@@ -64,6 +64,7 @@ module Bulkrax
               title: [set.name],
               identifier: [set.spec],
               institution: [parser_fields['institution_name']],
+              visibility: 'open',
               collection_type_gid: Hyrax::CollectionType.find_or_create_default_collection_type.gid
             }
             #Bulkrax::Factories::CollectionFactory.new(attrs).find_or_create
