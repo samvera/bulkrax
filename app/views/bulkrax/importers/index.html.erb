@@ -1,0 +1,50 @@
+<% provide :page_header do %>
+  <h1><span class="fa fa-cloud-upload" aria-hidden="true"></span> Importers</h1>
+  <div class="pull-right">
+    <%= link_to new_importer_path, class: 'btn btn-primary' do %>
+      <span class="fa fa-edit" aria-hidden="true"></span> <%= t(:'helpers.action.importer.new') %>
+    <% end %>
+  </div>
+<% end %>
+
+<div class="panel panel-default">
+  <div class="panel-body">
+    <% if @importers.present? %>
+      <div class="table-responsive">
+        <table class="table table-striped datatable">
+          <thead>
+            <tr>
+              <th scope="col">Name</th>
+              <th scope="col">Last Run</th>
+              <th scope="col">Next Run</th>
+              <th scope="col">Records Enqueued</th>
+              <th scope="col">Records Processed</th>
+              <th scope="col">Records Failed</th>
+              <th scope="col">Records Deleted Upstream</th>
+              <th scope="col">Total Records</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @importers.each do |importer| %>
+              <tr>
+                <th scope="row"><%= importer.name %></th>
+                <td><%= importer.last_imported_at.strftime("%b %d, %Y") if importer.last_imported_at %></td>
+                <td><%= importer.next_import_at.strftime("%b %d, %Y") if importer.next_import_at %></td>
+                <td><%= importer.import_runs.last&.enqueued %></td>
+                <td><%= importer.import_runs.last&.processed %></td>
+                <td><%= importer.import_runs.last&.failures %></td>
+                <td><%= importer.import_runs.last&.deleted %></td>
+                <td><%= importer.import_runs.last&.total %></td>
+                <td><%= link_to raw('<span class="glyphicon glyphicon-pencil"></span>'), edit_importer_path(importer) %></td>
+                <td><%= link_to raw('<span class="glyphicon glyphicon-remove"></span>'), importer, method: :delete, data: { confirm: 'Are you sure?' } %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+      <% else %>
+        <p>No importers have been created.</p>
+      <% end %>
+  </div>
+</div>
+

@@ -11,4 +11,7 @@ gemspec
 # your gem to rubygems.org.
 
 # To use a debugger
-# gem 'byebug', group: [:development, :test]
+gem 'byebug', group: [:development, :test]
+gem "rspec-rails"
+gem "factory_bot_rails"
+gem "oai"

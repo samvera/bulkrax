@@ -1,0 +1,44 @@
+<p id="notice"><%= notice %></p>
+
+<p>
+  <strong>Name:</strong>
+  <%= @importer.name %>
+</p>
+
+<p>
+  <strong>Admin set:</strong>
+  <%= @importer.admin_set_id %>
+</p>
+
+<p>
+  <strong>User:</strong>
+  <%= @importer.user %>
+</p>
+
+<p>
+  <strong>Frequency:</strong>
+  <%= @importer.frequency %>
+</p>
+
+<p>
+  <strong>Parser klass:</strong>
+  <%= @importer.parser_klass %>
+</p>
+
+<p>
+  <strong>Limit:</strong>
+  <%= @importer.limit %>
+</p>
+
+<p>
+  <strong>Parser fields:</strong>
+  <%= @importer.parser_fields %>
+</p>
+
+<p>
+  <strong>Field mapping:</strong>
+  <%= @importer.field_mapping %>
+</p>
+
+<%= link_to 'Edit', edit_importer_path(@importer) %> |
+<%= link_to 'Back', importers_path %>
