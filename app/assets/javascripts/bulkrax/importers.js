@@ -1,6 +1,6 @@
 // Place all the behaviors and hooks related to the matching controller here.
 // All this logic will automatically be available in application.js.
-$(document).ready(function() {
+$(document).on('turbolinks:load', function() {
   var refresh_button = $('.refresh-set-source')
   var base_url = $('#importer_parser_fields_base_url')
   var external_set_select = $("#importer_parser_fields_set")
