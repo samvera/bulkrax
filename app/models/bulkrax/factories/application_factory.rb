@@ -5,8 +5,8 @@ module Bulkrax
 
       eager_autoload do
         autoload :CollectionFactory
-        autoload :WorkFactory if defined?(Work)
-        autoload :ImageFactory if defined?(Image)
+        autoload :WorkFactory
+        autoload :ImageFactory
         autoload :ObjectFactory
         autoload :WithAssociatedCollection
       end
