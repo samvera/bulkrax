@@ -15,7 +15,7 @@ module Bulkrax
       end
 
       def entry_class
-        'ETD'
+        'Work'
       end
 
       def raw_record
