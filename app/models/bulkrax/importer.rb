@@ -47,6 +47,10 @@ module Bulkrax
       frequency.to_seconds != 0
     end
 
+    def last_imported_at
+      @last_imported_at ||= self.importer_runs.last.created_at
+    end
+
     def next_import_at
       (last_imported_at || Time.current) + frequency.to_seconds if schedulable? and last_imported_at.present?
     end
