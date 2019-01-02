@@ -45,6 +45,13 @@ module Bulkrax
       end
 
       def records(opts = {})
+        if parser_fields['set'].present?
+          opts.merge!(set: parser_fields['set'])
+        end
+        if importer.last_imported_at
+          opts.merge!(from: import.last_imported_at)
+        end
+
         if opts[:quick]
           opts.delete(:quick)
           @short_records = client.list_identifiers(opts)

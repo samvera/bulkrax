@@ -40,7 +40,10 @@ module Bulkrax
       @importer = Importer.new(importer_params)
 
       if @importer.save
-        redirect_to @importer, notice: 'Importer was successfully created.'
+        if params[:commit] == 'Create and Import'
+          Bulkrax::ImporterJob.perform_later(@importer.id)
+        end
+        redirect_to importers_path, notice: 'Importer was successfully created.'
       else
         render :new
       end
@@ -49,7 +52,7 @@ module Bulkrax
     # PATCH/PUT /importers/1
     def update
       if @importer.update(importer_params)
-        redirect_to @importer, notice: 'Importer was successfully updated.'
+        redirect_to importers_path, notice: 'Importer was successfully updated.'
       else
         render :edit
       end

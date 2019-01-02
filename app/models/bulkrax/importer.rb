@@ -48,7 +48,7 @@ module Bulkrax
     end
 
     def last_imported_at
-      @last_imported_at ||= self.importer_runs.last.created_at
+      @last_imported_at ||= self.importer_runs.last&.created_at
     end
 
     def next_import_at
@@ -70,12 +70,12 @@ module Bulkrax
           break
         elsif record.deleted? # TODO record.status == "deleted"
           self.current_importer_run.deleted_records += 1
+          self.current_importer_run.save!
         else
           seen[record.identifier] = true
           ImportWorkJob.perform_later(self.id, record.identifier)
           self.increment_counters(index)
         end
-        current_importer_run.save
       end
 
       remove_unseen
