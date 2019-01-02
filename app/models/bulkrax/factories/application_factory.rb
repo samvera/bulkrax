@@ -5,7 +5,7 @@ module Bulkrax
 
       eager_autoload do
         autoload :CollectionFactory
-        autoload :ETDFactory
+        autoload :WorkFactory
         autoload :ImageFactory
         autoload :ObjectFactory
         autoload :WithAssociatedCollection

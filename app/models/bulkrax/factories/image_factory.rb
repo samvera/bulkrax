@@ -1,16 +1,18 @@
-module Bulkrax
-  module Factories
-    class ImageFactory < ObjectFactory
-      include WithAssociatedCollection
+if defined?(Image)
+  module Bulkrax
+    module Factories
+      class ImageFactory < ObjectFactory
+        include WithAssociatedCollection
 
-      self.klass = Image
-      # A way to identify objects that are not Hydra minted identifiers
-      self.system_identifier_field = :identifier
+        self.klass = Image
+        # A way to identify objects that are not Hydra minted identifiers
+        self.system_identifier_field = :identifier
 
-      # TODO: add resource type?
-      # def create_attributes
-      #   #super.merge(resource_type: 'Image')
-      # end
+        # TODO: add resource type?
+        # def create_attributes
+        #   #super.merge(resource_type: 'Image')
+        # end
+      end
     end
   end
 end
