@@ -73,7 +73,7 @@ module Bulkrax
           self.current_importer_run.save!
         else
           seen[record.identifier] = true
-          ImportWorkJob.perform_later(self.id, record.identifier)
+          ImportWorkJob.perform_later(self.id, self.current_importer_run.id, record.identifier)
           self.increment_counters(index)
         end
       end
