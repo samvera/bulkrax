@@ -2,7 +2,7 @@ module Bulkrax
   module Matchers
     class OaiMatcher < ApplicationMatcher
       def parse_remote_files(src)
-        {url: src}
+        {url: src} if src.present?
       end
 
       def parse_language(src)
