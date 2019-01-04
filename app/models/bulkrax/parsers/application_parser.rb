@@ -3,7 +3,7 @@ module Bulkrax
     class ApplicationParser
 
       attr_accessor :importer, :total
-      delegate :parser_fields, :user, to: :importer
+      delegate :only_updates, :parser_fields, :user, to: :importer
 
       def self.parser_fields
         {}

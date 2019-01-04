@@ -6,7 +6,7 @@ module Bulkrax
       start = Time.current
       importer = Importer.find(importer_id)
 
-      importer.import_works
+      importer.import_works(only_updates_since_last_import)
       if importer.schedulable?
         ImporterJob.set(wait_until: importer.next_import_at).perform_later(importer.id, true)
       end

@@ -10,6 +10,8 @@ module Bulkrax
 
     validates :name, presence: true
     validates :admin_set_id, presence: true
+
+    attr_accessor :only_updates
     # TODO validates :metadata_prefix, presence: true
     # TODO validates :base_url, presence: true
 
@@ -67,7 +69,8 @@ module Bulkrax
       @seen ||= {}
     end
 
-    def import_works
+    def import_works(only_updates=false)
+      self.only_updates = only_updates
       parser.create_collections
       parser.records(quick: true).each_with_index do |record, index|
         if !limit.nil? && index >= limit
