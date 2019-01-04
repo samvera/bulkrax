@@ -2,8 +2,8 @@ module Bulkrax
   module Parsers
     class ApplicationParser
 
-      #attr_accessor :url, :headers, :file_url, :user, :admin_set_id, :rights, :institution, :total, :client, :collection_name, :metadata_prefix
       attr_accessor :importer, :total
+      delegate :parser_fields, :user, to: :importer
 
       def self.parser_fields
         {}

@@ -13,6 +13,10 @@ module Bulkrax
     # TODO validates :metadata_prefix, presence: true
     # TODO validates :base_url, presence: true
 
+    def parser_fields
+      read_attribute(:parser_fields) || {}
+    end
+
     def parser
       # create an parser based on importer
       @parser ||= self.parser_klass.constantize.new(

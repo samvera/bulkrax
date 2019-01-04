@@ -1,9 +1,8 @@
 module Bulkrax
   module Parsers
-    class OaiParser < ApplicationParser
+    class OaiDcParser < ApplicationParser
       attr_accessor :client, :headers
       delegate :list_sets, to: :client
-      delegate :parser_fields, :user, to: :importer
 
       def self.parser_fields
         {
@@ -37,7 +36,7 @@ module Bulkrax
       end
 
       def mapping_class
-        Mappings::OaiMapping
+        Mappings::OaiDcMapping
       end
 
       def entry(identifier)
