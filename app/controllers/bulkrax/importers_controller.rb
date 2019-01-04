@@ -53,9 +53,9 @@ module Bulkrax
     def update
       if @importer.update(importer_params)
         if params[:commit] == 'Update and Harvest Updated Items'
-          Bulkrax::ImportJob.perform_later(@harvester.id, true)
+          Bulkrax::ImportJob.perform_later(@importer.id, true)
         elsif params[:commit] == 'Update and Re-Harvest All Items' # here we reset the last_harvested_at to ensure that we are pulling all new data
-          Bulkrax::ImporterJob.perform_later(@harvester.id)
+          Bulkrax::ImporterJob.perform_later(@importer.id)
         end
         redirect_to importers_path, notice: 'Importer was successfully updated.'
       else
