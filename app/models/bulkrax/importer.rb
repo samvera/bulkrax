@@ -72,7 +72,7 @@ module Bulkrax
     def import_works(only_updates=false)
       self.only_updates = only_updates
       parser.create_collections
-      parser.records(quick: true).each_with_index do |record, index|
+      parser.records(quick: true).full.each_with_index do |record, index|
         if !limit.nil? && index >= limit
           break
         elsif record.deleted? # TODO record.status == "deleted"
