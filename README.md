@@ -16,9 +16,16 @@ And then execute:
 $ bundle
 ```
 
-Or install it yourself as:
+Mount the engine in your routes file
+
+```ruby 
+mount Bulkrax::Engine, at: '/'
+```
+
+Install the migrations
+
 ```bash
-$ gem install bulkrax
+rails bulkrax:install:migrations db:migrate
 ```
 
 ## Contributing
