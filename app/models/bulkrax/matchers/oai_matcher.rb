@@ -19,7 +19,7 @@ module Bulkrax
       end
 
       def parse_format_digital(src)
-        case src.to_s.downcase
+        case src.to_s.strip.downcase
         when 'application/pdf','pdf'
           'PDF'
         when 'image/jpeg', 'image/jpg', 'jpeg', 'jpg'
