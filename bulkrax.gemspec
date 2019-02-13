@@ -17,6 +17,8 @@ Gem::Specification.new do |s|
   s.files = Dir["{app,config,db,lib}/**/*", "MIT-LICENSE", "Rakefile", "README.md"]
 
   s.add_dependency "rails", "~> 5.1.6"
+  s.add_dependency "loofah", ">= 2.2.3" # security issue, remove on rails upgrade
+  s.add_dependency "rack", ">= 2.0.6" # security issue, remove on rails upgrade
   s.add_dependency 'iso8601', '~> 0.9.0'
   s.add_dependency 'oai', '~> 0.4'
   s.add_dependency 'libxml-ruby', '~> 3.1.0'
