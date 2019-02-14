@@ -15,7 +15,8 @@ module Bulkrax
     matcher 'subject', split: true
     matcher 'title'
     matcher 'types', from: ['types', 'type'], split: true, parsed: true
-    matcher 'relation', split: true
+    # NOTE (dewey4iv): Commented out per Rob. Being removed temporarily for ATLA's use
+    # matcher 'relation', split: true
     matcher 'remote_files', from: ['thumbnail_url'], parsed: true
   end
 end

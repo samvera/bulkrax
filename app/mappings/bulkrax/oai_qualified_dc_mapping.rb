@@ -16,7 +16,8 @@ module Bulkrax
     matcher 'language', parsed: true, split: true
     matcher 'place', from: ['coverage', 'spatial']
     matcher 'publisher', split: /\s*[;]\s*/
-    matcher 'relation', split: true
+    # NOTE (dewey4iv): Commented out per Rob. Being removed temporarily for ATLA's use
+    # matcher 'relation', split: true
     matcher 'rights_holder', from: ['rights_holder', 'rightsHolder']
     matcher 'subject', split: true
     matcher 'time_period', from: ['time_period', 'temporal'], split: true
