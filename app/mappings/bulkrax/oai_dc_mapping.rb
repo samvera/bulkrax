@@ -13,7 +13,8 @@ module Bulkrax
     matcher 'language', parsed: true, split: true
     matcher 'place', from: ['coverage']
     matcher 'publisher', split: /\s*[;]\s*/
-    matcher 'relation', split: true
+    # NOTE (dewey4iv): Commented out per Rob. Being removed temporarily for ATLA's use
+    # matcher 'relation', split: true
     matcher 'subject', split: true
     matcher 'title'
     matcher 'types', from: ['types', 'type'], split: true, parsed: true
