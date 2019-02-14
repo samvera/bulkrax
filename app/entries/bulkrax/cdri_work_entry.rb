@@ -23,10 +23,16 @@ module Bulkrax
 
       @all_attrs = @attrs.each_with_object({}) do |(key, value), hash|
         clean_key = key.gsub(/component/i, '').gsub(/\d+/, '').underscore
-        if entry_class.new.respond_to?(clean_key.to_sym) && clean_key != 'id'
-          hash[clean_key] ||= []
+        if(clean_key.match(/publisher/i))
+          hash['institution'] ||= []
           val = val.respond_to?(:value) ? value.value : value
-          hash[clean_key] << val.gsub(/\n|\r|\r\n/, ' ').strip
+          hash['institution'] << val.gsub(/\n|\r|\r\n/, ' ').strip
+        else
+          if entry_class.new.respond_to?(clean_key.to_sym) && clean_key != 'id'
+            hash[clean_key] ||= []
+            val = val.respond_to?(:value) ? value.value : value
+            hash[clean_key] << val.gsub(/\n|\r|\r\n/, ' ').strip
+          end
         end
       end
       @all_attrs['visibility'] = 'open'

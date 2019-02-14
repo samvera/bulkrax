@@ -5,7 +5,6 @@ module Bulkrax
       {
         xml_path: :string,
         upload_path: :string,
-        institution_name: :string,
         rights_statements: :string,
       }
     end

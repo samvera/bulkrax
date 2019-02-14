@@ -57,7 +57,6 @@
       <div class='cdri_fields'>
         <%= fi.input :xml_path, as: :string, input_html: { value: importer.parser_fields['xml_path'] } %>
         <%= fi.input :upload_path, as: :string, input_html: { value: importer.parser_fields['upload_path'] } %>
-        <%= fi.input :institution_name, as: :string, input_html: { value: importer.parser_fields['institution_name'] } %>
         <% rights_statements = Hyrax.config.rights_statement_service_class.new %>
         <%= fi.input :rights_statement,
         collection: rights_statements.select_active_options,

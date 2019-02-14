@@ -21,10 +21,8 @@ module Bulkrax
           hash[clean_key] << val.gsub(/\n|\r|\r\n/, ' ').strip
         end
       end
-
       @all_attrs['visibility'] = 'open'
       @all_attrs['collection_type_gid'] = Hyrax::CollectionType.find_or_create_default_collection_type.gid
-      @all_attrs['institution'] = [parser.parser_fields['institution_name']] if parser.parser_fields['institution_name'].present?
       @all_attrs['identifier'] = [@identifier]
       @all_attrs
     end
