@@ -24,9 +24,9 @@ module Bulkrax
       @all_attrs = @attrs.each_with_object({}) do |(key, value), hash|
         clean_key = key.gsub(/component/i, '').gsub(/\d+/, '').underscore
         if(clean_key.match(/publisher/i))
-          hash['institution'] ||= []
+          hash['contributing_institution'] ||= []
           val = val.respond_to?(:value) ? value.value : value
-          hash['institution'] << val.gsub(/\n|\r|\r\n/, ' ').strip
+          hash['contributing_institution'] << val.gsub(/\n|\r|\r\n/, ' ').strip
         else
           if entry_class.new.respond_to?(clean_key.to_sym) && clean_key != 'id'
             hash[clean_key] ||= []
@@ -36,6 +36,7 @@ module Bulkrax
         end
       end
       @all_attrs['visibility'] = 'open'
+      @metadata['rights_statement'] = [parser.parser_fields['rights_statement']]
       @all_attrs['collection'] = {id: @collection_id}
       @all_attrs['file'] = [@attrs["ComponentFileName"]] if @attrs["ComponentFileName"].present?
       @all_attrs
