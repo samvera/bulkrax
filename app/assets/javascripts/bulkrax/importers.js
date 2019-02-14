@@ -1,5 +1,6 @@
 // Place all the behaviors and hooks related to the matching controller here.
 // All this logic will automatically be available in application.js.
+
 $(document).on('turbolinks:load', function() {
   var refresh_button = $('.refresh-set-source')
   var base_url = $('#importer_parser_fields_base_url')
@@ -23,7 +24,31 @@ $(document).on('turbolinks:load', function() {
       initial_base_url = base_url.val()
     }
   })
+
+  // hide and show correct parser fields depending on klass setting
+  $('body').on('change', '#importer_parser_klass', function(e) {
+    handleParserKlass()
+  })
+  handleParserKlass()
 });
+
+function handleParserKlass(){
+  var parser_klass = $("#importer_parser_klass")
+
+  if($('.oai_fields').length > 0) {
+    window.oai_fields = $('.oai_fields').detach()
+  }
+  if($('.cdri_fields').length > 0) {
+    window.cdri_fields = $('.cdri_fields').detach()
+  }
+
+  if(parser_klass.val().match(/oai/i)){
+    $('.parser_fields').append(window.oai_fields)
+  } else if(parser_klass.val().match(/cdri/i)){
+    $('.parser_fields').append(window.cdri_fields)
+  }
+  
+}
 
 function handleSourceLoad(refresh_button, base_url, external_set_select) {
   if (base_url.val() == "") { // ignore empty base_url value

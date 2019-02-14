@@ -21,17 +21,7 @@ module Bulkrax
 
     def parser
       # create an parser based on importer
-      @parser ||= self.parser_klass.constantize.new(
-        self
-        # self.file_url,
-        # #        self.right_statement,
-        # #        self.institution_name,
-        # self.user,
-        # self.admin_set_id,
-        # self.parser_fields,
-        # self.field_mapping
-        # #        self.external_set_id,
-      )
+      @parser ||= self.parser_klass.constantize.new(self)
     end
 
     def frequency_enums
@@ -46,7 +36,8 @@ module Bulkrax
     end
 
     def frequency
-      ISO8601::Duration.new read_attribute(:frequency) if read_attribute(:frequency)
+      f = read_attribute(:frequency) || "PT0S"
+      ISO8601::Duration.new(f)
     end
 
     def schedulable?
@@ -71,20 +62,7 @@ module Bulkrax
 
     def import_works(only_updates=false)
       self.only_updates = only_updates
-      parser.create_collections
-      parser.records(quick: true).full.each_with_index do |record, index|
-        if !limit.nil? && index >= limit
-          break
-        elsif record.deleted? # TODO record.status == "deleted"
-          self.current_importer_run.deleted_records += 1
-          self.current_importer_run.save!
-        else
-          seen[record.identifier] = true
-          ImportWorkJob.perform_later(self.id, self.current_importer_run.id, record.identifier)
-          self.increment_counters(index)
-        end
-      end
-
+      parser.run
       remove_unseen
     end
 
