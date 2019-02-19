@@ -1,12 +1,12 @@
 module Bulkrax
   class OaiMatcher < ApplicationMatcher
     def parse_remote_files(src)
-      {url: src} if src.present?
+      { url: src } if src.present?
     end
 
     def parse_language(src)
       l = LanguageList::LanguageInfo.find(src)
-      return l ? l.name : src
+      l ? l.name : src
     end
 
     def parse_types(src)
@@ -19,7 +19,7 @@ module Bulkrax
 
     def parse_format_digital(src)
       case src.to_s.strip.downcase
-      when 'application/pdf','pdf'
+      when 'application/pdf', 'pdf'
         'PDF'
       when 'image/jpeg', 'image/jpg', 'jpeg', 'jpg'
         'JPEG'
@@ -39,12 +39,8 @@ module Bulkrax
         'AVI'
       when 'audio/aac', 'aac'
         'AAC'
-      when 'audio/mp4', 'mp4'
-        'MP4'
       when 'audio/mpeg', 'audio/mp3', 'audio/mpeg3', 'mpeg', 'mp3', 'mpeg3'
         'MPEG'
-      when 'audio/ogg', 'ogg'
-        'OGG'
       when 'audio/aiff', 'aiff'
         'AIFF'
       when 'audio/webm', 'webm'
