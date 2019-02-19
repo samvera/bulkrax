@@ -1,6 +1,6 @@
 module Bulkrax
   class CdriParser < ApplicationParser
-    attr_accessor :data, :running_count
+    attr_accessor :data, :running_count, :cdri_collection
     def self.parser_fields
       {
         xml_path: :string,
@@ -26,7 +26,19 @@ module Bulkrax
       @running_count ||= 0
     end
 
+    def cdri_collection
+      return @cdri_collection if @cdri_collection
+      @cdri_collection = Collection.where(identifier: ['cdri']).first
+      @cdri_collection ||= CollectionFactory.new({identifier: ['cdri'],
+                                                  title: ["CDRI"],
+                                                  visibility: 'open',
+                                                  collection_type_gid: Hyrax::CollectionType.find_or_create_default_collection_type.gid
+                                                 }).find_or_create
+    end
+
     def create_collections_with_works
+      self.cdri_collection # make sure it is created before we start
+
       data.css('Collections').each do |collection_xml|
         collection = CdriCollectionEntry.new(self, collection_xml).build
         create_works(collection_xml, collection)

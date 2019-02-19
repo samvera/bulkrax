@@ -37,8 +37,9 @@ module Bulkrax
       end
       @all_attrs['visibility'] = 'open'
       @all_attrs['rights_statement'] = [parser.parser_fields['rights_statement']]
-      @all_attrs['collection'] = {id: @collection_id}
+      @all_attrs['collections'] = [{id: parser.cdri_collection&.id}, {id: @collection_id}]
       @all_attrs['file'] = [@attrs["ComponentFileName"]] if @attrs["ComponentFileName"].present?
+      @all_attrs['identifier'] ||= [@identifier]
       @all_attrs
     end
   end
