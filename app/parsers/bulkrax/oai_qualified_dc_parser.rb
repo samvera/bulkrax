@@ -1,7 +1,7 @@
 module Bulkrax
   class OaiQualifiedDcParser < OaiDcParser
     def mapping_class
-      Mappings::OaiQualifiedDcMapping
+      OaiQualifiedDcMapping
     end
   end
 end

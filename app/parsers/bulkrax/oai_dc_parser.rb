@@ -106,12 +106,12 @@ module Bulkrax
         if !limit.nil? && index >= limit
           break
         elsif record.deleted? # TODO record.status == "deleted"
-          self.current_importer_run.deleted_records += 1
-          self.current_importer_run.save!
+          importer.current_importer_run.deleted_records += 1
+          importer.current_importer_run.save!
         else
           seen[record.identifier] = true
-          ImportWorkJob.perform_later(self.id, self.current_importer_run.id, record.identifier)
-          self.increment_counters(index)
+          ImportWorkJob.perform_later(importer.id, importer.current_importer_run.id, record.identifier)
+          importer.increment_counters(index)
         end
       end
     end
