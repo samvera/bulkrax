@@ -42,12 +42,14 @@ function handleParserKlass(){
     window.cdri_fields = $('.cdri_fields').detach()
   }
 
-  if(parser_klass.val().match(/oai/i)){
-    $('.parser_fields').append(window.oai_fields)
-  } else if(parser_klass.val().match(/cdri/i)){
-    $('.parser_fields').append(window.cdri_fields)
+  if(parser_klass.length > 0) {
+    if(parser_klass.val().match(/oai/i)){
+      $('.parser_fields').append(window.oai_fields)
+    } else if(parser_klass.val().match(/cdri/i)){
+      $('.parser_fields').append(window.cdri_fields)
+    }
   }
-  
+
 }
 
 function handleSourceLoad(refresh_button, base_url, external_set_select) {
