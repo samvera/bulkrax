@@ -34,6 +34,8 @@ module Bulkrax
                                                   visibility: 'open',
                                                   collection_type_gid: Hyrax::CollectionType.find_or_create_default_collection_type.gid
                                                  }).find_or_create
+      @cdri_collection.reindex_extent = Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX
+      return @cdri_collection
     end
 
     def create_collections_with_works
@@ -49,16 +51,30 @@ module Bulkrax
     end
 
     def create_works(collection_xml, collection)
-      collection_xml.css('Components').map do |component_xml|
+      collection_xml.css('Components').select do |component_xml|
         ImporterRun.find(current_importer_run.id).increment!(:enqueued_records)
-
-        work = CdriWorkEntry.new(self, component_xml, collection).build
-        ImporterRun.find(current_importer_run.id).increment!(:processed_records) if work.valid?
-
+        if Work.where(identifier: [component_xml["ComponentID"].to_s]).count > 0
+          ImporterRun.find(current_importer_run.id).increment!(:processed_records)
+          puts "skipped #{component_xml["ComponentID"]}"
+          next
+        end
+        begin
+          work = CdriWorkEntry.new(self, component_xml, collection).build
+          if work.valid?
+            ImporterRun.find(current_importer_run.id).increment!(:processed_records)
+          else
+            Rails.logger.error "Import ERROR: #{component_xml["ComponentID"].to_s} - #{work.errors.full_messages}"
+            ImporterRun.find(current_importer_run.id).increment!(:failed_records)
+          end
+        rescue => e
+          Rails.logger.error "Import ERROR: #{component_xml["ComponentID"].to_s}"
+          ImporterRun.find(current_importer_run.id).increment!(:failed_records)
+        end
         self.running_count += 1
         if limit && running_count >= limit
           break
         end
+        false
       end
     end
 

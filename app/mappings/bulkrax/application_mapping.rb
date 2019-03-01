@@ -41,12 +41,10 @@ module Bulkrax
           add_metadata(node.name, node.content)
         end
       end
-
       # TODO go through all parer_fields and add them?
       add_metadata('thumbnail_url', thumbnail_url)
-
       @metadata['contributing_institution'] = [contributing_institution]
-      @metadata['rights_statement'] = [rights_statement]
+      @metadata['rights_statement'] = [rights_statement] unless @metadata['rights_statement'].present?
       @metadata['visibility'] = 'open'
 
       @metadata

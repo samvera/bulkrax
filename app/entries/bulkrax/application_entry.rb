@@ -32,7 +32,8 @@ module Bulkrax
       return @all_attrs if @all_attrs
       @all_attrs ||= mapping.all_attrs
       unless collection_name == "all"
-        @all_attrs['collection'] = {identifier: [collection_name]}
+        @all_attrs['collections'] ||= []
+        @all_attrs['collections'] << {id: parser.collection&.id}
       end
       return @all_attrs
     end

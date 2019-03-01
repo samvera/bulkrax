@@ -64,10 +64,7 @@ module Bulkrax
       @object = klass.new
       run_callbacks :save do
         run_callbacks :create do
-          Rails.logger.debug("============= 6")
           klass == Collection ? create_collection(attrs) : work_actor.create(environment(attrs))
-          Rails.logger.debug("============= 7")
-
         end
       end
       log_created(object)
@@ -96,10 +93,8 @@ module Bulkrax
     end
 
     def create_collection(attrs)
-      Rails.logger.debug("============= 8")
       @object.attributes = attrs
       @object.apply_depositor_metadata(@user)
-      Rails.logger.debug("============= 9")
 
       @object.save!
     end

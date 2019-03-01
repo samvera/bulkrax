@@ -20,7 +20,7 @@ module Bulkrax
     end
 
     def client
-      @client ||= OAI::Client.new(parser_fields['base_url'],
+      @client ||= OAI::Client.new(importer.parser_fields['base_url'],
                                   headers: headers,
                                   parser: 'libxml',
                                   metadata_prefix: importer.parser_fields['metadata_prefix'])
@@ -28,6 +28,10 @@ module Bulkrax
 
     def collection_name
       @collection_name ||= parser_fields['set'] || 'all'
+    end
+
+    def collection
+      @collection ||= Collection.where(identifier: [@collection_name]).first
     end
 
     def entry_class
@@ -64,7 +68,7 @@ module Bulkrax
         end
       else
         begin
-          @records ||= client.list_records(opts)
+          @records ||= client.list_records(opts.merge(metadata_prefix: parser_fields['metadata_prefix']))
         rescue OAI::Exception => e
           if e.code == "noRecordsMatch"
             @records = []

@@ -1,5 +1,10 @@
 module Bulkrax
   class OaiMatcher < ApplicationMatcher
+    def parse_collections(src)
+      collection = Collection.where(title: [src]).first
+      collection ||= Collection.create(title: [src], identifier: [src], collection_type_gid: Hyrax::CollectionType.find_or_create_default_collection_type.gid)
+      {id: collection.id} if collection
+    end
     def parse_remote_files(src)
       { url: src } if src.present?
     end
