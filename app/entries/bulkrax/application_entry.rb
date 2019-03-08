@@ -22,6 +22,7 @@ module Bulkrax
       @mapping ||= mapping_class.new(
         raw_record,
         parser.parser_fields['rights_statement'],
+        parser.parser_fields['override_rights_statement'],
         parser.parser_fields['institution_name'],
         parser.parser_fields['thumbnail_url'],
         collection_name == "all"

@@ -10,6 +10,7 @@ module Bulkrax
         set: :string,
         institution_name: :string,
         rights_statements: :string,
+        override_rights_statement: :boolean,
         thumbnail_url: :string
       }
     end

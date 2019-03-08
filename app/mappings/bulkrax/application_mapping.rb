@@ -7,7 +7,7 @@ module Bulkrax
     attr_accessor :record, :rights_statement, :contributing_institution, :thumbnail_url, :all
     class_attribute :matchers
 
-    def initialize(record, rights_statement, contributing_institution, thumbnail_url, all = false)
+    def initialize(record, rights_statement, override_rights_statement, contributing_institution, thumbnail_url, all = false)
       @record = record.record
       @rights_statement = rights_statement
       @contributing_institution = contributing_institution
@@ -44,7 +44,9 @@ module Bulkrax
       # TODO go through all parer_fields and add them?
       add_metadata('thumbnail_url', thumbnail_url)
       @metadata['contributing_institution'] = [contributing_institution]
-      @metadata['rights_statement'] = [rights_statement] unless @metadata['rights_statement'].present?
+      if override_rights_statement || @metadata['rights_statement'].blank?
+        @metadata['rights_statement'] = [rights_statement]
+      end
       @metadata['visibility'] = 'open'
 
       @metadata
