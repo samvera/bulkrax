@@ -15,7 +15,7 @@ module Bulkrax
     matcher 'format_original', from: ['medium']
     matcher 'identifier', from: ['identifier'], if: ->(parser, content) { content.match(/http(s{0,1}):\/\//) }
     matcher 'language', parsed: true, split: true
-    matcher 'manifest_url', from: ['hasFormat']
+    matcher 'remote_manifest_url', from: ['hasFormat']
     matcher 'place', from: ['coverage', 'spatial']
     matcher 'publisher', split: /\s*[;]\s*/
     # NOTE (dewey4iv): Commented out per Rob. Being removed temporarily for ATLA's use

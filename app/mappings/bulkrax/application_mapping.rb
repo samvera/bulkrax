@@ -4,7 +4,7 @@ require 'ostruct'
 
 module Bulkrax
   class ApplicationMapping
-    attr_accessor :record, :rights_statement, :contributing_institution, :thumbnail_url, :all
+    attr_accessor :record, :rights_statement, :override_rights_statement, :contributing_institution, :thumbnail_url, :all
     class_attribute :matchers
 
     def initialize(record, rights_statement, override_rights_statement, contributing_institution, thumbnail_url, all = false)
