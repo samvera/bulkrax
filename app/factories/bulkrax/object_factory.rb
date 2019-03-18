@@ -118,8 +118,17 @@ module Bulkrax
     def file_attributes
       hash = {}
       hash[:uploaded_files] = upload_ids if files_directory.present? && attributes[:file].present?
-      hash[:remote_files] = attributes[:remote_files] if attributes[:remote_files].present?
+      hash[:remote_files] = new_remote_files if new_remote_files.present?
       hash
+    end
+
+    def new_remote_files
+      @new_remote_files ||= if attributes[:remote_files].present? && object.present?
+                              attributes[:remote_files].detect do |file|
+                                existing = object.file_sets.detect {|f| f.import_url && f.import_url == file[:url]}
+                                !existing
+                              end
+                            end
     end
 
     def file_paths
