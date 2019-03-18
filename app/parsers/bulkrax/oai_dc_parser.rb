@@ -107,16 +107,19 @@ module Bulkrax
     end
 
     def create_works
-      self.records(quick: true).full.each_with_index do |record, index|
-        if !limit.nil? && index >= limit
-          break
-        elsif record.deleted? # TODO record.status == "deleted"
-          importer.current_importer_run.deleted_records += 1
-          importer.current_importer_run.save!
-        else
-          seen[record.identifier] = true
-          ImportWorkJob.perform_later(importer.id, importer.current_importer_run.id, record.identifier)
-          importer.increment_counters(index)
+      results = self.records(quick: true)
+      if results.present?
+        results.full.each_with_index do |record, index|
+          if !limit.nil? && index >= limit
+            break
+          elsif record.deleted? # TODO record.status == "deleted"
+            importer.current_importer_run.deleted_records += 1
+            importer.current_importer_run.save!
+          else
+            seen[record.identifier] = true
+            ImportWorkJob.perform_later(importer.id, importer.current_importer_run.id, record.identifier)
+            importer.increment_counters(index)
+          end
         end
       end
     end

@@ -1,7 +1,7 @@
 // Place all the behaviors and hooks related to the matching controller here.
 // All this logic will automatically be available in application.js.
 
-$(document).on('turbolinks:load', function() {
+function prepBulkrax(event) {
   var refresh_button = $('.refresh-set-source')
   var base_url = $('#importer_parser_fields_base_url')
   var external_set_select = $("#importer_parser_fields_set")
@@ -30,7 +30,7 @@ $(document).on('turbolinks:load', function() {
     handleParserKlass()
   })
   handleParserKlass()
-});
+}
 
 function handleParserKlass(){
   var parser_klass = $("#importer_parser_klass")
@@ -91,3 +91,5 @@ function setError(selector, error) {
   selector.html('<option value="none">Error - Please enter Base URL and try again</option>')
   selector.attr('disabled', true)
 }
+
+$(document).on({'turbolinks:load': prepBulkrax, 'ready': prepBulkrax})
