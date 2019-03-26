@@ -18,11 +18,6 @@ module Bulkrax
     end
 
     # @api
-    def mapping_class
-      raise 'must be defined'
-    end
-
-    # @api
     def records(opts = {})
       raise 'must be defined'
     end

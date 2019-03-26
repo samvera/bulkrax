@@ -36,15 +36,7 @@ module Bulkrax
     end
 
     def entry_class
-      OaiEntry
-    end
-
-    def mapping_class
-      OaiDcMapping
-    end
-
-    def entry(identifier)
-      entry_class.new(importer: self.importer, identifier: identifier)
+      OaiDcEntry
     end
 
     def records(opts = {})
@@ -117,7 +109,8 @@ module Bulkrax
             importer.current_importer_run.save!
           else
             seen[record.identifier] = true
-            ImportWorkJob.perform_later(importer.id, importer.current_importer_run.id, record.identifier)
+            new_entry = entry_class.create!(importer: self.importer, identifier: record.identifier, collection_id: self.collection.id)
+            ImportWorkJob.perform_later(new_entry.id, importer.current_importer_run.id)
             importer.increment_counters(index)
           end
         end

@@ -1,6 +1,6 @@
 module Bulkrax
   class CdriParser < ApplicationParser
-    attr_accessor :data, :running_count, :cdri_collection
+    attr_accessor :data, :running_count
     def self.parser_fields
       {
         xml_path: :string,
@@ -26,21 +26,7 @@ module Bulkrax
       @running_count ||= 0
     end
 
-    def cdri_collection
-      return @cdri_collection if @cdri_collection
-      @cdri_collection = Collection.where(identifier: ['cdri']).first
-      @cdri_collection ||= CollectionFactory.new({identifier: ['cdri'],
-                                                  title: ["CDRI"],
-                                                  visibility: 'open',
-                                                  collection_type_gid: Hyrax::CollectionType.find_or_create_default_collection_type.gid
-                                                 }).find_or_create
-      @cdri_collection.reindex_extent = Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX
-      return @cdri_collection
-    end
-
     def create_collections_with_works
-      self.cdri_collection # make sure it is created before we start
-
       data.css('Collections').each do |collection_xml|
         collection = CdriCollectionEntry.create(importer: self.importer, raw_metadata: collection_xml).build
         create_works(collection_xml, collection)
@@ -59,18 +45,15 @@ module Bulkrax
           next
         end
         begin
-          work = CdriWorkEntry.create(importer: self.importer, raw_metadata: component_xml, collection: collection).build
-          if work.valid?
-            ImporterRun.find(current_importer_run.id).increment!(:processed_records)
-          else
-            Rails.logger.error "Import ERROR: #{component_xml["ComponentID"].to_s} - #{work.errors.full_messages}"
-            ImporterRun.find(current_importer_run.id).increment!(:failed_records)
-          end
+          new_entry = entry_class.create(importer: self.importer, raw_metadata: component_xml, collection_id: collection.id)
+          ImportWorkJob.perform_later(new_entry.id, importer.current_importer_run.id)
+          ImporterRun.find(current_importer_run.id).increment!(:processed_records)
         rescue => e
           debugger
-          Rails.logger.error "Import ERROR: #{component_xml["ComponentID"].to_s}"
+          Rails.logger.error "Import ERROR: #{component_xml["ComponentID"].to_s} - Message: #{e.message}"
           ImporterRun.find(current_importer_run.id).increment!(:failed_records)
         end
+
         self.running_count += 1
         if limit && running_count >= limit
           break
@@ -86,11 +69,6 @@ module Bulkrax
     def mapping_class
       CdriMapping
     end
-
-    def entry(identifier)
-      entry_class.new(self, identifier)
-    end
-
 
     def total
       @total ||= data.css('Components').count

@@ -13,21 +13,25 @@ module Bulkrax
       @raw_metadata_xml ||= Nokogiri::XML.fragment(raw_metadata).elements.first
     end
 
-    def all_attrs
-      return @all_attrs if @all_attrs.present?
-      @all_attrs = raw_metadata_xml.each_with_object({}) do |(key, value), hash|
+    def build_metadata
+      self.parsed_metadata = {}
+      raw_metadata_xml.each_with_object({}) do |(key, value), hash|
         clean_key = key.gsub(/collection/i, '').gsub(/\d+/, '').underscore
-        if entry_class.new.respond_to?(clean_key.to_sym) && clean_key != 'id'
-          hash[clean_key] ||= []
-          val = val.respond_to?(:value) ? value.value : value
-          hash[clean_key] << val.gsub(/\n|\r|\r\n/, ' ').strip
-        end
+        next if clean_key == 'id'
+        val = value.respond_to?(:value) ? value.value : value
+        add_metadata(clean_key, val)
       end
 
-      @all_attrs['visibility'] = 'open'
-      @all_attrs['collection_type_gid'] = Hyrax::CollectionType.find_or_create_default_collection_type.gid
-      @all_attrs['identifier'] = [self.identifier]
-      @all_attrs
+      # remove any unspported attributes
+      object = entry_class.new
+      self.parsed_metadata = self.parsed_metadata.select do |key, value|
+        object.respond_to?(key.to_sym)
+      end
+
+      self.parsed_metadata['visibility'] = 'open'
+      self.parsed_metadata['collection_type_gid'] = Hyrax::CollectionType.find_or_create_default_collection_type.gid
+      self.parsed_metadata['identifier'] = [self.identifier]
+      return self.parsed_metadata
     end
   end
 end

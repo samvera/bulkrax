@@ -84,11 +84,6 @@ module Bulkrax
       # end
     end
 
-    def import_work(identifier)
-      entry = parser.entry(identifier)
-      entry.build
-    end
-
     def increment_counters(index)
       if limit.to_i > 0
         current_importer_run.total_records = limit

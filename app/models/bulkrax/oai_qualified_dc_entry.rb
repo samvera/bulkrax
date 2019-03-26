@@ -1,9 +1,5 @@
 module Bulkrax
-  class OaiQualifiedDcMapping < ApplicationMapping
-    def self.matcher_class
-      Bulkrax::OaiMatcher
-    end
-
+  class OaiQualifiedDcEntry < OaiEntry
     matcher 'alternative_title', from: ['alternative', 'alternative_title'], split: true
     matcher 'collections', from: ['isPartOf'], parsed: true
     matcher 'contributor', split: true
@@ -29,6 +25,3 @@ module Bulkrax
     matcher 'types', from: ['types', 'type'], split: true, parsed: true
   end
 end
-
-#isPartOf
-#hasFormat

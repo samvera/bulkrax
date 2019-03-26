@@ -1,8 +1,8 @@
 module Bulkrax
   class OaiPtcParser < OaiDcParser
-    def mapping_class
-      OaiPtcMapping
-    end
 
+    def entry_class
+      OaiPtcEntry
+    end
   end
 end
