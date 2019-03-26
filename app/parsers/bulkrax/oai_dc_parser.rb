@@ -44,7 +44,7 @@ module Bulkrax
     end
 
     def entry(identifier)
-      entry_class.new(self, identifier)
+      entry_class.new(importer: self.importer, identifier: identifier)
     end
 
     def records(opts = {})

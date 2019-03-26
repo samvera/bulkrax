@@ -1,17 +1,17 @@
 module Bulkrax
-  class ApplicationEntry
-    attr_accessor :parser, :importer, :raw_record, :parsed_record, :all_attrs, :identifier
+  class Entry < ApplicationRecord
+    belongs_to :importer
+
+    attr_accessor :all_attrs
+
+    delegate :parser,
+             to: :importer
 
     delegate :client,
              :mapping_class,
              :collection_name,
              :user,
              to: :parser
-
-    def initialize(parser, identifier)
-      @parser= parser
-      @identifier = identifier
-    end
 
     def build
       # attributes, files_dir = nil, files = [], user = nil

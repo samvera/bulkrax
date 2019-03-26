@@ -42,7 +42,7 @@ module Bulkrax
       self.cdri_collection # make sure it is created before we start
 
       data.css('Collections').each do |collection_xml|
-        collection = CdriCollectionEntry.new(self, collection_xml).build
+        collection = CdriCollectionEntry.create(importer: self.importer, raw_metadata: collection_xml).build
         create_works(collection_xml, collection)
         if limit && running_count >= limit
           break
@@ -59,7 +59,7 @@ module Bulkrax
           next
         end
         begin
-          work = CdriWorkEntry.new(self, component_xml, collection).build
+          work = CdriWorkEntry.create(importer: self.importer, raw_metadata: component_xml, collection: collection).build
           if work.valid?
             ImporterRun.find(current_importer_run.id).increment!(:processed_records)
           else
@@ -67,6 +67,7 @@ module Bulkrax
             ImporterRun.find(current_importer_run.id).increment!(:failed_records)
           end
         rescue => e
+          debugger
           Rails.logger.error "Import ERROR: #{component_xml["ComponentID"].to_s}"
           ImporterRun.find(current_importer_run.id).increment!(:failed_records)
         end
