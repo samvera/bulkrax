@@ -51,11 +51,8 @@ module Bulkrax
     end
 
     def parse_subject(src)
-      src.to_s.titleize
-    end
-
-    def parse_title(src)
-      src.to_s.titleize
+      string = src.to_s
+      string.slice(0,1).capitalize + string.slice(1..-1)
     end
 
     def parse_types(src)

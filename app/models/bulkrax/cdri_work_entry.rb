@@ -7,7 +7,7 @@ module Bulkrax
     matcher 'language', parsed: true, split: /\s*,\s*/
     matcher 'place', from: ['pub_place']
     matcher 'subject', parsed: true
-    matcher 'title', parsed: true
+    matcher 'title'
 
     def initialize(attrs={})
       super(attrs)
