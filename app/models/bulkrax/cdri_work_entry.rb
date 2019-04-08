@@ -1,5 +1,6 @@
 module Bulkrax
   class CdriWorkEntry < Entry
+    include Bulkrax::Concerns::HasMatchers
     matcher 'contributing_institution', from: ['publisher']
     matcher 'creator', split: true
     matcher 'date', from: ['date', 'pub_date'], split: true

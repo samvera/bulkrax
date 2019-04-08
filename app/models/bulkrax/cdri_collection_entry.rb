@@ -1,5 +1,7 @@
 module Bulkrax
   class CdriCollectionEntry < Entry
+    include Bulkrax::Concerns::HasMatchers
+
     def initialize(attrs={})
       super(attrs)
       self.identifier = raw_metadata_xml['CollectionNameCode'].to_s

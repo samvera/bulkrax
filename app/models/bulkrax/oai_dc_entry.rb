@@ -1,5 +1,7 @@
 module Bulkrax
   class OaiDcEntry < OaiEntry
+    include Bulkrax::Concerns::HasMatchers
+
     matcher 'contributor', split: true
     matcher 'creator', split: true
     matcher 'date', from: ['date'], split: true

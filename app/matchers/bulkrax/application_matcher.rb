@@ -52,7 +52,9 @@ module Bulkrax
 
     def parse_subject(src)
       string = src.to_s
-      string.slice(0,1).capitalize + string.slice(1..-1)
+      if string.present?
+        string.slice(0,1).capitalize + string.slice(1..-1)
+      end
     end
 
     def parse_types(src)
@@ -61,7 +63,9 @@ module Bulkrax
 
     def parse_format_original(src)
       string = src.to_s
-      string.slice(0,1).capitalize + string.slice(1..-1)
+      if string.present?
+        string.slice(0,1).capitalize + string.slice(1..-1)
+      end
     end
 
     def parse_format_digital(src)

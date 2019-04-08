@@ -39,7 +39,7 @@ module Bulkrax
     def create_works(collection_xml, collection)
       collection_xml.css('Components').select do |component_xml|
         ImporterRun.find(current_importer_run.id).increment!(:enqueued_records)
-        if Work.where(identifier: [component_xml["ComponentID"].to_s]).count > 0
+        if only_updates && Work.where(identifier: [component_xml["ComponentID"].to_s]).count > 0
           ImporterRun.find(current_importer_run.id).increment!(:processed_records)
           puts "skipped #{component_xml["ComponentID"]}"
           next

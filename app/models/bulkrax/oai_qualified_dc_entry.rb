@@ -1,5 +1,7 @@
 module Bulkrax
   class OaiQualifiedDcEntry < OaiEntry
+    include Bulkrax::Concerns::HasMatchers
+
     matcher 'alternative_title', from: ['alternative', 'alternative_title'], split: true
     matcher 'collections', from: ['isPartOf'], parsed: true
     matcher 'contributor', split: true
@@ -8,7 +10,7 @@ module Bulkrax
     matcher 'description'
     matcher 'extent'
     matcher 'format_digital', from: ['format_digital', 'format'], parsed: true
-    matcher 'format_original', from: ['medium']
+    matcher 'format_original', from: ['medium'], parsed: true
     matcher 'identifier', from: ['identifier'], if: ->(parser, content) { content.match(/http(s{0,1}):\/\//) }
     matcher 'language', parsed: true, split: true
     matcher 'remote_manifest_url', from: ['hasFormat']
