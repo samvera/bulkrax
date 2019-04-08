@@ -60,7 +60,8 @@ module Bulkrax
     end
 
     def parse_format_original(src)
-      src.to_s.titleize
+      string = src.to_s
+      string.slice(0,1).capitalize + string.slice(1..-1)
     end
 
     def parse_format_digital(src)
