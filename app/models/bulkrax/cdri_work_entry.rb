@@ -48,7 +48,7 @@ module Bulkrax
       self.parsed_metadata['rights_statement'] = [parser.parser_fields['rights_statement']]
       self.parsed_metadata['collections'] ||= []
       self.parsed_metadata['collections'] << {id: self.collection&.id}
-      self.parsed_metadata['file'] = [raw_metadata_xml["ComponentFileName"]] if raw_metadata_xml["ComponentFileName"].present?
+      self.parsed_metadata['file'] = [raw_metadata_xml["ComponentFileName"].downcase] if raw_metadata_xml["ComponentFileName"].present?
       self.parsed_metadata['identifier'] ||= [self.identifier]
       return self.parsed_metadata
     end

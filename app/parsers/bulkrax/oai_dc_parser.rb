@@ -32,7 +32,7 @@ module Bulkrax
     end
 
     def collection
-      @collection ||= Collection.where(identifier: [@collection_name]).first
+      @collection ||= Collection.where(identifier: [collection_name]).first
     end
 
     def entry_class
