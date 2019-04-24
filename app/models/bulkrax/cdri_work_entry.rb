@@ -50,6 +50,7 @@ module Bulkrax
       self.parsed_metadata['collections'] << {id: self.collection&.id}
       self.parsed_metadata['file'] = [raw_metadata_xml["ComponentFileName"].downcase] if raw_metadata_xml["ComponentFileName"].present?
       self.parsed_metadata['identifier'] ||= [self.identifier]
+      self.parsed_metadata['has_manifest'] = ["1"]
       return self.parsed_metadata
     end
   end
