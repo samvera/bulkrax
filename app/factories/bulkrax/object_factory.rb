@@ -53,7 +53,8 @@ module Bulkrax
     def search_by_identifier
       query = { system_identifier_field =>
                 attributes[system_identifier_field] }
-      klass.where(query).first
+      match = klass.where(query).first
+      return match if match && match.send(system_identifier_field) == attributes[system_identifier_field]
     end
 
     # An ActiveFedora bug when there are many habtm <-> has_many associations means they won't all get saved.
