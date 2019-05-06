@@ -3,7 +3,8 @@ module Bulkrax
     include Bulkrax::Concerns::HasMatchers
 
     matcher 'alternative_title', from: ['alternative', 'alternative_title'], split: true
-    matcher 'collections', from: ['isPartOf'], parsed: true
+    # NOTE removed as we dont want to accidentally create lots of parallel collections with the same name
+    # matcher 'collections', from: ['isPartOf'], parsed: true
     matcher 'contributor', split: true
     matcher 'creator', split: true
     matcher 'date', from: ['date', 'created'], split: true
