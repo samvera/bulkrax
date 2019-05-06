@@ -129,6 +129,8 @@ module Bulkrax
                                 existing = object.file_sets.detect {|f| f.import_url && f.import_url == file[:url]}
                                 !existing
                               end
+                            elsif attributes[:remote_files].present?
+                              attributes[:remote_files]
                             end
     end
 
