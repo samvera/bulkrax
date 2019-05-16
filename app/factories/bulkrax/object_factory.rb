@@ -124,7 +124,7 @@ module Bulkrax
     end
 
     def new_remote_files
-      @new_remote_files ||= if attributes[:remote_files].present? && object.present?
+      @new_remote_files ||= if attributes[:remote_files].present? && object.present? && object.file_sets.present?
                               attributes[:remote_files].select do |file|
                                 existing = object.file_sets.detect {|f| f.import_url && f.import_url == file[:url]}
                                 !existing
