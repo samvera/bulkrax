@@ -16,9 +16,9 @@ module Bulkrax
     def run
       arg_hash = { id: attributes[:id], name: 'UPDATE', klass: klass }
       @object = find
-      @object.reindex_extent = Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX
-      if @object
-        ActiveSupport::Notifications.instrument('import.importer', arg_hash) { update }
+     if @object
+       @object.reindex_extent = Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX
+       ActiveSupport::Notifications.instrument('import.importer', arg_hash) { update }
       else
         ActiveSupport::Notifications.instrument('import.importer', arg_hash.merge(name: 'CREATE')) { create }
       end
