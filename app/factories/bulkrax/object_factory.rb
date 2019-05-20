@@ -16,6 +16,7 @@ module Bulkrax
     def run
       arg_hash = { id: attributes[:id], name: 'UPDATE', klass: klass }
       @object = find
+      @object.reindex_extent = Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX
       if @object
         ActiveSupport::Notifications.instrument('import.importer', arg_hash) { update }
       else
@@ -63,6 +64,7 @@ module Bulkrax
     def create
       attrs = create_attributes
       @object = klass.new
+      @object.reindex_extent = Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX
       run_callbacks :save do
         run_callbacks :create do
           klass == Collection ? create_collection(attrs) : work_actor.create(environment(attrs))
