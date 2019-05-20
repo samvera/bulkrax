@@ -20,8 +20,9 @@ module Bulkrax
       parser.parser_fields['rights_statement']
     end
 
+    # try and deal with a couple possible states for this input field
     def override_rights_statement
-      parser.parser_fields['override_rights_statement']
+      ['true', '1'].include?(parser.parser_fields['override_rights_statement'].to_s)
     end
 
     def contributing_institution
