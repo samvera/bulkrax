@@ -11,7 +11,12 @@ module Bulkrax
         ImporterRun.find(args[1]).increment!(:failed_records)
         raise e
       else
-        ImporterRun.find(args[1]).increment!(:processed_records)
+        if entry.last_exception
+          ImporterRun.find(args[1]).increment!(:failed_records)
+          raise e
+        else
+          ImporterRun.find(args[1]).increment!(:processed_records)
+        end
       end
     end
   end

@@ -20,6 +20,5 @@ module Bulkrax
       end
       ActionController::Base.view_paths = paths
     end
-
   end
 end

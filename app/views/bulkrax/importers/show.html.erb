@@ -40,5 +40,27 @@
   <%= @importer.field_mapping %>
 </p>
 
+<%# TODO add entry info and paginate it here %>
+<table class='table table-striped'>
+  <thead>
+    <tr>
+      <th>Identifier</th>
+      <th>Status</th>
+      <th>Status Set At</th>
+      <th>Last Error</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @importer.entries.find_each do |e| %>
+      <tr>
+        <td><%= e.identifier %></td>
+        <td><%= e.status %></td>
+        <td><%= e.status_at %></td>
+        <td><%= e.last_error %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
 <%= link_to 'Edit', edit_importer_path(@importer) %> |
 <%= link_to 'Back', importers_path %>

@@ -51,7 +51,7 @@ module Bulkrax
     end
 
     def parse_subject(src)
-      string = src.to_s
+      string = src.to_s.strip
       if string.present?
         string.slice(0,1).capitalize + string.slice(1..-1)
       end

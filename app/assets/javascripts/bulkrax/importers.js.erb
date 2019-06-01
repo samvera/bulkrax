@@ -33,23 +33,17 @@ function prepBulkrax(event) {
 }
 
 function handleParserKlass(){
-  var parser_klass = $("#importer_parser_klass")
+  var parser_klass = $("#importer_parser_klass option:selected")
 
-  if($('.oai_fields').length > 0) {
-    window.oai_fields = $('.oai_fields').detach()
+  <% Bulkrax.parsers.map{ |p| p[:partial]}.uniq.each do |partial| %>
+  if($('.<%= partial %>').length > 0) {
+    window.<%= partial %> = $('.<%= partial %>').detach()
   }
-  if($('.cdri_fields').length > 0) {
-    window.cdri_fields = $('.cdri_fields').detach()
-  }
+  <% end %>
 
-  if(parser_klass.length > 0) {
-    if(parser_klass.val().match(/oai/i)){
-      $('.parser_fields').append(window.oai_fields)
-    } else if(parser_klass.val().match(/cdri/i)){
-      $('.parser_fields').append(window.cdri_fields)
-    }
+  if(parser_klass.length > 0 && parser_klass.data('partial').length > 0) {
+    $('.parser_fields').append(window[parser_klass.data('partial')])
   }
-
 }
 
 function handleSourceLoad(refresh_button, base_url, external_set_select) {

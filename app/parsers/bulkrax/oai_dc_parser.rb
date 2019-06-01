@@ -109,7 +109,9 @@ module Bulkrax
             importer.current_importer_run.save!
           else
             seen[record.identifier] = true
-            new_entry = entry_class.create!(importer: self.importer, identifier: record.identifier, collection_id: self.collection.id)
+            new_entry = entry_class.where(importer: self.importer, identifier: record.identifier).first_or_create! do |e|
+              e.collection_id: self.collection.id
+            end
             ImportWorkJob.perform_later(new_entry.id, importer.current_importer_run.id)
             importer.increment_counters(index)
           end

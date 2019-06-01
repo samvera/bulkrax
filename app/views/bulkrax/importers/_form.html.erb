@@ -20,52 +20,14 @@
 
   <%= form.input :limit, as: :integer, hint: 'leave blank or 0 for all records' %>
 
-  <%= form.input :parser_klass, collection: [["OAI - Dublin Core", "Bulkrax::OaiDcParser"], ["OAI - Qualified Dublin Core", "Bulkrax::OaiQualifiedDcParser"], ["OAI - Princeton Theological Commons", "Bulkrax::OaiPtcParser"], ["CDRI Xml File", "Bulkrax::CdriParser"]], label: "Parser" %>
+  <%= form.input :parser_klass, collection: Bulkrax.parsers.map {|p| [p[:name], p[:class_name], {'data-partial' => p[:partial]}]}, label: "Parser" %>
 
   <%= form.fields_for :parser_fields do |fi| %>
     <div class='parser_fields'>
       <p>Specific fields for each parser are available only when a parser is selected</p>
-      <div class='oai_fields'>
-        <%= fi.input :base_url, as: :string, input_html: { value: importer.parser_fields['base_url'] } %>
-        <%= fi.input :metadata_prefix, as: :string, hint: 'Such as oai_dc, dcterms or oai_qdc', input_html: { value: importer.parser_fields['metadata_prefix'] } %>
-        <%= fi.input :set, collection: [importer.parser_fields['set']], label: 'Set (source)', selected: importer.parser_fields['set'] %>
-        <button type="button" class="btn btn-default refresh-set-source">Refresh Sets</button>
-
-        <%= fi.input :institution_name, as: :string, input_html: { value: importer.parser_fields['institution_name'] } %>
-        <% rights_statements = Hyrax.config.rights_statement_service_class.new %>
-        <%= fi.input :rights_statement,
-        collection: rights_statements.select_active_options,
-        selected: importer.parser_fields['rights_statement'],
-        include_blank: true,
-        item_helper: rights_statements.method(:include_current_value),
-        input_html: { class: 'form-control' } %>
-        <%= fi.input :override_rights_statement, as: :boolean, hint: 'If checked, always use the selected rights statment. If unchecked, use dc:rights from the record and only use the provided value if dc:rights is blank.', input_html: { checked: (importer.parser_fields['override_rights_statement'] == "1") } %>
-        <%= fi.input :thumbnail_url, as: :string, input_html: { value: importer.parser_fields['thumbnail_url'] } %>
-        <div class="help-block well well-sm">
-          <p>
-            The Thumbnail URL allows for basic templating and substitution on any identified information in to the url. For example:
-          </p>
-
-          <p>
-            http://commons.ptsem.edu/?cover=<&#37= identifier.split(':').last &#37>&size=L
-          </p>
-
-          <p>
-            http://commons.ptsem.edu/?cover=<&#37= record.header.identifier.split(':').last &#37>&size=L
-          </p>
-        </div>
-      </div>
-      <div class='cdri_fields'>
-        <%= fi.input :xml_path, as: :string, input_html: { value: importer.parser_fields['xml_path'] } %>
-        <%= fi.input :upload_path, as: :string, input_html: { value: importer.parser_fields['upload_path'] } %>
-        <% rights_statements = Hyrax.config.rights_statement_service_class.new %>
-        <%= fi.input :rights_statement,
-        collection: rights_statements.select_active_options,
-        selected: importer.parser_fields['rights_statement'],
-        include_blank: true,
-        item_helper: rights_statements.method(:include_current_value),
-        input_html: { class: 'form-control' } %>
-      </div>
+      <% Bulkrax.parsers.map {|p| p[:partial]}.uniq.each do |partial| %>
+        <%= render partial: partial, locals: {form: form, fi: fi, importer: importer} %>
+      <% end %>
     </div>
   <% end %>
 
