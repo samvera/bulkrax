@@ -26,8 +26,9 @@ module Bulkrax
 
       if @result.is_a?(Array) && self.parsed
         @result.each_with_index do |res, index|
-          @result[index] = send("parse_#{to}", res)
+          @result[index] = send("parse_#{to}", res.strip)
         end
+        @result.delete_if { |k, v| v.nil? }
       elsif self.parsed
         @result = send("parse_#{to}", @result)
       end
@@ -104,8 +105,10 @@ module Bulkrax
         'HTML'
       when 'text/rtf', 'rtf'
         'RTF'
+      when 'url'
+        'URL'
       else
-        src.to_s.titleize
+        nil
       end
     end
 
