@@ -16,7 +16,7 @@ module Bulkrax
     def build
       # attributes, files_dir = nil, files = [], user = nil
       begin
-        Bulkrax::ApplicationFactory.for(entry_class.to_s).new(build_metadata, nil, [], user).run
+        @collection = Bulkrax::ApplicationFactory.for(entry_class.to_s).new(build_metadata, nil, [], user).run
       rescue => e
         self.last_error = "#{e.message}\n\n#{e.backtrace}"
         self.last_error_at = Time.now
@@ -26,7 +26,9 @@ module Bulkrax
         self.last_error_at = nil
         self.last_exception = nil
         self.last_succeeded_at = Time.now
+        self.collection_id = @collection.id
       end
+      return @collection
     end
 
     def collection
