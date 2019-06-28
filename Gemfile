@@ -15,3 +15,13 @@ gem 'byebug', group: [:development, :test]
 gem "rspec-rails"
 gem "factory_bot_rails"
 gem "oai"
+gem "hyrax", "~> 2.3"
+gem "blacklight", "~> 6.20.0"
+
+group :development, :test do
+  gem 'solr_wrapper', '>= 0.3'
+end
+
+gem 'rsolr', '>= 1.0'
+gem 'bootstrap-sass', '~> 3.0'
+gem 'twitter-typeahead-rails', '0.11.1.pre.corejavascript'

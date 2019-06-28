@@ -25,16 +25,25 @@ require 'rails_helper'
 
 module Bulkrax
   RSpec.describe ImportersController, type: :controller do
+    routes { Bulkrax::Engine.routes }
 
     # This should return the minimal set of attributes required to create a valid
     # Importer. As you add validations to Importer, be sure to
     # adjust the attributes here as well.
     let(:valid_attributes) {
-      skip("Add a hash of attributes valid for your model")
+      {
+        name: 'Test Importer',
+        admin_set_id: 'admin_set/default',
+        user_id: FactoryBot.create(:user).id
+      }
     }
 
     let(:invalid_attributes) {
-      skip("Add a hash of attributes invalid for your model")
+      {
+        name: '',
+        admin_set_id: 'admin_set/default',
+        user_id: nil 
+      }
     }
 
     # This should return the minimal set of values that should be in the session
@@ -83,7 +92,7 @@ module Bulkrax
 
         it "redirects to the created importer" do
           post :create, params: {importer: valid_attributes}, session: valid_session
-          expect(response).to redirect_to(Importer.last)
+          expect(response).to redirect_to(importers_path)
         end
       end
 
@@ -111,7 +120,7 @@ module Bulkrax
         it "redirects to the importer" do
           importer = Importer.create! valid_attributes
           put :update, params: {id: importer.to_param, importer: valid_attributes}, session: valid_session
-          expect(response).to redirect_to(importer)
+          expect(response).to redirect_to(importers_path)
         end
       end
 

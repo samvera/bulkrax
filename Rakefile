@@ -24,3 +24,5 @@ load 'rails/tasks/statistics.rake'
 
 require 'bundler/gem_tasks'
 
+
+require 'solr_wrapper/rake_task' unless Rails.env.production?

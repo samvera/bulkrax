@@ -3,7 +3,7 @@ FactoryBot.define do
     name { "MyString" }
     admin_set_id { "MyString" }
     user { nil }
-    frequency { "MyString" }
+    frequency { "PT0S" }
     parser_klass { "MyString" }
     limit { 1 }
     parser_fields { "" }
@@ -15,7 +15,7 @@ FactoryBot.define do
     admin_set_id { "MyString" }
     user { nil }
     frequency { "PT0S" }
-    parser_klass { "Bulkrax::Parsers::OaiParser" }
+    parser_klass { "Bulkrax::OaiDcParser" }
     limit { 10 }
     parser_fields { {
                       'base_url' =>  "http://commons.ptsem.edu/api/oai-pmh",

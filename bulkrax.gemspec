@@ -24,6 +24,6 @@ Gem::Specification.new do |s|
   s.add_dependency 'libxml-ruby', '~> 3.1.0'
   s.add_dependency 'simple_form', '~> 3.2', '<= 3.5.0'
   s.add_dependency 'language_list', '~> 1.2', '>= 1.2.1'
-
   s.add_development_dependency 'sqlite3', '~> 1.3.13'
+  s.add_development_dependency 'simplecov'
 end
