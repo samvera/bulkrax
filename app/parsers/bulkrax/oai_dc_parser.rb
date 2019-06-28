@@ -87,7 +87,7 @@ module Bulkrax
           attrs = {
             title: [set.name],
             identifier: [set.spec],
-            institution: [parser_fields['institution_name']],
+            contributing_institution: [parser_fields['institution_name']],
             visibility: 'open',
             collection_type_gid: Hyrax::CollectionType.find_or_create_default_collection_type.gid
           }
