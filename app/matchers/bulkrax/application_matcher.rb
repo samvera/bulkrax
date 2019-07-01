@@ -37,17 +37,18 @@ module Bulkrax
     end
 
     def parse_collections(src)
+      src = src.to_s.strip
       collection = Collection.where(title: [src]).first
       collection ||= Collection.create(title: [src], identifier: [src], collection_type_gid: Hyrax::CollectionType.find_or_create_default_collection_type.gid)
       {id: collection.id} if collection
     end
 
     def parse_remote_files(src)
-      { url: src } if src.present?
+      { url: src.strip } if src.present?
     end
 
     def parse_language(src)
-      l = LanguageList::LanguageInfo.find(src)
+      l = LanguageList::LanguageInfo.find(src.strip)
       l ? l.name : src
     end
 
@@ -59,11 +60,11 @@ module Bulkrax
     end
 
     def parse_types(src)
-      src.to_s.titleize
+      src.to_s.strip.titleize
     end
 
     def parse_format_original(src)
-      string = src.to_s
+      string = src.to_s.strip
       if string.present?
         string.slice(0,1).capitalize + string.slice(1..-1)
       end
