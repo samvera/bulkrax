@@ -109,13 +109,16 @@ module Bulkrax
         .merge(file_attributes)
     end
 
-    # Find existing file or upload new file. This assumes a Work will have unique file titles;
+    # Find existing files or upload new files. This assumes a Work will have unique file titles;
+    #   and that those file titles will not have changed
     # could filter by URIs instead (slower).
     # When an uploaded_file already exists we do not want to pass its id in `file_attributes`
     # otherwise it gets reuploaded by `work_actor`.
+    # support multiple files; ensure attributes[:file] is an Array
     def upload_ids
-      work_files_titles = object.file_sets.map(&:title) if object.present? && object.file_sets.present?
-      work_files_titles && work_files_titles.include?(attributes[:file]) ? [] : [import_file(file_paths.first)]
+      attributes[:file] = Array.wrap(attributes[:file])
+      work_files_titles = object.file_sets.map(&:title).map(&:first) if object.present? && object.file_sets.present?
+      work_files_titles && (work_files_titles & attributes[:file]).present? ? [] : import_files
     end
 
     def file_attributes
@@ -138,6 +141,10 @@ module Bulkrax
 
     def file_paths
       attributes[:file].map { |file_name| File.join(files_directory, file_name) } if attributes[:file]
+    end
+
+    def import_files
+      file_paths.map { | path | import_file(path) }
     end
 
     def import_file(path)

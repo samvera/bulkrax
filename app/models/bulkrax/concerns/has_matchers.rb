@@ -31,6 +31,8 @@ module Bulkrax::Concerns::HasMatchers
   def add_metadata(node_name, node_content)
     matcher = self.class.matchers[node_name]
 
+    return unless factory_class.method_defined?(node_name.to_sym) || node_name == 'file'
+
     if matcher
       result = matcher.result(self, node_content)
       if result

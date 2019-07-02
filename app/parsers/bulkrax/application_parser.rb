@@ -22,6 +22,8 @@ module Bulkrax
       raise 'must be defined'
     end
 
+    def files_path; end
+
     def record(identifier, opts = {})
       return @record if @record
 

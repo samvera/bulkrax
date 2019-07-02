@@ -16,16 +16,11 @@ module Bulkrax
     def build
       # attributes, files_dir = nil, files = [], user = nil
       begin
-        @item = Bulkrax::ApplicationFactory.for(entry_class.to_s).new(build_metadata, nil, [], user).run
+        @item = Bulkrax::ApplicationFactory.for(factory_class.to_s).new(build_metadata, parser.files_path, [], user).run
       rescue => e
-        self.last_error = "#{e.message}\n\n#{e.backtrace}"
-        self.last_error_at = Time.now
-        self.last_exception = e
+        status_info(e)
       else
-        self.last_error = nil
-        self.last_error_at = nil
-        self.last_exception = nil
-        self.last_succeeded_at = Time.now
+        status_info
         self.collection_id = @item.id if @item.is_a?(Collection)
       end
       return @item
@@ -37,6 +32,24 @@ module Bulkrax
 
     def build_metadata
       raise 'Not Implemented'
+    end
+
+    def add_visibility
+      self.parsed_metadata['visibility'] = 'open' if self.parsed_metadata['visibility'].blank?
+    end
+
+    def add_rights_statement
+      if override_rights_statement || self.parsed_metadata['rights_statement'].blank?
+        self.parsed_metadata['rights_statement'] = [parser.parser_fields['rights_statement']]
+      end
+    end
+
+    def override_rights_statement
+      ['true', '1'].include?(parser.parser_fields['override_rights_statement'].to_s)
+    end
+
+    def factory_class
+      Work
     end
 
     def status
@@ -55,6 +68,19 @@ module Bulkrax
         self.last_succeeded_at
       when 'failed'
         self.last_error_at
+      end
+    end
+
+    def status_info(e = nil)
+      if e.nil?
+        self.last_error = nil
+        self.last_error_at = nil
+        self.last_exception = nil
+        self.last_succeeded_at = Time.now
+      else
+        self.last_error = "#{e.message}\n\n#{e.backtrace}"
+        self.last_error_at = Time.now
+        self.last_exception = e
       end
     end
   end

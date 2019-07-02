@@ -5,7 +5,8 @@ module Bulkrax
     mattr_accessor :parsers
     self.parsers = [
       { name: "OAI - Dublin Core", class_name: "Bulkrax::OaiDcParser", partial: 'oai_fields' },
-      { name: "OAI - Qualified Dublin Core", class_name: "Bulkrax::OaiQualifiedDcParser", partial: 'oai_fields' }
+      { name: "OAI - Qualified Dublin Core", class_name: "Bulkrax::OaiQualifiedDcParser", partial: 'oai_fields' },
+      { name: "CSV - Comma Separated Values", class_name: "Bulkrax::CsvParser", partial: 'csv_fields' }
     ]
   end
 
