@@ -13,6 +13,11 @@ module Bulkrax
     end
 
     # @api
+    def run
+      raise 'must be defined'
+    end
+
+    # @api
     def entry_class
       raise 'must be defined'
     end

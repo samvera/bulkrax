@@ -7,7 +7,7 @@ module Bulkrax
       begin
         entry.build
         entry.save
-      rescue => e
+      rescue StandardError => e
         ImporterRun.find(args[1]).increment!(:failed_records)
         raise e
       else
