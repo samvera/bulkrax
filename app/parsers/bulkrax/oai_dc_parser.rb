@@ -31,18 +31,16 @@ module Bulkrax
       @collection_name ||= parser_fields['set'] || 'all'
     end
 
-    def collection
-      @collection ||= Collection.where(identifier: [collection_name]).first
-    end
-
     def entry_class
       OaiDcEntry
     end
 
+    def collection_entry_class
+      OaiSetEntry
+    end
+
     def records(opts = {})
-      if parser_fields['set'].present?
-        opts.merge!(set: parser_fields['set'])
-      end
+      opts.merge!(set: collection_name) unless collection_name == 'all'
 
       if importer.last_imported_at && only_updates
         opts.merge!(from: importer&.last_imported_at&.strftime("%Y-%m-%d"))
@@ -82,19 +80,19 @@ module Bulkrax
     end
 
     def create_collections
+      metadata = {
+        visibility: 'open',
+        collection_type_gid: Hyrax::CollectionType.find_or_create_default_collection_type.gid
+      }
+
       list_sets.each do |set|
-        if collection_name == 'all' || collection_name == set.spec
-          attrs = {
-            title: [set.name],
-            identifier: [set.spec],
-            contributing_institution: [parser_fields['institution_name']],
-            visibility: 'open',
-            collection_type_gid: Hyrax::CollectionType.find_or_create_default_collection_type.gid
-          }
-          #Bulkrax::CollectionFactory.new(attrs).find_or_create
-          collection = Collection.where(identifier: [set.spec]).first
-          collection ||= Collection.create!(attrs)
-        end
+        next unless collection_name == 'all' || collection_name == set.spec
+
+        metadata[:title] = [set.name]
+        metadata[Bulkrax.system_identifier_field] = [set.spec]
+
+        new_entry = collection_entry_class.where(importer: importer, identifier: set.spec, raw_metadata: metadata).first_or_create!
+        ImportWorkCollectionJob.perform_later(new_entry.id, importer.current_importer_run.id)
       end
     end
 
@@ -109,9 +107,7 @@ module Bulkrax
             importer.current_importer_run.save!
           else
             seen[record.identifier] = true
-            new_entry = entry_class.where(importer: self.importer, identifier: record.identifier).first_or_create! do |e|
-              e.collection_id = self.collection.id
-            end
+            new_entry = entry_class.where(importer: self.importer, identifier: record.identifier).first_or_create!
             ImportWorkJob.perform_later(new_entry.id, importer.current_importer_run.id)
             importer.increment_counters(index)
           end

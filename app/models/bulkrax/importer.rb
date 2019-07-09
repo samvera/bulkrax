@@ -63,8 +63,12 @@ module Bulkrax
 
     def import_works(only_updates=false)
       self.only_updates = only_updates
-      parser.run
+      parser.create_works
       remove_unseen
+    end
+
+    def import_collections
+      parser.create_collections
     end
 
     def remove_unseen

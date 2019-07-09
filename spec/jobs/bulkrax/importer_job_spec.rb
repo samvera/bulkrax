@@ -2,7 +2,7 @@ require 'rails_helper'
 
 module Bulkrax
   RSpec.describe ImporterJob, type: :job do
-    let(:importer) { FactoryBot.build(:bulkrax_importer_oai) }
+    let(:importer) { FactoryBot.create(:bulkrax_importer_oai) }
 
     before(:each) do
       allow(Bulkrax::Importer).to receive(:find).with(1).and_return(importer)

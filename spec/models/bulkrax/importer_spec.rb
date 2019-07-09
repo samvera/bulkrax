@@ -28,7 +28,8 @@ module Bulkrax
     describe 'import works' do
       before do
         allow(Bulkrax::OaiDcParser).to receive(:new).and_return(Bulkrax::OaiDcParser.new(importer)) # .with(subject).and_return(parser)
-        allow_any_instance_of(Bulkrax::OaiDcParser).to receive(:run)
+        allow_any_instance_of(Bulkrax::OaiDcParser).to receive(:create_collections)
+        allow_any_instance_of(Bulkrax::OaiDcParser).to receive(:create_works)
       end
 
       it 'calls parser run' do

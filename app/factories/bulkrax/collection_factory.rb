@@ -1,7 +1,7 @@
 module Bulkrax
   class CollectionFactory < ObjectFactory
     self.klass = Collection
-    self.system_identifier_field = :identifier
+    self.system_identifier_field = Bulkrax.system_identifier_field
 
     def find_or_create
       collection = find
