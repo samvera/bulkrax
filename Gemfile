@@ -20,6 +20,7 @@ gem "blacklight", "~> 6.20.0"
 
 group :development, :test do
   gem 'solr_wrapper', '>= 0.3'
+  gem 'database_cleaner'
 end
 
 gem 'rsolr', '>= 1.0'

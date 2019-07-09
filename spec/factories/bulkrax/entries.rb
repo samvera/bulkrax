@@ -1,5 +1,5 @@
 FactoryBot.define do
-  factory :bulkrax_entry, class: 'Entry' do
+  factory :bulkrax_entry, class: 'Bulkrax::Entry' do
     identifier { "MyString" }
     type { "" }
     importer { nil }
