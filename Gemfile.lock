@@ -149,6 +149,7 @@ GEM
     concurrent-ruby (1.1.5)
     connection_pool (2.2.2)
     crass (1.0.4)
+    database_cleaner (1.7.0)
     declarative (0.0.10)
     declarative-option (0.1.0)
     deprecation (1.0.0)
@@ -710,6 +711,7 @@ DEPENDENCIES
   bootstrap-sass (~> 3.0)
   bulkrax!
   byebug
+  database_cleaner
   factory_bot_rails
   hyrax (~> 2.3)
   oai
@@ -721,4 +723,4 @@ DEPENDENCIES
   twitter-typeahead-rails (= 0.11.1.pre.corejavascript)
 
 BUNDLED WITH
-   1.17.2
+   1.17.3

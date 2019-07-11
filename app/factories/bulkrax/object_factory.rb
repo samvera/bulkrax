@@ -1,4 +1,4 @@
-# TODO require 'importer/log_subscriber'
+# TODO: require 'importer/log_subscriber'
 module Bulkrax
   class ObjectFactory
     extend ActiveModel::Callbacks
@@ -16,9 +16,9 @@ module Bulkrax
     def run
       arg_hash = { id: attributes[:id], name: 'UPDATE', klass: klass }
       @object = find
-     if @object
-       @object.reindex_extent = Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX
-       ActiveSupport::Notifications.instrument('import.importer', arg_hash) { update }
+      if @object
+        @object.reindex_extent = Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX
+        ActiveSupport::Notifications.instrument('import.importer', arg_hash) { update }
       else
         ActiveSupport::Notifications.instrument('import.importer', arg_hash.merge(name: 'CREATE')) { create }
       end
@@ -28,6 +28,7 @@ module Bulkrax
 
     def update
       raise "Object doesn't exist" unless object
+
       run_callbacks(:save) do
         work_actor.update(environment(update_attributes))
       end
@@ -106,16 +107,19 @@ module Bulkrax
     # a way that is compatible with how the factory needs them.
     def transform_attributes
       attributes.slice(*permitted_attributes)
-        .merge(file_attributes)
+                .merge(file_attributes)
     end
 
-    # Find existing file or upload new file. This assumes a Work will have unique file titles;
+    # Find existing files or upload new files. This assumes a Work will have unique file titles;
+    #   and that those file titles will not have changed
     # could filter by URIs instead (slower).
     # When an uploaded_file already exists we do not want to pass its id in `file_attributes`
     # otherwise it gets reuploaded by `work_actor`.
+    # support multiple files; ensure attributes[:file] is an Array
     def upload_ids
-      work_files_titles = object.file_sets.map(&:title) if object.present? && object.file_sets.present?
-      work_files_titles && work_files_titles.include?(attributes[:file]) ? [] : [import_file(file_paths.first)]
+      attributes[:file] = Array.wrap(attributes[:file])
+      work_files_titles = object.file_sets.map { |t| t.title.to_a }.flatten if object.present? && object.file_sets.present?
+      work_files_titles && (work_files_titles & attributes[:file]).present? ? [] : import_files
     end
 
     def file_attributes
@@ -127,9 +131,9 @@ module Bulkrax
 
     def new_remote_files
       @new_remote_files ||= if attributes[:remote_files].present? && object.present? && object.file_sets.present?
-                              attributes[:remote_files].select do |file|
-                                existing = object.file_sets.detect {|f| f.import_url && f.import_url == file[:url]}
-                                !existing
+                              attributes[:remote_files].reject do |file|
+                                existing = object.file_sets.detect { |f| f.import_url && f.import_url == file[:url] }
+                                existing
                               end
                             elsif attributes[:remote_files].present?
                               attributes[:remote_files]
@@ -137,7 +141,11 @@ module Bulkrax
     end
 
     def file_paths
-      attributes[:file].map { |file_name| File.join(files_directory, file_name) } if attributes[:file]
+      attributes[:file]&.map { |file_name| File.join(files_directory, file_name) }
+    end
+
+    def import_files
+      file_paths.map { |path| import_file(path) }
     end
 
     def import_file(path)

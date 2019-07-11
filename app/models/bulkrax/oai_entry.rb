@@ -4,9 +4,6 @@ require 'ostruct'
 
 module Bulkrax
   class OaiEntry < Entry
-    def entry_class
-      Work
-    end
 
     def raw_record
       @raw_record ||= client.get_record({identifier: identifier, metadata_prefix: parser.parser_fields['metadata_prefix'] })
@@ -47,12 +44,10 @@ module Bulkrax
       end
       add_metadata('thumbnail_url', thumbnail_url)
 
-      self.parsed_metadata['contributing_institution'] = [contributing_institution]
-      if override_rights_statement || self.parsed_metadata['rights_statement'].blank?
-        self.parsed_metadata['rights_statement'] = [rights_statement]
-      end
-      self.parsed_metadata['visibility'] = 'open'
+      add_visibility
+      add_rights_statement
       self.parsed_metadata['source'] ||= [record.header.identifier]
+      self.parsed_metadata['contributing_institution'] = [contributing_institution]
 
       if collection.present?
         self.parsed_metadata['collections'] ||= []
