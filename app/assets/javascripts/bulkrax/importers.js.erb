@@ -4,13 +4,13 @@
 function prepBulkrax(event) {
   var refresh_button = $('.refresh-set-source')
   var base_url = $('#importer_parser_fields_base_url')
-  var external_set_select = $("#importer_parser_fields_set")
   var initial_base_url = base_url.val()
 
   // handle refreshing/loading of external sets via button click
   $('body').on('click', '.refresh-set-source', function(e) {
     e.preventDefault()
-
+    
+    external_set_select = $("#importer_parser_fields_set")
     handleSourceLoad(refresh_button, base_url, external_set_select)
   })
 
@@ -18,8 +18,12 @@ function prepBulkrax(event) {
   $('body').on('blur', '#importer_parser_fields_base_url', function(e) {
     e.preventDefault()
 
+    // retrieve the latest base_url
+    base_url = $('#importer_parser_fields_base_url')
+
     // ensure we don't make another query if the value is the same -- this can be forced by clicking the refresh button
     if (initial_base_url != base_url.val()) {
+      external_set_select = $("#importer_parser_fields_set")
       handleSourceLoad(refresh_button, base_url, external_set_select)
       initial_base_url = base_url.val()
     }
@@ -41,7 +45,7 @@ function handleParserKlass(){
   }
   <% end %>
 
-  if(parser_klass.length > 0 && parser_klass.data('partial').length > 0) {
+  if(parser_klass.length > 0 && parser_klass.data('partial') && parser_klass.data('partial').length > 0 ) {
     $('.parser_fields').append(window[parser_klass.data('partial')])
   }
 }
