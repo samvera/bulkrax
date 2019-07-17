@@ -8,7 +8,7 @@ module Bulkrax
 
     attr_accessor :all_attrs, :last_exception
 
-    delegate :parser,
+    delegate :parser, :mapping,
              to: :importer
 
     delegate :client,

@@ -72,6 +72,11 @@ module Bulkrax
       end
     end
 
+    # the set of fields available in the import data
+    def import_fields
+      ['contributor', 'coverage', 'creator', 'date', 'description', 'format', 'identifier', 'language', 'publisher', 'relation', 'rights', 'source', 'subject', 'title', 'type']
+    end
+
     def list_sets
       client.list_sets
     end

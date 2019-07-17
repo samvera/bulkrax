@@ -27,6 +27,10 @@ module Bulkrax
       raise 'must be defined'
     end
 
+    def import_fields
+      raise 'must be defined'
+    end
+
     def files_path; end
 
     def record(identifier, opts = {})
