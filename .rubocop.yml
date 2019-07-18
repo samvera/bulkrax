@@ -2,3 +2,11 @@ inherit_from: .rubocop_todo.yml
 
 inherit_gem:
   bixby: bixby_default.yml
+
+# Notch8 coding conventions
+# @see https://github.com/rubocop-hq/rubocop/blob/master/manual/configuration.md
+Style/RedundantReturn:
+  Enabled: false
+
+Style/RedundantSelf:
+  Enabled: false
