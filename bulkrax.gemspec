@@ -26,4 +26,5 @@ Gem::Specification.new do |s|
   s.add_dependency 'language_list', '~> 1.2', '>= 1.2.1'
   s.add_development_dependency 'sqlite3', '~> 1.3.13'
   s.add_development_dependency 'simplecov'
+  s.add_development_dependency 'bixby'
 end
