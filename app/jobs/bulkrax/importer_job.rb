@@ -3,11 +3,19 @@ module Bulkrax
     queue_as :import
 
     def perform(importer_id, only_updates_since_last_import = false)
-      start = Time.current
       importer = Importer.find(importer_id)
 
+      import(importer, only_updates_since_last_import)
+      schedule(importer) if importer.schedulable?
+    end
+
+    def import(importer, only_updates_since_last_import)
+      importer.import_collections
       importer.import_works(only_updates_since_last_import)
-      ImporterJob.set(wait_until: importer.next_import_at).perform_later(importer.id, true) if importer.schedulable?
+    end
+
+    def schedule(importer)
+      ImporterJob.set(wait_until: importer.next_import_at).perform_later(importer.id, true)
     end
   end
 end

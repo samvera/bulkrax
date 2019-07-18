@@ -5,7 +5,7 @@ module Bulkrax
     def perform(*args)
       entry = Entry.find(args[0])
       begin
-        entry.build
+        reschedule(entry.id, ImporterRun.find(args[1]).id) if entry.build.blank?
         entry.save
       rescue StandardError => e
         ImporterRun.find(args[1]).increment!(:failed_records)
@@ -18,6 +18,10 @@ module Bulkrax
           ImporterRun.find(args[1]).increment!(:processed_records)
         end
       end
+    end
+
+    def reschedule(entry_id, run_id)
+      ImportWorkJob.set(wait: 1.minutes).perform_later(entry_id, run_id)
     end
   end
 end

@@ -13,7 +13,7 @@ FactoryBot.define do
   factory :bulkrax_importer_oai, class: 'Bulkrax::Importer' do
     name { 'Oai Collection' }
     admin_set_id { 'MyString' }
-    user { nil }
+    user { User.new(email: 'user@example.com') }
     frequency { 'PT0S' }
     parser_klass { 'Bulkrax::OaiDcParser' }
     limit { 10 }
