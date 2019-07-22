@@ -4,7 +4,8 @@ module Bulkrax
   class Engine < ::Rails::Engine
     isolate_namespace Bulkrax
     initializer :append_migrations do |app|
-      unless app.root.to_s.match root.to_s
+      if !app.root.to_s.match root.to_s &&
+         app.root.join('db/migrate').glob("*.bulkrax.rb").blank?
         config.paths["db/migrate"].expanded.each do |expanded_path|
           app.config.paths["db/migrate"] << expanded_path
         end
