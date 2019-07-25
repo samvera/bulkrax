@@ -12,9 +12,9 @@ Gem::Specification.new do |s|
   s.homepage    = "https://github.com/samvera-labs/bulkrax"
   s.summary     = "Summary of Bulkrax."
   s.description = "Description of Bulkrax."
-  s.license     = "MIT"
+  s.license     = "Apache-2.0"
 
-  s.files = Dir["{app,config,db,lib}/**/*", "MIT-LICENSE", "Rakefile", "README.md"]
+  s.files = Dir["{app,config,db,lib}/**/*", "LICENSE", "Rakefile", "README.md"]
 
   s.add_dependency "rails", "~> 5.1.6"
   s.add_dependency "loofah", ">= 2.2.3" # security issue, remove on rails upgrade
