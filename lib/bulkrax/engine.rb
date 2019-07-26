@@ -5,7 +5,7 @@ module Bulkrax
     isolate_namespace Bulkrax
     initializer :append_migrations do |app|
       if !app.root.to_s.match root.to_s &&
-         app.root.join('db/migrate').glob("*.bulkrax.rb").blank?
+         app.root.join('db/migrate').children.none? {|path| path.fnmatch?("*.bulkrax.rb")}
         config.paths["db/migrate"].expanded.each do |expanded_path|
           app.config.paths["db/migrate"] << expanded_path
         end
