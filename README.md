@@ -20,12 +20,6 @@ Mount the engine in your routes file
 mount Bulkrax::Engine, at: '/'
 ```
 
-Install the migrations
-
-```bash
-rails bulkrax:install:migrations db:migrate
-```
-
 
 ## Requirements
 
