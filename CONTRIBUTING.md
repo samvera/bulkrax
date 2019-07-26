@@ -1,4 +1,4 @@
-# Contributing to Samvera::Persona
+# Contributing to Bulkrax
 
 We encourage everyone to help improve this project.  Bug reports and pull requests are welcome on GitHub at https://github.com/samvera-labs/bulkrax.
 
