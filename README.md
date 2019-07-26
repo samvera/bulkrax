@@ -1,5 +1,5 @@
 # Bulkrax
-Bulkrax is an import gem that provides an admin interface to create and run importers for your Hyrax applications.  
+Bulkrax is a batteries included importer for Samvera applications. It currently includes support for OAIPMH (DC and Qualified DC) and CSV out of the box. It is also designed to be extensible, allowing you to easily add new importers in to your application or to include them with other gems. Bulkrax provides a full admin interface including creating, editing, scheduling and reviewing imports.
 
 
 ## Installation
@@ -19,9 +19,6 @@ Mount the engine in your routes file
 ```ruby 
 mount Bulkrax::Engine, at: '/'
 ```
-
-
-## Requirements
 
 
 ## How it Works
