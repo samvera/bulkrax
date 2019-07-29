@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20190715162044) do
+ActiveRecord::Schema.define(version: 20190731114016) do
 
   create_table "bookmarks", force: :cascade do |t|
     t.integer "user_id", null: false
@@ -28,7 +28,6 @@ ActiveRecord::Schema.define(version: 20190715162044) do
     t.string "identifier"
     t.string "collection_ids"
     t.string "type"
-    t.integer "importer_id"
     t.text "raw_metadata"
     t.text "parsed_metadata"
     t.datetime "created_at", null: false
@@ -36,7 +35,33 @@ ActiveRecord::Schema.define(version: 20190715162044) do
     t.text "last_error"
     t.datetime "last_error_at"
     t.datetime "last_succeeded_at"
-    t.index ["importer_id"], name: "index_bulkrax_entries_on_importer_id"
+    t.string "importerexporter_type"
+    t.integer "importerexporter_id"
+    t.index ["importerexporter_type", "importerexporter_id"], name: "index_bulkrax_entries_on_importerexporter_type_and_id"
+  end
+
+  create_table "bulkrax_exporter_runs", force: :cascade do |t|
+    t.integer "exporter_id"
+    t.integer "total_records", default: 0
+    t.integer "enqueued_records", default: 0
+    t.integer "processed_records", default: 0
+    t.integer "deleted_records", default: 0
+    t.integer "failed_records", default: 0
+    t.index ["exporter_id"], name: "index_bulkrax_exporter_runs_on_exporter_id"
+  end
+
+  create_table "bulkrax_exporters", force: :cascade do |t|
+    t.string "name"
+    t.integer "user_id"
+    t.string "parser_klass"
+    t.integer "limit"
+    t.text "field_mapping"
+    t.string "export_source"
+    t.string "export_from"
+    t.string "export_type"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_bulkrax_exporters_on_user_id"
   end
 
   create_table "bulkrax_importer_runs", force: :cascade do |t|

@@ -21,7 +21,9 @@
 
   <%= form.input :limit, as: :integer, hint: 'leave blank or 0 for all records' %>
 
-  <%= form.input :parser_klass, collection: Bulkrax.parsers.map {|p| [p[:name], p[:class_name], {'data-partial' => p[:partial]}]}, label: "Parser" %>
+  <%= form.input :parser_klass, 
+    collection: Bulkrax.parsers.map {|p| [p[:name], p[:class_name], {'data-partial' => p[:partial]}]if p[:class_name].constantize.import_supported? }.compact,
+    label: "Parser" %>
 
   <%= form.fields_for :parser_fields do |fi| %>
     <div class='parser_fields'>

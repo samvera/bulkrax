@@ -1,0 +1,33 @@
+<div class="panel-body">
+  <% if exporter.errors.any? %>
+    <div id="error_explanation">
+      <h2><%= pluralize(exporter.errors.count, "error") %> prohibited this exporter from being saved:</h2>
+
+      <ul>
+        <% exporter.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <%= form.input :name %>
+
+  <%= form.hidden_field :user_id, value: current_user.id %>
+
+  <%= form.input :export_type, collection:  form.object.export_type_list %>
+
+  <%= form.input :export_from, collection: form.object.export_from_list, label: 'Export From' %>
+
+  <%# dynamically populate depending on choice %>
+  <%# flip between available_collections && available_exporters %>
+  this will be dynamic with some js, for now just do importer
+  <%= form.input :export_source, collection:  form.object.importers_list %>
+  
+  <%= form.input :limit, as: :integer, hint: 'leave blank or 0 for all records' %>
+
+  <%= form.input :parser_klass, 
+    collection: Bulkrax.parsers.map {|p| [p[:name], p[:class_name], {'data-partial' => p[:partial]}] if p[:class_name].constantize.export_supported? }.compact, 
+    label: "Export Format" %>
+
+</div>
