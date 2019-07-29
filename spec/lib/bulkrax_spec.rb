@@ -6,7 +6,7 @@ RSpec.describe Bulkrax do
       it 'has a default' do
         expect(described_class.parsers).to eq([
                                                 { class_name: 'Bulkrax::OaiDcParser', name: 'OAI - Dublin Core', partial: 'oai_fields' },
-                                                { class_name: 'Bulkrax::OaiQualifiedDcParser', name: 'OAI - Qualified Dublin Core', partial: 'oai_qualified_fields' },
+                                                { class_name: 'Bulkrax::OaiQualifiedDcParser', name: 'OAI - Qualified Dublin Core', partial: 'oai_fields' },
                                                 { class_name: 'Bulkrax::CsvParser', name: 'CSV - Comma Separated Values', partial: 'csv_fields' }
                                               ])
       end
@@ -57,6 +57,15 @@ RSpec.describe Bulkrax do
     context 'field_mappings' do
       it 'has defaults for oaidc and qdc' do
         expect(described_class.field_mappings.keys).to eq(["Bulkrax::OaiDcParser", "Bulkrax::OaiQualifiedDcParser"])
+      end
+    end
+
+    context 'paths' do
+      it 'has import_path' do
+        expect(described_class.import_path).to eq('tmp/imports')
+      end
+      it 'has export_path' do
+        expect(described_class.export_path).to eq('tmp/exports')
       end
     end
   end

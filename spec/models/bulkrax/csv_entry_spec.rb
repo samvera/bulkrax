@@ -4,7 +4,7 @@ module Bulkrax
   RSpec.describe CsvEntry, type: :model do
     describe 'builds entry' do
       let(:importer) { FactoryBot.build(:bulkrax_importer_csv) }
-      subject { described_class.new(importer: importer) }
+      subject { described_class.new(importerexporter: importer) }
 
       context 'without required metadata' do
         before(:each) do

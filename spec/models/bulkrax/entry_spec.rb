@@ -4,7 +4,7 @@ module Bulkrax
   RSpec.describe Entry, type: :model do
     describe 'field_mappings' do
       let(:importer) { FactoryBot.build(:bulkrax_importer) }
-      subject { described_class.new(importer: importer) }
+      subject { described_class.new(importerexporter: importer) }
 
       context '.mapping' do
 

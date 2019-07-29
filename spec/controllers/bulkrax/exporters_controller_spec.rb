@@ -24,16 +24,15 @@ require 'rails_helper'
 # `rails-controller-testing` gem.
 
 module Bulkrax
-  RSpec.describe ImportersController, type: :controller do
+  RSpec.describe ExportersController, type: :controller do
     routes { Bulkrax::Engine.routes }
 
     # This should return the minimal set of attributes required to create a valid
-    # Importer. As you add validations to Importer, be sure to
+    # Exporter. As you add validations to Exporter, be sure to
     # adjust the attributes here as well.
     let(:valid_attributes) do
       {
-        name: 'Test Importer',
-        admin_set_id: 'admin_set/default',
+        name: 'Test Exporter',
         user_id: FactoryBot.create(:user).id,
         parser_klass: 'Bulkrax::CsvParser'
       }
@@ -42,19 +41,18 @@ module Bulkrax
     let(:invalid_attributes) do
       {
         name: '',
-        admin_set_id: 'admin_set/default',
         user_id: nil
       }
     end
 
     # This should return the minimal set of values that should be in the session
     # in order to pass any filters (e.g. authentication) defined in
-    # ImportersController. Be sure to keep this updated too.
+    # ExportersController. Be sure to keep this updated too.
     let(:valid_session) { {} }
 
     describe 'GET #index' do
       it 'returns a success response' do
-        Importer.create! valid_attributes
+        Exporter.create! valid_attributes
         get :index, params: {}, session: valid_session
         expect(response).to be_successful
       end
@@ -62,8 +60,8 @@ module Bulkrax
 
     describe 'GET #show' do
       it 'returns a success response' do
-        importer = Importer.create! valid_attributes
-        get :show, params: { id: importer.to_param }, session: valid_session
+        exporter = Exporter.create! valid_attributes
+        get :show, params: { id: exporter.to_param }, session: valid_session
         expect(response).to be_successful
       end
     end
@@ -77,29 +75,29 @@ module Bulkrax
 
     describe 'GET #edit' do
       it 'returns a success response' do
-        importer = Importer.create! valid_attributes
-        get :edit, params: { id: importer.to_param }, session: valid_session
+        exporter = Exporter.create! valid_attributes
+        get :edit, params: { id: exporter.to_param }, session: valid_session
         expect(response).to be_successful
       end
     end
 
     describe 'POST #create' do
       context 'with valid params' do
-        it 'creates a new Importer' do
+        it 'creates a new Exporter' do
           expect do
-            post :create, params: { importer: valid_attributes }, session: valid_session
-          end.to change(Importer, :count).by(1)
+            post :create, params: { exporter: valid_attributes }, session: valid_session
+          end.to change(Exporter, :count).by(1)
         end
 
-        it 'redirects to the created importer' do
-          post :create, params: { importer: valid_attributes }, session: valid_session
-          expect(response).to redirect_to(importers_path)
+        it 'redirects to the created exporter' do
+          post :create, params: { exporter: valid_attributes }, session: valid_session
+          expect(response).to redirect_to(exporters_path)
         end
       end
 
       context 'with invalid params' do
         it "returns a success response (i.e. to display the 'new' template)" do
-          post :create, params: { importer: invalid_attributes }, session: valid_session
+          post :create, params: { exporter: invalid_attributes }, session: valid_session
           expect(response).to be_successful
         end
       end
@@ -109,47 +107,46 @@ module Bulkrax
       context 'with valid params' do
         let(:new_attributes) do
           {
-            name: 'Test Importer Updated',
-            admin_set_id: 'admin_set/default',
+            name: 'Test Exporter Updated',
             user_id: FactoryBot.create(:user).id
           }
         end
 
-        it 'updates the requested importer' do
-          importer = Importer.create! valid_attributes
-          put :update, params: { id: importer.to_param, importer: new_attributes }, session: valid_session
-          importer.reload
-          expect(importer.name).to eq('Test Importer Updated')
+        it 'updates the requested exporter' do
+          exporter = Exporter.create! valid_attributes
+          put :update, params: { id: exporter.to_param, exporter: new_attributes }, session: valid_session
+          exporter.reload
+          expect(exporter.name).to eq('Test Exporter Updated')
         end
 
-        it 'redirects to the importer' do
-          importer = Importer.create! valid_attributes
-          put :update, params: { id: importer.to_param, importer: valid_attributes }, session: valid_session
-          expect(response).to redirect_to(importers_path)
+        it 'redirects to the exporter' do
+          exporter = Exporter.create! valid_attributes
+          put :update, params: { id: exporter.to_param, exporter: valid_attributes }, session: valid_session
+          expect(response).to redirect_to(exporters_path)
         end
       end
 
       context 'with invalid params' do
         it "returns a success response (i.e. to display the 'edit' template)" do
-          importer = Importer.create! valid_attributes
-          put :update, params: { id: importer.to_param, importer: invalid_attributes }, session: valid_session
+          exporter = Exporter.create! valid_attributes
+          put :update, params: { id: exporter.to_param, exporter: invalid_attributes }, session: valid_session
           expect(response).to be_successful
         end
       end
     end
 
     describe 'DELETE #destroy' do
-      it 'destroys the requested importer' do
-        importer = Importer.create! valid_attributes
+      it 'destroys the requested exporter' do
+        exporter = Exporter.create! valid_attributes
         expect do
-          delete :destroy, params: { id: importer.to_param }, session: valid_session
-        end.to change(Importer, :count).by(-1)
+          delete :destroy, params: { id: exporter.to_param }, session: valid_session
+        end.to change(Exporter, :count).by(-1)
       end
 
-      it 'redirects to the importers list' do
-        importer = Importer.create! valid_attributes
-        delete :destroy, params: { id: importer.to_param }, session: valid_session
-        expect(response).to redirect_to(importers_url)
+      it 'redirects to the exporters list' do
+        exporter = Exporter.create! valid_attributes
+        delete :destroy, params: { id: exporter.to_param }, session: valid_session
+        expect(response).to redirect_to(exporters_url)
       end
     end
   end

@@ -11,22 +11,22 @@ module Bulkrax
         institution_name: :string,
         rights_statements: :string,
         override_rights_statement: :boolean,
-        # @todo remove once field_mapping and exclude are supported
+        # @todo remove once field_mapping and exclude are supported in GUI
         blank_rights_statement: :boolean,
         thumbnail_url: :string
       }
     end
 
-    def initialize(importer)
+    def initialize(importerexporter)
       super
-      @headers = { from: importer.user.email }
+      @headers = { from: importerexporter.user.email }
     end
 
     def client
-      @client ||= OAI::Client.new(importer.parser_fields['base_url'],
+      @client ||= OAI::Client.new(importerexporter.parser_fields['base_url'],
                                   headers: headers,
                                   parser: 'libxml',
-                                  metadata_prefix: importer.parser_fields['metadata_prefix'])
+                                  metadata_prefix: importerexporter.parser_fields['metadata_prefix'])
     end
 
     def collection_name
@@ -44,8 +44,8 @@ module Bulkrax
     def records(opts = {})
       opts.merge!(set: collection_name) unless collection_name == 'all'
 
-      if importer.last_imported_at && only_updates
-        opts.merge!(from: importer&.last_imported_at&.strftime("%Y-%m-%d"))
+      if importerexporter.last_imported_at && only_updates
+        opts.merge!(from: importerexporter&.last_imported_at&.strftime("%Y-%m-%d"))
       end
 
       if opts[:quick]
@@ -98,8 +98,8 @@ module Bulkrax
         metadata[:title] = [set.name]
         metadata[Bulkrax.system_identifier_field] = [set.spec]
 
-        new_entry = collection_entry_class.where(importer: importer, identifier: set.spec, raw_metadata: metadata).first_or_create!
-        ImportWorkCollectionJob.perform_later(new_entry.id, importer.current_importer_run.id)
+        new_entry = collection_entry_class.where(importerexporter: importerexporter, identifier: set.spec, raw_metadata: metadata).first_or_create!
+        ImportWorkCollectionJob.perform_later(new_entry.id, importerexporter.current_importer_run.id)
       end
     end
 
@@ -110,13 +110,13 @@ module Bulkrax
           if !limit.nil? && index >= limit
             break
           elsif record.deleted? # TODO record.status == "deleted"
-            importer.current_importer_run.deleted_records += 1
-            importer.current_importer_run.save!
+            importerexporter.current_importer_run.deleted_records += 1
+            importerexporter.current_importer_run.save!
           else
             seen[record.identifier] = true
-            new_entry = entry_class.where(importer: self.importer, identifier: record.identifier).first_or_create!
-            ImportWorkJob.perform_later(new_entry.id, importer.current_importer_run.id)
-            importer.increment_counters(index)
+            new_entry = entry_class.where(importerexporter: self.importerexporter, identifier: record.identifier).first_or_create!
+            ImportWorkJob.perform_later(new_entry.id, importerexporter.current_importer_run.id)
+            importerexporter.increment_counters(index)
           end
         end
       end
