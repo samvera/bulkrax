@@ -6,7 +6,7 @@ module Bulkrax
 
     self.parsers = [
       { name: 'OAI - Dublin Core', class_name: 'Bulkrax::OaiDcParser', partial: 'oai_fields' },
-      { name: 'OAI - Qualified Dublin Core', class_name: 'Bulkrax::OaiQualifiedDcParser', partial: 'oai_qualified_fields' },
+      { name: 'OAI - Qualified Dublin Core', class_name: 'Bulkrax::OaiQualifiedDcParser', partial: 'oai_fields' },
       { name: 'CSV - Comma Separated Values', class_name: 'Bulkrax::CsvParser', partial: 'csv_fields' }
     ]
 
@@ -17,7 +17,7 @@ module Bulkrax
     # Based on Hyrax CoreMetadata && BasicMetadata
     # Override at appliation level to change
     self.field_mappings = {
-      oai_fields: {
+      "Bulkrax::OaiDcParser" => {
         "contributor" => { from: ["contributor"] },
         # no appropriate mapping for coverage (based_near needs id)
         #  ""=>{:from=>["coverage"]},
@@ -37,7 +37,7 @@ module Bulkrax
         "resource_type" => { from: ["type"], parsed: true },
         "remote_files" => { from: ['thumbnail_url'], parsed: true }
       },
-      oai_qualified_fields: {
+      "Bulkrax::OaiQualifiedDcParser" => {
         "abstract" => { from: ["abstract"] },
         "alternative_title" => { from: ["alternative"]},
         "bibliographic_citation" => { from: ["bibliographicCitation"] },

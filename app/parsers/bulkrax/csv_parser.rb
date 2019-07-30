@@ -21,7 +21,7 @@ module Bulkrax
     end
 
     def import_fields
-      records.map {|r| r.headers }.flatten
+      @import_fields ||= records.map {|r| r.headers }.flatten
     end
 
     def create_collections

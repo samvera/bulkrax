@@ -109,8 +109,8 @@ module Bulkrax
 
       def field_mapping_params
         # @todo replace/append once mapping GUI is in place
-        fields = Bulkrax.parsers.map {|m| m[:partial] if m[:class_name] == params[:importer][:parser_klass] }.compact.first
-        @importer.field_mapping = Bulkrax.field_mappings[fields.to_sym] if fields
+        field_mapping_key = Bulkrax.parsers.map {|m| m[:class_name] if m[:class_name] == params[:importer][:parser_klass] }.compact.first
+        @importer.field_mapping = Bulkrax.field_mappings[field_mapping_key] if field_mapping_key
       end
 
       def setup_client(url)

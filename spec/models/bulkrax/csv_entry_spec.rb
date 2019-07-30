@@ -11,11 +11,10 @@ module Bulkrax
           allow(subject).to receive(:record).and_return(source_identifier: '1', some_field: 'some data')
         end
 
-        # @todo - fix this, it just throws the error and the test fails ?
-        # it 'fails and stores an error' do
-        #   subject.identifier = 1
-        #   expect(subject.build_metadata).to raise_error(StandardError)
-        # end
+        it 'fails and stores an error' do
+          subject.identifier = 1
+          expect { subject.build_metadata }.to raise_error(StandardError)
+        end
       end
 
       context 'with required metadata' do
