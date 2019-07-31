@@ -20,9 +20,13 @@ module Bulkrax
       )
     end
 
+    def import_fields
+      @import_fields ||= records.map {|r| r.headers }.flatten
+    end
+
     def create_collections
       # does the CSV contain a collection column?
-      return if records.map {|r| r.headers.include?(:collection) }.blank?
+      return if import_fields.map {|r| r.headers.include?(:collection) }.blank?
 
       records.each do |record|
         next if record[:collection].blank?
@@ -43,7 +47,6 @@ module Bulkrax
     end
 
     def create_works
-      
       records.with_index(0) do |record, index|
         next if record[:source_identifier].blank?
         break if !limit.nil? && index >= limit

@@ -37,5 +37,42 @@ module Bulkrax
         expect(importer.only_updates).to eq(false)
       end
     end
+
+    describe 'field_mapping' do
+      context 'oai_parser' do
+        it 'retrieves the default field mapping for oai_dc' do
+          expect(importer.mapping).to eq(
+            "contributor" => { "excluded" => false, "from" => ["contributor"], "if" => nil, "parsed" => false, "split" => false },
+            "coverage" => { "excluded" => false, "from" => ["coverage"], "if" => nil, "parsed" => false, "split" => false },
+            "creator" => { "excluded" => false, "from" => ["creator"], "if" => nil, "parsed" => false, "split" => false },
+            "date" => { "excluded" => false, "from" => ["date"], "if" => nil, "parsed" => false, "split" => false },
+            "description" => { "excluded" => false, "from" => ["description"], "if" => nil, "parsed" => false, "split" => false },
+            "format" => { "excluded" => false, "from" => ["format"], "if" => nil, "parsed" => false, "split" => false },
+            "identifier" => { "excluded" => false, "from" => ["identifier"], "if" => nil, "parsed" => false, "split" => false },
+            "language" => { "excluded" => false, "from" => ["language"], "if" => nil, "parsed" => false, "split" => false },
+            "publisher" => { "excluded" => false, "from" => ["publisher"], "if" => nil, "parsed" => false, "split" => false },
+            "relation" => { "excluded" => false, "from" => ["relation"], "if" => nil, "parsed" => false, "split" => false },
+            "rights" => { "excluded" => false, "from" => ["rights"], "if" => nil, "parsed" => false, "split" => false },
+            "source" => { "excluded" => false, "from" => ["source"], "if" => nil, "parsed" => false, "split" => false },
+            "subject" => { "excluded" => false, "from" => ["subject"], "if" => nil, "parsed" => false, "split" => false },
+            "title" => { "excluded" => false, "from" => ["title"], "if" => nil, "parsed" => false, "split" => false },
+            "type" => { "excluded" => false, "from" => ["type"], "if" => nil, "parsed" => false, "split" => false }
+          )
+        end
+      end
+      context 'bulkrax_importer_csv' do
+        let(:importer) do
+          FactoryBot.create(:bulkrax_importer_csv, user: User.new(email: 'test@example.com'))
+        end
+        
+        it 'creates a default mapping from the column headers' do
+          expect(importer.mapping).to eq(
+            "source_identifier" => { "excluded" => false, "from" => ["source_identifier"], "if" => nil, "parsed" => false, "split" => false },
+            "title" => { "excluded" => false, "from" => ["title"], "if" => nil, "parsed" => false, "split" => false }
+          )
+        end
+
+      end
+    end
   end
 end

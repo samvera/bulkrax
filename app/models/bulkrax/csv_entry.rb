@@ -3,25 +3,7 @@ require 'csv'
 module Bulkrax
   class CsvEntry < Entry
     
-
     serialize :raw_metadata, JSON
-
-    matcher 'contributor', split: true
-    matcher 'creator', split: true
-    matcher 'date', split: true
-    matcher 'description'
-    matcher 'format_digital', parsed: true
-    matcher 'format_original', parsed: true
-    matcher 'identifier'
-    matcher 'language', parsed: true, split: true
-    matcher 'place'
-    matcher 'publisher', split: true
-    matcher 'rights_statement'
-    matcher 'subject', split: true
-    matcher 'title'
-    matcher 'alternative_title'
-    matcher 'types', from: %w[types type], split: true, parsed: true
-    matcher 'file', split: true
 
     def build_metadata
       self.parsed_metadata = {}

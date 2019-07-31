@@ -38,6 +38,7 @@ module Bulkrax
     # POST /importers
     def create
       @importer = Importer.new(importer_params)
+      field_mapping_params
 
       if @importer.save
         if params[:commit] == 'Create and Import'
@@ -51,6 +52,7 @@ module Bulkrax
 
     # PATCH/PUT /importers/1
     def update
+      field_mapping_params
       if @importer.update(importer_params)
         if params[:commit] == 'Update and Harvest Updated Items'
           Bulkrax::ImporterJob.perform_later(@importer.id, true)
@@ -85,7 +87,7 @@ module Bulkrax
 
       # Only allow a trusted parameter "white list" through.
       def importer_params
-        params.require(:importer).permit(:name, :admin_set_id, :user_id, :frequency, :parser_klass, :limit, parser_fields: {}, field_mapping: {})
+        params.require(:importer).permit(:name, :admin_set_id, :user_id, :frequency, :parser_klass, :limit, field_mapping: {}, parser_fields: {})
       end
 
       def list_external_sets
@@ -103,6 +105,12 @@ module Bulkrax
         end
 
         @sets
+      end
+
+      def field_mapping_params
+        # @todo replace/append once mapping GUI is in place
+        field_mapping_key = Bulkrax.parsers.map {|m| m[:class_name] if m[:class_name] == params[:importer][:parser_klass] }.compact.first
+        @importer.field_mapping = Bulkrax.field_mappings[field_mapping_key] if field_mapping_key
       end
 
       def setup_client(url)

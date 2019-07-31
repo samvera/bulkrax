@@ -20,6 +20,13 @@ module Bulkrax
       read_attribute(:parser_fields) || {}
     end
 
+    def mapping
+      if self.field_mapping.blank? || self.field_mapping == [{}]
+        self.field_mapping = parser.import_fields.reject(&:nil?).map {|m| Bulkrax.default_field_mapping.call(m)}.inject(:merge)
+      end
+      @mapping ||= self.field_mapping
+    end
+
     def parser
       # create an parser based on importer
       @parser ||= self.parser_klass.constantize.new(self)

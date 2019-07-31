@@ -13,9 +13,7 @@ module Bulkrax
 
         it 'fails and stores an error' do
           subject.identifier = 1
-          subject.build
-          expect(subject.last_error).to start_with('Missing required elements, required elements are: title, source_identifier')
-          expect(subject.status).to eq('failed')
+          expect { subject.build_metadata }.to raise_error(StandardError)
         end
       end
 

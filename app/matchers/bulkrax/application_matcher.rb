@@ -1,6 +1,6 @@
 module Bulkrax
   class ApplicationMatcher
-    attr_accessor :to, :from, :parsed, :if, :split
+    attr_accessor :to, :from, :parsed, :if, :split, :excluded
 
     def initialize(args)
       args.each do |k, v|
@@ -8,39 +8,39 @@ module Bulkrax
       end
     end
 
+    if_lambda = ->(parser, content, method, instruction) { content.send(method, Regexp.new(instruction)) }
+
     def result(parser, content)
-      return nil if self.if && !self.if.call(parser, content)
+      return nil if self.excluded || Bulkrax.reserved_properties.include?(self.to)
+      return nil if self.if && (!self.if.is_a?(Array) & !self.if.length != 2)
+
+      if self.if
+        self.if_lambda.call(parser, content, self.if[0], self.if[1])
+      end
 
       @result = content.gsub(/\s/, ' ') # remove any line feeds and tabs
       @result.strip!
 
-      if self.split.is_a?(Regexp)
-        @result = @result.split(self.split)
-      elsif self.split
+      if self.split.is_a?(TrueClass)
         @result = @result.split(/\s*[:;|]\s*/) # default split by : ; |
+      elsif self.split
+        @result = @result.split(Regexp.new(self.split))
       end
 
       if @result.is_a?(Array) && @result.size == 1
         @result = @result[0]
       end
 
-      if @result.is_a?(Array) && self.parsed
+      if @result.is_a?(Array) && self.parsed && self.respond_to?("parse_#{to}")
         @result.each_with_index do |res, index|
           @result[index] = send("parse_#{to}", res.strip)
         end
         @result.delete_if { |k, v| v.nil? }
-      elsif self.parsed
+      elsif self.parsed && self.respond_to?("parse_#{to}")
         @result = send("parse_#{to}", @result)
       end
 
       return @result
-    end
-
-    def parse_collections(src)
-      src = src.to_s.strip
-      collection = Collection.where(title: [src]).first
-      collection ||= Collection.create(title: [src], identifier: [src], collection_type_gid: Hyrax::CollectionType.find_or_create_default_collection_type.gid)
-      {id: collection.id} if collection
     end
 
     def parse_remote_files(src)
@@ -61,6 +61,11 @@ module Bulkrax
 
     def parse_types(src)
       src.to_s.strip.titleize
+    end
+
+    # Only add valid resource types
+    def parse_resource_type(src)
+      Hyrax::ResourceTypesService.label(src.to_s.strip.titleize)
     end
 
     def parse_format_original(src)

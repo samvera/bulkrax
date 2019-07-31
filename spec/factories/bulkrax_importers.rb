@@ -2,18 +2,18 @@ FactoryBot.define do
   factory :bulkrax_importer, class: 'Bulkrax::Importer' do
     name { "A.N. Import" }
     admin_set_id { "MyString" }
-    user { nil }
+    user { FactoryBot.build(:base_user) }
     frequency { "PT0S" }
     parser_klass { "Bulkrax::OaiDcParser" }
     limit { 10 }
     parser_fields { {} }
-    field_mapping { "" }
+    field_mapping { [{}] }
   end
 
   factory :bulkrax_importer_oai, class: 'Bulkrax::Importer' do
     name { 'Oai Collection' }
     admin_set_id { 'MyString' }
-    user { User.new(email: 'user@example.com') }
+    user { FactoryBot.build(:base_user) }
     frequency { 'PT0S' }
     parser_klass { 'Bulkrax::OaiDcParser' }
     limit { 10 }
@@ -23,7 +23,7 @@ FactoryBot.define do
         'metadata_prefix' => 'oai_dc'
       }
     end
-    field_mapping { '' }
+    field_mapping { {} }
   end
 
   factory :bulkrax_importer_csv, class: 'Bulkrax::Importer' do
@@ -33,7 +33,7 @@ FactoryBot.define do
     frequency { 'PT0S' }
     parser_klass { 'Bulkrax::CsvParser' }
     limit { 10 }
-    parser_fields { { 'csv_path' => 'some/path' } }
-    field_mapping { '' }
+    parser_fields { { 'csv_path' => 'spec/fixtures/csv/good.csv' } }
+    field_mapping { {} }
   end
 end
