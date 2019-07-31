@@ -11,6 +11,8 @@ module Bulkrax
         institution_name: :string,
         rights_statements: :string,
         override_rights_statement: :boolean,
+        # @todo remove once field_mapping and exclude are supported
+        blank_rights_statement: :boolean,
         thumbnail_url: :string
       }
     end

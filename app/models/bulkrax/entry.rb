@@ -53,8 +53,16 @@ module Bulkrax
       %w[true 1].include?(parser.parser_fields['override_rights_statement'].to_s)
     end
 
+    def blank_rights_statement
+      %w[true 1].include?(parser.parser_fields['blank_rights_statement'].to_s)
+    end
+
     def add_rights_statement
-      self.parsed_metadata['rights_statement'] = [parser.parser_fields['rights_statement']] if override_rights_statement || self.parsed_metadata['rights_statement'].blank?
+      if blank_rights_statement
+        self.parsed_metadata['rights_statement'] = nil
+      elsif override_rights_statement || self.parsed_metadata['rights_statement'].blank?
+        self.parsed_metadata['rights_statement'] = [parser.parser_fields['rights_statement']] 
+      end
     end
 
     def add_visibility
