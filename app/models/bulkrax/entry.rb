@@ -1,5 +1,6 @@
 module Bulkrax
   class Entry < ApplicationRecord
+    include Bulkrax::Concerns::HasMatchers
     belongs_to :importer
     serialize :parsed_metadata, JSON
     serialize :raw_metadata, JSON

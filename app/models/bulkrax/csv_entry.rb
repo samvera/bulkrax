@@ -2,7 +2,7 @@ require 'csv'
 
 module Bulkrax
   class CsvEntry < Entry
-    include Bulkrax::Concerns::HasMatchers
+    
 
     serialize :raw_metadata, JSON
 
