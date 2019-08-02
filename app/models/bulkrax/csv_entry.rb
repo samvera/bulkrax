@@ -7,6 +7,7 @@ module Bulkrax
 
     def build_metadata
       self.parsed_metadata = {}
+      self.parsed_metadata[Bulkrax.system_identifier_field] = [record['source_identifier']]
 
       if record.nil?
         raise StandardError, 'Record not found'
@@ -20,7 +21,7 @@ module Bulkrax
       add_visibility
       add_rights_statement
       add_collections
-      self.parsed_metadata[Bulkrax.system_identifier_field] ||= [record['source_identifier']]
+      add_local
 
       self.parsed_metadata
     end

@@ -3,20 +3,6 @@ module Bulkrax
     attr_accessor :client, :headers
     delegate :list_sets, to: :client
 
-    def self.parser_fields
-      {
-        base_url: :string,
-        metadata_prefix: :string,
-        set: :string,
-        institution_name: :string,
-        rights_statements: :string,
-        override_rights_statement: :boolean,
-        # @todo remove once field_mapping and exclude are supported
-        blank_rights_statement: :boolean,
-        thumbnail_url: :string
-      }
-    end
-
     def initialize(importer)
       super
       @headers = { from: importer.user.email }

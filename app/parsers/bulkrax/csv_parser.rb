@@ -2,14 +2,6 @@ module Bulkrax
   class CsvParser < ApplicationParser
     delegate :errors, :increment_counters, :parser_fields, to: :importer
 
-    def self.parser_fields
-      {
-        csv_path: :string,
-        rights_statements: :string,
-        override_rights_statement: :boolean
-      }
-    end
-
     def records(_opts = {})
       # there's a risk that this reads the whole file into memory and could cause a memory leak
       @records ||= CSV.foreach(
