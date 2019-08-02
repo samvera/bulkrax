@@ -92,6 +92,9 @@ module Bulkrax
         @exporter.field_mapping = Bulkrax.field_mappings[fields.to_sym] if fields
       end
 
+      # The following download code is based on
+      # https://github.com/samvera/hydra-head/blob/master/hydra-core/app/controllers/concerns/hydra/controller/download_behavior.rb
+
       def file
         @file ||= File.open(@exporter.exporter_export_zip_path, 'r')
       end
@@ -115,8 +118,6 @@ module Bulkrax
       def file_name
         @exporter.exporter_export_zip_path.split('/').last
       end
-
-      # from https://github.com/samvera/hydra-head/blob/master/hydra-core/app/controllers/concerns/hydra/controller/download_behavior.rb
 
       # render an HTTP HEAD response
       def content_head
