@@ -16,10 +16,6 @@ module Bulkrax
       raw_record.record.header.set_spec
     end
 
-    def contributing_institution
-      parser.parser_fields['institution_name']
-    end
-
     def context
       @context ||= OpenStruct.new(record: record, identifier: record.header.identifier)
     end
@@ -30,6 +26,7 @@ module Bulkrax
 
     def build_metadata
       self.parsed_metadata = {}
+      self.parsed_metadata[Bulkrax.system_identifier_field] = [record.header.identifier]
 
       record.metadata.children.each do |child|
         child.children.each do |node|
@@ -38,12 +35,12 @@ module Bulkrax
       end
       add_metadata('thumbnail_url', thumbnail_url)
 
-      self.parsed_metadata[Bulkrax.system_identifier_field] ||= [record.header.identifier]
       self.parsed_metadata['contributing_institution'] = [contributing_institution]
 
       add_visibility
       add_rights_statement
       add_collections
+      add_local
 
       return self.parsed_metadata
     end
