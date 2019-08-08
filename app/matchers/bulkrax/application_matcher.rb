@@ -1,3 +1,5 @@
+require 'language_list'
+
 module Bulkrax
   class ApplicationMatcher
     attr_accessor :to, :from, :parsed, :if, :split, :excluded
@@ -46,7 +48,7 @@ module Bulkrax
     end
 
     def parse_language(src)
-      l = LanguageList::LanguageInfo.find(src.strip)
+      l = ::LanguageList::LanguageInfo.find(src.strip)
       l ? l.name : src
     end
 

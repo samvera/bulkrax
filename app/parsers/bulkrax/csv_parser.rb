@@ -23,13 +23,16 @@ module Bulkrax
       records.each do |record|
         next if record[:collection].blank?
 
-        # split by : ; |
-        record[:collection].split(/\s*[:;|]\s*/).each do |collection|
+
+
+        # split by ; |
+        record[:collection].split(/\s*[;|]\s*/).each do |collection|
           metadata = {
             title: [collection],
             Bulkrax.system_identifier_field => [collection],
             visibility: 'open',
-            collection_type_gid: Hyrax::CollectionType.find_or_create_default_collection_type.gid
+            collection_type_gid: Hyrax::CollectionType.find_or_create_default_collection_type.gid,
+            contributing_institution: [record[:contributing_institution]].compact
           }
 
           new_entry = collection_entry_class.where(importer: importer, identifier: collection, raw_metadata: metadata).first_or_create!
