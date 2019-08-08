@@ -18,7 +18,7 @@ module Bulkrax
 
     def create_collections
       # does the CSV contain a collection column?
-      return if import_fields.map {|r| r.headers.include?(:collection) }.blank?
+      return unless import_fields.include?(:collection)
 
       records.each do |record|
         next if record[:collection].blank?

@@ -8,14 +8,12 @@ module Bulkrax
       end
     end
 
-    if_lambda = ->(parser, content, method, instruction) { content.send(method, Regexp.new(instruction)) }
-
     def result(parser, content)
-      return nil if self.excluded || Bulkrax.reserved_properties.include?(self.to)
-      return nil if self.if && (!self.if.is_a?(Array) & !self.if.length != 2)
+      return nil if self.excluded == true || Bulkrax.reserved_properties.include?(self.to)
+      return nil if self.if && (!self.if.is_a?(Array) && self.if.length != 2)
 
       if self.if
-        self.if_lambda.call(parser, content, self.if[0], self.if[1])
+        return unless content.send(self.if[0], Regexp.new(self.if[1]))
       end
 
       @result = content.gsub(/\s/, ' ') # remove any line feeds and tabs
