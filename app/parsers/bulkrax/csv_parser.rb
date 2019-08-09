@@ -20,21 +20,20 @@ module Bulkrax
       # does the CSV contain a collection column?
       return unless import_fields.include?(:collection)
 
-      records.each do |record|
-        next if record[:collection].blank?
+      # retrieve a list of unique collections
+      collections = records.map { |r| r[:collection] }.compact.uniq
 
-
+      collections.each do |collection_record|
+        next if collection_record.blank?
 
         # split by ; |
-        record[:collection].split(/\s*[;|]\s*/).each do |collection|
+        collection_record.split(/\s*[;|]\s*/).each do |collection|
           metadata = {
             title: [collection],
             Bulkrax.system_identifier_field => [collection],
             visibility: 'open',
-            collection_type_gid: Hyrax::CollectionType.find_or_create_default_collection_type.gid,
-            contributing_institution: [record[:contributing_institution]].compact
+            collection_type_gid: Hyrax::CollectionType.find_or_create_default_collection_type.gid
           }
-
           new_entry = collection_entry_class.where(importer: importer, identifier: collection, raw_metadata: metadata).first_or_create!
           ImportWorkCollectionJob.perform_later(new_entry.id, importer.current_importer_run.id)
         end
