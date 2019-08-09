@@ -85,7 +85,8 @@ module Bulkrax
         metadata[Bulkrax.system_identifier_field] = [set.spec]
 
         new_entry = collection_entry_class.where(importer: importer, identifier: set.spec, raw_metadata: metadata).first_or_create!
-        ImportWorkCollectionJob.perform_later(new_entry.id, importer.current_importer_run.id)
+        # perform now to ensure this gets created before work imports start
+        ImportWorkCollectionJob.perform_now(new_entry.id, importer.current_importer_run.id)
       end
     end
 
