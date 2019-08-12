@@ -35,7 +35,8 @@ module Bulkrax
             collection_type_gid: Hyrax::CollectionType.find_or_create_default_collection_type.gid
           }
           new_entry = collection_entry_class.where(importer: importer, identifier: collection, raw_metadata: metadata).first_or_create!
-          ImportWorkCollectionJob.perform_later(new_entry.id, importer.current_importer_run.id)
+          # perform now to ensure this gets created before work imports start
+          ImportWorkCollectionJob.perform_now(new_entry.id, importer.current_importer_run.id)
         end
       end
     end
