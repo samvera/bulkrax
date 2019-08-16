@@ -24,13 +24,17 @@ module Bulkrax
       build_metadata
       return false unless collections_created?
       begin
-        @item = Bulkrax::ApplicationFactory.for(factory_class.to_s).new(self.parsed_metadata, parser.files_path, [], user).run
+        @item = factory.run
       rescue StandardError => e
         status_info(e)
       else
         status_info
       end
       return @item
+    end
+
+    def factory
+      @factory ||= Bulkrax::ApplicationFactory.for(factory_class.to_s).new(self.parsed_metadata, parser.files_path, [], user)
     end
 
     def find_or_create_collection_ids
