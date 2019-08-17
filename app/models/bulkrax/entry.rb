@@ -2,7 +2,7 @@ module Bulkrax
   class Entry < ApplicationRecord
     include Bulkrax::Concerns::HasMatchers
     include Bulkrax::Concerns::HasLocalProcessing
-    
+
     belongs_to :importer
     serialize :parsed_metadata, JSON
     serialize :raw_metadata, JSON
@@ -34,7 +34,7 @@ module Bulkrax
     end
 
     def factory
-      @factory ||= Bulkrax::ApplicationFactory.for(factory_class.to_s).new(self.parsed_metadata, parser.files_path, [], user)
+      @factory ||= Bulkrax::ApplicationFactory.for(factory_class.to_s).new(self.parsed_metadata, identifier, parser.files_path, [], user)
     end
 
     def find_or_create_collection_ids

@@ -4,13 +4,14 @@ module Bulkrax
     extend ActiveModel::Callbacks
     define_model_callbacks :save, :create
     class_attribute :klass, :system_identifier_field
-    attr_reader :attributes, :files_directory, :object, :files
+    attr_reader :attributes, :files_directory, :object, :files, :unique_identifier
 
-    def initialize(attributes, files_dir = nil, files = [], user = nil)
+    def initialize(attributes, unique_identifier, files_dir = nil, files = [], user = nil)
       @attributes = ActiveSupport::HashWithIndifferentAccess.new(attributes)
       @files_directory = files_dir
       @files = files
       @user = user || User.batch_user
+      @unique_identifier = unique_identifier
     end
 
     def run
@@ -54,8 +55,11 @@ module Bulkrax
 
     def search_by_identifier
       query = { system_identifier_field =>
-                attributes[system_identifier_field] }
-      match = klass.where(query).detect { |m| m.send(system_identifier_field) == attributes[system_identifier_field] }
+                unique_identifier }
+      # Query can return partial matches (something6 matches both something6 and something68)
+      # so we need to weed out any that are not the correct full match. But other items might be
+      # in the multivalued field, so we have to go through them one at a time.
+      match = klass.where(query).detect { |m| m.send(system_identifier_field).include?(unique_identifier) }
       return match if match
     end
 
