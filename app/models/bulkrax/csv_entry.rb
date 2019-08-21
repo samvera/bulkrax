@@ -2,7 +2,6 @@ require 'csv'
 
 module Bulkrax
   class CsvEntry < Entry
-    
     serialize :raw_metadata, JSON
 
     def build_metadata

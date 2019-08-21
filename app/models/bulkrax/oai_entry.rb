@@ -3,6 +3,8 @@ require 'ostruct'
 
 module Bulkrax
   class OaiEntry < Entry
+    serialize :raw_metadata, JSON
+
     def raw_record
       @raw_record ||= client.get_record(identifier: identifier, metadata_prefix: parser.parser_fields['metadata_prefix'])
     end

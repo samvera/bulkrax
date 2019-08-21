@@ -5,7 +5,8 @@ module Bulkrax
 
     belongs_to :importer
     serialize :parsed_metadata, JSON
-    serialize :raw_metadata, JSON
+    # do not serialize raw_metadata as so we can support xml or other formats
+    # keep it raw.
     serialize :collection_ids, Array
 
     attr_accessor :all_attrs, :last_exception
