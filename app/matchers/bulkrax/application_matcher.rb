@@ -35,7 +35,7 @@ module Bulkrax
         @result.each_with_index do |res, index|
           @result[index] = send("parse_#{to}", res.strip)
         end
-        @result.delete_if { |k, v| v.nil? }
+        @result.delete(nil)
       elsif self.parsed && self.respond_to?("parse_#{to}")
         @result = send("parse_#{to}", @result)
       end
