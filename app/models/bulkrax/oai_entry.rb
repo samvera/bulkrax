@@ -65,7 +65,7 @@ module Bulkrax
         self.collection_ids << c.id unless c.blank? || self.collection_ids.include?(c.id)
       else
         sets.each do |set|
-          c = Collection.where(Bulkrax.system_identifier_field => set.content).first
+          c = Collection.where(Bulkrax.system_identifier_field => importer.unique_collection_identifier(set.content)).first
           self.collection_ids << c.id unless c.blank? || self.collection_ids.include?(c.id)
         end
       end
