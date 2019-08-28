@@ -78,6 +78,11 @@ module Bulkrax
       parser.create_collections
     end
 
+    # Prepend the base_url to ensure unique set identifiers
+    def unique_collection_identifier(id)
+      "#{self.parser_fields['base_url'].split('/')[2]}_#{id}"
+    end
+
     def remove_unseen
       # TODO
       # if primary_collection

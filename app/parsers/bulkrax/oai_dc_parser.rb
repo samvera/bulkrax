@@ -80,11 +80,11 @@ module Bulkrax
 
       list_sets.each do |set|
         next unless collection_name == 'all' || collection_name == set.spec
-
+        unique_collection_identifier = importer.unique_collection_identifier(set.spec)
         metadata[:title] = [set.name]
-        metadata[Bulkrax.system_identifier_field] = [set.spec]
+        metadata[Bulkrax.system_identifier_field] = [unique_collection_identifier]
 
-        new_entry = collection_entry_class.where(importer: importer, identifier: set.spec, raw_metadata: metadata).first_or_create!
+        new_entry = collection_entry_class.where(importer: importer, identifier: unique_collection_identifier, raw_metadata: metadata).first_or_create!
         # perform now to ensure this gets created before work imports start
         ImportWorkCollectionJob.perform_now(new_entry.id, importer.current_importer_run.id)
       end
