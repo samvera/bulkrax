@@ -49,8 +49,10 @@ module Bulkrax
     def collections_created?
       if sets.blank? || parser.collection_name != 'all'
         self.collection_ids.length == 1
+      elsif parser.collection_name == 'all'
+        sets.length == self.collection_ids.length
       else
-        sets.length == self.collection_ids.length  
+        self.collection_ids.length == 1
       end
     end
 
