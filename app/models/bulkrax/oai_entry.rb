@@ -47,11 +47,10 @@ module Bulkrax
     end
 
     def collections_created?
-      
       if parser.collection_name == 'all'
-        sets.blank? || (sets.exist? && sets.length == self.collection_ids.length)
+        sets.blank? || (sets.present? && sets.size == self.collection_ids.size)
       else
-        self.collection_ids.length == 1
+        self.collection_ids.size == 1
       end
     end
 
@@ -63,10 +62,16 @@ module Bulkrax
 
       if sets.blank? || parser.collection_name != 'all'
         c = Collection.where(Bulkrax.system_identifier_field => importer.unique_collection_identifier(parser.collection_name)).first
-        self.collection_ids << c.id unless c.blank? || self.collection_ids.include?(c.id)
+        if c.present? && !self.collection_ids.include?(c.id)
+          self.collection_ids << c.id
+        end
       else # All - collections should exist for all sets
-        c = Collection.where(Bulkrax.system_identifier_field => importer.unique_collection_identifier(set.content)).first
-        self.collection_ids << c.id unless c.blank? || self.collection_ids.include?(c.id)
+        sets.each do |set|
+          c = Collection.where(Bulkrax.system_identifier_field => importer.unique_collection_identifier(set.content)).first
+          if c.present? && !self.collection_ids.include?(c.id)
+            self.collection_ids << c.id
+          end
+        end
       end
       return self.collection_ids
     end

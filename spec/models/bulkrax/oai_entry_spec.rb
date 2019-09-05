@@ -19,14 +19,14 @@ module Bulkrax
 
         it 'expects collections for all sets' do
           allow(entry).to receive_message_chain(:sets, :exist?).and_return(true)
-          allow(entry).to receive_message_chain(:sets, :length).and_return(5)
+          allow(entry).to receive_message_chain(:sets, :size).and_return(5)
           expect(entry.collections_created?).to be_falsey
         end
 
         it 'expects collections for all sets' do
           entry.collection_ids = [1, 2, 3, 4, 5]
           allow(entry).to receive_message_chain(:sets, :exist?).and_return(true)
-          allow(entry).to receive_message_chain(:sets, :length).and_return(5)
+          allow(entry).to receive_message_chain(:sets, :size).and_return(5)
           expect(entry.collections_created?).to be_truthy
         end
       end
@@ -63,7 +63,7 @@ module Bulkrax
         entry.find_or_create_collection_ids
         expect(entry.collection_ids.length).to eq(1)
       end
-      it 'fails if there is no collectin' do
+      it 'fails if there is no collection' do
         allow(Collection).to receive(:where).and_return([])
         entry.find_or_create_collection_ids
         expect(entry.collection_ids.length).to eq(0)
