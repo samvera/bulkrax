@@ -53,7 +53,7 @@ module Bulkrax
     end
 
     def parse_subject(src)
-      string = src.to_s.strip
+      string = src.to_s.strip.downcase
       if string.present?
         string.slice(0,1).capitalize + string.slice(1..-1)
       end
@@ -69,7 +69,8 @@ module Bulkrax
     end
 
     def parse_format_original(src)
-      string = src.to_s.strip
+      # drop the case completely then upcase the first letter
+      string = src.to_s.strip.downcase
       if string.present?
         string.slice(0,1).capitalize + string.slice(1..-1)
       end
