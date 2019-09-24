@@ -36,8 +36,6 @@ module Bulkrax
       end
       add_metadata('thumbnail_url', thumbnail_url)
 
-      self.parsed_metadata['contributing_institution'] = [contributing_institution]
-
       add_visibility
       add_rights_statement
       add_collections
