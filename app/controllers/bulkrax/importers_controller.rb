@@ -4,7 +4,7 @@ require_dependency "oai"
 module Bulkrax
   class ImportersController < ApplicationController
     include Hyrax::ThemedLayoutController
-
+    before_action :authenticate_user!
     before_action :set_importer, only: [:show, :edit, :update, :destroy]
     with_themed_layout 'dashboard'
 
