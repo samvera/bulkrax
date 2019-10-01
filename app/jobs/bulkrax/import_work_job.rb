@@ -5,8 +5,11 @@ module Bulkrax
     def perform(*args)
       entry = Entry.find(args[0])
       begin
-        reschedule(entry.id, ImporterRun.find(args[1]).id) if entry.build.blank?
-        entry.save
+        if entry.build.present?
+          entry.save
+        else
+          reschedule(entry.id, ImporterRun.find(args[1]).id)
+        end
       rescue StandardError => e
         ImporterRun.find(args[1]).increment!(:failed_records)
         raise e
