@@ -57,6 +57,9 @@ module Bulkrax
         "resource_type" => { from: ["type"], parsed: true },
         "remote_files" => { from: ["thumbnail_url"], parsed: true }
       }
+      "Bulkrax::CsvParser" => {
+        "remote_files" => { from: ["remote_files"], parsed: true }
+      }
     }
 
     # Lambda to set the default field mapping
