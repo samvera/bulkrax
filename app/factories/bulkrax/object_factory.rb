@@ -155,14 +155,14 @@ module Bulkrax
       @new_remote_files ||= if object.present? && object.file_sets.present?
                               parsed_remote_files.select do |file|
                                 # is the url valid?
-                                is_valid = file[:url].match(URI::ABS_URI)
+                                is_valid = file[:url]&.match(URI::ABS_URI)
                                 # does the file already exist
                                 is_existing = object.file_sets.detect { |f| f.import_url && f.import_url == file[:url] }
                                 is_valid && !is_existing
                               end
                             else
                               parsed_remote_files.select do |file|
-                                file[:url].match(URI::ABS_URI)
+                                file[:url]&.match(URI::ABS_URI)
                               end
                             end
     end
