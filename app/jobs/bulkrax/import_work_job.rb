@@ -7,7 +7,7 @@ module Bulkrax
       begin
         if entry.build.present?
           entry.save
-        else
+        elsif entry.last_exception.blank?
           reschedule(entry.id, ImporterRun.find(args[1]).id)
         end
       rescue StandardError => e
