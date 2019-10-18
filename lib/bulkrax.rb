@@ -56,7 +56,7 @@ module Bulkrax
         "title" => { from: ["title"] },
         "resource_type" => { from: ["type"], parsed: true },
         "remote_files" => { from: ["thumbnail_url"], parsed: true }
-      }
+      },
       "Bulkrax::CsvParser" => {
         "remote_files" => { from: ["remote_files"], parsed: true }
       }
