@@ -1,6 +1,6 @@
 module Bulkrax
   class CsvParser < ApplicationParser
-    delegate :errors, :increment_counters, :parser_fields, to: :importer
+    delegate :errors, :increment_counters, :parser_fields, to: :importerexporter
 
     def records(_opts = {})
       # there's a risk that this reads the whole file into memory and could cause a memory leak
@@ -34,9 +34,9 @@ module Bulkrax
             visibility: 'open',
             collection_type_gid: Hyrax::CollectionType.find_or_create_default_collection_type.gid
           }
-          new_entry = collection_entry_class.where(importer: importer, identifier: collection, raw_metadata: metadata).first_or_create!
+          new_entry = collection_entry_class.where(importerexporter: importerexporter, identifier: collection, raw_metadata: metadata).first_or_create!
           # perform now to ensure this gets created before work imports start
-          ImportWorkCollectionJob.perform_now(new_entry.id, importer.current_importer_run.id)
+          ImportWorkCollectionJob.perform_now(new_entry.id, importerexporter.current_importer_run.id)
         end
       end
     end
@@ -47,8 +47,8 @@ module Bulkrax
         break if !limit.nil? && index >= limit
 
         seen[record[:source_identifier]] = true
-        new_entry = entry_class.where(importer: importer, identifier: record[:source_identifier], raw_metadata: record.to_h.compact).first_or_create!
-        ImportWorkJob.perform_later(new_entry.id, importer.current_importer_run.id)
+        new_entry = entry_class.where(importerexporter: importerexporter, identifier: record[:source_identifier], raw_metadata: record.to_h.compact).first_or_create!
+        ImportWorkJob.perform_later(new_entry.id, importerexporter.current_importer_run.id)
         increment_counters(index)
       end
     rescue StandardError => e

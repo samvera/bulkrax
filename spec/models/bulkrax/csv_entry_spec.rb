@@ -4,7 +4,7 @@ module Bulkrax
   RSpec.describe CsvEntry, type: :model do
     describe 'builds entry' do
       let(:importer) { FactoryBot.build(:bulkrax_importer_csv) }
-      subject { described_class.new(importer: importer) }
+      subject { described_class.new(importerexporter: importer) }
 
       context 'without required metadata' do
         before(:each) do
@@ -19,6 +19,11 @@ module Bulkrax
 
       context 'with required metadata' do
         before(:each) do
+          class WorkFactory < ObjectFactory
+            include WithAssociatedCollection
+            self.klass = Work
+            self.system_identifier_field = Bulkrax.system_identifier_field
+          end
           allow_any_instance_of(WorkFactory).to receive(:run)
           allow(subject).to receive(:record).and_return('source_identifier' => '2', 'title' => 'some title')
         end

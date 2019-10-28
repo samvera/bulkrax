@@ -4,7 +4,7 @@ module Bulkrax
   RSpec.describe CsvParser do
     describe '#create_works' do
       let(:importer) { FactoryBot.create(:bulkrax_importer_csv) }
-      let(:entry) { FactoryBot.create(:bulkrax_entry, importer: importer) }
+      let(:entry) { FactoryBot.create(:bulkrax_entry, importerexporter: importer) }
       subject { described_class.new(importer) }
 
       before(:each) do
@@ -30,7 +30,7 @@ module Bulkrax
         end
 
         it 'skips all of the lines' do
-          expect(subject.importer).not_to receive(:increment_counters)
+          expect(subject.importerexporter).not_to receive(:increment_counters)
           subject.create_works
         end
       end

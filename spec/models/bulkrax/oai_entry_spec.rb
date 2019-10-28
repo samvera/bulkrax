@@ -2,7 +2,7 @@ require 'rails_helper'
 
 module Bulkrax
   RSpec.describe OaiEntry, type: :model do
-    let(:entry) { described_class.new(importer: importer) }
+    let(:entry) { described_class.new(importerexporter: importer) }
     let(:importer) { FactoryBot.build(:bulkrax_importer_oai) }
     let(:collection) { FactoryBot.build(:collection) }
 

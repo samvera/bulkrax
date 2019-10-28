@@ -56,7 +56,7 @@ RSpec.describe Bulkrax do
 
     context 'field_mappings' do
       it 'has defaults for oaidc and qdc' do
-        expect(described_class.field_mappings.keys).to eq(["Bulkrax::OaiDcParser", "Bulkrax::OaiQualifiedDcParser"])
+        expect(described_class.field_mappings.keys).to eq(["Bulkrax::OaiDcParser", "Bulkrax::OaiQualifiedDcParser", "Bulkrax::CsvParser"])
       end
     end
   end

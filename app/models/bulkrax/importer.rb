@@ -7,7 +7,7 @@ module Bulkrax
 
     belongs_to :user
     has_many :importer_runs, dependent: :destroy, foreign_key: 'importer_id'
-    has_many :entries, dependent: :destroy, foreign_key: 'importer_id'
+    has_many :entries, as: :importerexporter, dependent: :destroy
 
     validates :name, presence: true
     validates :admin_set_id, presence: true
