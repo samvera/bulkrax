@@ -66,6 +66,8 @@ module Bulkrax
     # Only add valid resource types
     def parse_resource_type(src)
       Hyrax::ResourceTypesService.label(src.to_s.strip.titleize)
+    rescue KeyError
+      nil
     end
 
     def parse_format_original(src)
