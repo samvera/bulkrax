@@ -1,8 +1,21 @@
 # Bulkrax
-Bulkrax is a batteries included importer for Samvera applications. It currently includes support for OAIPMH (DC and Qualified DC) and CSV out of the box. It is also designed to be extensible, allowing you to easily add new importers in to your application or to include them with other gems. Bulkrax provides a full admin interface including creating, editing, scheduling and reviewing imports.
+Bulkrax is a batteries included importer for Samvera applications. It currently includes support for OAI-PMH (DC and Qualified DC) and CSV out of the box. It is also designed to be extensible, allowing you to easily add new importers in to your application or to include them with other gems. Bulkrax provides a full admin interface including creating, editing, scheduling and reviewing imports.
 
 
 ## Installation
+
+### Install Generator
+
+Add this line to your application's Gemfile:
+
+```ruby
+gem 'bulkrax', git: 'https://github.com/notch8/bulkrax.git'
+```
+
+And then execute:
+```bash
+$ rails generate bulkrax:install
+```
 
 ### Manual Installation
 
@@ -31,7 +44,7 @@ Ensure you have queues setup for `import` and `export`
   - default
   - import
 	- export
-	# other queues
+  # other queues
 ```
 
 ```ruby 
