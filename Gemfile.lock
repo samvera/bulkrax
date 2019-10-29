@@ -8,8 +8,8 @@ PATH
       loofah (>= 2.2.3)
       oai (~> 0.4)
       rack (>= 2.0.6)
-      rails (~> 5.1.6)
-      simple_form (~> 3.2, <= 3.5.0)
+      rails (>= 5.1.6)
+      simple_form
 
 GEM
   remote: https://rubygems.org/

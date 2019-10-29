@@ -38,6 +38,7 @@ rescue ActiveRecord::PendingMigrationError => e
 end
 RSpec.configure do |config|
   config.include FactoryBot::Syntax::Methods
+  config.include Devise::TestHelpers, :type => :controller
 
   config.after(:each) do
     DatabaseCleaner.clean

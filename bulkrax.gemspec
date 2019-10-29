@@ -16,13 +16,13 @@ Gem::Specification.new do |s|
 
   s.files = Dir["{app,config,db,lib}/**/*", "LICENSE", "Rakefile", "README.md"]
 
-  s.add_dependency "rails", "~> 5.1.6"
+  s.add_dependency "rails", ">= 5.1.6"
   s.add_dependency "loofah", ">= 2.2.3" # security issue, remove on rails upgrade
   s.add_dependency "rack", ">= 2.0.6" # security issue, remove on rails upgrade
+  s.add_dependency "simple_form"
   s.add_dependency 'iso8601', '~> 0.9.0'
   s.add_dependency 'oai', '~> 0.4'
   s.add_dependency 'libxml-ruby', '~> 3.1.0'
-  s.add_dependency 'simple_form', '~> 3.2', '<= 3.5.0'
   s.add_dependency 'language_list', '~> 1.2', '>= 1.2.1'
   s.add_development_dependency 'sqlite3', '~> 1.3.13'
   s.add_development_dependency 'simplecov'

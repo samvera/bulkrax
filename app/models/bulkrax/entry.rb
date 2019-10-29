@@ -3,7 +3,12 @@ module Bulkrax
     include Bulkrax::Concerns::HasMatchers
     include Bulkrax::Concerns::HasLocalProcessing
 
-    belongs_to :importer
+    # @deprecated Please use importerexporter instead
+    #custom_deprecator = ActiveSupport::Deprecation.new('next-release', 'bulkrax')
+    #ActiveSupport::Deprecation.deprecate_methods(Bulkrax::Entry, importer: :importerexporter, deprecator: custom_deprecator)
+    belongs_to :importer, required: false
+    
+    belongs_to :importerexporter, polymorphic: true
     serialize :parsed_metadata, JSON
     # do not serialize raw_metadata as so we can support xml or other formats
     # keep it raw.
@@ -11,8 +16,7 @@ module Bulkrax
 
     attr_accessor :all_attrs, :last_exception
 
-    delegate :parser, :mapping,
-             to: :importer
+    delegate :parser, :mapping, to: :importerexporter
 
     delegate :client,
              :collection_name,

@@ -3,16 +3,16 @@ module Bulkrax
     attr_accessor :client, :headers
     delegate :list_sets, to: :client
 
-    def initialize(importer)
+    def initialize(importerexporter)
       super
-      @headers = { from: importer.user.email }
+      @headers = { from: importerexporter.user.email }
     end
 
     def client
-      @client ||= OAI::Client.new(importer.parser_fields['base_url'],
+      @client ||= OAI::Client.new(importerexporter.parser_fields['base_url'],
                                   headers: headers,
                                   parser: 'libxml',
-                                  metadata_prefix: importer.parser_fields['metadata_prefix'])
+                                  metadata_prefix: importerexporter.parser_fields['metadata_prefix'])
     end
 
     def collection_name
@@ -30,8 +30,8 @@ module Bulkrax
     def records(opts = {})
       opts.merge!(set: collection_name) unless collection_name == 'all'
 
-      if importer.last_imported_at && only_updates
-        opts.merge!(from: importer&.last_imported_at&.strftime("%Y-%m-%d"))
+      if importerexporter.last_imported_at && only_updates
+        opts.merge!(from: importerexporter&.last_imported_at&.strftime("%Y-%m-%d"))
       end
 
       if opts[:quick]
@@ -80,13 +80,13 @@ module Bulkrax
 
       list_sets.each do |set|
         next unless collection_name == 'all' || collection_name == set.spec
-        unique_collection_identifier = importer.unique_collection_identifier(set.spec)
+        unique_collection_identifier = importerexporter.unique_collection_identifier(set.spec)
         metadata[:title] = [set.name]
         metadata[Bulkrax.system_identifier_field] = [unique_collection_identifier]
 
-        new_entry = collection_entry_class.where(importer: importer, identifier: unique_collection_identifier, raw_metadata: metadata).first_or_create!
+        new_entry = collection_entry_class.where(importerexporter: importerexporter, identifier: unique_collection_identifier, raw_metadata: metadata).first_or_create!
         # perform now to ensure this gets created before work imports start
-        ImportWorkCollectionJob.perform_now(new_entry.id, importer.current_importer_run.id)
+        ImportWorkCollectionJob.perform_now(new_entry.id, importerexporter.current_importer_run.id)
       end
     end
 
@@ -97,13 +97,13 @@ module Bulkrax
           if !limit.nil? && index >= limit
             break
           elsif record.deleted? # TODO record.status == "deleted"
-            importer.current_importer_run.deleted_records += 1
-            importer.current_importer_run.save!
+            importerexporter.current_importer_run.deleted_records += 1
+            importerexporter.current_importer_run.save!
           else
             seen[record.identifier] = true
-            new_entry = entry_class.where(importer: self.importer, identifier: record.identifier).first_or_create!
-            ImportWorkJob.perform_later(new_entry.id, importer.current_importer_run.id)
-            importer.increment_counters(index)
+            new_entry = entry_class.where(importerexporter: self.importerexporter, identifier: record.identifier).first_or_create!
+            ImportWorkJob.perform_later(new_entry.id, importerexporter.current_importer_run.id)
+            importerexporter.increment_counters(index)
           end
         end
       end
