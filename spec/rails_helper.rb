@@ -3,7 +3,7 @@ require 'spec_helper'
 ENV['RAILS_ENV'] ||= 'test'
 require 'simplecov'
 SimpleCov.start
-require File.expand_path("../../spec/test_app/config/environment", __FILE__)
+require File.expand_path("../test_app/config/environment", __FILE__)
 ENGINE_RAILS_ROOT = File.join(File.dirname(__FILE__), '../')
 # Prevent database truncation if the environment is production
 abort("The Rails environment is running in production mode!") if Rails.env.production?
@@ -38,7 +38,6 @@ rescue ActiveRecord::PendingMigrationError => e
 end
 RSpec.configure do |config|
   config.include FactoryBot::Syntax::Methods
-  config.include Devise::TestHelpers, :type => :controller
 
   config.after(:each) do
     DatabaseCleaner.clean

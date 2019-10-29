@@ -1,0 +1,39 @@
+<p id="notice"><%= notice %></p>
+
+<p>
+  <strong>Name:</strong>
+  <%= @exporter.name %>
+</p>
+
+<p>
+  <strong>Export Type:</strong>
+  <%= @exporter.export_type %>
+</p>
+
+<p>
+  <strong>Export From:</strong>
+  <%= @exporter.export_from %>
+</p>
+
+<p>
+  <strong>Export Source:</strong>
+  <%= @exporter.export_source %>
+</p>
+
+<p>
+  <strong>Parser klass:</strong>
+  <%= @exporter.parser_klass %>
+</p>
+
+<p>
+  <strong>Limit:</strong>
+  <%= @exporter.limit %>
+</p>
+
+<p>
+  <strong>Field mapping:</strong>
+  <%= @exporter.field_mapping %>
+</p>
+
+<%= link_to 'Edit', edit_exporter_path(@exporter) %> |
+<%= link_to 'Back', exporters_path %>

@@ -2,6 +2,8 @@ require 'iso8601'
 
 module Bulkrax
   class Importer < ApplicationRecord
+    include Bulkrax::ImporterExporterBehavior
+    
     serialize :parser_fields, JSON
     serialize :field_mapping, JSON
 
@@ -11,14 +13,11 @@ module Bulkrax
 
     validates :name, presence: true
     validates :admin_set_id, presence: true
+    validates :parser_klass, presence: true
 
     attr_accessor :only_updates
     # TODO validates :metadata_prefix, presence: true
     # TODO validates :base_url, presence: true
-
-    def parser_fields
-      read_attribute(:parser_fields) || {}
-    end
 
     def mapping
       if self.field_mapping.blank? || self.field_mapping == [{}]
@@ -27,9 +26,8 @@ module Bulkrax
       @mapping ||= self.field_mapping
     end
 
-    def parser
-      # create an parser based on importer
-      @parser ||= self.parser_klass.constantize.new(self)
+    def parser_fields
+      read_attribute(:parser_fields) || {}
     end
 
     def frequency_enums
@@ -50,14 +48,6 @@ module Bulkrax
 
     def schedulable?
       frequency.to_seconds != 0
-    end
-
-    def last_imported_at
-      @last_imported_at ||= self.importer_runs.last&.created_at
-    end
-
-    def next_import_at
-      (last_imported_at || Time.current) + frequency.to_seconds if schedulable? and last_imported_at.present?
     end
 
     def current_importer_run
@@ -98,18 +88,6 @@ module Bulkrax
       #     end
       #   end
       # end
-    end
-
-    def increment_counters(index)
-      if limit.to_i > 0
-        current_importer_run.total_records = limit
-      elsif parser.total > 0
-        current_importer_run.total_records = parser.total
-      else
-        current_importer_run.total_records = index + 1
-      end
-      current_importer_run.enqueued_records = index + 1
-      current_importer_run.save!
     end
 
   end

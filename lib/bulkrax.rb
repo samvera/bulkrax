@@ -2,7 +2,13 @@ require "bulkrax/engine"
 
 module Bulkrax
   class << self
-    mattr_accessor :parsers, :system_identifier_field, :default_field_mapping, :reserved_properties, :field_mappings
+    mattr_accessor :parsers,
+      :system_identifier_field,
+      :default_field_mapping,
+      :reserved_properties,
+      :field_mappings,
+      :import_path,
+      :export_path
 
     self.parsers = [
       { name: "OAI - Dublin Core", class_name: "Bulkrax::OaiDcParser", partial: "oai_fields" },
@@ -11,6 +17,8 @@ module Bulkrax
     ]
 
     self.system_identifier_field = "source"
+    self.import_path = 'tmp/imports'
+    self.export_path = 'tmp/exports'
 
     # Hash of Generic field_mappings for use in the view
     # There must be one field_mappings hash per view parial
