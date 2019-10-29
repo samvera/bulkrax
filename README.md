@@ -52,6 +52,93 @@ Ensure you have queues setup for `import` and `export`
 //= require bulkrax/application
 ```
 
+You'll want to an an intializer with some of these fields
+
+```ruby
+# config/initializers/bulkrax.rb
+Bulkrax.setup do |config|
+  # Add local parsers
+  # config.parsers += [
+  #   { name: 'MODS - My Local MODS parser', class_name: 'Bulkrax::ModsXmlParser', partial: 'mods_fields' },
+  # ]
+
+  # Field to use during import to identify if the Work or Collection already exists.
+  # Default is 'source'.
+  #   config.system_identifier_field = 'source'
+
+  # Path to store pending imports
+  # self.import_path = 'tmp/imports'
+
+  # Path to store exports before download
+  # self.export_path = 'tmp/exports'
+
+  # Field mappings
+  # Create a completely new set of mappings by replacing the whole set as follows
+  #   config.field_mappings = {
+  #     "Bulkrax::OaiDcParser" => { **individual field mappings go here*** }
+  #   }
+
+  # Add to, or change existing mappings as follows
+  #   e.g. to exclude date
+  #   config.field_mappings["Bulkrax::OaiDcParser"]["date"] = { from: ["date"], excluded: true  }
+
+  # To duplicate a set of mappings from one parser to another
+  #   config.field_mappings["Bulkrax::OaiOmekaParser"] = {}
+  #   config.field_mappings["Bulkrax::OaiDcParser"].each {|key,value| config.field_mappings["Bulkrax::OaiOmekaParser"][key] = value }
+
+  # Properties that should not be used in imports/exports. They are reserved for use by Hyrax.
+  # self.reserved_properties += ['my_field']
+end
+```
+
+## Configuring Import Work Types
+Currently all importers default to a work type of `Work`. There is a plan (see #56) to make this more easily configuratble in the future.
+
+For the moment, in order to set a different work type for a given Bulkrax Entry type you need to do the following.
+
+### Create a factory
+
+Let's say you have a work type called GenericWork. You would create a factory in your app at `app/factories/bulkrax/generic_work_factory.rb`. It might look like this:
+
+```ruby
+module Bulkrax
+  class GenericWorkFactory < ObjectFactory
+    include WithAssociatedCollection
+
+    self.klass = GenericWork
+    # A way to identify objects that are not Hydra minted identifiers
+    self.system_identifier_field = Bulkrax.system_identifier_field
+  end
+
+  def transform_attributes
+    @transform_attributes = super
+    contributor = @transform_attributes.delete('contributing_institution')
+    if contributor.present?
+      @transform_attributes['contributor'] ||= []
+      @transform_attributes['contributor'] << contributor
+    end
+    @transform_attributes
+  end
+end
+```
+
+### Modify the entry to use that factory
+
+In app/models/bulkrax/entry_decorator.rb we might add something like this
+
+```ruby
+module Bulkrax
+  module EntryDecorator
+    def factory_class
+      GenericWork
+    end
+  end
+end
+Bulkrax::Entry.prepend Bulkrax::EntryDecorator
+```
+
+Again, we acknowledge that this isn't ideal and needs to be more configurable.
+
 ## How it Works
 Once you have Bulkrax installed, you will have access to an easy to use interface with which you are able to create, edit, delete, run, and re-run imports and exports. 
 
