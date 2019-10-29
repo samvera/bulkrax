@@ -628,7 +628,7 @@ GEM
       multipart-post
       oauth2
     ruby-progressbar (1.10.1)
-    rubyzip (1.2.3)
+    rubyzip (2.0.0)
     samvera-nesting_indexer (2.0.0)
       dry-equalizer
     sass (3.7.4)
