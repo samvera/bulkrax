@@ -1,0 +1,53 @@
+<% provide :page_header do %>
+  <h1><span class="fa fa-cloud-download" aria-hidden="true"></span> Exporters</h1>
+  <div class="pull-right">
+    <%= link_to new_exporter_path, class: 'btn btn-primary' do %>
+      <span class="fa fa-edit" aria-hidden="true"></span> <%= t(:'helpers.action.exporter.new') %>
+    <% end %>
+  </div>
+<% end %>
+
+<div class="panel panel-default">
+  <div class="panel-body">
+    <% if @exporters.present? %>
+      <div class="table-responsive">
+        <table class="table table-striped datatable">
+          <thead>
+            <tr>
+              <th scope="col">Name</th>
+              <%# <th scope="col">Last Run</th> %>
+              <%# <th scope="col">Next Run</th> %>
+              <th scope="col">Records Enqueued</th>
+              <th scope="col">Records Processed</th>
+              <th scope="col">Records Failed</th>
+              <th scope="col">Records Deleted in <%= application_name %></th>
+              <th scope="col">Total Records</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @exporters.each do |exporter| %>
+              <tr>
+                <th scope="row"><%= exporter.name %></th>
+                <td><%= exporter.exporter_runs.last&.enqueued_records %></td>
+                <td><%= exporter.exporter_runs.last&.processed_records %></td>
+                <td><%= exporter.exporter_runs.last&.failed_records %></td>
+                <td><%= exporter.exporter_runs.last&.deleted_records %></td>
+                <td><%= exporter.exporter_runs.last&.total_records %></td>
+                <td>
+                  <% if File.exist?(exporter.exporter_export_zip_path) %>
+                    <%= link_to raw('<span class="glyphicon glyphicon-download"></span>'), exporter_download_path(exporter) %>
+                  <% end%>
+                </td>
+                <td><%= link_to raw('<span class="glyphicon glyphicon-pencil"></span>'), edit_exporter_path(exporter) %></td>
+                <td><%= link_to raw('<span class="glyphicon glyphicon-remove"></span>'), exporter, method: :delete, data: { confirm: 'Are you sure?' } %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+      <% else %>
+        <p>No exporters have been created.</p>
+      <% end %>
+  </div>
+</div>
+

@@ -25,6 +25,7 @@ module Bulkrax
             self.system_identifier_field = Bulkrax.system_identifier_field
           end
           allow_any_instance_of(WorkFactory).to receive(:run)
+          allow_any_instance_of(User).to receive(:batch_user)
           allow(subject).to receive(:record).and_return('source_identifier' => '2', 'title' => 'some title')
         end
 
