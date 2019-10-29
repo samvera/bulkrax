@@ -43,7 +43,7 @@ Ensure you have queues setup for `import` and `export`
 :queues:
   - default
   - import
-	- export
+  - export
   # other queues
 ```
 
