@@ -1,3 +1,9 @@
+module Bulkrax
+  class Entry < ApplicationRecord
+     belongs_to :importer
+  end
+end
+
 class ChangeImporterAndExporterToPolymorphic < ActiveRecord::Migration[5.1]
   def change
     add_column :bulkrax_entries, :importerexporter_id, :integer

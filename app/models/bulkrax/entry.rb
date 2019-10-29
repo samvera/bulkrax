@@ -2,11 +2,6 @@ module Bulkrax
   class Entry < ApplicationRecord
     include Bulkrax::Concerns::HasMatchers
     include Bulkrax::Concerns::HasLocalProcessing
-
-    # @deprecated Please use importerexporter instead
-    #custom_deprecator = ActiveSupport::Deprecation.new('next-release', 'bulkrax')
-    #ActiveSupport::Deprecation.deprecate_methods(Bulkrax::Entry, importer: :importerexporter, deprecator: custom_deprecator)
-    belongs_to :importer, required: false
     
     belongs_to :importerexporter, polymorphic: true
     serialize :parsed_metadata, JSON
