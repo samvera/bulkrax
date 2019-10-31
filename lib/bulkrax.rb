@@ -4,6 +4,7 @@ module Bulkrax
   class << self
     mattr_accessor :parsers,
       :system_identifier_field,
+      :default_work_type,
       :default_field_mapping,
       :reserved_properties,
       :field_mappings,
@@ -17,6 +18,7 @@ module Bulkrax
     ]
 
     self.system_identifier_field = "source"
+    self.default_work_type = 'Work'
     self.import_path = 'tmp/imports'
     self.export_path = 'tmp/exports'
 

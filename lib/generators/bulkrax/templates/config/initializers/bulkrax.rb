@@ -4,9 +4,15 @@ Bulkrax.setup do |config|
   #   { name: 'MODS - My Local MODS parser', class_name: 'Bulkrax::ModsXmlParser', partial: 'mods_fields' },
   # ]
 
+
   # Field to use during import to identify if the Work or Collection already exists.
   # Default is 'source'.
   #   config.system_identifier_field = 'source'
+
+
+  # WorkType to use as the default if none is specified in the import
+  # Default is the first returned by Hyrax.config.curation_concerns
+  self.default_work_type = Hyrax.config.curation_concerns.first.to_s
 
   # Path to store pending imports
   # self.import_path = 'tmp/imports'
