@@ -10,14 +10,14 @@ gemspec
 # Git. Remember to move these dependencies to your gemspec before releasing
 # your gem to rubygems.org.
 
-gem 'willow_sword', git: 'https://github.com/CottageLabs/willow_sword'
+gem 'willow_sword', github: 'notch8/willow_sword'
 
 # To use a debugger
 gem 'byebug', group: [:development, :test]
 gem "rspec-rails"
 gem "factory_bot_rails"
 gem "oai"
-gem "hyrax", "~> 2.3"
+gem "hyrax", ">= 2.3"
 gem "blacklight", "~> 6.20.0"
 
 group :development, :test do
