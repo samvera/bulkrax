@@ -19,8 +19,8 @@ RSpec.describe Bulkrax do
       it 'default_work_type is settable' do
         expect(described_class).to respond_to(:default_work_type=)
       end
-      it 'defaults to Work' do
-        expect(described_class.default_work_type).to eq('Work')
+      it 'has no default value' do
+        expect(described_class.default_work_type).to eq(nil)
       end
     end
 

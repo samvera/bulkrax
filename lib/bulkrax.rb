@@ -18,7 +18,6 @@ module Bulkrax
     ]
 
     self.system_identifier_field = "source"
-    self.default_work_type = 'Work'
     self.import_path = 'tmp/imports'
     self.export_path = 'tmp/exports'
 
