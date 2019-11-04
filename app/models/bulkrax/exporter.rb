@@ -15,14 +15,19 @@ module Bulkrax
     validates :name, presence: true
     validates :parser_klass, presence: true
 
-    delegate :write, :create_from_collection, :create_from_importer, to: :parser
+    delegate :write, :create_from_collection, :create_from_importer, :create_from_worktype, to: :parser
 
     def export
       current_exporter_run && setup_export_path
-      if self.export_from == 'collection'
+      case self.export_from
+      when 'collection'
         create_from_collection
-      elsif self.export_from == 'import'
+      when 'importer'
         create_from_importer
+      when 'worktype'
+        create_from_worktype
+      else
+        nil
       end
     end
 
@@ -31,7 +36,7 @@ module Bulkrax
     end
 
     def export_from_list
-      [['Collection', 'collection'], ['Import', 'import']]
+      [['Collection', 'collection'], ['Import', 'importer'], ['Work Type', 'worktype']]
     end
 
     def export_type_list

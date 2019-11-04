@@ -112,6 +112,21 @@ module Bulkrax
       end
     end
 
+    def create_from_worktype
+      work_ids = ActiveFedora::SolrService.query("has_model_ssim:#{importerexporter.export_source}").map(&:id)
+      work_ids.each do | wid |
+        new_entry = find_or_create_entry(entry_class, wid, 'Bulkrax::Exporter')
+        Bulkrax::ExportWorkJob.perform_now(new_entry.id,  current_exporter_run.id)
+      end
+    end
+
+    def files_path
+      arr = parser_fields['csv_path'].split('/')
+      arr.pop
+      arr << 'files'
+      arr.join('/')
+    end
+
     def entry_class
       CsvEntry
     end

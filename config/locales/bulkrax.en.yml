@@ -1,0 +1,13 @@
+en:
+  bulkrax:
+    exporter:
+      form:
+        labels:
+          export_type: Type of Export
+          export_from: Export Source
+          limit: Limit
+          export_format: Export Format
+          name: Name
+          collection: Collection
+          importer: importer
+          worktype: Work Type
