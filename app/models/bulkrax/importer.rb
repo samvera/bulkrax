@@ -23,7 +23,7 @@ module Bulkrax
       if self.field_mapping.blank? || self.field_mapping == [{}]
         self.field_mapping = parser.import_fields.reject(&:nil?).map {|m| Bulkrax.default_field_mapping.call(m)}.inject(:merge)
       end
-      @mapping = self.field_mapping
+      @mapping ||= self.field_mapping
     end
 
     def parser_fields

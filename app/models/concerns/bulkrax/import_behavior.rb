@@ -58,7 +58,7 @@ module Bulkrax
     end
 
     def factory_class
-      fc = (self.parsed_metadata['model'] unless self.parsed_metadata.blank?) || self.mapping['work_type'] || Bulkrax.default_work_type
+      fc = self.parsed_metadata&.[]('model') || self.mapping&.[]('work_type') || Bulkrax.default_work_type
       fc.constantize
     rescue NameError => e
       raise NameError.new(e.message)
