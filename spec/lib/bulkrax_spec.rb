@@ -16,6 +16,16 @@ RSpec.describe Bulkrax do
       end
     end
 
+    context 'server_name' do
+      it 'has a default' do
+        expect(described_class.server_name).to eq('bulkrax@example.com')
+      end
+
+      it 'is settable' do
+        expect(described_class).to respond_to(:server_name=)
+      end
+    end
+
     context 'reserved_properties' do
       it 'has a default' do
         expect(described_class.reserved_properties).to eq(%w[
