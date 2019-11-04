@@ -58,11 +58,13 @@ module Bulkrax
     # @return [Array] hyrax fields
     def field_to(field)
       return [field] if mapping.blank?
-      
-      mapping.map {
+      # retrieve the mapping
+      fields = mapping.map {
         |key,value| 
         key if (value['from'] && value['from'].include?(field)) || key == field 
       }.compact
+      return fields unless fields.blank?
+      return [field]
     end
   end
 end
