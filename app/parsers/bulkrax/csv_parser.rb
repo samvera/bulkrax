@@ -1,3 +1,4 @@
+require 'csv'
 module Bulkrax
   class CsvParser < ApplicationParser
     
