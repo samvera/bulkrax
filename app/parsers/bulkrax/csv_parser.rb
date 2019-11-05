@@ -1,3 +1,4 @@
+require 'csv'
 module Bulkrax
   class CsvParser < ApplicationParser
     
@@ -6,7 +7,6 @@ module Bulkrax
     end
 
     def records(_opts = {})
-      require 'csv'
       # there's a risk that this reads the whole file into memory and could cause a memory leak
       @records ||= CSV.foreach(
         parser_fields['csv_path'],

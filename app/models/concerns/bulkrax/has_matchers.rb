@@ -57,14 +57,10 @@ module Bulkrax
     # @param field [String] the importer field name
     # @return [Array] hyrax fields
     def field_to(field)
-      return [field] if mapping.blank?
-      # retrieve the mapping
-      fields = mapping.map {
-        |key,value| 
-        key if (value['from'] && value['from'].include?(field)) || key == field 
-      }.compact
-      return fields unless fields.blank?
-      return [field]
+      fields = mapping&.map { |key, value|
+        key if (value['from'] && value['from'].include?(field)) || key == field
+      }&.compact
+      return fields || [field]
     end
   end
 end
