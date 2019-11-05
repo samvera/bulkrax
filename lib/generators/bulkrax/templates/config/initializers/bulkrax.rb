@@ -20,6 +20,9 @@ Bulkrax.setup do |config|
   # Path to store exports before download
   # config.export_path = 'tmp/exports'
 
+  # Server name for oai request header
+  # config.server_name = 'my_server@name.com'
+
   # Field mappings
   # Create a completely new set of mappings by replacing the whole set as follows
   #   config.field_mappings = {

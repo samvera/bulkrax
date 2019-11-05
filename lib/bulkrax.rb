@@ -9,7 +9,8 @@ module Bulkrax
       :reserved_properties,
       :field_mappings,
       :import_path,
-      :export_path
+      :export_path,
+      :server_name
 
     self.parsers = [
       { name: "OAI - Dublin Core", class_name: "Bulkrax::OaiDcParser", partial: "oai_fields" },
@@ -20,11 +21,12 @@ module Bulkrax
     self.system_identifier_field = "source"
     self.import_path = 'tmp/imports'
     self.export_path = 'tmp/exports'
+    self.server_name = 'bulkrax@example.com'
 
     # Hash of Generic field_mappings for use in the view
     # There must be one field_mappings hash per view parial
     # Based on Hyrax CoreMetadata && BasicMetadata
-    # Override at appliation level to change
+    # Override at application level to change
     self.field_mappings = {
       "Bulkrax::OaiDcParser" => {
         "contributor" => { from: ["contributor"] },

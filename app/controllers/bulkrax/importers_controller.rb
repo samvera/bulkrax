@@ -116,7 +116,7 @@ module Bulkrax
       def setup_client(url)
         return false if url.nil?
 
-        headers = { from: 'server@atla.com' }
+        headers = { from: Bulkrax.server_name }
 
         @client ||= OAI::Client.new(url, headers: headers, parser: 'libxml', metadata_prefix: 'oai_dc')
       end
