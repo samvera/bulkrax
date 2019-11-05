@@ -46,11 +46,17 @@ module Bulkrax
 
       context '.field_supported?' do
         it 'returns true if the field is supported' do
-          expect(subject.field_supported?('creator'))
+          expect(subject.field_supported?('title')).to be_truthy
         end
 
         it 'returns false if the field is not supported' do
-          expect(subject.field_supported?('unsupported_field'))
+          expect(subject.field_supported?('unsupported_field')).to be_falsey
+        end
+      end
+
+      context 'factory_class' do
+        it 'returns Work' do
+          expect(subject.factory_class).to eq(Work)
         end
       end
     end

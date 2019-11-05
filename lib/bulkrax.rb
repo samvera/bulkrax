@@ -4,6 +4,7 @@ module Bulkrax
   class << self
     mattr_accessor :parsers,
       :system_identifier_field,
+      :default_work_type,
       :default_field_mapping,
       :reserved_properties,
       :field_mappings,

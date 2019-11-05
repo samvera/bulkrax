@@ -2,6 +2,46 @@ require 'rails_helper'
 
 RSpec.describe Bulkrax do
   describe '#mattr_accessor' do
+
+    context 'system_identifier_field' do
+      it 'responds to system_identifier_field' do
+        expect(described_class).to respond_to(:system_identifier_field)
+      end
+      it 'system_identifier_field is settable' do
+        expect(described_class).to respond_to(:system_identifier_field=)
+      end
+    end
+
+    context 'default_work_type' do
+      it 'responds to default_work_type' do
+        expect(described_class).to respond_to(:default_work_type)
+      end
+      it 'default_work_type is settable' do
+        expect(described_class).to respond_to(:default_work_type=)
+      end
+      it 'has no default value' do
+        expect(described_class.default_work_type).to eq(nil)
+      end
+    end
+
+    context 'import_path' do
+      it 'responds to import_path' do
+        expect(described_class).to respond_to(:import_path)
+      end
+      it 'import_path is settable' do
+        expect(described_class).to respond_to(:import_path=)
+      end
+    end
+
+    context 'export_path' do
+      it 'responds to export_path' do
+        expect(described_class).to respond_to(:export_path)
+      end
+      it 'export_path is settable' do
+        expect(described_class).to respond_to(:export_path=)
+      end
+    end
+
     context 'parsers' do
       it 'has a default' do
         expect(described_class.parsers).to eq([

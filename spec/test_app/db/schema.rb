@@ -54,6 +54,7 @@ ActiveRecord::Schema.define(version: 20190731114016) do
     t.integer "user_id"
     t.string "parser_klass"
     t.integer "limit"
+    t.text "parser_fields"
     t.text "field_mapping"
     t.string "export_source"
     t.string "export_from"

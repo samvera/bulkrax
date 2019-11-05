@@ -23,6 +23,13 @@ class Bulkrax::InstallGenerator < Rails::Generators::Base
 
   def create_config
     copy_file 'config/initializers/bulkrax.rb', 'config/initializers/bulkrax.rb'
+
+    hyrax = "\n# set bulkrax default work type to first curation_concern if it isn't already set\nif Bulkrax.default_work_type.blank?\n  Bulkrax.default_work_type = Hyrax.config.curation_concerns.first.to_s\nend\n"
+
+    append_to_file 'config/initializers/hyrax.rb' do 
+      hyrax
+    end unless File.read('config/initializers/hyrax.rb').include?(hyrax)
+
   end
 
   def create_local_processing
