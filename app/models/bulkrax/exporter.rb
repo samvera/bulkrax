@@ -36,11 +36,18 @@ module Bulkrax
     end
 
     def export_from_list
-      [['Collection', 'collection'], ['Import', 'importer'], ['Work Type', 'worktype']]
+      [
+        [I18n.t('bulkrax.exporter.labels.collection'), 'collection'], 
+        [I18n.t('bulkrax.exporter.labels.importer'), 'importer'], 
+        [I18n.t('bulkrax.exporter.labels.worktype'), 'worktype']
+      ]
     end
 
     def export_type_list
-      [['Metadata Only', 'metadata'], ['Metadata and Files', 'full']]
+      [
+        [I18n.t('bulkrax.exporter.labels.metadata'), 'metadata'],
+        [I18n.t('bulkrax.exporter.labels.full'), 'full']
+      ]
     end
 
     def importers_list

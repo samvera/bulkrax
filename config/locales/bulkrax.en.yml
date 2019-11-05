@@ -1,13 +1,16 @@
 en:
   bulkrax:
     exporter:
-      form:
-        labels:
-          export_type: Type of Export
-          export_from: Export Source
-          limit: Limit
-          export_format: Export Format
-          name: Name
-          collection: Collection
-          importer: importer
-          worktype: Work Type
+      labels:
+        export_type: Type of Export
+        export_from: Export From
+        limit: Limit
+        export_format: Export Format
+        name: Name
+        collection: Collection
+        importer: Importer
+        worktype: Work Type
+        metadata: Metadata Only
+        full: Metadata and Files
+        parser_klass: Parser
+        field_mapping: Field Mapping

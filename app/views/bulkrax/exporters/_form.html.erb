@@ -11,52 +11,53 @@
     </div>
   <% end %>
 
-  <%= form.input :name, label: t('bulkrax.exporter.form.labels.name') %>
+  <%= form.input :name, label: t('bulkrax.exporter.labels.name') %>
 
   <%= form.hidden_field :user_id, value: current_user.id %>
 
   <%= form.input :export_type, 
     collection:  form.object.export_type_list, 
-    label: t('bulkrax.exporter.form.labels.export_type'), 
+    label: t('bulkrax.exporter.labels.export_type'), 
     required: true,
     prompt: 'Please select an export type' %>
 
   <%= form.input :export_from, 
     collection: form.object.export_from_list, 
-    label: t('bulkrax.exporter.form.labels.export_from'), 
+    label: t('bulkrax.exporter.labels.export_from'), 
     required: true,
     prompt: 'Please select an export source' %>
 
   <%= form.input :export_source, 
-    label: t('bulkrax.exporter.form.labels.importer'),
+    label: t('bulkrax.exporter.labels.importer'),
     prompt: 'Select from the list',
     label_html: { class: 'importer hidden' },
     input_html: { class: 'importer hidden' }, 
     collection:  form.object.importers_list %>
 
-  <%# something like this, see https://github.com/samvera/hyrax/blob/master/app/views/hyrax/base/_form_member_of_collections.html.erb %>
   <%= form.input :export_source, 
     prompt: 'Start typing ... (not implemented yet)',
-    label: t('bulkrax.exporter.form.labels.collection'),
+    label: t('bulkrax.exporter.labels.collection'),
     label_html: { class: 'collection hidden' },
-    input_html: { class: 'collection hidden' } %>
+    input_html: { 
+      class: 'collection hidden',
+      data: { 
+        'autocomplete-url' => "/authorities/search/collections",
+        'autocomplete' => 'collection' } }
+    %>
   
   <%= form.input :export_source, 
-    label: t('bulkrax.exporter.form.labels.worktype'),
+    label: t('bulkrax.exporter.labels.worktype'),
     prompt: 'Select from the list',
     label_html: { class: 'worktype hidden' },
     input_html: { class: 'worktype hidden' },
     collection: Hyrax.config.curation_concerns.map {|cc| [cc.to_s, cc.to_s] } %>
   
-  <p>Coming Soon - search for works to export</p>
-  
   <%= form.input :limit, 
     as: :integer, 
     hint: 'leave blank or 0 for all records',
-    label: t('bulkrax.exporter.form.labels.limit') %>
+    label: t('bulkrax.exporter.labels.limit') %>
 
   <%= form.input :parser_klass, 
     collection: Bulkrax.parsers.map {|p| [p[:name], p[:class_name], {'data-partial' => p[:partial]}] if p[:class_name].constantize.export_supported? }.compact, 
-    label: "Export Format" %>
-
+    label: t('bulkrax.exporter.labels.export_format') %>
 </div>
