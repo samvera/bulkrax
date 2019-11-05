@@ -7,7 +7,7 @@ Bulkrax.setup do |config|
 
   # Field to use during import to identify if the Work or Collection already exists.
   # Default is 'source'.
-  #   config.system_identifier_field = 'source'
+  # config.system_identifier_field = 'source'
 
 
   # WorkType to use as the default if none is specified in the import
@@ -15,10 +15,10 @@ Bulkrax.setup do |config|
   # config.default_work_type = MyWork
 
   # Path to store pending imports
-  # self.import_path = 'tmp/imports'
+  # config.import_path = 'tmp/imports'
 
   # Path to store exports before download
-  # self.export_path = 'tmp/exports'
+  # config.export_path = 'tmp/exports'
 
   # Field mappings
   # Create a completely new set of mappings by replacing the whole set as follows
@@ -35,5 +35,5 @@ Bulkrax.setup do |config|
   #   config.field_mappings["Bulkrax::OaiDcParser"].each {|key,value| config.field_mappings["Bulkrax::OaiOmekaParser"][key] = value }
 
   # Properties that should not be used in imports/exports. They are reserved for use by Hyrax.
-  # self.reserved_properties += ['my_field']
+  # config.reserved_properties += ['my_field']
 end
