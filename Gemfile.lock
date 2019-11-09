@@ -1,10 +1,10 @@
 GIT
-  remote: https://github.com/CottageLabs/willow_sword
-  revision: 2f7c1b6b709da1aaacc04e4c5f51e6ad2556b370
+  remote: git://github.com/notch8/willow_sword.git
+  revision: 0a669d78617c6003e4aa1a46a10447be92be27d5
   specs:
     willow_sword (0.2.0)
       bagit (~> 0.4.1)
-      rails (~> 5.1.6)
+      rails (>= 5.1.6)
       rubyzip (>= 1.0.0)
 
 PATH
@@ -164,7 +164,7 @@ GEM
     clipboard-rails (1.7.1)
     concurrent-ruby (1.1.5)
     connection_pool (2.2.2)
-    crass (1.0.4)
+    crass (1.0.5)
     database_cleaner (1.7.0)
     declarative (0.0.10)
     declarative-option (0.1.0)
@@ -444,7 +444,7 @@ GEM
       shex (~> 0.5, >= 0.5.2)
       sparql (~> 3.0)
       sparql-client (~> 3.0)
-    loofah (2.2.3)
+    loofah (2.3.1)
       crass (~> 1.0.2)
       nokogiri (>= 1.5.9)
     mail (2.7.1)
@@ -473,7 +473,7 @@ GEM
     noid-rails (3.0.1)
       actionpack (>= 5.0.0, < 6)
       noid (~> 0.9)
-    nokogiri (1.10.4)
+    nokogiri (1.10.5)
       mini_portile2 (~> 2.4.0)
     nokogumbo (1.5.0)
       nokogiri
@@ -747,7 +747,7 @@ DEPENDENCIES
   byebug
   database_cleaner
   factory_bot_rails
-  hyrax (~> 2.3)
+  hyrax (>= 2.3)
   oai
   rsolr (>= 1.0)
   rspec-rails
