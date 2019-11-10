@@ -60,6 +60,7 @@ module Bulkrax
       fields = mapping&.map { |key, value|
         key if (value['from'] && value['from'].include?(field)) || key == field
       }&.compact
+      fields = nil if fields.blank?
       return fields || [field]
     end
   end

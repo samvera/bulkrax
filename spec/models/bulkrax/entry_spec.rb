@@ -6,6 +6,10 @@ module Bulkrax
       let(:importer) { FactoryBot.build(:bulkrax_importer) }
       subject { described_class.new(importerexporter: importer) }
 
+      before do
+        allow(Bulkrax).to receive(:default_work_type).and_return('Work')
+      end
+
       context '.mapping' do
 
         it 'is delegated to importer and returns the default set of 15 dc properties' do
@@ -27,20 +31,16 @@ module Bulkrax
           })
         }
 
-        it 'returns creator' do
+        it 'returns creator when author is mapped to creator' do
           expect(subject.field_to('author')).to eq(['creator'])
         end
 
-        it 'returns field when key exists, but no from mapping' do
+        it 'returns field when key exists, but there is no from mapping' do
           expect(subject.field_to('title')).to eq(['title'])
         end
 
-        it 'returns field when field is not mapped but is supported' do
-          expect(subject.field_to('publisher')).to eq([])
-        end
-
-        it 'returns nothing when the field is not supported' do
-          expect(subject.field_to('unmapped_field')).to eq([])
+        it 'returns field when field is not mapped at all' do
+          expect(subject.field_to('publisher')).to eq(['publisher'])
         end
       end
 
