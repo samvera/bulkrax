@@ -7,7 +7,7 @@ module Bulkrax
       subject { described_class.new(importerexporter: importer) }
 
       before do
-        allow(Bulkrax).to receive(:default_work_type).and_return('Work')
+        Bulkrax.default_work_type = 'Work'
       end
 
       context 'without required metadata' do
@@ -23,12 +23,7 @@ module Bulkrax
 
       context 'with required metadata' do
         before(:each) do
-          class WorkFactory < ObjectFactory
-            include WithAssociatedCollection
-            self.klass = Work
-            self.system_identifier_field = Bulkrax.system_identifier_field
-          end
-          allow_any_instance_of(WorkFactory).to receive(:run)
+          allow_any_instance_of(ObjectFactory).to receive(:run)
           allow_any_instance_of(User).to receive(:batch_user)
           allow(subject).to receive(:record).and_return('source_identifier' => '2', 'title' => 'some title')
         end

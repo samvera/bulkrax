@@ -53,7 +53,7 @@ module Bulkrax
     end
 
     def factory
-      @factory ||= Bulkrax::ApplicationFactory.for(factory_class.to_s).new(self.parsed_metadata, identifier, parser.files_path, [], user)
+      @factory ||= Bulkrax::ObjectFactory.new(self.parsed_metadata, identifier, user, factory_class)
     end
 
     def factory_class

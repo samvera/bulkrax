@@ -17,6 +17,10 @@ module Bulkrax
       record.each do |key, value|
         add_metadata(key, value)
       end
+
+      # construct full file path
+      self.parsed_metadata['file'] = self.parsed_metadata['file'].map {|f| file_path(f)} if self.parsed_metadata['file'].present?
+
       add_visibility
       add_rights_statement
       add_collections
@@ -68,5 +72,23 @@ module Bulkrax
       end unless record['collection'].blank?
       return self.collection_ids
     end
+
+    def required_elements?(keys)
+      !required_elements.map { |el| keys.include?(el) }.include?(false)
+    end
+
+    def required_elements
+      %w[title source_identifier]
+    end
+
+    def file_path(file)
+      # return if we already have the full file path
+      return file if File.exist?(file)
+      path = self.importerexporter.parser_fields['csv_path'].split('/')
+      # remove the metadata filename from the end of the import path
+      path.pop
+      File.join(path.join('/'), 'files', file)
+    end
+
   end
 end

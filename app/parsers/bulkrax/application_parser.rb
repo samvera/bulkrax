@@ -49,10 +49,6 @@ module Bulkrax
       importerexporter.is_a?(Bulkrax::Exporter)
     end
 
-    def validate_import; end
-
-    def files_path; end
-
     def find_or_create_entry(entryclass, identifier, type, raw_metadata = nil)
       entryclass.where(
         importerexporter_id: importerexporter.id,
