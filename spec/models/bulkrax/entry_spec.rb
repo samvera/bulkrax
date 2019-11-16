@@ -3,29 +3,28 @@ require 'rails_helper'
 module Bulkrax
   RSpec.describe Entry, type: :model do
     describe 'field_mappings' do
-      let(:importer) { FactoryBot.build(:bulkrax_importer) }
       subject { described_class.new(importerexporter: importer) }
+      let(:importer) { FactoryBot.build(:bulkrax_importer) }
 
       context '.mapping' do
-
         it 'is delegated to importer and returns the default set of 15 dc properties' do
           expect(subject.mapping.keys.length).to eq(15)
         end
       end
 
       context '.field_to (has_matchers)' do
-        let(:importer) { 
-          FactoryBot.build(:bulkrax_importer, field_mapping: { 
-            'creator' => {
-              from: ['author'],
-              parsed: false,
-              split: false,
-              if: nil,
-              excluded: false
-              },
-            'title' => {}
-          })
-        }
+        let(:importer) do
+          FactoryBot.build(:bulkrax_importer, field_mapping: {
+                             'creator' => {
+                               from: ['author'],
+                               parsed: false,
+                               split: false,
+                               if: nil,
+                               excluded: false
+                             },
+                             'title' => {}
+                           })
+        end
 
         it 'returns creator' do
           expect(subject.field_to('author')).to eq(['creator'])

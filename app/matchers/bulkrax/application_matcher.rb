@@ -10,7 +10,7 @@ module Bulkrax
       end
     end
 
-    def result(parser, content)
+    def result(_parser, content)
       return nil if self.excluded == true || Bulkrax.reserved_properties.include?(self.to)
       return nil if self.if && (!self.if.is_a?(Array) && self.if.length != 2)
 

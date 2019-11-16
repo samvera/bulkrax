@@ -1,4 +1,3 @@
 class User < ApplicationRecord
-
-	def batch_user; end
+  def batch_user; end
 end

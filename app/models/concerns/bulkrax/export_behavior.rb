@@ -28,10 +28,11 @@ module Bulkrax
         require 'open-uri'
         io = open(fs.original_file.uri)
         file = filename(fs)
+        next if file.blank?
         File.open(File.join(path, file), 'wb') do |f|
           f.write(io.read)
           f.close
-        end unless file.blank?
+        end
       end
     end
 

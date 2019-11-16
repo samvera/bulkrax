@@ -3,9 +3,9 @@ module Bulkrax
 
     attr_accessor :importerexporter, :total
     delegate :only_updates, :limit, :current_exporter_run, :current_importer_run, :errors,
-      :seen, :increment_counters, :parser_fields, :user, :exporter_export_path, :exporter_export_zip_path, 
-      to: :importerexporter
-      
+             :seen, :increment_counters, :parser_fields, :user, :exporter_export_path, :exporter_export_zip_path,
+             to: :importerexporter
+
     def self.parser_fields
       {}
     end

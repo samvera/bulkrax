@@ -3,7 +3,7 @@ require 'iso8601'
 module Bulkrax
   class Importer < ApplicationRecord
     include Bulkrax::ImporterExporterBehavior
-    
+
     serialize :parser_fields, JSON
     serialize :field_mapping, JSON
 
@@ -16,18 +16,16 @@ module Bulkrax
     validates :parser_klass, presence: true
 
     attr_accessor :only_updates
-    # TODO validates :metadata_prefix, presence: true
+    # TODO: validates :metadata_prefix, presence: true
     # TODO validates :base_url, presence: true
 
     def mapping
-      if self.field_mapping.blank? || self.field_mapping == [{}]
-        self.field_mapping = parser.import_fields.reject(&:nil?).map {|m| Bulkrax.default_field_mapping.call(m)}.inject(:merge)
-      end
+      self.field_mapping = parser.import_fields.reject(&:nil?).map { |m| Bulkrax.default_field_mapping.call(m) }.inject(:merge) if self.field_mapping.blank? || self.field_mapping == [{}]
       @mapping ||= self.field_mapping
     end
 
     def parser_fields
-      read_attribute(:parser_fields) || {}
+      self[:parser_fields] || {}
     end
 
     def frequency_enums
@@ -38,11 +36,11 @@ module Bulkrax
     end
 
     def frequency=(frequency)
-      write_attribute(:frequency, ISO8601::Duration.new(frequency).to_s)
+      self[:frequency] = ISO8601::Duration.new(frequency).to_s
     end
 
     def frequency
-      f = read_attribute(:frequency) || "PT0S"
+      f = self[:frequency] || "PT0S"
       ISO8601::Duration.new(f)
     end
 
@@ -58,7 +56,7 @@ module Bulkrax
       @seen ||= {}
     end
 
-    def import_works(only_updates=false)
+    def import_works(only_updates = false)
       self.only_updates = only_updates
       parser.create_works
       remove_unseen
@@ -89,6 +87,5 @@ module Bulkrax
       #   end
       # end
     end
-
   end
 end

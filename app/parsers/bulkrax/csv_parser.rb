@@ -1,7 +1,6 @@
 require 'csv'
 module Bulkrax
   class CsvParser < ApplicationParser
-    
     def self.export_supported?
       true
     end
@@ -17,7 +16,7 @@ module Bulkrax
     end
 
     def import_fields
-      @import_fields ||= records.map {|r| r.headers }.flatten
+      @import_fields ||= records.map(&:headers).flatten
     end
 
     def create_collections
@@ -59,19 +58,19 @@ module Bulkrax
     end
 
     def create_from_importer
-      Bulkrax::Importer.find(importerexporter.export_source).entries.each do | entry |
+      Bulkrax::Importer.find(importerexporter.export_source).entries.each do |entry|
         query = "#{ActiveFedora.index_field_mapper.solr_name(Bulkrax.system_identifier_field)}:\"#{entry.identifier}\""
         work_id = ActiveFedora::SolrService.query(query, fl: 'id', rows: 1).first['id']
         new_entry = find_or_create_entry(entry_class, work_id, 'Bulkrax::Exporter')
-        Bulkrax::ExportWorkJob.perform_now(new_entry.id,  current_exporter_run.id)
+        Bulkrax::ExportWorkJob.perform_now(new_entry.id, current_exporter_run.id)
       end
     end
 
     def create_from_collection
       work_ids = ActiveFedora::SolrService.query("member_of_collection_ids_ssim:#{importerexporter.export_source}").map(&:id)
-      work_ids.each do | wid |
+      work_ids.each do |wid|
         new_entry = find_or_create_entry(entry_class, wid, 'Bulkrax::Exporter')
-        Bulkrax::ExportWorkJob.perform_now(new_entry.id,  current_exporter_run.id)
+        Bulkrax::ExportWorkJob.perform_now(new_entry.id, current_exporter_run.id)
       end
     end
 
@@ -108,7 +107,7 @@ module Bulkrax
     def write_files
       file = setup_export_file
       file.puts(export_headers)
-      importerexporter.entries.each do | e |
+      importerexporter.entries.each do |e|
         file.puts(e.parsed_metadata.values.to_csv)
       end
       file.close
@@ -117,7 +116,7 @@ module Bulkrax
     def export_headers
       headers = ['id']
       headers << ['model']
-      importerexporter.mapping.keys.each {|key| headers << key unless Bulkrax.reserved_properties.include?(key) && !field_supported?(key)}.sort
+      importerexporter.mapping.keys.each { |key| headers << key unless Bulkrax.reserved_properties.include?(key) && !field_supported?(key) }.sort
       headers << 'file'
       headers.to_csv
     end

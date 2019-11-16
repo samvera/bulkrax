@@ -3,14 +3,14 @@ require "bulkrax/engine"
 module Bulkrax
   class << self
     mattr_accessor :parsers,
-      :system_identifier_field,
-      :default_work_type,
-      :default_field_mapping,
-      :reserved_properties,
-      :field_mappings,
-      :import_path,
-      :export_path,
-      :server_name
+                   :system_identifier_field,
+                   :default_work_type,
+                   :default_field_mapping,
+                   :reserved_properties,
+                   :field_mappings,
+                   :import_path,
+                   :export_path,
+                   :server_name
 
     self.parsers = [
       { name: "OAI - Dublin Core", class_name: "Bulkrax::OaiDcParser", partial: "oai_fields" },

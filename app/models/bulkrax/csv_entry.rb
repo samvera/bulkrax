@@ -21,7 +21,7 @@ module Bulkrax
       add_rights_statement
       add_collections
       add_local
-      
+
       self.parsed_metadata
     end
 
@@ -31,13 +31,12 @@ module Bulkrax
       self.parsed_metadata['model'] = work.has_model.first
       mapping.each do |key, value|
         next if Bulkrax.reserved_properties.include?(key) && !field_supported?(key)
-        if work.respond_to?(key)
-          data = work.send(key)
-          if data.is_a?(ActiveTriples::Relation)
-            self.parsed_metadata[key] = "#{data.join('; ')}" unless value[:excluded]
-          else
-            self.parsed_metadata[key] = data
-          end
+        next unless work.respond_to?(key)
+        data = work.send(key)
+        if data.is_a?(ActiveTriples::Relation)
+          self.parsed_metadata[key] = data.join('; ').to_s unless value[:excluded]
+        else
+          self.parsed_metadata[key] = data
         end
       end
       unless work.is_a?(Collection)
@@ -61,10 +60,12 @@ module Bulkrax
 
     def find_or_create_collection_ids
       return self.collection_ids if collections_created?
-      record['collection'].split(/\s*[:;|]\s*/).each do | collection |
-        c = Collection.where(Bulkrax.system_identifier_field => collection).first
-        self.collection_ids << c.id unless c.blank? || self.collection_ids.include?(c.id)
-      end unless record['collection'].blank?
+      unless record['collection'].blank?
+        record['collection'].split(/\s*[:;|]\s*/).each do |collection|
+          c = Collection.where(Bulkrax.system_identifier_field => collection).first
+          self.collection_ids << c.id unless c.blank? || self.collection_ids.include?(c.id)
+        end
+      end
       return self.collection_ids
     end
 

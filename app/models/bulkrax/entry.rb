@@ -64,6 +64,5 @@ module Bulkrax
         self.last_exception = e
       end
     end
-    
   end
 end

@@ -64,14 +64,13 @@ module Bulkrax
         let(:importer) do
           FactoryBot.create(:bulkrax_importer_csv, user: User.new(email: 'test@example.com'))
         end
-        
+
         it 'creates a default mapping from the column headers' do
           expect(importer.mapping).to eq(
             "source_identifier" => { "excluded" => false, "from" => ["source_identifier"], "if" => nil, "parsed" => false, "split" => false },
             "title" => { "excluded" => false, "from" => ["title"], "if" => nil, "parsed" => false, "split" => false }
           )
         end
-
       end
     end
   end
