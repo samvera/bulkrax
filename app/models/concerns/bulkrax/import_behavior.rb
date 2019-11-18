@@ -7,13 +7,12 @@ module Bulkrax
       build_metadata
       return false unless collections_created?
       begin
-        @item = factory.run
+        factory.run
+        return true
       rescue StandardError => e
         status_info(e)
-      else
-        status_info
+        return false
       end
-      return @item
     end
 
     def find_or_create_collection_ids

@@ -7,8 +7,8 @@ module Bulkrax
     def build_metadata
       if record.nil?
         raise StandardError, 'Record not found'
-      elsif required_elements?(record.keys) == false
-        raise StandardError, "Missing required elements, required elements are: #{required_elements.join(', ')}"
+      elsif importerexporter.parser.required_elements?(record.keys) == false
+        raise StandardError, "Missing required elements, required elements are: #{importerexporter.parser.required_elements.join(', ')}"
       end
 
       self.parsed_metadata = {}
@@ -61,19 +61,12 @@ module Bulkrax
 
     def find_or_create_collection_ids
       return self.collection_ids if collections_created?
+      valid_system_id(Collection)
       record['collection'].split(/\s*[:;|]\s*/).each do | collection |
-        c = Collection.where(Bulkrax.system_identifier_field => collection).first
+        c = find_collection(collection)
         self.collection_ids << c.id unless c.blank? || self.collection_ids.include?(c.id)
       end unless record['collection'].blank?
       return self.collection_ids
-    end
-
-    def required_elements?(keys)
-      !required_elements.map { |el| keys.include?(el) }.include?(false)
-    end
-
-    def required_elements
-      %w[title source_identifier]
     end
   end
 end

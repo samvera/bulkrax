@@ -26,11 +26,11 @@ module Bulkrax
     end
 
     def importer?
-      true if self.importerexporter_type == 'Bulkrax::Importer'
+      self.importerexporter_type == 'Bulkrax::Importer'
     end
 
     def exporter?
-      true if self.importerexporter_type == 'Bulkrax::Exporter'
+      self.importerexporter_type == 'Bulkrax::Exporter'
     end
 
     def status
@@ -65,5 +65,16 @@ module Bulkrax
       end
     end
     
+    def valid_system_id(model_class)
+      raise(
+        "#{model_class} does not implement the system_identifier_field: #{Bulkrax.system_identifier_field}"
+      ) unless model_class.properties.keys.include?(Bulkrax.system_identifier_field)
+    end
+
+    def find_collection(collection_identifier)
+      Collection.where(
+        Bulkrax.system_identifier_field => collection_identifier
+      ).detect { |m| m.send(Bulkrax.system_identifier_field).include?(collection_identifier) }
+    end
   end
 end
