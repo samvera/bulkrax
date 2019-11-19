@@ -1,4 +1,19 @@
-<div class='csv_fields'>
+<div class='bagit_fields'>
+
+  <%#= fi.input :metadata_type, 
+    collection:  importer.import_metadata_type, 
+    selected: importer.parser_fields['metadata_type'],
+    include_blank: true,
+    input_html: { class: 'form-control' }
+    %>
+  <%= fi.input :metadata_file_name, as: :string, input_html: { value: importer.parser_fields['metadata_file_name'] } %>
+
+  <%= fi.input :metadata_format, 
+    collection:  importer.import_metadata_format, 
+    selected: importer.parser_fields['metadata_format'],
+    include_blank: true,
+    input_html: { class: 'form-control' }
+    %>
   <%= fi.input :import_file_path, as: :string, input_html: { value: importer.parser_fields['import_file_path'] } %>
   <% rights_statements = Hyrax.config.rights_statement_service_class.new %>
   <%= fi.input :rights_statement,
@@ -8,5 +23,4 @@
         item_helper: rights_statements.method(:include_current_value),
         input_html: { class: 'form-control' } %>
   <%= fi.input :override_rights_statement, as: :boolean, hint: 'If checked, always use the selected rights statment. If unchecked, use rights or rights_statement from the record and only use the provided value if dc:rights is blank.', input_html: { checked: (importer.parser_fields['override_rights_statement'] == "1") } %>
-  
 </div>

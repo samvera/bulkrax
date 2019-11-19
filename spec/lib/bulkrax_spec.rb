@@ -47,7 +47,8 @@ RSpec.describe Bulkrax do
         expect(described_class.parsers).to eq([
                                                 { class_name: 'Bulkrax::OaiDcParser', name: 'OAI - Dublin Core', partial: 'oai_fields' },
                                                 { class_name: 'Bulkrax::OaiQualifiedDcParser', name: 'OAI - Qualified Dublin Core', partial: 'oai_fields' },
-                                                { class_name: 'Bulkrax::CsvParser', name: 'CSV - Comma Separated Values', partial: 'csv_fields' }
+                                                { class_name: 'Bulkrax::CsvParser', name: 'CSV - Comma Separated Values', partial: 'csv_fields' },
+                                                { class_name: 'Bulkrax::BagitParser', name: 'Bagit', partial: 'bagit_fields' }
                                               ])
       end
 
@@ -106,7 +107,7 @@ RSpec.describe Bulkrax do
 
     context 'field_mappings' do
       it 'has defaults for oaidc and qdc' do
-        expect(described_class.field_mappings.keys).to eq(["Bulkrax::OaiDcParser", "Bulkrax::OaiQualifiedDcParser", "Bulkrax::CsvParser"])
+        expect(described_class.field_mappings.keys).to eq(["Bulkrax::OaiDcParser", "Bulkrax::OaiQualifiedDcParser", "Bulkrax::CsvParser", "Bulkrax::BagitParser"])
       end
     end
   end

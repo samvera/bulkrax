@@ -97,5 +97,22 @@ module Bulkrax
       # end
     end
 
+    # The format for metadata for the incoming import; corresponds to an Entry class
+    def import_metadata_format
+      [['CSV', 'Bulkrax::CsvEntry'], ['RDF (N-Triples)', 'Bulkrax::RdfEntry']]
+    end
+
+    # The type of metadata for the incoming import, either one file for all works, or one file per work
+    # def import_metadata_type
+    #   [['Single Metadata File for all works', 'single'], ['Multiple Files, one per Work', 'multi']]
+    # end
+
+    # If the import data is zipped, unzip it to this path
+    def importer_unzip_path
+      @importer_unzip_path ||= File.join(ENV.fetch('RAILS_TMP', Dir.tmpdir).to_s, "import_#{self.id}_#{self.importer_runs.last.id}")
+    rescue
+      @importer_unzip_path ||= File.join(ENV.fetch('RAILS_TMP', Dir.tmpdir).to_s, "import_#{self.id}_0")
+    end
+
   end
 end

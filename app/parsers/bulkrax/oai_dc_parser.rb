@@ -67,11 +67,6 @@ module Bulkrax
       client.list_sets
     end
 
-    def run
-      create_collections
-      create_works
-    end
-
     def create_collections
       metadata = {
         visibility: 'open',

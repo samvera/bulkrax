@@ -22,8 +22,31 @@ module Bulkrax
              :user,
              to: :parser
 
+    # Retrieve fields from the file
+    # @param data - the source data
+    # @return Array 
+    def self.fields_from_data(data)
+      raise 'Not Implemented'
+    end
+
+    # Read the data from the supplied path
+    # @param path - path to the data file
+    # @return the data from the file
+    def self.read_data(path)
+      raise 'Not Implemented'
+    end
+
+    # Returns formatted data from the given file for a single Entry
+    # @param data - the data from the metadata file
+    # @param path - the path to the metadata file
+    # @param index - if the file contains multiple entries, the index of the entry to retrieve
+    # @return Hash containing the data (the entry build_metadata method will know what to expect in the hash)
+    def self.data_for_entry(data, path = nil, index = 0)
+      raise 'Not Implemented'
+    end
+
     def build
-      return false if type.nil?
+      return if type.nil?
       return build_for_importer if importer?
       return build_for_exporter if exporter?
     end
@@ -79,5 +102,6 @@ module Bulkrax
         Bulkrax.system_identifier_field => collection_identifier
       ).detect { |m| m.send(Bulkrax.system_identifier_field).include?(collection_identifier) }
     end
+
   end
 end
