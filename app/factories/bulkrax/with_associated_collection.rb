@@ -33,14 +33,5 @@ module Bulkrax
         super
       end
     end
-
-    private
-
-    def collection(attrs=nil)
-      attrs ||= attributes.fetch(:collection)
-      @collection ||= CollectionFactory.new(attrs).find_or_create
-      @collection.reindex_extent = Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX
-      return @collection
-    end
   end
 end

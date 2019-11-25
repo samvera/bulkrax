@@ -1,17 +1,20 @@
 # TODO: require 'importer/log_subscriber'
 module Bulkrax
   class ObjectFactory
+    include WithAssociatedCollection
     extend ActiveModel::Callbacks
     define_model_callbacks :save, :create
-    class_attribute :klass, :system_identifier_field
-    attr_reader :attributes, :files_directory, :object, :files, :unique_identifier
+    class_attribute :system_identifier_field
+    attr_reader :klass, :attributes, :files_directory, :object, :files, :unique_identifier
+    self.system_identifier_field = Bulkrax.system_identifier_field
 
-    def initialize(attributes, unique_identifier, files_dir = nil, files = [], user = nil)
+    def initialize(attributes, unique_identifier, files_dir = nil, files = [], user = nil, klass = nil)
       @attributes = ActiveSupport::HashWithIndifferentAccess.new(attributes)
       @files_directory = files_dir
       @files = files
       @user = user || User.batch_user
       @unique_identifier = unique_identifier
+      @klass = klass || Bulkrax.default_work_type
     end
 
     def run
@@ -31,7 +34,12 @@ module Bulkrax
       raise "Object doesn't exist" unless object
 
       run_callbacks(:save) do
-        work_actor.update(environment(update_attributes))
+        if object.is_a?(Collection)
+          object.attributes = update_attributes
+          object.save!
+        else
+          work_actor.update(environment(update_attributes))
+        end
       end
       log_updated(object)
     end
@@ -51,6 +59,12 @@ module Bulkrax
 
     def find_by_id
       klass.find(attributes[:id]) if klass.exists?(attributes[:id])
+    end
+
+    def find_or_create
+      o = find
+      return o if o
+      run(&:save!)
     end
 
     def search_by_identifier
