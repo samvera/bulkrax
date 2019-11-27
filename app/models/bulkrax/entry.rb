@@ -1,5 +1,8 @@
 module Bulkrax
+  # Custom error class for collections_created?
+  class CollectionsCreatedError < StandardError; end
   class Entry < ApplicationRecord
+
     include Bulkrax::HasMatchers
     include Bulkrax::HasLocalProcessing
     include Bulkrax::ImportBehavior

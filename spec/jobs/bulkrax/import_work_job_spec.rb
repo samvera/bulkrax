@@ -12,7 +12,8 @@ module Bulkrax
 
     describe 'successful job' do
       before do
-        allow(entry).to receive(:build).and_return(true)
+        allow(entry).to receive(:collections_created?).and_return(true)
+        allow(entry).to receive(:build).and_return(instance_of(Work))
         allow(entry).to receive(:save)
       end
       it 'increments :processed_records' do
@@ -23,8 +24,7 @@ module Bulkrax
 
     describe 'unsuccessful job - collections not created' do
       before do
-        allow(entry).to receive(:build).and_return(false)
-        allow(entry).to receive(:collections_created?).and_return(false)
+        allow(entry).to receive(:build_for_importer).and_raise(CollectionsCreatedError)
         allow(entry).to receive(:save)
       end
       it 'does not call increment' do
@@ -39,13 +39,13 @@ module Bulkrax
 
     describe 'unsuccessful job - error caught by build' do
       before do
-        allow(entry).to receive(:build).and_return(false)
+        allow(entry).to receive(:build).and_return(nil)
         allow(entry).to receive(:last_exception).and_return(StandardError)
         allow(entry).to receive(:save)
       end
       it 'increments :failed_records' do
         expect(importer_run).to receive(:increment!).with(:failed_records)
-        expect { subject.perform(1, 2) }.to raise_error(StandardError)
+        subject.perform(1, 2)
       end
     end
   end
