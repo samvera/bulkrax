@@ -25,7 +25,6 @@ module Bulkrax
 
     def reschedule(entry_id, run_id)
       ImportWorkJob.set(wait: 1.minutes).perform_later(entry_id, run_id)
-      true
     end
   end
 end
