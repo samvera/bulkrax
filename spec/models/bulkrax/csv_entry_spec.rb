@@ -6,6 +6,10 @@ module Bulkrax
       let(:importer) { FactoryBot.build(:bulkrax_importer_csv) }
       subject { described_class.new(importerexporter: importer) }
 
+      before do
+        allow(Bulkrax).to receive(:default_work_type).and_return('Work')
+      end
+
       context 'without required metadata' do
         before(:each) do
           allow(subject).to receive(:record).and_return(source_identifier: '1', some_field: 'some data')

@@ -5,7 +5,7 @@ if defined?(Image)
 
       self.klass = Image
       # A way to identify objects that are not Hydra minted identifiers
-      self.system_identifier_field = :identifier
+      self.system_identifier_field = Bulkrax.system_identifier_field
 
       # TODO: add resource type?
       # def create_attributes

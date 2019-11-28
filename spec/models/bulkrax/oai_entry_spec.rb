@@ -54,7 +54,7 @@ module Bulkrax
 
     describe "find_or_create_collection_ids" do
       before do
-        importer.parser_fields['set'] = 'some_set'
+        importer.parser_fields['set'] = 'MyCollection'
         allow(entry).to receive_message_chain(:sets, :blank?).and_return(false)
       end
 

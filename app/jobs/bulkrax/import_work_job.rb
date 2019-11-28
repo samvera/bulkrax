@@ -4,23 +4,23 @@ module Bulkrax
 
     def perform(*args)
       entry = Entry.find(args[0])
-      begin
-        if entry.build.present?
-          entry.save
-        elsif entry.last_exception.blank?
-          reschedule(entry.id, ImporterRun.find(args[1]).id)
-        end
-      rescue StandardError => e
-        ImporterRun.find(args[1]).increment!(:failed_records)
-        raise e
+      build_result = entry.build
+      if build_result.present?
+        entry.save!
+        ImporterRun.find(args[1]).increment!(:processed_records)
       else
-        if entry.last_exception
-          ImporterRun.find(args[1]).increment!(:failed_records)
-          raise entry.last_exception
-        else
-          ImporterRun.find(args[1]).increment!(:processed_records)
-        end
+        # do not retry here because whatever parse error kept you from creating a work will likely
+        # keep preventing you from doing so.
+        entry.save!
+        ImporterRun.find(args[1]).increment!(:failed_records)
       end
+      rescue CollectionsCreatedError => e
+        reschedule(args[0], args[1])
+      # Exceptions here are not an issue with building the work.
+      # Those are caught seperately, these are more likely network, db or other unexpected issues.
+      # Note that these temporary type issues do not raise the failure count
+      rescue StandardError => e
+        raise e
     end
 
     def reschedule(entry_id, run_id)

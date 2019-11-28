@@ -20,6 +20,14 @@ module Bulkrax
       end
     end
 
+    describe 'unsuccessful job' do
+      let(:importer) { FactoryBot.create(:bulkrax_importer_csv_bad) }
+
+      it 'raises an error with an invalid import' do
+        expect { subject.perform(1) }.to raise_error(RuntimeError, 'Missing required elements, required elements are: title, source_identifier')
+      end
+    end
+
     describe 'schedulable' do
       before do
         allow(importer).to receive(:schedulable?).and_return(true)

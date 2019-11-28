@@ -3,9 +3,8 @@ module Bulkrax
     extend ActiveSupport::Concern
 
     def build_for_importer
-      # attributes, files_dir = nil, files = [], user = nil
       build_metadata
-      return false unless collections_created?
+      raise CollectionsCreatedError unless collections_created?
       begin
         @item = factory.run
       rescue StandardError => e

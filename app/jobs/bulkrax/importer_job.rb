@@ -10,6 +10,7 @@ module Bulkrax
     end
 
     def import(importer, only_updates_since_last_import)
+      importer.validate_import
       importer.import_collections
       importer.import_works(only_updates_since_last_import)
     end

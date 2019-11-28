@@ -4,16 +4,26 @@ module Bulkrax
   RSpec.describe Entry, type: :model do
     describe 'field_mappings' do
       let(:importer) { FactoryBot.build(:bulkrax_importer) }
+      let(:collection) { FactoryBot.build(:collection) }
       subject { described_class.new(importerexporter: importer) }
 
       before do
+        allow(Collection).to receive(:where).and_return([collection])
         allow(Bulkrax).to receive(:default_work_type).and_return('Work')
       end
 
       context '.mapping' do
-
         it 'is delegated to importer and returns the default set of 15 dc properties' do
           expect(subject.mapping.keys.length).to eq(15)
+        end
+      end
+
+      context '.find_collection' do
+        it 'it finds the collection' do
+          expect(subject.find_collection('commons.ptsem.edu_MyCollection')).to eq(collection)
+        end
+        it 'it does find the collection with a partial match' do
+          expect(subject.find_collection('MyCollection')).not_to eq(collection)
         end
       end
 

@@ -17,7 +17,20 @@ module Bulkrax
     end
 
     def import_fields
-      @import_fields ||= records.map {|r| r.headers }.flatten
+      @import_fields ||= records.map {|r| r.headers }.flatten.uniq.compact
+    end
+
+    def required_elements?(keys)
+      return if keys.blank?
+      !required_elements.map { |el| keys.map(&:to_s).include?(el) }.include?(false)
+    end
+
+    def required_elements
+      %w[title source_identifier]
+    end
+
+    def validate_import
+      raise "Missing required elements, required elements are: #{required_elements.join(', ')}" unless required_elements?(import_fields)
     end
 
     def create_collections

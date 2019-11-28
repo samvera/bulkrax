@@ -18,7 +18,7 @@ module Bulkrax
           importer.parser_fields = { csv_path: './spec/fixtures/csv/malformed.csv' }
         end
 
-        it 'returns and empty array, and records the error on the importer' do
+        it 'returns an empty array, and records the error on the importer' do
           subject.create_works
           expect(importer.errors.details[:base].first[:error]).to eq('CSV::MalformedCSVError'.to_sym)
         end

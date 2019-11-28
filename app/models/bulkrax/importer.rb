@@ -15,6 +15,8 @@ module Bulkrax
     validates :admin_set_id, presence: true
     validates :parser_klass, presence: true
 
+    delegate :validate_import, to: :parser
+
     attr_accessor :only_updates
     # TODO validates :metadata_prefix, presence: true
     # TODO validates :base_url, presence: true
@@ -69,6 +71,7 @@ module Bulkrax
     end
 
     # Prepend the base_url to ensure unique set identifiers
+    # @todo - move to parser, as this is OAI specific
     def unique_collection_identifier(id)
       "#{self.parser_fields['base_url'].split('/')[2]}_#{id}"
     end
