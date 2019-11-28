@@ -42,14 +42,6 @@ module Bulkrax
       log_updated(object)
     end
 
-    def create_attributes
-      transform_attributes
-    end
-
-    def update_attributes
-      transform_attributes.except(:id)
-    end
-
     def find
       return find_by_id if attributes[:id]
       return search_by_identifier if attributes[system_identifier_field].present?
