@@ -3,9 +3,9 @@ module Bulkrax
     extend ActiveSupport::Concern
 
     def build_for_importer
-      build_metadata
-      raise CollectionsCreatedError unless collections_created?
       begin
+        build_metadata
+        raise CollectionsCreatedError unless collections_created?
         @item = factory.run
       rescue StandardError => e
         status_info(e)
