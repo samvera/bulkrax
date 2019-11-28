@@ -24,8 +24,8 @@ module Bulkrax
 
     def build
       return false if type.nil?
-      build_for_importer if importer?
-      build_for_exporter if exporter?
+      return build_for_importer if importer?
+      return build_for_exporter if exporter?
     end
 
     def importer?
