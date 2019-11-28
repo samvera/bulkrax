@@ -8,8 +8,7 @@ module Bulkrax
       subject { described_class.new(importerexporter: importer) }
 
       before do
-        allow(Collection).to receive(:where).and_return([collection])
-        allow(Bulkrax).to receive(:default_work_type).and_return('Work')
+        Bulkrax.default_work_type = 'Work'
       end
 
       context '.mapping' do

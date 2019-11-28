@@ -1,17 +1,18 @@
 # TODO: require 'importer/log_subscriber'
 module Bulkrax
   class ObjectFactory
+    include WithAssociatedCollection
     extend ActiveModel::Callbacks
     define_model_callbacks :save, :create
-    class_attribute :klass, :system_identifier_field
-    attr_reader :attributes, :files_directory, :object, :files, :unique_identifier
+    class_attribute :system_identifier_field
+    attr_reader :attributes, :object, :unique_identifier, :klass
+    self.system_identifier_field = Bulkrax.system_identifier_field
 
-    def initialize(attributes, unique_identifier, files_dir = nil, files = [], user = nil)
+    def initialize(attributes, unique_identifier, user = nil, klass = nil)
       @attributes = ActiveSupport::HashWithIndifferentAccess.new(attributes)
-      @files_directory = files_dir
-      @files = files
       @user = user || User.batch_user
       @unique_identifier = unique_identifier
+      @klass = klass || Bulkrax.default_work_type
     end
 
     def run
@@ -31,7 +32,12 @@ module Bulkrax
       raise "Object doesn't exist" unless object
 
       run_callbacks(:save) do
-        work_actor.update(environment(update_attributes))
+        if object.is_a?(Collection)
+          object.attributes = update_attributes
+          object.save!
+        else
+          work_actor.update(environment(update_attributes))
+        end
       end
       log_updated(object)
     end
@@ -51,6 +57,12 @@ module Bulkrax
 
     def find_by_id
       klass.find(attributes[:id]) if klass.exists?(attributes[:id])
+    end
+
+    def find_or_create
+      o = find
+      return o if o
+      run(&:save!)
     end
 
     def search_by_identifier
@@ -121,14 +133,14 @@ module Bulkrax
     # otherwise it gets reuploaded by `work_actor`.
     # support multiple files; ensure attributes[:file] is an Array
     def upload_ids
-      attributes[:file] = Array.wrap(attributes[:file])
+      attributes[:file] = file_paths
       work_files_titles = object.file_sets.map { |t| t.title.to_a }.flatten if object.present? && object.file_sets.present?
       work_files_titles && (work_files_titles & attributes[:file]).present? ? [] : import_files
     end
 
     def file_attributes
       hash = {}
-      hash[:uploaded_files] = upload_ids if files_directory.present? && attributes[:file].present?
+      hash[:uploaded_files] = upload_ids if attributes[:file].present?
       hash[:remote_files] = new_remote_files if new_remote_files.present?
       hash
     end
@@ -168,7 +180,7 @@ module Bulkrax
     end
 
     def file_paths
-      attributes[:file]&.map { |file_name| File.join(files_directory, file_name) }
+      @file_paths ||= Array.wrap(attributes[:file])&.map { |file| file if File.exist?(file) }
     end
 
     def import_files
