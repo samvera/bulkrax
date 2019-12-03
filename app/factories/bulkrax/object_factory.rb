@@ -5,14 +5,15 @@ module Bulkrax
     extend ActiveModel::Callbacks
     define_model_callbacks :save, :create
     class_attribute :system_identifier_field
-    attr_reader :attributes, :object, :unique_identifier, :klass
+    attr_reader :attributes, :object, :unique_identifier, :klass, :replace_files
     self.system_identifier_field = Bulkrax.system_identifier_field
 
-    def initialize(attributes, unique_identifier, user = nil, klass = nil)
+    def initialize(attributes, unique_identifier, replace_files = false, user = nil, klass = nil)
       @attributes = ActiveSupport::HashWithIndifferentAccess.new(attributes)
+      @replace_files = replace_files
       @user = user || User.batch_user
       @unique_identifier = unique_identifier
-      @klass = klass || Bulkrax.default_work_type
+      @klass = klass || Bulkrax.default_work_type.constantize
     end
 
     def run
@@ -36,6 +37,7 @@ module Bulkrax
           object.attributes = update_attributes
           object.save!
         else
+          destroy_existing_files if replace_files
           work_actor.update(environment(update_attributes))
         end
       end
@@ -92,6 +94,11 @@ module Bulkrax
       Rails.logger.info("#{msg} (#{Array(attributes[system_identifier_field]).first})")
     end
 
+    def log_deleted_fs(obj)
+      msg = "Deleted All Files from #{obj.id}"
+      Rails.logger.info("#{msg} (#{Array(attributes[system_identifier_field]).first})")
+    end
+
     private
 
     # @param [Hash] attrs the attributes to put in the environment
@@ -107,7 +114,6 @@ module Bulkrax
     def create_collection(attrs)
       @object.attributes = attrs
       @object.apply_depositor_metadata(@user)
-
       @object.save!
     end
 
@@ -125,13 +131,14 @@ module Bulkrax
     # otherwise it gets reuploaded by `work_actor`.
     # support multiple files; ensure attributes[:file] is an Array
     def upload_ids
+      return [] if klass == Collection
       attributes[:file] = file_paths
-      work_files_titles = object.file_sets.map { |t| t.title.to_a }.flatten if object.present? && object.file_sets.present?
-      work_files_titles && (work_files_titles & attributes[:file]).present? ? [] : import_files
+      work_files_filenames && (work_files_filenames & import_files_filenames).present? ? [] : import_files
     end
 
     def file_attributes
       hash = {}
+      return hash if klass == Collection
       hash[:uploaded_files] = upload_ids if attributes[:file].present?
       hash[:remote_files] = new_remote_files if new_remote_files.present?
       hash
@@ -175,6 +182,28 @@ module Bulkrax
       @file_paths ||= Array.wrap(attributes[:file])&.map { |file| file if File.exist?(file) }
     end
 
+    # Retrieve the orginal filenames for the files to be imported
+    def work_files_filenames
+      object.file_sets.map { |fn| fn.original_file.file_name.to_a }.flatten if object.present? && object.file_sets.present?
+    end
+
+    # Retrieve the filenames for the files to be imported
+    def import_files_filenames
+      file_paths.map {|f| f.split('/').last }
+    end
+
+    # Called if #replace_files is true
+    # Destroy all file_sets for this object
+    def destroy_existing_files
+      if object.present? && object.file_sets.present?
+        object.file_sets.each do | fs |
+          Hyrax::Actors::FileSetActor.new(fs, @user).destroy
+        end
+        @object = object.reload
+        log_deleted_fs(object)
+      end
+    end
+
     def import_files
       file_paths.map { |path| import_file(path) }
     end
@@ -187,10 +216,7 @@ module Bulkrax
       u.id
     end
 
-    ## TO DO: handle invalid file in CSV
-    ## currently the importer stops if no file corresponding to a given file_name is found
-
-    # Regardless of what the MODS Parser gives us, these are the properties we are prepared to accept.
+    # Regardless of what the Parser gives us, these are the properties we are prepared to accept.
     def permitted_attributes
       klass.properties.keys.map(&:to_sym) + %i[id edit_users edit_groups read_groups visibility]
     end

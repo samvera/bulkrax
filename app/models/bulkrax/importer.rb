@@ -60,6 +60,10 @@ module Bulkrax
       @seen ||= {}
     end
 
+    def replace_files
+      self.parser_fields['replace_files']
+    end
+
     def import_works(only_updates=false)
       self.only_updates = only_updates
       parser.create_works

@@ -9,6 +9,7 @@ module Bulkrax
 
       before do
         Bulkrax.default_work_type = 'Work'
+        allow(Collection).to receive(:where).and_return([collection])
       end
 
       context '.mapping' do

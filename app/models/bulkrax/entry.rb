@@ -15,7 +15,7 @@ module Bulkrax
 
     attr_accessor :all_attrs, :last_exception
 
-    delegate :parser, :mapping, to: :importerexporter
+    delegate :parser, :mapping, :replace_files, to: :importerexporter
 
     delegate :client,
              :collection_name,
