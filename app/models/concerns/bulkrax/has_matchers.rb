@@ -50,7 +50,7 @@ module Bulkrax
     end
 
     def field_supported?(field)
-      (factory_class.method_defined?(field) && !excluded?(field)) || field == 'file' || field == 'remote_files'
+      (factory_class.method_defined?(field) && !excluded?(field)) || field == 'file' || field == 'remote_files' || field == 'model'
     end
 
     # Hyrax field to use for the given import field

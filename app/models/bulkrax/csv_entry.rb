@@ -16,7 +16,24 @@ module Bulkrax
     end
 
     def self.data_for_entry(data, path = nil, index = 0)
-      return data[index].to_h.compact
+      raw_data = data[index].to_h.compact
+      # If the collection field mapping is not 'collection', add 'collection' - the parser needs it
+      if raw_data.keys.include?(collection_field.to_sym) && collection_field != 'collection'
+        raw_data[:collection] = raw_data[collection_field.to_sym]
+      end
+      # If the children field mapping is not 'children', add 'children' - the parser needs it
+      if raw_data.keys.include?(children_field.to_sym) && children_field != 'children'
+        raw_data[:children] = raw_data[collection_field.to_sym]
+      end
+      return raw_data
+    end
+
+    def self.collection_field
+      Bulkrax.collection_field_mapping[self.class.to_s] || 'collection'
+    end
+
+    def self.children_field
+      Bulkrax.parent_child_field_mapping[self.to_s]
     end
 
     def build_metadata
@@ -75,17 +92,17 @@ module Bulkrax
     end
 
     def collections_created?
-      return true if record['collection'].blank?
-      record['collection'].split(/\s*[:;|]\s*/).length == self.collection_ids.length
+      return true if record[self.class.collection_field].blank?
+      record[collection_field].split(/\s*[:;|]\s*/).length == self.collection_ids.length
     end
 
     def find_or_create_collection_ids
       return self.collection_ids if collections_created?
       valid_system_id(Collection)
-      record['collection'].split(/\s*[:;|]\s*/).each do | collection |
+      record[self.class.collection_field].split(/\s*[:;|]\s*/).each do | collection |
         c = find_collection(collection)
         self.collection_ids << c.id unless c.blank? || self.collection_ids.include?(c.id)
-      end unless record['collection'].blank?
+      end unless record[self.class.collection_field].blank?
       return self.collection_ids
     end
 

@@ -65,10 +65,21 @@ module Bulkrax
 
     # Allow for mapping a model field to the work type or collection
     def parse_model(src)
-      if src&.match(URI::ABS_URI)
-        url.split('/').last.constantize
+      model = nil
+      if src.is_a?(Array)
+        models = src.map { |m| extract_model(m) }.compact
+        model = models.first unless models.blank?
       else
-        src.constantize
+        model = extract_model(src)
+      end
+      return model
+    end
+
+    def extract_model(src)
+      if src&.match(URI::ABS_URI)
+        src.split('/').last
+      else
+        src
       end
     rescue StandardError
       nil
