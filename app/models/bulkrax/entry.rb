@@ -1,6 +1,6 @@
 module Bulkrax
   # Custom error class for collections_created?
-  class CollectionsCreatedError < StandardError; end
+  class CollectionsCreatedError < Exception; end
   class Entry < ApplicationRecord
 
     include Bulkrax::HasMatchers
@@ -24,8 +24,8 @@ module Bulkrax
 
     def build
       return false if type.nil?
-      build_for_importer if importer?
-      build_for_exporter if exporter?
+      return build_for_importer if importer?
+      return build_for_exporter if exporter?
     end
 
     def importer?
