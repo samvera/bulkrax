@@ -63,6 +63,17 @@ module Bulkrax
       src.to_s.strip.titleize
     end
 
+    # Allow for mapping a model field to the work type or collection
+    def parse_model(src)
+      if src&.match(URI::ABS_URI)
+        url.split('/').last.constantize
+      else
+        src.constantize
+      end
+    rescue StandardError
+      nil
+    end
+
     # Only add valid resource types
     def parse_resource_type(src)
       Hyrax::ResourceTypesService.label(src.to_s.strip.titleize)
