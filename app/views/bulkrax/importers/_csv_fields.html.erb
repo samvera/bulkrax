@@ -8,5 +8,10 @@
         item_helper: rights_statements.method(:include_current_value),
         input_html: { class: 'form-control' } %>
   <%= fi.input :override_rights_statement, as: :boolean, hint: 'If checked, always use the selected rights statment. If unchecked, use rights or rights_statement from the record and only use the provided value if dc:rights is blank.', input_html: { checked: (importer.parser_fields['override_rights_statement'] == "1") } %>
-  
+
+  <h4>Add CSV:</h4>
+  <%= simple_form_for @importer, html: {multipart: true} do |form| %>
+    <%= file_field_tag 'file', accept: 'text/csv' %><br />
+  <% end %>
+
 </div>

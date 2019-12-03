@@ -41,7 +41,12 @@ module Bulkrax
 
     # POST /importers
     def create
-      @importer = Importer.new(importer_params)
+
+      local_params = importer_params
+      local_params[:parser_fields]['csv_path'] = write_import_file
+
+      @importer = Importer.new(local_params)
+
       field_mapping_params
 
       if @importer.save
@@ -56,6 +61,11 @@ module Bulkrax
 
     # PATCH/PUT /importers/1
     def update
+      ## write to location(Bulkrax.importer_path), create directory for the import
+
+      local_params = importer_params
+      local_params[:parser_fields]['import_file_path'] = write_import_file
+
       field_mapping_params
       if @importer.update(importer_params)
         # do not perform the import
@@ -94,6 +104,15 @@ module Bulkrax
     end
 
     private
+
+      def write_import_file
+        # f = File.read(params[:file].path)
+        # uploaded_csv = params[:file]
+        # File.open(Rails.root.join('tmp', 'import', uploaded_csv.original_filename), 'wb') do |file|
+        #   file.write(uploaded_csv.read)
+        # end
+      end
+    
       # Use callbacks to share common setup or constraints between actions.
       def set_importer
         @importer = Importer.find(params[:id])
