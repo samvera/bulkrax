@@ -34,7 +34,6 @@
               <td><%= importer.importer_runs.last&.processed_records %></td>
               <td><%= importer.importer_runs.last&.failed_records %></td>
               <td><%= importer.importer_runs.last&.deleted_records %></td>
-              <td><%= importer.importer_runs.last&.total_collection_records %></td>
               <td><%= importer.importer_runs.last&.total_records %></td>
               <td><%= link_to raw('<span class="glyphicon glyphicon-info-sign"></span>'), importer_path(importer) %></td>
               <td><%= link_to raw('<span class="glyphicon glyphicon-pencil"></span>'), edit_importer_path(importer) %></td>
