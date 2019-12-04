@@ -3,7 +3,7 @@ require 'iso8601'
 module Bulkrax
   class Importer < ApplicationRecord
     include Bulkrax::ImporterExporterBehavior
-    
+
     serialize :parser_fields, JSON
     serialize :field_mapping, JSON
 
@@ -53,7 +53,7 @@ module Bulkrax
     end
 
     def current_importer_run
-      @current_importer_run ||= self.importer_runs.create!(total_records: self.limit)
+      @current_importer_run ||= self.importer_runs.create!(total_work_entries: self.limit)
     end
 
     def seen

@@ -19,9 +19,9 @@ module Bulkrax
     end
 
     describe 'importer run' do
-      it 'creates an ImporterRun with total_records set to the value of limit' do
+      it 'creates an ImporterRun with total_work_entries set to the value of limit' do
         importer.current_importer_run
-        expect(importer.current_importer_run.total_records).to eq(10)
+        expect(importer.current_importer_run.total_work_entries).to eq(10)
       end
     end
 
@@ -64,7 +64,7 @@ module Bulkrax
         let(:importer) do
           FactoryBot.create(:bulkrax_importer_csv, user: User.new(email: 'test@example.com'))
         end
-        
+
         it 'creates a default mapping from the column headers' do
           expect(importer.mapping).to eq(
             "source_identifier" => { "excluded" => false, "from" => ["source_identifier"], "if" => nil, "parsed" => false, "split" => false },

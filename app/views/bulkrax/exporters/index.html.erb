@@ -32,7 +32,7 @@
                 <td><%= exporter.exporter_runs.last&.processed_records %></td>
                 <td><%= exporter.exporter_runs.last&.failed_records %></td>
                 <td><%= exporter.exporter_runs.last&.deleted_records %></td>
-                <td><%= exporter.exporter_runs.last&.total_records %></td>
+                <td><%= exporter.exporter_runs.last&.total_work_entries %></td>
                 <td>
                   <% if File.exist?(exporter.exporter_export_zip_path) %>
                     <%= link_to raw('<span class="glyphicon glyphicon-download"></span>'), exporter_download_path(exporter) %>
@@ -50,4 +50,3 @@
       <% end %>
   </div>
 </div>
-
