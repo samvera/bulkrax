@@ -74,6 +74,10 @@ module Bulkrax
       parser.create_collections
     end
 
+    def add_parent_child_relationships
+      parser.create_parent_child_relationships
+    end
+
     # Prepend the base_url to ensure unique set identifiers
     # @todo - move to parser, as this is OAI specific
     def unique_collection_identifier(id)

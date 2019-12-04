@@ -66,38 +66,6 @@ module Bulkrax
       errors.add(:base, e.class.to_s.to_sym, message: e.message)
     end
 
-    def create_parent_child_relationships
-      # child_work_ids
-      # member_of_collection_ids
-      # records ... are there any? 
-      # and go through making them
-      # check the class of the parent (?) to see if it's a collection or not
-      # this might be able to use the factory and import work, but just with child_works
-      # I am a bit less sure how to do this with collections
-      parents = records.map do |record| 
-        { 
-          record[:source_identifier] => record[:children] 
-        } unless record[:children].blank?
-      end.inject(:merge)
-
-      parents.each do | key, value |
-        parent = entry_class.where(
-          identifier: key,
-          importerexporter_id: importerexporter.id,
-          importerexporter_type: importerexporter.type,
-        )
-        children = value.map do | child |
-          entry_class.where(
-            identifier: child,
-            importerexporter_id: importerexporter.id,
-            importerexporter_type: importerexporter.type,
-          ).first.id
-        end
-        ChildRelationshipsJob.perform_later(parent.id, children, current_importer_run.id)
-      end
-      parents
-    end
-
     def total
       metadata_paths.count
     end

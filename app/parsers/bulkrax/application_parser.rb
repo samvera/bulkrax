@@ -50,6 +50,50 @@ module Bulkrax
       raise 'must be defined' if importer?
     end
 
+    # Optional, only used by certain parsers
+    # Other parsers should override with a custom or empty method
+    # Will be skipped unless the record is a Hash
+    def create_parent_child_relationships
+      parents = []
+      parents = records.map do |record|
+        next unless record.is_a?(Hash)
+        { 
+          record[:source_identifier] => record[:children] 
+        } unless record[:children].blank?
+      end.compact
+      parents = parents.inject(:merge) unless parents.blank?
+
+      parents.each do | key, value |
+        parent = entry_class.where(
+          identifier: key,
+          importerexporter_id: importerexporter.id,
+          importerexporter_type: 'Bulkrax::Importer',
+        ).first
+
+        # not finding the entries here indicates that the given identifiers are incorrect
+        # in that case we should log that
+        children = []
+        children = value.map do | child |
+          entry_class.where(
+            identifier: child,
+            importerexporter_id: importerexporter.id,
+            importerexporter_type: 'Bulkrax::Importer',
+          ).first
+        end.compact.uniq
+
+        if parent.present? && (children.length != value.length)
+          # Increment the failures for the number we couldn't find
+          # Because all of our entries have been created by now, if we can't find them, the data is wrong
+          Rails.logger.error("Expected #{value.length} children for parent entry #{parent.id}, found #{children.length}")
+          return if children.length == 0
+          Rails.logger.warn("Adding #{children.length} children to parent entry #{parent.id} (expected #{value.length})")
+        end
+        parent_id = parent.id
+        child_entry_ids = children.map { |c| c.id }
+        ChildRelationshipsJob.perform_later(parent_id, child_entry_ids, current_importer_run.id)
+      end
+    end
+
     def setup_export_file
       raise 'must be defined' if exporter?
     end

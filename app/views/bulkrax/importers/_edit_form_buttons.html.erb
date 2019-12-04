@@ -11,5 +11,5 @@
 <% else %>
 	<%= form.button :submit, value: 'Update Importer', class: 'btn btn-primary' %>
 	| <%= form.button :submit, value: 'Update and Re-Import (update metadata only)', class: 'btn btn-primary' %>
-	| <%= form.button :submit, value: 'Update and Re-Import (update metadata and replace files)', class: 'btn btn-primary' %>
+	| <%= form.button :submit, value: 'Update and Re-Import (update metadata and replace files)', class: 'btn btn-primary', data: {confirm: "Are you sure? This will remove all files before adding them from the import."} %>
 <% end %>

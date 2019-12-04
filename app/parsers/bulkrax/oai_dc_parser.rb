@@ -106,6 +106,8 @@ module Bulkrax
       end
     end
 
+    def create_parent_child_relationships; end
+
     def total
       @total ||= records(quick: true).doc.find(".//resumptionToken").to_a.first.attributes["completeListSize"].to_i
     rescue

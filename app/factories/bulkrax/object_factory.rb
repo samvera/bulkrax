@@ -31,15 +31,9 @@ module Bulkrax
 
     def update
       raise "Object doesn't exist" unless object
-
-      run_callbacks(:save) do
-        if object.is_a?(Collection)
-          object.attributes = update_attributes
-          object.save!
-        else
-          destroy_existing_files if replace_files
-          work_actor.update(environment(update_attributes))
-        end
+      attrs = update_attributes
+      run_callbacks :save do
+        klass == Collection ? update_collection(attrs) : work_actor.update(environment(attrs))
       end
       log_updated(object)
     end
@@ -112,9 +106,57 @@ module Bulkrax
     end
 
     def create_collection(attrs)
+      attrs = collection_type(attrs)
+      @object.member_of_collections = member_of_collections
+      @object.member_ids = member_ids
       @object.attributes = attrs
       @object.apply_depositor_metadata(@user)
       @object.save!
+    end
+
+    def update_collection(attrs)
+      @object.member_of_collections = member_of_collections
+      @object.member_ids = member_ids
+      @object.attributes = attrs
+      @object.save!
+    end
+
+    # Collections don't respond to member_of_collections_attributes or member_of_collection_ids=
+    # Add them directly
+    # collection should be in the form  { id: collection_id }
+    # and collections [{ id: collection_id }]
+    # member_ids comes from 
+    # @todo - consider performance implications although we wouldn't expect a Collection to be a member of many Collections
+    def member_ids
+      members = @object.member_ids.to_a
+      [:collection, :collections].each do | atat |
+      if attributes[atat].present?
+        members.concat(
+          Array.wrap(
+            find_collection(attributes[atat])
+          )
+        )
+      end
+      members.flatten.compact.uniq
+    end
+
+    def find_collection(id)
+      case id.class
+      when Hash
+        id[:id]
+      when String
+        id
+      when Array
+        id.map {|i| find_collection(id) }
+      else
+        []
+      end
+    end
+
+    def collection_type(attrs)
+      return attrs if attrs['collection_type_gid'].present?
+      attrs['collection_type_gid'] = Hyrax::CollectionType.find_or_create_default_collection_type.gid 
+      attrs
     end
 
     # Override if we need to map the attributes from the parser in
@@ -218,7 +260,7 @@ module Bulkrax
 
     # Regardless of what the Parser gives us, these are the properties we are prepared to accept.
     def permitted_attributes
-      klass.properties.keys.map(&:to_sym) + %i[id edit_users edit_groups read_groups visibility]
+      klass.properties.keys.map(&:to_sym) + %i[id edit_users edit_groups read_groups visibility work_members_attributes]
     end
   end
 end

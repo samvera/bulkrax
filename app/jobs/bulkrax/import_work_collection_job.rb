@@ -10,7 +10,6 @@ module Bulkrax
         ImporterRun.find(args[1]).increment!(:processed_collections)
       rescue => e
         ImporterRun.find(args[1]).increment!(:failed_collections)
-        raise e
       end
     end
   end

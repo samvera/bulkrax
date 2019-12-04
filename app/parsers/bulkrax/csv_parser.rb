@@ -54,7 +54,7 @@ module Bulkrax
             title: [collection],
             Bulkrax.system_identifier_field => [collection],
             visibility: 'open',
-            collection_type_gid: Hyrax::collectionType.find_or_create_default_collection_type.gid
+            collection_type_gid: Hyrax::CollectionType.find_or_create_default_collection_type.gid
           }
           new_entry = find_or_create_entry(collection_entry_class, collection, 'Bulkrax::Importer', metadata)
           ImportWorkCollectionJob.perform_now(new_entry.id, current_importer_run.id)
@@ -75,6 +75,10 @@ module Bulkrax
       end
     rescue StandardError => e
       errors.add(:base, e.class.to_s.to_sym, message: e.message)
+    end
+
+    def create_parent_child_relationships
+      super
     end
 
     def create_from_importer
