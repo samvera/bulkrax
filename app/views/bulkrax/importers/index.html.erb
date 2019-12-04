@@ -17,11 +17,12 @@
               <th scope="col">Name</th>
               <th scope="col">Last Run</th>
               <th scope="col">Next Run</th>
-              <th scope="col">Records Enqueued</th>
-              <th scope="col">Records Processed</th>
-              <th scope="col">Records Failed</th>
-              <th scope="col">Records Deleted Upstream</th>
-              <th scope="col">Total Records</th>
+              <th scope="col">Entries Enqueued</th>
+              <th scope="col">Entries Processed</th>
+              <th scope="col">Entries Failed</th>
+              <th scope="col">Entries Deleted Upstream</th>
+              <th scope="col">Total Collection Entries</th>
+              <th scope="col">Total Work Entries</th>
             </tr>
           </thead>
           <tbody>
@@ -34,6 +35,7 @@
                 <td><%= importer.importer_runs.last&.processed_records %></td>
                 <td><%= importer.importer_runs.last&.failed_records %></td>
                 <td><%= importer.importer_runs.last&.deleted_records %></td>
+                <td><%= importer.importer_runs.last&.total_collection_records %></td>
                 <td><%= importer.importer_runs.last&.total_records %></td>
                 <td><%= link_to raw('<span class="glyphicon glyphicon-pencil"></span>'), edit_importer_path(importer) %></td>
                 <td><%= link_to raw('<span class="glyphicon glyphicon-remove"></span>'), importer, method: :delete, data: { confirm: 'Are you sure?' } %></td>
@@ -47,4 +49,3 @@
       <% end %>
   </div>
 </div>
-

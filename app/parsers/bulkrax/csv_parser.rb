@@ -1,9 +1,20 @@
 require 'csv'
 module Bulkrax
   class CsvParser < ApplicationParser
-    
+
     def self.export_supported?
       true
+    end
+
+    def collections
+      # does the CSV contain a collection column?
+      return [] unless import_fields.include?(:collection)
+      # retrieve a list of unique collections
+      records.map { |r| r[:collection] }.compact.uniq
+    end
+
+    def collections_total
+      collections.size
     end
 
     def records(_opts = {})
@@ -34,12 +45,6 @@ module Bulkrax
     end
 
     def create_collections
-      # does the CSV contain a collection column?
-      return unless import_fields.include?(:collection)
-
-      # retrieve a list of unique collections
-      collections = records.map { |r| r[:collection] }.compact.uniq
-
       collections.each do |collection_record|
         next if collection_record.blank?
 
