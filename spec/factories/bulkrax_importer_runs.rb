@@ -1,7 +1,7 @@
 FactoryBot.define do
   factory :bulkrax_importer_run, class: 'Bulkrax::ImporterRun' do
     importer { nil }
-    total_records { 1 }
+    total_work_entries { 1 }
     enqueued_records { 1 }
     processed_records { 1 }
     deleted_records { 1 }
