@@ -26,18 +26,19 @@
           </thead>
           <tbody>
             <% @importers.each do |importer| %>
-              <tr>
-                <th scope="row"><%= importer.name %></th>
-                <td><%= importer.last_imported_at.strftime("%b %d, %Y") if importer.last_imported_at %></td>
-                <td><%= importer.next_import_at.strftime("%b %d, %Y") if importer.next_import_at %></td>
-                <td><%= importer.importer_runs.last&.enqueued_records %></td>
-                <td><%= importer.importer_runs.last&.processed_records %></td>
-                <td><%= importer.importer_runs.last&.failed_records %></td>
-                <td><%= importer.importer_runs.last&.deleted_records %></td>
-                <td><%= importer.importer_runs.last&.total_records %></td>
-                <td><%= link_to raw('<span class="glyphicon glyphicon-pencil"></span>'), edit_importer_path(importer) %></td>
-                <td><%= link_to raw('<span class="glyphicon glyphicon-remove"></span>'), importer, method: :delete, data: { confirm: 'Are you sure?' } %></td>
-              </tr>
+            <tr>
+              <th scope="row"><%= link_to importer.name, importer_path(importer) %></th>
+              <td><%= importer.last_imported_at.strftime("%b %d, %Y") if importer.last_imported_at %></td>
+              <td><%= importer.next_import_at.strftime("%b %d, %Y") if importer.next_import_at %></td>
+              <td><%= importer.importer_runs.last&.enqueued_records %></td>
+              <td><%= importer.importer_runs.last&.processed_records %></td>
+              <td><%= importer.importer_runs.last&.failed_records %></td>
+              <td><%= importer.importer_runs.last&.deleted_records %></td>
+              <td><%= importer.importer_runs.last&.total_records %></td>
+              <td><%= link_to raw('<span class="glyphicon glyphicon-info-sign"></span>'), importer_path(importer) %></td>
+              <td><%= link_to raw('<span class="glyphicon glyphicon-pencil"></span>'), edit_importer_path(importer) %></td>
+              <td><%= link_to raw('<span class="glyphicon glyphicon-remove"></span>'), importer, method: :delete, data: { confirm: 'Are you sure?' } %></td>
+            </tr>
             <% end %>
           </tbody>
         </table>
@@ -47,4 +48,3 @@
       <% end %>
   </div>
 </div>
-
