@@ -60,7 +60,7 @@ module Bulkrax
           ImportWorkCollectionJob.perform_now(new_entry.id, current_importer_run.id)
         end
       end
-      current_importer_run.total_collection_entries = parser.collections_total
+      current_importer_run.total_collection_entries = collections_total
     end
 
     def create_works
