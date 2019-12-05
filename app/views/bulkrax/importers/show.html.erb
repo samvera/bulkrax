@@ -1,66 +1,74 @@
-<p id="notice"><%= notice %></p>
+<h1><span class="fa fa-cloud-upload" aria-hidden="true"></span> Importer: <%= @importer.name %></h1>
 
-<p>
-  <strong>Name:</strong>
-  <%= @importer.name %>
-</p>
+<div class="panel panel-default">
+  <div class="panel-body">
 
-<p>
-  <strong>Admin set:</strong>
-  <%= @importer.admin_set_id %>
-</p>
+    <p id="notice"><%= notice %></p>
 
-<p>
-  <strong>User:</strong>
-  <%= @importer.user %>
-</p>
+    <p>
+      <strong>Name:</strong>
+      <%= @importer.name %>
+    </p>
 
-<p>
-  <strong>Frequency:</strong>
-  <%= @importer.frequency %>
-</p>
+    <p>
+      <strong>Admin set:</strong>
+      <%= @importer.admin_set_id %>
+    </p>
 
-<p>
-  <strong>Parser klass:</strong>
-  <%= @importer.parser_klass %>
-</p>
+    <p>
+      <strong>User:</strong>
+      <%= @importer.user %>
+    </p>
 
-<p>
-  <strong>Limit:</strong>
-  <%= @importer.limit %>
-</p>
+    <p>
+      <strong>Frequency:</strong>
+      <%= @importer.frequency %>
+    </p>
 
-<p>
-  <strong>Parser fields:</strong>
-  <%= @importer.parser_fields %>
-</p>
+    <p>
+      <strong>Parser klass:</strong>
+      <%= @importer.parser_klass %>
+    </p>
 
-<p>
-  <strong>Field mapping:</strong>
-  <%= @importer.field_mapping %>
-</p>
+    <p>
+      <strong>Limit:</strong>
+      <%= @importer.limit %>
+    </p>
 
-<%# TODO add entry info and paginate it here %>
-<table class='table table-striped'>
-  <thead>
-    <tr>
-      <th>Identifier</th>
-      <th>Status</th>
-      <th>Status Set At</th>
-      <th>Last Error</th>
-    </tr>
-  </thead>
-  <tbody>
-    <% @importer.entries.find_each do |e| %>
-      <tr>
-        <td><%= e.identifier %></td>
-        <td><%= e.status %></td>
-        <td><%= e.status_at %></td>
-        <td><%= e.last_error %></td>
-      </tr>
-    <% end %>
-  </tbody>
-</table>
+    <p>
+      <strong>Parser fields:</strong>
+      <%= @importer.parser_fields %>
+    </p>
 
-<%= link_to 'Edit', edit_importer_path(@importer) %> |
-<%= link_to 'Back', importers_path %>
+    <p>
+      <strong>Field mapping:</strong>
+      <%= @importer.field_mapping %>
+    </p>
+
+    <%# TODO add entry info and paginate it here %>
+    <table class='table table-striped'>
+      <thead>
+        <tr>
+          <th>Identifier</th>
+          <th>Status</th>
+          <th>Status Set At</th>
+          <th>Last Error</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @importer.entries.find_each do |e| %>
+          <tr>
+            <td><%= e.identifier %></td>
+            <td><%= e.status %></td>
+            <td><%= e.status_at %></td>
+            <td><%= e.last_error %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+
+    <%= link_to 'Edit', edit_importer_path(@importer) %> |
+    <%= link_to 'Back', importers_path %>
+
+  </div>
+</div>

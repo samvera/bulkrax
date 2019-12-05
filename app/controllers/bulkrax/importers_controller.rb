@@ -18,6 +18,10 @@ module Bulkrax
 
     # GET /importers/1
     def show
+      add_breadcrumb t(:'hyrax.controls.home'), main_app.root_path
+      add_breadcrumb t(:'hyrax.dashboard.breadcrumbs.admin'), hyrax.dashboard_path
+      add_breadcrumb 'Importers', bulkrax.importers_path
+      add_breadcrumb (@importer.name)
     end
 
     # GET /importers/new
