@@ -50,7 +50,7 @@ module Bulkrax
     end
 
     # Override to add specific validations
-    def def validate_import; end
+    def validate_import; end
 
     def find_or_create_entry(entryclass, identifier, type, raw_metadata = nil)
       entryclass.where(

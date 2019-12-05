@@ -1,0 +1,15 @@
+
+<%# If we can know the parser, we can vary the buttons here %>
+
+<% if @importer.importer_runs.blank? %>
+	<%= form.button :submit, value: 'Update Importer', class: 'btn btn-primary' %>
+	| <%= form.button :submit, value: 'Update and Import (importer has not yet been run)', class: 'btn btn-primary' %>
+<% elsif @importer.parser_klass == 'Bulkrax::OaiParser' %> 
+	<%= form.button :submit, value: 'Update Importer', class: 'btn btn-primary' %>
+	| <%= form.button :submit, value: 'Update and Harvest Updated Items', class: 'btn btn-primary' %>
+	| <%= form.button :submit, value: 'Update and Re-Harvest All Items', class: 'btn btn-primary' %>
+<% else %>
+	<%= form.button :submit, value: 'Update Importer', class: 'btn btn-primary' %>
+	| <%= form.button :submit, value: 'Update and Re-Import (update metadata only)', class: 'btn btn-primary' %>
+	| <%= form.button :submit, value: 'Update and Re-Import (update metadata and replace files)', class: 'btn btn-primary' %>
+<% end %>

@@ -54,9 +54,19 @@ module Bulkrax
     def update
       field_mapping_params
       if @importer.update(importer_params)
-        if params[:commit] == 'Update and Harvest Updated Items'
+        # do not perform the import
+        if params[:commit] == 'Update Importer'
+          # do nothing
+        # OAI-only - selective re-harvest
+        elsif params[:commit] == 'Update and Harvest Updated Items'
           Bulkrax::ImporterJob.perform_later(@importer.id, true)
-        elsif params[:commit] == 'Update and Re-Harvest All Items' # here we reset the last_harvested_at to ensure that we are pulling all new data
+        # Perform a full metadata and files re-import
+        elsif params[:commit] == 'Update and Re-Import (update metadata and replace files)'
+          @importer.parser_fields['replace_files'] = true
+          @importer.save
+          Bulkrax::ImporterJob.perform_later(@importer.id)
+        # In all other cases, perform a full metadata-only re-import
+        else
           Bulkrax::ImporterJob.perform_later(@importer.id)
         end
         redirect_to importers_path, notice: 'Importer was successfully updated.'
