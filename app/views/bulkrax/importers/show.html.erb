@@ -45,23 +45,32 @@
       <%= @importer.field_mapping %>
     </p>
 
+    <h1>Collection Entries</h1>
     <%# TODO add entry info and paginate it here %>
     <table class='table table-striped'>
       <thead>
         <tr>
           <th>Identifier</th>
+          <th>Entry ID</th>
           <th>Status</th>
+          <th>Errors</th>
           <th>Status Set At</th>
-          <th>Last Error</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody>
         <% @importer.entries.find_each do |e| %>
           <tr>
             <td><%= e.identifier %></td>
-            <td><%= e.status %></td>
-            <td><%= e.status_at %></td>
+            <td><%= e.id %></td>
+            <% if e.status == "succeeded" %>
+              <td><span class="glyphicon glyphicon-ok"></span> <%= e.status %></td>
+              <% else %>
+              <td><span class="glyphicon glyphicon-remove"></span> <%= e.status %></td>
+            <% end %>
             <td><%= e.last_error %></td>
+            <td><%= e.status_at %></td>
+            <td>Actions</td>
           </tr>
         <% end %>
       </tbody>
