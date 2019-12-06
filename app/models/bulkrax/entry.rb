@@ -1,6 +1,7 @@
 module Bulkrax
   # Custom error class for collections_created?
   class CollectionsCreatedError < Exception; end
+  class OAIError < Exception; end
   class Entry < ApplicationRecord
 
     include Bulkrax::HasMatchers
