@@ -35,7 +35,8 @@
               <td><%= importer.importer_runs.last&.processed_records %></td>
               <td><%= importer.importer_runs.last&.failed_records %></td>
               <td><%= importer.importer_runs.last&.deleted_records %></td>
-              <td><%= importer.importer_runs.last&.total_records %></td>
+              <td><%= importer.importer_runs.last&.total_collection_entries %></td>
+              <td><%= importer.importer_runs.last&.total_work_entries %></td>
               <td><%= link_to raw('<span class="glyphicon glyphicon-info-sign"></span>'), importer_path(importer) %></td>
               <td><%= link_to raw('<span class="glyphicon glyphicon-pencil"></span>'), edit_importer_path(importer) %></td>
               <td><%= link_to raw('<span class="glyphicon glyphicon-remove"></span>'), importer, method: :delete, data: { confirm: 'Are you sure?' } %></td>
