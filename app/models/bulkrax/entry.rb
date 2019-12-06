@@ -39,10 +39,9 @@ module Bulkrax
 
     # Returns formatted data from the given file for a single Entry
     # @param data - the data from the metadata file
-    # @param path - the path to the metadata file
-    # @param index - if the file contains multiple entries, the index of the entry to retrieve
+    # @param path - the path to the metadata file - used by RDF to get the file_paths
     # @return Hash containing the data (the entry build_metadata method will know what to expect in the hash)
-    def self.data_for_entry(data, path = nil, index = 0)
+    def self.data_for_entry(data, path = nil)
       raise 'Not Implemented'
     end
 

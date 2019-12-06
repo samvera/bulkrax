@@ -8,6 +8,7 @@ module Bulkrax
       data.headers.flatten.compact.uniq
     end
 
+    # there's a risk that this reads the whole file into memory and could cause a memory leak    
     def self.read_data(path)
       CSV.read(path,
         headers: true,
@@ -15,8 +16,12 @@ module Bulkrax
         encoding: 'utf-8')
     end
 
-    def self.data_for_entry(data, path = nil, index = 0)
-      raw_data = data[index].to_h.compact
+    def self.data_for_entry(data, path = nil)
+      # If the whole CSV data is passed, grab the first row
+      if data.is_a?(CSV::Table)
+        data = data.first
+      end
+      raw_data = data.to_h
       # If the collection field mapping is not 'collection', add 'collection' - the parser needs it
       if raw_data.keys.include?(collection_field.to_sym) && collection_field != 'collection'
         raw_data[:collection] = raw_data[collection_field.to_sym]
@@ -33,7 +38,7 @@ module Bulkrax
     end
 
     def self.children_field
-      Bulkrax.parent_child_field_mapping[self.to_s]
+      Bulkrax.parent_child_field_mapping[self.to_s] || 'children'
     end
 
     def build_metadata

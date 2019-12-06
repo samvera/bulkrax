@@ -54,14 +54,8 @@ module Bulkrax
     # Other parsers should override with a custom or empty method
     # Will be skipped unless the record is a Hash
     def create_parent_child_relationships
-      parents = []
-      parents = records.map do |record|
-        next unless record.is_a?(Hash)
-        { 
-          record[:source_identifier] => record[:children] 
-        } unless record[:children].blank?
-      end.compact
-      parents = parents.inject(:merge) unless parents.blank?
+      parents = setup_parents
+      return if parents.blank?
 
       parents.each do | key, value |
         parent = entry_class.where(
@@ -92,6 +86,27 @@ module Bulkrax
         child_entry_ids = children.map { |c| c.id }
         ChildRelationshipsJob.perform_later(parent_id, child_entry_ids, current_importer_run.id)
       end
+    end
+
+    def setup_parents
+      parents = []
+      records.each do |record|
+        if record.respond_to?(:to_h)
+          r = record.to_h
+        else
+          r = record
+        end
+        next unless r.is_a?(Hash)
+        if r[:children].is_a?(String)
+          children = r[:children].split(/\s*[:;|]\s*/)
+        else
+          children = r[:children]
+        end
+        parents << { 
+          r[:source_identifier] => children
+        } unless children.blank?
+      end
+      parents.inject(:merge) unless parents.blank?
     end
 
     def setup_export_file

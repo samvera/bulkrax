@@ -35,8 +35,6 @@ module Bulkrax
     # If the import data also contains records for these works, they will be updated
     # during create works
     def create_collections
-      collections = records.map { |record| record[:collection] }.flatten.compact.uniq
-      return if collections.blank?
       collections.each do |collection_record|
         # split by ; |
         collection_record.split(/\s*[;|]\s*/).each do |collection|
@@ -64,6 +62,14 @@ module Bulkrax
       end
     rescue StandardError => e
       errors.add(:base, e.class.to_s.to_sym, message: e.message)
+    end
+
+    def collections
+      records.map { |record| record[:collection] }.flatten.compact.uniq
+    end
+
+    def collections_total
+      collections.size
     end
 
     def total

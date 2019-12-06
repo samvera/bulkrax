@@ -3,7 +3,7 @@ require 'rails_helper'
 module Bulkrax
   RSpec.describe Importer, type: :model do
     let(:importer) do
-      FactoryBot.create(:bulkrax_importer, user: User.new(email: 'test@example.com'))
+      FactoryBot.create(:bulkrax_importer)
     end
 
     describe 'frequency' do
