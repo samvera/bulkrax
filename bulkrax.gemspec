@@ -24,6 +24,9 @@ Gem::Specification.new do |s|
   s.add_dependency 'oai', '~> 0.4'
   s.add_dependency 'libxml-ruby', '~> 3.1.0'
   s.add_dependency 'language_list', '~> 1.2', '>= 1.2.1'
+  s.add_dependency 'rdf', '>= 2.0.2', '< 4.0'
+  s.add_dependency 'bagit', '~> 0.4'
+
   s.add_development_dependency 'sqlite3', '~> 1.3.13'
   s.add_development_dependency 'simplecov'
   s.add_development_dependency 'bixby'

@@ -1,5 +1,5 @@
 <div class='csv_fields'>
-  <%= fi.input :csv_path, as: :string, input_html: { value: importer.parser_fields['csv_path'] } %>
+  <%= fi.input :import_file_path, as: :string, input_html: { value: importer.parser_fields['import_file_path'] } %>
   <% rights_statements = Hyrax.config.rights_statement_service_class.new %>
   <%= fi.input :rights_statement,
         collection: rights_statements.select_active_options,

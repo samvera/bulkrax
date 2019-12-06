@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20190731114016) do
+ActiveRecord::Schema.define(version: 20191204223857) do
 
   create_table "bookmarks", force: :cascade do |t|
     t.integer "user_id", null: false
@@ -41,7 +41,7 @@ ActiveRecord::Schema.define(version: 20190731114016) do
 
   create_table "bulkrax_exporter_runs", force: :cascade do |t|
     t.integer "exporter_id"
-    t.integer "total_records", default: 0
+    t.integer "total_work_entries", default: 0
     t.integer "enqueued_records", default: 0
     t.integer "processed_records", default: 0
     t.integer "deleted_records", default: 0
@@ -66,7 +66,7 @@ ActiveRecord::Schema.define(version: 20190731114016) do
 
   create_table "bulkrax_importer_runs", force: :cascade do |t|
     t.integer "importer_id"
-    t.integer "total_records", default: 0
+    t.integer "total_work_entries", default: 0
     t.integer "enqueued_records", default: 0
     t.integer "processed_records", default: 0
     t.integer "deleted_records", default: 0
@@ -75,6 +75,7 @@ ActiveRecord::Schema.define(version: 20190731114016) do
     t.datetime "updated_at", null: false
     t.integer "processed_collections", default: 0
     t.integer "failed_collections", default: 0
+    t.integer "total_collection_entries", default: 0
     t.index ["importer_id"], name: "index_bulkrax_importer_runs_on_importer_id"
   end
 

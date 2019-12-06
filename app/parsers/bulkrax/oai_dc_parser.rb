@@ -13,6 +13,8 @@ module Bulkrax
                                   headers: headers,
                                   parser: 'libxml',
                                   metadata_prefix: importerexporter.parser_fields['metadata_prefix'])
+      rescue StandardError
+        raise OAIError
     end
 
     def collection_name
@@ -65,11 +67,6 @@ module Bulkrax
 
     def list_sets
       client.list_sets
-    end
-
-    def run
-      create_collections
-      create_works
     end
 
     def create_collections

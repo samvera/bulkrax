@@ -20,7 +20,7 @@ module Bulkrax
     def records(_opts = {})
       # there's a risk that this reads the whole file into memory and could cause a memory leak
       @records ||= CSV.foreach(
-        parser_fields['csv_path'],
+        parser_fields['import_file_path'],
         headers: true,
         header_converters: :symbol,
         encoding: 'utf-8'
@@ -94,6 +94,13 @@ module Bulkrax
       end
     end
 
+    def files_path
+      arr = parser_fields['import_file_path'].split('/')
+      arr.pop
+      arr << 'files'
+      arr.join('/')
+    end
+
     def entry_class
       CsvEntry
     end
@@ -105,7 +112,7 @@ module Bulkrax
     # See https://stackoverflow.com/questions/2650517/count-the-number-of-lines-in-a-file-without-reading-entire-file-into-memory
     def total
       if importer?
-        @total ||= `wc -l #{parser_fields['csv_path']}`.to_i -1
+        @total ||= `wc -l #{parser_fields['import_file_path']}`.to_i -1
       elsif exporter?
         @total ||= importerexporter.entries.count
       else
