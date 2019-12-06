@@ -33,7 +33,7 @@ FactoryBot.define do
     frequency { 'PT0S' }
     parser_klass { 'Bulkrax::CsvParser' }
     limit { 10 }
-    parser_fields { { 'csv_path' => 'spec/fixtures/csv/good.csv' } }
+    parser_fields { { 'import_file_path' => 'spec/fixtures/csv/good.csv' } }
     field_mapping { {} }
   end
 
@@ -44,7 +44,7 @@ FactoryBot.define do
     frequency { 'PT0S' }
     parser_klass { 'Bulkrax::CsvParser' }
     limit { 10 }
-    parser_fields { { 'csv_path' => 'spec/fixtures/csv/bad.csv' } }
+    parser_fields { { 'import_file_path' => 'spec/fixtures/csv/bad.csv' } }
     field_mapping { {} }
   end
 end

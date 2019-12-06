@@ -84,7 +84,7 @@ module Bulkrax
     def file_path(file)
       # return if we already have the full file path
       return file if File.exist?(file)
-      path = self.importerexporter.parser_fields['csv_path'].split('/')
+      path = self.importerexporter.parser_fields['import_file_path'].split('/')
       # remove the metadata filename from the end of the import path
       path.pop
       File.join(path.join('/'), 'files', file)

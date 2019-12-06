@@ -1,5 +1,6 @@
 require_dependency "bulkrax/application_controller"
 require_dependency "oai"
+require 'fileutils'
 
 module Bulkrax
   class ImportersController < ApplicationController
@@ -41,15 +42,14 @@ module Bulkrax
 
     # POST /importers
     def create
-
-      local_params = importer_params
-      local_params[:parser_fields]['csv_path'] = write_import_file
-
-      @importer = Importer.new(local_params)
-
+      @importer = Importer.new(importer_params)
       field_mapping_params
 
       if @importer.save
+        if params[:file].present?
+          @importer[:parser_fields]['import_file_path'] = write_import_file
+          @importer.save 
+        end
         if params[:commit] == 'Create and Import'
           Bulkrax::ImporterJob.perform_later(@importer.id)
         end
@@ -61,13 +61,11 @@ module Bulkrax
 
     # PATCH/PUT /importers/1
     def update
-      ## write to location(Bulkrax.importer_path), create directory for the import
-
       local_params = importer_params
-      local_params[:parser_fields]['import_file_path'] = write_import_file
+      local_params[:parser_fields]['import_file_path'] = write_import_file if params[:file].present?
 
       field_mapping_params
-      if @importer.update(importer_params)
+      if @importer.update(local_params)
         # do not perform the import
         if params[:commit] == 'Update Importer'
           # do nothing
@@ -106,11 +104,18 @@ module Bulkrax
     private
 
       def write_import_file
-        # f = File.read(params[:file].path)
-        # uploaded_csv = params[:file]
-        # File.open(Rails.root.join('tmp', 'import', uploaded_csv.original_filename), 'wb') do |file|
-        #   file.write(uploaded_csv.read)
-        # end
+        path = File.join(path_for_import, params[:file].original_filename)
+        FileUtils.mv(
+          params[:file].path,
+          path
+        )
+        path
+      end
+
+      def path_for_import
+        path = File.join(Bulkrax.import_path, @importer.id.to_s)
+        FileUtils.mkdir_p(path) unless File.exists?(path)
+        path
       end
     
       # Use callbacks to share common setup or constraints between actions.

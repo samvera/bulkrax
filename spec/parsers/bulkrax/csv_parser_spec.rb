@@ -15,7 +15,7 @@ module Bulkrax
 
       context 'with malformed CSV' do
         before(:each) do
-          importer.parser_fields = { csv_path: './spec/fixtures/csv/malformed.csv' }
+          importer.parser_fields = { import_file_path: './spec/fixtures/csv/malformed.csv' }
         end
 
         it 'returns an empty array, and records the error on the importer' do
@@ -26,7 +26,7 @@ module Bulkrax
 
       context 'without an identifier column' do
         before(:each) do
-          importer.parser_fields = { csv_path: './spec/fixtures/csv/bad.csv' }
+          importer.parser_fields = { import_file_path: './spec/fixtures/csv/bad.csv' }
         end
 
         it 'skips all of the lines' do
@@ -37,7 +37,7 @@ module Bulkrax
 
       context 'with a nil value in the identifier column' do
         before(:each) do
-          importer.parser_fields = { csv_path: './spec/fixtures/csv/ok.csv' }
+          importer.parser_fields = { import_file_path: './spec/fixtures/csv/ok.csv' }
         end
 
         it 'skips the bad line' do
@@ -48,7 +48,7 @@ module Bulkrax
 
       context 'with good data' do
         before(:each) do
-          importer.parser_fields = { csv_path: './spec/fixtures/csv/good.csv' }
+          importer.parser_fields = { import_file_path: './spec/fixtures/csv/good.csv' }
         end
 
         it 'processes the line' do
