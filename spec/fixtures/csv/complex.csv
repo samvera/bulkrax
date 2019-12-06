@@ -1,0 +1,5 @@
+source_identfier,title,collection,children,model
+123456789,A Work (in A Collection has Another Work as child),345678912,234567891,Work
+234567891,Another Work (has A Collection as child),,345678912,Work
+345678912,A Collection (has Another Collection as member),,456789123,Collection
+456789123,Another Collection (has Another Work as a member),,234567891,Collection

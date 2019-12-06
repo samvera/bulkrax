@@ -27,7 +27,7 @@ module Bulkrax
           # reject any Collections, they can't be children of Works
           @child_works_hash.each_pair {|k,v| members_works << k if v[:class_name] != 'Collection' }
           if members_works.length < @child_entries.length
-            Rails.logger.warn("Cannot add collections as children of works: #{(@child_entries.length - members_works.length)} collections were discarded for parent entry #{parent.id} (of #{@child_entries.length})")
+            Rails.logger.warn("Cannot add collections as children of works: #{(@child_entries.length - members_works.length)} collections were discarded for parent entry #{@entry.id} (of #{@child_entries.length})")
           end
           work_parent_work_child(members_works) unless members_works.blank?
         end
@@ -50,12 +50,13 @@ module Bulkrax
         work = child_entry.factory.find
         # If we can't find the Work/Collection, raise a custom error
         raise ChildWorksError if work.blank?
-        hash[work.id] = { class_name: work.class.to_s, source_identifier: child_entry }
+        hash[work.id] = { class_name: work.class.to_s, source_identifier: child_entry.identifier }
       end
       return hash
     end
 
     # Work-Collection membership is added to the child as member_of_collection_ids
+    # This is adding the reverse relatinship, from the child to the parent
     def work_child_collection_parent(work_id)
       attrs = { id: work_id, collections: [{ id: @entry.factory.find.id }] }
       Bulkrax::ObjectFactory.new(attrs, @child_works_hash[work_id][:source_identifier], false, @user, @child_works_hash[work_id][:class_name].constantize).run
@@ -84,12 +85,12 @@ module Bulkrax
       }
       Bulkrax::ObjectFactory.new(attrs, @entry.identifier, false, @user, @entry.factory_class).run
       ImporterRun.find(@importer_run_id).increment!(:processed_children)
-    rescue StandardError
+    rescue StandardError => e
       ImporterRun.find(@importer_run_id).increment!(:failed_children)
     end
 
-    def reschedule(entry_id, child_entry_ids)
-      ChildRelationshipsJob.set(wait: 10.minutes).perform_later(entry_id, child_ids, run_id)
+    def reschedule(entry_id, child_entry_ids, importer_run_id)
+      ChildRelationshipsJob.set(wait: 10.minutes).perform_later(entry_id, child_ids, importer_run_id)
     end
 
   end

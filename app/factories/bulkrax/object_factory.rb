@@ -107,7 +107,6 @@ module Bulkrax
 
     def create_collection(attrs)
       attrs = collection_type(attrs)
-      @object.member_of_collections = member_of_collections
       @object.member_ids = member_ids
       @object.attributes = attrs
       @object.apply_depositor_metadata(@user)
@@ -115,7 +114,6 @@ module Bulkrax
     end
 
     def update_collection(attrs)
-      @object.member_of_collections = member_of_collections
       @object.member_ids = member_ids
       @object.attributes = attrs
       @object.save!
@@ -130,12 +128,13 @@ module Bulkrax
     def member_ids
       members = @object.member_ids.to_a
       [:collection, :collections].each do | atat |
-      if attributes[atat].present?
-        members.concat(
-          Array.wrap(
-            find_collection(attributes[atat])
+        if attributes[atat].present?
+          members.concat(
+            Array.wrap(
+              find_collection(attributes[atat])
+            )
           )
-        )
+        end
       end
       members.flatten.compact.uniq
     end
