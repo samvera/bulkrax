@@ -13,3 +13,12 @@
  *= require_tree .
  *= require_self
  */
+
+div.importer_parser_fields_file_style span.radio {
+  display: inline;
+  margin-right: 20px;
+}
+
+div#file_upload, div#file_path {
+  display: none
+}

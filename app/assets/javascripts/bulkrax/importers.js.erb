@@ -5,11 +5,12 @@ function prepBulkrax(event) {
   var refresh_button = $('.refresh-set-source')
   var base_url = $('#importer_parser_fields_base_url')
   var initial_base_url = base_url.val()
+  handleFileToggle()
 
   // handle refreshing/loading of external sets via button click
   $('body').on('click', '.refresh-set-source', function(e) {
     e.preventDefault()
-    
+
     external_set_select = $("#importer_parser_fields_set")
     handleSourceLoad(refresh_button, base_url, external_set_select)
   })
@@ -34,6 +35,21 @@ function prepBulkrax(event) {
     handleParserKlass()
   })
   handleParserKlass()
+}
+
+function handleFileToggle() {
+  $('#importer_parser_fields_file_style_upload_a_file').click(function(e){
+    $('#file_path').hide()
+    $('#file_upload').show()
+    $('#file_path input').attr('required', null)
+    $('#file_upload input').attr('required', 'required')
+  })
+  $('#importer_parser_fields_file_style_specify_a_path_on_the_server').click(function(e){
+    $('#file_path').show()
+    $('#file_upload').hide()
+    $('#file_path input').attr('required', 'required')
+    $('#file_upload input').attr('required', null)
+  })
 }
 
 function handleParserKlass(){

@@ -42,13 +42,14 @@ module Bulkrax
 
     # POST /importers
     def create
+      file = params[:importer][:parser_fields].delete(:file)
       @importer = Importer.new(importer_params)
       field_mapping_params
 
       if @importer.save
-        if params[:file].present?
-          @importer[:parser_fields]['import_file_path'] = write_import_file
-          @importer.save 
+        if file.present?
+          @importer[:parser_fields]['import_file_path'] = write_import_file(file)
+          @importer.save
         end
         if params[:commit] == 'Create and Import'
           Bulkrax::ImporterJob.perform_later(@importer.id)
@@ -61,11 +62,14 @@ module Bulkrax
 
     # PATCH/PUT /importers/1
     def update
-      local_params = importer_params
-      local_params[:parser_fields]['import_file_path'] = write_import_file if params[:file].present?
-
+      file = params[:importer][:parser_fields].delete(:file)
       field_mapping_params
-      if @importer.update(local_params)
+      if @importer.update(importer_params)
+        if file.present?
+          @importer[:parser_fields]['import_file_path'] = write_import_file(file)
+          @importer.save
+        end
+
         # do not perform the import
         if params[:commit] == 'Update Importer'
           # do nothing
@@ -102,11 +106,10 @@ module Bulkrax
     end
 
     private
-
-      def write_import_file
-        path = File.join(path_for_import, params[:file].original_filename)
+      def write_import_file(file)
+        path = File.join(path_for_import, file.original_filename)
         FileUtils.mv(
-          params[:file].path,
+          file.path,
           path
         )
         path
@@ -117,7 +120,7 @@ module Bulkrax
         FileUtils.mkdir_p(path) unless File.exists?(path)
         path
       end
-    
+
       # Use callbacks to share common setup or constraints between actions.
       def set_importer
         @importer = Importer.find(params[:id])

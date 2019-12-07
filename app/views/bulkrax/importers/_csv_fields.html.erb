@@ -1,5 +1,4 @@
 <div class='csv_fields'>
-  <%= fi.input :import_file_path, as: :string, input_html: { value: importer.parser_fields['import_file_path'] } %>
   <% rights_statements = Hyrax.config.rights_statement_service_class.new %>
   <%= fi.input :rights_statement,
         collection: rights_statements.select_active_options,
@@ -12,6 +11,13 @@
   <h4>Add CSV File to Import:</h4>
   <%# accept a single file upload; data files and bags will need to be added another way %>
   <%# @todo - for updates show the currently uploaded file and make it clear it will get replaced %>
-  <%= file_field_tag 'file', accept: 'text/csv' %><br />
-  
+  <%= fi.input :file_style, collection: ['Upload a File', 'Specify a Path on the Server'], as: :radio_buttons, label: false %>
+  <div id='file_upload'>
+    <%= fi.input 'file', as: :file, input_html: {accept: 'text/csv'} %><br />
+  </div>
+  <div id='file_path'>
+    <%= fi.input :import_file_path, as: :string, input_html: { value: importer.parser_fields['import_file_path'] } %>
+  </div>
+
+
 </div>

@@ -17,7 +17,7 @@ module Bulkrax
 
     delegate :validate_import, to: :parser
 
-    attr_accessor :only_updates
+    attr_accessor :only_updates, :file_style, :file
     # TODO validates :metadata_prefix, presence: true
     # TODO validates :base_url, presence: true
 
