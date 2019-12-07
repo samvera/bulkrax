@@ -48,5 +48,15 @@ module Bulkrax
         subject.perform(1, 2)
       end
     end
+
+    describe 'unsuccessful job - custom error raised by build' do
+      before do
+        allow(entry).to receive(:build).and_raise(OAIError)
+      end
+      it 'increments :failed_records' do
+        expect { subject.perform(1, 2) }.to raise_error(OAIError)
+        expect(importer_run).not_to receive(:increment!).with(:failed_records)
+      end
+    end
   end
 end

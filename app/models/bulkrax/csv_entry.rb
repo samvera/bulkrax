@@ -4,6 +4,21 @@ module Bulkrax
   class CsvEntry < Entry
     serialize :raw_metadata, JSON
 
+    def self.fields_from_data(data)
+      data.headers.flatten.compact.uniq
+    end
+
+    def self.read_data(path)
+      CSV.read(path,
+        headers: true,
+        header_converters: :symbol,
+        encoding: 'utf-8')
+    end
+
+    def self.data_for_entry(data, path = nil, index = 0)
+      return data[index].to_h.compact
+    end
+
     def build_metadata
       if record.nil?
         raise StandardError, 'Record not found'
@@ -15,6 +30,7 @@ module Bulkrax
       self.parsed_metadata[Bulkrax.system_identifier_field] = [record['source_identifier']]
 
       record.each do |key, value|
+        next if key == 'collection'
         add_metadata(key, value)
       end
 

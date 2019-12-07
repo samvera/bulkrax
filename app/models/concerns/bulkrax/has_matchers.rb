@@ -50,7 +50,7 @@ module Bulkrax
     end
 
     def field_supported?(field)
-      factory_class.method_defined?(field) || field == 'file' || field == 'remote_files'
+      (factory_class.method_defined?(field) && !excluded?(field)) || field == 'file' || field == 'remote_files'
     end
 
     # Hyrax field to use for the given import field
@@ -62,6 +62,12 @@ module Bulkrax
       }&.compact
       fields = nil if fields.blank?
       return fields || [field]
+    end
+
+    # Check whether a field is explicitly excluded in the mapping
+    def excluded?(field)
+      return false unless mapping[field].present?
+      mapping[field]['excluded'] || false
     end
   end
 end

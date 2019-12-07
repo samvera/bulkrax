@@ -37,6 +37,17 @@ FactoryBot.define do
     field_mapping { {} }
   end
 
+  factory :bulkrax_importer_bagit, class: 'Bulkrax::Importer' do
+    name { 'Bagit Import' }
+    admin_set_id { 'MyString' }
+    user { FactoryBot.build(:base_user) }
+    frequency { 'PT0S' }
+    parser_klass { 'Bulkrax::BagitParser' }
+    limit { 10 }
+    parser_fields { {} }
+    field_mapping { {} }
+  end
+
   factory :bulkrax_importer_csv_bad, class: 'Bulkrax::Importer' do
     name { 'CSV Import' }
     admin_set_id { 'MyString' }

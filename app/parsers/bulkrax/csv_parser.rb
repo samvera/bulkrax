@@ -94,6 +94,13 @@ module Bulkrax
       end
     end
 
+    def files_path
+      arr = parser_fields['import_file_path'].split('/')
+      arr.pop
+      arr << 'files'
+      arr.join('/')
+    end
+
     def entry_class
       CsvEntry
     end
