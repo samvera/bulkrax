@@ -45,7 +45,7 @@
       <%= @importer.field_mapping %>
     </p>
 
-    <h1>Collection Entries</h1>
+    <h2>Collection Entries</h2>
     <%# TODO add entry info and paginate it here %>
     <table class='table table-striped'>
       <thead>
@@ -53,7 +53,6 @@
           <th>Identifier</th>
           <th>Entry ID</th>
           <th>Status</th>
-          <th>Errors</th>
           <th>Status Set At</th>
           <th>Actions</th>
         </tr>
@@ -64,13 +63,12 @@
             <td><%= e.identifier %></td>
             <td><%= e.id %></td>
             <% if e.status == "succeeded" %>
-              <td><span class="glyphicon glyphicon-ok"></span> <%= e.status %></td>
+              <td><span class="glyphicon glyphicon-ok" style="color: green;"></span> <%= e.status %></td>
               <% else %>
-              <td><span class="glyphicon glyphicon-remove"></span> <%= e.status %></td>
+              <td><span class="glyphicon glyphicon-remove" style="color: red;"></span> <%= e.status %></td>
             <% end %>
-            <td><%= e.last_error %></td>
             <td><%= e.status_at %></td>
-            <td>Actions</td>
+            <td>TODO: Actions</td>
           </tr>
         <% end %>
       </tbody>
