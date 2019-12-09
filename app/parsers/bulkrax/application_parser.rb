@@ -54,9 +54,6 @@ module Bulkrax
     # Other parsers should override with a custom or empty method
     # Will be skipped unless the record is a Hash
     def create_parent_child_relationships
-      parents = setup_parents
-      return if parents.blank?
-
       parents.each do | key, value |
         parent = entry_class.where(
           identifier: key,
@@ -88,8 +85,12 @@ module Bulkrax
       end
     end
 
+    def parents
+      @parents ||= setup_parents
+    end
+
     def setup_parents
-      parents = []
+      pts = []
       records.each do |record|
         if record.respond_to?(:to_h)
           r = record.to_h
@@ -102,11 +103,11 @@ module Bulkrax
         else
           children = r[:children]
         end
-        parents << { 
+        pts << { 
           r[:source_identifier] => children
         } unless children.blank?
       end
-      parents.inject(:merge) unless parents.blank?
+      pts.blank? ? pts : pts.inject(:merge)
     end
 
     def setup_export_file

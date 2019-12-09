@@ -34,11 +34,6 @@ module Bulkrax
       # Not all of the Works/Collections exist yet; reschedule
       rescue Bulkrax::ChildWorksError
         reschedule(args[0], args[1], args[2])
-      # Exceptions here are not an issue with adding the relationships.
-      # Those are caught seperately, these are more likely network, db or other unexpected issues.
-      # Note that these temporary type issues do not raise the failure count
-      rescue StandardError => e
-        raise e
       end
     end
 

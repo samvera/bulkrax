@@ -15,7 +15,7 @@ module Bulkrax
     validates :admin_set_id, presence: true
     validates :parser_klass, presence: true
 
-    delegate :validate_import, to: :parser
+    delegate :validate_import, :create_parent_child_relationships, to: :parser
 
     attr_accessor :only_updates
     # TODO validates :metadata_prefix, presence: true
@@ -72,10 +72,6 @@ module Bulkrax
 
     def import_collections
       parser.create_collections
-    end
-
-    def add_parent_child_relationships
-      parser.create_parent_child_relationships
     end
 
     # Prepend the base_url to ensure unique set identifiers
