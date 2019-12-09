@@ -35,7 +35,7 @@ module Bulkrax
       end
 
       # construct full file path
-      self.parsed_metadata['file'] = self.parsed_metadata['file'].map {|f| file_path(f)} if self.parsed_metadata['file'].present?
+      self.parsed_metadata['file'] = self.parsed_metadata['file'].split(/\s*[:;|]\s*/).map {|f| file_path(f)} if self.parsed_metadata['file'].present?
 
       add_visibility
       add_rights_statement
@@ -100,10 +100,13 @@ module Bulkrax
     def file_path(file)
       # return if we already have the full file path
       return file if File.exist?(file)
-      path = self.importerexporter.parser_fields['import_file_path'].split('/')
-      # remove the metadata filename from the end of the import path
-      path.pop
-      File.join(path.join('/'), 'files', file)
+      path = importerexporter.parser.files_path
+      f = File.join(path, file)
+      if File.exist?(f)
+        return f
+      else
+        raise "File #{f} does not exist"
+      end
     end
 
   end
