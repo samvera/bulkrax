@@ -47,14 +47,11 @@ module Bulkrax
     # POST /importers
     def create
       file = params[:importer][:parser_fields].delete(:file)
+      cloud_files = params.delete(:selected_files)
       @importer = Importer.new(importer_params)
       field_mapping_params
-
       if @importer.save
-        if file.present?
-          @importer[:parser_fields]['import_file_path'] = write_import_file(file)
-          @importer.save
-        end
+        files_for_import(file, cloud_files)
         if params[:commit] == 'Create and Import'
           Bulkrax::ImporterJob.perform_later(@importer.id)
         end
@@ -67,13 +64,10 @@ module Bulkrax
     # PATCH/PUT /importers/1
     def update
       file = params[:importer][:parser_fields].delete(:file)
+      cloud_files = params.delete(:selected_files)
       field_mapping_params
       if @importer.update(importer_params)
-        if file.present?
-          @importer[:parser_fields]['import_file_path'] = write_import_file(file)
-          @importer.save
-        end
-
+        files_for_import(file, cloud_files)
         # do not perform the import
         if params[:commit] == 'Update Importer'
         # do nothing
@@ -110,6 +104,22 @@ module Bulkrax
     end
 
     private
+
+      def files_for_import(file, cloud_files)
+        return if file.blank? && cloud_files.blank?
+        if file.present?
+          @importer[:parser_fields]['import_file_path'] = write_import_file(file)
+        end
+        if cloud_files.present?
+          # For BagIt, there will only be one bag, so we get the file_path back
+          # For Csv, we expect only file uploads, so we won't get the file_path back
+          target = retrieve_files(cloud_files)
+          @importer[:parser_fields]['import_file_path'] = target unless target.blank?
+          retrieve_files(cloud_files)
+        end
+        @importer.save
+      end
+
       def write_import_file(file)
         path = File.join(path_for_import, file.original_filename)
         FileUtils.mv(
@@ -132,7 +142,41 @@ module Bulkrax
 
       # Only allow a trusted parameter "white list" through.
       def importer_params
-        params.require(:importer).permit(:name, :admin_set_id, :user_id, :frequency, :parser_klass, :limit, field_mapping: {}, parser_fields: {})
+        params.require(:importer).permit(:name, :admin_set_id, :user_id, :frequency, :parser_klass, :limit, :selected_files, field_mapping: {}, parser_fields: {})
+      end
+
+      # @todo - investigate getting directory structure
+      # @todo - investigate using perform_later, and haveing the importer check for
+      #   DownloadCloudFileJob before it starts
+      def retrieve_files(files)
+        # For CSV, write the files into a files sub-directory
+        if params[:importer][:parser_klass].downcase.include?('bagit')
+          files_path = path_for_import
+          # There should only be one zip file for Bagit, take the first
+          if files['0'].present?
+            target_file = File.join(files_path, files['0']['file_name'])
+            # Now because we want the files in place before the importer runs
+            # Problematic for a large upload
+            Bulkrax::DownloadCloudFileJob.perform_now(files['0'], target_file)
+            return target_file
+          end
+        else
+          files_path = File.join(path_for_import, 'files')  
+          FileUtils.mkdir_p(files_path) unless File.exists?(files_path)
+          files.each_pair do | key, file |
+            # this only works for uniquely named files
+            target_file = File.join(files_path, file['file_name'])
+            # Now because we want the files in place before the importer runs
+            # Problematic for a large upload
+            Bulkrax::DownloadCloudFileJob.perform_now(file, target_file)
+          end
+        end
+      end
+
+      def path_for_import
+        path = File.join(Bulkrax.import_path, @importer.id.to_s)
+        FileUtils.mkdir_p(path) unless File.exists?(path)
+        path
       end
 
       def list_external_sets
