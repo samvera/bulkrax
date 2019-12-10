@@ -62,7 +62,7 @@ module Bulkrax
 
     # Collection-Collection membership is added to the as member_ids
     def collection_parent_collection_child(member_ids)
-      attrs = { id: @entry.factory.find.id, collections: member_ids }
+      attrs = { id: @entry.factory.find.id, children: member_ids }
       Bulkrax::ObjectFactory.new(attrs, @entry.identifier, false, @user, @entry.factory_class).run
       ImporterRun.find(@importer_run_id).increment!(:processed_children)
     rescue StandardError
