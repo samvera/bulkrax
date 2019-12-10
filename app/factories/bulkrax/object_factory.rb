@@ -106,46 +106,47 @@ module Bulkrax
 
     def create_collection(attrs)
       attrs = collection_type(attrs)
-      @object.member_ids = member_ids
+      @object.members = members
       @object.attributes = attrs
       @object.apply_depositor_metadata(@user)
       @object.save!
     end
 
     def update_collection(attrs)
-      @object.member_ids = member_ids
+      @object.members = members
       @object.attributes = attrs
       @object.save!
     end
 
     # Collections don't respond to member_of_collections_attributes or member_of_collection_ids=
-    # Add them directly
+    #   or member_ids=
+    # Add them directly with members
     # collection should be in the form  { id: collection_id }
     # and collections [{ id: collection_id }]
     # member_ids comes from 
     # @todo - consider performance implications although we wouldn't expect a Collection to be a member of many Collections
-    def member_ids
-      members = @object.member_ids.to_a
+    def members
+      ms = @object.members.to_a
       [:collection, :collections].each do | atat |
         if attributes[atat].present?
-          members.concat(
+          ms.concat(
             Array.wrap(
               find_collection(attributes[atat])
             )
           )
         end
       end
-      members.flatten.compact.uniq
+      ms.flatten.compact.uniq
     end
 
     def find_collection(id)
-      case id.class
+      case id
       when Hash
-        id[:id]
+        Collection.find(id[:id])
       when String
-        id
+        Collection.find(id)
       when Array
-        id.map {|i| find_collection(id) }
+        id.map {|i| find_collection(i) }
       else
         []
       end

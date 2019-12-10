@@ -85,7 +85,7 @@ module Bulkrax
     end
 
     def reschedule(entry_id, child_entry_ids, importer_run_id)
-      ChildRelationshipsJob.set(wait: 10.minutes).perform_later(entry_id, child_ids, importer_run_id)
+      ChildRelationshipsJob.set(wait: 10.minutes).perform_later(entry_id, child_entry_ids, importer_run_id)
     end
 
   end
