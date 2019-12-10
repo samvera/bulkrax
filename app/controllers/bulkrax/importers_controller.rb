@@ -1,5 +1,6 @@
 require_dependency "bulkrax/application_controller"
 require_dependency "oai"
+require 'fileutils'
 
 module Bulkrax
   class ImportersController < ApplicationController
@@ -41,10 +42,15 @@ module Bulkrax
 
     # POST /importers
     def create
+      file = params[:importer][:parser_fields].delete(:file)
       @importer = Importer.new(importer_params)
       field_mapping_params
 
       if @importer.save
+        if file.present?
+          @importer[:parser_fields]['import_file_path'] = write_import_file(file)
+          @importer.save
+        end
         if params[:commit] == 'Create and Import'
           Bulkrax::ImporterJob.perform_later(@importer.id)
         end
@@ -56,8 +62,14 @@ module Bulkrax
 
     # PATCH/PUT /importers/1
     def update
+      file = params[:importer][:parser_fields].delete(:file)
       field_mapping_params
       if @importer.update(importer_params)
+        if file.present?
+          @importer[:parser_fields]['import_file_path'] = write_import_file(file)
+          @importer.save
+        end
+
         # do not perform the import
         if params[:commit] == 'Update Importer'
           # do nothing
@@ -94,6 +106,21 @@ module Bulkrax
     end
 
     private
+      def write_import_file(file)
+        path = File.join(path_for_import, file.original_filename)
+        FileUtils.mv(
+          file.path,
+          path
+        )
+        path
+      end
+
+      def path_for_import
+        path = File.join(Bulkrax.import_path, @importer.id.to_s)
+        FileUtils.mkdir_p(path) unless File.exists?(path)
+        path
+      end
+
       # Use callbacks to share common setup or constraints between actions.
       def set_importer
         @importer = Importer.find(params[:id])
