@@ -24,6 +24,30 @@ RSpec.describe Bulkrax do
       end
     end
 
+    context 'parent_child_field_mapping' do
+      it 'responds to parent_child_field_mapping' do
+        expect(described_class).to respond_to(:parent_child_field_mapping)
+      end
+      it 'default_work_type is settable' do
+        expect(described_class).to respond_to(:parent_child_field_mapping=)
+      end
+      it 'has no default value' do
+        expect(described_class.parent_child_field_mapping).to eq({})
+      end
+    end
+
+    context 'collection_field_mapping' do
+      it 'responds to collection_field_mapping' do
+        expect(described_class).to respond_to(:collection_field_mapping)
+      end
+      it 'default_work_type is settable' do
+        expect(described_class).to respond_to(:collection_field_mapping=)
+      end
+      it 'has a default value for CSV' do
+        expect(described_class.collection_field_mapping).to eq({'Bulkrax::CsvEntry' => 'collection'})
+      end
+    end
+
     context 'import_path' do
       it 'responds to import_path' do
         expect(described_class).to respond_to(:import_path)

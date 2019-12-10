@@ -17,6 +17,8 @@ module Bulkrax
       it 'retrieves the data and constructs a hash' do
         expect(described_class.data_for_entry(data)).to eq(
           { data: "<http://example.org/ns/19158> <http://purl.org/dc/terms/identifier> \"12345\" .\n<http://example.org/ns/19158> <http://purl.org/dc/terms/title> \"Test Bag\" .\n", 
+            children: [],
+            collection: [],
             file: [], 
             format: :ntriples, 
             source_identifier: "http://example.org/ns/19158"

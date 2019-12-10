@@ -8,7 +8,23 @@ FactoryBot.define do
   end
 
   factory :bulkrax_csv_entry, class: 'Bulkrax::CsvEntry' do
-    identifier { "MyString" }
+    identifier { "csv_entry" }
+    type { 'Bulkrax::CsvEntry' }
+    importerexporter { FactoryBot.build(:bulkrax_importer) }
+    raw_metadata { {} }
+    parsed_metadata { {} }
+  end
+
+  factory :bulkrax_csv_entry_work, class: 'Bulkrax::CsvEntry' do
+    identifier { "entry_work" }
+    type { 'Bulkrax::CsvEntry' }
+    importerexporter { FactoryBot.build(:bulkrax_importer) }
+    raw_metadata { {} }
+    parsed_metadata { {} }
+  end
+
+  factory :bulkrax_csv_entry_collection, class: 'Bulkrax::CsvEntry' do
+    identifier { "entry_collection" }
     type { 'Bulkrax::CsvEntry' }
     importerexporter { FactoryBot.build(:bulkrax_importer) }
     raw_metadata { {} }

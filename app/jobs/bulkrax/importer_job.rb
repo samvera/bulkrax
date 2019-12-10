@@ -13,6 +13,7 @@ module Bulkrax
       importer.validate_import
       importer.import_collections
       importer.import_works(only_updates_since_last_import)
+      importer.create_parent_child_relationships
     end
 
     def schedule(importer)

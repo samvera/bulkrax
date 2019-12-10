@@ -1,7 +1,6 @@
 # TODO: require 'importer/log_subscriber'
 module Bulkrax
   class ObjectFactory
-    include WithAssociatedCollection
     extend ActiveModel::Callbacks
     define_model_callbacks :save, :create
     class_attribute :system_identifier_field
@@ -31,15 +30,9 @@ module Bulkrax
 
     def update
       raise "Object doesn't exist" unless object
-
-      run_callbacks(:save) do
-        if object.is_a?(Collection)
-          object.attributes = update_attributes
-          object.save!
-        else
-          destroy_existing_files if replace_files
-          work_actor.update(environment(update_attributes))
-        end
+      attrs = update_attributes
+      run_callbacks :save do
+        klass == Collection ? update_collection(attrs) : work_actor.update(environment(attrs))
       end
       log_updated(object)
     end
@@ -112,9 +105,90 @@ module Bulkrax
     end
 
     def create_collection(attrs)
+      attrs = collection_type(attrs)
+      @object.member_ids = member_ids
       @object.attributes = attrs
       @object.apply_depositor_metadata(@user)
       @object.save!
+    end
+
+    def update_collection(attrs)
+      @object.member_ids = member_ids
+      @object.attributes = attrs
+      @object.save!
+    end
+
+    # Collections don't respond to member_of_collections_attributes or member_of_collection_ids=
+    # Add them directly
+    # collection should be in the form  { id: collection_id }
+    # and collections [{ id: collection_id }]
+    # member_ids comes from 
+    # @todo - consider performance implications although we wouldn't expect a Collection to be a member of many Collections
+    def member_ids
+      members = @object.member_ids.to_a
+      [:collection, :collections].each do | atat |
+        if attributes[atat].present?
+          members.concat(
+            Array.wrap(
+              find_collection(attributes[atat])
+            )
+          )
+        end
+      end
+      members.flatten.compact.uniq
+    end
+
+    def find_collection(id)
+      case id.class
+      when Hash
+        id[:id]
+      when String
+        id
+      when Array
+        id.map {|i| find_collection(id) }
+      else
+        []
+      end
+    end
+
+    def collection_type(attrs)
+      return attrs if attrs['collection_type_gid'].present?
+      attrs['collection_type_gid'] = Hyrax::CollectionType.find_or_create_default_collection_type.gid 
+      attrs
+    end
+
+    # Strip out the :collection key, and add the member_of_collection_ids,
+    # which is used by Hyrax::Actors::AddAsMemberOfCollectionsActor
+    def create_attributes
+      return transform_attributes if klass == Collection
+      if attributes[:collection].present?
+        transform_attributes.except(:collection).merge(member_of_collections_attributes: {0 => {id: collection.id}})
+      elsif attributes[:collections].present?
+        collection_ids = attributes[:collections].each.with_index.inject({}) do |ids, (element, index)|
+          ids[index] = element
+          ids
+        end
+        transform_attributes.except(:collections).merge(member_of_collections_attributes: collection_ids)
+      else
+        transform_attributes
+      end
+    end
+
+    # Strip out the :collection key, and add the member_of_collection_ids,
+    # which is used by Hyrax::Actors::AddAsMemberOfCollectionsActor
+    def update_attributes
+      return transform_attributes.except(:id) if klass == Collection
+      if attributes[:collection].present?
+        transform_attributes.except(:id).except(:collection).merge(member_of_collections_attributes: {0 => {id: collection.id}})
+      elsif attributes[:collections].present?
+        collection_ids = attributes[:collections].each.with_index.inject({}) do |ids, (element, index)|
+          ids[index] = element
+          ids
+        end
+        transform_attributes.except(:id).except(:collections).merge(member_of_collections_attributes: collection_ids)
+      else
+        transform_attributes.except(:id)
+      end
     end
 
     # Override if we need to map the attributes from the parser in
@@ -218,7 +292,7 @@ module Bulkrax
 
     # Regardless of what the Parser gives us, these are the properties we are prepared to accept.
     def permitted_attributes
-      klass.properties.keys.map(&:to_sym) + %i[id edit_users edit_groups read_groups visibility]
+      klass.properties.keys.map(&:to_sym) + %i[id edit_users edit_groups read_groups visibility work_members_attributes]
     end
   end
 end

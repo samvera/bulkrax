@@ -6,6 +6,10 @@ module Bulkrax
       true
     end
 
+    def initialize(importerexporter)
+      @importerexporter = importerexporter
+    end
+
     def collections
       # does the CSV contain a collection column?
       return [] unless import_fields.include?(:collection)
@@ -18,17 +22,12 @@ module Bulkrax
     end
 
     def records(_opts = {})
-      # there's a risk that this reads the whole file into memory and could cause a memory leak
-      @records ||= CSV.foreach(
-        parser_fields['import_file_path'],
-        headers: true,
-        header_converters: :symbol,
-        encoding: 'utf-8'
-      )
+      @records ||= entry_class.read_data(parser_fields['import_file_path']).map { | record_data | entry_class.data_for_entry(record_data) }
     end
 
+    # We could use CsvEntry#fields_from_data(data) but that would mean re-reading the data
     def import_fields
-      @import_fields ||= records.map {|r| r.headers }.flatten.uniq.compact
+      @import_fields ||= records.inject(:merge).keys.compact.uniq
     end
 
     def required_elements?(keys)
@@ -64,7 +63,7 @@ module Bulkrax
     end
 
     def create_works
-      records.with_index(0) do |record, index|
+      records.each_with_index do |record, index|
         next if record[:source_identifier].blank?
         break if !limit.nil? && index >= limit
 
@@ -75,6 +74,10 @@ module Bulkrax
       end
     rescue StandardError => e
       errors.add(:base, e.class.to_s.to_sym, message: e.message)
+    end
+
+    def create_parent_child_relationships
+      super
     end
 
     def create_from_importer
