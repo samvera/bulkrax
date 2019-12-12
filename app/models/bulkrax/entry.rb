@@ -13,6 +13,7 @@ module Bulkrax
     serialize :parsed_metadata, JSON
     # Do not serialize raw_metadata as so we can support xml or other formats
     serialize :collection_ids, Array
+    serialize :last_error, JSON
 
     attr_accessor :all_attrs, :last_exception
 
@@ -85,7 +86,7 @@ module Bulkrax
         self.last_exception = nil
         self.last_succeeded_at = Time.now
       else
-        self.last_error = "#{e.message}\n\n#{e.backtrace}"
+        self.last_error =  { error_class: e.class.to_s, error_message: e.message, error_trace: e.backtrace }
         self.last_error_at = Time.now
         self.last_exception = e
       end
