@@ -118,10 +118,6 @@ module Bulkrax
       raise 'must be defined' if exporter?
     end
 
-    def files_path
-      raise 'must be defined' if exporter?
-    end
-
     def importer?
       importerexporter.is_a?(Bulkrax::Importer)
     end

@@ -41,6 +41,8 @@ module Bulkrax
 
     def validate_import
       raise "Missing required elements, required elements are: #{required_elements.join(', ')}" unless required_elements?(import_fields)
+      # check file_paths; this will raise an error if any files are missing
+      true if file_paths.present?
     end
 
     def create_collections
@@ -97,13 +99,6 @@ module Bulkrax
       end
     end
 
-    def files_path
-      arr = parser_fields['import_file_path'].split('/')
-      arr.pop
-      arr << 'files'
-      arr.join('/')
-    end
-
     def entry_class
       CsvEntry
     end
@@ -147,6 +142,31 @@ module Bulkrax
     # in the parser as it is specific to the format
     def setup_export_file
       File.open(File.join(importerexporter.exporter_export_path, 'export.csv'), 'w')
+    end
+
+    private 
+
+    # @todo check after latest merge, this might have changed to 'file'
+    def file_paths
+      @file_paths ||= records.map do | r | 
+        if r[:file].present?
+          r[:file].split(/\s*[:;|]\s*/).map do | f |
+            file = File.join(files_path, f)
+            if File.exist?(file)
+              file
+            else
+              raise "File #{file} does not exist"
+            end
+          end.compact.uniq
+        end
+      end.flatten.compact
+    end
+
+    def files_path
+      path = self.importerexporter.parser_fields['import_file_path'].split('/')
+      # remove the metadata filename from the end of the import path
+      path.pop
+      path.join('/')
     end
   end
 end

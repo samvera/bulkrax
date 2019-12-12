@@ -4,6 +4,10 @@ module Bulkrax
       false # @todo will be supported
     end
 
+    def validate_import
+      return true if import_fields.present?
+    end
+
     def entry_class
       self.parser_fields['metadata_format'].constantize
     end
@@ -89,11 +93,6 @@ module Bulkrax
       %w[title source_identifier]
     end
 
-    # @todo - remove/refactor after factory refactory
-    def files_path
-      Rails.root.to_s
-    end
-
     # private
 
       def real_import_file_path
@@ -146,9 +145,10 @@ module Bulkrax
       # Are the immediate sub-directories of this directory bags?
       # All or nothing
       def bags?(path)
-        result = true
+        result = nil 
         Dir.glob("#{path}/*").reject { |d| File.file?(d) }.each do |dir|
-          result = false unless bag?(dir)
+          result = bag?(dir)
+          break if result == false
         end
         result
       end
