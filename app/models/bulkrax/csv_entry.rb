@@ -98,7 +98,7 @@ module Bulkrax
 
     def collections_created?
       return true if record[self.class.collection_field].blank?
-      record[collection_field].split(/\s*[:;|]\s*/).length == self.collection_ids.length
+      record[self.class.collection_field].split(/\s*[:;|]\s*/).length == self.collection_ids.length
     end
 
     def find_or_create_collection_ids
