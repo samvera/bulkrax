@@ -40,10 +40,11 @@ module Bulkrax
       %w[title source_identifier]
     end
 
-    def validate_import
-      raise "Missing required elements, required elements are: #{required_elements.join(', ')}" unless required_elements?(import_fields)
-      # check file_paths; this will raise an error if any files are missing
-      true if file_paths.present?
+    def valid_import?
+      required_elements?(import_fields) && file_paths.present?
+    rescue StandardError => e
+      errors.add(:base, e.class.to_s.to_sym, message: e.message)
+      return false
     end
 
     def create_collections

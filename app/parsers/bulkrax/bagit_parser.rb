@@ -6,8 +6,8 @@ module Bulkrax
       false # @todo will be supported
     end
 
-    def validate_import
-      return true if import_fields.present?
+    def valid_import?
+      import_fields.present?
     end
 
     def entry_class
