@@ -1,25 +1,27 @@
+# frozen_string_literal: true
+
 require 'rails_helper'
 
 module Bulkrax
   RSpec.describe BagitParser do
-    let(:importer) { FactoryBot.create(:bulkrax_importer_bagit) }
     subject { described_class.new(importer) }
+    let(:importer) { FactoryBot.create(:bulkrax_importer_bagit) }
 
-    before(:each) do
+    before do
       allow(entry).to receive(:id)
       allow(Bulkrax::ImportWorkJob).to receive(:perform_later)
     end
 
     describe 'Bag or Bags with RDF Metadata' do
       let(:entry) { FactoryBot.create(:bulkrax_rdf_entry, importerexporter: importer) }
-      let(:parser_fields) {
+      let(:parser_fields) do
         {
           'metadata_file_name' => 'descMetadata.nt',
           'metadata_format' => 'Bulkrax::RdfEntry'
-        } 
-      }
+        }
+      end
 
-      before(:each) do
+      before do
         allow(Bulkrax::RdfEntry).to receive_message_chain(:where, :first_or_create!).and_return(entry)
         importer.parser_fields = parser_fields
       end
@@ -82,14 +84,14 @@ module Bulkrax
 
     describe 'Bag with CSV' do
       let(:entry) { FactoryBot.create(:bulkrax_csv_entry, importerexporter: importer) }
-      let(:parser_fields) {
+      let(:parser_fields) do
         {
           'import_file_path' => './spec/fixtures/bags/bag_with_csv',
           'metadata_file_name' => 'metadata.csv',
           'metadata_format' => 'Bulkrax::CsvEntry'
-        } 
-      }
-  
+        }
+      end
+
       before do
         allow(Bulkrax::CsvEntry).to receive_message_chain(:where, :first_or_create!).and_return(entry)
         importer.parser_fields = parser_fields

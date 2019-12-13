@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class AddSocialToUsers < ActiveRecord::Migration[5.1]
   def self.up
     add_column :users, :facebook_handle, :string

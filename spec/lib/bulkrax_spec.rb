@@ -1,8 +1,9 @@
+# frozen_string_literal: true
+
 require 'rails_helper'
 
 RSpec.describe Bulkrax do
   describe '#mattr_accessor' do
-
     context 'system_identifier_field' do
       it 'responds to system_identifier_field' do
         expect(described_class).to respond_to(:system_identifier_field)
@@ -44,7 +45,7 @@ RSpec.describe Bulkrax do
         expect(described_class).to respond_to(:collection_field_mapping=)
       end
       it 'has a default value for CSV' do
-        expect(described_class.collection_field_mapping).to eq({'Bulkrax::CsvEntry' => 'collection'})
+        expect(described_class.collection_field_mapping).to eq('Bulkrax::CsvEntry' => 'collection')
       end
     end
 
@@ -125,7 +126,7 @@ RSpec.describe Bulkrax do
       end
 
       it 'is responds with default hash' do
-        expect(described_class.default_field_mapping.call('creator')).to eq({"creator"=>{:excluded=>false, :from=>["creator"], :if=>nil, :parsed=>false, :split=>false}})
+        expect(described_class.default_field_mapping.call('creator')).to eq("creator" => { excluded: false, from: ["creator"], if: nil, parsed: false, split: false })
       end
     end
 

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'rails_helper'
 
 module Bulkrax
@@ -10,7 +12,7 @@ module Bulkrax
     let(:work_child) { FactoryBot.build(:another_work) }
     let(:collection_parent) { FactoryBot.build(:collection) }
     let(:collection_child) { FactoryBot.build(:collection) }
-    let(:factory) { double(Bulkrax::ObjectFactory)}
+    let(:factory) { double(Bulkrax::ObjectFactory) }
 
     before do
       allow(entry_work).to receive(:factory_class).and_return(Work)
@@ -31,17 +33,18 @@ module Bulkrax
 
       it 'calls work_parent_work_child' do
         expect(subject).to receive(:work_parent_work_child).with([work_child.id])
-        subject.perform(1,[2],3)
+        subject.perform(1, [2], 3)
       end
 
       it 'creates the object factory' do
         expect(Bulkrax::ObjectFactory).to receive(:new).with(
-          {:id=>"work_id", :work_members_attributes=>{0=>{:id=>"another_work_id"}}}, 
+          { id: "work_id", work_members_attributes: { 0 => { id: "another_work_id" } } },
           'entry_work',
           false,
           importer.user,
-          Work)
-        subject.perform(1,[2],3)
+          Work
+        )
+        subject.perform(1, [2], 3)
       end
 
       context 'importer run' do
@@ -51,7 +54,7 @@ module Bulkrax
 
         it 'increments processed children' do
           expect(importer.current_importer_run).to receive(:increment!).with(:processed_children)
-          subject.perform(1,[2],3)
+          subject.perform(1, [2], 3)
         end
       end
 
@@ -67,10 +70,9 @@ module Bulkrax
         it 'does not increment processed or failed children' do
           expect(importer.current_importer_run).not_to receive(:increment!).with(:processed_children)
           expect(importer.current_importer_run).not_to receive(:increment!).with(:failed_children)
-          subject.perform(1,[2],3)
+          subject.perform(1, [2], 3)
         end
       end
-
     end
 
     describe '#work_child_collection_parent' do
@@ -83,17 +85,18 @@ module Bulkrax
 
       it 'calls work_child_collection_parent' do
         expect(subject).to receive(:work_child_collection_parent).with(work_child.id)
-        subject.perform(1,[2],3)
+        subject.perform(1, [2], 3)
       end
 
       it 'creates the object factory' do
         expect(Bulkrax::ObjectFactory).to receive(:new).with(
-          {:collections=>[{:id=>"collection_id"}], :id=>"another_work_id"}, 
+          { collections: [{ id: "collection_id" }], id: "another_work_id" },
           'csv_entry',
           false,
           importer.user,
-          Work)
-        subject.perform(1,[2],3)
+          Work
+        )
+        subject.perform(1, [2], 3)
       end
 
       context 'importer runs' do
@@ -103,7 +106,7 @@ module Bulkrax
 
         it 'increments processed children' do
           expect(importer.current_importer_run).to receive(:increment!).with(:processed_children)
-          subject.perform(1,[2],3)
+          subject.perform(1, [2], 3)
         end
       end
     end
@@ -118,17 +121,18 @@ module Bulkrax
 
       it 'calls collection_parent_collection_child' do
         expect(subject).to receive(:collection_parent_collection_child).with([collection_child.id])
-        subject.perform(1,[2],3)
+        subject.perform(1, [2], 3)
       end
 
       it 'creates the object factory' do
         expect(Bulkrax::ObjectFactory).to receive(:new).with(
-          {:collections=>["collection_id"], :id=>"collection_id"}, 
+          { collections: ["collection_id"], id: "collection_id" },
           'entry_collection',
           false,
           importer.user,
-          Collection)
-        subject.perform(1,[2],3)
+          Collection
+        )
+        subject.perform(1, [2], 3)
       end
 
       context 'importer runs' do
@@ -138,9 +142,9 @@ module Bulkrax
 
         it 'increments processed children' do
           expect(importer.current_importer_run).to receive(:increment!).with(:processed_children)
-          subject.perform(1,[2],3)
+          subject.perform(1, [2], 3)
         end
-      end  
+      end
     end
 
     describe 'error handling' do
@@ -149,7 +153,7 @@ module Bulkrax
           allow(subject).to receive(:build_child_works_hash).and_raise(StandardError)
         end
         it 'does not increment failed children' do
-          expect { subject.perform(1,[2],3) } .to raise_error(StandardError)
+          expect { subject.perform(1, [2], 3) } .to raise_error(StandardError)
           expect(importer.current_importer_run).not_to receive(:increment!).with(:failed_children)
         end
       end
@@ -164,7 +168,7 @@ module Bulkrax
         end
         it 'increments failed children' do
           expect(importer.current_importer_run).to receive(:increment!).with(:failed_children)
-          subject.perform(1,[2],3)
+          subject.perform(1, [2], 3)
         end
       end
 
@@ -173,8 +177,8 @@ module Bulkrax
           allow(subject).to receive(:build_child_works_hash).and_raise(Bulkrax::ChildWorksError)
         end
         it 'does not increment failed children' do
-          expect(subject).to receive(:reschedule).with(1,[2],3)
-          subject.perform(1,[2],3)
+          expect(subject).to receive(:reschedule).with(1, [2], 3)
+          subject.perform(1, [2], 3)
         end
       end
     end

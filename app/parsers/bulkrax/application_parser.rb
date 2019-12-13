@@ -1,12 +1,14 @@
+# frozen_string_literal: true
+
 module Bulkrax
   class ApplicationParser
 
     attr_accessor :importerexporter, :total
     delegate :only_updates, :limit, :current_exporter_run, :current_importer_run, :errors,
-      :seen, :increment_counters, :parser_fields, :user,
-      :exporter_export_path, :exporter_export_zip_path, :importer_unzip_path,
-      to: :importerexporter
-      
+             :seen, :increment_counters, :parser_fields, :user,
+             :exporter_export_path, :exporter_export_zip_path, :importer_unzip_path,
+             to: :importerexporter
+
     def self.parser_fields
       {}
     end
@@ -54,21 +56,21 @@ module Bulkrax
     # Other parsers should override with a custom or empty method
     # Will be skipped unless the record is a Hash
     def create_parent_child_relationships
-      parents.each do | key, value |
+      parents.each do |key, value|
         parent = entry_class.where(
           identifier: key,
           importerexporter_id: importerexporter.id,
-          importerexporter_type: 'Bulkrax::Importer',
+          importerexporter_type: 'Bulkrax::Importer'
         ).first
 
         # not finding the entries here indicates that the given identifiers are incorrect
         # in that case we should log that
         children = []
-        children = value.map do | child |
+        children = value.map do |child|
           entry_class.where(
             identifier: child,
             importerexporter_id: importerexporter.id,
-            importerexporter_type: 'Bulkrax::Importer',
+            importerexporter_type: 'Bulkrax::Importer'
           ).first
         end.compact.uniq
 
@@ -76,11 +78,11 @@ module Bulkrax
           # Increment the failures for the number we couldn't find
           # Because all of our entries have been created by now, if we can't find them, the data is wrong
           Rails.logger.error("Expected #{value.length} children for parent entry #{parent.id}, found #{children.length}")
-          return if children.length == 0
+          return if children.empty?
           Rails.logger.warn("Adding #{children.length} children to parent entry #{parent.id} (expected #{value.length})")
         end
         parent_id = parent.id
-        child_entry_ids = children.map { |c| c.id }
+        child_entry_ids = children.map(&:id)
         ChildRelationshipsJob.perform_later(parent_id, child_entry_ids, current_importer_run.id)
       end
     end
@@ -92,20 +94,21 @@ module Bulkrax
     def setup_parents
       pts = []
       records.each do |record|
-        if record.respond_to?(:to_h)
-          r = record.to_h
-        else
-          r = record
-        end
+        r = if record.respond_to?(:to_h)
+              record.to_h
+            else
+              record
+            end
         next unless r.is_a?(Hash)
-        if r[:children].is_a?(String)
-          children = r[:children].split(/\s*[:;|]\s*/)
-        else
-          children = r[:children]
-        end
-        pts << { 
+        children = if r[:children].is_a?(String)
+                     r[:children].split(/\s*[:;|]\s*/)
+                   else
+                     r[:children]
+                   end
+        next if children.blank?
+        pts << {
           r[:source_identifier] => children
-        } unless children.blank?
+        }
       end
       pts.blank? ? pts : pts.inject(:merge)
     end

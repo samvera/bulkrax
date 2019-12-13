@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'rails_helper'
 
 module Bulkrax
@@ -71,7 +73,6 @@ module Bulkrax
             "title" => { "excluded" => false, "from" => ["title"], "if" => nil, "parsed" => false, "split" => false }
           )
         end
-
       end
     end
   end

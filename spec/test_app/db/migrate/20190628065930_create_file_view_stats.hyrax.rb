@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class CreateFileViewStats < ActiveRecord::Migration[5.1]
   def change
     create_table :file_view_stats do |t|

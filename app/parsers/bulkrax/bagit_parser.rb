@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Bulkrax
   class BagitParser < ApplicationParser
     def self.export_supported?
@@ -95,62 +97,62 @@ module Bulkrax
 
     # private
 
-      def real_import_file_path
-        if file? && zip?
-          unzip(self.parser_fields['import_file_path'])
-          return File.join(importer_unzip_path, self.parser_fields['import_file_path'].split('/').last.gsub('.zip', ''))
-        else
-          self.parser_fields['import_file_path']
-        end
+    def real_import_file_path
+      if file? && zip?
+        unzip(self.parser_fields['import_file_path'])
+        return File.join(importer_unzip_path, self.parser_fields['import_file_path'].split('/').last.gsub('.zip', ''))
+      else
+        self.parser_fields['import_file_path']
       end
+    end
 
-      # Gather the paths to all bags; skip any stray files
-      def bag_paths
-        if bag?(import_file_path)
-          [import_file_path]
-        elsif bags?(import_file_path)
-          Dir.glob("#{import_file_path}/*").reject { |d| File.file?(d) }
-        else
-          raise 'No valid bags found'
-        end
+    # Gather the paths to all bags; skip any stray files
+    def bag_paths
+      if bag?(import_file_path)
+        [import_file_path]
+      elsif bags?(import_file_path)
+        Dir.glob("#{import_file_path}/*").reject { |d| File.file?(d) }
+      else
+        raise 'No valid bags found'
       end
+    end
 
-      def metadata_file_name
-        raise 'The metadata file name must be specified' if self.parser_fields['metadata_file_name'].blank?
-        self.parser_fields['metadata_file_name']
-      end
+    def metadata_file_name
+      raise 'The metadata file name must be specified' if self.parser_fields['metadata_file_name'].blank?
+      self.parser_fields['metadata_file_name']
+    end
 
-      # Gather the paths to all metadata files matching the metadata_file_name
-      def metadata_paths
-        @metadata_paths ||= bag_paths.map do |b|
-          Dir.glob("#{b}/**/*").select { |f| File.file?(f) && f.ends_with?(metadata_file_name) }
-        end.flatten.compact
-      end
+    # Gather the paths to all metadata files matching the metadata_file_name
+    def metadata_paths
+      @metadata_paths ||= bag_paths.map do |b|
+        Dir.glob("#{b}/**/*").select { |f| File.file?(f) && f.ends_with?(metadata_file_name) }
+      end.flatten.compact
+    end
 
-      # Is this a file?
-      def file?
-        File.file?(self.parser_fields['import_file_path'])
-      end
+    # Is this a file?
+    def file?
+      File.file?(self.parser_fields['import_file_path'])
+    end
 
-      # Is this a zip file?
-      def zip?
-        MIME::Types.type_for(self.parser_fields['import_file_path']).include?('application/zip')
-      end
+    # Is this a zip file?
+    def zip?
+      MIME::Types.type_for(self.parser_fields['import_file_path']).include?('application/zip')
+    end
 
-      # Is the directory is a bag?
-      def bag?(path)
-        File.exist?(File.join(path, 'bagit.txt')) && BagIt::Bag.new(path).valid?
-      end
+    # Is the directory is a bag?
+    def bag?(path)
+      File.exist?(File.join(path, 'bagit.txt')) && BagIt::Bag.new(path).valid?
+    end
 
-      # Are the immediate sub-directories of this directory bags?
-      # All or nothing
-      def bags?(path)
-        result = nil 
-        Dir.glob("#{path}/*").reject { |d| File.file?(d) }.each do |dir|
-          result = bag?(dir)
-          break if result == false
-        end
-        result
+    # Are the immediate sub-directories of this directory bags?
+    # All or nothing
+    def bags?(path)
+      result = nil
+      Dir.glob("#{path}/*").reject { |d| File.file?(d) }.each do |dir|
+        result = bag?(dir)
+        break if result == false
       end
+      result
+    end
   end
 end

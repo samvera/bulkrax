@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class TidyUpBecauseOfBadException < ActiveRecord::Migration[5.1]
   def change
     if column_exists?(Hyrax::PermissionTemplate.table_name, :workflow_id)

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class CreateCollectionTypes < ActiveRecord::Migration[5.1]
   def change
     create_table :hyrax_collection_types do |t|

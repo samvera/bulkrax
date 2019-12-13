@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Bulkrax
   module ImportersHelper
     # borrowd from batch-importer https://github.com/samvera-labs/hyrax-batch_ingest/blob/master/app/controllers/hyrax/batch_ingest/batches_controller.rb

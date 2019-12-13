@@ -1,7 +1,8 @@
+# frozen_string_literal: true
+
 require 'csv'
 module Bulkrax
   class CsvParser < ApplicationParser
-
     def self.export_supported?
       true
     end
@@ -22,7 +23,7 @@ module Bulkrax
     end
 
     def records(_opts = {})
-      @records ||= entry_class.read_data(parser_fields['import_file_path']).map { | record_data | entry_class.data_for_entry(record_data) }
+      @records ||= entry_class.read_data(parser_fields['import_file_path']).map { |record_data| entry_class.data_for_entry(record_data) }
     end
 
     # We could use CsvEntry#fields_from_data(data) but that would mean re-reading the data
@@ -83,19 +84,19 @@ module Bulkrax
     end
 
     def create_from_importer
-      Bulkrax::Importer.find(importerexporter.export_source).entries.each do | entry |
+      Bulkrax::Importer.find(importerexporter.export_source).entries.each do |entry|
         query = "#{ActiveFedora.index_field_mapper.solr_name(Bulkrax.system_identifier_field)}:\"#{entry.identifier}\""
         work_id = ActiveFedora::SolrService.query(query, fl: 'id', rows: 1).first['id']
         new_entry = find_or_create_entry(entry_class, work_id, 'Bulkrax::Exporter')
-        Bulkrax::ExportWorkJob.perform_now(new_entry.id,  current_exporter_run.id)
+        Bulkrax::ExportWorkJob.perform_now(new_entry.id, current_exporter_run.id)
       end
     end
 
     def create_from_collection
       work_ids = ActiveFedora::SolrService.query("member_of_collection_ids_ssim:#{importerexporter.export_source}").map(&:id)
-      work_ids.each do | wid |
+      work_ids.each do |wid|
         new_entry = find_or_create_entry(entry_class, wid, 'Bulkrax::Exporter')
-        Bulkrax::ExportWorkJob.perform_now(new_entry.id,  current_exporter_run.id)
+        Bulkrax::ExportWorkJob.perform_now(new_entry.id, current_exporter_run.id)
       end
     end
 
@@ -125,7 +126,7 @@ module Bulkrax
     def write_files
       file = setup_export_file
       file.puts(export_headers)
-      importerexporter.entries.each do | e |
+      importerexporter.entries.each do |e|
         file.puts(e.parsed_metadata.values.to_csv)
       end
       file.close
@@ -134,7 +135,7 @@ module Bulkrax
     def export_headers
       headers = ['id']
       headers << ['model']
-      importerexporter.mapping.keys.each {|key| headers << key unless Bulkrax.reserved_properties.include?(key) && !field_supported?(key)}.sort
+      importerexporter.mapping.keys.each { |key| headers << key unless Bulkrax.reserved_properties.include?(key) && !field_supported?(key) }.sort
       headers << 'file'
       headers.to_csv
     end
@@ -144,13 +145,13 @@ module Bulkrax
       File.open(File.join(importerexporter.exporter_export_path, 'export.csv'), 'w')
     end
 
-    private 
+    private
 
-    # @todo check after latest merge, this might have changed to 'file'
-    def file_paths
-      @file_paths ||= records.map do | r | 
-        if r[:file].present?
-          r[:file].split(/\s*[:;|]\s*/).map do | f |
+      # @todo check after latest merge, this might have changed to 'file'
+      def file_paths
+        @file_paths ||= records.map do |r|
+          next unless r[:file].present?
+          r[:file].split(/\s*[:;|]\s*/).map do |f|
             file = File.join(files_path, f)
             if File.exist?(file)
               file
@@ -158,15 +159,14 @@ module Bulkrax
               raise "File #{file} does not exist"
             end
           end.compact.uniq
-        end
-      end.flatten.compact
-    end
+        end.flatten.compact
+      end
 
-    def files_path
-      path = self.importerexporter.parser_fields['import_file_path'].split('/')
-      # remove the metadata filename from the end of the import path
-      path.pop
-      path.join('/')
-    end
+      def files_path
+        path = self.importerexporter.parser_fields['import_file_path'].split('/')
+        # remove the metadata filename from the end of the import path
+        path.pop
+        path.join('/')
+      end
   end
 end

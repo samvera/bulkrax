@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class CreateSipityWorkflowMethods < ActiveRecord::Migration[5.1]
   def change
     create_table :sipity_workflow_methods do |t|

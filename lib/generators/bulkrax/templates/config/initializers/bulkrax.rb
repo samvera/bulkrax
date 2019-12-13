@@ -1,14 +1,14 @@
+# frozen_string_literal: true
+
 Bulkrax.setup do |config|
   # Add local parsers
   # config.parsers += [
   #   { name: 'MODS - My Local MODS parser', class_name: 'Bulkrax::ModsXmlParser', partial: 'mods_fields' },
   # ]
 
-
   # Field to use during import to identify if the Work or Collection already exists.
   # Default is 'source'.
   # config.system_identifier_field = 'source'
-
 
   # WorkType to use as the default if none is specified in the import
   # Default is the first returned by Hyrax.config.curation_concerns
@@ -28,13 +28,13 @@ Bulkrax.setup do |config|
   # This value IS NOT used for OAI, so setting the OAI Entries here will have no effect
   # The mapping is supplied per Entry, provide the full class name as a string, eg. 'Bulkrax::CsvEntry'
   # Example:
-  #   { 
+  #   {
   #     'Bulkrax::RdfEntry'  => 'http://opaquenamespace.org/ns/contents',
-  #     'Bulkrax::CsvEntry'  => 'children' 
+  #     'Bulkrax::CsvEntry'  => 'children'
   #   }
   # By default no parent-child relationships are added
   # config.parent_child_field_mapping = { }
-  
+
   # Field_mapping for establishing a collection relationship (FROM work TO collection)
   # This value IS NOT used for OAI, so setting the OAI parser here will have no effect
   # The mapping is supplied per Entry, provide the full class name as a string, eg. 'Bulkrax::CsvEntry'

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Bulkrax
   class OaiDcParser < ApplicationParser
     attr_accessor :client, :headers
@@ -13,8 +15,8 @@ module Bulkrax
                                   headers: headers,
                                   parser: 'libxml',
                                   metadata_prefix: importerexporter.parser_fields['metadata_prefix'])
-      rescue StandardError
-        raise OAIError
+    rescue StandardError
+      raise OAIError
     end
 
     def collection_name
@@ -30,11 +32,9 @@ module Bulkrax
     end
 
     def records(opts = {})
-      opts.merge!(set: collection_name) unless collection_name == 'all'
+      opts[:set] = collection_name unless collection_name == 'all'
 
-      if importerexporter.last_imported_at && only_updates
-        opts.merge!(from: importerexporter&.last_imported_at&.strftime("%Y-%m-%d"))
-      end
+      opts[:from] = importerexporter&.last_imported_at&.strftime("%Y-%m-%d") if importerexporter.last_imported_at && only_updates
 
       if opts[:quick]
         opts.delete(:quick)
@@ -65,9 +65,7 @@ module Bulkrax
       ['contributor', 'coverage', 'creator', 'date', 'description', 'format', 'identifier', 'language', 'publisher', 'relation', 'rights', 'source', 'subject', 'title', 'type']
     end
 
-    def list_sets
-      client.list_sets
-    end
+    delegate :list_sets, to: :client
 
     def create_collections
       metadata = {
@@ -93,7 +91,7 @@ module Bulkrax
         results.full.each_with_index do |record, index|
           if !limit.nil? && index >= limit
             break
-          elsif record.deleted? # TODO record.status == "deleted"
+          elsif record.deleted? # TODO: record.status == "deleted"
             importerexporter.current_importer_run.deleted_records += 1
             importerexporter.current_importer_run.save!
           else
@@ -113,6 +111,5 @@ module Bulkrax
     rescue
       @total = 0
     end
-
   end
 end

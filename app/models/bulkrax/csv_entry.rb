@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'csv'
 
 module Bulkrax
@@ -8,28 +10,22 @@ module Bulkrax
       data.headers.flatten.compact.uniq
     end
 
-    # there's a risk that this reads the whole file into memory and could cause a memory leak    
+    # there's a risk that this reads the whole file into memory and could cause a memory leak
     def self.read_data(path)
       CSV.read(path,
-        headers: true,
-        header_converters: :symbol,
-        encoding: 'utf-8')
+               headers: true,
+               header_converters: :symbol,
+               encoding: 'utf-8')
     end
 
-    def self.data_for_entry(data, path = nil)
+    def self.data_for_entry(data, _path = nil)
       # If the whole CSV data is passed, grab the first row
-      if data.is_a?(CSV::Table)
-        data = data.first
-      end
+      data = data.first if data.is_a?(CSV::Table)
       raw_data = data.to_h
       # If the collection field mapping is not 'collection', add 'collection' - the parser needs it
-      if raw_data.keys.include?(collection_field.to_sym) && collection_field != 'collection'
-        raw_data[:collection] = raw_data[collection_field.to_sym]
-      end
+      raw_data[:collection] = raw_data[collection_field.to_sym] if raw_data.keys.include?(collection_field.to_sym) && collection_field != 'collection'
       # If the children field mapping is not 'children', add 'children' - the parser needs it
-      if raw_data.keys.include?(children_field.to_sym) && children_field != 'children'
-        raw_data[:children] = raw_data[collection_field.to_sym]
-      end
+      raw_data[:children] = raw_data[collection_field.to_sym] if raw_data.keys.include?(children_field.to_sym) && children_field != 'children'
       return raw_data
     end
 
@@ -57,13 +53,13 @@ module Bulkrax
       end
 
       # construct full file path
-      self.parsed_metadata['file'] = self.parsed_metadata['file'].split(/\s*[:;|]\s*/).map {|f| file_path(f)} if self.parsed_metadata['file'].present?
+      self.parsed_metadata['file'] = self.parsed_metadata['file'].split(/\s*[:;|]\s*/).map { |f| file_path(f) } if self.parsed_metadata['file'].present?
 
       add_visibility
       add_rights_statement
       add_collections
       add_local
-      
+
       self.parsed_metadata
     end
 
@@ -73,13 +69,12 @@ module Bulkrax
       self.parsed_metadata['model'] = work.has_model.first
       mapping.each do |key, value|
         next if Bulkrax.reserved_properties.include?(key) && !field_supported?(key)
-        if work.respond_to?(key)
-          data = work.send(key)
-          if data.is_a?(ActiveTriples::Relation)
-            self.parsed_metadata[key] = "#{data.join('; ')}" unless value[:excluded]
-          else
-            self.parsed_metadata[key] = data
-          end
+        next unless work.respond_to?(key)
+        data = work.send(key)
+        if data.is_a?(ActiveTriples::Relation)
+          self.parsed_metadata[key] = data.join('; ').to_s unless value[:excluded]
+        else
+          self.parsed_metadata[key] = data
         end
       end
       unless work.is_a?(Collection)
@@ -104,10 +99,12 @@ module Bulkrax
     def find_or_create_collection_ids
       return self.collection_ids if collections_created?
       valid_system_id(Collection)
-      record[self.class.collection_field].split(/\s*[:;|]\s*/).each do | collection |
-        c = find_collection(collection)
-        self.collection_ids << c.id unless c.blank? || self.collection_ids.include?(c.id)
-      end unless record[self.class.collection_field].blank?
+      unless record[self.class.collection_field].blank?
+        record[self.class.collection_field].split(/\s*[:;|]\s*/).each do |collection|
+          c = find_collection(collection)
+          self.collection_ids << c.id unless c.blank? || self.collection_ids.include?(c.id)
+        end
+      end
       return self.collection_ids
     end
 
@@ -130,6 +127,5 @@ module Bulkrax
         raise "File #{f} does not exist"
       end
     end
-
   end
 end

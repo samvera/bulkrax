@@ -1,18 +1,20 @@
+# frozen_string_literal: true
+
 require "bulkrax/engine"
 
 module Bulkrax
   class << self
     mattr_accessor :parsers,
-      :system_identifier_field,
-      :default_work_type,
-      :default_field_mapping,
-      :collection_field_mapping,
-      :parent_child_field_mapping,
-      :reserved_properties,
-      :field_mappings,
-      :import_path,
-      :export_path,
-      :server_name
+                   :system_identifier_field,
+                   :default_work_type,
+                   :default_field_mapping,
+                   :collection_field_mapping,
+                   :parent_child_field_mapping,
+                   :reserved_properties,
+                   :field_mappings,
+                   :import_path,
+                   :export_path,
+                   :server_name
 
     self.parsers = [
       { name: "OAI - Dublin Core", class_name: "Bulkrax::OaiDcParser", partial: "oai_fields" },
@@ -34,18 +36,18 @@ module Bulkrax
     # This value IS NOT used for OAI, so setting the OAI Entries here will have no effect
     # The mapping is supplied per Entry, provide the full class name as a string, eg. 'Bulkrax::CsvEntry'
     # Example:
-    #   { 
+    #   {
     #     'Bulkrax::RdfEntry'  => 'http://opaquenamespace.org/ns/contents',
-    #     'Bulkrax::CsvEntry'  => 'children' 
+    #     'Bulkrax::CsvEntry'  => 'children'
     #   }
     # By default no parent-child relationships are added
-    self.parent_child_field_mapping = { }
+    self.parent_child_field_mapping = {}
 
     # Field_mapping for establishing a collection relationship (FROM work TO collection)
     # This value IS NOT used for OAI, so setting the OAI Entries here will have no effect
     # The mapping is supplied per Entry, provide the full class name as a string, eg. 'Bulkrax::CsvEntry'
     # The default value for CSV is collection
-    self.collection_field_mapping = { 
+    self.collection_field_mapping = {
       'Bulkrax::CsvEntry' => 'collection'
     }
 
@@ -97,7 +99,7 @@ module Bulkrax
       "Bulkrax::CsvParser" => {
         "remote_files" => { from: ["remote_files"], parsed: true }
       },
-      'Bulkrax::BagitParser'  => {}
+      'Bulkrax::BagitParser' => {}
     }
 
     # Lambda to set the default field mapping

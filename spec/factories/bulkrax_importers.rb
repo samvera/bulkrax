@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 FactoryBot.define do
   factory :bulkrax_importer, class: 'Bulkrax::Importer' do
     name { "A.N. Import" }

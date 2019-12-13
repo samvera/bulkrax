@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class UpdateCollectionTypeColumnOptions < ActiveRecord::Migration[5.1]
   def up
     change_column :hyrax_collection_types, :title, :string, unique: true

@@ -1,9 +1,10 @@
+# frozen_string_literal: true
+
 module Bulkrax
   # Custom error class for collections_created?
-  class CollectionsCreatedError < Exception; end
-  class OAIError < Exception; end
+  class CollectionsCreatedError < RuntimeError; end
+  class OAIError < RuntimeError; end
   class Entry < ApplicationRecord
-
     include Bulkrax::HasMatchers
     include Bulkrax::HasLocalProcessing
     include Bulkrax::ImportBehavior
@@ -26,15 +27,15 @@ module Bulkrax
 
     # Retrieve fields from the file
     # @param data - the source data
-    # @return Array 
-    def self.fields_from_data(data)
+    # @return Array
+    def self.fields_from_data(_data)
       raise 'Not Implemented'
     end
 
     # Read the data from the supplied path
     # @param path - path to the data file
     # @return the data from the file
-    def self.read_data(path)
+    def self.read_data(_path)
       raise 'Not Implemented'
     end
 
@@ -42,7 +43,7 @@ module Bulkrax
     # @param data - the data from the metadata file
     # @param path - the path to the metadata file - used by RDF to get the file_paths
     # @return Hash containing the data (the entry build_metadata method will know what to expect in the hash)
-    def self.data_for_entry(data, path = nil)
+    def self.data_for_entry(_data, _path = nil)
       raise 'Not Implemented'
     end
 
@@ -91,11 +92,13 @@ module Bulkrax
         self.last_exception = e
       end
     end
-    
+
     def valid_system_id(model_class)
-      raise(
-        "#{model_class} does not implement the system_identifier_field: #{Bulkrax.system_identifier_field}"
-      ) unless model_class.properties.keys.include?(Bulkrax.system_identifier_field)
+      unless model_class.properties.keys.include?(Bulkrax.system_identifier_field)
+        raise(
+          "#{model_class} does not implement the system_identifier_field: #{Bulkrax.system_identifier_field}"
+        )
+      end
     end
 
     def find_collection(collection_identifier)
@@ -103,6 +106,5 @@ module Bulkrax
         Bulkrax.system_identifier_field => collection_identifier
       ).detect { |m| m.send(Bulkrax.system_identifier_field).include?(collection_identifier) }
     end
-
   end
 end
