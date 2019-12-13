@@ -121,6 +121,22 @@ module Bulkrax
       @total = 0
     end
 
+    # @todo - investigate getting directory structure
+    # @todo - investigate using perform_later, and having the importer check for
+    #   DownloadCloudFileJob before it starts
+    def retrieve_cloud_files(files)
+      files_path = File.join(path_for_import, 'files')  
+      FileUtils.mkdir_p(files_path) unless File.exists?(files_path)
+      files.each_pair do | key, file |
+        # this only works for uniquely named files
+        target_file = File.join(files_path, file['file_name'])
+        # Now because we want the files in place before the importer runs
+        # Problematic for a large upload
+        Bulkrax::DownloadCloudFileJob.perform_now(file, target_file)
+      end
+      return nil
+    end
+
     # export methods
 
     def write_files
@@ -143,15 +159,12 @@ module Bulkrax
     # in the parser as it is specific to the format
     def setup_export_file
       File.open(File.join(importerexporter.exporter_export_path, 'export.csv'), 'w')
-    end
+    end 
 
-    private
-
-      # @todo check after latest merge, this might have changed to 'file'
-      def file_paths
-        @file_paths ||= records.map do |r|
-          next unless r[:file].present?
-          r[:file].split(/\s*[:;|]\s*/).map do |f|
+    def file_paths
+      @file_paths ||= records.map do | r | 
+        if r[:file].present?
+          r[:file].split(/\s*[:;|]\s*/).map do | f |
             file = File.join(files_path, f)
             if File.exist?(file)
               file
@@ -162,11 +175,11 @@ module Bulkrax
         end.flatten.compact
       end
 
-      def files_path
-        path = self.importerexporter.parser_fields['import_file_path'].split('/')
-        # remove the metadata filename from the end of the import path
-        path.pop
-        path.join('/')
-      end
+    def files_path
+      path = self.importerexporter.parser_fields['import_file_path'].split('/')
+      # remove the metadata filename from the end of the import path
+      path.pop
+      File.join(path.join('/'), 'files')
+    end
   end
 end
