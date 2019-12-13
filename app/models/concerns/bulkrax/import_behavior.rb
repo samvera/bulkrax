@@ -7,6 +7,8 @@ module Bulkrax
         build_metadata
         raise CollectionsCreatedError unless collections_created?
         @item = factory.run
+      rescue RSolr::Error::Http => e
+        raise e
       rescue StandardError => e
         status_info(e)
       else

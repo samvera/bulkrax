@@ -7,7 +7,7 @@ class ChangeEntryLastError < ActiveRecord::Migration[5.1]
     errors = {}
     last_error = Bulkrax::Entry.arel_table[:last_error]
     Bulkrax::Entry.where(last_error.matches("%\n\n%")).each do | entry |
-      old_errors = entry.last_error.split("\n\n")
+      old_errors = entry.last_error.split("\n\n") unless entry.last_error.nil?
       errors[entry.id] = { 
         'error_class' => 'unknown', 
         'error_message' => old_errors.first,
