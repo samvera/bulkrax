@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require_dependency "bulkrax/application_controller"
 
 module Bulkrax
@@ -16,8 +18,7 @@ module Bulkrax
     end
 
     # GET /exporters/1
-    def show
-    end
+    def show; end
 
     # GET /exporters/new
     def new
@@ -54,9 +55,7 @@ module Bulkrax
     def update
       field_mapping_params
       if @exporter.update(exporter_params)
-        if params[:commit] == 'Update and Re-Export All Items'
-          Bulkrax::ExporterJob.perform_now(@exporter.id)
-        end
+        Bulkrax::ExporterJob.perform_now(@exporter.id) if params[:commit] == 'Update and Re-Export All Items'
         redirect_to exporters_path, notice: 'Exporter was successfully updated.'
       else
         render :edit
@@ -76,6 +75,7 @@ module Bulkrax
     end
 
     private
+
       # Use callbacks to share common setup or constraints between actions.
       def set_exporter
         @exporter = Exporter.find(params[:id])
@@ -88,7 +88,7 @@ module Bulkrax
 
       def field_mapping_params
         # @todo replace/append once mapping GUI is in place
-        fields = Bulkrax.parsers.map {|m| m[:partial] if m[:class_name] == params[:exporter][:parser_klass] }.compact.first
+        fields = Bulkrax.parsers.map { |m| m[:partial] if m[:class_name] == params[:exporter][:parser_klass] }.compact.first
         @exporter.field_mapping = Bulkrax.field_mappings[fields.to_sym] if fields
       end
 
@@ -142,8 +142,8 @@ module Bulkrax
 
       private
 
-      def stream_body(iostream)
-        self.response_body = iostream
-      end
+        def stream_body(iostream)
+          self.response_body = iostream
+        end
   end
 end

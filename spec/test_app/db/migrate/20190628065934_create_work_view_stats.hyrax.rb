@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class CreateWorkViewStats < ActiveRecord::Migration[5.1]
   def change
     create_table :work_view_stats do |t|

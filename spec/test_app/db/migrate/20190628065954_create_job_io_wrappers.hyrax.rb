@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class CreateJobIoWrappers < ActiveRecord::Migration[5.1]
   def change
     create_table :job_io_wrappers do |t|

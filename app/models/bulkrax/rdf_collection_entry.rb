@@ -1,6 +1,7 @@
+# frozen_string_literal: true
+
 module Bulkrax
   class RdfCollectionEntry < RdfEntry
-
     def record
       @record ||= self.raw_metadata
     end
@@ -14,6 +15,5 @@ module Bulkrax
     def factory_class
       Collection
     end
-
   end
 end

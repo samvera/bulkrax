@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Bulkrax
   module HasMatchers
     extend ActiveSupport::Concern
@@ -12,7 +14,7 @@ module Bulkrax
         Bulkrax::ApplicationMatcher
       end
 
-      def matcher(name, args={})
+      def matcher(name, args = {})
         matcher = matcher_class.new(
           to: name,
           parsed: args[:parsed],
@@ -25,8 +27,7 @@ module Bulkrax
     end
 
     def add_metadata(node_name, node_content)
-
-      field_to(node_name).each do | name |
+      field_to(node_name).each do |name|
         next unless field_supported?(name)
         matcher = self.class.matcher(name, mapping[name].symbolize_keys) if mapping[name]
 
@@ -57,9 +58,9 @@ module Bulkrax
     # @param field [String] the importer field name
     # @return [Array] hyrax fields
     def field_to(field)
-      fields = mapping&.map { |key, value|
-        key if (value['from'] && value['from'].include?(field)) || key == field
-      }&.compact
+      fields = mapping&.map do |key, value|
+        key if (value['from']&.include?(field)) || key == field
+      end&.compact
       fields = nil if fields.blank?
       return fields || [field]
     end

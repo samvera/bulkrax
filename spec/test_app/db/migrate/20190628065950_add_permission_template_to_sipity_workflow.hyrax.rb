@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class AddPermissionTemplateToSipityWorkflow < ActiveRecord::Migration[5.1]
   def change
     add_column :sipity_workflows, :permission_template_id, :integer, index: true

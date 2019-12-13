@@ -1,11 +1,13 @@
+# frozen_string_literal: true
+
 require 'rails_helper'
 
 module Bulkrax
   RSpec.describe Entry, type: :model do
     describe 'field_mappings' do
+      subject { described_class.new(importerexporter: importer) }
       let(:importer) { FactoryBot.build(:bulkrax_importer) }
       let(:collection) { FactoryBot.build(:collection) }
-      subject { described_class.new(importerexporter: importer) }
 
       before do
         Bulkrax.default_work_type = 'Work'
@@ -19,27 +21,27 @@ module Bulkrax
       end
 
       context '.find_collection' do
-        it 'it finds the collection' do
+        it 'finds the collection' do
           expect(subject.find_collection('commons.ptsem.edu_MyCollection')).to eq(collection)
         end
-        it 'it does find the collection with a partial match' do
+        it 'does find the collection with a partial match' do
           expect(subject.find_collection('MyCollection')).not_to eq(collection)
         end
       end
 
       context '.field_to (has_matchers)' do
-        let(:importer) { 
-          FactoryBot.build(:bulkrax_importer, field_mapping: { 
-            'creator' => {
-              from: ['author'],
-              parsed: false,
-              split: false,
-              if: nil,
-              excluded: false
-              },
-            'title' => {}
-          })
-        }
+        let(:importer) do
+          FactoryBot.build(:bulkrax_importer, field_mapping: {
+                             'creator' => {
+                               from: ['author'],
+                               parsed: false,
+                               split: false,
+                               if: nil,
+                               excluded: false
+                             },
+                             'title' => {}
+                           })
+        end
 
         it 'returns creator when author is mapped to creator' do
           expect(subject.field_to('author')).to eq(['creator'])

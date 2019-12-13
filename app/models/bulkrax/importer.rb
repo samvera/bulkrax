@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'iso8601'
 
 module Bulkrax
@@ -18,18 +20,16 @@ module Bulkrax
     delegate :validate_import, :create_parent_child_relationships, to: :parser
 
     attr_accessor :only_updates, :file_style, :file
-    # TODO validates :metadata_prefix, presence: true
+    # TODO: validates :metadata_prefix, presence: true
     # TODO validates :base_url, presence: true
 
     def mapping
-      if self.field_mapping.blank? || self.field_mapping == [{}]
-        self.field_mapping = parser.import_fields.reject(&:nil?).map {|m| Bulkrax.default_field_mapping.call(m)}.inject(:merge)
-      end
+      self.field_mapping = parser.import_fields.reject(&:nil?).map { |m| Bulkrax.default_field_mapping.call(m) }.inject(:merge) if self.field_mapping.blank? || self.field_mapping == [{}]
       @mapping ||= self.field_mapping
     end
 
     def parser_fields
-      read_attribute(:parser_fields) || {}
+      self[:parser_fields] || {}
     end
 
     def frequency_enums
@@ -40,11 +40,11 @@ module Bulkrax
     end
 
     def frequency=(frequency)
-      write_attribute(:frequency, ISO8601::Duration.new(frequency).to_s)
+      self[:frequency] = ISO8601::Duration.new(frequency).to_s
     end
 
     def frequency
-      f = read_attribute(:frequency) || "PT0S"
+      f = self[:frequency] || "PT0S"
       ISO8601::Duration.new(f)
     end
 
@@ -64,7 +64,7 @@ module Bulkrax
       self.parser_fields['replace_files']
     end
 
-    def import_works(only_updates=false)
+    def import_works(only_updates = false)
       self.only_updates = only_updates
       parser.create_works
       remove_unseen
@@ -113,6 +113,5 @@ module Bulkrax
     rescue
       @importer_unzip_path ||= File.join(ENV.fetch('RAILS_TMP', Dir.tmpdir).to_s, "import_#{self.id}_0")
     end
-
   end
 end

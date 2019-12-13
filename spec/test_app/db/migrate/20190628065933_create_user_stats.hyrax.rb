@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class CreateUserStats < ActiveRecord::Migration[5.1]
   def change
     create_table :user_stats do |t|

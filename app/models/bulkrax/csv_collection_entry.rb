@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Bulkrax
   class CsvCollectionEntry < CsvEntry
     def factory_class

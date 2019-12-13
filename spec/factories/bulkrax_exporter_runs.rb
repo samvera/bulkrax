@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 FactoryBot.define do
   factory :bulkrax_exporter_run, class: 'Bulkrax::ExporterRun' do
     exporter { nil }

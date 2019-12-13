@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class AddUniqueConstraintToPermissionTemplateAccesses < ActiveRecord::Migration[5.1]
   def change
     add_index :permission_template_accesses,

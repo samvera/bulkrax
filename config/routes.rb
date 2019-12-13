@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 Bulkrax::Engine.routes.draw do
   resources :exporters do
     get :download

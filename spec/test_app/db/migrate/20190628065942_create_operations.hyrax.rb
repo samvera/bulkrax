@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class CreateOperations < ActiveRecord::Migration[5.1]
   def change
     create_table :curation_concerns_operations do |t|

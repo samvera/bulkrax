@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class CreateCollectionBrandingInfos < ActiveRecord::Migration[5.1]
   def change
     create_table :collection_branding_infos do |t|

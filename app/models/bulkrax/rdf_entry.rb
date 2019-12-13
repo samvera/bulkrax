@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'rdf'
 module Bulkrax
   class RdfEntry < Entry
@@ -23,10 +25,10 @@ module Bulkrax
           writer << statement
         end
       end
-      return { 
-        source_identifier: reader.subjects.first.to_s, 
-        format: format, 
-        data: data, 
+      return {
+        source_identifier: reader.subjects.first.to_s,
+        format: format,
+        data: data,
         file: record_file_paths(path),
         collection: collections,
         children: children
@@ -79,10 +81,12 @@ module Bulkrax
 
     def find_or_create_collection_ids
       return self.collection_ids if collections_created?
-      self.raw_metadata['collection'].each do | collection |
-        c = find_collection(collection)
-        self.collection_ids << c.id unless c.blank? || self.collection_ids.include?(c.id)
-      end unless self.raw_metadata['collection'].blank?
+      unless self.raw_metadata['collection'].blank?
+        self.raw_metadata['collection'].each do |collection|
+          c = find_collection(collection)
+          self.collection_ids << c.id unless c.blank? || self.collection_ids.include?(c.id)
+        end
+      end
       return self.collection_ids
     end
   end

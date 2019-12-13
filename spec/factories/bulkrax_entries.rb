@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 FactoryBot.define do
   factory :bulkrax_entry, class: 'Bulkrax::Entry' do
     identifier { "MyString" }

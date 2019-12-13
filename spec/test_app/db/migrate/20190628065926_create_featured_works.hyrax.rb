@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class CreateFeaturedWorks < ActiveRecord::Migration[5.1]
   def change
     create_table :featured_works do |t|

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Bulkrax
   module ImporterExporterBehavior
     extend ActiveSupport::Concern
@@ -11,17 +13,17 @@ module Bulkrax
     end
 
     def next_import_at
-      (last_imported_at || Time.current) + frequency.to_seconds if schedulable? and last_imported_at.present?
+      (last_imported_at || Time.current) + frequency.to_seconds if schedulable? && last_imported_at.present?
     end
 
     def increment_counters(index)
-      if limit.to_i > 0
-        current_importer_run.total_work_entries = limit
-      elsif parser.total > 0
-        current_importer_run.total_work_entries = parser.total
-      else
-        current_importer_run.total_work_entries = index + 1
-      end
+      current_importer_run.total_work_entries = if limit.to_i > 0
+                                                  limit
+                                                elsif parser.total > 0
+                                                  parser.total
+                                                else
+                                                  index + 1
+                                                end
       current_importer_run.enqueued_records = index + 1
       current_importer_run.save!
     end

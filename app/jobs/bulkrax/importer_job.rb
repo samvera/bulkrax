@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Bulkrax
   class ImporterJob < ApplicationJob
     queue_as :import

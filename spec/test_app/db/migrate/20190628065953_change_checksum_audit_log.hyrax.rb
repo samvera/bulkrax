@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class ChangeChecksumAuditLog < ActiveRecord::Migration[5.1]
   def change
     rename_column :checksum_audit_logs, :version, :checked_uri

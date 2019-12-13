@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 FactoryBot.define do
   factory :bulkrax_importer_run, class: 'Bulkrax::ImporterRun' do
     importer { nil }

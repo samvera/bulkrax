@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require_dependency "bulkrax/application_controller"
 require_dependency "oai"
 require 'fileutils'
@@ -22,7 +24,7 @@ module Bulkrax
       add_breadcrumb t(:'hyrax.controls.home'), main_app.root_path
       add_breadcrumb t(:'hyrax.dashboard.breadcrumbs.admin'), hyrax.dashboard_path
       add_breadcrumb 'Importers', bulkrax.importers_path
-      add_breadcrumb (@importer.name)
+      add_breadcrumb @importer.name
       @work_entries = @importer.entries.where(type: @importer.parser.entry_class.to_s).page(params[:work_entries_page])
       @collection_entries = @importer.entries.where(type: @importer.parser.collection_entry_class.to_s).page(params[:collections_entries_page])
     end
@@ -74,7 +76,7 @@ module Bulkrax
 
         # do not perform the import
         if params[:commit] == 'Update Importer'
-          # do nothing
+        # do nothing
         # OAI-only - selective re-harvest
         elsif params[:commit] == 'Update and Harvest Updated Items'
           Bulkrax::ImporterJob.perform_later(@importer.id, true)
@@ -119,7 +121,7 @@ module Bulkrax
 
       def path_for_import
         path = File.join(Bulkrax.import_path, @importer.id.to_s)
-        FileUtils.mkdir_p(path) unless File.exists?(path)
+        FileUtils.mkdir_p(path) unless File.exist?(path)
         path
       end
 
@@ -152,7 +154,7 @@ module Bulkrax
 
       def field_mapping_params
         # @todo replace/append once mapping GUI is in place
-        field_mapping_key = Bulkrax.parsers.map {|m| m[:class_name] if m[:class_name] == params[:importer][:parser_klass] }.compact.first
+        field_mapping_key = Bulkrax.parsers.map { |m| m[:class_name] if m[:class_name] == params[:importer][:parser_klass] }.compact.first
         @importer.field_mapping = Bulkrax.field_mappings[field_mapping_key] if field_mapping_key
       end
 

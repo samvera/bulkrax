@@ -1,4 +1,5 @@
-class User < ApplicationRecord
+# frozen_string_literal: true
 
-	def batch_user; end
+class User < ApplicationRecord
+  def batch_user; end
 end

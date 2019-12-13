@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'rails_helper'
 
 module Bulkrax
@@ -74,7 +76,7 @@ module Bulkrax
       end
 
       it 'sets up the list of parents and children' do
-        expect(subject.parents).to eq({"123456789"=>["234567891"], "234567891"=>["345678912"], "345678912"=>["456789123"], "456789123"=>["234567891"]})
+        expect(subject.parents).to eq("123456789" => ["234567891"], "234567891" => ["345678912"], "345678912" => ["456789123"], "456789123" => ["234567891"])
       end
 
       it 'something else' do

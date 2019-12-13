@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class CreateProxyDepositRequests < ActiveRecord::Migration[5.1]
   def change
     create_table :proxy_deposit_requests do |t|

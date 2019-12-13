@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class CreateChecksumAuditLogs < ActiveRecord::Migration[5.1]
   def self.up
     create_table :checksum_audit_logs do |t|
