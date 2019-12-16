@@ -52,6 +52,24 @@ module Bulkrax
       raise 'must be defined' if importer?
     end
 
+    # Optional, define if using browse everything for file upload
+    def retrieve_cloud_files(files); end
+
+    def write_import_file(file)
+      path = File.join(path_for_import, file.original_filename)
+      FileUtils.mv(
+        file.path,
+        path
+      )
+      path
+    end
+
+    def path_for_import
+      path = File.join(Bulkrax.import_path, importerexporter.id.to_s)
+      FileUtils.mkdir_p(path) unless File.exists?(path)
+      path
+    end
+
     # Optional, only used by certain parsers
     # Other parsers should override with a custom or empty method
     # Will be skipped unless the record is a Hash
@@ -130,7 +148,9 @@ module Bulkrax
     end
 
     # Override to add specific validations
-    def validate_import; end
+    def valid_import?
+      true
+    end
 
     def find_or_create_entry(entryclass, identifier, type, raw_metadata = nil)
       entryclass.where(

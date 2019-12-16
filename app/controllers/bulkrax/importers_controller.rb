@@ -47,14 +47,11 @@ module Bulkrax
     # POST /importers
     def create
       file = params[:importer][:parser_fields].delete(:file)
+      cloud_files = params.delete(:selected_files)
       @importer = Importer.new(importer_params)
       field_mapping_params
-
       if @importer.save
-        if file.present?
-          @importer[:parser_fields]['import_file_path'] = write_import_file(file)
-          @importer.save
-        end
+        files_for_import(file, cloud_files)
         if params[:commit] == 'Create and Import'
           Bulkrax::ImporterJob.perform_later(@importer.id)
         end
@@ -67,13 +64,10 @@ module Bulkrax
     # PATCH/PUT /importers/1
     def update
       file = params[:importer][:parser_fields].delete(:file)
+      cloud_files = params[:importer].delete(:selected_files)
       field_mapping_params
       if @importer.update(importer_params)
-        if file.present?
-          @importer[:parser_fields]['import_file_path'] = write_import_file(file)
-          @importer.save
-        end
-
+        files_for_import(file, cloud_files)
         # do not perform the import
         if params[:commit] == 'Update Importer'
         # do nothing
@@ -110,19 +104,20 @@ module Bulkrax
     end
 
     private
-      def write_import_file(file)
-        path = File.join(path_for_import, file.original_filename)
-        FileUtils.mv(
-          file.path,
-          path
-        )
-        path
-      end
 
-      def path_for_import
-        path = File.join(Bulkrax.import_path, @importer.id.to_s)
-        FileUtils.mkdir_p(path) unless File.exist?(path)
-        path
+      def files_for_import(file, cloud_files)
+        return if file.blank? && cloud_files.blank?
+        if file.present?
+          @importer[:parser_fields]['import_file_path'] = @importer.parser.write_import_file(file)
+        end
+        if cloud_files.present?
+          # For BagIt, there will only be one bag, so we get the file_path back and set import_file_path
+          # For CSV, we expect only file uploads, so we won't get the file_path back
+          # and we expect the import_file_path to be set already
+          target = @importer.parser.retrieve_cloud_files(cloud_files)
+          @importer[:parser_fields]['import_file_path'] = target unless target.blank?
+        end
+        @importer.save
       end
 
       # Use callbacks to share common setup or constraints between actions.
@@ -132,7 +127,7 @@ module Bulkrax
 
       # Only allow a trusted parameter "white list" through.
       def importer_params
-        params.require(:importer).permit(:name, :admin_set_id, :user_id, :frequency, :parser_klass, :limit, field_mapping: {}, parser_fields: {})
+        params.require(:importer).permit(:name, :admin_set_id, :user_id, :frequency, :parser_klass, :limit, :selected_files, field_mapping: {}, parser_fields: {})
       end
 
       def list_external_sets

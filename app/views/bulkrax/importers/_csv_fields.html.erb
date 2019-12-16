@@ -20,6 +20,10 @@
   <div id='file_path'>
     <%= fi.input :import_file_path, as: :string, input_html: { value: importer.parser_fields['import_file_path'] } %>
   </div>
-
-
+  <% if Hyrax.config.browse_everything? %>
+	  <h4>Add Files to Import:</h4>
+	  <p>Choose files to upload. The filenames must be unique, and the filenames must be referenced in a column called 'file' in the accompanying CSV file.</p>
+    <%= render 'browse_everything', form: form %>
+  <% end %>
+  <br />
 </div>
