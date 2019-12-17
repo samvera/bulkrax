@@ -15,6 +15,7 @@
           <thead>
             <tr>
               <th scope="col">Name</th>
+              <th scope="col">Status</th>
               <th scope="col">Last Run</th>
               <th scope="col">Next Run</th>
               <th scope="col">Entries Enqueued</th>
@@ -29,6 +30,7 @@
             <% @importers.each do |importer| %>
             <tr>
               <th scope="row"><%= link_to importer.name, importer_path(importer) %></th>
+              <td><%= importer.importer_runs.last&.importer_status %></td>
               <td><%= importer.last_imported_at.strftime("%b %d, %Y") if importer.last_imported_at %></td>
               <td><%= importer.next_import_at.strftime("%b %d, %Y") if importer.next_import_at %></td>
               <td><%= importer.importer_runs.last&.enqueued_records %></td>
