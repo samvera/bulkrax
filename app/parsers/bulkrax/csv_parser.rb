@@ -41,7 +41,7 @@ module Bulkrax
     end
 
     def valid_import?
-      required_elements?(import_fields) && file_paths.present?
+      required_elements?(import_fields) && file_paths.is_a?(Array)
     rescue StandardError => e
       errors.add(:base, e.class.to_s.to_sym, message: e.message)
       return false
@@ -173,8 +173,9 @@ module Bulkrax
               raise "File #{file} does not exist"
             end
           end.compact.uniq
-        end.flatten.compact
-      end
+        end
+      end.flatten.compact
+    end
 
     def files_path
       path = self.importerexporter.parser_fields['import_file_path'].split('/')
