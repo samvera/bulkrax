@@ -14,6 +14,7 @@ gem 'bulkrax', git: 'https://github.com/samvera-labs/bulkrax.git'
 
 And then execute:
 ```bash
+$ bundle update
 $ rails generate bulkrax:install
 ```
 
