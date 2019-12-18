@@ -6,9 +6,9 @@ module Bulkrax
   class OAIError < RuntimeError; end
   class Entry < ApplicationRecord
     include Bulkrax::HasMatchers
-    include Bulkrax::HasLocalProcessing
     include Bulkrax::ImportBehavior
     include Bulkrax::ExportBehavior
+    include Bulkrax::HasLocalProcessing
 
     belongs_to :importerexporter, polymorphic: true
     serialize :parsed_metadata, JSON
