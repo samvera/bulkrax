@@ -9,7 +9,7 @@ Bulkrax is a batteries included importer for Samvera applications. It currently 
 Add this line to your application's Gemfile:
 
 ```ruby
-gem 'bulkrax', git: 'https://github.com/notch8/bulkrax.git'
+gem 'bulkrax', git: 'https://github.com/samvera-labs/bulkrax.git'
 ```
 
 And then execute:
@@ -22,7 +22,7 @@ $ rails generate bulkrax:install
 Add this line to your application's Gemfile:
 
 ```ruby
-gem 'bulkrax', git: 'https://github.com/notch8/bulkrax.git'
+gem 'bulkrax', git: 'https://github.com/samvera-labs/bulkrax.git'
 ```
 
 And then execute:
