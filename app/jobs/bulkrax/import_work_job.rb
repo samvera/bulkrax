@@ -9,17 +9,23 @@ module Bulkrax
       build_result = entry.build
       if build_result.present?
         entry.save!
-        ImporterRun.find(args[1]).increment!(:processed_records)
+        importer_run = ImporterRun.find(args[1])
+        importer_run.increment(:processed_records)
+        importer_run.decrement(:enqueued_records)
+        importer_run.save!
       else
-        # do not retry here because whatever parse error kept you from creating a work will likely
+        # do not retry m here because whatever parse error kept you from creating a work will likely
         # keep preventing you from doing so.
         entry.save!
-        ImporterRun.find(args[1]).increment!(:failed_records)
+        importer_run = ImporterRun.find(args[1])
+        importer_run.increment(:failed_records)
+        importer_run.decrement(:enqueued_records)
+        importer_run.save!
       end
     rescue CollectionsCreatedError => e
       reschedule(args[0], args[1])
       # Exceptions here are not an issue with building the work.
-      # Those are caught seperately, these are more likely network, db or other unexpected issues.
+      # Those are caught separately, these are more likely network, db or other unexpected issues.
       # Note that these temporary type issues do not raise the failure count
     rescue StandardError, OAIError, RSolr::Error::Http => e
       raise e
