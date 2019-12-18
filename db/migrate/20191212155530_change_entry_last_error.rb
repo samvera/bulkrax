@@ -1,6 +1,6 @@
 class ChangeEntryLastError < ActiveRecord::Migration[5.1]
 
-  class Bulkrax::Entry < ActiveRecord::Base
+  class Bulkrax::Entry < ApplicationRecord
   end
 
   def change
