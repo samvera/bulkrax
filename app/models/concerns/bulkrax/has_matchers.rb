@@ -51,6 +51,7 @@ module Bulkrax
     end
 
     def field_supported?(field)
+      field = field.gsub('_attributes', '')
       (factory_class.method_defined?(field) && !excluded?(field)) || field == 'file' || field == 'remote_files' || field == 'model'
     end
 
@@ -59,8 +60,8 @@ module Bulkrax
     # @return [Array] hyrax fields
     def field_to(field)
       fields = mapping&.map do |key, value|
-        key if (value['from']&.include?(field)) || key == field
-      end&.compact
+        key if (value.present? && value['from']&.include?(field)) || key == field
+      end.compact
       fields = nil if fields.blank?
       return fields || [field]
     end
