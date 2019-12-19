@@ -164,7 +164,7 @@ module Bulkrax
     def export_headers
       headers = ['id']
       headers << ['model']
-      importerexporter.mapping.keys.each { |key| headers << key unless Bulkrax.reserved_properties.include?(key) && !field_supported?(key) }.sort
+      importerexporter.mapping.each_key { |key| headers << key unless Bulkrax.reserved_properties.include?(key) && !field_supported?(key) }.sort
       headers << 'file'
       headers.to_csv
     end

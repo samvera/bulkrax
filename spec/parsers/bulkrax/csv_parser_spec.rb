@@ -66,9 +66,9 @@ module Bulkrax
     end
 
     describe '#write_partial_import_file', clean_downloads: true do
+      subject        { described_class.new(importer) }
       let(:importer) { FactoryBot.create(:bulkrax_importer_csv_failed) }
       let(:file)     { fixture_file_upload('./spec/fixtures/csv/ok.csv') }
-      subject        { described_class.new(importer) }
 
       it 'returns the path of the partial import file' do
         expect(subject.write_partial_import_file(file))
@@ -91,7 +91,7 @@ module Bulkrax
 
         expect(import_filename).to eq('failed.csv')
         expect(uploaded_filename).to eq('ok.csv')
-        expect(partial_import_filename).to_not eq(uploaded_filename)
+        expect(partial_import_filename).not_to eq(uploaded_filename)
         expect(partial_import_filename).to eq('failed_corrected_entries.csv')
       end
     end
