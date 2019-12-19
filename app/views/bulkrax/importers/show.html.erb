@@ -36,13 +36,17 @@
     </p>
 
     <p>
-      <strong>Parser fields:</strong>
-      <%= @importer.parser_fields.to_yaml %>
+      <strong>Parser fields:</strong><br />
+      <% @importer.parser_fields.each do |key,value| %>
+        <%= key %>: <%= value %> <br />
+      <% end %>
     </p>
 
     <p>
-      <strong>Field mapping:</strong>
-      <%= @importer.field_mapping.to_yaml %>
+      <strong>Field mapping:</strong><br />
+      <% @importer.field_mapping.each do |key,value| %>
+        <%= key %>: <%= value %> <br />
+      <% end %>
     </p>
 
     <p>
