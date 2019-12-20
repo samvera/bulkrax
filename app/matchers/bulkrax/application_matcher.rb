@@ -29,9 +29,7 @@ module Bulkrax
         @result = @result.split(Regexp.new(self.split))
       end
 
-      if @result.is_a?(Array) && @result.size == 1
-        @result = @result[0]
-      end
+      @result = @result[0] if @result.is_a?(Array) && @result.size == 1
 
       if @result.is_a?(Array) && self.parsed && self.respond_to?("parse_#{to}")
         @result.each_with_index do |res, index|
@@ -56,9 +54,9 @@ module Bulkrax
 
     def parse_subject(src)
       string = src.to_s.strip.downcase
-      if string.present?
-        string.slice(0,1).capitalize + string.slice(1..-1)
-      end
+      return unless string.present?
+
+      string.slice(0, 1).capitalize + string.slice(1..-1)
     end
 
     def parse_types(src)
@@ -97,10 +95,9 @@ module Bulkrax
     def parse_format_original(src)
       # drop the case completely then upcase the first letter
       string = src.to_s.strip.downcase
-      if string.present?
-        string.slice(0,1).capitalize + string.slice(1..-1)
-      end
-    end
+      return unless string.present?
 
+      string.slice(0, 1).capitalize + string.slice(1..-1)
+    end
   end
 end
