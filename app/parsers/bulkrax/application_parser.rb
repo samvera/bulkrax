@@ -66,7 +66,7 @@ module Bulkrax
 
     def path_for_import
       path = File.join(Bulkrax.import_path, importerexporter.id.to_s)
-      FileUtils.mkdir_p(path) unless File.exists?(path)
+      FileUtils.mkdir_p(path) unless File.exist?(path)
       path
     end
 

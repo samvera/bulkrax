@@ -126,9 +126,9 @@ module Bulkrax
     # @todo - investigate using perform_later, and having the importer check for
     #   DownloadCloudFileJob before it starts
     def retrieve_cloud_files(files)
-      files_path = File.join(path_for_import, 'files')  
-      FileUtils.mkdir_p(files_path) unless File.exists?(files_path)
-      files.each_pair do | key, file |
+      files_path = File.join(path_for_import, 'files')
+      FileUtils.mkdir_p(files_path) unless File.exist?(files_path)
+      files.each_pair do |_key, file|
         # this only works for uniquely named files
         target_file = File.join(files_path, file['file_name'])
         # Now because we want the files in place before the importer runs
@@ -160,20 +160,19 @@ module Bulkrax
     # in the parser as it is specific to the format
     def setup_export_file
       File.open(File.join(importerexporter.exporter_export_path, 'export.csv'), 'w')
-    end 
+    end
 
     def file_paths
-      @file_paths ||= records.map do | r | 
-        if r[:file].present?
-          r[:file].split(/\s*[:;|]\s*/).map do | f |
-            file = File.join(files_path, f)
-            if File.exist?(file)
-              file
-            else
-              raise "File #{file} does not exist"
-            end
-          end.compact.uniq
-        end
+      @file_paths ||= records.map do |r|
+        next unless r[:file].present?
+        r[:file].split(/\s*[:;|]\s*/).map do |f|
+          file = File.join(files_path, f)
+          if File.exist?(file)
+            file
+          else
+            raise "File #{file} does not exist"
+          end
+        end.compact.uniq
       end.flatten.compact
     end
 
