@@ -38,11 +38,13 @@ module Bulkrax
     end
 
     def build_metadata
-      if record.nil?
-        raise StandardError, 'Record not found'
-      elsif importerexporter.parser.required_elements?(record.keys) == false
+      raise StandardError, 'Record not found' if record.nil?
+
+      # rubocop:disable Style/IfUnlessModifier
+      if importerexporter.parser.required_elements?(record.keys) == false
         raise StandardError, "Missing required elements, required elements are: #{importerexporter.parser.required_elements.join(', ')}"
       end
+      # rubocop:enable Style/IfUnlessModifier
 
       self.parsed_metadata = {}
       self.parsed_metadata[Bulkrax.system_identifier_field] = [record['source_identifier']]
@@ -121,11 +123,8 @@ module Bulkrax
       return file if File.exist?(file)
       path = importerexporter.parser.files_path
       f = File.join(path, file)
-      if File.exist?(f)
-        return f
-      else
-        raise "File #{f} does not exist"
-      end
+      return f if File.exist?(f)
+      raise "File #{f} does not exist"
     end
   end
 end

@@ -11,9 +11,7 @@ module Bulkrax
       @raw_record ||= client.get_record(identifier: identifier, metadata_prefix: parser.parser_fields['metadata_prefix'])
     end
 
-    def record
-      raw_record.record
-    end
+    delegate :record, to: raw_record
 
     def sets
       raw_record.record.header.set_spec
@@ -66,12 +64,11 @@ module Bulkrax
         self.collection_ids << c.id if c.present? && !self.collection_ids.include?(c.id)
       else # All - collections should exist for all sets
         sets.each do |set|
-          c = Collection.where(Bulkrax.system_identifier_field => importerexporter.unique_collection_identifier(set.content)).first
+          c = Collection.find_by(Bulkrax.system_identifier_field => importerexporter.unique_collection_identifier(set.content))
           self.collection_ids << c.id if c.present? && !self.collection_ids.include?(c.id)
         end
       end
       return self.collection_ids
     end
-
   end
 end

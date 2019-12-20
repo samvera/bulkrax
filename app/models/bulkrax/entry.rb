@@ -85,20 +85,19 @@ module Bulkrax
         self.last_error = nil
         self.last_error_at = nil
         self.last_exception = nil
-        self.last_succeeded_at = Time.now
+        self.last_succeeded_at = Time.current
       else
         self.last_error =  { error_class: e.class.to_s, error_message: e.message, error_trace: e.backtrace }
-        self.last_error_at = Time.now
+        self.last_error_at = Time.current
         self.last_exception = e
       end
     end
 
     def valid_system_id(model_class)
-      unless model_class.properties.keys.include?(Bulkrax.system_identifier_field)
-        raise(
-          "#{model_class} does not implement the system_identifier_field: #{Bulkrax.system_identifier_field}"
-        )
-      end
+      return unless model_class.properties.keys.include?(Bulkrax.system_identifier_field)
+      raise(
+        "#{model_class} does not implement the system_identifier_field: #{Bulkrax.system_identifier_field}"
+      )
     end
 
     def find_collection(collection_identifier)
