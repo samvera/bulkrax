@@ -2,7 +2,6 @@
 
 module Bulkrax
   class ApplicationParser
-
     attr_accessor :importerexporter, :total
     delegate :only_updates, :limit, :current_exporter_run, :current_importer_run, :errors,
              :seen, :increment_counters, :parser_fields, :user,
@@ -83,7 +82,6 @@ module Bulkrax
 
         # not finding the entries here indicates that the given identifiers are incorrect
         # in that case we should log that
-        children = []
         children = value.map do |child|
           entry_class.where(
             identifier: child,
@@ -96,7 +94,7 @@ module Bulkrax
           # Increment the failures for the number we couldn't find
           # Because all of our entries have been created by now, if we can't find them, the data is wrong
           Rails.logger.error("Expected #{value.length} children for parent entry #{parent.id}, found #{children.length}")
-          return if children.empty?
+          break if children.empty?
           Rails.logger.warn("Adding #{children.length} children to parent entry #{parent.id} (expected #{value.length})")
         end
         parent_id = parent.id

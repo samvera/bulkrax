@@ -112,7 +112,7 @@ module Bulkrax
     # See https://stackoverflow.com/questions/2650517/count-the-number-of-lines-in-a-file-without-reading-entire-file-into-memory
     def total
       if importer?
-        @total ||= `wc -l #{parser_fields['import_file_path']}`.to_i -1
+        @total ||= `wc -l #{parser_fields['import_file_path']}`.to_i - 1
       elsif exporter?
         @total ||= importerexporter.entries.count
       else
@@ -167,11 +167,8 @@ module Bulkrax
         next unless r[:file].present?
         r[:file].split(/\s*[:;|]\s*/).map do |f|
           file = File.join(files_path, f)
-          if File.exist?(file)
-            file
-          else
-            raise "File #{file} does not exist"
-          end
+          return file if File.exist?(file)
+          raise "File #{file} does not exist"
         end.compact.uniq
       end.flatten.compact
     end
