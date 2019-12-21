@@ -8,15 +8,14 @@ module Bulkrax
       entry = Entry.find(args[0])
       build_result = entry.build
       if build_result.present?
-        entry.save!
         ImporterRun.find(args[1]).increment!(:processed_records)
       else
         # do not retry here because whatever parse error kept you from creating a work will likely
         # keep preventing you from doing so.
-        entry.save!
         ImporterRun.find(args[1]).increment!(:failed_records)
       end
-    rescue CollectionsCreatedError => e
+      entry.save!
+    rescue CollectionsCreatedError
       reschedule(args[0], args[1])
       # Exceptions here are not an issue with building the work.
       # Those are caught seperately, these are more likely network, db or other unexpected issues.
