@@ -15,7 +15,7 @@ module Bulkrax
         ImporterRun.find(args[1]).increment!(:failed_records)
       end
       entry.save!
-    rescue CollectionsCreatedError
+    rescue Bulkrax::CollectionsCreatedError
       reschedule(args[0], args[1])
       # Exceptions here are not an issue with building the work.
       # Those are caught seperately, these are more likely network, db or other unexpected issues.
