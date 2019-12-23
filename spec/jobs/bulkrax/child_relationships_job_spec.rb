@@ -126,7 +126,7 @@ module Bulkrax
 
       it 'creates the object factory' do
         expect(Bulkrax::ObjectFactory).to receive(:new).with(
-          { collections: ["collection_id"], id: "collection_id" },
+          { children: ["collection_id"], id: "collection_id" },
           'entry_collection',
           false,
           importer.user,

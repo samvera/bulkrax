@@ -7,14 +7,16 @@ module Bulkrax
   class OaiEntry < Entry
     serialize :raw_metadata, JSON
 
+    def record
+      raw_record
+    end
+
     def raw_record
       @raw_record ||= client.get_record(identifier: identifier, metadata_prefix: parser.parser_fields['metadata_prefix'])
     end
 
-    delegate :record, to: raw_record
-
     def sets
-      raw_record.record.header.set_spec
+      record.header.set_spec
     end
 
     def context
