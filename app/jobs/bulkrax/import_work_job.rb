@@ -22,7 +22,8 @@ module Bulkrax
         importer_run.decrement(:enqueued_records)
         importer_run.save!
       end
-    rescue CollectionsCreatedError => e
+      entry.save!
+    rescue CollectionsCreatedError
       reschedule(args[0], args[1])
       # Exceptions here are not an issue with building the work.
       # Those are caught separately, these are more likely network, db or other unexpected issues.

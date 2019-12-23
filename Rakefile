@@ -19,13 +19,9 @@ end
 APP_RAKEFILE = File.expand_path("../spec/test_app/Rakefile", __FILE__)
 load 'rails/tasks/engine.rake'
 
-
 load 'rails/tasks/statistics.rake'
 
-
-
 require 'bundler/gem_tasks'
-
 
 require 'solr_wrapper/rake_task' unless Rails.env.production?
 
@@ -34,7 +30,7 @@ begin
 
   RSpec::Core::RakeTask.new(:spec)
 
-  task :default => :spec
-rescue LoadError
+  task default: :spec
+rescue LoadError # rubocop:disable Lint/HandleExceptions
   # no rspec available
 end

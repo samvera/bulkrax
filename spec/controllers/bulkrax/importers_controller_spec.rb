@@ -47,7 +47,7 @@ module Bulkrax
         admin_set_id: 'admin_set/default',
         user_id: FactoryBot.create(:user).id,
         parser_klass: 'Bulkrax::CsvParser',
-        parser_fields: { }
+        parser_fields: {}
       }
     end
 
@@ -124,7 +124,7 @@ module Bulkrax
             name: 'Test Importer Updated',
             admin_set_id: 'admin_set/default',
             user_id: FactoryBot.create(:user).id,
-            parser_fields: { }
+            parser_fields: {}
           }
         end
 
