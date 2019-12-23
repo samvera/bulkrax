@@ -143,7 +143,7 @@ module Bulkrax
       end
 
       def member_of_collections
-        ms = @object.member_of_collection_ids.to_a
+        ms = @object.member_of_collection_ids.to_a.map { | id | find_collection(id) }
         [:collection, :collections].each do |atat|
           next unless attributes[atat].present?
           ms.concat(
