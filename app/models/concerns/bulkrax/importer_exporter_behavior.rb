@@ -19,7 +19,7 @@ module Bulkrax
     def increment_counters(index)
       current_importer_run.total_work_entries = if limit.to_i.positive?
                                                   limit
-                                                elsif parser.positive?
+                                                elsif parser.total.positive?
                                                   parser.total
                                                 else
                                                   index + 1
