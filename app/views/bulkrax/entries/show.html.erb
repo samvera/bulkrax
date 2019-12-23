@@ -1,0 +1,38 @@
+<div class="panel panel-default">
+  <div class="panel-body">
+
+    <p id="notice"><%= notice %></p>
+
+    <p>
+      <strong>Identifier:</strong>
+      <%= @entry.identifier %>
+    </p>
+
+    <p>
+      <strong>Entry ID:</strong>
+      <%= @entry.id %>
+    </p>
+
+    <p>
+      <strong>Type:</strong>
+      <%= @importer.user %>
+    </p>
+
+    <p>
+      <strong>Raw Metadata:</strong>
+      <%= @entry.raw_metadata %>
+    </p>
+
+    <p>
+      <strong>Parsed Metadata:</strong>
+      <%= @entry.parsed_metadata %>
+    </p>
+
+    <p>
+      <strong>Importer:</strong>
+      <%= link_to @importer.name, importer_path(@importer) %>
+    </p>
+
+    <p>
+      <strong>Work/Collection Link:</strong>
+    </p>

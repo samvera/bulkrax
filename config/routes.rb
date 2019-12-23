@@ -8,5 +8,6 @@ Bulkrax::Engine.routes.draw do
     collection do
       post :external_sets
     end
+    resources :entries, only: %i[show]
   end
 end

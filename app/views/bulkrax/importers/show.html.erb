@@ -68,7 +68,7 @@
               <td><span class="glyphicon glyphicon-remove" style="color: red;"></span> <%= e.status %></td>
             <% end %>
             <td><%= e.status_at %></td>
-            <td>TODO: Actions</td>
+            <td><%= link_to raw('<span class="glyphicon glyphicon-info-sign"></span>'), bulkrax.importer_entry_path(@importer.id, e.id) %></td>
           </tr>
         <% end %>
       </tbody>
