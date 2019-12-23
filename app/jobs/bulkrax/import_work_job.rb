@@ -9,18 +9,16 @@ module Bulkrax
       build_result = entry.build
       if build_result.present?
         entry.save!
-        importer_run = ImporterRun.find(args[1])
-        importer_run.increment(:processed_records)
-        importer_run.decrement(:enqueued_records)
-        importer_run.save!
+        ImporterRun.find(args[1]).increment(:processed_records)
+        ImporterRun.find(args[1]).decrement(:enqueued_records)
+        ImporterRun.find(args[1]).save!
       else
         # do not retry here because whatever parse error kept you from creating a work will likely
         # keep preventing you from doing so.
         entry.save!
-        importer_run = ImporterRun.find(args[1])
-        importer_run.increment(:failed_records)
-        importer_run.decrement(:enqueued_records)
-        importer_run.save!
+        ImporterRun.find(args[1]).increment(:failed_records)
+        ImporterRun.find(args[1]).decrement(:enqueued_records)
+        ImporterRun.find(args[1]).save!
       end
       entry.save!
     rescue CollectionsCreatedError
