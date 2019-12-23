@@ -14,7 +14,7 @@ module Bulkrax
         importer_run.decrement(:enqueued_records)
         importer_run.save!
       else
-        # do not retry m here because whatever parse error kept you from creating a work will likely
+        # do not retry here because whatever parse error kept you from creating a work will likely
         # keep preventing you from doing so.
         entry.save!
         importer_run = ImporterRun.find(args[1])
