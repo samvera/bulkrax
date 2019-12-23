@@ -94,7 +94,7 @@ module Bulkrax
       Rails.logger.info("#{msg} (#{Array(attributes[system_identifier_field]).first})")
     end
 
-    # private
+    private
 
       # @param [Hash] attrs the attributes to put in the environment
       # @return [Hyrax::Actors::Environment]
