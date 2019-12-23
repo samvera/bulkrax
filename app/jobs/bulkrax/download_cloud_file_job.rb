@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Bulkrax
   class DownloadCloudFileJob < ApplicationJob
     queue_as :import
@@ -13,6 +15,5 @@ module Bulkrax
         # first argument is the filename instead of a chunk of data.
       end
     end
-
   end
 end

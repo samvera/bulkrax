@@ -12,11 +12,10 @@ module Bulkrax
     end
 
     def import(importer, only_updates_since_last_import)
-      if importer.valid_import?
-        importer.import_collections
-        importer.import_works(only_updates_since_last_import)
-        importer.create_parent_child_relationships
-      end
+      return unless importer.valid_import?
+      importer.import_collections
+      importer.import_works(only_updates_since_last_import)
+      importer.create_parent_child_relationships
     end
 
     def schedule(importer)

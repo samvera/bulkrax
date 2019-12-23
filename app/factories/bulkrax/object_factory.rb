@@ -284,13 +284,12 @@ module Bulkrax
       # Called if #replace_files is true
       # Destroy all file_sets for this object
       def destroy_existing_files
-        if object.present? && object.file_sets.present?
-          object.file_sets.each do |fs|
-            Hyrax::Actors::FileSetActor.new(fs, @user).destroy
-          end
-          @object = object.reload
-          log_deleted_fs(object)
+        return unless object.present? && object.file_sets.present?
+        object.file_sets.each do |fs|
+          Hyrax::Actors::FileSetActor.new(fs, @user).destroy
         end
+        @object = object.reload
+        log_deleted_fs(object)
       end
 
       def import_files
