@@ -94,7 +94,7 @@ module Bulkrax
       Rails.logger.info("#{msg} (#{Array(attributes[system_identifier_field]).first})")
     end
 
-    private
+    # private
 
       # @param [Hash] attrs the attributes to put in the environment
       # @return [Hyrax::Actors::Environment]
@@ -143,7 +143,7 @@ module Bulkrax
       end
 
       def member_of_collections
-        ms = @object.member_of_collection_ids.to_a
+        ms = @object.member_of_collection_ids.to_a.map { | id | find_collection(id) }
         [:collection, :collections].each do |atat|
           next unless attributes[atat].present?
           ms.concat(
