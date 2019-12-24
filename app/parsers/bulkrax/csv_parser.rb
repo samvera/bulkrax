@@ -167,10 +167,13 @@ module Bulkrax
         next unless r[:file].present?
         r[:file].split(/\s*[:;|]\s*/).map do |f|
           file = File.join(files_path, f.gsub(' ', '_'))
-          return file if File.exist?(file)
-          raise "File #{file} does not exist"
-        end.compact.uniq
-      end.flatten.compact
+          if File.exist?(file)
+            file 
+          else
+            raise "File #{file} does not exist"
+          end
+        end
+      end.flatten.compact.uniq
     end
 
     def files_path
