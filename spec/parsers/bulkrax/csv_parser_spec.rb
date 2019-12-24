@@ -79,7 +79,7 @@ module Bulkrax
         expect(subject.parents).to eq("123456789" => ["234567891"], "234567891" => ["345678912"], "345678912" => ["456789123"], "456789123" => ["234567891"])
       end
 
-      it 'something else' do
+      it 'invokes Bulkrax::ChildRelationshipsJob' do
         expect(Bulkrax::ChildRelationshipsJob).to receive(:perform_later).exactly(4).times
         subject.create_parent_child_relationships
       end

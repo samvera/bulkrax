@@ -108,7 +108,13 @@
         <% @work_entries.each do |e| %>
           <tr>
             <td><%= e.identifier %></td>
-            <td><%= Array.wrap(e.raw_metadata.dig("collection")).join(';') %></td>
+            <% if e.parsed_metadata.present? && e.parsed_metadata.dig("collections").present? %>
+              <td><%= e.parsed_metadata.dig("collections").map {|c| c['id'] }.join('; ') %></td>
+            <% elsif e.raw_metadata.present? %>
+              <td><%= Array.wrap(e.raw_metadata.dig("collection")).join(';') %></td>
+            <% else %>
+            <td></td>
+            <% end %>
             <td><%= e.id %></td>
             <% if e.status == "succeeded" %>
               <td><span class="glyphicon glyphicon-ok" style="color: green;"></span> <%= e.status %></td>
