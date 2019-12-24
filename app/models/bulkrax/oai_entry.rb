@@ -8,7 +8,7 @@ module Bulkrax
     serialize :raw_metadata, JSON
 
     def record
-      raw_record
+      raw_record.record
     end
 
     def raw_record
