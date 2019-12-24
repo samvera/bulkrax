@@ -94,7 +94,7 @@ module Bulkrax
     end
 
     def valid_system_id(model_class)
-      return unless model_class.properties.keys.include?(Bulkrax.system_identifier_field)
+      return true if unless model_class.properties.keys.include?(Bulkrax.system_identifier_field)
       raise(
         "#{model_class} does not implement the system_identifier_field: #{Bulkrax.system_identifier_field}"
       )
