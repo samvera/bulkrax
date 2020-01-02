@@ -50,10 +50,9 @@ module Bulkrax
     end
 
     def add_collections
-      if find_or_create_collection_ids.present?
-        self.parsed_metadata['collections'] = []
-        self.parsed_metadata['collections'] += find_or_create_collection_ids.map { |c| { id: c } }
-      end
+      return unless find_or_create_collection_ids.present?
+      self.parsed_metadata['collections'] = []
+      self.parsed_metadata['collections'] += find_or_create_collection_ids.map { |c| { id: c } }
     end
 
     def factory
@@ -62,9 +61,9 @@ module Bulkrax
 
     def factory_class
       fc = if self.parsed_metadata&.[]('model').present?
-             self.parsed_metadata&.[]('model').is_a?(Array) ? self.parsed_metadata&.[]('model').first : self.parsed_metadata&.[]('model')
+             self.parsed_metadata&.[]('model').is_a?(Array) ? self.parsed_metadata&.[]('model')&.first : self.parsed_metadata&.[]('model')
            elsif self.mapping&.[]('work_type').present?
-             self.parsed_metadata&.[]('work_type').is_a?(Array) ? self.parsed_metadata&.[]('work_type').first : self.parsed_metadata&.[]('work_type')
+             self.parsed_metadata&.[]('work_type').is_a?(Array) ? self.parsed_metadata&.[]('work_type')&.first : self.parsed_metadata&.[]('work_type')
            else
              Bulkrax.default_work_type
            end

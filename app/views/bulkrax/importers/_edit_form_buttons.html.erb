@@ -4,7 +4,7 @@
 <% if @importer.importer_runs.blank? %>
 	<%= form.button :submit, value: 'Update Importer', class: 'btn btn-primary' %>
 	| <%= form.button :submit, value: 'Update and Import (importer has not yet been run)', class: 'btn btn-primary' %>
-<% elsif @importer.parser_klass == 'Bulkrax::OaiParser' %> 
+<% elsif @importer.parser_klass.include?('Oai') %> 
 	<%= form.button :submit, value: 'Update Importer', class: 'btn btn-primary' %>
 	| <%= form.button :submit, value: 'Update and Harvest Updated Items', class: 'btn btn-primary' %>
 	| <%= form.button :submit, value: 'Update and Re-Harvest All Items', class: 'btn btn-primary' %>

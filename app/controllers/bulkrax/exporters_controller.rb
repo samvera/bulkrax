@@ -140,10 +140,8 @@ module Bulkrax
         self.content_type = 'application/zip'
       end
 
-      private
-
-        def stream_body(iostream)
-          self.response_body = iostream
-        end
+      def stream_body(iostream)
+        self.response_body = iostream
+      end
   end
 end

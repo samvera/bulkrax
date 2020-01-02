@@ -36,13 +36,27 @@
     </p>
 
     <p>
-      <strong>Parser fields:</strong>
-      <%= @importer.parser_fields %>
+      <strong>Parser fields:</strong><br />
+      <% @importer.parser_fields.each do |key,value| %>
+        <%= key %>: <%= value %> <br />
+      <% end %>
     </p>
 
     <p>
-      <strong>Field mapping:</strong>
-      <%= @importer.field_mapping %>
+      <strong>Field mapping:</strong><br />
+      <% @importer.field_mapping.each do |key,value| %>
+        <%= key %>: <%= value %> <br />
+      <% end %>
+    </p>
+
+    <p>
+      <strong>Total Works:</strong>
+      <%= @importer.importer_runs.last&.total_work_entries %>
+    </p>
+
+    <p>
+      <strong>Total Collections:</strong>
+      <%= @importer.importer_runs.last&.total_collection_entries %>
     </p>
     <br />
     <h2>Collection Entries</h2>
@@ -73,6 +87,7 @@
         <% end %>
       </tbody>
     </table>
+    <%= page_entries_info(@collection_entries, param_name: :collections_entries_page) %><br />
     <%= paginate(@collection_entries, param_name: :collections_entries_page) %>
 
     <br />
@@ -82,7 +97,6 @@
         <tr>
           <th>Identifier</th>
           <th>Collection</th>
-          <th>Row #</th>
           <th>Entry ID</th>
           <th>Status</th>
           <th>Status Set At</th>
@@ -93,8 +107,13 @@
         <% @work_entries.each do |e| %>
           <tr>
             <td><%= e.identifier %></td>
-            <td><%= e.raw_metadata.dig("collection") %></td>
-            <td>Row #</td>
+            <% if e.parsed_metadata.present? && e.parsed_metadata.dig("collections").present? %>
+              <td><%= e.parsed_metadata.dig("collections").map {|c| c['id'] }.join('; ') %></td>
+            <% elsif e.raw_metadata.present? %>
+              <td><%= Array.wrap(e.raw_metadata.dig("collection")).join(';') %></td>
+            <% else %>
+            <td></td>
+            <% end %>
             <td><%= e.id %></td>
             <% if e.status == "succeeded" %>
               <td><span class="glyphicon glyphicon-ok" style="color: green;"></span> <%= e.status %></td>
@@ -107,6 +126,7 @@
         <% end %>
       </tbody>
     </table>
+    <%= page_entries_info(@work_entries, param_name: :collections_entries_page) %><br />
     <%= paginate(@work_entries, param_name: :work_entries_page) %>
     <br />
     <%= link_to 'Edit', edit_importer_path(@importer) %> |

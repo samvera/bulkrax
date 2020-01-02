@@ -52,9 +52,7 @@ module Bulkrax
       field_mapping_params
       if @importer.save
         files_for_import(file, cloud_files)
-        if params[:commit] == 'Create and Import'
-          Bulkrax::ImporterJob.perform_later(@importer.id)
-        end
+        Bulkrax::ImporterJob.perform_later(@importer.id) if params[:commit] == 'Create and Import'
         redirect_to importers_path, notice: 'Importer was successfully created.'
       else
         render :new
@@ -74,8 +72,8 @@ module Bulkrax
         # OAI-only - selective re-harvest
         elsif params[:commit] == 'Update and Harvest Updated Items'
           Bulkrax::ImporterJob.perform_later(@importer.id, true)
-        # Perform a full metadata and files re-import
-        elsif params[:commit] == 'Update and Re-Import (update metadata and replace files)'
+        # Perform a full metadata and files re-import; do the same for an OAI re-harvest of all items
+        elsif params[:commit] == ('Update and Re-Import (update metadata and replace files)' || 'Update and Re-Harvest All Items')
           @importer.parser_fields['replace_files'] = true
           @importer.save
           Bulkrax::ImporterJob.perform_later(@importer.id)
@@ -107,9 +105,7 @@ module Bulkrax
 
       def files_for_import(file, cloud_files)
         return if file.blank? && cloud_files.blank?
-        if file.present?
-          @importer[:parser_fields]['import_file_path'] = @importer.parser.write_import_file(file)
-        end
+        @importer[:parser_fields]['import_file_path'] = @importer.parser.write_import_file(file) if file.present?
         if cloud_files.present?
           # For BagIt, there will only be one bag, so we get the file_path back and set import_file_path
           # For CSV, we expect only file uploads, so we won't get the file_path back
