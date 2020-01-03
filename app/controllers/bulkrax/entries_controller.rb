@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_dependency "bulkrax/application_controller"
 require_dependency "oai"
 require 'fileutils'
 
