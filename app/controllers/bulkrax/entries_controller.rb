@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require_dependency "bulkrax/application_controller"
 require_dependency "oai"
 require 'fileutils'
 
@@ -19,7 +18,6 @@ module Bulkrax
       add_breadcrumb 'Importers', bulkrax.importers_path
       add_breadcrumb @importer.name, bulkrax.importer_path(@importer.id)
       add_breadcrumb @entry.id
-      # render 'importers/entries/show.html.erb'
     end
 
   end
