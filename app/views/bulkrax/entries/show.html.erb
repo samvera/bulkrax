@@ -29,10 +29,28 @@
     </p>
 
     <p>
-      <strong>Importer:</strong>
-      <%= link_to @importer.name, importer_path(@importer) %>
+      <% if @entry.last_succeeded_at != nil %>
+        <% if @importer.class == Bulkrax::Importer %>
+          <strong>Importer:</strong>
+          <%= link_to @importer.name, importer_path(@importer) %>
+        <% else %>
+        <%# TODO: Create Exporter showpage table for individual items in order to link to the item %>
+          <strong>Exporter Link: Showpage has not been setup yet.</strong>
+        <% end %>
+      <% else %>
+        <strong>Importer Link: Item has not been imported successfully</strong>
+      <% end %>
     </p>
 
     <p>
-      <strong>Work/Collection Link:</strong>
+      <% if @entry.last_succeeded_at != nil %>
+        <strong><%= @entry.factory_class.to_s %> Link:</strong>
+        <% if @entry.factory_class.to_s == "Collection" %>
+          <%= link_to @entry.factory_class.to_s, hyrax.polymorphic_path(@entry.factory.find) %>
+        <% else %>
+          <%= link_to @entry.factory_class.to_s, main_app.polymorphic_path(@entry.factory.find) %>
+        <% end %>
+      <% else %>
+        <strong> Item Link: Item has not been imported successfully</strong>
+      <% end %>
     </p>
