@@ -22,19 +22,3 @@ div.importer_parser_fields_file_style span.radio {
 div#file_upload, div#file_path {
   display: none
 }
-
-div.entry-buttons {
-  text-align: right;
-  margin-top: 25px;
-  margin-bottom: 10px;
-}
-
-div.entry-buttons button {
-  display: inline-block;
-}
-
-@media only screen and (max-width: 991px) {
-  div.entry-buttons {
-    text-align: left;
-  }
-}
