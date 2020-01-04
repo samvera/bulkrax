@@ -67,6 +67,7 @@
           <th>Identifier</th>
           <th>Entry ID</th>
           <th>Status</th>
+          <th>Errors</th>
           <th>Status Set At</th>
           <th>Actions</th>
         </tr>
@@ -81,6 +82,7 @@
               <% else %>
               <td><span class="glyphicon glyphicon-remove" style="color: red;"></span> <%= e.status %></td>
             <% end %>
+            <td><%= link_to "Errors", bulkrax.importer_entry_path(@importer.id, e.id) %></td>
             <td><%= e.status_at %></td>
             <td><%= link_to raw('<span class="glyphicon glyphicon-info-sign"></span>'), bulkrax.importer_entry_path(@importer.id, e.id) %></td>
           </tr>
@@ -99,6 +101,7 @@
           <th>Collection</th>
           <th>Entry ID</th>
           <th>Status</th>
+          <th>Errors</th>
           <th>Status Set At</th>
           <th>Actions</th>
         </tr>
@@ -119,6 +122,11 @@
               <td><span class="glyphicon glyphicon-ok" style="color: green;"></span> <%= e.status %></td>
               <% else %>
               <td><span class="glyphicon glyphicon-remove" style="color: red;"></span> <%= e.status %></td>
+            <% end %>
+            <% if e.last_error.present? %>
+              <td><%= link_to e.last_error.dig("error_class"), bulkrax.importer_entry_path(@importer.id, e.id) %></td>
+            <% else %>
+              <td></td>
             <% end %>
             <td><%= e.status_at %></td>
             <td><%= link_to raw('<span class="glyphicon glyphicon-info-sign"></span>'), bulkrax.importer_entry_path(@importer.id, e.id) %></td>

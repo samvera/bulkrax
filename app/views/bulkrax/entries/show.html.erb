@@ -29,6 +29,15 @@
     </p>
 
     <p>
+      <% if @entry.last_error.present? %>
+        <strong>Errored at:</strong> <%= @entry.last_error_at %><br />
+        <strong>Error:</strong> <%= @entry.last_error['error_class'] %> - <%= @entry.last_error['error_message'] %>
+      <% else %>
+        <strong>Succeeded At:</strong> <%= @entry.last_succeeded_at %>
+      <% end %>
+    </p>
+
+    <p>
       <% if @entry.last_succeeded_at != nil %>
         <% if @importer.class == Bulkrax::Importer %>
           <strong>Importer:</strong>
