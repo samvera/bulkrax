@@ -3,6 +3,7 @@
 require_dependency "bulkrax/application_controller"
 require_dependency "oai"
 require 'fileutils'
+require 'csv'
 
 module Bulkrax
   class ImportersController < ApplicationController
