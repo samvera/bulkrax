@@ -19,13 +19,26 @@
     </p>
 
     <p>
-      <strong>Raw Metadata:</strong>
-      <%= @entry.raw_metadata %>
+      <strong>Raw Metadata:</strong><br />
+      <% @entry.raw_metadata.each do |key,value| %>
+        <%= key %>: <%= value %> <br />
+      <% end %>
     </p>
 
     <p>
-      <strong>Parsed Metadata:</strong>
-      <%= @entry.parsed_metadata %>
+      <strong>Parsed Metadata:</strong><br />
+      <% @entry.parsed_metadata.each do |key,value| %>
+        <%= key %>: <%= value %> <br />
+      <% end %>
+    </p>
+
+    <p>
+      <% if @entry.last_error.present? %>
+        <strong>Errored at:</strong> <%= @entry.last_error_at %><br />
+        <strong>Error:</strong> <%= @entry.last_error['error_class'] %> - <%= @entry.last_error['error_message'] %>
+      <% else %>
+        <strong>Succeeded At:</strong> <%= @entry.last_succeeded_at %>
+      <% end %>
     </p>
 
     <p>
