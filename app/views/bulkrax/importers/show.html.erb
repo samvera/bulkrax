@@ -82,7 +82,11 @@
               <% else %>
               <td><span class="glyphicon glyphicon-remove" style="color: red;"></span> <%= e.status %></td>
             <% end %>
-            <td><%= link_to "Errors", bulkrax.importer_entry_path(@importer.id, e.id) %></td>
+            <% if e.last_error.present? %>
+              <td><%= link_to e.last_error.dig("error_class"), bulkrax.importer_entry_path(@importer.id, e.id) %></td>
+            <% else %>
+              <td></td>
+            <% end %>
             <td><%= e.status_at %></td>
             <td><%= link_to raw('<span class="glyphicon glyphicon-info-sign"></span>'), bulkrax.importer_entry_path(@importer.id, e.id) %></td>
           </tr>

@@ -19,19 +19,27 @@
     </p>
 
     <p>
-      <strong>Raw Metadata:</strong>
-      <%= @entry.raw_metadata %>
+      <strong>Raw Metadata:</strong><br />
+      <% @entry.raw_metadata.each do |key,value| %>
+        <%= key %>: <%= value %> <br />
+      <% end %>
     </p>
 
     <p>
-      <strong>Parsed Metadata:</strong>
-      <%= @entry.parsed_metadata %>
+      <strong>Parsed Metadata:</strong><br />
+      <% if @entry.parsed_metadata.present? %>
+        <% @entry.parsed_metadata.each do |key,value| %>
+          <%= key %>: <%= value %> <br />
+        <% end %>
+      <% end %>
     </p>
 
     <p>
       <% if @entry.last_error.present? %>
         <strong>Errored at:</strong> <%= @entry.last_error_at %><br />
-        <strong>Error:</strong> <%= @entry.last_error['error_class'] %> - <%= @entry.last_error['error_message'] %>
+        <strong>Error:</strong> <%= @entry.last_error['error_class'] %> - <%= @entry.last_error['error_message'] %><br />
+        <strong>Error Trace: </strong> <button>Toggle</button>
+        <p id="error_trace" style="display: none"><%= @entry.last_error['error_trace'] %></p>
       <% else %>
         <strong>Succeeded At:</strong> <%= @entry.last_succeeded_at %>
       <% end %>
@@ -63,3 +71,9 @@
         <strong> Item Link: Item has not been imported successfully</strong>
       <% end %>
     </p>
+
+<script>
+  $( "button" ).click(function() {
+    $( "#error_trace" ).toggle();
+  });
+</script>
