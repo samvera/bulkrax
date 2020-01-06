@@ -21,9 +21,14 @@ module Bulkrax
     end
 
     describe 'importer run' do
+      before do
+        allow_any_instance_of(Bulkrax::OaiDcParser).to receive(:collections_total).and_return(1)
+      end
+
       it 'creates an ImporterRun with total_work_entries set to the value of limit' do
         importer.current_importer_run
         expect(importer.current_importer_run.total_work_entries).to eq(10)
+        expect(importer.current_importer_run.total_collection_entries).to eq(1)
       end
     end
 
@@ -69,6 +74,7 @@ module Bulkrax
 
         it 'creates a default mapping from the column headers' do
           expect(importer.mapping).to eq(
+            "collection" => {"excluded"=>false, "from"=>["collection"], "if"=>nil, "parsed"=>false, "split"=>false},
             "source_identifier" => { "excluded" => false, "from" => ["source_identifier"], "if" => nil, "parsed" => false, "split" => false },
             "title" => { "excluded" => false, "from" => ["title"], "if" => nil, "parsed" => false, "split" => false }
           )

@@ -17,8 +17,9 @@ module Bulkrax
       before do
         allow(entry).to receive(:save).and_return(true)
       end
-      it 'increments :processed_records' do
+      it 'increments :processed_records and decrements enqueued record' do
         expect(exporter_run).to receive(:increment!).with(:processed_records)
+        expect(exporter_run).to receive(:decrement!).with(:enqueued_records)
         subject.perform(1, 1)
       end
     end

@@ -5,7 +5,11 @@ module Bulkrax
     extend ActiveSupport::Concern
 
     def parser
-      @parser ||= self.parser_klass.constantize.new(self)
+      @parser ||= parser_class.new(self)
+    end
+
+    def parser_class
+      self.parser_klass.constantize
     end
 
     def last_imported_at
