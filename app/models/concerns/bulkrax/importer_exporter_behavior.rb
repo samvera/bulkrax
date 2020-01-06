@@ -17,13 +17,7 @@ module Bulkrax
     end
 
     def increment_counters(index)
-      current_importer_run.total_work_entries = if limit.to_i.positive?
-                                                  limit
-                                                elsif parser.total.positive?
-                                                  parser.total
-                                                else
-                                                  index + 1
-                                                end
+      current_importer_run.total_work_entries = index + 1 unless limit.to_i.positive? || parser.total.positive?
       current_importer_run.enqueued_records = index + 1
       current_importer_run.save!
     end

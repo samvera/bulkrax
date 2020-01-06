@@ -52,7 +52,7 @@ module Bulkrax
         next if collection_record.blank?
 
         # split by ; |
-        collection_record.split(/\s*[;|]\s*/).each do |collection|
+        collection_record.split(/\s*[;|]\s*/).each_with_index do |collection, index|
           metadata = {
             title: [collection],
             Bulkrax.system_identifier_field => [collection],
@@ -61,9 +61,9 @@ module Bulkrax
           }
           new_entry = find_or_create_entry(collection_entry_class, collection, 'Bulkrax::Importer', metadata)
           ImportWorkCollectionJob.perform_now(new_entry.id, current_importer_run.id)
+          increment_counters(index)
         end
       end
-      current_importer_run.total_collection_entries = collections_total
     end
 
     def create_works
@@ -110,9 +110,11 @@ module Bulkrax
     end
 
     # See https://stackoverflow.com/questions/2650517/count-the-number-of-lines-in-a-file-without-reading-entire-file-into-memory
+    #   Changed to grep as wc -l counts blank lines, and ignores the final unescaped line (which may or may not contain data)
     def total
       if importer?
-        @total ||= `wc -l #{parser_fields['import_file_path']}`.to_i - 1
+        # @total ||= `wc -l #{parser_fields['import_file_path']}`.to_i - 1
+        @total ||= `grep -vc ^$ #{parser_fields['import_file_path']}`.to_i - 1
       elsif exporter?
         @total ||= importerexporter.entries.count
       else

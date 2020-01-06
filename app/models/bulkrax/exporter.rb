@@ -43,7 +43,7 @@ module Bulkrax
     end
 
     def current_exporter_run
-      @current_exporter_run ||= self.exporter_runs.create!(total_work_entries: self.limit)
+      @current_exporter_run ||= self.exporter_runs.create!(total_work_entries: self.limit || parser.total)
     end
 
     def setup_export_path

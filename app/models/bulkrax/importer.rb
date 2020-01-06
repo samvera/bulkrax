@@ -53,7 +53,7 @@ module Bulkrax
     end
 
     def current_importer_run
-      @current_importer_run ||= self.importer_runs.create!(total_work_entries: self.limit)
+      @current_importer_run ||= self.importer_runs.create!(total_work_entries: self.limit || parser.total, total_collection_entries: parser.collections_total)
     end
 
     def seen
