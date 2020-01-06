@@ -5,6 +5,10 @@ inherit_gem:
 
 # Notch8 coding conventions
 # @see https://github.com/rubocop-hq/rubocop/blob/master/manual/configuration.md
+Style/FrozenStringLiteralComment:
+  Exclude:
+    - spec/test_app/db/schema.rb
+
 Style/RedundantReturn:
   Enabled: false
 
