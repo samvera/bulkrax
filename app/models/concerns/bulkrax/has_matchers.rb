@@ -45,7 +45,7 @@ module Bulkrax
           # we didn't find a match, add by default
           if multiple
             parsed_metadata[name] ||= []
-            parsed_metadata[name] << Array.wrap(node_content.strip)
+            parsed_metadata[name] += Array.wrap(node_content.strip)
           else
             parsed_metadata[name] = Array.wrap(node_content.strip).join('; ')
           end
