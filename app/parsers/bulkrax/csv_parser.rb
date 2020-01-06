@@ -15,7 +15,7 @@ module Bulkrax
       # does the CSV contain a collection column?
       return [] unless import_fields.include?(:collection)
       # retrieve a list of unique collections
-      records.map { |r| r[:collection] }.compact.uniq
+      records.map { |r| r[:collection].split(/\s*[;|]\s*/) unless r[:collection].blank? }.flatten.compact.uniq
     end
 
     def collections_total
@@ -48,21 +48,17 @@ module Bulkrax
     end
 
     def create_collections
-      collections.each do |collection_record|
-        next if collection_record.blank?
-
-        # split by ; |
-        collection_record.split(/\s*[;|]\s*/).each_with_index do |collection, index|
-          metadata = {
-            title: [collection],
-            Bulkrax.system_identifier_field => [collection],
-            visibility: 'open',
-            collection_type_gid: Hyrax::CollectionType.find_or_create_default_collection_type.gid
-          }
-          new_entry = find_or_create_entry(collection_entry_class, collection, 'Bulkrax::Importer', metadata)
-          ImportWorkCollectionJob.perform_now(new_entry.id, current_importer_run.id)
-          increment_counters(index)
-        end
+      collections.each_with_index do |collection, index|
+        next if collection.blank?
+        metadata = {
+          title: [collection],
+          Bulkrax.system_identifier_field => [collection],
+          visibility: 'open',
+          collection_type_gid: Hyrax::CollectionType.find_or_create_default_collection_type.gid
+        }
+        new_entry = find_or_create_entry(collection_entry_class, collection, 'Bulkrax::Importer', metadata)
+        ImportWorkCollectionJob.perform_now(new_entry.id, current_importer_run.id)
+        increment_counters(index)
       end
     end
 

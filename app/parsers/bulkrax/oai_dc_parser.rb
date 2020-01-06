@@ -73,7 +73,7 @@ module Bulkrax
         collection_type_gid: Hyrax::CollectionType.find_or_create_default_collection_type.gid
       }
 
-      list_sets.each do |set|
+      list_sets.each_with_index do | set, index |
         next unless collection_name == 'all' || collection_name == set.spec
         unique_collection_identifier = importerexporter.unique_collection_identifier(set.spec)
         metadata[:title] = [set.name]
