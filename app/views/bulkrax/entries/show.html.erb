@@ -1,0 +1,69 @@
+<div class="panel panel-default">
+  <div class="panel-body">
+
+    <p id="notice"><%= notice %></p>
+
+    <p>
+      <strong>Identifier:</strong>
+      <%= @entry.identifier %>
+    </p>
+
+    <p>
+      <strong>Entry ID:</strong>
+      <%= @entry.id %>
+    </p>
+
+    <p>
+      <strong>Type:</strong>
+      <%= @entry.factory_class %>
+    </p>
+
+    <p>
+      <strong>Raw Metadata:</strong><br />
+      <% @entry.raw_metadata.each do |key,value| %>
+        <%= key %>: <%= value %> <br />
+      <% end %>
+    </p>
+
+    <p>
+      <strong>Parsed Metadata:</strong><br />
+      <% @entry.parsed_metadata.each do |key,value| %>
+        <%= key %>: <%= value %> <br />
+      <% end %>
+    </p>
+
+    <p>
+      <% if @entry.last_error.present? %>
+        <strong>Errored at:</strong> <%= @entry.last_error_at %><br />
+        <strong>Error:</strong> <%= @entry.last_error['error_class'] %> - <%= @entry.last_error['error_message'] %>
+      <% else %>
+        <strong>Succeeded At:</strong> <%= @entry.last_succeeded_at %>
+      <% end %>
+    </p>
+
+    <p>
+      <% if @entry.last_succeeded_at != nil %>
+        <% if @importer.class == Bulkrax::Importer %>
+          <strong>Importer:</strong>
+          <%= link_to @importer.name, importer_path(@importer) %>
+        <% else %>
+        <%# TODO: Create Exporter showpage table for individual items in order to link to the item %>
+          <strong>Exporter Link: Showpage has not been setup yet.</strong>
+        <% end %>
+      <% else %>
+        <strong>Importer Link: Item has not been imported successfully</strong>
+      <% end %>
+    </p>
+
+    <p>
+      <% if @entry.last_succeeded_at != nil %>
+        <strong><%= @entry.factory_class.to_s %> Link:</strong>
+        <% if @entry.factory_class.to_s == "Collection" %>
+          <%= link_to @entry.factory_class.to_s, hyrax.polymorphic_path(@entry.factory.find) %>
+        <% else %>
+          <%= link_to @entry.factory_class.to_s, main_app.polymorphic_path(@entry.factory.find) %>
+        <% end %>
+      <% else %>
+        <strong> Item Link: Item has not been imported successfully</strong>
+      <% end %>
+    </p>

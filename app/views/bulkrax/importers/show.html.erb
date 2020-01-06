@@ -74,7 +74,7 @@
       <tbody>
         <% @collection_entries.each do |e| %>
           <tr>
-            <td><%= e.identifier %></td>
+            <td><%= link_to e.identifier, bulkrax.importer_entry_path(@importer.id, e.id) %></td>
             <td><%= e.id %></td>
             <% if e.status == "succeeded" %>
               <td><span class="glyphicon glyphicon-ok" style="color: green;"></span> <%= e.status %></td>
@@ -82,7 +82,7 @@
               <td><span class="glyphicon glyphicon-remove" style="color: red;"></span> <%= e.status %></td>
             <% end %>
             <td><%= e.status_at %></td>
-            <td>TODO: Actions</td>
+            <td><%= link_to raw('<span class="glyphicon glyphicon-info-sign"></span>'), bulkrax.importer_entry_path(@importer.id, e.id) %></td>
           </tr>
         <% end %>
       </tbody>
@@ -92,7 +92,6 @@
 
     <br />
     <h2>Work Entries</h2>
-    <%# TODO add entry info and paginate it here %>
     <table class='table table-striped'>
       <thead>
         <tr>
@@ -107,7 +106,7 @@
       <tbody>
         <% @work_entries.each do |e| %>
           <tr>
-            <td><%= e.identifier %></td>
+            <td><%= link_to e.identifier, bulkrax.importer_entry_path(@importer.id, e.id) %></td>
             <% if e.parsed_metadata.present? && e.parsed_metadata.dig("collections").present? %>
               <td><%= e.parsed_metadata.dig("collections").map {|c| c['id'] }.join('; ') %></td>
             <% elsif e.raw_metadata.present? %>
@@ -122,7 +121,7 @@
               <td><span class="glyphicon glyphicon-remove" style="color: red;"></span> <%= e.status %></td>
             <% end %>
             <td><%= e.status_at %></td>
-            <td>TODO: Actions</td>
+            <td><%= link_to raw('<span class="glyphicon glyphicon-info-sign"></span>'), bulkrax.importer_entry_path(@importer.id, e.id) %></td>
           </tr>
         <% end %>
       </tbody>
