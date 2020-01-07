@@ -75,7 +75,7 @@
       <tbody>
         <% @collection_entries.each do |e| %>
           <tr>
-            <td><%= e.identifier %></td>
+            <td><%= link_to e.identifier, bulkrax.importer_entry_path(@importer.id, e.id) %></td>
             <td><%= e.id %></td>
             <% if e.status == "succeeded" %>
               <td><span class="glyphicon glyphicon-ok" style="color: green;"></span> <%= e.status %></td>
@@ -113,7 +113,7 @@
       <tbody>
         <% @work_entries.each do |e| %>
           <tr>
-            <td><%= e.identifier %></td>
+            <td><%= link_to e.identifier, bulkrax.importer_entry_path(@importer.id, e.id) %></td>
             <% if e.parsed_metadata.present? && e.parsed_metadata.dig("collections").present? %>
               <td><%= e.parsed_metadata.dig("collections").map {|c| c['id'] }.join('; ') %></td>
             <% elsif e.raw_metadata.present? %>

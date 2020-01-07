@@ -20,8 +20,8 @@ module Bulkrax
     def run
       arg_hash = { id: attributes[:id], name: 'UPDATE', klass: klass }
       @object = find
-      if @object
-        @object.reindex_extent = Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX
+      if object
+        object.reindex_extent = Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX
         ActiveSupport::Notifications.instrument('import.importer', arg_hash) { update }
       else
         ActiveSupport::Notifications.instrument('import.importer', arg_hash.merge(name: 'CREATE')) { create }
@@ -32,6 +32,7 @@ module Bulkrax
 
     def update
       raise "Object doesn't exist" unless object
+      destroy_existing_files if @replace_files && klass != Collection
       attrs = update_attributes
       run_callbacks :save do
         klass == Collection ? update_collection(attrs) : work_actor.update(environment(attrs))
@@ -70,7 +71,7 @@ module Bulkrax
     def create
       attrs = create_attributes
       @object = klass.new
-      @object.reindex_extent = Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX
+      object.reindex_extent = Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX
       run_callbacks :save do
         run_callbacks :create do
           klass == Collection ? create_collection(attrs) : work_actor.create(environment(attrs))
@@ -99,7 +100,7 @@ module Bulkrax
       # @param [Hash] attrs the attributes to put in the environment
       # @return [Hyrax::Actors::Environment]
       def environment(attrs)
-        Hyrax::Actors::Environment.new(@object, Ability.new(@user), attrs)
+        Hyrax::Actors::Environment.new(object, Ability.new(@user), attrs)
       end
 
       def work_actor
@@ -108,18 +109,18 @@ module Bulkrax
 
       def create_collection(attrs)
         attrs = collection_type(attrs)
-        @object.members = members
-        @object.member_of_collections = member_of_collections
-        @object.attributes = attrs
-        @object.apply_depositor_metadata(@user)
-        @object.save!
+        object.members = members
+        object.member_of_collections = member_of_collections
+        object.attributes = attrs
+        object.apply_depositor_metadata(@user)
+        object.save!
       end
 
       def update_collection(attrs)
-        @object.members = members
-        @object.member_of_collections = member_of_collections
-        @object.attributes = attrs
-        @object.save!
+        object.members = members
+        object.member_of_collections = member_of_collections
+        object.attributes = attrs
+        object.save!
       end
 
       # Collections don't respond to member_of_collections_attributes or member_of_collection_ids=
@@ -130,7 +131,7 @@ module Bulkrax
       # member_ids comes from
       # @todo - consider performance implications although we wouldn't expect a Collection to be a member of many Collections
       def members
-        ms = @object.members.to_a
+        ms = object.members.to_a
         [:children].each do |atat|
           next unless attributes[atat].present?
           ms.concat(
@@ -143,7 +144,7 @@ module Bulkrax
       end
 
       def member_of_collections
-        ms = @object.member_of_collection_ids.to_a.map { | id | find_collection(id) }
+        ms = object.member_of_collection_ids.to_a.map { | id | find_collection(id) }
         [:collection, :collections].each do |atat|
           next unless attributes[atat].present?
           ms.concat(
@@ -283,6 +284,7 @@ module Bulkrax
 
       # Called if #replace_files is true
       # Destroy all file_sets for this object
+      # Reload the object to ensure the remaining methods have the most up to date object
       def destroy_existing_files
         return unless object.present? && object.file_sets.present?
         object.file_sets.each do |fs|

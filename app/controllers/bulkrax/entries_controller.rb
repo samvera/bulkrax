@@ -19,7 +19,6 @@ module Bulkrax
       add_breadcrumb 'Importers', bulkrax.importers_path
       add_breadcrumb @importer.name, bulkrax.importer_path(@importer.id)
       add_breadcrumb @entry.id
-      # render 'importers/entries/show.html.erb'
     end
 
   end

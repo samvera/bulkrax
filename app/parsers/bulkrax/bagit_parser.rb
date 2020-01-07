@@ -11,11 +11,11 @@ module Bulkrax
     end
 
     def entry_class
-      self.parser_fields['metadata_format'].constantize
+      parser_fields['metadata_format'].constantize
     end
 
     def collection_entry_class
-      self.parser_fields['metadata_format'].gsub('Entry', 'CollectionEntry').constantize
+      parser_fields['metadata_format'].gsub('Entry', 'CollectionEntry').constantize
     rescue
       Entry
     end
@@ -111,10 +111,10 @@ module Bulkrax
 
     def real_import_file_path
       if file? && zip?
-        unzip(self.parser_fields['import_file_path'])
-        return File.join(importer_unzip_path, self.parser_fields['import_file_path'].split('/').last.gsub('.zip', ''))
+        unzip(parser_fields['import_file_path'])
+        return File.join(importer_unzip_path, parser_fields['import_file_path'].split('/').last.gsub('.zip', ''))
       else
-        self.parser_fields['import_file_path']
+        parser_fields['import_file_path']
       end
     end
 
@@ -130,8 +130,8 @@ module Bulkrax
     end
 
     def metadata_file_name
-      raise 'The metadata file name must be specified' if self.parser_fields['metadata_file_name'].blank?
-      self.parser_fields['metadata_file_name']
+      raise 'The metadata file name must be specified' if parser_fields['metadata_file_name'].blank?
+      parser_fields['metadata_file_name']
     end
 
     # Gather the paths to all metadata files matching the metadata_file_name
@@ -143,12 +143,12 @@ module Bulkrax
 
     # Is this a file?
     def file?
-      File.file?(self.parser_fields['import_file_path'])
+      File.file?(parser_fields['import_file_path'])
     end
 
     # Is this a zip file?
     def zip?
-      MIME::Types.type_for(self.parser_fields['import_file_path']).include?('application/zip')
+      MIME::Types.type_for(parser_fields['import_file_path']).include?('application/zip')
     end
 
     # Is the directory is a bag?

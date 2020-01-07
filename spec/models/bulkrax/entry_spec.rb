@@ -66,6 +66,16 @@ module Bulkrax
         end
       end
 
+      context '.multiple?' do
+        it 'returns true if the field is multi-valued' do
+          expect(subject.multiple?('title')).to be_truthy
+        end
+
+        it 'returns false when field is singular' do
+          expect(subject.multiple?('owner')).to be_falsey
+        end
+      end
+
       context 'factory_class' do
         it 'returns Work' do
           expect(subject.factory_class).to eq(Work)

@@ -89,7 +89,7 @@ module Bulkrax
       @record ||= raw_metadata
     end
 
-    def matcher_class
+    def self.matcher_class
       Bulkrax::CsvMatcher
     end
 

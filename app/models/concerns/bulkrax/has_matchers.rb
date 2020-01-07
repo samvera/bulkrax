@@ -30,28 +30,38 @@ module Bulkrax
       field_to(node_name).each do |name|
         next unless field_supported?(name)
         matcher = self.class.matcher(name, mapping[name].symbolize_keys) if mapping[name]
-
+        multiple = multiple?(name)
         if matcher
           result = matcher.result(self, node_content)
           if result
-            parsed_metadata[name] ||= []
-
-            if result.is_a?(Array)
-              parsed_metadata[name] += result
+            if multiple
+              parsed_metadata[name] ||= []
+              parsed_metadata[name] += Array.wrap(result)
             else
-              parsed_metadata[name] << result
+              parsed_metadata[name] = Array.wrap(result).join('; ')
             end
           end
         else
           # we didn't find a match, add by default
-          parsed_metadata[name] ||= []
-          parsed_metadata[name] << node_content.strip
+          if multiple
+            parsed_metadata[name] ||= []
+            parsed_metadata[name] += Array.wrap(node_content.strip)
+          else
+            parsed_metadata[name] = Array.wrap(node_content.strip).join('; ')
+          end
         end
       end
     end
 
     def field_supported?(field)
+      field = field.gsub('_attributes', '')
       (factory_class.method_defined?(field) && !excluded?(field)) || field == 'file' || field == 'remote_files' || field == 'model'
+    end
+
+    def multiple?(field)
+      return true if field == 'file' || field == 'remote_files'
+      return false if field == 'model'
+      field_supported?(field) && factory_class.properties[field]['multiple']
     end
 
     # Hyrax field to use for the given import field
@@ -59,8 +69,8 @@ module Bulkrax
     # @return [Array] hyrax fields
     def field_to(field)
       fields = mapping&.map do |key, value|
-        key if (value['from']&.include?(field)) || key == field
-      end&.compact
+        key if (value.present? && value['from']&.include?(field)) || key == field
+      end.compact
       fields = nil if fields.blank?
       return fields || [field]
     end
