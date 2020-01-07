@@ -15,7 +15,7 @@ module Bulkrax
       # does the CSV contain a collection column?
       return [] unless import_fields.include?(:collection)
       # retrieve a list of unique collections
-      records.map { |r| r[:collection] }.compact.uniq
+      records.map { |r| r[:collection].split(/\s*[;|]\s*/) unless r[:collection].blank? }.flatten.compact.uniq
     end
 
     def collections_total
@@ -48,22 +48,18 @@ module Bulkrax
     end
 
     def create_collections
-      collections.each do |collection_record|
-        next if collection_record.blank?
-
-        # split by ; |
-        collection_record.split(/\s*[;|]\s*/).each do |collection|
-          metadata = {
-            title: [collection],
-            Bulkrax.system_identifier_field => [collection],
-            visibility: 'open',
-            collection_type_gid: Hyrax::CollectionType.find_or_create_default_collection_type.gid
-          }
-          new_entry = find_or_create_entry(collection_entry_class, collection, 'Bulkrax::Importer', metadata)
-          ImportWorkCollectionJob.perform_now(new_entry.id, current_importer_run.id)
-        end
+      collections.each_with_index do |collection, index|
+        next if collection.blank?
+        metadata = {
+          title: [collection],
+          Bulkrax.system_identifier_field => [collection],
+          visibility: 'open',
+          collection_type_gid: Hyrax::CollectionType.find_or_create_default_collection_type.gid
+        }
+        new_entry = find_or_create_entry(collection_entry_class, collection, 'Bulkrax::Importer', metadata)
+        ImportWorkCollectionJob.perform_now(new_entry.id, current_importer_run.id)
+        increment_counters(index, true))
       end
-      current_importer_run.total_collection_entries = collections_total
     end
 
     def create_works
@@ -110,9 +106,11 @@ module Bulkrax
     end
 
     # See https://stackoverflow.com/questions/2650517/count-the-number-of-lines-in-a-file-without-reading-entire-file-into-memory
+    #   Changed to grep as wc -l counts blank lines, and ignores the final unescaped line (which may or may not contain data)
     def total
       if importer?
-        @total ||= `wc -l #{parser_fields['import_file_path']}`.to_i - 1
+        # @total ||= `wc -l #{parser_fields['import_file_path']}`.to_i - 1
+        @total ||= `grep -vc ^$ #{parser_fields['import_file_path']}`.to_i - 1
       elsif exporter?
         @total ||= importerexporter.entries.count
       else

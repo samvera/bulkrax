@@ -73,7 +73,7 @@ module Bulkrax
         collection_type_gid: Hyrax::CollectionType.find_or_create_default_collection_type.gid
       }
 
-      list_sets.each do |set|
+      collections.each_with_index do | set, index |
         next unless collection_name == 'all' || collection_name == set.spec
         unique_collection_identifier = importerexporter.unique_collection_identifier(set.spec)
         metadata[:title] = [set.name]
@@ -82,6 +82,7 @@ module Bulkrax
         new_entry = collection_entry_class.where(importerexporter: importerexporter, identifier: unique_collection_identifier, raw_metadata: metadata).first_or_create!
         # perform now to ensure this gets created before work imports start
         ImportWorkCollectionJob.perform_now(new_entry.id, importerexporter.current_importer_run.id)
+        increment_counters(index, true))
       end
     end
 
@@ -98,9 +99,21 @@ module Bulkrax
             seen[record.identifier] = true
             new_entry = entry_class.where(importerexporter: self.importerexporter, identifier: record.identifier).first_or_create!
             ImportWorkJob.perform_later(new_entry.id, importerexporter.current_importer_run.id)
-            importerexporter.increment_counters(index)
+            increment_counters(index)
           end
         end
+      end
+    end
+
+    def collections
+      @collections ||= list_sets
+    end
+
+    def collections_total
+      if collection_name == 'all' 
+        collections.count
+      else
+        1
       end
     end
 

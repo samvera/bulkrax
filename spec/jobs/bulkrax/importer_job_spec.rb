@@ -22,11 +22,12 @@ module Bulkrax
       end
     end
 
-    describe 'unsuccessful job' do
+    describe 'failed job' do
       let(:importer) { FactoryBot.create(:bulkrax_importer_csv_bad) }
 
-      it 'raises an error with an invalid import' do
-        expect { subject.perform(1) }.to raise_error(RuntimeError, 'Missing required elements, required elements are: title, source_identifier')
+      it 'returns for an invalid import' do
+        expect(importer).not_to receive(:import_collections)
+        expect(importer).not_to receive(:import_works)
       end
     end
 

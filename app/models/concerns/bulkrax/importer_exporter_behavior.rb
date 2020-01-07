@@ -5,7 +5,11 @@ module Bulkrax
     extend ActiveSupport::Concern
 
     def parser
-      @parser ||= self.parser_klass.constantize.new(self)
+      @parser ||= parser_class.new(self)
+    end
+
+    def parser_class
+      self.parser_klass.constantize
     end
 
     def last_imported_at
@@ -16,14 +20,13 @@ module Bulkrax
       (last_imported_at || Time.current) + frequency.to_seconds if schedulable? && last_imported_at.present?
     end
 
-    def increment_counters(index)
-      current_importer_run.total_work_entries = if limit.to_i.positive?
-                                                  limit
-                                                elsif parser.total.positive?
-                                                  parser.total
-                                                else
-                                                  index + 1
-                                                end
+    def increment_counters(index, collection=false)
+      # Only set the totals if they were not set on initialization
+      if collection
+        current_importer_run.total_collection_entries = index + 1 unless parser.collections_total.positive?
+      else
+        current_importer_run.total_work_entries = index + 1 unless limit.to_i.positive? || parser.total.positive?
+      end
       current_importer_run.enqueued_records = index + 1
       current_importer_run.save!
     end

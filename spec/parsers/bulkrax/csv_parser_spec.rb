@@ -57,6 +57,11 @@ module Bulkrax
           expect(subject).to receive(:increment_counters).twice
           subject.create_works
         end
+
+        it 'counts the correct number of works and collections' do
+          expect(subject.total).to eq(2)
+          expect(subject.collections_total).to eq(2)
+        end
       end
     end
 
