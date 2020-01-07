@@ -82,7 +82,7 @@ module Bulkrax
         new_entry = collection_entry_class.where(importerexporter: importerexporter, identifier: unique_collection_identifier, raw_metadata: metadata).first_or_create!
         # perform now to ensure this gets created before work imports start
         ImportWorkCollectionJob.perform_now(new_entry.id, importerexporter.current_importer_run.id)
-        increment_counters(index)
+        increment_counters(index, true))
       end
     end
 
