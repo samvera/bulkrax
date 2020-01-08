@@ -4,7 +4,7 @@ module Bulkrax
   class ImporterJob < ApplicationJob
     queue_as :import
 
-    def perform(importer_id, only_updates_since_last_import = false)
+    def perform(importer_id, only_updates_since_last_import = false, validate_only = false)
       importer = Importer.find(importer_id)
 
       import(importer, only_updates_since_last_import)

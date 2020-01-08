@@ -79,11 +79,19 @@ module Bulkrax
       field_mapping_params
       if @importer.save
         files_for_import(file, cloud_files)
-        Bulkrax::ImporterJob.perform_later(@importer.id) if params[:commit] == 'Create and Import'
-        if api_request?
-          json_response('create', :created, 'Importer was successfully created.')
-        else
-          redirect_to importers_path, notice: 'Importer was successfully created.'
+        if params[:commit] == 'Create and Import'
+          Bulkrax::ImporterJob.perform_later(@importer.id)
+          if api_request?
+            json_response('create', :created, 'Importer was successfully created.')
+          else
+            redirect_to importers_path, notice: 'Importer was successfully created.'
+          end
+        elsif params[:commit] == 'Create and Validate'
+          validate_only = true
+          Bulkrax::ImporterJob.perform_now(@importer.id)
+          redirect_to importers_path, notice: 'Importer was successfully validated.'
+          # call the Job from 56
+          # route to importers_path showpage
         end
       else
         if api_request?
