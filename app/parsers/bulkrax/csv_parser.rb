@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'csv'
+require 'fileutils'
 module Bulkrax
   class CsvParser < ApplicationParser
     def self.export_supported?
@@ -200,7 +201,7 @@ module Bulkrax
       row = {}
       # Ensure each header has a value, even if it's just an empty string
       headers.each do |h|
-        row.merge!({ "#{h}": '' })
+        row.merge!({ "#{h}": nil })
       end
       # Match each value to its corresponding header
       row.merge!(errored_entry.raw_metadata.symbolize_keys)
@@ -209,6 +210,7 @@ module Bulkrax
     end
 
     def setup_errored_entries_file
+      FileUtils.mkdir_p(importerexporter.errored_entries_file_path)
       File.open(File.join(importerexporter.errored_entries_file_path, 'errored_entries.csv'), 'w')
     end
   end
