@@ -15,24 +15,18 @@
           <thead>
             <tr>
               <th scope="col">Name</th>
-              <%# <th scope="col">Last Run</th> %>
-              <%# <th scope="col">Next Run</th> %>
-              <th scope="col">Records Enqueued</th>
-              <th scope="col">Records Processed</th>
-              <th scope="col">Records Failed</th>
-              <th scope="col">Records Deleted in <%= application_name %></th>
-              <th scope="col">Total Records</th>
+              <th scope="col">Status</th>
+              <th scope="col">Date Exported</th>
+              <th scope="col">Actions</th>
             </tr>
           </thead>
           <tbody>
             <% @exporters.each do |exporter| %>
+            <% fail %>
               <tr>
                 <th scope="row"><%= exporter.name %></th>
-                <td><%= exporter.exporter_runs.last&.enqueued_records %></td>
-                <td><%= exporter.exporter_runs.last&.processed_records %></td>
-                <td><%= exporter.exporter_runs.last&.failed_records %></td>
-                <td><%= exporter.exporter_runs.last&.deleted_records %></td>
-                <td><%= exporter.exporter_runs.last&.total_work_entries %></td>
+                <td><%= exporter.exporter_runs.last&.exporter_status %></td>
+                <td><%= exporter.created_at %></td>
                 <td>
                   <% if File.exist?(exporter.exporter_export_zip_path) %>
                     <%= link_to raw('<span class="glyphicon glyphicon-download"></span>'), exporter_download_path(exporter) %>
