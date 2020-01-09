@@ -22,7 +22,6 @@
           </thead>
           <tbody>
             <% @exporters.each do |exporter| %>
-            <% fail %>
               <tr>
                 <th scope="row"><%= exporter.name %></th>
                 <td><%= exporter.exporter_runs.last&.exporter_status %></td>
