@@ -1,28 +1,17 @@
 class ChangeEntryLastError < ActiveRecord::Migration[5.1]
 
-  class ::Bulkrax::Entry < ApplicationRecord
-  end
-
   def change
-    errors = {}
-    last_error = Bulkrax::Entry.arel_table[:last_error]
-    Bulkrax::Entry.where(last_error.matches("%\n\n%")).each do | entry |
-      old_errors = entry.last_error.split("\n\n") unless entry.last_error.nil?
-      errors[entry.id] = { 
+    # Use raw query to change text to JSON as last_error field is now serialized
+    results = ActiveRecord::Base.connection.execute("SELECT id, last_error from bulkrax_entries WHERE last_error IS NOT null AND last_error LIKE '%\n\n%'")
+    results.each do | error |
+      old_errors = error['last_error'].split("\n\n")
+      new_error = {
         'error_class' => 'unknown', 
         'error_message' => old_errors.first,
         'error_trace' => old_errors.last
       }
-      entry.update_attribute(:last_error, nil)
+      ActiveRecord::Base.connection.execute("UPDATE bulkrax_entries SET last_error = '#{new_error.to_json}' WHERE id = '#{error['id']}'")
     end
-
-    Bulkrax::Entry.class_eval do
-      serialize :last_error, JSON
-    end
-
-    errors.each_pair do | entry, value |
-      Bulkrax::Entry.find(entry).update_attribute(:last_error, value)
-    end 
   end
 
 end
