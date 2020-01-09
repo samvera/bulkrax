@@ -114,8 +114,8 @@ module Bulkrax
       @importer_unzip_path ||= File.join(ENV.fetch('RAILS_TMP', Dir.tmpdir).to_s, "import_#{self.id}_0")
     end
 
-    def errored_entries_file_path
-      @errored_entries_file_path ||= File.join(ENV.fetch('RAILS_TMP', Dir.tmpdir).to_s, "import_#{self.id}_errored_entries")
+    def errored_entries_csv_path
+      @errored_entries_csv_path ||= File.join(ENV.fetch('RAILS_TMP', Dir.tmpdir).to_s, "import_#{self.id}_errored_entries.csv")
     end
   end
 end

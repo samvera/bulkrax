@@ -6,6 +6,16 @@ module Bulkrax
     # The following download code is based on
     # https://github.com/samvera/hydra-head/blob/master/hydra-core/app/controllers/concerns/hydra/controller/download_behavior.rb
 
+    def file
+      @file ||= File.open(file_path, 'r')
+    end
+
+    # Override this if you'd like a different filename
+    # @return [String] the filename
+    def file_name
+      file_path.split('/').last
+    end
+
     def download_content_type
       'application/zip'
     end

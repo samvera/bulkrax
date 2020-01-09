@@ -98,15 +98,5 @@ module Bulkrax
       def file_path
         @exporter.exporter_export_zip_path
       end
-
-      def file
-        @file ||= File.open(file_path, 'r')
-      end
-
-      # Override this if you'd like a different filename
-      # @return [String] the filename
-      def file_name
-        file_path.split('/').last
-      end
   end
 end

@@ -210,8 +210,7 @@ module Bulkrax
     end
 
     def setup_errored_entries_file
-      FileUtils.mkdir_p(importerexporter.errored_entries_file_path)
-      File.open(File.join(importerexporter.errored_entries_file_path, 'errored_entries.csv'), 'w')
+      File.open(importerexporter.errored_entries_csv_path, 'w')
     end
   end
 end

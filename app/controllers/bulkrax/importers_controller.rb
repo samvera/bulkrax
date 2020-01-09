@@ -8,6 +8,7 @@ require 'fileutils'
 module Bulkrax
   class ImportersController < ApplicationController
     include Hyrax::ThemedLayoutController
+    include Bulkrax::DownloadBehavior
     before_action :authenticate_user!
     before_action :set_importer, only: [:show, :edit, :update, :destroy]
     with_themed_layout 'dashboard'
@@ -102,6 +103,13 @@ module Bulkrax
       end
     end
 
+    # GET /importers/1/export_errors
+    def export_errors
+      @importer = Importer.find(params[:importer_id])
+      @importer.write_errored_entries_file
+      send_content
+    end
+
     private
 
       def files_for_import(file, cloud_files)
@@ -156,6 +164,16 @@ module Bulkrax
         headers = { from: Bulkrax.server_name }
 
         @client ||= OAI::Client.new(url, headers: headers, parser: 'libxml', metadata_prefix: 'oai_dc')
+      end
+
+      # Download methods
+
+      def file_path
+        @importer.errored_entries_csv_path
+      end
+
+      def download_content_type
+        'text/csv'
       end
   end
 end
