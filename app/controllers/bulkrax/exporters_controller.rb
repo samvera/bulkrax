@@ -5,6 +5,7 @@ require_dependency "bulkrax/application_controller"
 module Bulkrax
   class ExportersController < ApplicationController
     include Hyrax::ThemedLayoutController
+    include Bulkrax::DownloadBehavior
     before_action :authenticate_user!
     before_action :set_exporter, only: [:show, :edit, :update, :destroy]
     with_themed_layout 'dashboard'
@@ -92,56 +93,20 @@ module Bulkrax
         @exporter.field_mapping = Bulkrax.field_mappings[fields.to_sym] if fields
       end
 
-      # The following download code is based on
-      # https://github.com/samvera/hydra-head/blob/master/hydra-core/app/controllers/concerns/hydra/controller/download_behavior.rb
+      # Download methods
+
+      def file_path
+        @exporter.exporter_export_zip_path
+      end
 
       def file
-        @file ||= File.open(@exporter.exporter_export_zip_path, 'r')
-      end
-
-      def send_content
-        response.headers['Accept-Ranges'] = 'bytes'
-        if request.head?
-          content_head
-        else
-          send_file_contents
-        end
-      end
-
-      # Create some headers for the datastream
-      def content_options
-        { disposition: 'inline', type: 'application/zip', filename: file_name }
+        @file ||= File.open(file_path, 'r')
       end
 
       # Override this if you'd like a different filename
       # @return [String] the filename
       def file_name
-        @exporter.exporter_export_zip_path.split('/').last
-      end
-
-      # render an HTTP HEAD response
-      def content_head
-        response.headers['Content-Length'] = file.size
-        head :ok, content_type: 'application/zip'
-      end
-
-      def send_file_contents
-        self.status = 200
-        prepare_file_headers
-        stream_body file.read
-      end
-
-      def prepare_file_headers
-        send_file_headers! content_options
-        response.headers['Content-Type'] = 'application/zip'
-        response.headers['Content-Length'] ||= file.size.to_s
-        # Prevent Rack::ETag from calculating a digest over body
-        response.headers['Last-Modified'] = File.mtime(@exporter.exporter_export_zip_path).utc.strftime("%a, %d %b %Y %T GMT")
-        self.content_type = 'application/zip'
-      end
-
-      def stream_body(iostream)
-        self.response_body = iostream
+        file_path.split('/').last
       end
   end
 end
