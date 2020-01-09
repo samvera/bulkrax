@@ -115,7 +115,9 @@ module Bulkrax
     end
 
     def errored_entries_csv_path
-      @errored_entries_csv_path ||= File.join(ENV.fetch('RAILS_TMP', Dir.tmpdir).to_s, "import_#{self.id}_errored_entries.csv")
+      @errored_entries_csv_path ||= File.join(ENV.fetch('RAILS_TMP', Dir.tmpdir).to_s, "import_#{self.id}_#{self.importer_runs.last.id}_errored_entries.csv")
+    rescue
+      @errored_entries_csv_path ||= File.join(ENV.fetch('RAILS_TMP', Dir.tmpdir).to_s, "import_#{self.id}_0_errored_entries.csv")
     end
   end
 end
