@@ -10,5 +10,6 @@ Bulkrax::Engine.routes.draw do
       post :external_sets
     end
     resources :entries, only: %i[show]
+    get :upload_corrected_entries
   end
 end

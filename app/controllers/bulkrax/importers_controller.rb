@@ -95,6 +95,16 @@ module Bulkrax
       redirect_to importers_url, notice: 'Importer was successfully destroyed.'
     end
 
+    # GET /importer/1/upload_corrected_entries
+    def upload_corrected_entries
+      @importer = Importer.find(params[:importer_id])
+      add_breadcrumb t(:'hyrax.controls.home'), main_app.root_path
+      add_breadcrumb t(:'hyrax.dashboard.breadcrumbs.admin'), hyrax.dashboard_path
+      add_breadcrumb 'Importers', bulkrax.importers_path
+      add_breadcrumb @importer.name, bulkrax.importer_path(@importer.id)
+      add_breadcrumb 'Upload Corrected Entries'
+    end
+
     def external_sets
       if list_external_sets
         render json: { base_url: params[:base_url], sets: @sets }

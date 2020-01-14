@@ -1,0 +1,30 @@
+<div class="col-xs-12 main-header">
+  <h1><span class="fa fa-cloud-upload" aria-hidden="true"></span> Upload Corrected Entries: <%= @importer.name %></h1>
+</div>
+
+<div class="panel panel-default">
+  <div class="panel-body">
+
+    <p id="notice"><%= notice %></p>
+
+    <p>Upload only the corrected works for the <b><%= @importer.name %></b> importer. Only CSV files are allowed.</p>
+
+    <div class="fileupload-buttonbar">
+      <%= simple_form_for @importer, html: { multipart: true } do |f| %>
+        <%= f.input :file,
+          as: :file,
+          label: raw("<span class='glyphicon glyphicon-plus'></span><span> Add file...</span>"),
+          label_html: {
+            class: 'btn btn-success'
+          },
+          input_html: {
+            style: 'display:none;',
+            accept: 'text/csv'
+          } %>
+        <div class="pull-right">
+          <%= link_to 'Import Corrected Works', importer_path(@importer.id), class: 'btn btn-primary' %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
