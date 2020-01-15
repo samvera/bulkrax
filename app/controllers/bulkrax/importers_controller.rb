@@ -77,6 +77,7 @@ module Bulkrax
       cloud_files = params.delete(:selected_files)
       @importer = Importer.new(importer_params)
       field_mapping_params
+      @importer.validate_only = true if params[:commit] == 'Create and Validate'
       if @importer.save
         files_for_import(file, cloud_files)
         if params[:commit] == 'Create and Import'
@@ -87,11 +88,8 @@ module Bulkrax
             redirect_to importers_path, notice: 'Importer was successfully created.'
           end
         elsif params[:commit] == 'Create and Validate'
-          validate_only = true
           Bulkrax::ImporterJob.perform_now(@importer.id)
-          redirect_to importers_path, notice: 'Importer was successfully validated.'
-          # call the Job from 56
-          # route to importers_path showpage
+          redirect_to importer_path(@importer), notice: 'Importer was successfully validated.'
         end
       else
         if api_request?
