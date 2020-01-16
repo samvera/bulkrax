@@ -185,5 +185,56 @@ module Bulkrax
         expect(File.read(import_file_path)).to include('Title,')
       end
     end
+
+    describe 'GET #upload_corrected_entries' do
+      it 'returns a success response' do
+        importer = Importer.create! valid_attributes
+        get :upload_corrected_entries, params: { importer_id: importer.to_param }, session: valid_session
+        expect(response).to be_successful
+      end
+    end
+
+    describe 'POST #upload_corrected_entries_file' do
+      context 'with valid params' do
+        let(:file_upload_params) do
+          {
+            parser_fields: {
+              file: fixture_file_upload('./spec/fixtures/csv/ok.csv')
+            }
+          }
+        end
+
+        it 'sets partial_import_file_path on the requested importer' do
+          importer = Importer.create! valid_attributes
+          post :upload_corrected_entries_file, params: { importer_id: importer.to_param, importer: file_upload_params }, session: valid_session
+          importer.reload
+          expect(importer.parser_fields['partial_import_file_path']).to eq('tmp/imports/1/ok.csv')
+        end
+
+        it 'redirects to the importer with a notice' do
+          importer = Importer.create! valid_attributes
+          post :upload_corrected_entries_file, params: { importer_id: importer.to_param, importer: file_upload_params }, session: valid_session
+          expect(response).to redirect_to(importer_path(importer))
+          expect(flash[:notice]).to include('successfully')
+        end
+      end
+
+      context 'with invalid params' do
+        let(:bad_file_upload_params) do
+          {
+            parser_fields: {
+              file: nil
+            }
+          }
+        end
+
+        it 'redirects to the upload_corrected_entries view with an alert' do
+          importer = Importer.create! valid_attributes
+          post :upload_corrected_entries_file, params: { importer_id: importer.to_param, importer: bad_file_upload_params }, session: valid_session
+          expect(response).to redirect_to(importer_upload_corrected_entries_path(importer))
+          expect(flash[:alert]).to include('failed')
+        end
+      end
+    end
   end
 end
