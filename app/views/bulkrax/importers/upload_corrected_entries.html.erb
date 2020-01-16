@@ -5,26 +5,28 @@
 <div class="panel panel-default">
   <div class="panel-body">
 
-    <p id="notice"><%= notice %></p>
-
     <p>Upload only the corrected works for the <b><%= @importer.name %></b> importer. Only CSV files are allowed.</p>
 
-    <div class="fileupload-buttonbar">
-      <%= simple_form_for @importer, html: { multipart: true } do |f| %>
-        <%= f.input :file,
-          as: :file,
-          label: raw("<span class='glyphicon glyphicon-plus'></span><span> Add file...</span>"),
-          label_html: {
-            class: 'btn btn-success'
-          },
-          input_html: {
-            style: 'display:none;',
-            accept: 'text/csv'
-          } %>
-        <div class="pull-right">
-          <%= link_to 'Import Corrected Works', importer_path(@importer.id), class: 'btn btn-primary' %>
+    <%= simple_form_for @importer, url: importer_upload_corrected_entries_file_path, method: :post, html: { multipart: true } do |f| %>
+      <%= f.fields_for :parser_fields do |fi| %>
+        <div class='parser_fields'>
+          <div class="fileupload-buttonbar hide-required-tag">
+            <%= fi.input 'file',
+              as: :file,
+              label: raw("<span class='glyphicon glyphicon-plus'></span><span> Add file...</span>"),
+              label_html: {
+                class: 'btn btn-success'
+              },
+              input_html: {
+                style: 'display:none;',
+                accept: 'text/csv'
+              } %>
+          </div>
         </div>
       <% end %>
-    </div>
+      <div class="pull-right">
+        <%= f.button :submit, 'Import Corrected Works', class: 'btn btn-primary' %>
+      </div>
+    <% end %>
   </div>
 </div>

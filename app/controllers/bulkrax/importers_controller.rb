@@ -105,6 +105,19 @@ module Bulkrax
       add_breadcrumb 'Upload Corrected Entries'
     end
 
+    # POST /importer/1/upload_corrected_entries_file
+    def upload_corrected_entries_file
+      file = params[:importer][:parser_fields].delete(:file)
+      @importer = Importer.find(params[:importer_id])
+      if @importer.save && file.present?
+        @importer[:parser_fields]['partial_import_file_path'] = @importer.parser.write_import_file(file) if file.present?
+        @importer.save
+        redirect_to importer_path(@importer), notice: 'Corrected entries uploaded successfully'
+      else
+        redirect_to importer_upload_corrected_entries_path(@importer), alert: 'Importer failed to update with new file'
+      end
+    end
+
     def external_sets
       if list_external_sets
         render json: { base_url: params[:base_url], sets: @sets }

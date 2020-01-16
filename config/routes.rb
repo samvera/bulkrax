@@ -11,5 +11,6 @@ Bulkrax::Engine.routes.draw do
     end
     resources :entries, only: %i[show]
     get :upload_corrected_entries
+    post :upload_corrected_entries_file
   end
 end
