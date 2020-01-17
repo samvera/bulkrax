@@ -55,7 +55,7 @@ module Bulkrax
       end
 
       # construct full file path
-      self.parsed_metadata['file'] = record['file'].split(/\s*[:;|]\s*/).map { |f| file_path(f.gsub(' ', '_')) } if record['file'].present?
+      self.parsed_metadata['file'] = record['file'].split(/\s*[:;|]\s*/).map { |f| file_path(f.tr(' ', '_')) } if record['file'].present?
 
       add_visibility
       add_rights_statement

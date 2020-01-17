@@ -37,7 +37,7 @@ module Bulkrax
       context 'with files containing spaces' do
         before(:each) do
           allow_any_instance_of(ObjectFactory).to receive(:run)
-          
+
           allow(subject).to receive(:record).and_return('source_identifier' => '3', 'title' => 'some title', 'file' => './spec/fixtures/csv/test file.csv')
           allow(File).to receive(:exist?).with('./spec/fixtures/csv/test_file.csv').and_return(true)
         end

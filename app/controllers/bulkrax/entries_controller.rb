@@ -20,6 +20,5 @@ module Bulkrax
       add_breadcrumb @importer.name, bulkrax.importer_path(@importer.id)
       add_breadcrumb @entry.id
     end
-
   end
 end
