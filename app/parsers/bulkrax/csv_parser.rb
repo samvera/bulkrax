@@ -128,7 +128,7 @@ module Bulkrax
       FileUtils.mkdir_p(files_path) unless File.exist?(files_path)
       files.each_pair do |_key, file|
         # this only works for uniquely named files
-        target_file = File.join(files_path, file['file_name'].gsub(' ', '_'))
+        target_file = File.join(files_path, file['file_name'].tr(' ', '_'))
         # Now because we want the files in place before the importer runs
         # Problematic for a large upload
         Bulkrax::DownloadCloudFileJob.perform_now(file, target_file)
@@ -164,9 +164,9 @@ module Bulkrax
       @file_paths ||= records.map do |r|
         next unless r[:file].present?
         r[:file].split(/\s*[:;|]\s*/).map do |f|
-          file = File.join(files_path, f.gsub(' ', '_'))
+          file = File.join(files_path, f.tr(' ', '_'))
           if File.exist?(file)
-            file 
+            file
           else
             raise "File #{file} does not exist"
           end

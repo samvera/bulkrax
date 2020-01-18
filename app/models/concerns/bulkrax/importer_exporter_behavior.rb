@@ -20,7 +20,7 @@ module Bulkrax
       (last_imported_at || Time.current) + frequency.to_seconds if schedulable? && last_imported_at.present?
     end
 
-    def increment_counters(index, collection=false)
+    def increment_counters(index, collection = false)
       # Only set the totals if they were not set on initialization
       if collection
         current_importer_run.total_collection_entries = index + 1 unless parser.collections_total.positive?

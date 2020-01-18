@@ -73,7 +73,7 @@ module Bulkrax
         collection_type_gid: Hyrax::CollectionType.find_or_create_default_collection_type.gid
       }
 
-      collections.each_with_index do | set, index |
+      collections.each_with_index do |set, index|
         next unless collection_name == 'all' || collection_name == set.spec
         unique_collection_identifier = importerexporter.unique_collection_identifier(set.spec)
         metadata[:title] = [set.name]
@@ -110,7 +110,7 @@ module Bulkrax
     end
 
     def collections_total
-      if collection_name == 'all' 
+      if collection_name == 'all'
         collections.count
       else
         1

@@ -11,6 +11,5 @@ module Bulkrax
       return "Processing" if import_runs&.enqueued_records > 0
       return "Completed" if import_runs&.enqueued_records == 0 && import_runs&.processed_records == import_runs&.total_work_entries
     end
-
   end
 end
