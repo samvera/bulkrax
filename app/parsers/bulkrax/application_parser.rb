@@ -2,7 +2,7 @@
 
 module Bulkrax
   class ApplicationParser
-    attr_accessor :importerexporter, :total
+    attr_accessor :importerexporter
     delegate :only_updates, :limit, :current_exporter_run, :current_importer_run, :errors,
              :seen, :increment_counters, :parser_fields, :user,
              :exporter_export_path, :exporter_export_zip_path, :importer_unzip_path,
@@ -35,7 +35,7 @@ module Bulkrax
     end
 
     # @api
-    def records(opts = {})
+    def records(_opts = {})
       raise 'must be defined'
     end
 
@@ -160,7 +160,7 @@ module Bulkrax
     end
 
     # @todo - review this method
-    def record(identifier, opts = {})
+    def record(identifier, _opts = {})
       return @record if @record
 
       @record = entry_class.new(self, identifier)
