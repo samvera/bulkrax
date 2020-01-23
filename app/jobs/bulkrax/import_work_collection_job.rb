@@ -4,6 +4,7 @@ module Bulkrax
   class ImportWorkCollectionJob < ApplicationJob
     queue_as :import
 
+    # rubocop:disable Rails/SkipsModelValidations
     def perform(*args)
       entry = Entry.find(args[0])
       begin
@@ -17,5 +18,6 @@ module Bulkrax
         raise e
       end
     end
+    # rubocop:enable Rails/SkipsModelValidations
   end
 end
