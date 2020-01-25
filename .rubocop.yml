@@ -1,3 +1,18 @@
+# Bixby coding conventions
+# Added AllCops config for further modification
+AllCops:
+  TargetRubyVersion: 2.3
+  DisabledByDefault: true
+  DisplayCopNames: true
+  Exclude:
+    - 'db/**/*'
+    - 'script/**/*'
+    - 'tmp/**/*'
+    - 'vendor/**/*'
+    - 'node_modules/**/*'
+    # Additions by Notch8
+    - 'spec/test_app/**/*'
+
 inherit_from: .rubocop_todo.yml
 
 inherit_gem:
@@ -5,9 +20,13 @@ inherit_gem:
 
 # Notch8 coding conventions
 # @see https://github.com/rubocop-hq/rubocop/blob/master/manual/configuration.md
+Metrics/ModuleLength:
+  Exclude:
+    - 'spec/**/*'
+
 Style/FrozenStringLiteralComment:
   Exclude:
-    - spec/test_app/db/schema.rb
+    - 'spec/test_app/db/schema.rb'
 
 Style/RedundantReturn:
   Enabled: false

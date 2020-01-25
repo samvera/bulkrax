@@ -4,21 +4,22 @@ require 'rails_helper'
 
 module Bulkrax
   RSpec.describe ImporterJob, type: :job do
+    subject(:importer_job) { described_class.new }
     let(:importer) { FactoryBot.create(:bulkrax_importer_oai) }
 
-    before(:each) do
+    before do
       allow(Bulkrax::Importer).to receive(:find).with(1).and_return(importer)
     end
 
     describe 'successful job' do
       it 'calls import_works with false' do
         expect(importer).to receive(:import_works).with(false)
-        subject.perform(1)
+        importer_job.perform(1)
       end
 
       it 'calls import_works with true if only_updates_since_last_import=true' do
         expect(importer).to receive(:import_works).with(true)
-        subject.perform(1, true)
+        importer_job.perform(1, true)
       end
     end
 
@@ -40,7 +41,7 @@ module Bulkrax
       it 'schedules import_works when schedulable?' do
         expect(importer).to receive(:import_works).with(false)
         expect(ImporterJob).to receive(:set).with(wait_until: 1).and_return(ImporterJob)
-        subject.perform(1)
+        importer_job.perform(1)
       end
     end
   end

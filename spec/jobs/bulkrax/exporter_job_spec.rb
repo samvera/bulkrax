@@ -4,6 +4,7 @@ require 'rails_helper'
 
 module Bulkrax
   RSpec.describe ExporterJob, type: :job do
+    subject(:exporter_job) { described_class.new }
     let(:exporter) { FactoryBot.create(:bulkrax_exporter) }
     let(:bulkrax_exporter_run) { FactoryBot.create(:bulkrax_exporter_run, exporter: exporter) }
 
@@ -16,7 +17,7 @@ module Bulkrax
     describe 'successful job' do
       it 'calls export' do
         expect(exporter).to receive(:export)
-        subject.perform(1)
+        exporter_job.perform(1)
       end
     end
   end

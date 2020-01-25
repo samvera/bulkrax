@@ -26,10 +26,9 @@ class Bulkrax::InstallGenerator < Rails::Generators::Base
 
     hyrax = "\n# set bulkrax default work type to first curation_concern if it isn't already set\nif Bulkrax.default_work_type.blank?\n  Bulkrax.default_work_type = Hyrax.config.curation_concerns.first.to_s\nend\n"
 
-    unless File.read('config/initializers/hyrax.rb').include?(hyrax)
-      append_to_file 'config/initializers/hyrax.rb' do
-        hyrax
-      end
+    return if File.read('config/initializers/hyrax.rb').include?(hyrax)
+    append_to_file 'config/initializers/hyrax.rb' do
+      hyrax
     end
   end
 
@@ -42,10 +41,9 @@ class Bulkrax::InstallGenerator < Rails::Generators::Base
     file_text = File.read(file)
     js = '//= require bulkrax/application'
 
-    unless file_text.include?(js)
-      insert_into_file file, before: /\/\/= require_tree ./ do
-        "#{js}\n"
-      end
+    return if file_text.include?(js)
+    insert_into_file file, before: /\/\/= require_tree ./ do
+      "#{js}\n"
     end
   end
 

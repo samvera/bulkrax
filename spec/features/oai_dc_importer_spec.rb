@@ -12,7 +12,7 @@ module Bulkrax
     end
     let(:collection) { FactoryBot.build(:collection) }
 
-    it 'should create a work' do
+    it 'creates a work' do
       allow(Collection).to receive(:where).and_return([collection])
       importer.import_works
     end
