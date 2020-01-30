@@ -4,10 +4,11 @@ require 'rails_helper'
 
 module Bulkrax
   RSpec.describe ImportWorkJob, type: :job do
+    subject(:import_work_job) { described_class.new }
     let(:entry) { FactoryBot.build(:bulkrax_entry) }
     let(:importer_run) { FactoryBot.build(:bulkrax_importer_run) }
 
-    before(:each) do
+    before do
       allow(Bulkrax::Entry).to receive(:find).with(1).and_return(entry)
       allow(Bulkrax::ImporterRun).to receive(:find).with(2).and_return(importer_run)
     end
@@ -21,7 +22,7 @@ module Bulkrax
       it 'increments :processed_records' do
         expect(importer_run).to receive(:increment!).with(:processed_records)
         expect(importer_run).to receive(:decrement!).with(:enqueued_records)
-        subject.perform(1, 2)
+        import_work_job.perform(1, 2)
       end
     end
 
@@ -33,11 +34,11 @@ module Bulkrax
       it 'does not call increment' do
         expect(importer_run).not_to receive(:increment!)
         expect(importer_run).not_to receive(:decrement!)
-        subject.perform(1, 2)
+        import_work_job.perform(1, 2)
       end
       it 'reschedules the job' do
-        expect(subject).to receive(:reschedule)
-        subject.perform(1, 2)
+        expect(import_work_job).to receive(:reschedule) # rubocop:disable RSpec/SubjectStub
+        import_work_job.perform(1, 2)
       end
     end
 
@@ -49,7 +50,7 @@ module Bulkrax
       it 'increments :failed_records' do
         expect(importer_run).to receive(:increment!).with(:failed_records)
         expect(importer_run).to receive(:decrement!).with(:enqueued_records)
-        subject.perform(1, 2)
+        import_work_job.perform(1, 2)
       end
     end
 
@@ -58,7 +59,7 @@ module Bulkrax
         allow(entry).to receive(:build).and_raise(OAIError)
       end
       it 'increments :failed_records' do
-        expect { subject.perform(1, 2) }.to raise_error(OAIError)
+        expect { import_work_job.perform(1, 2) }.to raise_error(OAIError)
         expect(importer_run).not_to receive(:increment!).with(:failed_records)
         expect(importer_run).not_to receive(:decrement!).with(:enqueued_records)
       end

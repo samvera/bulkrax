@@ -2,7 +2,7 @@
 
 module Bulkrax
   class OaiDcParser < ApplicationParser
-    attr_accessor :client, :headers
+    attr_accessor :headers
     delegate :list_sets, to: :client
 
     def initialize(importerexporter)
@@ -41,21 +41,15 @@ module Bulkrax
         begin
           @short_records = client.list_identifiers(opts)
         rescue OAI::Exception => e
-          if e.code == "noRecordsMatch"
-            @short_records = []
-          else
-            raise e
-          end
+          return @short_records = [] if e.code == "noRecordsMatch"
+          raise e
         end
       else
         begin
           @records ||= client.list_records(opts.merge(metadata_prefix: parser_fields['metadata_prefix']))
         rescue OAI::Exception => e
-          if e.code == "noRecordsMatch"
-            @records = []
-          else
-            raise e
-          end
+          return @records = [] if e.code == "noRecordsMatch"
+          raise e
         end
       end
     end
@@ -88,19 +82,17 @@ module Bulkrax
 
     def create_works
       results = self.records(quick: true)
-      if results.present?
-        results.full.each_with_index do |record, index|
-          if !limit.nil? && index >= limit
-            break
-          elsif record.deleted? # TODO: record.status == "deleted"
-            importerexporter.current_importer_run.deleted_records += 1
-            importerexporter.current_importer_run.save!
-          else
-            seen[record.identifier] = true
-            new_entry = entry_class.where(importerexporter: self.importerexporter, identifier: record.identifier).first_or_create!
-            ImportWorkJob.perform_later(new_entry.id, importerexporter.current_importer_run.id)
-            increment_counters(index)
-          end
+      return unless results.present?
+      results.full.each_with_index do |record, index|
+        break unless !limit.nil? && index >= limit
+        if record.deleted? # TODO: record.status == "deleted"
+          importerexporter.current_importer_run.deleted_records += 1
+          importerexporter.current_importer_run.save!
+        else
+          seen[record.identifier] = true
+          new_entry = entry_class.where(importerexporter: self.importerexporter, identifier: record.identifier).first_or_create!
+          ImportWorkJob.perform_later(new_entry.id, importerexporter.current_importer_run.id)
+          increment_counters(index)
         end
       end
     end

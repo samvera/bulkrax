@@ -4,6 +4,7 @@ require 'rails_helper'
 
 module Bulkrax
   RSpec.describe ExportWorkJob, type: :job do
+    subject(:export_work_job) { described_class.new }
     let(:entry) { FactoryBot.build(:bulkrax_entry) }
     let(:exporter_run) { FactoryBot.build(:bulkrax_exporter_run) }
 
@@ -20,7 +21,7 @@ module Bulkrax
       it 'increments :processed_records and decrements enqueued record' do
         expect(exporter_run).to receive(:increment!).with(:processed_records)
         expect(exporter_run).to receive(:decrement!).with(:enqueued_records)
-        subject.perform(1, 1)
+        export_work_job.perform(1, 1)
       end
     end
   end

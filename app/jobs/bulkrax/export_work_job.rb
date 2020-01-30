@@ -10,6 +10,7 @@ module Bulkrax
         entry.build
         entry.save
       rescue StandardError => e
+        # rubocop:disable Rails/SkipsModelValidations
         ExporterRun.find(args[1]).increment!(:failed_records)
         ExporterRun.find(args[1]).decrement!(:enqueued_records)
         raise e
@@ -22,6 +23,7 @@ module Bulkrax
           ExporterRun.find(args[1]).increment!(:processed_records)
           ExporterRun.find(args[1]).decrement!(:enqueued_records)
         end
+        # rubocop:enable Rails/SkipsModelValidations
       end
     end
   end

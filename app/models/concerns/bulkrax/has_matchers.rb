@@ -41,14 +41,12 @@ module Bulkrax
               parsed_metadata[name] = Array.wrap(result).join('; ')
             end
           end
+        # we didn't find a match, add by default
+        elsif multiple
+          parsed_metadata[name] ||= []
+          parsed_metadata[name] += Array.wrap(node_content.strip)
         else
-          # we didn't find a match, add by default
-          if multiple
-            parsed_metadata[name] ||= []
-            parsed_metadata[name] += Array.wrap(node_content.strip)
-          else
-            parsed_metadata[name] = Array.wrap(node_content.strip).join('; ')
-          end
+          parsed_metadata[name] = Array.wrap(node_content.strip).join('; ')
         end
       end
     end
@@ -70,7 +68,7 @@ module Bulkrax
     def field_to(field)
       fields = mapping&.map do |key, value|
         key if (value.present? && value['from']&.include?(field)) || key == field
-      end.compact
+      end&.compact
       fields = nil if fields.blank?
       return fields || [field]
     end

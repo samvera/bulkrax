@@ -7,9 +7,9 @@ module Bulkrax
     def importer_status
       import_runs = importer.importer_runs.last
 
-      return "Failed" if import_runs&.failed_records > 0 || import_runs&.failed_collections > 0 || import_runs&.failed_children > 0
-      return "Processing" if import_runs&.enqueued_records > 0
-      return "Completed" if import_runs&.enqueued_records == 0 && import_runs&.processed_records == import_runs&.total_work_entries
+      return "Failed" if import_runs&.failed_records&.positive? || import_runs&.failed_collections&.positive? || import_runs&.failed_children&.positive?
+      return "Processing" if import_runs&.enqueued_records&.positive?
+      return "Completed" if import_runs&.enqueued_records&.zero? && import_runs&.processed_records == import_runs&.total_work_entries
     end
   end
 end

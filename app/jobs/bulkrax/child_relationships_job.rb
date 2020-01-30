@@ -50,6 +50,7 @@ module Bulkrax
         return hash
       end
 
+      # rubocop:disable Rails/SkipsModelValidations
       # Work-Collection membership is added to the child as member_of_collection_ids
       # This is adding the reverse relatinship, from the child to the parent
       def work_child_collection_parent(work_id)
@@ -81,6 +82,7 @@ module Bulkrax
       rescue StandardError
         ImporterRun.find(@importer_run_id).increment!(:failed_children)
       end
+      # rubocop:enable Rails/SkipsModelValidations
 
       def reschedule(entry_id, child_entry_ids, importer_run_id)
         ChildRelationshipsJob.set(wait: 10.minutes).perform_later(entry_id, child_entry_ids, importer_run_id)
