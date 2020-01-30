@@ -9,6 +9,7 @@ module Bulkrax
                    :system_identifier_field,
                    :default_work_type,
                    :default_field_mapping,
+                   :source_identifier_field_mapping,
                    :collection_field_mapping,
                    :parent_child_field_mapping,
                    :reserved_properties,
@@ -22,13 +23,20 @@ module Bulkrax
       { name: "OAI - Dublin Core", class_name: "Bulkrax::OaiDcParser", partial: "oai_fields" },
       { name: "OAI - Qualified Dublin Core", class_name: "Bulkrax::OaiQualifiedDcParser", partial: "oai_fields" },
       { name: "CSV - Comma Separated Values", class_name: "Bulkrax::CsvParser", partial: "csv_fields" },
-      { name: "Bagit", class_name: "Bulkrax::BagitParser", partial: "bagit_fields" }
+      { name: "Bagit", class_name: "Bulkrax::BagitParser", partial: "bagit_fields" },
+      { name: "XML", class_name: "Bulkrax::XMLParser", partial: "xml_fields" }
     ]
 
     self.system_identifier_field = "source"
     self.import_path = 'tmp/imports'
     self.export_path = 'tmp/exports'
     self.server_name = 'bulkrax@example.com'
+
+    # Field_mapping for establishing a source_identifier to use as the unique identifier for the entry
+    # This value IS NOT used for OAI, so setting the OAI Entries here will have no effect
+    # The mapping is supplied per Entry, provide the full class name as a string, eg. 'Bulkrax::CsvEntry'
+    # The default value for CSV is source_identifier, for RDF it is the subject
+    self.source_identifier_field_mapping = {}
 
     # @todo, merge parent_child_field_mapping and collection_field_mapping into field_mappings,
     # or make them settable per import some other way.
@@ -49,9 +57,7 @@ module Bulkrax
     # This value IS NOT used for OAI, so setting the OAI Entries here will have no effect
     # The mapping is supplied per Entry, provide the full class name as a string, eg. 'Bulkrax::CsvEntry'
     # The default value for CSV is collection
-    self.collection_field_mapping = {
-      'Bulkrax::CsvEntry' => 'collection'
-    }
+    self.collection_field_mapping = {}
 
     # Hash of Generic field_mappings for use in the view
     # There must be one field_mappings hash per view parial

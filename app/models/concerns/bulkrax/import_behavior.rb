@@ -49,7 +49,7 @@ module Bulkrax
     end
 
     def add_visibility
-      self.parsed_metadata['visibility'] = 'open' if self.parsed_metadata['visibility'].blank?
+      self.parsed_metadata['visibility'] = importerexporter.visibility if self.parsed_metadata['visibility'].blank?
     end
 
     def add_collections

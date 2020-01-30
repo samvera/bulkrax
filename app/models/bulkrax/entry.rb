@@ -42,10 +42,34 @@ module Bulkrax
 
     # Returns formatted data from the given file for a single Entry
     # @param data - the data from the metadata file
-    # @param path - the path to the metadata file - used by RDF to get the file_paths
+    # @param path - the path to the metadata file (used by some entries to get the file_paths for import)
     # @return Hash containing the data (the entry build_metadata method will know what to expect in the hash)
     def self.data_for_entry(_data, _path = nil)
       raise 'Not Implemented'
+    end
+
+    # Return all files in this directory and sub-directories
+    #   excluding the given path if it is a file (which would be the metadata file)
+    # Files must be in the same, or a subdirectory of, the given path
+    def self.record_file_paths(path)
+      return [] if path.nil?
+      if File.file?(path)
+        Dir.glob("#{File.dirname(path)}/**/*.*").reject { |f| f == path }
+      else
+        Dir.glob("#{path}/**/*.*").reject { |f| f == path }
+      end
+    end
+
+    def self.source_identifier_field
+      Bulkrax.source_identifier_field_mapping[self.to_s]
+    end
+
+    def self.collection_field
+      Bulkrax.collection_field_mapping[self.to_s]
+    end
+
+    def self.children_field
+      Bulkrax.parent_child_field_mapping[self.to_s]
     end
 
     def build

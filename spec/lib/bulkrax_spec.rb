@@ -25,11 +25,23 @@ RSpec.describe Bulkrax do
       end
     end
 
+    context 'source_identifier_field_mapping' do
+      it 'responds to source_identifier_field_mapping' do
+        expect(described_class).to respond_to(:source_identifier_field_mapping)
+      end
+      it 'source_identifier_field_mapping is settable' do
+        expect(described_class).to respond_to(:source_identifier_field_mapping=)
+      end
+      it 'has no default value' do
+        expect(described_class.source_identifier_field_mapping).to eq({})
+      end
+    end
+
     context 'parent_child_field_mapping' do
       it 'responds to parent_child_field_mapping' do
         expect(described_class).to respond_to(:parent_child_field_mapping)
       end
-      it 'default_work_type is settable' do
+      it 'parent_child_field_mapping is settable' do
         expect(described_class).to respond_to(:parent_child_field_mapping=)
       end
       it 'has no default value' do
@@ -41,11 +53,11 @@ RSpec.describe Bulkrax do
       it 'responds to collection_field_mapping' do
         expect(described_class).to respond_to(:collection_field_mapping)
       end
-      it 'default_work_type is settable' do
+      it 'collection_field_mapping is settable' do
         expect(described_class).to respond_to(:collection_field_mapping=)
       end
-      it 'has a default value for CSV' do
-        expect(described_class.collection_field_mapping).to eq('Bulkrax::CsvEntry' => 'collection')
+      it 'has no default value' do
+        expect(described_class.collection_field_mapping).to eq({})
       end
     end
 
@@ -73,7 +85,8 @@ RSpec.describe Bulkrax do
                                                 { class_name: 'Bulkrax::OaiDcParser', name: 'OAI - Dublin Core', partial: 'oai_fields' },
                                                 { class_name: 'Bulkrax::OaiQualifiedDcParser', name: 'OAI - Qualified Dublin Core', partial: 'oai_fields' },
                                                 { class_name: 'Bulkrax::CsvParser', name: 'CSV - Comma Separated Values', partial: 'csv_fields' },
-                                                { class_name: 'Bulkrax::BagitParser', name: 'Bagit', partial: 'bagit_fields' }
+                                                { class_name: 'Bulkrax::BagitParser', name: 'Bagit', partial: 'bagit_fields' },
+                                                { class_name: 'Bulkrax::XmlParser', name: 'XML', partial: 'xml_fields' }
                                               ])
       end
 

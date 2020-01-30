@@ -52,6 +52,10 @@ module Bulkrax
       @import_file_path ||= self.parser_fields['import_file_path']
     end
 
+    def visibility
+      @visibility ||= self.parser_fields['visibility'] || 'open'
+    end
+
     def create_collections
       raise 'must be defined' if importer?
     end
@@ -80,7 +84,7 @@ module Bulkrax
 
     # Optional, only used by certain parsers
     # Other parsers should override with a custom or empty method
-    # Will be skipped unless the record is a Hash
+    # Will be skipped unless the #record is a Hash
     def create_parent_child_relationships
       parents.each do |key, value|
         parent = entry_class.where(
@@ -186,6 +190,10 @@ module Bulkrax
       0
     end
 
+    def collections_total
+      0
+    end
+
     def write
       write_files
       zip
@@ -197,6 +205,29 @@ module Bulkrax
 
     def zip
       WillowSword::ZipPackage.new(exporter_export_path, exporter_export_zip_path).create_zip
+    end
+
+    # Is this a file?
+    def file?
+      File.file?(parser_fields['import_file_path'])
+    end
+
+    # Is this a zip file?
+    def zip?
+      MIME::Types.type_for(parser_fields['import_file_path']).include?('application/zip')
+    end
+
+    def import_file_path
+      @import_file_path ||= real_import_file_path
+    end
+
+    def real_import_file_path
+      if file? && zip?
+        unzip(parser_fields['import_file_path'])
+        return File.join(importer_unzip_path, parser_fields['import_file_path'].split('/').last.gsub('.zip', ''))
+      else
+        parser_fields['import_file_path']
+      end
     end
   end
 end

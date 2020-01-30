@@ -18,15 +18,20 @@ module Bulkrax
                encoding: 'utf-8')
     end
 
-    def self.data_for_entry(data, _path = nil)
-      # If the whole CSV data is passed, grab the first row
+    def self.data_for_entry(data, path = nil)
+      # If a multi-line CSV data is passed, grab the first row
       data = data.first if data.is_a?(CSV::Table)
       raw_data = data.to_h
       # If the collection field mapping is not 'collection', add 'collection' - the parser needs it
       raw_data[:collection] = raw_data[collection_field.to_sym] if raw_data.keys.include?(collection_field.to_sym) && collection_field != 'collection'
       # If the children field mapping is not 'children', add 'children' - the parser needs it
       raw_data[:children] = raw_data[collection_field.to_sym] if raw_data.keys.include?(children_field.to_sym) && children_field != 'children'
+      raw_data[:file] = record_file_paths(path) if raw_data[:file].blank?
       return raw_data
+    end
+
+    def self.source_identifier_field
+      Bulkrax.source_identifier_field_mapping[self.to_s] || 'source_identifier'
     end
 
     def self.collection_field

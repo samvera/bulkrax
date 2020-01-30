@@ -89,10 +89,6 @@ module Bulkrax
       metadata_paths.count
     end
 
-    def import_file_path
-      @import_file_path ||= real_import_file_path
-    end
-
     def required_elements?(keys)
       return if keys.blank?
       !required_elements.map { |el| keys.map(&:to_s).include?(el) }.include?(false)
@@ -114,16 +110,7 @@ module Bulkrax
       return target_file
     end
 
-    # private
-
-    def real_import_file_path
-      if file? && zip?
-        unzip(parser_fields['import_file_path'])
-        return File.join(importer_unzip_path, parser_fields['import_file_path'].split('/').last.gsub('.zip', ''))
-      else
-        parser_fields['import_file_path']
-      end
-    end
+    private
 
     def bags
       return @bags if @bags.present?
@@ -176,5 +163,6 @@ module Bulkrax
       return nil unless bag.valid?
       bag
     end
+
   end
 end
