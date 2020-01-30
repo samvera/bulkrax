@@ -5,7 +5,7 @@ module Bulkrax
     attr_accessor :importerexporter
     delegate :only_updates, :limit, :current_exporter_run, :current_importer_run, :errors,
              :seen, :increment_counters, :parser_fields, :user,
-             :exporter_export_path, :exporter_export_zip_path, :importer_unzip_path,
+             :exporter_export_path, :exporter_export_zip_path, :importer_unzip_path, :validate_only,
              to: :importerexporter
 
     def self.parser_fields

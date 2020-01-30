@@ -7,8 +7,10 @@ module Bulkrax
     def build_for_importer
       begin
         build_metadata
-        raise CollectionsCreatedError unless collections_created?
-        @item = factory.run
+        # if !validate_only
+          raise CollectionsCreatedError unless collections_created?
+          @item = factory.run
+        # end
       rescue RSolr::Error::Http, CollectionsCreatedError => e
         raise e
       rescue StandardError => e
@@ -25,7 +27,7 @@ module Bulkrax
 
     # override this to ensure any collections have been created before building the work
     def collections_created?
-      true
+      false
     end
 
     def build_metadata
