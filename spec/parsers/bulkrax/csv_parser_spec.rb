@@ -89,5 +89,23 @@ module Bulkrax
         subject.create_parent_child_relationships
       end
     end
+
+    describe '#write_errored_entries_file', clean_downloads: true do
+      let(:importer) { FactoryBot.create(:bulkrax_importer_csv_failed, entries: [entry_failed, entry_succeeded]) }
+      let(:entry_failed) { FactoryBot.create(:bulkrax_csv_entry_failed, raw_metadata: { title: 'Failed' }) }
+      let(:entry_succeeded) { FactoryBot.create(:bulkrax_csv_entry, raw_metadata: { title: 'Succeeded' }) }
+      let(:import_file_path) { importer.errored_entries_csv_path }
+      subject { described_class.new(importer) }
+
+      it 'writes a CSV file containing the contents of failed entries' do
+        expect(File.exist?(import_file_path)).to eq(false)
+
+        expect(subject.write_errored_entries_file).to eq(true)
+
+        expect(File.exist?(import_file_path)).to eq(true)
+        expect(File.read(import_file_path)).to include('Failed,')
+        expect(File.read(import_file_path)).to_not include('Succeeded')
+      end
+    end
   end
 end

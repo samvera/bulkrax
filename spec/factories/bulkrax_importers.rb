@@ -71,4 +71,15 @@ FactoryBot.define do
     parser_fields { { 'import_file_path' => 'spec/fixtures/csv/bad.csv' } }
     field_mapping { {} }
   end
+
+  factory :bulkrax_importer_csv_failed, class: 'Bulkrax::Importer' do
+    name { 'CSV Import' }
+    admin_set_id { 'MyString' }
+    user { FactoryBot.build(:base_user) }
+    frequency { 'PT0S' }
+    parser_klass { 'Bulkrax::CsvParser' }
+    limit { 10 }
+    parser_fields { { 'import_file_path' => 'spec/fixtures/csv/failed.csv' } }
+    field_mapping { {} }
+  end
 end

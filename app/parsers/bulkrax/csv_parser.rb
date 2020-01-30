@@ -185,16 +185,18 @@ module Bulkrax
     # errored entries methods
 
     def write_errored_entries_file
+      @errored_entries ||= importerexporter.entries.where.not(last_error: [nil, {}, ''])
+      return unless @errored_entries.present?
+
       file = setup_errored_entries_file
       headers = import_fields
-      @errored_entries ||= importerexporter.entries.where.not(last_error: [nil, {}, ''])
-
       file.puts(headers.to_csv)
       @errored_entries.each do |ee|
         row = build_errored_entry_row(headers, ee)
         file.puts(row)
       end
       file.close
+      true
     end
 
     def build_errored_entry_row(headers, errored_entry)
