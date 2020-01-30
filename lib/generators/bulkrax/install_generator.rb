@@ -33,7 +33,7 @@ class Bulkrax::InstallGenerator < Rails::Generators::Base
   end
 
   def create_local_processing
-    copy_file 'app/models/bulkrax/concerns/has_local_processing.rb', 'app/models/bulkrax/concerns/has_local_processing.rb'
+    copy_file 'app/models/concerns/bulkrax/has_local_processing.rb', 'app/models/concerns/bulkrax/has_local_processing.rb'
   end
 
   def add_javascripts
