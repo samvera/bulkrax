@@ -22,7 +22,8 @@ module Bulkrax
       { name: "OAI - Dublin Core", class_name: "Bulkrax::OaiDcParser", partial: "oai_fields" },
       { name: "OAI - Qualified Dublin Core", class_name: "Bulkrax::OaiQualifiedDcParser", partial: "oai_fields" },
       { name: "CSV - Comma Separated Values", class_name: "Bulkrax::CsvParser", partial: "csv_fields" },
-      { name: "Bagit", class_name: "Bulkrax::BagitParser", partial: "bagit_fields" }
+      { name: "Bagit", class_name: "Bulkrax::BagitParser", partial: "bagit_fields" },
+      { name: "XML", class_name: "Bulkrax::XMLParser", partial: "xml_fields" }
     ]
 
     self.system_identifier_field = "source"
