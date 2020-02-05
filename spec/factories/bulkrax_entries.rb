@@ -27,7 +27,7 @@ FactoryBot.define do
 
   factory :bulkrax_csv_entry_collection, class: 'Bulkrax::CsvEntry' do
     identifier { "entry_collection" }
-    type { 'Bulkrax::CsvEntry' }
+    type { 'Bulkrax::CsvCollectionEntry' }
     importerexporter { FactoryBot.build(:bulkrax_importer) }
     raw_metadata { {} }
     parsed_metadata { {} }

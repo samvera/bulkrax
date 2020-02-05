@@ -91,20 +91,38 @@ module Bulkrax
     end
 
     describe '#write_errored_entries_file', clean_downloads: true do
-      let(:importer) { FactoryBot.create(:bulkrax_importer_csv_failed, entries: [entry_failed, entry_succeeded]) }
-      let(:entry_failed) { FactoryBot.create(:bulkrax_csv_entry_failed, raw_metadata: { title: 'Failed' }) }
-      let(:entry_succeeded) { FactoryBot.create(:bulkrax_csv_entry, raw_metadata: { title: 'Succeeded' }) }
+      subject                { described_class.new(importer) }
+      let(:importer)         { FactoryBot.create(:bulkrax_importer_csv_failed, entries: [entry_failed, entry_succeeded, entry_collection]) }
+      let(:entry_failed)     { FactoryBot.create(:bulkrax_csv_entry_failed, raw_metadata: { title: 'Failed' }) }
+      let(:entry_succeeded)  { FactoryBot.create(:bulkrax_csv_entry, raw_metadata: { title: 'Succeeded' }) }
+      let(:entry_collection) { FactoryBot.create(:bulkrax_csv_entry_collection, raw_metadata: { title: 'Collection' }, last_error: 'failed') }
       let(:import_file_path) { importer.errored_entries_csv_path }
-      subject { described_class.new(importer) }
 
-      it 'writes a CSV file containing the contents of failed entries' do
+      it 'returns true' do
+        expect(subject.write_errored_entries_file).to eq(true)
+      end
+
+      it 'writes a CSV file to the correct location' do
         expect(File.exist?(import_file_path)).to eq(false)
 
-        expect(subject.write_errored_entries_file).to eq(true)
+        subject.write_errored_entries_file
 
         expect(File.exist?(import_file_path)).to eq(true)
-        expect(File.read(import_file_path)).to include('Failed,')
-        expect(File.read(import_file_path)).to_not include('Succeeded')
+      end
+
+      it 'contains the contents of failed entries' do
+        subject.write_errored_entries_file
+        file_contents = File.read(import_file_path)
+
+        expect(file_contents).to include('Failed,')
+        expect(file_contents).to_not include('Succeeded')
+      end
+
+      it 'ignores failed collection entries' do
+        subject.write_errored_entries_file
+        file_contents = File.read(import_file_path)
+
+        expect(file_contents).to_not include('Collection')
       end
     end
   end
