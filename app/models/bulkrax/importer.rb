@@ -17,7 +17,7 @@ module Bulkrax
     validates :admin_set_id, presence: true
     validates :parser_klass, presence: true
 
-    delegate :valid_import?, :create_parent_child_relationships, to: :parser
+    delegate :valid_import?, :create_parent_child_relationships, :write_errored_entries_file, to: :parser
 
     attr_accessor :only_updates, :file_style, :file
     # TODO: validates :metadata_prefix, presence: true
@@ -112,6 +112,12 @@ module Bulkrax
       @importer_unzip_path ||= File.join(ENV.fetch('RAILS_TMP', Dir.tmpdir).to_s, "import_#{self.id}_#{self.importer_runs.last.id}")
     rescue
       @importer_unzip_path ||= File.join(ENV.fetch('RAILS_TMP', Dir.tmpdir).to_s, "import_#{self.id}_0")
+    end
+
+    def errored_entries_csv_path
+      @errored_entries_csv_path ||= File.join(ENV.fetch('RAILS_TMP', Dir.tmpdir).to_s, "import_#{self.id}_#{self.importer_runs.last.id}_errored_entries.csv")
+    rescue
+      @errored_entries_csv_path ||= File.join(ENV.fetch('RAILS_TMP', Dir.tmpdir).to_s, "import_#{self.id}_0_errored_entries.csv")
     end
   end
 end

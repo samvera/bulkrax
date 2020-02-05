@@ -166,5 +166,24 @@ module Bulkrax
         expect(response).to redirect_to(importers_url)
       end
     end
+
+    describe 'GET #export_errors', clean_downloads: true do
+      let(:importer) { FactoryBot.create(:bulkrax_importer_csv_failed, entries: [failed_entry]) }
+      let(:failed_entry) { FactoryBot.create(:bulkrax_csv_entry_failed) }
+      let(:import_file_path) { importer.errored_entries_csv_path }
+
+      before do
+        importer.parser_fields.merge!(import_file_path: import_file_path)
+      end
+
+      it 'writes a CSV file containing the contents of failed entries' do
+        expect(File.exist?(import_file_path)).to eq(false)
+
+        get :export_errors, params: { importer_id: importer.to_param }, session: valid_session
+
+        expect(File.exist?(import_file_path)).to eq(true)
+        expect(File.read(import_file_path)).to include('Title,')
+      end
+    end
   end
 end

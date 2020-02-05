@@ -45,6 +45,10 @@ RSpec.configure do |config|
     DatabaseCleaner.clean
   end
 
+  config.after(:each, clean_downloads: true) do
+    FileUtils.rm_rf(Dir.glob("#{ENV.fetch('RAILS_TMP', Dir.tmpdir)}/*_errored_entries.csv"))
+  end
+
   # Remove this line if you're not using ActiveRecord or ActiveRecord fixtures
   config.fixture_path = "#{::Rails.root}/spec/fixtures"
 

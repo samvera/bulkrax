@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'csv'
+require 'fileutils'
 module Bulkrax
   class CsvParser < ApplicationParser
     def self.export_supported?
@@ -176,6 +177,39 @@ module Bulkrax
       # remove the metadata filename from the end of the import path
       path.pop
       File.join(path.join('/'), 'files')
+    end
+
+    # errored entries methods
+
+    def write_errored_entries_file
+      @errored_entries ||= importerexporter.entries.where.not(last_error: [nil, {}, ''])
+      return unless @errored_entries.present?
+
+      file = setup_errored_entries_file
+      headers = import_fields
+      file.puts(headers.to_csv)
+      @errored_entries.each do |ee|
+        row = build_errored_entry_row(headers, ee)
+        file.puts(row)
+      end
+      file.close
+      true
+    end
+
+    def build_errored_entry_row(headers, errored_entry)
+      row = {}
+      # Ensure each header has a value, even if it's just an empty string
+      headers.each do |h|
+        row.merge!({ "#{h}": nil })
+      end
+      # Match each value to its corresponding header
+      row.merge!(errored_entry.raw_metadata.symbolize_keys)
+
+      row.values.to_csv
+    end
+
+    def setup_errored_entries_file
+      File.open(importerexporter.errored_entries_csv_path, 'w')
     end
   end
 end

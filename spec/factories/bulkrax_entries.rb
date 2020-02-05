@@ -33,6 +33,15 @@ FactoryBot.define do
     parsed_metadata { {} }
   end
 
+  factory :bulkrax_csv_entry_failed, class: 'Bulkrax::CsvEntry' do
+    identifier { "entry_failed" }
+    type { 'Bulkrax::CsvEntry' }
+    importerexporter { FactoryBot.build(:bulkrax_importer) }
+    raw_metadata { { title: 'Title' } }
+    parsed_metadata { {} }
+    last_error { 'failed' }
+  end
+
   factory :bulkrax_rdf_entry, class: 'Bulkrax::RdfEntry' do
     identifier { "MyString" }
     type { 'Bulkrax::RdfEntry' }
