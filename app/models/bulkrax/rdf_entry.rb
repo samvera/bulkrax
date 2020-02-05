@@ -41,14 +41,6 @@ module Bulkrax
       Dir.glob("#{File.dirname(path)}/**/*").reject { |f| File.file?(f) == false }
     end
 
-    def self.collection_field
-      Bulkrax.collection_field_mapping[self.to_s]
-    end
-
-    def self.children_field
-      Bulkrax.parent_child_field_mapping[self.to_s]
-    end
-
     def record
       @record ||= RDF::Reader.for(self.raw_metadata['format'].to_sym).new(self.raw_metadata['data'])
     end

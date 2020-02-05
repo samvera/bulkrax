@@ -85,10 +85,6 @@ module Bulkrax
       metadata_paths.count
     end
 
-    def import_file_path
-      @import_file_path ||= real_import_file_path
-    end
-
     def required_elements?(keys)
       return if keys.blank?
       !required_elements.map { |el| keys.map(&:to_s).include?(el) }.include?(false)
@@ -110,16 +106,7 @@ module Bulkrax
       return target_file
     end
 
-    # private
-
-    def real_import_file_path
-      if file? && zip?
-        unzip(parser_fields['import_file_path'])
-        return File.join(importer_unzip_path, parser_fields['import_file_path'].split('/').last.gsub('.zip', ''))
-      else
-        parser_fields['import_file_path']
-      end
-    end
+    private
 
     # Gather the paths to all bags; skip any stray files
     def bag_paths
@@ -142,16 +129,6 @@ module Bulkrax
       @metadata_paths ||= bag_paths.map do |b|
         Dir.glob("#{b}/**/*").select { |f| File.file?(f) && f.ends_with?(metadata_file_name) }
       end.flatten.compact
-    end
-
-    # Is this a file?
-    def file?
-      File.file?(parser_fields['import_file_path'])
-    end
-
-    # Is this a zip file?
-    def zip?
-      MIME::Types.type_for(parser_fields['import_file_path']).include?('application/zip')
     end
 
     # Is the directory is a bag?

@@ -43,9 +43,11 @@ module Bulkrax
           end
         # we didn't find a match, add by default
         elsif multiple
+          node_content = node_content.content if node_content.is_a?(Nokogiri::XML::NodeSet)
           parsed_metadata[name] ||= []
           parsed_metadata[name] += Array.wrap(node_content.strip)
         else
+          node_content = node_content.content if node_content.is_a?(Nokogiri::XML::NodeSet)
           parsed_metadata[name] = Array.wrap(node_content.strip).join('; ')
         end
       end
