@@ -2,8 +2,7 @@
   <h1><span class="fa fa-cloud-upload" aria-hidden="true"></span> Importer: <%= @importer.name %></h1>
   <% if @importer.parser_klass == 'Bulkrax::CsvParser' && @work_entries.map { |e| e.status == 'failed' }.any? %>
     <div class="pull-right">
-      <%# TODO: Uncomment when i49 is merged %>
-      <%# link_to 'Export Errored Entries', importer_export_errors_path(@importer.id), class: 'btn btn-primary' %>
+      <%= link_to 'Export Errored Entries', importer_export_errors_path(@importer.id), class: 'btn btn-primary' %>
       <%= link_to 'Upload Corrected Entries', importer_upload_corrected_entries_path(@importer.id), class: 'btn btn-primary' %>
     </div>
   <% end %>
