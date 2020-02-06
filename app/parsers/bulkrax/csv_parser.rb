@@ -182,7 +182,7 @@ module Bulkrax
     # errored entries methods
 
     def write_errored_entries_file
-      @errored_entries ||= importerexporter.entries.where.not(last_error: [nil, {}, ''])
+      @errored_entries ||= importerexporter.entries.where.not(last_error: [nil, {}, ''], type: 'Bulkrax::CsvCollectionEntry')
       return unless @errored_entries.present?
 
       file = setup_errored_entries_file
