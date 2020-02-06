@@ -269,7 +269,7 @@ module Bulkrax
       end
 
       def file_paths
-        @file_paths ||= Array.wrap(attributes[:file])&.map { |file| file if File.exist?(file) }
+        @file_paths ||= Array.wrap(attributes[:file])&.select { |file| File.exist?(file) }
       end
 
       # Retrieve the orginal filenames for the files to be imported
