@@ -154,9 +154,10 @@ module Bulkrax
       entryclass.where(
         importerexporter_id: importerexporter.id,
         importerexporter_type: type,
-        identifier: identifier,
-        raw_metadata: raw_metadata
-      ).first_or_create!
+        identifier: identifier
+      ).first_or_create! do |e|
+        e.raw_metadata = raw_metadata
+      end
     end
 
     # @todo - review this method
