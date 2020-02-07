@@ -163,13 +163,14 @@ module Bulkrax
     end
 
     def find_or_create_entry(entryclass, identifier, type, raw_metadata = nil)
-      entryclass.where(
+      entry = entryclass.where(
         importerexporter_id: importerexporter.id,
         importerexporter_type: type,
         identifier: identifier
-      ).first_or_create! do |e|
-        e.raw_metadata = raw_metadata
-      end
+      ).first_or_create!
+      entry.raw_metadata = raw_metadata
+      entry.save!
+      entry
     end
 
     # @todo - review this method

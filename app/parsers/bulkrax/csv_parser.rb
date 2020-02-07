@@ -25,7 +25,7 @@ module Bulkrax
 
     def records(_opts = {})
       file_for_import = only_updates ? parser_fields['partial_import_file_path'] : parser_fields['import_file_path']
-      @records ||= entry_class.read_data(file_for_import).map { |record_data| entry_class.data_for_entry(record_data) }
+      entry_class.read_data(file_for_import).map { |record_data| entry_class.data_for_entry(record_data) }
     end
 
     # We could use CsvEntry#fields_from_data(data) but that would mean re-reading the data
@@ -70,8 +70,7 @@ module Bulkrax
         break if !limit.nil? && index >= limit
 
         seen[record[:source_identifier]] = true
-        # new_entry = find_or_create_entry(entry_class, record[:source_identifier], 'Bulkrax::Importer', record.to_h.compact)
-        new_entry = entry_class.where(importerexporter: self.importerexporter, importerexporter_type: 'Bulkrax::Importer', identifier: record[:source_identifier]).first_or_create!
+        new_entry = find_or_create_entry(entry_class, record[:source_identifier], 'Bulkrax::Importer', record.to_h.compact)
         ImportWorkJob.perform_later(new_entry.id, current_importer_run.id)
         increment_counters(index)
       end
