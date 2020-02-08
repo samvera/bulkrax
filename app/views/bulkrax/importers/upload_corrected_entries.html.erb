@@ -5,7 +5,11 @@
 <div class="panel panel-default">
   <div class="panel-body">
 
-    <p>Upload only the corrected works for the <b><%= @importer.name %></b> importer. Only CSV files are allowed.</p>
+    <p>
+    Upload <b>only</b> the corrected entries for the <b><%= @importer.name %></b> importer. To export failed entries for correction,
+    <%= link_to "click here <span class='glyphicon glyphicon-download-alt'></span>".html_safe, importer_export_errors_path(@importer.id) %>
+    </p>
+    <p>Only CSV files are allowed.</p>
 
     <%= simple_form_for @importer, url: importer_upload_corrected_entries_file_path, method: :post, html: { multipart: true } do |f| %>
       <%= f.fields_for :parser_fields do |fi| %>
