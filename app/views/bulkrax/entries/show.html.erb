@@ -20,8 +20,10 @@
 
     <p>
       <strong>Raw Metadata:</strong><br />
-      <% @entry.raw_metadata.each do |key,value| %>
-        <%= key %>: <%= value %> <br />
+      <% if @entry.raw_metadata.present? %>
+        <% @entry.raw_metadata.each do |key,value| %>
+          <%= key %>: <%= value %> <br />
+        <% end %>
       <% end %>
     </p>
 
