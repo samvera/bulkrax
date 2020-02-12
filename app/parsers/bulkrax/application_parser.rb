@@ -64,15 +64,15 @@ module Bulkrax
     end
 
     def write_partial_import_file(file)
-      path = File.join(path_for_import, file.original_filename)
-      initial_filename = path.split('/').last
-      filename = "#{File.basename(path, '.csv')}_corrected_entries.csv"
-      mv_path = File.join(path_for_import, filename)
+      import_filename = import_file_path.split('/').last
+      partial_import_filename = "#{File.basename(import_filename, '.csv')}_corrected_entries.csv"
+
+      path = File.join(path_for_import, partial_import_filename)
       FileUtils.mv(
         file.path,
-        mv_path
+        path
       )
-      mv_path
+      path
     end
 
     def path_for_import
