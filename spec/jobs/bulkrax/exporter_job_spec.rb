@@ -14,7 +14,7 @@ module Bulkrax
       allow(exporter).to receive(:mapping).and_return("title" => {})
     end
 
-    describe 'successful job' do
+    describe 'successful job', clean_downloads: true do
       it 'calls export' do
         expect(exporter).to receive(:export)
         exporter_job.perform(1)

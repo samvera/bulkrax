@@ -63,18 +63,6 @@ module Bulkrax
       path
     end
 
-    def write_partial_import_file(file)
-      import_filename = import_file_path.split('/').last
-      partial_import_filename = "#{File.basename(import_filename, '.csv')}_corrected_entries.csv"
-
-      path = File.join(path_for_import, partial_import_filename)
-      FileUtils.mv(
-        file.path,
-        path
-      )
-      path
-    end
-
     def path_for_import
       path = File.join(Bulkrax.import_path, importerexporter.id.to_s)
       FileUtils.mkdir_p(path) unless File.exist?(path)

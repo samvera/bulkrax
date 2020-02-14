@@ -194,7 +194,7 @@ module Bulkrax
       end
     end
 
-    describe 'POST #upload_corrected_entries_file' do
+    describe 'POST #upload_corrected_entries_file', clean_downloads: true do
       context 'with valid params' do
         let(:file_upload_params) do
           {
@@ -205,14 +205,21 @@ module Bulkrax
         end
 
         it 'sets partial_import_file_path on the requested importer' do
-          importer = Importer.create! valid_attributes
+          importer = FactoryBot.create(:bulkrax_importer_csv_failed)
+          expect(importer.parser_fields['partial_import_file_path']).to_not be_present
+
           post :upload_corrected_entries_file, params: { importer_id: importer.to_param, importer: file_upload_params }, session: valid_session
-          importer.reload
-          expect(importer.parser_fields['partial_import_file_path']).to eq('tmp/imports/1/ok.csv')
+          expect(importer.reload.parser_fields['partial_import_file_path']).to be_present
+        end
+
+        it 'invokes Bulkrax::ImporterJob' do
+          expect(Bulkrax::ImporterJob).to receive(:perform_later).exactly(1).times
+          importer = FactoryBot.create(:bulkrax_importer_csv_failed)
+          post :upload_corrected_entries_file, params: { importer_id: importer.to_param, importer: file_upload_params }, session: valid_session
         end
 
         it 'redirects to the importer with a notice' do
-          importer = Importer.create! valid_attributes
+          importer = FactoryBot.create(:bulkrax_importer_csv_failed)
           post :upload_corrected_entries_file, params: { importer_id: importer.to_param, importer: file_upload_params }, session: valid_session
           expect(response).to redirect_to(importer_path(importer))
           expect(flash[:notice]).to include('successfully')

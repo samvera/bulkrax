@@ -78,6 +78,18 @@ module Bulkrax
       errors.add(:base, e.class.to_s.to_sym, message: e.message)
     end
 
+    def write_partial_import_file(file)
+      import_filename = import_file_path.split('/').last
+      partial_import_filename = "#{File.basename(import_filename, '.csv')}_corrected_entries.csv"
+
+      path = File.join(path_for_import, partial_import_filename)
+      FileUtils.mv(
+        file.path,
+        path
+      )
+      path
+    end
+
     def create_parent_child_relationships
       super
     end

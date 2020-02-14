@@ -46,7 +46,9 @@ RSpec.configure do |config|
   end
 
   config.after(:each, clean_downloads: true) do
-    FileUtils.rm_rf(Dir.glob("#{ENV.fetch('RAILS_TMP', Dir.tmpdir)}/*_errored_entries.csv"))
+    FileUtils.rm_rf(Dir.glob("#{ENV.fetch('RAILS_TMP', Dir.tmpdir)}/*_entries.csv"))
+    FileUtils.rm_rf(Dir.glob("#{File.join(Bulkrax.import_path, '1', '/*_entries.csv')}"))
+    FileUtils.rm_rf(Dir.glob("#{File.join(Bulkrax.export_path, '1', '1', '/*.csv')}"))
   end
 
   # Remove this line if you're not using ActiveRecord or ActiveRecord fixtures
