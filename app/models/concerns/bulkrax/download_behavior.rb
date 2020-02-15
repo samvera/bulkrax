@@ -2,7 +2,6 @@
 
 module Bulkrax
   module DownloadBehavior
-
     # The following download code is based on
     # https://github.com/samvera/hydra-head/blob/master/hydra-core/app/controllers/concerns/hydra/controller/download_behavior.rb
 

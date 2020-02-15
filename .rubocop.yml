@@ -20,6 +20,9 @@ inherit_gem:
 
 # Notch8 coding conventions
 # @see https://github.com/rubocop-hq/rubocop/blob/master/manual/configuration.md
+Metrics/BlockLength:
+  Max: 495
+
 Metrics/ModuleLength:
   Exclude:
     - 'spec/**/*'

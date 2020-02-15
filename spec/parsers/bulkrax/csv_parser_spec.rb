@@ -115,14 +115,14 @@ module Bulkrax
         file_contents = File.read(import_file_path)
 
         expect(file_contents).to include('Failed,')
-        expect(file_contents).to_not include('Succeeded')
+        expect(file_contents).not_to include('Succeeded')
       end
 
       it 'ignores failed collection entries' do
         subject.write_errored_entries_file
         file_contents = File.read(import_file_path)
 
-        expect(file_contents).to_not include('Collection')
+        expect(file_contents).not_to include('Collection')
       end
     end
   end
