@@ -1,5 +1,13 @@
 <div class='xml_fields'>
 
+  <%# @todo improve on this implementation. 
+    As it stands, it's a hostage to namespaces, 
+    eg. dc:title 
+    if namespaces aren't in the xml, we would have to specify dc:title
+    but if the namespaces ARE present, we remove them so we would need title
+  %>
+  <%= fi.import :record_element, hint: 'Provide the xml element name to use to identify the record, or records, eg. ROW - each record in the attached XML is wrapped in a <ROW> tag.'>
+
   <%= fi.input :import_type, 
 		collection: [
 			['Multiple Metadata Files, One per Work', 'single'],
