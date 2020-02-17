@@ -200,7 +200,7 @@ module Bulkrax
       row = {}
       # Ensure each header has a value, even if it's just an empty string
       headers.each do |h|
-        row.merge!({ "#{h}": nil })
+        row.merge!("#{h}": nil)
       end
       # Match each value to its corresponding header
       row.merge!(errored_entry.raw_metadata.symbolize_keys)

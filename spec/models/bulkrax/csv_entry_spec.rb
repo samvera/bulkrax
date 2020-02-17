@@ -5,15 +5,15 @@ require 'rails_helper'
 module Bulkrax
   RSpec.describe CsvEntry, type: :model do
     describe 'builds entry' do
-      let(:importer) { FactoryBot.build(:bulkrax_importer_csv) }
       subject { described_class.new(importerexporter: importer) }
+      let(:importer) { FactoryBot.build(:bulkrax_importer_csv) }
 
       before do
         Bulkrax.default_work_type = 'Work'
       end
 
       context 'without required metadata' do
-        before(:each) do
+        before do
           allow(subject).to receive(:record).and_return(source_identifier: '1', some_field: 'some data')
         end
 
@@ -23,7 +23,7 @@ module Bulkrax
       end
 
       context 'with required metadata' do
-        before(:each) do
+        before do
           allow_any_instance_of(ObjectFactory).to receive(:run)
           allow(subject).to receive(:record).and_return('source_identifier' => '2', 'title' => 'some title')
         end
@@ -35,7 +35,7 @@ module Bulkrax
       end
 
       context 'with files containing spaces' do
-        before(:each) do
+        before do
           allow_any_instance_of(ObjectFactory).to receive(:run)
 
           allow(subject).to receive(:record).and_return('source_identifier' => '3', 'title' => 'some title', 'file' => './spec/fixtures/csv/test file.csv')
