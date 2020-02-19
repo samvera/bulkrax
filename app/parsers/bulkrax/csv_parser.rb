@@ -24,7 +24,8 @@ module Bulkrax
     end
 
     def records(_opts = {})
-      @records ||= entry_class.read_data(parser_fields['import_file_path']).map { |record_data| entry_class.data_for_entry(record_data) }
+      file_for_import = only_updates ? parser_fields['partial_import_file_path'] : parser_fields['import_file_path']
+      entry_class.read_data(file_for_import).map { |record_data| entry_class.data_for_entry(record_data) }
     end
 
     # We could use CsvEntry#fields_from_data(data) but that would mean re-reading the data
@@ -75,6 +76,18 @@ module Bulkrax
       end
     rescue StandardError => e
       errors.add(:base, e.class.to_s.to_sym, message: e.message)
+    end
+
+    def write_partial_import_file(file)
+      import_filename = import_file_path.split('/').last
+      partial_import_filename = "#{File.basename(import_filename, '.csv')}_corrected_entries.csv"
+
+      path = File.join(path_for_import, partial_import_filename)
+      FileUtils.mv(
+        file.path,
+        path
+      )
+      path
     end
 
     def create_parent_child_relationships

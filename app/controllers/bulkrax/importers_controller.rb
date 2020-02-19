@@ -109,12 +109,13 @@ module Bulkrax
     def upload_corrected_entries_file
       file = params[:importer][:parser_fields].delete(:file)
       @importer = Importer.find(params[:importer_id])
-      if @importer.save && file.present?
-        @importer[:parser_fields]['partial_import_file_path'] = @importer.parser.write_import_file(file) if file.present?
+      if file.present?
+        @importer[:parser_fields]['partial_import_file_path'] = @importer.parser.write_partial_import_file(file)
         @importer.save
-        redirect_to importer_path(@importer), notice: 'Corrected entries uploaded successfully'
+        Bulkrax::ImporterJob.perform_later(@importer.id, true)
+        redirect_to importer_path(@importer), notice: 'Corrected entries uploaded successfully.'
       else
-        redirect_to importer_upload_corrected_entries_path(@importer), alert: 'Importer failed to update with new file'
+        redirect_to importer_upload_corrected_entries_path(@importer), alert: 'Importer failed to update with new file.'
       end
     end
 
