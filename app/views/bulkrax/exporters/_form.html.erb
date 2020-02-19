@@ -42,16 +42,18 @@
       class: 'collection hidden',
       data: { 
         'autocomplete-url' => "/authorities/search/collections",
-        'autocomplete' => 'collection' } }
-    %>
-  
+        'autocomplete' => 'collection'
+      }
+    }
+  %>
+
   <%= form.input :export_source, 
     label: t('bulkrax.exporter.labels.worktype'),
     prompt: 'Select from the list',
     label_html: { class: 'worktype hidden' },
     input_html: { class: 'worktype hidden' },
     collection: Hyrax.config.curation_concerns.map {|cc| [cc.to_s, cc.to_s] } %>
-  
+
   <%= form.input :limit, 
     as: :integer, 
     hint: 'leave blank or 0 for all records',
