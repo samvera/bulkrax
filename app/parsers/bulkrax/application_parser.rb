@@ -52,6 +52,10 @@ module Bulkrax
       @import_file_path ||= self.parser_fields['import_file_path']
     end
 
+    def visibility
+      @visibility ||= self.parser_fields['visibility'] || 'open'
+    end
+
     def create_collections
       raise 'must be defined' if importer?
     end

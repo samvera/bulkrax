@@ -49,10 +49,6 @@ module Bulkrax
       @metadata_paths ||= file_paths.select { |f| MIME::Types.type_for(f).include?('application/xml')}
     end
 
-    def relative_file_path(path)
-      path.pop
-    end
-
     def create_works
       records.each_with_index do |record, index|
         next if record[:source_identifier].blank?

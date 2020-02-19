@@ -19,7 +19,8 @@ module Bulkrax
     validates :admin_set_id, presence: true
     validates :parser_klass, presence: true
 
-    delegate :valid_import?, :create_parent_child_relationships, :write_errored_entries_file, to: :parser
+    delegate :valid_import?, :create_parent_child_relationships, 
+      :write_errored_entries_file, :visibility, to: :parser
 
     attr_accessor :only_updates, :file_style, :file
     # TODO: validates :metadata_prefix, presence: true
