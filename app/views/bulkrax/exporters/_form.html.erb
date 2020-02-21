@@ -35,7 +35,7 @@
     collection:  form.object.importers_list %>
 
   <%= form.input :export_source, 
-    prompt: 'Start typing ... (not implemented yet)',
+    prompt: 'Start typing ...',
     label: t('bulkrax.exporter.labels.collection'),
     label_html: { class: 'collection hidden' },
     input_html: { 
@@ -53,6 +53,10 @@
     label_html: { class: 'worktype hidden' },
     input_html: { class: 'worktype hidden' },
     collection: Hyrax.config.curation_concerns.map {|cc| [cc.to_s, cc.to_s] } %>
+
+  <%= form.input :export_source,
+    label_html: { class: 'hidden' },
+    input_html: { id: 'submitted_export_source', class: 'hidden' } %>
 
   <%= form.input :limit, 
     as: :integer, 
