@@ -20,7 +20,7 @@ module Bulkrax
         return unless content.send(self.if[0], Regexp.new(self.if[1]))
       end
 
-      @result = content.gsub(/\s/, ' ') # remove any line feeds and tabs
+      @result = content.to_s.gsub(/\s/, ' ') # remove any line feeds and tabs
       @result.strip!
 
       if self.split.is_a?(TrueClass)
