@@ -36,6 +36,7 @@ module Bulkrax
     end
 
     # Return all files, including metadata and bagit files
+    # Files must be the same directory, or a subdirectory of, that containing the CSV
     def self.record_file_paths(path)
       return [] if path.nil?
       Dir.glob("#{File.dirname(path)}/**/*").reject { |f| File.file?(f) == false }

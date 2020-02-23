@@ -18,7 +18,7 @@ module Bulkrax
                encoding: 'utf-8')
     end
 
-    def self.data_for_entry(data, _path = nil)
+    def self.data_for_entry(data, path = nil)
       # If the whole CSV data is passed, grab the first row
       data = data.first if data.is_a?(CSV::Table)
       raw_data = data.to_h
@@ -26,7 +26,16 @@ module Bulkrax
       raw_data[:collection] = raw_data[collection_field.to_sym] if raw_data.keys.include?(collection_field.to_sym) && collection_field != 'collection'
       # If the children field mapping is not 'children', add 'children' - the parser needs it
       raw_data[:children] = raw_data[collection_field.to_sym] if raw_data.keys.include?(children_field.to_sym) && children_field != 'children'
+      # Unless files are already in the data, build the files array
+      raw_data[:file] = record_file_paths(path) unless raw_data[:file].present?
       return raw_data
+    end
+
+    # Return all files, including metadata and bagit files
+    # Files must be the same directory, or a subdirectory of, that containing the CSV
+    def self.record_file_paths(path)
+      return [] if path.nil?
+      Dir.glob("#{File.dirname(path)}/**/*").reject { |f| File.file?(f) == false }
     end
 
     def self.collection_field
