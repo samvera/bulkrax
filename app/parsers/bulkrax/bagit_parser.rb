@@ -122,13 +122,14 @@ module Bulkrax
 
     # Gather the paths to all bags; skip any stray files
     def bag_paths
-      if bag?(import_file_path)
-        [import_file_path]
-      elsif bags?(import_file_path)
-        Dir.glob("#{import_file_path}/*").reject { |d| File.file?(d) }
-      else
-        raise 'No valid bags found'
-      end
+      result = if bag?(import_file_path)
+                 [import_file_path]
+               else
+                 Dir.glob("#{import_file_path}/*").select { |d| bag?(d) }
+               end
+
+      raise 'No valid bags found' if result.blank?
+      return result
     end
 
     def metadata_file_name
@@ -157,16 +158,4 @@ module Bulkrax
     def bag?(path)
       File.exist?(File.join(path, 'bagit.txt')) && BagIt::Bag.new(path).valid?
     end
-
-    # Are the immediate sub-directories of this directory bags?
-    # All or nothing
-    def bags?(path)
-      result = nil
-      Dir.glob("#{path}/*").reject { |d| File.file?(d) }.each do |dir|
-        result = bag?(dir)
-        break if result == false
-      end
-      result
-    end
   end
-end
