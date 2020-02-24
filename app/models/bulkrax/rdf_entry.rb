@@ -35,12 +35,6 @@ module Bulkrax
       }
     end
 
-    # Return all files, including metadata and bagit files
-    def self.record_file_paths(path)
-      return [] if path.nil?
-      Dir.glob("#{File.dirname(path)}/**/*").reject { |f| File.file?(f) == false }
-    end
-
     def record
       @record ||= RDF::Reader.for(self.raw_metadata['format'].to_sym).new(self.raw_metadata['data'])
     end

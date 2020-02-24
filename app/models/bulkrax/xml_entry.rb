@@ -33,14 +33,6 @@ module Bulkrax
       }
     end
 
-    # Return all files in this directory and sub-directories, excluding the metadata file
-    # Importing files is only supported on individual_file
-    # Files must be the same, or a subdirectory of, that containing the xml
-    def self.record_file_paths(path)
-      return [] if path.nil?
-      Dir.glob("#{File.dirname(path)}/**/*").reject { |f| File.file?(f) == false || f == path }
-    end
-
     # def self.matcher_class; end
 
     def record
