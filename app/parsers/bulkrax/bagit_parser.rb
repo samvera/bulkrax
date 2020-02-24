@@ -35,7 +35,7 @@ module Bulkrax
         data = entry_class.read_data(path)
         data = entry_class.data_for_entry(data, path)
         bag = BagIt::Bag.new(path.split('/')[0..-2].join('/'))
-        data[:file] = bag.bag_files
+        data[:file] = bag.bag_files.join('|')
         data
       end
     end
