@@ -33,7 +33,10 @@ module Bulkrax
       raise 'No metadata files were found' if metadata_paths.blank?
       @records ||= metadata_paths.map do |path|
         data = entry_class.read_data(path)
-        entry_class.data_for_entry(data, path)
+        data = entry_class.data_for_entry(data, path)
+        bag = BagIt::Bag.new(path.split('/')[0..-2].join('/'))
+        data['files'] = bag.bag_files
+        data
       end
     end
 
