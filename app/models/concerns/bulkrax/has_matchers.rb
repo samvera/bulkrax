@@ -59,7 +59,7 @@ module Bulkrax
     def multiple?(field)
       return true if field == 'file' || field == 'remote_files'
       return false if field == 'model'
-      field_supported?(field) && factory_class.properties[field]['multiple']
+      field_supported?(field) && factory_class&.properties&.[](field)&.[]('multiple')
     end
 
     # Hyrax field to use for the given import field
