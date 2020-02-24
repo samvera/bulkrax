@@ -159,3 +159,4 @@ module Bulkrax
       File.exist?(File.join(path, 'bagit.txt')) && BagIt::Bag.new(path).valid?
     end
   end
+end
