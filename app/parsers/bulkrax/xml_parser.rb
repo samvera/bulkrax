@@ -44,9 +44,15 @@ module Bulkrax
         end
     end
 
-    # Return all xml files
+    # If the import_file_path is an xml file, return that
+    # Otherwise return all xml files in the given folder
     def metadata_paths
-      @metadata_paths ||= file_paths.select { |f| MIME::Types.type_for(f).include?('application/xml')}
+      @metadata_paths ||= 
+      if file? && MIME::Types.type_for(real_import_file_path).include?('application/xml')
+        [real_import_file_path]
+      else
+        file_paths.select { |f| MIME::Types.type_for(f).include?('application/xml') }
+      end
     end
 
     def create_works
