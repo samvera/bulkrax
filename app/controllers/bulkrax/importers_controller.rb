@@ -106,9 +106,6 @@ module Bulkrax
       cloud_files = params[:importer].delete(:selected_files)
       field_mapping_params
 
-      Rails.logger.info('HELLO')
-      Rails.logger.info(importer_params)
-
       if @importer.update(importer_params)
         files_for_import(file, cloud_files)
         # do not perform the import
