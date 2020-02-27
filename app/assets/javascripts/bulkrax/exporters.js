@@ -4,10 +4,7 @@ jQuery(function() {
     var selectedVal = $('.exporter_export_from option:selected').val();
     hideUnhide(selectedVal);
   });
-  $('.exporter_export_source').change(function() {
-    setSubmittedExportSource()
-  });
-  // show the selected export_source option
+  // TODO: show the selected export_source option
   // $(document).ready(function() {
     // var selectedOpt = $('.exporter_export_source option:selected');
     // unhideSelected(selectedOpt);
@@ -15,13 +12,12 @@ jQuery(function() {
 });
 
 function hideUnhide(field) {
-  var allSources = $('body').find('.exporter_export_source')
+  var allSources = $('body').find('.export-source-option')
   hide(allSources)
 
   if (field != null) {
-    var selectedSource = allSources.find('.' + field)
+    var selectedSource = $('.' + field)
     unhideSelected(selectedSource)
-    selectedSource.addClass('selection')
   }
 
   if (field === 'collection') {
@@ -33,7 +29,6 @@ function hideUnhide(field) {
 function hide(allSources) {
   allSources.addClass('hidden');
   allSources.find('#exporter_export_source').addClass('hidden').attr('type', 'hidden');
-  allSources.find('#exporter_export_source').removeClass('selection');
 }
 
 // unhide selected export_source
@@ -41,14 +36,6 @@ function unhideSelected(selectedSource) {
   selectedSource.removeClass('hidden').removeAttr('type');
   selectedSource.parent().removeClass('hidden').removeAttr('type');
 };
-
-function setSubmittedExportSource() {
-  var export_source_val = $('body').find('select.selection').val()
-  if (export_source_val == undefined || '') {
-    export_source_val = $('body').find('.select2-chosen').text()
-  }
-  $('body').find('#submitted_export_source').val(export_source_val)
-}
 
 // add the autocomplete javascript
 function addAutocomplete() {
@@ -60,5 +47,4 @@ function addAutocomplete() {
   }))
 }
 
-// @todo - store the autoselected collection
 // clear selected when focus moves away from the export_from

@@ -27,36 +27,35 @@
     required: true,
     prompt: 'Please select an export source' %>
 
-  <%= form.input :export_source, 
+  <%= form.input :export_source_importer,
     label: t('bulkrax.exporter.labels.importer'),
     prompt: 'Select from the list',
-    label_html: { class: 'importer hidden' },
-    input_html: { class: 'importer hidden' }, 
+    label_html: { class: 'importer export-source-option hidden' },
+    input_html: { class: 'importer export-source-option hidden' },
     collection:  form.object.importers_list %>
 
-  <%= form.input :export_source, 
-    prompt: 'Start typing ...',
-    label: t('bulkrax.exporter.labels.collection'),
-    label_html: { class: 'collection hidden' },
-    input_html: { 
-      class: 'collection hidden',
-      data: { 
-        'autocomplete-url' => "/authorities/search/collections",
-        'autocomplete' => 'collection'
+  <div class='field-wrapper'>
+    <%= form.input :export_source_collection,
+      prompt: 'Start typing ...',
+      label: t('bulkrax.exporter.labels.collection'),
+      label_html: { class: 'collection export-source-option hidden' },
+      input_html: {
+        class: 'collection export-source-option hidden',
+        data: {
+          'autocomplete-url' => "/authorities/search/collections",
+          'autocomplete' => 'collection',
+          'id' => ''
+        }
       }
-    }
-  %>
+    %>
+  </div>
 
-  <%= form.input :export_source, 
+  <%= form.input :export_source_worktype,
     label: t('bulkrax.exporter.labels.worktype'),
     prompt: 'Select from the list',
-    label_html: { class: 'worktype hidden' },
-    input_html: { class: 'worktype hidden' },
+    label_html: { class: 'worktype export-source-option hidden' },
+    input_html: { class: 'worktype export-source-option hidden' },
     collection: Hyrax.config.curation_concerns.map {|cc| [cc.to_s, cc.to_s] } %>
-
-  <%= form.input :export_source,
-    label_html: { class: 'hidden' },
-    input_html: { id: 'submitted_export_source', class: 'hidden' } %>
 
   <%= form.input :limit, 
     as: :integer, 
