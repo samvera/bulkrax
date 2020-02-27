@@ -91,7 +91,7 @@ module Bulkrax
         else
           seen[record.identifier] = true
           new_entry = entry_class.where(importerexporter: self.importerexporter, identifier: record.identifier).first_or_create!
-          ImportWorkJob.perform_later(new_entry.id, importerexporter.current_importer_run.id)
+          ImportWorkJob.send(perform_method, new_entry.id, importerexporter.current_importer_run.id)
           increment_counters(index)
         end
       end

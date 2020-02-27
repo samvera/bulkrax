@@ -1,16 +1,17 @@
 # frozen_string_literal: true
 
 module Bulkrax
+  # Import Behavior for Entry classes
   module ImportBehavior
     extend ActiveSupport::Concern
 
     def build_for_importer
       begin
         build_metadata
-        # if !validate_only
+        unless self.importerexporter.validate_only
           raise CollectionsCreatedError unless collections_created?
           @item = factory.run
-        # end
+        end
       rescue RSolr::Error::Http, CollectionsCreatedError => e
         raise e
       rescue StandardError => e
@@ -25,9 +26,9 @@ module Bulkrax
       self.collection_ids
     end
 
-    # override this to ensure any collections have been created before building the work
+    # override this in a sub-class of Entry to ensure any collections have been created before building the work
     def collections_created?
-      false
+      true
     end
 
     def build_metadata

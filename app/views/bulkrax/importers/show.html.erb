@@ -152,7 +152,7 @@
 
     <% if @importer.validate_only == true %>
         <div class='pull-left'>
-          <%= button_to 'Continue', @importer, method: :update, class: 'btn btn-primary' %>
+          <%= button_to 'Continue', importer_continue_path(@importer), method: :put, class: 'btn btn-primary' %>
         </div>
         <div class='pull-right'>
           <%= button_to 'Discard', @importer, method: :delete, data: { confirm: 'Are you sure?' }, class: 'btn btn-primary' %>
