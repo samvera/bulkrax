@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20191212155530) do
+ActiveRecord::Schema.define(version: 20200108194557) do
 
   create_table "bookmarks", force: :cascade do |t|
     t.integer "user_id", null: false
@@ -92,6 +92,7 @@ ActiveRecord::Schema.define(version: 20191212155530) do
     t.text "field_mapping"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "validate_only"
     t.index ["user_id"], name: "index_bulkrax_importers_on_user_id"
   end
 

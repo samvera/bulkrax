@@ -82,14 +82,13 @@ module Bulkrax
         files_for_import(file, cloud_files)
         if params[:commit] == 'Create and Import'
           Bulkrax::ImporterJob.perform_later(@importer.id)
-          if api_request?
-            json_response('create', :created, 'Importer was successfully created.')
-          else
-            redirect_to importers_path, notice: 'Importer was successfully created.'
-          end
         elsif params[:commit] == 'Create and Validate'
           Bulkrax::ImporterJob.perform_now(@importer.id)
-          redirect_to importer_path(@importer), notice: 'Importer was successfully validated.'
+        end
+        if api_request?
+          json_response('create', :created, 'Importer was successfully created.')
+        else
+          redirect_to importers_path, notice: 'Importer was successfully created.'
         end
       else
         if api_request?
@@ -98,6 +97,7 @@ module Bulkrax
           render :new
         end
       end
+
       # rubocop:enable Style/IfInsideElse
     end
 
@@ -131,6 +131,7 @@ module Bulkrax
         else
           Bulkrax::ImporterJob.perform_later(@importer.id)
         end
+        
         if api_request?
           json_response('updated', :ok, 'Importer was successfully updated.')
         else
