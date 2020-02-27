@@ -245,7 +245,8 @@ module Bulkrax
     end
 
     context 'with application/json request' do
-      let(:controller) { subject }
+      subject(:controller) { described_class.new }
+
       before do
         allow(controller).to receive(:api_request?).and_return(true)
         allow(AdminSet).to receive(:find).with('admin_set/default')
