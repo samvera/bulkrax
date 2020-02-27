@@ -115,10 +115,10 @@ module Bulkrax
       end
 
       if @importer.update(importer_params)
-        files_for_import(file, cloud_files)
+        files_for_import(file, cloud_files) unless file.nil? && cloud_files.nil?
         # do not perform the import
         if params[:commit] == 'Update Importer'
-        # do nothing
+          # do nothing
         # OAI-only - selective re-harvest
         elsif params[:commit] == 'Update and Harvest Updated Items'
           Bulkrax::ImporterJob.perform_later(@importer.id, true)
