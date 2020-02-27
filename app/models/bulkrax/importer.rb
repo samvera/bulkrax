@@ -32,7 +32,7 @@ module Bulkrax
       self[:parser_fields] || {}
     end
 
-    def frequency_enums
+    def self.frequency_enums
       # these duration values use ISO 8601 Durations (https://en.wikipedia.org/wiki/ISO_8601#Durations)
       # TLDR; all durations are prefixed with 'P' and the parts are a number with the type of duration.
       # i.e. P1Y2M3W4DT5H6M7S == 1 Year, 2 Months, 3 Weeks, 4 Days, 5 Hours, 6 Minutes, 7 Seconds

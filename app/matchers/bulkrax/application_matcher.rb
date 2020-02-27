@@ -22,15 +22,21 @@ module Bulkrax
 
       @result = content.to_s.gsub(/\s/, ' ') # remove any line feeds and tabs
       @result.strip!
+      process_split
+      @result = @result[0] if @result.is_a?(Array) && @result.size == 1
+      process_parse
+      return @result
+    end
 
+    def process_split
       if self.split.is_a?(TrueClass)
         @result = @result.split(/\s*[:;|]\s*/) # default split by : ; |
       elsif self.split
         @result = @result.split(Regexp.new(self.split))
       end
+    end
 
-      @result = @result[0] if @result.is_a?(Array) && @result.size == 1
-
+    def process_parse
       if @result.is_a?(Array) && self.parsed && self.respond_to?("parse_#{to}")
         @result.each_with_index do |res, index|
           @result[index] = send("parse_#{to}", res.strip)
@@ -39,8 +45,6 @@ module Bulkrax
       elsif self.parsed && self.respond_to?("parse_#{to}")
         @result = send("parse_#{to}", @result)
       end
-
-      return @result
     end
 
     def parse_remote_files(src)
