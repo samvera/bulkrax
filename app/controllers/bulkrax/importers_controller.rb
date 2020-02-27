@@ -80,11 +80,7 @@ module Bulkrax
       @importer.validate_only = true if params[:commit] == 'Create and Validate'
       if @importer.save
         files_for_import(file, cloud_files)
-        if params[:commit] == 'Create and Import'
-          Bulkrax::ImporterJob.perform_later(@importer.id)
-        elsif params[:commit] == 'Create and Validate'
-          Bulkrax::ImporterJob.perform_now(@importer.id)
-        end
+        Bulkrax::ImporterJob.send(@importer.parser.perform_method, @importer.id)
         if api_request?
           json_response('create', :created, 'Importer was successfully created.')
         else
@@ -131,11 +127,6 @@ module Bulkrax
         else
           Bulkrax::ImporterJob.perform_later(@importer.id)
         end
-<<<<<<< HEAD
-        
-=======
-
->>>>>>> 4eacfc4... rudimentary controller spec
         if api_request?
           json_response('updated', :ok, 'Importer was successfully updated.')
         else
