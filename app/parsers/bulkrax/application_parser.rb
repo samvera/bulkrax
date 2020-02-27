@@ -39,6 +39,14 @@ module Bulkrax
       raise 'must be defined'
     end
 
+    def perform_method
+      if self.validate_only
+        'perform_now'
+      else
+        'perform_later'
+      end
+    end
+
     def import_file_path
       @import_file_path ||= self.parser_fields['import_file_path']
     end

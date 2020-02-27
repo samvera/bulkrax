@@ -15,7 +15,7 @@ module Bulkrax
       return unless importer.valid_import?
       importer.import_collections
       importer.import_works(only_updates_since_last_import)
-      importer.create_parent_child_relationships
+      importer.create_parent_child_relationships unless importer.validate_only
     end
 
     def schedule(importer)
