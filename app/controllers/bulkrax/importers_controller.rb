@@ -118,7 +118,7 @@ module Bulkrax
         files_for_import(file, cloud_files) unless file.nil? && cloud_files.nil?
         # do not perform the import
         if params[:commit] == 'Update Importer'
-          # do nothing
+        # do nothing
         # OAI-only - selective re-harvest
         elsif params[:commit] == 'Update and Harvest Updated Items'
           Bulkrax::ImporterJob.perform_later(@importer.id, true)
@@ -131,7 +131,11 @@ module Bulkrax
         else
           Bulkrax::ImporterJob.perform_later(@importer.id)
         end
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> 4eacfc4... rudimentary controller spec
         if api_request?
           json_response('updated', :ok, 'Importer was successfully updated.')
         else

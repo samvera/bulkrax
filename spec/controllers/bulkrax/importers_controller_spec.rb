@@ -173,18 +173,29 @@ module Bulkrax
           validate_only: false
         }
       end
+<<<<<<< HEAD
       
       it 'sets validate_only to false' do
         put :continue, params: { importer_id: importer.to_param, }, session: valid_session
+=======
+
+      it 'sets validate_only to false' do
+        put :continue, params: { importer_id: importer.to_param }, session: valid_session
+>>>>>>> 4eacfc4... rudimentary controller spec
         importer.reload
         expect(importer.validate_only).to eq(false)
       end
 
       it 'calls update' do
         expect(controller).to receive(:update)
+<<<<<<< HEAD
         put :continue, params: { importer_id: importer.to_param, }, session: valid_session
       end
 
+=======
+        put :continue, params: { importer_id: importer.to_param }, session: valid_session
+      end
+>>>>>>> 4eacfc4... rudimentary controller spec
     end
 
     describe 'DELETE #destroy' do
