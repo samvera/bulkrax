@@ -55,7 +55,10 @@ module Bulkrax
 
     def field_supported?(field)
       field = field.gsub('_attributes', '')
-      (factory_class.method_defined?(field) && !excluded?(field)) || field == 'file' || field == 'remote_files' || field == 'model'
+
+      return false if excluded?(field)
+      return true if ['file', 'remote_files', 'model'].include?(field)
+      return factory_class.method_defined?(field) && factory_class.properties[field].present?
     end
 
     def multiple?(field)
@@ -71,8 +74,9 @@ module Bulkrax
       fields = mapping&.map do |key, value|
         key if (value.present? && value['from']&.include?(field)) || key == field
       end&.compact
-      fields = nil if fields.blank?
-      return fields || [field]
+
+      return [field] if fields.blank?
+      return fields
     end
 
     # Check whether a field is explicitly excluded in the mapping
