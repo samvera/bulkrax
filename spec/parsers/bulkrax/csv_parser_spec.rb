@@ -72,7 +72,7 @@ module Bulkrax
 
       it 'returns the path of the partial import file' do
         expect(subject.write_partial_import_file(file))
-          .to eq('tmp/imports/1/failed_corrected_entries.csv')
+          .to eq("tmp/imports/#{importer.id}/failed_corrected_entries.csv")
       end
 
       it 'moves the partial import file to the correct path' do

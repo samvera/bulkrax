@@ -77,9 +77,10 @@ module Bulkrax
       cloud_files = params[:importer].delete(:selected_files)
       @importer = Importer.new(importer_params)
       field_mapping_params
+      @importer.validate_only = true if params[:commit] == 'Create and Validate'
       if @importer.save
         files_for_import(file, cloud_files)
-        Bulkrax::ImporterJob.perform_later(@importer.id) if params[:commit] == 'Create and Import'
+        Bulkrax::ImporterJob.send(@importer.parser.perform_method, @importer.id)
         if api_request?
           json_response('create', :created, 'Importer was successfully created.')
         else
@@ -92,6 +93,7 @@ module Bulkrax
           render :new
         end
       end
+
       # rubocop:enable Style/IfInsideElse
     end
 
@@ -101,13 +103,15 @@ module Bulkrax
       if api_request?
         return return_json_response unless valid_update_params?
       end
-
-      file = params[:importer][:parser_fields].delete(:file)
-      cloud_files = params[:importer].delete(:selected_files)
-      field_mapping_params
+      # skipped for calls from continue
+      if params[:importer][:parser_fields].present?
+        file = params[:importer][:parser_fields].delete(:file)
+        cloud_files = params[:importer].delete(:selected_files)
+        field_mapping_params
+      end
 
       if @importer.update(importer_params)
-        files_for_import(file, cloud_files)
+        files_for_import(file, cloud_files) unless file.nil? && cloud_files.nil?
         # do not perform the import
         if params[:commit] == 'Update Importer'
         # do nothing
@@ -147,6 +151,14 @@ module Bulkrax
       else
         redirect_to importers_url, notice: 'Importer was successfully destroyed.'
       end
+    end
+
+    # PUT /importers/1
+    def continue
+      @importer = Importer.find(params[:importer_id])
+      params[:importer] = { name: @importer.name }
+      @importer.validate_only = false
+      update
     end
 
     # GET /importer/1/upload_corrected_entries
@@ -210,7 +222,18 @@ module Bulkrax
 
       # Only allow a trusted parameter "white list" through.
       def importer_params
-        params.require(:importer).permit(:name, :admin_set_id, :user_id, :frequency, :parser_klass, :limit, :selected_files, field_mapping: {}, parser_fields: {})
+        params.require(:importer).permit(
+          :name,
+          :admin_set_id,
+          :user_id,
+          :frequency,
+          :parser_klass,
+          :limit,
+          :validate_only,
+          :selected_files,
+          field_mapping: {},
+          parser_fields: {}
+        )
       end
 
       def list_external_sets
@@ -238,9 +261,7 @@ module Bulkrax
 
       def setup_client(url)
         return false if url.nil?
-
         headers = { from: Bulkrax.server_name }
-
         @client ||= OAI::Client.new(url, headers: headers, parser: 'libxml', metadata_prefix: 'oai_dc')
       end
 

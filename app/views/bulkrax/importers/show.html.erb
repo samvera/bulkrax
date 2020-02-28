@@ -148,7 +148,16 @@
     <%= paginate(@work_entries, param_name: :work_entries_page) %>
     <br />
     <%= link_to 'Edit', edit_importer_path(@importer) %> |
-    <%= link_to 'Back', importers_path %>
+    <%= link_to 'Back', importers_path %><br /><br />
+
+    <% if @importer.validate_only == true %>
+        <div class='pull-left'>
+          <%= button_to 'Continue', importer_continue_path(@importer), method: :put, class: 'btn btn-primary' %>
+        </div>
+        <div class='pull-right'>
+          <%= button_to 'Discard', @importer, method: :delete, data: { confirm: 'Are you sure?' }, class: 'btn btn-primary' %>
+        </div>
+    <% end %>
 
   </div>
 </div>

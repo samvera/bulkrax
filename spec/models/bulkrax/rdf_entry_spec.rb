@@ -56,7 +56,7 @@ module Bulkrax
           subject.raw_metadata = raw_metadata
           subject.identifier = "http://example.org/ns/19158"
           allow_any_instance_of(ObjectFactory).to receive(:run).and_return(instance_of(Work))
-          allow_any_instance_of(User).to receive(:batch_user)
+          allow(User).to receive(:batch_user)
         end
 
         it 'succeeds' do

@@ -5,7 +5,7 @@ module Bulkrax
     attr_accessor :importerexporter
     delegate :only_updates, :limit, :current_exporter_run, :current_importer_run, :errors,
              :seen, :increment_counters, :parser_fields, :user,
-             :exporter_export_path, :exporter_export_zip_path, :importer_unzip_path,
+             :exporter_export_path, :exporter_export_zip_path, :importer_unzip_path, :validate_only,
              to: :importerexporter
 
     def self.parser_fields
@@ -37,6 +37,14 @@ module Bulkrax
     # @api
     def records(_opts = {})
       raise 'must be defined'
+    end
+
+    def perform_method
+      if self.validate_only
+        'perform_now'
+      else
+        'perform_later'
+      end
     end
 
     def import_file_path
