@@ -74,7 +74,7 @@ module Bulkrax
         return return_json_response unless valid_create_params?
       end
       file = params[:importer][:parser_fields].delete(:file)
-      cloud_files = params.delete(:selected_files)
+      cloud_files = params[:importer].delete(:selected_files)
       @importer = Importer.new(importer_params)
       field_mapping_params
       @importer.validate_only = true if params[:commit] == 'Create and Validate'
