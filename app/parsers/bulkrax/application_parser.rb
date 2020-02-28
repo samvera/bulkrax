@@ -84,7 +84,7 @@ module Bulkrax
 
     # Optional, only used by certain parsers
     # Other parsers should override with a custom or empty method
-    # Will be skipped unless the record is a Hash
+    # Will be skipped unless the #record is a Hash
     def create_parent_child_relationships
       parents.each do |key, value|
         parent = entry_class.where(
