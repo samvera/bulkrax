@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- This grammar has been deprecated - use FMPXMLRESULT instead -->
+<FMPDSORESULT xmlns="http://www.filemaker.com/fmpdsoresult">
+  <ROW MODID="12" RECORDID="148142">
+    <TitleLargerEntity>Test XML</TitleLargerEntity>
+    <Abstract>Lorem ipsum dolor sit amet.</Abstract>
+    <DrisUnique>0145514</DrisUnique>
+  </ROW>
+</FMPDSORESULT>
