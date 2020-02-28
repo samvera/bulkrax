@@ -91,7 +91,11 @@ FactoryBot.define do
     parser_klass { 'Bulkrax::XmlParser' }
     limit { 10 }
     parser_fields { { 'import_file_path' => 'spec/fixtures/xml/good.xml' } }
-    # TODO: field_mapping should be added here?
-    field_mapping { { 'title': { from: ['TitleLargerEntity'] } } }
+    field_mapping {
+      {
+        'title': { from: ['TitleLargerEntity'] },
+        'abstract': { from: ['Abstract'] }
+      }
+    }
   end
 end

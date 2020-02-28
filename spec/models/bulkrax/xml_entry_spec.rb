@@ -22,7 +22,7 @@ module Bulkrax
         it 'retrieves the data and constructs a hash' do
           expect(described_class.data_for_entry(data)).to eq(
             source_identifier: '0145514',
-            data: "<!-- This grammar has been deprecated - use FMPXMLRESULT instead --><FMPDSORESULT>  <ROW MODID=\"12\" RECORDID=\"148142\">    <TitleLargerEntity>Test XML</TitleLargerEntity>    <Abstract>Lorem ipsum dolor sit amet.</Abstract>    <DrisUnique>0145514</DrisUnique>  </ROW></FMPDSORESULT>",
+            data: "<!-- This grammar has been deprecated - use FMPXMLRESULT instead --><FMPDSORESULT> <ROW MODID=\"12\" RECORDID=\"148142\"> <TitleLargerEntity>Test XML</TitleLargerEntity> <Abstract>Lorem ipsum dolor sit amet.</Abstract> <DrisUnique>0145514</DrisUnique> </ROW></FMPDSORESULT>",
             collection: [],
             file: [],
             children: []
@@ -50,7 +50,7 @@ module Bulkrax
         before do
           subject.raw_metadata = raw_metadata
           allow_any_instance_of(ObjectFactory).to receive(:run).and_return(instance_of(Work))
-          allow_any_instance_of(User).to receive(:batch_user)
+          allow(User).to receive(:batch_user)
         end
 
         it 'succeeds' do
@@ -61,6 +61,12 @@ module Bulkrax
         it 'builds entry' do
           subject.build
           expect(subject.parsed_metadata).to eq("file" => [], "rights_statement" => [nil], "source" => ["0145514"], "title" => ["Test XML"], "visibility" => "open")
+        end
+
+        it 'does not add unsupported fields' do
+          subject.build
+          expect(subject.parsed_metadata).not_to include('abstract')
+          expect(subject.parsed_metadata).not_to include('Lorem ipsum dolor sit amet.')
         end
       end
 
