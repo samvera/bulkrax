@@ -32,8 +32,8 @@ class Bulkrax::InstallGenerator < Rails::Generators::Base
     end
   end
 
-  def create_api_definition
-    copy_file 'config/api_definition.yml', 'config/api_definition.yml'
+  def create_bulkrax_api
+    copy_file 'config/bulkrax_api.yml', 'config/bulkrax_api.yml'
   end
 
   def create_cmd_script
