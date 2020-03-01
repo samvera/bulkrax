@@ -54,9 +54,9 @@ module Bulkrax
     def self.record_file_paths(path)
       return [] if path.nil?
       if File.file?(path)
-        Dir.glob("#{File.dirname(path)}/**/*").reject { |f| f == path }
+        Dir.glob("#{File.dirname(path)}/**/*.*").reject { |f| f == path }
       else
-        Dir.glob("#{path}/**/*").reject { |f| f == path }
+        Dir.glob("#{path}/**/*.*").reject { |f| f == path }
       end
     end
 
