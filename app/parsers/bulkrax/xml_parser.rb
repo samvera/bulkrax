@@ -80,7 +80,7 @@ module Bulkrax
 
         seen[record[:source_identifier]] = true
         new_entry = find_or_create_entry(entry_class, record[:source_identifier], 'Bulkrax::Importer', record)
-        ImportWorkJob.perform_later(new_entry.id, current_importer_run.id)
+        ImportWorkJob.send(perform_method, new_entry.id, current_importer_run.id)
         increment_counters(index)
       end
     rescue StandardError => e
