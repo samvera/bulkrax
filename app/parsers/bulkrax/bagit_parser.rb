@@ -10,6 +10,7 @@ module Bulkrax
       return true if import_fields.present?
     rescue => e
       status_info(e)
+      false
     end
 
     def entry_class

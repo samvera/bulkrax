@@ -46,6 +46,7 @@ module Bulkrax
       required_elements?(import_fields) && file_paths.is_a?(Array)
     rescue StandardError => e
       status_info(e)
+      false
     end
 
     def create_collections
