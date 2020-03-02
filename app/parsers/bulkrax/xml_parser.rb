@@ -9,13 +9,18 @@ module Bulkrax
     def collection_entry_class; end
     def create_collections; end
     def import_fields; end
+
+    def valid_import?
+      raise 'No metadata files found' if metadata_paths.blank?
+      raise 'No records found' if records.blank?
+      true
+    end
     
     # For multiple, we expect to find metadata for multiple works in the given metadata file(s)
     # For single, we expect to find metadata for a single work in the given metadata file(s)
     #  if the file contains more than one record, we take only the first
     # In either case there may be multiple metadata files returned by metadata_paths
     def records(opts = {})
-      raise 'No metadata files were found' if metadata_paths.blank?
       @records ||=
       if parser_fields['import_type'] == 'multiple'
         r = []
@@ -75,10 +80,10 @@ module Bulkrax
         increment_counters(index)
       end
     rescue StandardError => e
+      # status_info(e)
       errors.add(:base, e.class.to_s.to_sym, message: e.message)
     end
 
-    # def valid_import?; end (default: true)
     def total
       records.size
     end
