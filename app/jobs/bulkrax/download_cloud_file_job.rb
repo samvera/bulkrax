@@ -5,7 +5,7 @@ module Bulkrax
     queue_as :import
 
     # Retrieve cloud file and write to the imports directory
-    # Note: if using the file system, the mounted directory in 
+    # Note: if using the file system, the mounted directory in
     #   browse_everything MUST be shared by web and worker servers
     def perform(file, target_file)
       retriever = BrowseEverything::Retriever.new

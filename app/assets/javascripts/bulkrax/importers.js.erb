@@ -2,6 +2,15 @@
 // All this logic will automatically be available in application.js.
 
 function prepBulkrax(event) {
+
+  $( "button#err_toggle" ).click(function() {
+    $( "#error_trace" ).toggle();
+  });
+
+  $( "button#fm_toggle" ).click(function() {
+    $( "#field_mapping" ).toggle();
+  });
+
   var refresh_button = $('.refresh-set-source')
   var base_url = $('#importer_parser_fields_base_url')
   var initial_base_url = base_url.val()
@@ -81,6 +90,7 @@ function handleFileToggle(file_path) {
     $('#cloud').hide()
     $('#file_path input').attr('required', 'required')
     $('#file_upload input').attr('required', null)
+    $('#importer_parser_fields_file_style_specify_a_path_on_the_server').attr('checked', true)
   }
 
   $('#importer_parser_fields_file_style_upload_a_file').click(function(e){
