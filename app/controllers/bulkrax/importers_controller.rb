@@ -230,7 +230,7 @@ module Bulkrax
           :parser_klass,
           :limit,
           :validate_only,
-          :selected_files,
+          selected_files: {},
           field_mapping: {},
           parser_fields: {}
         )
