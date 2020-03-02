@@ -14,6 +14,10 @@ module Bulkrax
       raise 'No metadata files found' if metadata_paths.blank?
       raise 'No records found' if records.blank?
       true
+    rescue StandardError => e
+      # status_info(e)
+      errors.add(:base, e.class.to_s.to_sym, message: e.message)
+      false
     end
     
     # For multiple, we expect to find metadata for multiple works in the given metadata file(s)
