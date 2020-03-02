@@ -15,6 +15,7 @@ module Bulkrax
     #  if the file contains more than one record, we take only the first
     # In either case there may be multiple metadata files returned by metadata_paths
     def records(opts = {})
+      raise 'No metadata files were found' if metadata_paths.blank?
       @records ||=
       if parser_fields['import_type'] == 'multiple'
         r = []
