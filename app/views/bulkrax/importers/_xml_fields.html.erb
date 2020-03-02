@@ -10,8 +10,8 @@
 
   <%= fi.input :import_type, 
 		collection: [
-			['Multiple Metadata Files, One per Work', 'single'],
-			['Single Metadata File, Multiple Works', 'multiple'] 
+			['Single Work in a Metadata File', 'single'],
+			['Multiple Works in a Metadata File', 'multiple'] 
 		], 
     selected: importer.parser_fields['import_type'],
     input_html: { class: 'form-control' }

@@ -9,21 +9,29 @@ module Bulkrax
     def collection_entry_class; end
     def create_collections; end
     def import_fields; end
-
+    
+    # For multiple, we expect to find metadata for multiple works in the given metadata file(s)
+    # For single, we expect to find metadata for a single work in the given metadata file(s)
+    #  if the file contains more than one record, we take only the first
+    # In either case there may be multiple metadata files returned by metadata_paths
     def records(opts = {})
       @records ||=
       if parser_fields['import_type'] == 'multiple'
         r = []
-        metadata_paths.map { | md | 
+        metadata_paths.map { | md |
+          # Retrieve all records
           elements = entry_class.read_data(md).xpath("//#{record_element}")
           r += elements.map { |el| entry_class.data_for_entry(el, md) }
         }
+        # Flatten because we may have multiple records per array
         r.compact.flatten
       elsif parser_fields['import_type'] == 'single'
         metadata_paths.map { | md | 
           entry_class.data_for_entry(
+            # Take only the first record
             entry_class.read_data(md).xpath("//#{record_element}").first,
             md
+          # No need to flatten because we take only the first record
           ) }.compact
       end
     end
