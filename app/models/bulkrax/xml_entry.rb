@@ -20,13 +20,12 @@ module Bulkrax
       xpath_for_source_id = ".//*[name()='#{source_identifier_field}']"
       return {
         source_identifier: data.xpath(xpath_for_source_id).first.text,
-        # Remove tabs and and newlines
         data:
           data.to_xml(
             encoding: 'UTF-8',
             save_with:
               Nokogiri::XML::Node::SaveOptions::NO_DECLARATION | Nokogiri::XML::Node::SaveOptions::NO_EMPTY_TAGS
-          ).gsub("\n", '').gsub("\t", '').squeeze(' '),
+          ).gsub("\n", '').gsub("\t", '').squeeze(' '), # Remove newlines, tabs, and extra whitespace
         collection: collections,
         file: record_file_paths(path),
         children: children

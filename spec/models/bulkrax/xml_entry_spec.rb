@@ -4,7 +4,7 @@ require 'rails_helper'
 
 module Bulkrax
   RSpec.describe XmlEntry, type: :model do
-    let(:path) { './spec/fixtures/xml/good.xml' }
+    let(:path) { './spec/fixtures/xml/single.xml' }
     let(:data) { described_class.read_data(path) }
 
     before do
@@ -21,8 +21,8 @@ module Bulkrax
       context '#data_for_entry' do
         it 'retrieves the data and constructs a hash' do
           expect(described_class.data_for_entry(data)).to eq(
-            source_identifier: '0145514',
-            data: "<!-- This grammar has been deprecated - use FMPXMLRESULT instead --><FMPDSORESULT> <ROW MODID=\"12\" RECORDID=\"148142\"> <TitleLargerEntity>Test XML</TitleLargerEntity> <Abstract>Lorem ipsum dolor sit amet.</Abstract> <DrisUnique>0145514</DrisUnique> </ROW></FMPDSORESULT>",
+            source_identifier: '3456012',
+            data: "<!-- This grammar has been deprecated - use FMPXMLRESULT instead --><FMPDSORESULT> <ROW MODID=\"3\" RECORDID=\"000003\"> <TitleLargerEntity>Single XML Entry</TitleLargerEntity> <Abstract>Lorem ipsum dolor sit amet.</Abstract> <DrisUnique>3456012</DrisUnique> </ROW></FMPDSORESULT>",
             collection: [],
             file: [],
             children: []
@@ -60,7 +60,7 @@ module Bulkrax
 
         it 'builds entry' do
           subject.build
-          expect(subject.parsed_metadata).to eq("file" => [], "rights_statement" => [nil], "source" => ["0145514"], "title" => ["Test XML"], "visibility" => "open")
+          expect(subject.parsed_metadata).to eq("file" => [], "rights_statement" => [nil], "source" => ["3456012"], "title" => ["Single XML Entry"], "visibility" => "open")
         end
 
         it 'does not add unsupported fields' do
