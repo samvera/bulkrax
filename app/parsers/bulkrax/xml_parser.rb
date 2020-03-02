@@ -15,8 +15,7 @@ module Bulkrax
       raise 'No records found' if records.blank?
       true
     rescue StandardError => e
-      # status_info(e)
-      errors.add(:base, e.class.to_s.to_sym, message: e.message)
+      status_info(e)
       false
     end
     
@@ -84,8 +83,7 @@ module Bulkrax
         increment_counters(index)
       end
     rescue StandardError => e
-      # status_info(e)
-      errors.add(:base, e.class.to_s.to_sym, message: e.message)
+      status_info(e)
     end
 
     def total
