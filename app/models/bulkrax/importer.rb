@@ -5,9 +5,11 @@ require 'iso8601'
 module Bulkrax
   class Importer < ApplicationRecord
     include Bulkrax::ImporterExporterBehavior
+    include Bulkrax::Status
 
     serialize :parser_fields, JSON
     serialize :field_mapping, JSON
+    serialize :last_error, JSON
 
     belongs_to :user
     has_many :importer_runs, dependent: :destroy, foreign_key: 'importer_id'
@@ -68,10 +70,16 @@ module Bulkrax
       self.only_updates = only_updates
       parser.create_works
       remove_unseen
+      status_info
+    rescue StandardError => e
+      status_info(e)
     end
 
     def import_collections
       parser.create_collections
+      status_info
+    rescue StandardError => e
+      status_info(e)
     end
 
     # Prepend the base_url to ensure unique set identifiers

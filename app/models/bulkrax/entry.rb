@@ -8,6 +8,7 @@ module Bulkrax
     include Bulkrax::HasMatchers
     include Bulkrax::ImportBehavior
     include Bulkrax::ExportBehavior
+    include Bulkrax::Status
     include Bulkrax::HasLocalProcessing
 
     belongs_to :importerexporter, polymorphic: true
@@ -16,7 +17,7 @@ module Bulkrax
     serialize :collection_ids, Array
     serialize :last_error, JSON
 
-    attr_accessor :all_attrs, :last_exception
+    attr_accessor :all_attrs
 
     delegate :parser, :mapping, :replace_files, to: :importerexporter
 
@@ -59,38 +60,6 @@ module Bulkrax
 
     def exporter?
       self.importerexporter_type == 'Bulkrax::Exporter'
-    end
-
-    def status
-      if self.last_error_at.present?
-        'failed'
-      elsif self.last_succeeded_at.present?
-        'succeeded'
-      else
-        'waiting'
-      end
-    end
-
-    def status_at
-      case status
-      when 'succeeded'
-        self.last_succeeded_at
-      when 'failed'
-        self.last_error_at
-      end
-    end
-
-    def status_info(e = nil)
-      if e.nil?
-        self.last_error = nil
-        self.last_error_at = nil
-        self.last_exception = nil
-        self.last_succeeded_at = Time.current
-      else
-        self.last_error =  { error_class: e.class.to_s, error_message: e.message, error_trace: e.backtrace }
-        self.last_error_at = Time.current
-        self.last_exception = e
-      end
     end
 
     def valid_system_id(model_class)

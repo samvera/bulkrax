@@ -6,6 +6,7 @@ module Bulkrax
     delegate :only_updates, :limit, :current_exporter_run, :current_importer_run, :errors,
              :seen, :increment_counters, :parser_fields, :user,
              :exporter_export_path, :exporter_export_zip_path, :importer_unzip_path, :validate_only,
+             :status, :status_info, :status_at,
              to: :importerexporter
 
     def self.parser_fields
@@ -109,6 +110,9 @@ module Bulkrax
         child_entry_ids = children.map(&:id)
         ChildRelationshipsJob.perform_later(parent_id, child_entry_ids, current_importer_run.id)
       end
+      status_info
+    rescue StandardError => e
+      status_info(e)
     end
 
     def parents

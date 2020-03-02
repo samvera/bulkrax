@@ -7,7 +7,10 @@ module Bulkrax
     end
 
     def valid_import?
-      import_fields.present?
+      return true if import_fields.present?
+    rescue => e
+      status_info(e)
+      false
     end
 
     def entry_class
@@ -65,8 +68,9 @@ module Bulkrax
         ImportWorkJob.send(perform_method, new_entry.id, current_importer_run.id)
         increment_counters(index)
       end
+      status_info
     rescue StandardError => e
-      errors.add(:base, e.class.to_s.to_sym, message: e.message)
+      status_info(e)
     end
 
     def collections

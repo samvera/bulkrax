@@ -22,7 +22,7 @@ module Bulkrax
 
         it 'returns an empty array, and records the error on the importer' do
           subject.create_works
-          expect(importer.errors.details[:base].first[:error]).to eq('CSV::MalformedCSVError'.to_sym)
+          expect(importer.last_error['error_class']).to eq('CSV::MalformedCSVError')
         end
       end
 

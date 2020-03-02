@@ -30,7 +30,13 @@
             <% @importers.each do |importer| %>
             <tr>
               <th scope="row"><%= link_to importer.name, importer_path(importer) %></th>
-              <td><%= importer.importer_runs.last&.importer_status %></td>
+              <td>
+              <% if importer.last_error.present? %>
+                Failed
+              <% else %>
+                <%= importer.importer_runs.last&.importer_status %>
+              <% end %>
+              </td>
               <td><%= importer.last_imported_at.strftime("%b %d, %Y") if importer.last_imported_at %></td>
               <td><%= importer.next_import_at.strftime("%b %d, %Y") if importer.next_import_at %></td>
               <td><%= importer.importer_runs.last&.enqueued_records %></td>
