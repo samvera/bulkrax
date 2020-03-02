@@ -91,11 +91,11 @@ FactoryBot.define do
     parser_klass { 'Bulkrax::XmlParser' }
     limit { 10 }
     parser_fields { { 'import_file_path' => 'spec/fixtures/xml/good.xml' } }
-    field_mapping {
+    field_mapping do
       {
         'title': { from: ['TitleLargerEntity'] },
         'abstract': { from: ['Abstract'] }
       }
-    }
+    end
   end
 end

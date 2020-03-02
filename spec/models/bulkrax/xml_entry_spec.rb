@@ -32,52 +32,54 @@ module Bulkrax
     end
 
     describe '#build' do
-      subject { described_class.new(importerexporter: importer) }
+      subject(:xml_entry) { described_class.new(importerexporter: importer) }
       let(:raw_metadata) { described_class.data_for_entry(data) }
       let(:importer) { FactoryBot.build(:bulkrax_importer_xml) }
+      let(:object_factory) { instance_double(ObjectFactory) }
 
       before do
         Bulkrax.default_work_type = 'Work'
-        Bulkrax.field_mappings.merge!({
+        Bulkrax.field_mappings.merge!(
           'Bulkrax::XmlParser' => {
             'title' => { from: ['TitleLargerEntity'] },
             'abstract' => { from: ['Abstract'] }
           }
-        })
+        )
       end
 
       context 'with raw_metadata' do
         before do
-          subject.raw_metadata = raw_metadata
-          allow_any_instance_of(ObjectFactory).to receive(:run).and_return(instance_of(Work))
+          xml_entry.raw_metadata = raw_metadata
+          allow(ObjectFactory).to receive(:new).and_return(object_factory)
+          allow(object_factory).to receive(:run).and_return(instance_of(Work))
           allow(User).to receive(:batch_user)
         end
 
         it 'succeeds' do
-          subject.build
-          expect(subject.status).to eq('succeeded')
+          xml_entry.build
+          expect(xml_entry.status).to eq('succeeded')
         end
 
         it 'builds entry' do
-          subject.build
-          expect(subject.parsed_metadata).to eq("file" => [], "rights_statement" => [nil], "source" => ["3456012"], "title" => ["Single XML Entry"], "visibility" => "open")
+          xml_entry.build
+          expect(xml_entry.parsed_metadata).to eq("file" => [], "rights_statement" => [nil], "source" => ["3456012"], "title" => ["Single XML Entry"], "visibility" => "open")
         end
 
         it 'does not add unsupported fields' do
-          subject.build
-          expect(subject.parsed_metadata).not_to include('abstract')
-          expect(subject.parsed_metadata).not_to include('Lorem ipsum dolor sit amet.')
+          xml_entry.build
+          expect(xml_entry.parsed_metadata).not_to include('abstract')
+          expect(xml_entry.parsed_metadata).not_to include('Lorem ipsum dolor sit amet.')
         end
       end
 
       context 'without raw_metadata' do
         before do
-          subject.raw_metadata = nil
+          xml_entry.raw_metadata = nil
         end
 
         it 'fails' do
-          subject.build
-          expect(subject.status).to eq('failed')
+          xml_entry.build
+          expect(xml_entry.status).to eq('failed')
         end
       end
     end
