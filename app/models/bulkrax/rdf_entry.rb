@@ -29,16 +29,9 @@ module Bulkrax
         source_identifier: reader.subjects.first.to_s,
         format: format,
         data: data,
-        file: record_file_paths(path),
         collection: collections,
         children: children
       }
-    end
-
-    # Return all files, including metadata and bagit files
-    def self.record_file_paths(path)
-      return [] if path.nil?
-      Dir.glob("#{File.dirname(path)}/**/*").reject { |f| File.file?(f) == false }
     end
 
     def self.collection_field
