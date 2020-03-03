@@ -5,9 +5,11 @@ require 'iso8601'
 module Bulkrax
   class Importer < ApplicationRecord
     include Bulkrax::ImporterExporterBehavior
+    include Bulkrax::Status
 
     serialize :parser_fields, JSON
     serialize :field_mapping, JSON
+    serialize :last_error, JSON
 
     belongs_to :user
     has_many :importer_runs, dependent: :destroy, foreign_key: 'importer_id'
@@ -32,7 +34,7 @@ module Bulkrax
       self[:parser_fields] || {}
     end
 
-    def frequency_enums
+    def self.frequency_enums
       # these duration values use ISO 8601 Durations (https://en.wikipedia.org/wiki/ISO_8601#Durations)
       # TLDR; all durations are prefixed with 'P' and the parts are a number with the type of duration.
       # i.e. P1Y2M3W4DT5H6M7S == 1 Year, 2 Months, 3 Weeks, 4 Days, 5 Hours, 6 Minutes, 7 Seconds
@@ -68,10 +70,16 @@ module Bulkrax
       self.only_updates = only_updates
       parser.create_works
       remove_unseen
+      status_info
+    rescue StandardError => e
+      status_info(e)
     end
 
     def import_collections
       parser.create_collections
+      status_info
+    rescue StandardError => e
+      status_info(e)
     end
 
     # Prepend the base_url to ensure unique set identifiers

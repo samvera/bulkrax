@@ -7,3 +7,4 @@ spec/test_app/log/*.log
 spec/test_app/tmp/
 coverage/**
 .byebug_history
+tmp/**

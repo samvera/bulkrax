@@ -40,7 +40,7 @@
       <% if @entry.last_error.present? %>
         <strong>Errored at:</strong> <%= @entry.last_error_at %><br />
         <strong>Error:</strong> <%= @entry.last_error['error_class'] %> - <%= @entry.last_error['error_message'] %><br />
-        <strong>Error Trace: </strong> <button>Toggle</button>
+        <strong>Error Trace: </strong> <button id="entry_error">Toggle</button>
         <p id="error_trace" style="display: none"><%= @entry.last_error['error_trace'] %></p>
       <% else %>
         <strong>Succeeded At:</strong> <%= @entry.last_succeeded_at %>
@@ -62,7 +62,8 @@
     </p>
 
     <p>
-      <% if @entry.last_succeeded_at != nil %>
+      <% factory_record = @entry.factory.find %>
+      <% if @entry.last_succeeded_at != nil && factory_record.present? %>
         <strong><%= @entry.factory_class.to_s %> Link:</strong>
         <% if @entry.factory_class.to_s == "Collection" %>
           <%= link_to @entry.factory_class.to_s, hyrax.polymorphic_path(@entry.factory.find) %>

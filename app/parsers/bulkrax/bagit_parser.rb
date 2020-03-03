@@ -7,7 +7,10 @@ module Bulkrax
     end
 
     def valid_import?
-      import_fields.present?
+      return true if import_fields.present?
+    rescue => e
+      status_info(e)
+      false
     end
 
     def entry_class
@@ -62,11 +65,12 @@ module Bulkrax
 
         seen[record[:source_identifier]] = true
         new_entry = find_or_create_entry(entry_class, record[:source_identifier], 'Bulkrax::Importer', record)
-        ImportWorkJob.perform_later(new_entry.id, current_importer_run.id)
+        ImportWorkJob.send(perform_method, new_entry.id, current_importer_run.id)
         increment_counters(index)
       end
+      status_info
     rescue StandardError => e
-      errors.add(:base, e.class.to_s.to_sym, message: e.message)
+      status_info(e)
     end
 
     def collections

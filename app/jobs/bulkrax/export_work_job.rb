@@ -15,10 +15,10 @@ module Bulkrax
         ExporterRun.find(args[1]).decrement!(:enqueued_records)
         raise e
       else
-        if entry.last_exception
+        if entry.last_error
           ExporterRun.find(args[1]).increment!(:failed_records)
           ExporterRun.find(args[1]).decrement!(:enqueued_records)
-          raise entry.last_exception
+          raise entry.last_error['error_class'].constantize
         else
           ExporterRun.find(args[1]).increment!(:processed_records)
           ExporterRun.find(args[1]).decrement!(:enqueued_records)
