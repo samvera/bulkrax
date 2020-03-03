@@ -27,17 +27,17 @@ module Bulkrax
 
     # @api
     def entry_class
-      raise 'must be defined'
+      raise StandardError, 'must be defined'
     end
 
     # @api
     def collection_entry_class
-      raise 'must be defined'
+      raise StandardError, 'must be defined'
     end
 
     # @api
     def records(_opts = {})
-      raise 'must be defined'
+      raise StandardError, 'must be defined'
     end
 
     def perform_method
@@ -48,20 +48,16 @@ module Bulkrax
       end
     end
 
-    def import_file_path
-      @import_file_path ||= self.parser_fields['import_file_path']
-    end
-
     def visibility
       @visibility ||= self.parser_fields['visibility'] || 'open'
     end
 
     def create_collections
-      raise 'must be defined' if importer?
+      raise StandardError, 'must be defined' if importer?
     end
 
     def create_works
-      raise 'must be defined' if importer?
+      raise StandardError, 'must be defined' if importer?
     end
 
     # Optional, define if using browse everything for file upload
@@ -146,11 +142,11 @@ module Bulkrax
     end
 
     def setup_export_file
-      raise 'must be defined' if exporter?
+      raise StandardError, 'must be defined' if exporter?
     end
 
     def write_files
-      raise 'must be defined' if exporter?
+      raise StandardError, 'must be defined' if exporter?
     end
 
     def importer?

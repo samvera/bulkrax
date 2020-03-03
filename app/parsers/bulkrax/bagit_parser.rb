@@ -24,7 +24,7 @@ module Bulkrax
     end
 
     def import_fields
-      raise 'No metadata files were found' if metadata_paths.blank?
+      raise StandardError, 'No metadata files were found' if metadata_paths.blank?
       @import_fields ||= metadata_paths.map do |path|
         entry_class.fields_from_data(entry_class.read_data(path))
       end.flatten.compact.uniq
@@ -130,17 +130,17 @@ module Bulkrax
       bags.map { |b| b.bag_dir }
     end
 
-    def metadata_file_name
-      raise 'The metadata file name must be specified' if parser_fields['metadata_file_name'].blank?
-      parser_fields['metadata_file_name']
-    end
+      def metadata_file_name
+        raise StandardError, 'The metadata file name must be specified' if parser_fields['metadata_file_name'].blank?
+        parser_fields['metadata_file_name']
+      end
 
-    # Gather the paths to all metadata files matching the metadata_file_name
-    def metadata_paths
-      @metadata_paths ||= bag_paths.map do |b|
-        Dir.glob("#{b}/**/*").select { |f| File.file?(f) && f.ends_with?(metadata_file_name) }
-      end.flatten.compact
-    end
+      # Gather the paths to all metadata files matching the metadata_file_name
+      def metadata_paths
+        @metadata_paths ||= bag_paths.map do |b|
+          Dir.glob("#{b}/**/*").select { |f| File.file?(f) && f.ends_with?(metadata_file_name) }
+        end.flatten.compact
+      end
 
     def metadata_path(bag)
       Dir.glob("#{bag.bag_dir}/**/*").detect { |f| File.file?(f) && f.ends_with?(metadata_file_name) }

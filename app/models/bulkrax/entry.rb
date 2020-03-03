@@ -30,14 +30,14 @@ module Bulkrax
     # @param data - the source data
     # @return Array
     def self.fields_from_data(_data)
-      raise 'Not Implemented'
+      raise StandardError, 'Not Implemented'
     end
 
     # Read the data from the supplied path
     # @param path - path to the data file
     # @return the data from the file
     def self.read_data(_path)
-      raise 'Not Implemented'
+      raise StandardError, 'Not Implemented'
     end
 
     # Returns formatted data from the given file for a single Entry
@@ -45,7 +45,7 @@ module Bulkrax
     # @param path - the path to the metadata file (used by some entries to get the file_paths for import)
     # @return Hash containing the data (the entry build_metadata method will know what to expect in the hash)
     def self.data_for_entry(_data, _path = nil)
-      raise 'Not Implemented'
+      raise StandardError, 'Not Implemented'
     end
 
     # Return all files in this directory and sub-directories
@@ -61,6 +61,7 @@ module Bulkrax
     end
 
     def self.source_identifier_field
+      raise "Source identifier must be configured for #{self}" if Bulkrax.source_identifier_field_mapping[self.to_s].blank?
       Bulkrax.source_identifier_field_mapping[self.to_s]
     end
 

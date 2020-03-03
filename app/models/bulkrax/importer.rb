@@ -19,16 +19,18 @@ module Bulkrax
     validates :admin_set_id, presence: true
     validates :parser_klass, presence: true
 
-    delegate :valid_import?, :create_parent_child_relationships, 
-      :write_errored_entries_file, :visibility, to: :parser
+    delegate :valid_import?, :create_parent_child_relationships,
+             :write_errored_entries_file, :visibility, to: :parser
 
     attr_accessor :only_updates, :file_style, :file
     # TODO: validates :metadata_prefix, presence: true
     # TODO validates :base_url, presence: true
 
     def mapping
-      self.field_mapping = parser.import_fields.reject(&:nil?).map { |m| Bulkrax.default_field_mapping.call(m) }.inject(:merge) if self.field_mapping.blank? || self.field_mapping == [{}]
-      @mapping ||= self.field_mapping
+      if parser.import_fields.present?
+        self.field_mapping = parser.import_fields.reject(&:nil?).map { |m| Bulkrax.default_field_mapping.call(m) }.inject(:merge) if self.field_mapping.blank? || self.field_mapping == [{}]
+      end
+      @mapping ||= self.field_mapping || {}
     end
 
     def parser_fields

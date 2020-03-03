@@ -32,7 +32,7 @@ module Bulkrax
     end
 
     def build_metadata
-      raise 'Not Implemented'
+      raise StandardError, 'Not Implemented'
     end
 
     def rights_statement

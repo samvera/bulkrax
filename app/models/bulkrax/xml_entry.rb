@@ -25,7 +25,7 @@ module Bulkrax
             encoding: 'UTF-8',
             save_with:
               Nokogiri::XML::Node::SaveOptions::NO_DECLARATION | Nokogiri::XML::Node::SaveOptions::NO_EMPTY_TAGS
-          ).gsub("\n", '').gsub("\t", '').squeeze(' '), # Remove newlines, tabs, and extra whitespace
+          ).delete("\n").delete("\t").squeeze(' '), # Remove newlines, tabs, and extra whitespace
         collection: collections,
         file: record_file_paths(path),
         children: children
@@ -47,7 +47,7 @@ module Bulkrax
         elements = record.xpath("//*[name()='#{element_name}']")
         next if elements.blank?
         elements.each do |el|
-          el.children.map { |node| node.content }.each do |content|
+          el.children.map(&:content).each do |content|
             add_metadata(element_name, content) unless content.blank?
           end
         end
@@ -58,6 +58,7 @@ module Bulkrax
       self.parsed_metadata['file'] = self.raw_metadata['file']
 
       add_local
+      raise StandardError, "title is required" if self.parsed_metadata['title'].blank?
       self.parsed_metadata
     end
 

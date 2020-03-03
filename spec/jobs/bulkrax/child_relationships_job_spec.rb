@@ -175,6 +175,10 @@ module Bulkrax
 
       context 'reschedule' do
         before do
+          allow(Bulkrax::Entry).to receive(:find).with(1).and_return(entry_work)
+          allow(Bulkrax::Entry).to receive(:find).with(2).and_return(child_entry)
+          allow(child_entry).to receive(:factory_class).and_return(Work)
+          allow(child_entry).to receive_message_chain(:factory, :find).and_return(nil)
           allow(child_relationship_job).to receive(:build_child_works_hash).and_raise(Bulkrax::ChildWorksError)
         end
         it 'does not increment failed children' do

@@ -14,7 +14,7 @@ module Bulkrax
     end
 
     def build_export_metadata
-      raise 'not implemented'
+      raise StandardError, 'not implemented'
     end
 
     def work
