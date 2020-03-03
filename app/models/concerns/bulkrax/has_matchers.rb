@@ -44,9 +44,10 @@ module Bulkrax
         # we didn't find a match, add by default
         elsif multiple
           parsed_metadata[name] ||= []
-          parsed_metadata[name] += Array.wrap(node_content.strip)
+          parsed_metadata[name] += node_content.is_a?(Array) ? node_content : Array.wrap(node_content.strip)
+
         else
-          parsed_metadata[name] = Array.wrap(node_content.strip).join('; ')
+          parsed_metadata[name] = node_content.is_a?(Array) ? node_content.join('; ') : Array.wrap(node_content.strip).join('; ')
         end
       end
     end
@@ -59,7 +60,7 @@ module Bulkrax
     def multiple?(field)
       return true if field == 'file' || field == 'remote_files'
       return false if field == 'model'
-      field_supported?(field) && factory_class.properties[field]['multiple']
+      field_supported?(field) && factory_class&.properties&.[](field)&.[]('multiple')
     end
 
     # Hyrax field to use for the given import field
