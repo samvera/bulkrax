@@ -136,4 +136,16 @@ RSpec.describe Bulkrax do
       end
     end
   end
+
+  context 'api_definition' do
+    it 'responds to api_definition' do
+      expect(described_class).to respond_to(:api_definition)
+    end
+    it 'api_definition is notsettable' do
+      expect(described_class).to respond_to(:api_definition=)
+    end
+    it 'loads the yaml file and returns a hash' do
+      expect(described_class.api_definition).to be_a(Hash)
+    end
+  end
 end

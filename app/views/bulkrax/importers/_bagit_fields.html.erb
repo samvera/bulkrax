@@ -20,16 +20,16 @@
         selected: importer.parser_fields['rights_statement'],
         include_blank: true,
         item_helper: rights_statements.method(:include_current_value),
-        input_html: { class: 'form-control' } %>
+        input_html: { class: 'form-control' } ,
+        required: false
+        %>
   <%= fi.input :override_rights_statement, as: :boolean, hint: 'If checked, always use the selected rights statment. If unchecked, use rights or rights_statement from the record and only use the provided value if dc:rights is blank.', input_html: { checked: (importer.parser_fields['override_rights_statement'] == "1") } %>
 
   <h4>Bag or Bags to Import:</h4>
   <p>File upload and Cloud File upload must be a Zip file containing a single BagIt Bag, or a folder containing multiple BagIt Bags.</p>
   <p>The Server Path can point to a BagIt Bag, a folder containing BagIt Bags, or a zip file containing either.</p>
 
-  <% selected = 'Specify a Path on the Server' if importer.parser_fields['import_file_path'].present? %>
-
-  <%= fi.input :file_style, collection: ['Upload a File', 'Specify a Path on the Server', 'Add Cloud File'], checked: selected, as: :radio_buttons, label: false %>
+  <%= fi.input :file_style, collection: ['Upload a File', 'Specify a Path on the Server', 'Add Cloud File'], as: :radio_buttons, label: false %>
   <div id='file_upload'>
     <%= fi.input 'file', as: :file, input_html: {accept: 'application/zip'} %><br />
   </div>

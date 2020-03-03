@@ -25,7 +25,7 @@ module Bulkrax
 
     def records(_opts = {})
       file_for_import = only_updates ? parser_fields['partial_import_file_path'] : parser_fields['import_file_path']
-      entry_class.read_data(file_for_import).map { |record_data| entry_class.data_for_entry(record_data) }
+      @records ||= entry_class.read_data(file_for_import).map { |record_data| entry_class.data_for_entry(record_data) }
     end
 
     # We could use CsvEntry#fields_from_data(data) but that would mean re-reading the data
@@ -45,8 +45,8 @@ module Bulkrax
     def valid_import?
       required_elements?(import_fields) && file_paths.is_a?(Array)
     rescue StandardError => e
-      errors.add(:base, e.class.to_s.to_sym, message: e.message)
-      return false
+      status_info(e)
+      false
     end
 
     def create_collections
@@ -71,11 +71,12 @@ module Bulkrax
 
         seen[record[:source_identifier]] = true
         new_entry = find_or_create_entry(entry_class, record[:source_identifier], 'Bulkrax::Importer', record.to_h.compact)
-        ImportWorkJob.perform_later(new_entry.id, current_importer_run.id)
+        ImportWorkJob.send(perform_method, new_entry.id, current_importer_run.id)
         increment_counters(index)
       end
+      status_info
     rescue StandardError => e
-      errors.add(:base, e.class.to_s.to_sym, message: e.message)
+      status_info(e)
     end
 
     def write_partial_import_file(file)
@@ -164,7 +165,7 @@ module Bulkrax
     def export_headers
       headers = ['id']
       headers << ['model']
-      importerexporter.mapping.keys.each { |key| headers << key unless Bulkrax.reserved_properties.include?(key) && !field_supported?(key) }.sort
+      importerexporter.mapping.each_key { |key| headers << key unless Bulkrax.reserved_properties.include?(key) && !field_supported?(key) }.sort
       headers << 'file'
       headers.to_csv
     end
@@ -175,6 +176,7 @@ module Bulkrax
     end
 
     def file_paths
+      raise 'No records were found' if records.blank?
       @file_paths ||= records.map do |r|
         next unless r[:file].present?
         r[:file].split(/\s*[:;|]\s*/).map do |f|

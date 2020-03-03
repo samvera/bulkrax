@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "bulkrax/engine"
+require 'active_support/all'
 
 module Bulkrax
   class << self
@@ -14,7 +15,8 @@ module Bulkrax
                    :field_mappings,
                    :import_path,
                    :export_path,
-                   :server_name
+                   :server_name,
+                   :api_definition
 
     self.parsers = [
       { name: "OAI - Dublin Core", class_name: "Bulkrax::OaiDcParser", partial: "oai_fields" },
@@ -137,6 +139,16 @@ module Bulkrax
       original_url
       relative_path
     ]
+  end
+
+  def self.api_definition
+    @api_definition ||= ActiveSupport::HashWithIndifferentAccess.new(
+      YAML.safe_load(
+        ERB.new(
+          File.read(Rails.root.join('config', 'bulkrax_api.yml'))
+        ).result
+      )
+    )
   end
 
   # this function maps the vars from your app into your engine

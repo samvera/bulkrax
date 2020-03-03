@@ -116,6 +116,15 @@ module Bulkrax
           expect(response).to be_successful
         end
       end
+
+      context 'with Create and Validate' do
+        let(:importer) { Importer.create! valid_attributes }
+
+        it 'uses perform_now' do
+          expect(Bulkrax::ImporterJob).to receive(:perform_now).exactly(1).times
+          post :create, params: { importer: valid_attributes, commit: 'Create and Validate' }, session: valid_session
+        end
+      end
     end
 
     describe 'PUT #update' do
@@ -149,6 +158,31 @@ module Bulkrax
           put :update, params: { id: importer.to_param, importer: invalid_attributes }, session: valid_session
           expect(response).to be_successful
         end
+      end
+    end
+
+    describe 'PUT #continue' do
+      let(:importer) { Importer.create! valid_attributes }
+      let(:valid_attributes) do
+        {
+          name: 'Test Importer',
+          admin_set_id: 'admin_set/default',
+          user_id: FactoryBot.create(:user).id,
+          parser_klass: 'Bulkrax::CsvParser',
+          parser_fields: { some_attribute: 'something' },
+          validate_only: false
+        }
+      end
+
+      it 'sets validate_only to false' do
+        put :continue, params: { importer_id: importer.to_param }, session: valid_session
+        importer.reload
+        expect(importer.validate_only).to eq(false)
+      end
+
+      it 'calls update' do
+        expect(controller).to receive(:update)
+        put :continue, params: { importer_id: importer.to_param }, session: valid_session
       end
     end
 
@@ -206,7 +240,7 @@ module Bulkrax
 
         it 'sets partial_import_file_path on the requested importer' do
           importer = FactoryBot.create(:bulkrax_importer_csv_failed)
-          expect(importer.parser_fields['partial_import_file_path']).to_not be_present
+          expect(importer.parser_fields['partial_import_file_path']).not_to be_present
 
           post :upload_corrected_entries_file, params: { importer_id: importer.to_param, importer: file_upload_params }, session: valid_session
           expect(importer.reload.parser_fields['partial_import_file_path']).to be_present
@@ -240,6 +274,125 @@ module Bulkrax
           post :upload_corrected_entries_file, params: { importer_id: importer.to_param, importer: bad_file_upload_params }, session: valid_session
           expect(response).to redirect_to(importer_upload_corrected_entries_path(importer))
           expect(flash[:alert]).to include('failed')
+        end
+      end
+    end
+
+    context 'with application/json request' do
+      before do
+        allow(controller).to receive(:api_request?).and_return(true)
+        allow(AdminSet).to receive(:find).with('admin_set/default')
+        allow(User).to receive(:batch_user).and_return(FactoryBot.create(:user))
+        allow(controller).to receive(:valid_parser_fields?).and_return(true)
+      end
+
+      context 'with valid params' do
+        before do
+          ENV['BULKRAX_API_TOKEN'] = '1234'
+          request.headers['Authorization'] = 'Token: 1234'
+        end
+
+        it 'creates a new Importer' do
+          expect do
+            post :create, params: { importer: valid_attributes, commit: 'Create' }, session: valid_session
+          end.to change(Importer, :count).by(1)
+        end
+
+        it 'returns a 201 Created' do
+          post :create, params: { importer: valid_attributes, commit: 'Create' }, session: valid_session
+          expect(response.status).to eq(201)
+        end
+      end
+
+      context 'with invalid params' do
+        before do
+          ENV['BULKRAX_API_TOKEN'] = '1234'
+          request.headers['Authorization'] = 'Token: 1234'
+        end
+
+        it "returns a 422 Unprocessable Entry" do
+          post :create, params: { importer: invalid_attributes, commit: 'Create' }, session: valid_session
+          expect(response.status).to eq(422)
+        end
+      end
+
+      context 'without a valid auth token' do
+        it 'returns a 401 Not Authenticated' do
+          post :create, params: { importer: valid_attributes, commit: 'Create' }, session: valid_session
+          expect(response.status).to eq(401)
+        end
+      end
+
+      describe 'PUT #update' do
+        before do
+          allow(AdminSet).to receive(:find).with('admin_set/default')
+          allow(User).to receive(:batch_user).and_return(FactoryBot.create(:user))
+        end
+
+        context 'with valid params' do
+          let(:new_attributes) do
+            {
+              name: 'Test Importer Updated',
+              admin_set_id: 'admin_set/default',
+              user_id: FactoryBot.create(:user).id,
+              parser_fields: { some_attribute: 'something' }
+            }
+          end
+
+          before do
+            ENV['BULKRAX_API_TOKEN'] = '1234'
+            request.headers['Authorization'] = 'Token: 1234'
+          end
+
+          it 'updates the requested importer' do
+            importer = Importer.create! valid_attributes
+            put :update, params: { id: importer.to_param, importer: new_attributes, commit: 'Update Importer' }, session: valid_session
+            importer.reload
+            expect(importer.name).to eq('Test Importer Updated')
+          end
+
+          it 'returns a 200 OK' do
+            importer = Importer.create! valid_attributes
+            put :update, params: { id: importer.to_param, importer: valid_attributes, commit: 'Update Importer' }, session: valid_session
+            expect(response.status).to eq(200)
+          end
+        end
+
+        context 'with invalid params' do
+          before do
+            ENV['BULKRAX_API_TOKEN'] = '1234'
+            request.headers['Authorization'] = 'Token: 1234'
+          end
+
+          it "returns a 422 Unprocessable Entry" do
+            importer = Importer.create! valid_attributes
+            put :update, params: { id: importer.to_param, importer: invalid_attributes, commit: 'Update Importer' }, session: valid_session
+            expect(response.status).to eq(422)
+          end
+        end
+
+        context 'without a valid auth token' do
+          it 'returns a 401 Unauthorized without an access token' do
+            importer = Importer.create! valid_attributes
+            put :update, params: { id: importer.to_param, importer: valid_attributes, commit: 'Update Importer' }, session: valid_session
+            expect(response.status).to eq(401)
+          end
+        end
+      end
+
+      describe 'DELETE #destroy' do
+        it 'destroys the requested importer' do
+          importer = Importer.create! valid_attributes
+          expect do
+            delete :destroy, params: { id: importer.to_param }, session: valid_session
+          end.to change(Importer, :count).by(-1)
+          expect(response.status).to eq(200)
+        end
+
+        it 'returns a 200 OK' do
+          importer = Importer.create! valid_attributes
+          delete :destroy, params: { id: importer.to_param }, session: valid_session
+          expect(response.status).to eq(200)
         end
       end
     end

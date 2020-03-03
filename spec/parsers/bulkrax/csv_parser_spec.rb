@@ -22,7 +22,7 @@ module Bulkrax
 
         it 'returns an empty array, and records the error on the importer' do
           subject.create_works
-          expect(importer.errors.details[:base].first[:error]).to eq('CSV::MalformedCSVError'.to_sym)
+          expect(importer.last_error['error_class']).to eq('CSV::MalformedCSVError')
         end
       end
 
@@ -66,13 +66,13 @@ module Bulkrax
     end
 
     describe '#write_partial_import_file', clean_downloads: true do
+      subject        { described_class.new(importer) }
       let(:importer) { FactoryBot.create(:bulkrax_importer_csv_failed) }
       let(:file)     { fixture_file_upload('./spec/fixtures/csv/ok.csv') }
-      subject        { described_class.new(importer) }
 
       it 'returns the path of the partial import file' do
         expect(subject.write_partial_import_file(file))
-          .to eq('tmp/imports/1/failed_corrected_entries.csv')
+          .to eq("tmp/imports/#{importer.id}/failed_corrected_entries.csv")
       end
 
       it 'moves the partial import file to the correct path' do
@@ -91,7 +91,7 @@ module Bulkrax
 
         expect(import_filename).to eq('failed.csv')
         expect(uploaded_filename).to eq('ok.csv')
-        expect(partial_import_filename).to_not eq(uploaded_filename)
+        expect(partial_import_filename).not_to eq(uploaded_filename)
         expect(partial_import_filename).to eq('failed_corrected_entries.csv')
       end
     end

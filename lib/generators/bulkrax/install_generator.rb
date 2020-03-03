@@ -32,6 +32,14 @@ class Bulkrax::InstallGenerator < Rails::Generators::Base
     end
   end
 
+  def create_bulkrax_api
+    copy_file 'config/bulkrax_api.yml', 'config/bulkrax_api.yml'
+  end
+
+  def create_cmd_script
+    copy_file 'bin/importer', 'bin/importer'
+  end
+
   def create_local_processing
     copy_file 'app/models/concerns/bulkrax/has_local_processing.rb', 'app/models/concerns/bulkrax/has_local_processing.rb'
   end

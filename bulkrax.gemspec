@@ -23,7 +23,7 @@ Gem::Specification.new do |s|
   s.add_dependency "rack", ">= 2.0.6" # security issue, remove on rails upgrade
   s.add_dependency "simple_form"
   s.add_dependency 'iso8601', '~> 0.9.0'
-  s.add_dependency 'oai', '~> 0.4'
+  s.add_dependency 'oai', '~> 1'
   s.add_dependency 'libxml-ruby', '~> 3.1.0'
   s.add_dependency 'language_list', '~> 1.2', '>= 1.2.1'
   s.add_dependency 'rdf', '>= 2.0.2', '< 4.0'

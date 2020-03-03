@@ -1,73 +1,117 @@
 # frozen_string_literal: true
 
-require_dependency "bulkrax/application_controller"
-require_dependency "oai"
-require 'csv'
+require_dependency 'bulkrax/application_controller'
+require_dependency 'oai'
 require 'fileutils'
 
 module Bulkrax
   class ImportersController < ApplicationController
     include Hyrax::ThemedLayoutController
     include Bulkrax::DownloadBehavior
-    before_action :authenticate_user!
+    include Bulkrax::API
+    include Bulkrax::ValidationHelper
+
+    protect_from_forgery unless: -> { api_request? }
+    before_action :token_authenticate!, if: -> { api_request? }, only: [:create, :update, :delete]
+    before_action :authenticate_user!, unless: -> { api_request? }
     before_action :set_importer, only: [:show, :edit, :update, :destroy]
     with_themed_layout 'dashboard'
 
     # GET /importers
     def index
-      add_breadcrumb t(:'hyrax.controls.home'), main_app.root_path
-      add_breadcrumb t(:'hyrax.dashboard.breadcrumbs.admin'), hyrax.dashboard_path
-      add_breadcrumb 'Importers', bulkrax.importers_path
       @importers = Importer.all
+      if api_request?
+        json_response('index')
+      else
+        add_breadcrumb t(:'hyrax.controls.home'), main_app.root_path
+        add_breadcrumb t(:'hyrax.dashboard.breadcrumbs.admin'), hyrax.dashboard_path
+        add_breadcrumb 'Importers', bulkrax.importers_path
+      end
     end
 
     # GET /importers/1
     def show
-      add_breadcrumb t(:'hyrax.controls.home'), main_app.root_path
-      add_breadcrumb t(:'hyrax.dashboard.breadcrumbs.admin'), hyrax.dashboard_path
-      add_breadcrumb 'Importers', bulkrax.importers_path
-      add_breadcrumb @importer.name
-      @work_entries = @importer.entries.where(type: @importer.parser.entry_class.to_s).page(params[:work_entries_page])
-      @collection_entries = @importer.entries.where(type: @importer.parser.collection_entry_class.to_s).page(params[:collections_entries_page])
+      if api_request?
+        json_response('show')
+      else
+        add_breadcrumb t(:'hyrax.controls.home'), main_app.root_path
+        add_breadcrumb t(:'hyrax.dashboard.breadcrumbs.admin'), hyrax.dashboard_path
+        add_breadcrumb 'Importers', bulkrax.importers_path
+        add_breadcrumb @importer.name
+        @work_entries = @importer.entries.where(type: @importer.parser.entry_class.to_s).page(params[:work_entries_page])
+        @collection_entries = @importer.entries.where(type: @importer.parser.collection_entry_class.to_s).page(params[:collections_entries_page])
+      end
     end
 
     # GET /importers/new
     def new
-      add_breadcrumb t(:'hyrax.controls.home'), main_app.root_path
-      add_breadcrumb t(:'hyrax.dashboard.breadcrumbs.admin'), hyrax.dashboard_path
-      add_breadcrumb 'Importers', bulkrax.importers_path
       @importer = Importer.new
+      if api_request?
+        json_response('new')
+      else
+        add_breadcrumb t(:'hyrax.controls.home'), main_app.root_path
+        add_breadcrumb t(:'hyrax.dashboard.breadcrumbs.admin'), hyrax.dashboard_path
+        add_breadcrumb 'Importers', bulkrax.importers_path
+      end
     end
 
     # GET /importers/1/edit
     def edit
-      add_breadcrumb t(:'hyrax.controls.home'), main_app.root_path
-      add_breadcrumb t(:'hyrax.dashboard.breadcrumbs.admin'), hyrax.dashboard_path
-      add_breadcrumb 'Importers', bulkrax.importers_path
+      if api_request?
+        json_response('edit')
+      else
+        add_breadcrumb t(:'hyrax.controls.home'), main_app.root_path
+        add_breadcrumb t(:'hyrax.dashboard.breadcrumbs.admin'), hyrax.dashboard_path
+        add_breadcrumb 'Importers', bulkrax.importers_path
+      end
     end
 
     # POST /importers
+    # rubocop:disable Metrics/MethodLength
     def create
+      # rubocop:disable Style/IfInsideElse
+      if api_request?
+        return return_json_response unless valid_create_params?
+      end
       file = params[:importer][:parser_fields].delete(:file)
-      cloud_files = params.delete(:selected_files)
+      cloud_files = params[:importer].delete(:selected_files)
       @importer = Importer.new(importer_params)
       field_mapping_params
+      @importer.validate_only = true if params[:commit] == 'Create and Validate'
       if @importer.save
         files_for_import(file, cloud_files)
-        Bulkrax::ImporterJob.perform_later(@importer.id) if params[:commit] == 'Create and Import'
-        redirect_to importers_path, notice: 'Importer was successfully created.'
+        Bulkrax::ImporterJob.send(@importer.parser.perform_method, @importer.id)
+        if api_request?
+          json_response('create', :created, 'Importer was successfully created.')
+        else
+          redirect_to importers_path, notice: 'Importer was successfully created.'
+        end
       else
-        render :new
+        if api_request?
+          json_response('create', :unprocessable_entity)
+        else
+          render :new
+        end
       end
+
+      # rubocop:enable Style/IfInsideElse
     end
 
     # PATCH/PUT /importers/1
     def update
-      file = params[:importer][:parser_fields].delete(:file)
-      cloud_files = params[:importer].delete(:selected_files)
-      field_mapping_params
+      # rubocop:disable Style/IfInsideElse
+      if api_request?
+        return return_json_response unless valid_update_params?
+      end
+      # skipped for calls from continue
+      if params[:importer][:parser_fields].present?
+        file = params[:importer][:parser_fields].delete(:file)
+        cloud_files = params[:importer].delete(:selected_files)
+        field_mapping_params
+      end
+
       if @importer.update(importer_params)
-        files_for_import(file, cloud_files)
+        files_for_import(file, cloud_files) unless file.nil? && cloud_files.nil?
         # do not perform the import
         if params[:commit] == 'Update Importer'
         # do nothing
@@ -79,20 +123,42 @@ module Bulkrax
           @importer.parser_fields['replace_files'] = true
           @importer.save
           Bulkrax::ImporterJob.perform_later(@importer.id)
-        # In all other cases, perform a full metadata-only re-import
+        # In all other cases, perform a metadata-only re-import
         else
           Bulkrax::ImporterJob.perform_later(@importer.id)
         end
-        redirect_to importers_path, notice: 'Importer was successfully updated.'
+        if api_request?
+          json_response('updated', :ok, 'Importer was successfully updated.')
+        else
+          redirect_to importers_path, notice: 'Importer was successfully updated.'
+        end
       else
-        render :edit
+        if api_request?
+          json_response('update', :unprocessable_entity, 'Something went wrong.')
+        else
+          render :edit
+        end
       end
+      # rubocop:enable Style/IfInsideElse
     end
+    # rubocop:enable Metrics/MethodLength
 
     # DELETE /importers/1
     def destroy
       @importer.destroy
-      redirect_to importers_url, notice: 'Importer was successfully destroyed.'
+      if api_request?
+        json_response('destroy', :ok, notice: 'Importer was successfully destroyed.')
+      else
+        redirect_to importers_url, notice: 'Importer was successfully destroyed.'
+      end
+    end
+
+    # PUT /importers/1
+    def continue
+      @importer = Importer.find(params[:importer_id])
+      params[:importer] = { name: @importer.name }
+      @importer.validate_only = false
+      update
     end
 
     # GET /importer/1/upload_corrected_entries
@@ -156,7 +222,18 @@ module Bulkrax
 
       # Only allow a trusted parameter "white list" through.
       def importer_params
-        params.require(:importer).permit(:name, :admin_set_id, :user_id, :frequency, :parser_klass, :limit, :selected_files, field_mapping: {}, parser_fields: {})
+        params.require(:importer).permit(
+          :name,
+          :admin_set_id,
+          :user_id,
+          :frequency,
+          :parser_klass,
+          :limit,
+          :validate_only,
+          selected_files: {},
+          field_mapping: {},
+          parser_fields: {}
+        )
       end
 
       def list_external_sets
@@ -184,9 +261,7 @@ module Bulkrax
 
       def setup_client(url)
         return false if url.nil?
-
         headers = { from: Bulkrax.server_name }
-
         @client ||= OAI::Client.new(url, headers: headers, parser: 'libxml', metadata_prefix: 'oai_dc')
       end
 
