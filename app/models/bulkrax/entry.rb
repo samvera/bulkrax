@@ -17,6 +17,8 @@ module Bulkrax
     serialize :collection_ids, Array
     serialize :last_error, JSON
 
+    paginates_per 5
+
     attr_accessor :all_attrs
 
     delegate :parser, :mapping, :replace_files, to: :importerexporter
