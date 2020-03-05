@@ -121,6 +121,35 @@ module Bulkrax
       end
     end
 
+    describe '#create_from_importer' do
+      subject(:parser) { described_class.new(exporter) }
+      let(:exporter)   { FactoryBot.create(:bulkrax_exporter, export_source: importer.id) }
+      let(:importer)   { FactoryBot.create(:bulkrax_importer_csv, entries: [entry_1, entry_2]) }
+      let(:entry_1)    { FactoryBot.create(:bulkrax_csv_entry) }
+      let(:entry_2)    { FactoryBot.create(:bulkrax_csv_entry) }
+
+      it 'invokes ExportWorkJob twice' do
+        expect(ActiveFedora::SolrService)
+          .to receive(:query)
+          .and_return([{ id: SecureRandom.alphanumeric(9) }])
+          .exactly(2).times
+        expect(Bulkrax::ExportWorkJob).to receive(:perform_now).exactly(2).times
+        parser.create_from_importer
+      end
+    end
+
+    describe '#create_from_collection' do
+      pending
+    end
+
+    describe '#create_from_worktype' do
+      pending
+    end
+
+    describe '#files_path' do
+      pending
+    end
+
     describe '#write_errored_entries_file', clean_downloads: true do
       subject                { described_class.new(importer) }
       let(:importer)         { FactoryBot.create(:bulkrax_importer_csv_failed, entries: [entry_failed, entry_succeeded, entry_collection]) }

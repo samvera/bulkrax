@@ -10,8 +10,8 @@ module Bulkrax
     describe 'export_from' do
       it 'defines a list of export from types' do
         expect(exporter.export_from_list).to eq([
-          [I18n.t('bulkrax.exporter.labels.collection'), 'collection'],
           [I18n.t('bulkrax.exporter.labels.importer'), 'importer'],
+          [I18n.t('bulkrax.exporter.labels.collection'), 'collection'],
           [I18n.t('bulkrax.exporter.labels.worktype'), 'worktype']
         ])
       end
