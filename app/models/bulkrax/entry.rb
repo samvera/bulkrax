@@ -17,6 +17,8 @@ module Bulkrax
     serialize :collection_ids, Array
     serialize :last_error, JSON
 
+    paginates_per 5
+
     attr_accessor :all_attrs
 
     delegate :parser, :mapping, :replace_files, to: :importerexporter
@@ -30,22 +32,47 @@ module Bulkrax
     # @param data - the source data
     # @return Array
     def self.fields_from_data(_data)
-      raise 'Not Implemented'
+      raise StandardError, 'Not Implemented'
     end
 
     # Read the data from the supplied path
     # @param path - path to the data file
     # @return the data from the file
     def self.read_data(_path)
-      raise 'Not Implemented'
+      raise StandardError, 'Not Implemented'
     end
 
     # Returns formatted data from the given file for a single Entry
     # @param data - the data from the metadata file
-    # @param path - the path to the metadata file - used by RDF to get the file_paths
+    # @param path - the path to the metadata file (used by some entries to get the file_paths for import)
     # @return Hash containing the data (the entry build_metadata method will know what to expect in the hash)
     def self.data_for_entry(_data, _path = nil)
-      raise 'Not Implemented'
+      raise StandardError, 'Not Implemented'
+    end
+
+    # Return all files in this directory and sub-directories
+    #   excluding the given path if it is a file (which would be the metadata file)
+    # Files must be in the same, or a subdirectory of, the given path
+    def self.record_file_paths(path)
+      return [] if path.nil?
+      if File.file?(path)
+        Dir.glob("#{File.dirname(path)}/**/*.*").reject { |f| f == path }
+      else
+        Dir.glob("#{path}/**/*.*").reject { |f| f == path }
+      end
+    end
+
+    def self.source_identifier_field
+      raise "Source identifier must be configured for #{self}" if Bulkrax.source_identifier_field_mapping[self.to_s].blank?
+      Bulkrax.source_identifier_field_mapping[self.to_s]
+    end
+
+    def self.collection_field
+      Bulkrax.collection_field_mapping[self.to_s]
+    end
+
+    def self.children_field
+      Bulkrax.parent_child_field_mapping[self.to_s]
     end
 
     def build

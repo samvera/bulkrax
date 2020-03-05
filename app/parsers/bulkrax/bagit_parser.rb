@@ -24,7 +24,7 @@ module Bulkrax
     end
 
     def import_fields
-      raise 'No metadata files were found' if metadata_paths.blank?
+      raise StandardError, 'No metadata files were found' if metadata_paths.blank?
       @import_fields ||= metadata_paths.map do |path|
         entry_class.fields_from_data(entry_class.read_data(path))
       end.flatten.compact.uniq
@@ -89,10 +89,6 @@ module Bulkrax
       metadata_paths.count
     end
 
-    def import_file_path
-      @import_file_path ||= real_import_file_path
-    end
-
     def required_elements?(keys)
       return if keys.blank?
       !required_elements.map { |el| keys.map(&:to_s).include?(el) }.include?(false)
@@ -114,67 +110,57 @@ module Bulkrax
       return target_file
     end
 
-    # private
+    private
 
-    def real_import_file_path
-      if file? && zip?
-        unzip(parser_fields['import_file_path'])
-        return File.join(importer_unzip_path, parser_fields['import_file_path'].split('/').last.gsub('.zip', ''))
-      else
-        parser_fields['import_file_path']
+      def bags
+        return @bags if @bags.present?
+        new_bag = bag(import_file_path)
+        @bags = if new_bag
+                  [new_bag]
+                else
+                  Dir.glob("#{import_file_path}/**/*").map { |d| bag(d) }
+                end
+        @bags.delete(nil)
+        raise 'No valid bags found' if @bags.blank?
+        return @bags
       end
-    end
 
-    def bags
-      return @bags if @bags.present?
-      new_bag = bag(import_file_path)
-      @bags = if new_bag
-                [new_bag]
-              else
-                Dir.glob("#{import_file_path}/**/*").map { |d| bag(d) }
-              end
-      @bags.delete(nil)
-      raise 'No valid bags found' if @bags.blank?
-      return @bags
-    end
+      # Gather the paths to all bags; skip any stray files
+      def bag_paths
+        bags.map(&:bag_dir)
+      end
 
-    # Gather the paths to all bags; skip any stray files
-    def bag_paths
-      bags.map { |b| b.bag_dir }
-    end
+      def metadata_file_name
+        raise StandardError, 'The metadata file name must be specified' if parser_fields['metadata_file_name'].blank?
+        parser_fields['metadata_file_name']
+      end
 
-    def metadata_file_name
-      raise 'The metadata file name must be specified' if parser_fields['metadata_file_name'].blank?
-      parser_fields['metadata_file_name']
-    end
+      # Gather the paths to all metadata files matching the metadata_file_name
+      def metadata_paths
+        @metadata_paths ||= bag_paths.map do |b|
+          Dir.glob("#{b}/**/*").select { |f| File.file?(f) && f.ends_with?(metadata_file_name) }
+        end.flatten.compact
+      end
 
-    # Gather the paths to all metadata files matching the metadata_file_name
-    def metadata_paths
-      @metadata_paths ||= bag_paths.map do |b|
-        Dir.glob("#{b}/**/*").select { |f| File.file?(f) && f.ends_with?(metadata_file_name) }
-      end.flatten.compact
-    end
+      def metadata_path(bag)
+        Dir.glob("#{bag.bag_dir}/**/*").detect { |f| File.file?(f) && f.ends_with?(metadata_file_name) }
+      end
 
-    def metadata_path(bag)
-      Dir.glob("#{bag.bag_dir}/**/*").detect { |f| File.file?(f) && f.ends_with?(metadata_file_name) }
-    end
+      # Is this a file?
+      def file?
+        File.file?(parser_fields['import_file_path'])
+      end
 
+      # Is this a zip file?
+      def zip?
+        MIME::Types.type_for(parser_fields['import_file_path']).include?('application/zip')
+      end
 
-    # Is this a file?
-    def file?
-      File.file?(parser_fields['import_file_path'])
-    end
-
-    # Is this a zip file?
-    def zip?
-      MIME::Types.type_for(parser_fields['import_file_path']).include?('application/zip')
-    end
-
-    def bag(path)
-      return nil unless File.exist?(File.join(path, 'bagit.txt'))
-      bag = BagIt::Bag.new(path)
-      return nil unless bag.valid?
-      bag
-    end
+      def bag(path)
+        return nil unless File.exist?(File.join(path, 'bagit.txt'))
+        bag = BagIt::Bag.new(path)
+        return nil unless bag.valid?
+        bag
+      end
   end
 end

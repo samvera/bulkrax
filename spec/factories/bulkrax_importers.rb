@@ -82,4 +82,20 @@ FactoryBot.define do
     parser_fields { { 'import_file_path' => 'spec/fixtures/csv/failed.csv' } }
     field_mapping { {} }
   end
+
+  factory :bulkrax_importer_xml, class: 'Bulkrax::Importer' do
+    name { 'XML Import' }
+    admin_set_id { 'MyString' }
+    user { FactoryBot.build(:base_user) }
+    frequency { 'PT0S' }
+    parser_klass { 'Bulkrax::XmlParser' }
+    limit { 10 }
+    parser_fields { { 'import_file_path' => 'spec/fixtures/xml/good.xml' } }
+    field_mapping do
+      {
+        'title': { from: ['TitleLargerEntity'] },
+        'abstract': { from: ['Abstract'] }
+      }
+    end
+  end
 end

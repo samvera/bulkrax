@@ -44,7 +44,7 @@ module Bulkrax
 
         it 'Raises an error' do
           subject.create_works
-          expect(importer.last_error['error_class']).to eq('RuntimeError')
+          expect(importer.last_error['error_class']).to eq('StandardError')
         end
       end
 
@@ -55,7 +55,7 @@ module Bulkrax
 
         it 'Raises an error' do
           subject.create_works
-          expect(importer.last_error['error_class']).to eq('RuntimeError')
+          expect(importer.last_error['error_class']).to eq('StandardError')
         end
       end
 
@@ -111,7 +111,7 @@ module Bulkrax
 
         it 'Raises an error' do
           subject.create_works
-          expect(importer.last_error['error_class']).to eq('RuntimeError')
+          expect(importer.last_error['error_class']).to eq('StandardError')
         end
       end
     end

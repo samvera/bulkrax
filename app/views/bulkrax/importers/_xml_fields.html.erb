@@ -1,0 +1,60 @@
+<div class='xml_fields'>
+
+  <%# @todo improve on this implementation. 
+    As it stands, it's a hostage to namespaces, 
+    eg. dc:title 
+    if namespaces aren't in the xml, we would have to specify dc:title
+    but if the namespaces ARE present, we remove them so we would need title
+  %>
+  <%= fi.input :record_element, 
+    hint: 'Provide the xml element name to use to identify the record, or records, eg. ROW - each record in the attached XML is wrapped in a <ROW> tag.', 
+    input_html: { value: importer.parser_fields['record_element'] }
+    %>
+
+  <%= fi.input :import_type, 
+		collection: [
+      ['Single Work per Metadata File', 'single'],
+			['Multiple Works per Metadata File', 'multiple'] 
+		], 
+    selected: importer.parser_fields['import_type'],
+    input_html: { class: 'form-control' }
+    %>
+  
+  <h4>Visiblity</h4>
+
+  <%= fi.input :visibility, 
+		collection: [
+      ['Public', 'open'],
+      ['Private', 'restricted']
+		], 
+    selected: importer.parser_fields['visibility'] || 'open',
+    input_html: { class: 'form-control' }
+    %>
+
+  <% rights_statements = Hyrax.config.rights_statement_service_class.new %>
+  <%= fi.input :rights_statement,
+        collection: rights_statements.select_active_options,
+        selected: importer.parser_fields['rights_statement'],
+        include_blank: true,
+        item_helper: rights_statements.method(:include_current_value),
+        input_html: { class: 'form-control' },
+        required: false %>
+  <%= fi.input :override_rights_statement, as: :boolean, hint: 'If checked, always use the selected rights statment. If unchecked, use rights or rights_statement from the record and only use the provided value if dc:rights is blank.', input_html: { checked: (importer.parser_fields['override_rights_statement'] == "1") } %>
+
+  <h4>XML and files to Import:</h4>
+  <p>File upload and Cloud File upload MUST be a either a single XML file (for metadata only import) OR a Zip file containing the XML files and data files, each in a separate folder.</p>
+  <p>The Server Path can point to a folder containing XML files and data files to import, or direct to the XML file itself.</p>
+
+  <%= fi.input :file_style, collection: ['Upload a File', 'Specify a Path on the Server', 'Add Cloud File'], as: :radio_buttons, label: false %>
+  <div id='file_upload'>
+    <%= fi.input 'file', as: :file, input_html: {accept: ['application/zip', 'application/xml']} %><br />
+  </div>
+  <div id='file_path'>
+    <%= fi.input :import_file_path, as: :string, input_html: { value: importer.parser_fields['import_file_path'] } %>
+  </div>
+  <div id='cloud'>
+    <% if Hyrax.config.browse_everything? %>
+      <%= render 'browse_everything', form: form %>
+    <% end %>
+  </div>
+</div>

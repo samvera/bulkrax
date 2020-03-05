@@ -176,7 +176,7 @@ module Bulkrax
     end
 
     def file_paths
-      raise 'No records were found' if records.blank?
+      raise StandardError, 'No records were found' if records.blank?
       @file_paths ||= records.map do |r|
         next unless r[:file].present?
         r[:file].split(/\s*[:;|]\s*/).map do |f|

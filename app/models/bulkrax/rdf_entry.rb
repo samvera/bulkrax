@@ -13,7 +13,7 @@ module Bulkrax
       data.predicates.map(&:to_s)
     end
 
-    def self.data_for_entry(data, path = nil)
+    def self.data_for_entry(data, _path = nil)
       reader = data
       format = reader.class.format.to_sym
       collections = []

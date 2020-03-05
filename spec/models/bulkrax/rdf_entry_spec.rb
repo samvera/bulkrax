@@ -28,7 +28,7 @@ module Bulkrax
       end
 
       it 'returns file paths from the record' do
-        expect(described_class.record_file_paths(path).count).to eq 7
+        expect(described_class.record_file_paths(path).count).to eq 6
       end
     end
 

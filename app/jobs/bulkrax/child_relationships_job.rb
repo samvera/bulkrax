@@ -57,7 +57,9 @@ module Bulkrax
         attrs = { id: work_id, collections: [{ id: @entry.factory.find.id }] }
         Bulkrax::ObjectFactory.new(attrs, @child_works_hash[work_id][:source_identifier], false, @user, @child_works_hash[work_id][:class_name].constantize).run
         ImporterRun.find(@importer_run_id).increment!(:processed_children)
-      rescue StandardError
+      rescue StandardError => e
+        @entry.status_info(e)
+        @entry.save!
         ImporterRun.find(@importer_run_id).increment!(:failed_children)
       end
 
@@ -66,7 +68,9 @@ module Bulkrax
         attrs = { id: @entry.factory.find.id, children: member_ids }
         Bulkrax::ObjectFactory.new(attrs, @entry.identifier, false, @user, @entry.factory_class).run
         ImporterRun.find(@importer_run_id).increment!(:processed_children)
-      rescue StandardError
+      rescue StandardError => e
+        @entry.status_info(e)
+        @entry.save!
         ImporterRun.find(@importer_run_id).increment!(:failed_children)
       end
 
@@ -79,7 +83,9 @@ module Bulkrax
                                            end }
         Bulkrax::ObjectFactory.new(attrs, @entry.identifier, false, @user, @entry.factory_class).run
         ImporterRun.find(@importer_run_id).increment!(:processed_children)
-      rescue StandardError
+      rescue StandardError => e
+        @entry.status_info(e)
+        @entry.save!
         ImporterRun.find(@importer_run_id).increment!(:failed_children)
       end
       # rubocop:enable Rails/SkipsModelValidations
