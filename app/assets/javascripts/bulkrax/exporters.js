@@ -4,11 +4,12 @@ jQuery(function() {
     var selectedVal = $('.exporter_export_from option:selected').val();
     hideUnhide(selectedVal);
   });
-  // TODO: show the selected export_source option
-  // $(document).ready(function() {
-    // var selectedOpt = $('.exporter_export_source option:selected');
-    // unhideSelected(selectedOpt);
-  // });
+
+  // show the selected export_source option
+  $(document).ready(function() {
+    var selectedVal = $('.exporter_export_from option:selected').val();
+    hideUnhide(selectedVal);
+  });
 });
 
 function hideUnhide(field) {
@@ -46,5 +47,3 @@ function addAutocomplete() {
     autocomplete.setup(elem, elem.data('autocomplete'), elem.data('autocompleteUrl'))
   }))
 }
-
-// clear selected when focus moves away from the export_from

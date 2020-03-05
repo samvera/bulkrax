@@ -33,6 +33,18 @@ module Bulkrax
       end
     end
 
+    def export_source_importer
+      self.export_source if self.export_from == 'importer'
+    end
+
+    def export_source_collection
+      self.export_source if self.export_from == 'collection'
+    end
+
+    def export_source_worktype
+      self.export_source if self.export_from == 'worktype'
+    end
+
     def mapping
       @mapping ||= self.field_mapping || export_properties.map { |m| Bulkrax.default_field_mapping.call(m) }.inject(:merge)
     end
