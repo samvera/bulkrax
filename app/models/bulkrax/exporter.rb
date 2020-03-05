@@ -33,6 +33,9 @@ module Bulkrax
       end
     end
 
+    # #export_source accessors
+    # Used in form to prevent it from getting confused as to which value to populate #export_source with.
+    # Also, used to display the correct selected value when rendering edit form.
     def export_source_importer
       self.export_source if self.export_from == 'importer'
     end
@@ -51,8 +54,8 @@ module Bulkrax
 
     def export_from_list
       [
-        [I18n.t('bulkrax.exporter.labels.collection'), 'collection'], 
-        [I18n.t('bulkrax.exporter.labels.importer'), 'importer'], 
+        [I18n.t('bulkrax.exporter.labels.importer'), 'importer'],
+        [I18n.t('bulkrax.exporter.labels.collection'), 'collection'],
         [I18n.t('bulkrax.exporter.labels.worktype'), 'worktype']
       ]
     end

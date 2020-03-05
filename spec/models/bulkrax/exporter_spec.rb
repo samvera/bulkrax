@@ -56,5 +56,44 @@ module Bulkrax
         end
       end
     end
+
+    describe '#export_source accessors' do
+      context 'when exporting from an importer' do
+        it '#export_source_importer returns #export_source' do
+          expect(exporter.export_source_importer).to eq(exporter.export_source)
+        end
+
+        it 'other #export_source accessors return nil' do
+          expect(exporter.export_source_collection).to be_nil
+          expect(exporter.export_source_worktype).to be_nil
+        end
+      end
+
+      context 'when exporting from a collection' do
+        let(:exporter) { FactoryBot.create(:bulkrax_exporter_collection) }
+
+        it '#export_source_collection returns #export_source' do
+          expect(exporter.export_source_collection).to eq(exporter.export_source)
+        end
+
+        it 'other #export_source accessors return nil' do
+          expect(exporter.export_source_importer).to be_nil
+          expect(exporter.export_source_worktype).to be_nil
+        end
+      end
+
+      context 'when exporting from a worktype' do
+        let(:exporter) { FactoryBot.create(:bulkrax_exporter_worktype) }
+
+        it '#export_source_worktype returns #export_source' do
+          expect(exporter.export_source_worktype).to eq(exporter.export_source)
+        end
+
+        it 'other #export_source accessors return nil' do
+          expect(exporter.export_source_importer).to be_nil
+          expect(exporter.export_source_collection).to be_nil
+        end
+      end
+    end
   end
 end
