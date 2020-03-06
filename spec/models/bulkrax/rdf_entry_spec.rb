@@ -21,7 +21,6 @@ module Bulkrax
           data: "<http://example.org/ns/19158> <http://purl.org/dc/terms/identifier> \"12345\" .\n<http://example.org/ns/19158> <http://purl.org/dc/terms/title> \"Test Bag\" .\n",
           children: [],
           collection: [],
-          file: [],
           format: :ntriples,
           source_identifier: "http://example.org/ns/19158"
         )
@@ -61,7 +60,7 @@ module Bulkrax
 
         it 'succeeds' do
           subject.build
-          expect(subject.parsed_metadata).to eq("file" => [], "rights_statement" => [nil], "source" => ["http://example.org/ns/19158"], "title" => ["Test Bag"], "visibility" => "open")
+          expect(subject.parsed_metadata).to eq("file" => nil, "rights_statement" => [nil], "source" => ["http://example.org/ns/19158"], "title" => ["Test Bag"], "visibility" => "open")
           expect(subject.status).to eq('succeeded')
         end
       end
