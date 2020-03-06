@@ -175,6 +175,7 @@ module Bulkrax
       File.open(File.join(importerexporter.exporter_export_path, 'export.csv'), 'w')
     end
 
+    # Retrieve file paths for [:file] in records
     def file_paths
       raise StandardError, 'No records were found' if records.blank?
       @file_paths ||= records.map do |r|
@@ -187,11 +188,12 @@ module Bulkrax
       end.flatten.compact.uniq
     end
 
-    def files_path
-      path = self.importerexporter.parser_fields['import_file_path'].split('/')
-      # remove the metadata filename from the end of the import path
-      path.pop
-      File.join(path.join('/'), 'files')
+    # Retrieve the path where we expect to find files
+    def path_to_files
+      @path_to_files ||= File.join(
+        File.file?(real_import_file_path) ? File.dirname(real_import_file_path) : real_import_file_path,
+        'files'
+      )
     end
 
     # errored entries methods

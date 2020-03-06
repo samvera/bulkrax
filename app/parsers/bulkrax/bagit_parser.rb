@@ -33,10 +33,10 @@ module Bulkrax
     # Assume a single metadata record per path
     # Create an Array of all metadata records, one per file
     def records(_opts = {})
-      raise 'No BagIt records were found' if bags.blank?
+      raise StandardError, 'No BagIt records were found' if bags.blank?
       @records ||= bags.map do |bag|
         path = metadata_path(bag)
-        raise 'No metadata files were found' if path.blank?
+        raise StandardError, 'No metadata files were found' if path.blank?
         data = entry_class.read_data(path)
         data = entry_class.data_for_entry(data, path)
         data[:file] = bag.bag_files.join('|')
@@ -121,7 +121,7 @@ module Bulkrax
                   Dir.glob("#{import_file_path}/**/*").map { |d| bag(d) }
                 end
         @bags.delete(nil)
-        raise 'No valid bags found' if @bags.blank?
+        raise StandardError, 'No valid bags found' if @bags.blank?
         return @bags
       end
 

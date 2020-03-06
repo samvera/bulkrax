@@ -60,7 +60,7 @@ module Bulkrax
       end
 
       # construct full file path
-      self.parsed_metadata['file'] = record['file'].split(/\s*[:;|]\s*/).map { |f| file_path(f.tr(' ', '_')) } if record['file'].present?
+      self.parsed_metadata['file'] = record['file'].split(/\s*[:;|]\s*/).map { |f| path_to_file(f.tr(' ', '_')) } if record['file'].present?
 
       add_visibility
       add_rights_statement
@@ -123,10 +123,11 @@ module Bulkrax
       %w[title source_identifier]
     end
 
-    def file_path(file)
+    # If only filename is given, construct the path (/files/my_file)
+    def path_to_file(file)
       # return if we already have the full file path
       return file if File.exist?(file)
-      path = importerexporter.parser.files_path
+      path = importerexporter.parser.path_to_files
       f = File.join(path, file)
       return f if File.exist?(f)
       raise "File #{f} does not exist"
