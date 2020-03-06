@@ -139,11 +139,29 @@ module Bulkrax
     end
 
     describe '#create_from_collection' do
-      pending
+      subject(:parser) { described_class.new(exporter) }
+      let(:exporter)   { FactoryBot.create(:bulkrax_exporter_collection) }
+
+      it 'invokes ExportWorkJob twice' do
+        # Use OpenStructs to simulate the behavior of ActiveFedora::SolrHit instances.
+        work_ids = [OpenStruct.new({ id: SecureRandom.alphanumeric(9) }), OpenStruct.new({ id: SecureRandom.alphanumeric(9) })]
+        expect(ActiveFedora::SolrService).to receive(:query).and_return(work_ids)
+        expect(Bulkrax::ExportWorkJob).to receive(:perform_now).exactly(2).times
+        parser.create_from_collection
+      end
     end
 
     describe '#create_from_worktype' do
-      pending
+      subject(:parser) { described_class.new(exporter) }
+      let(:exporter)   { FactoryBot.create(:bulkrax_exporter_worktype) }
+
+      it 'invokes ExportWorkJob twice' do
+        # Use OpenStructs to simulate the behavior of ActiveFedora::SolrHit instances.
+        work_ids = [OpenStruct.new({ id: SecureRandom.alphanumeric(9) }), OpenStruct.new({ id: SecureRandom.alphanumeric(9) })]
+        expect(ActiveFedora::SolrService).to receive(:query).and_return(work_ids)
+        expect(Bulkrax::ExportWorkJob).to receive(:perform_now).exactly(2).times
+        parser.create_from_worktype
+      end
     end
 
     describe '#files_path' do
