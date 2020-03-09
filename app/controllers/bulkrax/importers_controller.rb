@@ -73,8 +73,8 @@ module Bulkrax
       if api_request?
         return return_json_response unless valid_create_params?
       end
-      file = params[:importer][:parser_fields].delete(:file)
-      cloud_files = params[:importer].delete(:selected_files)
+      file = params.to_unsafe_h[:importer][:parser_fields].delete(:file)
+      cloud_files = params.to_unsafe_h[:importer].delete(:selected_files)
       @importer = Importer.new(importer_params)
       field_mapping_params
       @importer.validate_only = true if params[:commit] == 'Create and Validate'
@@ -105,8 +105,8 @@ module Bulkrax
       end
       # skipped for calls from continue
       if params[:importer][:parser_fields].present?
-        file = params[:importer][:parser_fields].delete(:file)
-        cloud_files = params[:importer].delete(:selected_files)
+        file = params.to_unsafe_h[:importer][:parser_fields].delete(:file)
+        cloud_files = params.to_unsafe_h[:importer].delete(:selected_files)
         field_mapping_params
       end
 
