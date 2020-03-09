@@ -15,14 +15,14 @@
     input_html: { class: 'form-control' }
     %>
 
-  <%= fi.input :visibility, 
-		collection: [
+  <%= fi.input :visibility,
+    collection: [
       ['Public', 'open'],
       ['Private', 'restricted']
-		], 
+    ],
     selected: importer.parser_fields['visibility'] || 'open',
     input_html: { class: 'form-control' }
-    %>
+  %>
 
   <% rights_statements = Hyrax.config.rights_statement_service_class.new %>
   <%= fi.input :rights_statement,
