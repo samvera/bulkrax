@@ -128,7 +128,7 @@ module Bulkrax
       let(:entry_1)    { FactoryBot.create(:bulkrax_csv_entry) }
       let(:entry_2)    { FactoryBot.create(:bulkrax_csv_entry) }
 
-      it 'invokes ExportWorkJob twice' do
+      it 'invokes Bulkrax::ExportWorkJob twice' do
         expect(ActiveFedora::SolrService)
           .to receive(:query)
           .and_return([{ id: SecureRandom.alphanumeric(9) }])
@@ -136,18 +136,43 @@ module Bulkrax
         expect(Bulkrax::ExportWorkJob).to receive(:perform_now).exactly(2).times
         parser.create_from_importer
       end
+
+      context 'with an export limit of 1' do
+        let(:exporter) { FactoryBot.create(:bulkrax_exporter, export_source: importer.id, limit: 1) }
+
+        it 'invokes Bulkrax::ExportWorkJob once' do
+          expect(ActiveFedora::SolrService)
+            .to receive(:query)
+            .and_return([{ id: SecureRandom.alphanumeric(9) }])
+            .exactly(1).times
+          expect(Bulkrax::ExportWorkJob).to receive(:perform_now).exactly(1).times
+          parser.create_from_importer
+        end
+      end
     end
 
     describe '#create_from_collection' do
       subject(:parser) { described_class.new(exporter) }
       let(:exporter)   { FactoryBot.create(:bulkrax_exporter_collection) }
 
-      it 'invokes ExportWorkJob twice' do
+      it 'invokes Bulkrax::ExportWorkJob twice' do
         # Use OpenStructs to simulate the behavior of ActiveFedora::SolrHit instances.
         work_ids = [OpenStruct.new({ id: SecureRandom.alphanumeric(9) }), OpenStruct.new({ id: SecureRandom.alphanumeric(9) })]
         expect(ActiveFedora::SolrService).to receive(:query).and_return(work_ids)
         expect(Bulkrax::ExportWorkJob).to receive(:perform_now).exactly(2).times
         parser.create_from_collection
+      end
+
+      context 'with an export limit of 1' do
+        let(:exporter) { FactoryBot.create(:bulkrax_exporter_collection, limit: 1) }
+
+        it 'invokes Bulkrax::ExportWorkJob once' do
+          # Use OpenStructs to simulate the behavior of ActiveFedora::SolrHit instances.
+          work_ids = [OpenStruct.new({ id: SecureRandom.alphanumeric(9) }), OpenStruct.new({ id: SecureRandom.alphanumeric(9) })]
+          expect(ActiveFedora::SolrService).to receive(:query).and_return(work_ids)
+          expect(Bulkrax::ExportWorkJob).to receive(:perform_now).exactly(1).times
+          parser.create_from_collection
+        end
       end
     end
 
@@ -155,16 +180,28 @@ module Bulkrax
       subject(:parser) { described_class.new(exporter) }
       let(:exporter)   { FactoryBot.create(:bulkrax_exporter_worktype) }
 
-      it 'invokes ExportWorkJob twice' do
+      it 'invokes Bulkrax::ExportWorkJob twice' do
         # Use OpenStructs to simulate the behavior of ActiveFedora::SolrHit instances.
         work_ids = [OpenStruct.new({ id: SecureRandom.alphanumeric(9) }), OpenStruct.new({ id: SecureRandom.alphanumeric(9) })]
         expect(ActiveFedora::SolrService).to receive(:query).and_return(work_ids)
         expect(Bulkrax::ExportWorkJob).to receive(:perform_now).exactly(2).times
         parser.create_from_worktype
       end
+
+      context 'with an export limit of 1' do
+        let(:exporter) { FactoryBot.create(:bulkrax_exporter_worktype, limit: 1) }
+
+        it 'invokes Bulkrax::ExportWorkJob once' do
+          # Use OpenStructs to simulate the behavior of ActiveFedora::SolrHit instances.
+          work_ids = [OpenStruct.new({ id: SecureRandom.alphanumeric(9) }), OpenStruct.new({ id: SecureRandom.alphanumeric(9) })]
+          expect(ActiveFedora::SolrService).to receive(:query).and_return(work_ids)
+          expect(Bulkrax::ExportWorkJob).to receive(:perform_now).exactly(1).times
+          parser.create_from_worktype
+        end
+      end
     end
 
-    describe '#files_path' do
+    describe '#path_to_files' do
       pending
     end
 
