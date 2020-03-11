@@ -157,6 +157,14 @@ module Bulkrax
       importerexporter.is_a?(Bulkrax::Exporter)
     end
 
+    # @param limit [Integer] limit set on the importerexporter
+    # @param index [Integer] index of current iteration
+    # @return [boolean]
+    def limit_reached?(limit, index)
+      return false if limit.nil? || limit.zero? # no limit
+      index >= limit
+    end
+
     # Override to add specific validations
     def valid_import?
       true
