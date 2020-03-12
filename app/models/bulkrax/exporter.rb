@@ -12,7 +12,7 @@ module Bulkrax
 
     belongs_to :user
     has_many :exporter_runs, dependent: :destroy, foreign_key: 'exporter_id'
-    has_many :entries, as: :importerexporter
+    has_many :entries, as: :importerexporter, dependent: :destroy
 
     validates :name, presence: true
     validates :parser_klass, presence: true
