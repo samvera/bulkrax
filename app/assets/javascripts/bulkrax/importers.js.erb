@@ -116,18 +116,18 @@ function handleFileToggle(file_path) {
   })
 }
 
-function handleParserKlass(){
-  var parser_klass = $("#importer_parser_klass option:selected")
-
+function handleParserKlass() {
   <% Bulkrax.parsers.map{ |p| p[:partial]}.uniq.each do |partial| %>
   if($('.<%= partial %>').length > 0) {
     window.<%= partial %> = $('.<%= partial %>').detach()
   }
   <% end %>
 
-  if(parser_klass.length > 0 && parser_klass.data('partial') && parser_klass.data('partial').length > 0 ) {
+  var parser_klass = $("#importer_parser_klass option:selected")
+  if(parser_klass.length > 0 && parser_klass.data('partial') && parser_klass.data('partial').length > 0) {
     $('.parser_fields').append(window[parser_klass.data('partial')])
   }
+
   var file_path_value = $('#importer_parser_fields_import_file_path').val()
   handleFileToggle(file_path_value)
 }
@@ -172,4 +172,4 @@ function setError(selector, error) {
   selector.attr('disabled', true)
 }
 
-$(document).on({'turbolinks:load': prepBulkrax, 'ready': prepBulkrax})
+$(document).on({'ready': prepBulkrax, 'turbolinks:load': prepBulkrax})
