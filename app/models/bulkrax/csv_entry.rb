@@ -60,7 +60,10 @@ module Bulkrax
       end
 
       # construct full file path
-      self.parsed_metadata['file'] = record['file'].split(/\s*[:;|]\s*/).map { |f| path_to_file(f.tr(' ', '_')) } if record['file'].present?
+      self.parsed_metadata['file'] ||= []
+      self.parsed_metadata['file'] += record['file'].split(/\s*[:;|]\s*/) if record['file'].present?
+      self.parsed_metadata['file'] = self.parsed_metadata['file'].select { |f| f.present? }
+      self.parsed_metadata['file'] = self.parsed_metadata['file'].map { |f| path_to_file(f.tr(' ', '_')) }
 
       add_visibility
       add_rights_statement
