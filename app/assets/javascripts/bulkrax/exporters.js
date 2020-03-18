@@ -1,22 +1,3 @@
-jQuery(function() {
-  // show the selected export_source option
-  // TODO: double check if jQuery(function) IS document.ready
-  $(document).ready(function() {
-    var selectedVal = $('.exporter_export_from option:selected').val();
-    hideUnhide(selectedVal);
-
-    // if (selectedVal == 'collection') {
-      // $('#exporter_export_source_collection').val() // TODO: pass @collection.id
-    // }
-  });
-
-  // get the selected export_from option and show the corresponding export_source
-  $('.exporter_export_from').change(function() {
-    var selectedVal = $('.exporter_export_from option:selected').val();
-    hideUnhide(selectedVal);
-  });
-});
-
 function hideUnhide(field) {
   var allSources = $('body').find('.export-source-option')
   hide(allSources)
@@ -67,16 +48,14 @@ function initUI(element, url) { // TODO: rename func
           // id: this.excludeWorkId // Exclude this work // TODO: determine if this is needed
         };
       },
-      results: processResults
+      results: function(data, page) {
+        // parse the results into the format expected by Select2.
+        // since we are using custom formatting functions we do not need to alter remote JSON data
+        let results = data.map((obj) => {
+          return { id: obj.id, text: obj.label[0] };
+        })
+        return { results: results };
+      }
     }
   }).select2('data', null);
-}
-
-// parse the results into the format expected by Select2.
-// since we are using custom formatting functions we do not need to alter remote JSON data
-function processResults(data, page) {
-  let results = data.map((obj) => {
-    return { id: obj.id, text: obj.label[0] };
-  })
-  return { results: results };
 }

@@ -70,3 +70,24 @@
     collection: Bulkrax.parsers.map {|p| [p[:name], p[:class_name], {'data-partial' => p[:partial]}] if p[:class_name].constantize.export_supported? }.compact, 
     label: t('bulkrax.exporter.labels.export_format') %>
 </div>
+
+<script>
+  jQuery(function() {
+    // show the selected export_source option
+    // TODO: double check if jQuery(function) IS document.ready
+    $(document).ready(function() {
+      var selectedVal = $('.exporter_export_from option:selected').val();
+      hideUnhide(selectedVal);
+
+      if (selectedVal == 'collection') {
+        $('#exporter_export_source_collection').val("<%= @collection&.id %>")
+      }
+    });
+
+    // get the selected export_from option and show the corresponding export_source
+    $('.exporter_export_from').change(function() {
+      var selectedVal = $('.exporter_export_from option:selected').val();
+      hideUnhide(selectedVal);
+    });
+  });
+</script>
