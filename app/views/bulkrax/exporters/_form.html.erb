@@ -71,18 +71,20 @@
     label: t('bulkrax.exporter.labels.export_format') %>
 </div>
 
+<%# Find definitions for the functions called in this script in
+    app/assets/javascripts/bulkrax/exporters.js %>
 <script>
-  jQuery(function() {
+  $(function() {
     // show the selected export_source option
-    // TODO: double check if jQuery(function) IS document.ready
-    $(document).ready(function() {
-      var selectedVal = $('.exporter_export_from option:selected').val();
-      hideUnhide(selectedVal);
+    var selectedVal = $('.exporter_export_from option:selected').val();
+    hideUnhide(selectedVal);
 
-      if (selectedVal == 'collection') {
-        $('#exporter_export_source_collection').val("<%= @collection&.id %>")
-      }
-    });
+    // Select2 dropdowns don't like taking a value param. Thus,
+    // if export_source_collection is present, we populate the input.
+    var selectedCollectionId = "<%= @collection&.id %>"
+    if (selectedCollectionId.length > 0) {
+      $('#exporter_export_source_collection').val(selectedCollectionId)
+    }
 
     // get the selected export_from option and show the corresponding export_source
     $('.exporter_export_from').change(function() {

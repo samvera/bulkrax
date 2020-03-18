@@ -8,7 +8,7 @@ function hideUnhide(field) {
   }
 
   if (field === 'collection') {
-    addAutocomplete();
+    initCollectionSearchInputs();
   }
 };
 
@@ -25,14 +25,14 @@ function unhideSelected(selectedSource) {
 };
 
 // add the autocomplete javascript
-function addAutocomplete() {
+function initCollectionSearchInputs() {
   $('[data-autocomplete]').each((function() {
     var elem = $(this)
-    initUI(elem, elem.data('autocompleteUrl'))
+    initSelect2(elem, elem.data('autocompleteUrl'))
   }))
 }
 
-function initUI(element, url) { // TODO: rename func
+function initSelect2(element, url) {
   element.select2({
     minimumInputLength: 2,
     initSelection : (row, callback) => {
@@ -45,7 +45,6 @@ function initUI(element, url) { // TODO: rename func
       data: (term, page) => {
         return {
           q: term // search term
-          // id: this.excludeWorkId // Exclude this work // TODO: determine if this is needed
         };
       },
       results: function(data, page) {
