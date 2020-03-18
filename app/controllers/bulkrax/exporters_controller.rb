@@ -34,6 +34,10 @@ module Bulkrax
       add_breadcrumb t(:'hyrax.controls.home'), main_app.root_path
       add_breadcrumb t(:'hyrax.dashboard.breadcrumbs.admin'), hyrax.dashboard_path
       add_breadcrumb 'Exporters', bulkrax.exporters_path
+
+      if @exporter.export_source.present? && @exporter.export_from == 'collection'
+        @collection = Collection.find(@exporter.export_source)
+      end
     end
 
     # POST /exporters

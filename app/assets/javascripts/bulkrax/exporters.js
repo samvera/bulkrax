@@ -1,12 +1,17 @@
 jQuery(function() {
-  // get the selected export_from option and show the corresponding export_source
-  $('.exporter_export_from').change(function() {
+  // show the selected export_source option
+  // TODO: double check if jQuery(function) IS document.ready
+  $(document).ready(function() {
     var selectedVal = $('.exporter_export_from option:selected').val();
     hideUnhide(selectedVal);
+
+    // if (selectedVal == 'collection') {
+      // $('#exporter_export_source_collection').val() // TODO: pass @collection.id
+    // }
   });
 
-  // show the selected export_source option
-  $(document).ready(function() {
+  // get the selected export_from option and show the corresponding export_source
+  $('.exporter_export_from').change(function() {
     var selectedVal = $('.exporter_export_from option:selected').val();
     hideUnhide(selectedVal);
   });
@@ -16,7 +21,7 @@ function hideUnhide(field) {
   var allSources = $('body').find('.export-source-option')
   hide(allSources)
 
-  if (field != null) {
+  if (field.length > 0) {
     var selectedSource = $('.' + field)
     unhideSelected(selectedSource)
   }
@@ -40,10 +45,38 @@ function unhideSelected(selectedSource) {
 
 // add the autocomplete javascript
 function addAutocomplete() {
-  var Autocomplete = require('hyrax/autocomplete');
-  var autocomplete = new Autocomplete()
   $('[data-autocomplete]').each((function() {
     var elem = $(this)
-    autocomplete.setup(elem, elem.data('autocomplete'), elem.data('autocompleteUrl'))
+    initUI(elem, elem.data('autocompleteUrl'))
   }))
+}
+
+function initUI(element, url) { // TODO: rename func
+  element.select2({
+    minimumInputLength: 2,
+    initSelection : (row, callback) => {
+      var data = {id: row.val(), text: row.val()};
+      callback(data);
+    },
+    ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
+      url: url,
+      dataType: 'json',
+      data: (term, page) => {
+        return {
+          q: term // search term
+          // id: this.excludeWorkId // Exclude this work // TODO: determine if this is needed
+        };
+      },
+      results: processResults
+    }
+  }).select2('data', null);
+}
+
+// parse the results into the format expected by Select2.
+// since we are using custom formatting functions we do not need to alter remote JSON data
+function processResults(data, page) {
+  let results = data.map((obj) => {
+    return { id: obj.id, text: obj.label[0] };
+  })
+  return { results: results };
 }

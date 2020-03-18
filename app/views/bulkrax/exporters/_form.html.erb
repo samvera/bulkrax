@@ -41,6 +41,7 @@
     <%= form.input :export_source_collection,
       prompt: 'Start typing ...',
       label: t('bulkrax.exporter.labels.collection'),
+      placeholder: @collection&.title&.first,
       label_html: { class: 'collection export-source-option hidden' },
       input_html: {
         class: 'collection export-source-option hidden',
