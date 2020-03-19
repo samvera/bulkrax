@@ -120,7 +120,7 @@ module Bulkrax
       work_ids.each_with_index do |wid, index|
         break if limit_reached?(limit, index)
         new_entry = find_or_create_entry(entry_class, wid, 'Bulkrax::Exporter')
-        Bulkrax::ExportWorkJob.perform_now(new_entry.id,  current_exporter_run.id)
+        Bulkrax::ExportWorkJob.perform_now(new_entry.id, current_exporter_run.id)
       end
     end
 
