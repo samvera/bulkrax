@@ -1,5 +1,5 @@
 <% provide :page_header do %>
-  <h1><span class="fa fa-edit" aria-hidden="true"></span> New Exporter</h1>
+  <h1><span class="fa fa-edit" aria-hidden="true"></span> Edit Exporter</h1>
 <% end %>
 
 <div class="row">
@@ -9,10 +9,12 @@
         <%= render 'form', exporter: @exporter, form: form %>
         <div class="panel-footer">
           <div class='pull-right'>
-             <%= form.button :submit, value: 'Update Exporter', class: 'btn btn-primary' %>
-           | <%= form.button :submit, value: 'Update and Re-Export All Items', class: 'btn btn-primary' %>
-           <% cancel_path = form.object.persisted? ? exporter_path(form.object) : exporters_path %>
-            | <%= link_to t('.cancel'), cancel_path, class: 'btn btn-default ' %>
+            <%= form.button :submit, value: 'Update Exporter', class: 'btn btn-primary' %>
+            |
+            <%= form.button :submit, value: 'Update and Re-Export All Items', class: 'btn btn-primary' %>
+            |
+            <% cancel_path = form.object.persisted? ? exporter_path(form.object) : exporters_path %>
+            <%= link_to t('.cancel'), cancel_path, class: 'btn btn-default ' %>
           </div>
         </div>
       <% end %>

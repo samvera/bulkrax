@@ -1,5 +1,9 @@
 en:
   bulkrax:
+    admin:
+      sidebar:
+        exporters: Exporters
+        importers: Importers
     exporter:
       labels:
         export_type: Type of Export

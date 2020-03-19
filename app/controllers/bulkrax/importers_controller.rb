@@ -23,9 +23,7 @@ module Bulkrax
       if api_request?
         json_response('index')
       else
-        add_breadcrumb t(:'hyrax.controls.home'), main_app.root_path
-        add_breadcrumb t(:'hyrax.dashboard.breadcrumbs.admin'), hyrax.dashboard_path
-        add_breadcrumb 'Importers', bulkrax.importers_path
+        add_importer_breadcrumbs
       end
     end
 
@@ -34,9 +32,7 @@ module Bulkrax
       if api_request?
         json_response('show')
       else
-        add_breadcrumb t(:'hyrax.controls.home'), main_app.root_path
-        add_breadcrumb t(:'hyrax.dashboard.breadcrumbs.admin'), hyrax.dashboard_path
-        add_breadcrumb 'Importers', bulkrax.importers_path
+        add_importer_breadcrumbs
         add_breadcrumb @importer.name
         @work_entries = @importer.entries.where(type: @importer.parser.entry_class.to_s).page(params[:work_entries_page])
         @collection_entries = @importer.entries.where(type: @importer.parser.collection_entry_class.to_s).page(params[:collections_entries_page])
@@ -49,9 +45,8 @@ module Bulkrax
       if api_request?
         json_response('new')
       else
-        add_breadcrumb t(:'hyrax.controls.home'), main_app.root_path
-        add_breadcrumb t(:'hyrax.dashboard.breadcrumbs.admin'), hyrax.dashboard_path
-        add_breadcrumb 'Importers', bulkrax.importers_path
+        add_importer_breadcrumbs
+        add_breadcrumb 'New'
       end
     end
 
@@ -60,9 +55,9 @@ module Bulkrax
       if api_request?
         json_response('edit')
       else
-        add_breadcrumb t(:'hyrax.controls.home'), main_app.root_path
-        add_breadcrumb t(:'hyrax.dashboard.breadcrumbs.admin'), hyrax.dashboard_path
-        add_breadcrumb 'Importers', bulkrax.importers_path
+        add_importer_breadcrumbs
+        add_breadcrumb @importer.name, bulkrax.importer_path(@importer.id)
+        add_breadcrumb 'Edit'
       end
     end
 
@@ -257,6 +252,12 @@ module Bulkrax
         # @todo replace/append once mapping GUI is in place
         field_mapping_key = Bulkrax.parsers.map { |m| m[:class_name] if m[:class_name] == params[:importer][:parser_klass] }.compact.first
         @importer.field_mapping = Bulkrax.field_mappings[field_mapping_key] if field_mapping_key
+      end
+
+      def add_importer_breadcrumbs
+        add_breadcrumb t(:'hyrax.controls.home'), main_app.root_path
+        add_breadcrumb t(:'hyrax.dashboard.breadcrumbs.admin'), hyrax.dashboard_path
+        add_breadcrumb 'Importers', bulkrax.importers_path
       end
 
       def setup_client(url)
