@@ -84,7 +84,7 @@ module Bulkrax
       results = self.records(quick: true)
       return unless results.present?
       results.full.each_with_index do |record, index|
-        break unless !limit.nil? && index >= limit
+        break if limit_reached?(limit, index)
         if record.deleted? # TODO: record.status == "deleted"
           importerexporter.current_importer_run.deleted_records += 1
           importerexporter.current_importer_run.save!

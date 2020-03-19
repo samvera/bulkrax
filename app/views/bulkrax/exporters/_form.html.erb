@@ -11,23 +11,79 @@
     </div>
   <% end %>
 
-  <%= form.input :name %>
+  <%= form.input :name, label: t('bulkrax.exporter.labels.name') %>
 
   <%= form.hidden_field :user_id, value: current_user.id %>
 
-  <%= form.input :export_type, collection:  form.object.export_type_list %>
+  <%= form.input :export_type, 
+    collection:  form.object.export_type_list, 
+    label: t('bulkrax.exporter.labels.export_type'), 
+    required: true,
+    prompt: 'Please select an export type' %>
 
-  <%= form.input :export_from, collection: form.object.export_from_list, label: 'Export From' %>
+  <%= form.input :export_from, 
+    collection: form.object.export_from_list, 
+    label: t('bulkrax.exporter.labels.export_from'), 
+    required: true,
+    prompt: 'Please select an export source' %>
 
-  <%# dynamically populate depending on choice %>
-  <%# flip between available_collections && available_exporters %>
-  this will be dynamic with some js, for now just do importer
-  <%= form.input :export_source, collection:  form.object.importers_list %>
-  
-  <%= form.input :limit, as: :integer, hint: 'leave blank or 0 for all records' %>
+  <%= form.input :export_source_importer,
+    label: t('bulkrax.exporter.labels.importer'),
+    prompt: 'Select from the list',
+    label_html: { class: 'importer export-source-option hidden' },
+    input_html: { class: 'importer export-source-option hidden' },
+    collection:  form.object.importers_list %>
+
+  <%= form.input :export_source_collection,
+    prompt: 'Start typing ...',
+    label: t('bulkrax.exporter.labels.collection'),
+    placeholder: @collection&.title&.first,
+    label_html: { class: 'collection export-source-option hidden' },
+    input_html: {
+      class: 'collection export-source-option hidden',
+      data: {
+        'autocomplete-url' => '/authorities/search/collections',
+        'autocomplete' => 'collection'
+      }
+    }
+  %>
+
+  <%= form.input :export_source_worktype,
+    label: t('bulkrax.exporter.labels.worktype'),
+    prompt: 'Select from the list',
+    label_html: { class: 'worktype export-source-option hidden' },
+    input_html: { class: 'worktype export-source-option hidden' },
+    collection: Hyrax.config.curation_concerns.map {|cc| [cc.to_s, cc.to_s] } %>
+
+  <%= form.input :limit, 
+    as: :integer, 
+    hint: 'leave blank or 0 for all records',
+    label: t('bulkrax.exporter.labels.limit') %>
 
   <%= form.input :parser_klass, 
     collection: Bulkrax.parsers.map {|p| [p[:name], p[:class_name], {'data-partial' => p[:partial]}] if p[:class_name].constantize.export_supported? }.compact, 
-    label: "Export Format" %>
-
+    label: t('bulkrax.exporter.labels.export_format') %>
 </div>
+
+<%# Find definitions for the functions called in this script in
+    app/assets/javascripts/bulkrax/exporters.js %>
+<script>
+  $(function() {
+    // show the selected export_source option
+    var selectedVal = $('.exporter_export_from option:selected').val();
+    hideUnhide(selectedVal);
+
+    // Select2 dropdowns don't like taking a value param. Thus,
+    // if export_source_collection is present, we populate the input.
+    var selectedCollectionId = "<%= @collection&.id %>"
+    if (selectedCollectionId.length > 0) {
+      $('#exporter_export_source_collection').val(selectedCollectionId)
+    }
+
+    // get the selected export_from option and show the corresponding export_source
+    $('.exporter_export_from').change(function() {
+      var selectedVal = $('.exporter_export_from option:selected').val();
+      hideUnhide(selectedVal);
+    });
+  });
+</script>
