@@ -78,6 +78,8 @@ module Bulkrax
         Bulkrax::ImporterJob.send(@importer.parser.perform_method, @importer.id)
         if api_request?
           json_response('create', :created, 'Importer was successfully created.')
+        elsif @importer.validate_only
+          redirect_to importer_path(@importer.id), notice: 'Importer validation completed. Please review and choose to either Continue with or Discard the import.'
         else
           redirect_to importers_path, notice: 'Importer was successfully created.'
         end
