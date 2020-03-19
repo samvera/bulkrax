@@ -34,25 +34,19 @@
     input_html: { class: 'importer export-source-option hidden' },
     collection:  form.object.importers_list %>
 
-  <%# Collection input needs to be wrapped in .field-wrapper and have 'data-id' present for autocomplete JS to work.
-      See setIdentifier() function here:
-      https://github.com/samvera/hyrax/blob/v2.6.0/app/assets/javascripts/hyrax/autocomplete/linked_data.es6#L24-L27 %>
-  <div class='field-wrapper'>
-    <%= form.input :export_source_collection,
-      prompt: 'Start typing ...',
-      label: t('bulkrax.exporter.labels.collection'),
-      placeholder: @collection&.title&.first,
-      label_html: { class: 'collection export-source-option hidden' },
-      input_html: {
-        class: 'collection export-source-option hidden',
-        data: {
-          'autocomplete-url' => "/authorities/search/collections",
-          'autocomplete' => 'collection',
-          'id' => ''
-        }
+  <%= form.input :export_source_collection,
+    prompt: 'Start typing ...',
+    label: t('bulkrax.exporter.labels.collection'),
+    placeholder: @collection&.title&.first,
+    label_html: { class: 'collection export-source-option hidden' },
+    input_html: {
+      class: 'collection export-source-option hidden',
+      data: {
+        'autocomplete-url' => '/authorities/search/collections',
+        'autocomplete' => 'collection'
       }
-    %>
-  </div>
+    }
+  %>
 
   <%= form.input :export_source_worktype,
     label: t('bulkrax.exporter.labels.worktype'),
