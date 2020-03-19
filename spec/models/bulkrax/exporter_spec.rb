@@ -8,21 +8,23 @@ module Bulkrax
     let(:importer) { FactoryBot.create(:bulkrax_importer) }
 
     describe 'export_from' do
-      it 'defines a list of export from types' do
-        expect(exporter.export_from_list).to eq([
-          [I18n.t('bulkrax.exporter.labels.importer'), 'importer'],
-          [I18n.t('bulkrax.exporter.labels.collection'), 'collection'],
-          [I18n.t('bulkrax.exporter.labels.worktype'), 'worktype']
-        ])
+      it 'defines a list of export from types' do # rubocop:disable RSpec/ExampleLength
+        expect(exporter.export_from_list)
+          .to eq([
+                   [I18n.t('bulkrax.exporter.labels.importer'), 'importer'],
+                   [I18n.t('bulkrax.exporter.labels.collection'), 'collection'],
+                   [I18n.t('bulkrax.exporter.labels.worktype'), 'worktype']
+                 ])
       end
     end
 
     describe 'export_type' do
       it 'defines a list of export types' do
-        expect(exporter.export_type_list).to eq([
-          [I18n.t('bulkrax.exporter.labels.metadata'), 'metadata'],
-          [I18n.t('bulkrax.exporter.labels.full'), 'full']
-        ])
+        expect(exporter.export_type_list)
+          .to eq([
+                   [I18n.t('bulkrax.exporter.labels.metadata'), 'metadata'],
+                   [I18n.t('bulkrax.exporter.labels.full'), 'full']
+                 ])
       end
     end
 

@@ -36,9 +36,7 @@ module Bulkrax
       add_breadcrumb 'Exporters', bulkrax.exporters_path
 
       # Correctly populate export_source_collection input
-      if @exporter.export_source.present? && @exporter.export_from == 'collection'
-        @collection = Collection.find(@exporter.export_source)
-      end
+      @collection = Collection.find(@exporter.export_source) if @exporter.export_source.present? && @exporter.export_from == 'collection'
     end
 
     # POST /exporters

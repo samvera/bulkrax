@@ -6,8 +6,6 @@ module Bulkrax
   class Exporter < ApplicationRecord
     include Bulkrax::ImporterExporterBehavior
 
-    attr_accessor :export_source_importer, :export_source_collection, :export_source_worktype
-
     serialize :field_mapping, JSON
 
     belongs_to :user
@@ -28,8 +26,6 @@ module Bulkrax
         create_from_importer
       when 'worktype'
         create_from_worktype
-      else
-        nil
       end
     end
 
