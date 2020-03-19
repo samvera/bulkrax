@@ -43,13 +43,14 @@ module Bulkrax
           end
         # we didn't find a match, add by default
         elsif multiple
+          Rails.logger.error("Bulkrax Column automatically matched #{node_name}, #{node_content}")
           node_content = node_content.content if node_content.is_a?(Nokogiri::XML::NodeSet)
           parsed_metadata[name] ||= []
           parsed_metadata[name] += node_content.is_a?(Array) ? node_content : Array.wrap(node_content.strip)
-
         else
+          Rails.logger.error("Bulkrax Column automatically matched #{node_name}, #{node_content}")
           node_content = node_content.content if node_content.is_a?(Nokogiri::XML::NodeSet)
-          parsed_metadata[name] = Array.wrap(node_content.strip).join('; ')
+          parsed_metadata[name] = Array.wrap(node_content.to_s.strip).join('; ') if node_content
         end
       end
     end
