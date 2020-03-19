@@ -142,6 +142,11 @@ module Bulkrax
       files_path = File.join(path_for_import, 'files')
       FileUtils.mkdir_p(files_path) unless File.exist?(files_path)
       files.each_pair do |_key, file|
+        # fixes bug where auth headers do not get attached properly
+        if file['auth_header'].present?
+          file['headers'] ||= {}
+          file['headers'].merge!(file['auth_header'])
+        end
         # this only works for uniquely named files
         target_file = File.join(files_path, file['file_name'].tr(' ', '_'))
         # Now because we want the files in place before the importer runs
