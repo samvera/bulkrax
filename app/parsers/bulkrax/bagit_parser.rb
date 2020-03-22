@@ -65,7 +65,7 @@ module Bulkrax
     def create_works
       records.each_with_index do |record, index|
         next if record[:source_identifier].blank?
-        break if !limit.nil? && index >= limit
+        break if limit_reached?(limit, index)
 
         seen[record[:source_identifier]] = true
         new_entry = find_or_create_entry(entry_class, record[:source_identifier], 'Bulkrax::Importer', record)

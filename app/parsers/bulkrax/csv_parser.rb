@@ -67,7 +67,7 @@ module Bulkrax
     def create_works
       records.each_with_index do |record, index|
         next if record[:source_identifier].blank?
-        break if !limit.nil? && index >= limit
+        break if limit_reached?(limit, index)
 
         seen[record[:source_identifier]] = true
         new_entry = find_or_create_entry(entry_class, record[:source_identifier], 'Bulkrax::Importer', record.to_h.compact)
@@ -96,7 +96,9 @@ module Bulkrax
     end
 
     def create_from_importer
-      Bulkrax::Importer.find(importerexporter.export_source).entries.each do |entry|
+      non_errored_entries = Bulkrax::Importer.find(importerexporter.export_source).entries.where(last_error: [nil, {}, ''])
+      non_errored_entries.each_with_index do |entry, index|
+        break if limit_reached?(limit, index)
         query = "#{ActiveFedora.index_field_mapper.solr_name(Bulkrax.system_identifier_field)}:\"#{entry.identifier}\""
         work_id = ActiveFedora::SolrService.query(query, fl: 'id', rows: 1).first['id']
         new_entry = find_or_create_entry(entry_class, work_id, 'Bulkrax::Exporter')
@@ -106,7 +108,17 @@ module Bulkrax
 
     def create_from_collection
       work_ids = ActiveFedora::SolrService.query("member_of_collection_ids_ssim:#{importerexporter.export_source}").map(&:id)
-      work_ids.each do |wid|
+      work_ids.each_with_index do |wid, index|
+        break if limit_reached?(limit, index)
+        new_entry = find_or_create_entry(entry_class, wid, 'Bulkrax::Exporter')
+        Bulkrax::ExportWorkJob.perform_now(new_entry.id, current_exporter_run.id)
+      end
+    end
+
+    def create_from_worktype
+      work_ids = ActiveFedora::SolrService.query("has_model_ssim:#{importerexporter.export_source}").map(&:id)
+      work_ids.each_with_index do |wid, index|
+        break if limit_reached?(limit, index)
         new_entry = find_or_create_entry(entry_class, wid, 'Bulkrax::Exporter')
         Bulkrax::ExportWorkJob.perform_now(new_entry.id, current_exporter_run.id)
       end
@@ -142,6 +154,11 @@ module Bulkrax
       files_path = File.join(path_for_import, 'files')
       FileUtils.mkdir_p(files_path) unless File.exist?(files_path)
       files.each_pair do |_key, file|
+        # fixes bug where auth headers do not get attached properly
+        if file['auth_header'].present?
+          file['headers'] ||= {}
+          file['headers'].merge!(file['auth_header'])
+        end
         # this only works for uniquely named files
         target_file = File.join(files_path, file['file_name'].tr(' ', '_'))
         # Now because we want the files in place before the importer runs

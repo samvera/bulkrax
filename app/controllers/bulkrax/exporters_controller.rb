@@ -34,6 +34,9 @@ module Bulkrax
       add_breadcrumb t(:'hyrax.controls.home'), main_app.root_path
       add_breadcrumb t(:'hyrax.dashboard.breadcrumbs.admin'), hyrax.dashboard_path
       add_breadcrumb 'Exporters', bulkrax.exporters_path
+
+      # Correctly populate export_source_collection input
+      @collection = Collection.find(@exporter.export_source) if @exporter.export_source.present? && @exporter.export_from == 'collection'
     end
 
     # POST /exporters
@@ -84,6 +87,7 @@ module Bulkrax
 
       # Only allow a trusted parameter "white list" through.
       def exporter_params
+        params[:exporter][:export_source] = params[:exporter]["export_source_#{params[:exporter][:export_from]}".to_sym]
         params.fetch(:exporter).permit(:name, :user_id, :export_source, :export_from, :export_type, :parser_klass, :limit, field_mapping: {})
       end
 

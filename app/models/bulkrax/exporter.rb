@@ -10,20 +10,38 @@ module Bulkrax
 
     belongs_to :user
     has_many :exporter_runs, dependent: :destroy, foreign_key: 'exporter_id'
-    has_many :entries, as: :importerexporter
+    has_many :entries, as: :importerexporter, dependent: :destroy
 
     validates :name, presence: true
     validates :parser_klass, presence: true
 
-    delegate :write, :create_from_collection, :create_from_importer, to: :parser
+    delegate :write, :create_from_collection, :create_from_importer, :create_from_worktype, to: :parser
 
     def export
       current_exporter_run && setup_export_path
-      if self.export_from == 'collection'
+      case self.export_from
+      when 'collection'
         create_from_collection
-      elsif self.export_from == 'import'
+      when 'importer'
         create_from_importer
+      when 'worktype'
+        create_from_worktype
       end
+    end
+
+    # #export_source accessors
+    # Used in form to prevent it from getting confused as to which value to populate #export_source with.
+    # Also, used to display the correct selected value when rendering edit form.
+    def export_source_importer
+      self.export_source if self.export_from == 'importer'
+    end
+
+    def export_source_collection
+      self.export_source if self.export_from == 'collection'
+    end
+
+    def export_source_worktype
+      self.export_source if self.export_from == 'worktype'
     end
 
     def mapping
@@ -31,11 +49,18 @@ module Bulkrax
     end
 
     def export_from_list
-      [['Collection', 'collection'], ['Import', 'import']]
+      [
+        [I18n.t('bulkrax.exporter.labels.importer'), 'importer'],
+        [I18n.t('bulkrax.exporter.labels.collection'), 'collection'],
+        [I18n.t('bulkrax.exporter.labels.worktype'), 'worktype']
+      ]
     end
 
     def export_type_list
-      [['Metadata Only', 'metadata'], ['Metadata and Files', 'full']]
+      [
+        [I18n.t('bulkrax.exporter.labels.metadata'), 'metadata'],
+        [I18n.t('bulkrax.exporter.labels.full'), 'full']
+      ]
     end
 
     def importers_list
