@@ -24,6 +24,9 @@
               <th scope="col">Entries Deleted Upstream</th>
               <th scope="col">Total Collection Entries</th>
               <th scope="col">Total Work Entries</th>
+              <th scope="col"></th>
+              <th scope="col"></th>
+              <th scope="col"></th>
             </tr>
           </thead>
           <tbody>
@@ -60,3 +63,21 @@
       <% end %>
   </div>
 </div>
+
+<script>
+  $(function() {
+    $('#DataTables_Table_0').DataTable({
+      destroy: true, /* Reinitialize DataTable with config below */
+      'columnDefs': [
+          { 'orderable': true, 'targets': [...Array(10).keys()] },
+          { 'orderable': false, 'targets': [10, 11, 12] }
+      ],
+      'language': {
+        'info': 'Showing _START_ to _END_ of _TOTAL_ importers',
+        'infoEmpty': 'No importers to show',
+        'infoFiltered': '(filtered from _MAX_ total importers)',
+        'lengthMenu': 'Show _MENU_ importers'
+      }
+    })
+  })
+</script>
