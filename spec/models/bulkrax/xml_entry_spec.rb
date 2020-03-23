@@ -24,7 +24,7 @@ module Bulkrax
             source_identifier: '3456012',
             data: "<!-- This grammar has been deprecated - use FMPXMLRESULT instead --><FMPDSORESULT> <ROW MODID=\"3\" RECORDID=\"000003\"> <TitleLargerEntity>Single XML Entry</TitleLargerEntity> <Abstract>Lorem ipsum dolor sit amet.</Abstract> <DrisUnique>3456012</DrisUnique> </ROW></FMPDSORESULT>",
             collection: [],
-            file: [],
+            file: nil,
             children: []
           )
         end
@@ -62,7 +62,7 @@ module Bulkrax
 
         it 'builds entry' do
           xml_entry.build
-          expect(xml_entry.parsed_metadata).to eq("file" => [], "rights_statement" => [nil], "source" => ["3456012"], "title" => ["Single XML Entry"], "visibility" => "open")
+          expect(xml_entry.parsed_metadata).to eq("file" => nil, "rights_statement" => [nil], "source" => ["3456012"], "title" => ["Single XML Entry"], "visibility" => "open")
         end
 
         it 'does not add unsupported fields' do
