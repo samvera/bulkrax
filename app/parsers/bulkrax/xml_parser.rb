@@ -40,7 +40,7 @@ module Bulkrax
         elsif parser_fields['import_type'] == 'single'
           metadata_paths.map do |md|
             data = entry_class.read_data(md).xpath("//#{record_element}").first # Take only the first record
-            entry_class.data_for_entry(data, md)
+            entry_class.data_for_entry(data)
           end.compact # No need to flatten because we take only the first record
         end
     end
