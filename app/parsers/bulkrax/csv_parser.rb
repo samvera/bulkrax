@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'csv'
-require 'fileutils'
 module Bulkrax
   class CsvParser < ApplicationParser
     def self.export_supported?
