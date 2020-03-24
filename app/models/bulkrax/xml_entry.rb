@@ -14,7 +14,7 @@ module Bulkrax
       Nokogiri::XML(open(path)).remove_namespaces!
     end
 
-    def self.data_for_entry(data, path = nil)
+    def self.data_for_entry(data)
       collections = []
       children = []
       xpath_for_source_id = ".//*[name()='#{source_identifier_field}']"
@@ -27,7 +27,6 @@ module Bulkrax
               Nokogiri::XML::Node::SaveOptions::NO_DECLARATION | Nokogiri::XML::Node::SaveOptions::NO_EMPTY_TAGS
           ).delete("\n").delete("\t").squeeze(' '), # Remove newlines, tabs, and extra whitespace
         collection: collections,
-        file: record_file_paths(path),
         children: children
       }
     end

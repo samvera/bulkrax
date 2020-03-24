@@ -38,7 +38,7 @@ module Bulkrax
         path = metadata_path(bag)
         raise StandardError, 'No metadata files were found' if path.blank?
         data = entry_class.read_data(path)
-        data = entry_class.data_for_entry(data, path)
+        data = entry_class.data_for_entry(data)
         data[:file] = bag.bag_files.join('|')
         data
       end

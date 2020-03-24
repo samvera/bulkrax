@@ -18,7 +18,7 @@ module Bulkrax
                encoding: 'utf-8')
     end
 
-    def self.data_for_entry(data, path = nil)
+    def self.data_for_entry(data)
       # If a multi-line CSV data is passed, grab the first row
       data = data.first if data.is_a?(CSV::Table)
       raw_data = data.to_h
@@ -26,7 +26,6 @@ module Bulkrax
       raw_data[:collection] = raw_data[collection_field.to_sym] if raw_data.keys.include?(collection_field.to_sym) && collection_field != 'collection'
       # If the children field mapping is not 'children', add 'children' - the parser needs it
       raw_data[:children] = raw_data[collection_field.to_sym] if raw_data.keys.include?(children_field.to_sym) && children_field != 'children'
-      raw_data[:file] = record_file_paths(path) if raw_data[:file].blank?
       return raw_data
     end
 
@@ -61,7 +60,6 @@ module Bulkrax
 
       # construct full file path
       self.parsed_metadata['file'] ||= []
-      self.parsed_metadata['file'] += record['file'].split(/\s*[:;|]\s*/) if record['file'].present?
       self.parsed_metadata['file'] = self.parsed_metadata['file'].select { |f| f.present? && f != '[]' }
       self.parsed_metadata['file'] = self.parsed_metadata['file'].map { |f| path_to_file(f.tr(' ', '_')) }
 

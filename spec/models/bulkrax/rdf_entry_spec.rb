@@ -25,10 +25,6 @@ module Bulkrax
           source_identifier: "http://example.org/ns/19158"
         )
       end
-
-      it 'returns file paths from the record' do
-        expect(described_class.record_file_paths(path).count).to eq 6
-      end
     end
 
     describe 'builds entry' do
