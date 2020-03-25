@@ -1,39 +1,84 @@
 <p id="notice"><%= notice %></p>
 
-<p>
-  <strong><% t('bulkrax.exporter.labels.name') %></strong>
-  <%= @exporter.name %>
-</p>
+<div class="col-xs-12 main-header">
+  <h1><span class="fa fa-cloud-download" aria-hidden="true"></span> Exporter: <%= @exporter.name %></h1>
+</div>
 
-<p>
-  <strong><% t('bulkrax.exporter.labels.export_type') %></strong>
-  <%= @exporter.export_type %>
-</p>
+<div class="panel panel-default">
+  <div class="panel-body">
+    <p>
+      <strong><%= t('bulkrax.exporter.labels.name') %>:</strong>
+      <%= @exporter.name %>
+    </p>
 
-<p>
-  <strong><% t('bulkrax.exporter.labels.export_from') %></strong>
-  <%= @exporter.export_from %>
-</p>
+    <p>
+      <strong><%= t('bulkrax.exporter.labels.user') %>:</strong>
+      <%= @exporter.user %>
+    </p>
 
-<p>
-  <strong><% t('bulkrax.exporter.labels.export_source') %></strong>
-  <%= @exporter.export_source %>
-</p>
+    <p>
+      <strong><%= t('bulkrax.exporter.labels.export_type') %>:</strong>
+      <%= @exporter.export_type %>
+    </p>
 
-<p>
-  <strong><% t('bulkrax.exporter.labels.parser_klass') %></strong>
-  <%= @exporter.parser_klass %>
-</p>
+    <p>
+      <strong><%= t('bulkrax.exporter.labels.export_from') %>:</strong>
+      <%= @exporter.export_from %>
+    </p>
 
-<p>
-  <strong><% t('bulkrax.exporter.labels.limit') %></strong>
-  <%= @exporter.limit %>
-</p>
+    <p>
+      <strong><%= t('bulkrax.exporter.labels.export_source') %>:</strong>
+      <% case @exporter.export_from %>
+      <% when 'collection' %>
+        <% collection = Collection.find(@exporter.export_source) %>
+        <%= link_to collection&.title&.first, hyrax.dashboard_collection_path(collection.id) %>
+      <% when 'importer' %>
+        <% importer = Bulkrax::Importer.find(@exporter.export_source) %>
+        <%= link_to importer.name, bulkrax.importer_path(importer.id) %>
+      <% when 'worktype' %>
+        <%= @exporter.export_source %>
+      <% end %>
+    </p>
 
-<p>
-  <strong><% t('bulkrax.exporter.labels.field_mapping') %></strong>
-  <%= @exporter.field_mapping %>
-</p>
+    <p>
+      <strong><%= t('bulkrax.exporter.labels.parser_klass') %>:</strong>
+      <%= @exporter.parser_klass %>
+    </p>
 
-<%= link_to 'Edit', edit_exporter_path(@exporter) %> |
-<%= link_to 'Back', exporters_path %>
+    <p>
+      <strong><%= t('bulkrax.exporter.labels.limit') %>:</strong>
+      <%= @exporter.limit %>
+    </p>
+
+    <%# TODO: last_error %>
+
+    <%# Currently, no parser-specific fields exist on Exporter,
+        thus there's no real reason to always show this field %>
+    <% if @exporter.parser_fields.present? %>
+      <p>
+        <strong><%= t('bulkrax.exporter.labels.parser_fields') %>:</strong><br>
+        <% @exporter.parser_fields.each do |k, v| %>
+          <%= k %>: <%= v %><br>
+        <% end %>
+      </p>
+    <% end %>
+
+    <p>
+      <strong><%= t('bulkrax.exporter.labels.field_mapping') %>:</strong> <button id="fm_toggle">Toggle</button>
+      <div id="field_mapping" style="display: none">
+        <% @exporter.mapping.each do |k, v| %>
+          <%= k %>: <%= v %><br>
+        <% end %>
+      </div>
+    </p>
+
+    <p>
+      <strong><%= t('bulkrax.exporter.labels.total_work_entries') %>:</strong>
+      <%= @exporter.exporter_runs.last&.total_work_entries %>
+    </p>
+
+    <%= link_to 'Edit', edit_exporter_path(@exporter) %>
+    |
+    <%= link_to 'Back', exporters_path %>
+  </div>
+</div>
