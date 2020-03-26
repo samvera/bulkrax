@@ -10,7 +10,6 @@ module Bulkrax
     before_action :authenticate_user!
     with_themed_layout 'dashboard'
 
-    # GET /importers/1/entries/1
     def show
       if params[:importer_id].present?
         show_importer
@@ -19,9 +18,11 @@ module Bulkrax
       end
     end
 
+    # GET /importers/1/entries/1
     def show_importer
       @importer = Importer.find(params[:importer_id])
       @entry = Entry.find(params[:id])
+
       add_breadcrumb t(:'hyrax.controls.home'), main_app.root_path
       add_breadcrumb t(:'hyrax.dashboard.breadcrumbs.admin'), hyrax.dashboard_path
       add_breadcrumb 'Importers', bulkrax.importers_path
@@ -29,9 +30,11 @@ module Bulkrax
       add_breadcrumb @entry.id
     end
 
+    # GET /exporters/1/entries/1
     def show_exporter
       @exporter = Exporter.find(params[:exporter_id])
       @entry = Entry.find(params[:id])
+
       add_breadcrumb t(:'hyrax.controls.home'), main_app.root_path
       add_breadcrumb t(:'hyrax.dashboard.breadcrumbs.admin'), hyrax.dashboard_path
       add_breadcrumb 'Exporters', bulkrax.exporters_path

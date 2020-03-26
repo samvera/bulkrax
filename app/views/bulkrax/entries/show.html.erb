@@ -47,30 +47,38 @@
       <% end %>
     </p>
 
+    <%# TODO: i18n %>
     <p>
-      <% if @entry.last_succeeded_at != nil %>
-        <% if @importer.class == Bulkrax::Importer %>
+      <% if @importer.present? %>
+        <% if @entry.last_succeeded_at != nil %>
           <strong>Importer:</strong>
           <%= link_to @importer.name, importer_path(@importer) %>
         <% else %>
-        <%# TODO: Create Exporter showpage table for individual items in order to link to the item %>
-          <strong>Exporter Link: Showpage has not been setup yet.</strong>
+          <strong>Importer Link: Item has not been imported successfully</strong>
         <% end %>
-      <% else %>
-        <strong>Importer Link: Item has not been imported successfully</strong>
+      <% elsif @exporter.present? %>
+        <% if @entry.last_succeeded_at != nil %>
+          <strong>Exporter:</strong>
+          <%= link_to @exporter.name, exporter_path(@exporter) %>
+        <% else %>
+          <strong>Exporter Link: Item has not been exported successfully</strong>
+        <% end %>
       <% end %>
     </p>
 
-    <p>
-      <% factory_record = @entry.factory.find %>
-      <% if @entry.last_succeeded_at != nil && factory_record.present? %>
-        <strong><%= @entry.factory_class.to_s %> Link:</strong>
-        <% if @entry.factory_class.to_s == "Collection" %>
-          <%= link_to @entry.factory_class.to_s, hyrax.polymorphic_path(@entry.factory.find) %>
+    <%# TODO: Exporter equivalent? %>
+    <% if @importer.present? %>
+      <p>
+        <% factory_record = @entry.factory.find %>
+        <% if @entry.last_succeeded_at != nil && factory_record.present? %>
+          <strong><%= @entry.factory_class.to_s %> Link:</strong>
+          <% if @entry.factory_class.to_s == "Collection" %>
+            <%= link_to @entry.factory_class.to_s, hyrax.polymorphic_path(@entry.factory.find) %>
+          <% else %>
+            <%= link_to @entry.factory_class.to_s, main_app.polymorphic_path(@entry.factory.find) %>
+          <% end %>
         <% else %>
-          <%= link_to @entry.factory_class.to_s, main_app.polymorphic_path(@entry.factory.find) %>
+          <strong> Item Link: Item has not been imported successfully</strong>
         <% end %>
-      <% else %>
-        <strong> Item Link: Item has not been imported successfully</strong>
-      <% end %>
-    </p>
+      </p>
+    <% end %>
