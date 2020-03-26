@@ -1,8 +1,9 @@
+<p id="notice"><%= notice %></p>
+
 <div class="panel panel-default">
   <div class="panel-body">
 
-    <p id="notice"><%= notice %></p>
-
+    <%# TODO: i18n %>
     <p>
       <strong>Identifier:</strong>
       <%= @entry.identifier %>
@@ -36,37 +37,32 @@
       <% end %>
     </p>
 
+    <%# Consider spliting dynamic fields into two partials %>
+
     <p>
       <% if @entry.last_error.present? %>
         <strong>Errored at:</strong> <%= @entry.last_error_at %><br />
         <strong>Error:</strong> <%= @entry.last_error['error_class'] %> - <%= @entry.last_error['error_message'] %><br />
         <strong>Error Trace: </strong> <button id="entry_error">Toggle</button>
         <p id="error_trace" style="display: none"><%= @entry.last_error['error_trace'] %></p>
-      <% else %>
+      <% elsif @entry.last_succeeded_at != nil %>
         <strong>Succeeded At:</strong> <%= @entry.last_succeeded_at %>
+      <% else %>
+        <strong>Succeeded At:</strong> Item has not been <%= @importer.present? ? 'imported' : 'exported' %> successfully
       <% end %>
     </p>
 
-    <%# TODO: i18n %>
     <p>
       <% if @importer.present? %>
-        <% if @entry.last_succeeded_at != nil %>
-          <strong>Importer:</strong>
-          <%= link_to @importer.name, importer_path(@importer) %>
-        <% else %>
-          <strong>Importer Link: Item has not been imported successfully</strong>
-        <% end %>
+        <strong>Importer:</strong>
+        <%= link_to @importer.name, importer_path(@importer) %>
       <% elsif @exporter.present? %>
-        <% if @entry.last_succeeded_at != nil %>
-          <strong>Exporter:</strong>
-          <%= link_to @exporter.name, exporter_path(@exporter) %>
-        <% else %>
-          <strong>Exporter Link: Item has not been exported successfully</strong>
-        <% end %>
+        <strong>Exporter:</strong>
+        <%= link_to @exporter.name, exporter_path(@exporter) %>
       <% end %>
     </p>
 
-    <%# TODO: Exporter equivalent? %>
+    <%# TODO: Currently no Exporter equivalent, is one necessary? %>
     <% if @importer.present? %>
       <p>
         <% factory_record = @entry.factory.find %>
@@ -78,7 +74,9 @@
             <%= link_to @entry.factory_class.to_s, main_app.polymorphic_path(@entry.factory.find) %>
           <% end %>
         <% else %>
-          <strong> Item Link: Item has not been imported successfully</strong>
+          <strong>Item Link:</strong> Item has not been imported successfully
         <% end %>
       </p>
     <% end %>
+  </div>
+</div>
