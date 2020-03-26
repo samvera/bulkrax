@@ -114,7 +114,7 @@
         <% end %>
       </tbody>
     </table>
-    <%= page_entries_info(@collection_entries, param_name: :collections_entries_page) %><br />
+    <%= page_entries_info(@collection_entries) %><br />
     <%= paginate(@collection_entries, param_name: :collections_entries_page) %>
 
     <br />
@@ -161,7 +161,7 @@
         <% end %>
       </tbody>
     </table>
-    <%= page_entries_info(@work_entries, param_name: :collections_entries_page) %><br />
+    <%= page_entries_info(@work_entries) %><br />
     <%= paginate(@work_entries, param_name: :work_entries_page) %>
 
     <br />

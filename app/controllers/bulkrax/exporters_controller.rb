@@ -21,6 +21,8 @@ module Bulkrax
     def show
       add_exporter_breadcrumbs
       add_breadcrumb @exporter.name
+
+      @work_entries = @exporter.entries.where(type: @exporter.parser.entry_class.to_s).page(params[:work_entries_page])
     end
 
     # GET /exporters/new

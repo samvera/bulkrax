@@ -1,11 +1,11 @@
-<p id="notice"><%= notice %></p>
+<p id='notice'><%= notice %></p>
 
-<div class="col-xs-12 main-header">
-  <h1><span class="fa fa-cloud-download" aria-hidden="true"></span> Exporter: <%= @exporter.name %></h1>
+<div class='col-xs-12 main-header'>
+  <h1><span class='fa fa-cloud-download' aria-hidden='true'></span> Exporter: <%= @exporter.name %></h1>
 </div>
 
-<div class="panel panel-default">
-  <div class="panel-body">
+<div class='panel panel-default'>
+  <div class='panel-body'>
     <p>
       <strong><%= t('bulkrax.exporter.labels.name') %>:</strong>
       <%= @exporter.name %>
@@ -64,8 +64,8 @@
     <% end %>
 
     <p>
-      <strong><%= t('bulkrax.exporter.labels.field_mapping') %>:</strong> <button id="fm_toggle">Toggle</button>
-      <div id="field_mapping" style="display: none">
+      <strong><%= t('bulkrax.exporter.labels.field_mapping') %>:</strong> <button id='fm_toggle'>Toggle</button>
+      <div id='field_mapping' style='display: none'>
         <% @exporter.mapping.each do |k, v| %>
           <%= k %>: <%= v %><br>
         <% end %>
@@ -76,6 +76,55 @@
       <strong><%= t('bulkrax.exporter.labels.total_work_entries') %>:</strong>
       <%= @exporter.exporter_runs.last&.total_work_entries %>
     </p>
+
+    <br>
+
+    <h2>Work Entries</h2>
+    <table class='table table-striped'>
+      <thead>
+        <tr>
+          <th>Identifier</th>
+          <th>Collection</th>
+          <th>Entry ID</th>
+          <th>Status</th>
+          <th>Errors</th>
+          <th>Status Set At</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <% @work_entries.each do |e| %>
+          <tr>
+            <td><%= link_to e.identifier, bulkrax.exporter_entry_path(@exporter.id, e.id) %></td>
+            <% if e.parsed_metadata.present? && e.parsed_metadata.dig('collections').present? %>
+              <td><%= e.parsed_metadata.dig('collections').map {|c| c['id'] }.join('; ') %></td>
+            <% elsif e.raw_metadata.present? %>
+              <td><%= Array.wrap(e.raw_metadata.dig('collection')).join(';') %></td>
+            <% else %>
+            <td></td>
+            <% end %>
+            <td><%= e.id %></td>
+            <% if e.status == 'succeeded' %>
+              <td><span class='glyphicon glyphicon-ok' style='color: green;'></span> <%= e.status %></td>
+              <% else %>
+              <td><span class='glyphicon glyphicon-remove' style='color: red;'></span> <%= e.status %></td>
+            <% end %>
+            <% if e.last_error.present? %>
+              <td><%= link_to e.last_error.dig('error_class'), bulkrax.exporter_entry_path(@exporter.id, e.id) %></td>
+            <% else %>
+              <td></td>
+            <% end %>
+            <td><%= e.status_at %></td>
+            <td><%= link_to raw("<span class='glyphicon glyphicon-info-sign'></span>"), bulkrax.exporter_entry_path(@exporter.id, e.id) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <%= page_entries_info(@work_entries) %><br>
+    <%= paginate(@work_entries, param_name: :work_entries_page) %>
+
+    <br>
 
     <%= link_to 'Edit', edit_exporter_path(@exporter) %>
     |
