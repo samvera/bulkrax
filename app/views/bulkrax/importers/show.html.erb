@@ -59,11 +59,10 @@
       <% end %>
     </p>
 
-
    <p>
       <strong>Field mapping:</strong> <button id="fm_toggle">Toggle</button>
       <div id="field_mapping" style="display: none">
-        <% @importer.mapping.each do |key,value| %>
+        <% @importer.field_mapping.each do |key,value| %>
           <%= key %>: <%= value %> <br />
         <% end %>
       </div>
