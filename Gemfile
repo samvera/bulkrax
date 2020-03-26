@@ -20,7 +20,7 @@ gem "oai"
 gem 'rsolr', '>= 1.0'
 gem "rspec-rails"
 gem 'twitter-typeahead-rails', '0.11.1.pre.corejavascript'
-gem 'willow_sword', github: 'notch8/willow_sword'
+gem 'willow_sword', git: 'https://github.com/notch8/willow_sword.git'
 
 group :development, :test do
   # To use a debugger
