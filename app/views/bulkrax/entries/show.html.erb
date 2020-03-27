@@ -62,21 +62,26 @@
       <% end %>
     </p>
 
-    <%# TODO: Currently no Exporter equivalent, is one necessary? %>
-    <% if @importer.present? %>
-      <p>
+    <p>
+      <% if @importer.present? %>
         <% factory_record = @entry.factory.find %>
         <% if @entry.last_succeeded_at != nil && factory_record.present? %>
           <strong><%= @entry.factory_class.to_s %> Link:</strong>
           <% if @entry.factory_class.to_s == "Collection" %>
-            <%= link_to @entry.factory_class.to_s, hyrax.polymorphic_path(@entry.factory.find) %>
+            <%= link_to @entry.factory_class.to_s, hyrax.polymorphic_path(factory_record) %>
           <% else %>
-            <%= link_to @entry.factory_class.to_s, main_app.polymorphic_path(@entry.factory.find) %>
+            <%= link_to @entry.factory_class.to_s, main_app.polymorphic_path(factory_record) %>
           <% end %>
         <% else %>
           <strong>Item Link:</strong> Item has not been imported successfully
         <% end %>
-      </p>
-    <% end %>
+      <% else %>
+        <% record = @entry&.work %>
+        <% if record.present? %>
+          <strong><%= record.class.to_s %> Link:</strong>
+          <%= link_to record.class.to_s, main_app.polymorphic_path(record) %>
+        <% end %>
+      <% end %>
+    </p>
   </div>
 </div>
