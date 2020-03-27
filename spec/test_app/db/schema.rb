@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20200312190638) do
+ActiveRecord::Schema.define(version: 20200326235838) do
 
   create_table "bookmarks", force: :cascade do |t|
     t.integer "user_id", null: false
@@ -62,6 +62,9 @@ ActiveRecord::Schema.define(version: 20200312190638) do
     t.string "export_type"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "last_error"
+    t.datetime "last_error_at"
+    t.datetime "last_succeeded_at"
     t.index ["user_id"], name: "index_bulkrax_exporters_on_user_id"
   end
 
