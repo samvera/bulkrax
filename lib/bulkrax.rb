@@ -104,9 +104,8 @@ module Bulkrax
         "resource_type" => { from: ["type"], parsed: true },
         "remote_files" => { from: ["thumbnail_url"], parsed: true }
       },
-      "Bulkrax::CsvParser" => {
-        "remote_files" => { from: ["remote_files"], parsed: true }
-      },
+      # When empty, a default_field_mapping will be generated
+      "Bulkrax::CsvParser" => {},
       'Bulkrax::BagitParser' => {},
       'Bulkrax::XmlParser' => {}
     }

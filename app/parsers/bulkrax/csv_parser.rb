@@ -170,25 +170,25 @@ module Bulkrax
     # export methods
 
     def write_files
-      file = setup_export_file
-      file.puts(export_headers)
-      importerexporter.entries.each do |e|
-        file.puts(e.parsed_metadata.values.to_csv)
+      CSV.open(setup_export_file, "w", headers: export_headers, write_headers: true) do |csv|
+        importerexporter.entries.each do |e|
+          csv << e.parsed_metadata
+        end
       end
-      file.close
     end
 
     def export_headers
       headers = ['id']
-      headers << ['model']
-      importerexporter.mapping.each_key { |key| headers << key unless Bulkrax.reserved_properties.include?(key) && !field_supported?(key) }.sort
+      headers << CsvEntry.source_identifier_field
+      headers << 'model'
+      mapping.each_key { |key| headers << key unless Bulkrax.reserved_properties.include?(key) && !field_supported?(key) }.sort
       headers << 'file'
-      headers.to_csv
+      headers
     end
 
     # in the parser as it is specific to the format
     def setup_export_file
-      File.open(File.join(importerexporter.exporter_export_path, 'export.csv'), 'w')
+      File.join(importerexporter.exporter_export_path, 'export.csv')
     end
 
     # Retrieve file paths for [:file] in records

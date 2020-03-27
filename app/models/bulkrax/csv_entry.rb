@@ -72,8 +72,10 @@ module Bulkrax
     end
 
     def build_export_metadata
+      make_round_trippable
       self.parsed_metadata = {}
-      self.parsed_metadata['source_identifier'] = work.id
+      self.parsed_metadata[id] = work.id
+      self.parsed_metadata[self.source_identifier_field] = work.id
       self.parsed_metadata['model'] = work.has_model.first
       mapping.each do |key, value|
         next if Bulkrax.reserved_properties.include?(key) && !field_supported?(key)
@@ -89,6 +91,16 @@ module Bulkrax
         self.parsed_metadata['file'] = work.file_sets.map { |fs| "#{work.id}/#{filename(fs)}" unless filename(fs).blank? }.compact.join('; ')
       end
       self.parsed_metadata
+    end
+
+    # In order for the existing exported work, to be updated by a re-import
+    # we need a unique value in Bulkrax.system_identifier_field
+    # add the existing work id to Bulkrax.system_identifier_field
+    def make_round_trippable
+      values = work.send("#{Bulkrax.system_identifier_field}").to_a
+      values << work.id
+      work.send("#{Bulkrax.system_identifier_field}=", values)
+      work.save
     end
 
     def record

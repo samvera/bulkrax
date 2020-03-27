@@ -18,6 +18,8 @@ $ bundle update
 $ rails generate bulkrax:install
 ```
 
+If using Sidekiq, setup queues for `import` and `export`. 
+
 ### Manual Installation
 
 Add this line to your application's Gemfile:
@@ -37,15 +39,15 @@ Mount the engine in your routes file
 mount Bulkrax::Engine, at: '/'
 ```
 
-Ensure you have queues setup for `import` and `export`
+If using Sidekiq, setup queues for `import` and `export`. 
 
 ```ruby 
 # in config/sidekiq.yml
 :queues:
   - default
-  - import
-  - export
-  # other queues
+  - import # added
+  - export # added
+  # your other queues ...
 ```
 
 ```ruby 
@@ -53,92 +55,67 @@ Ensure you have queues setup for `import` and `export`
 //= require bulkrax/application
 ```
 
-You'll want to an an intializer with some of these fields
+You'll want to add an intializer to configure the importer to your needs:
 
 ```ruby
 # config/initializers/bulkrax.rb
 Bulkrax.setup do |config|
-  # Add local parsers
-  # config.parsers += [
-  #   { name: 'MODS - My Local MODS parser', class_name: 'Bulkrax::ModsXmlParser', partial: 'mods_fields' },
-  # ]
+  # some configuration
+end
+```
 
-  # Field to use during import to identify if the Work or Collection already exists.
-  # Default is 'source'.
-  #   config.system_identifier_field = 'source'
+The [configuration guide](https://github.com/samvera-labs/bulkrax/wiki/Configuration) provides detailed instructions on the various available configurations.
 
-  # Path to store pending imports
-  # self.import_path = 'tmp/imports'
+Example:
 
-  # Path to store exports before download
-  # self.export_path = 'tmp/exports'
+```
+Bulkrax.setup do | config |
+  # If the work type isn't provided during import, use Image 
+  config.default_work_type = 'Image'
 
-  # Field mappings
-  # Create a completely new set of mappings by replacing the whole set as follows
-  #   config.field_mappings = {
-  #     "Bulkrax::OaiDcParser" => { **individual field mappings go here*** }
-  #   }
+  # Use identifier to store the unique import identifier
+  config.system_identifier_field = 'identifier'
 
-  # Add to, or change existing mappings as follows
-  #   e.g. to exclude date
-  #   config.field_mappings["Bulkrax::OaiDcParser"]["date"] = { from: ["date"], excluded: true  }
-
-  # To duplicate a set of mappings from one parser to another
-  #   config.field_mappings["Bulkrax::OaiOmekaParser"] = {}
-  #   config.field_mappings["Bulkrax::OaiDcParser"].each {|key,value| config.field_mappings["Bulkrax::OaiOmekaParser"][key] = value }
-
-  # Properties that should not be used in imports/exports. They are reserved for use by Hyrax.
-  # self.reserved_properties += ['my_field']
+  # Setup a field mapping for the OaiDcParser
+  # Your application metadata fields are the key
+  #   from: fields in the incoming source data
+  config.field_mappings = {
+    "Bulkrax::OaiDcParser" => {
+      "contributor" => { from: ["contributor"] },
+      "creator" => { from: ["creator"] },
+      "date_created" => { from: ["date"] },
+      "description" => { from: ["description"] },
+      "identifier" => { from: ["identifier"] },
+      "language" => { from: ["language"], parsed: true },
+      "publisher" => { from: ["publisher"] },
+      "related_url" => { from: ["relation"] },
+      "rights_statement" => { from: ["rights"] },
+      "source" => { from: ["source"] },
+      "subject" => { from: ["subject"], parsed: true },
+      "title" => { from: ["title"] },
+      "resource_type" => { from: ["type"], parsed: true },
+      "remote_files" => { from: ["thumbnail_url"], parsed: true }
+    }
+  }
 end
 ```
 
 ## Configuring Import Work Types
-Currently all importers default to a work type of `Work`. There is a plan (see #56) to make this more easily configuratble in the future.
 
-For the moment, in order to set a different work type for a given Bulkrax Entry type you need to do the following.
+An Import needs to know what Work Type to create. The importer looks for:
 
-### Create a factory
+1) An incoming metadata field mapped to 'model'
+2) An incoming metadata field mapped to 'work_type'
 
-Let's say you have a work type called GenericWork. You would create a factory in your app at `app/factories/bulkrax/generic_work_factory.rb`. It might look like this:
+If it does not find either of these, or the data they contain is not a valid Work Type in the repository, the `default_work_type` will be used.
 
-```ruby
-module Bulkrax
-  class GenericWorkFactory < ObjectFactory
-    include WithAssociatedCollection
+The install generator sets `default_work_type` to the first Work Type returned by `Hyrax.config.curation_concerns` but this can be overriden by setting `default_work_type` in `config/initializer/bulkrax.rb` as shown above.
 
-    self.klass = GenericWork
-    # A way to identify objects that are not Hydra minted identifiers
-    self.system_identifier_field = Bulkrax.system_identifier_field
-  end
+## Configuring Field Mapping
 
-  def transform_attributes
-    @transform_attributes = super
-    contributor = @transform_attributes.delete('contributing_institution')
-    if contributor.present?
-      @transform_attributes['contributor'] ||= []
-      @transform_attributes['contributor'] << contributor
-    end
-    @transform_attributes
-  end
-end
-```
+It's unlikely that the incoming import data has fields that exactly match those in your repository. Field mappings allow you to tell bulkrax how to map field in the incoming data to a field in your application.
 
-### Modify the entry to use that factory
-
-In app/models/bulkrax/entry_decorator.rb we might add something like this
-
-```ruby
-module Bulkrax
-  module EntryDecorator
-    def factory_class
-      GenericWork
-    end
-  end
-end
-Bulkrax::Entry.prepend Bulkrax::EntryDecorator
-```
-
-Again, we acknowledge that this isn't ideal and needs to be more configurable.
+By default, the 
 
 ## How it Works
 Once you have Bulkrax installed, you will have access to an easy to use interface with which you are able to create, edit, delete, run, and re-run imports and exports. 
