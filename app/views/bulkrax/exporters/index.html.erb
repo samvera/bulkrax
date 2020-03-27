@@ -27,7 +27,13 @@
             <% @exporters.each do |exporter| %>
               <tr>
                 <th scope="row"><%= link_to exporter.name, exporter_path(exporter) %></th>
-                <td><%= exporter.exporter_runs.last&.exporter_status %></td>
+                <td>
+                  <% if exporter.last_error.present? %>
+                    Failed
+                  <% else %>
+                    <%= exporter.exporter_runs.last&.exporter_status %>
+                  <% end %>
+                </td>
                 <td><%= exporter.created_at %></td>
                 <td>
                   <% if File.exist?(exporter.exporter_export_zip_path) %>

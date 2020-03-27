@@ -50,7 +50,16 @@
       <%= @exporter.limit %>
     </p>
 
-    <%# TODO: last_error %>
+    <p>
+      <% if @exporter.last_error.present? %>
+        <strong>Errored at:</strong> <%= @exporter.last_error_at %><br />
+        <strong>Error:</strong> <%= @exporter.last_error['error_class'] %> - <%= @exporter.last_error['error_message'] %><br />
+        <strong>Error Trace: </strong> <button id="err_toggle">Toggle</button>
+        <p id="error_trace" style="display: none"><%= @exporter.last_error['error_trace'] %></p>
+      <% elsif @exporter.last_succeeded_at.present?  %>
+        <strong>Succeeded At:</strong> <%= @exporter.last_succeeded_at %>
+      <% end %>
+    </p>
 
     <%# Currently, no parser-specific fields exist on Exporter,
         thus there's no real reason to always show this field %>
@@ -66,7 +75,7 @@
     <p>
       <strong><%= t('bulkrax.exporter.labels.field_mapping') %>:</strong> <button id='fm_toggle'>Toggle</button>
       <div id='field_mapping' style='display: none'>
-        <% @exporter.field_mapping.each do |k, v| %>
+        <% @exporter.field_mapping&.each do |k, v| %>
           <%= k %>: <%= v %><br>
         <% end %>
       </div>
