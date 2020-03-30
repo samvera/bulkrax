@@ -3,6 +3,7 @@
 Bulkrax::Engine.routes.draw do
   resources :exporters do
     get :download
+    resources :entries, only: %i[show]
   end
   resources :importers do
     put :continue

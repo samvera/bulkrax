@@ -1,8 +1,9 @@
+<p id="notice"><%= notice %></p>
+
 <div class="panel panel-default">
   <div class="panel-body">
 
-    <p id="notice"><%= notice %></p>
-
+    <%# TODO: i18n %>
     <p>
       <strong>Identifier:</strong>
       <%= @entry.identifier %>
@@ -36,41 +37,51 @@
       <% end %>
     </p>
 
+    <%# Consider spliting dynamic fields into two partials %>
+
     <p>
       <% if @entry.last_error.present? %>
         <strong>Errored at:</strong> <%= @entry.last_error_at %><br />
         <strong>Error:</strong> <%= @entry.last_error['error_class'] %> - <%= @entry.last_error['error_message'] %><br />
         <strong>Error Trace: </strong> <button id="entry_error">Toggle</button>
         <p id="error_trace" style="display: none"><%= @entry.last_error['error_trace'] %></p>
-      <% else %>
+      <% elsif @entry.last_succeeded_at != nil %>
         <strong>Succeeded At:</strong> <%= @entry.last_succeeded_at %>
+      <% else %>
+        <strong>Succeeded At:</strong> Item has not been <%= @importer.present? ? 'imported' : 'exported' %> successfully
       <% end %>
     </p>
 
     <p>
-      <% if @entry.last_succeeded_at != nil %>
-        <% if @importer.class == Bulkrax::Importer %>
-          <strong>Importer:</strong>
-          <%= link_to @importer.name, importer_path(@importer) %>
-        <% else %>
-        <%# TODO: Create Exporter showpage table for individual items in order to link to the item %>
-          <strong>Exporter Link: Showpage has not been setup yet.</strong>
-        <% end %>
-      <% else %>
-        <strong>Importer Link: Item has not been imported successfully</strong>
+      <% if @importer.present? %>
+        <strong>Importer:</strong>
+        <%= link_to @importer.name, importer_path(@importer) %>
+      <% elsif @exporter.present? %>
+        <strong>Exporter:</strong>
+        <%= link_to @exporter.name, exporter_path(@exporter) %>
       <% end %>
     </p>
 
     <p>
-      <% factory_record = @entry.factory.find %>
-      <% if @entry.last_succeeded_at != nil && factory_record.present? %>
-        <strong><%= @entry.factory_class.to_s %> Link:</strong>
-        <% if @entry.factory_class.to_s == "Collection" %>
-          <%= link_to @entry.factory_class.to_s, hyrax.polymorphic_path(@entry.factory.find) %>
+      <% if @importer.present? %>
+        <% factory_record = @entry.factory.find %>
+        <% if @entry.last_succeeded_at != nil && factory_record.present? %>
+          <strong><%= @entry.factory_class.to_s %> Link:</strong>
+          <% if @entry.factory_class.to_s == "Collection" %>
+            <%= link_to @entry.factory_class.to_s, hyrax.polymorphic_path(factory_record) %>
+          <% else %>
+            <%= link_to @entry.factory_class.to_s, main_app.polymorphic_path(factory_record) %>
+          <% end %>
         <% else %>
-          <%= link_to @entry.factory_class.to_s, main_app.polymorphic_path(@entry.factory.find) %>
+          <strong>Item Link:</strong> Item has not been imported successfully
         <% end %>
       <% else %>
-        <strong> Item Link: Item has not been imported successfully</strong>
+        <% record = @entry&.work %>
+        <% if record.present? %>
+          <strong><%= record.class.to_s %> Link:</strong>
+          <%= link_to record.class.to_s, main_app.polymorphic_path(record) %>
+        <% end %>
       <% end %>
     </p>
+  </div>
+</div>

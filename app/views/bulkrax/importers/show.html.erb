@@ -77,9 +77,10 @@
       <strong>Total Collections:</strong>
       <%= @importer.importer_runs.last&.total_collection_entries %>
     </p>
+
     <br />
+
     <h2>Collection Entries</h2>
-    <%# TODO add entry info and paginate it here %>
     <table class='table table-striped'>
       <thead>
         <tr>
@@ -91,6 +92,7 @@
           <th>Actions</th>
         </tr>
       </thead>
+
       <tbody>
         <% @collection_entries.each do |e| %>
           <tr>
@@ -112,10 +114,11 @@
         <% end %>
       </tbody>
     </table>
-    <%= page_entries_info(@collection_entries, param_name: :collections_entries_page) %><br />
+    <%= page_entries_info(@collection_entries) %><br />
     <%= paginate(@collection_entries, param_name: :collections_entries_page) %>
 
     <br />
+
     <h2>Work Entries</h2>
     <table class='table table-striped'>
       <thead>
@@ -129,6 +132,7 @@
           <th>Actions</th>
         </tr>
       </thead>
+
       <tbody>
         <% @work_entries.each do |e| %>
           <tr>
@@ -157,20 +161,22 @@
         <% end %>
       </tbody>
     </table>
-    <%= page_entries_info(@work_entries, param_name: :collections_entries_page) %><br />
+    <%= page_entries_info(@work_entries) %><br />
     <%= paginate(@work_entries, param_name: :work_entries_page) %>
+
     <br />
-    <%= link_to 'Edit', edit_importer_path(@importer) %> |
+
+    <%= link_to 'Edit', edit_importer_path(@importer) %>
+    |
     <%= link_to 'Back', importers_path %><br /><br />
 
     <% if @importer.validate_only == true %>
-        <div class='pull-left'>
-          <%= button_to 'Continue', importer_continue_path(@importer), method: :put, class: 'btn btn-primary' %>
-        </div>
-        <div class='pull-right'>
-          <%= button_to 'Discard', @importer, method: :delete, data: { confirm: 'Are you sure?' }, class: 'btn btn-primary' %>
-        </div>
+      <div class='pull-left'>
+        <%= button_to 'Continue', importer_continue_path(@importer), method: :put, class: 'btn btn-primary' %>
+      </div>
+      <div class='pull-right'>
+        <%= button_to 'Discard', @importer, method: :delete, data: { confirm: 'Are you sure?' }, class: 'btn btn-primary' %>
+      </div>
     <% end %>
-
   </div>
 </div>

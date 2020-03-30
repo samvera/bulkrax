@@ -12,28 +12,32 @@ module Bulkrax
 
     # GET /exporters
     def index
-      add_breadcrumb t(:'hyrax.controls.home'), main_app.root_path
-      add_breadcrumb t(:'hyrax.dashboard.breadcrumbs.admin'), hyrax.dashboard_path
-      add_breadcrumb 'Exporters', bulkrax.exporters_path
       @exporters = Exporter.all
+
+      add_exporter_breadcrumbs
     end
 
     # GET /exporters/1
-    def show; end
+    def show
+      add_exporter_breadcrumbs
+      add_breadcrumb @exporter.name
+
+      @work_entries = @exporter.entries.where(type: @exporter.parser.entry_class.to_s).page(params[:work_entries_page])
+    end
 
     # GET /exporters/new
     def new
-      add_breadcrumb t(:'hyrax.controls.home'), main_app.root_path
-      add_breadcrumb t(:'hyrax.dashboard.breadcrumbs.admin'), hyrax.dashboard_path
-      add_breadcrumb 'Exporters', bulkrax.exporters_path
       @exporter = Exporter.new
+
+      add_exporter_breadcrumbs
+      add_breadcrumb 'New'
     end
 
     # GET /exporters/1/edit
     def edit
-      add_breadcrumb t(:'hyrax.controls.home'), main_app.root_path
-      add_breadcrumb t(:'hyrax.dashboard.breadcrumbs.admin'), hyrax.dashboard_path
-      add_breadcrumb 'Exporters', bulkrax.exporters_path
+      add_exporter_breadcrumbs
+      add_breadcrumb @exporter.name, bulkrax.exporter_path(@exporter.id)
+      add_breadcrumb 'Edit'
 
       # Correctly populate export_source_collection input
       @collection = Collection.find(@exporter.export_source) if @exporter.export_source.present? && @exporter.export_from == 'collection'
@@ -95,6 +99,12 @@ module Bulkrax
         # @todo replace/append once mapping GUI is in place
         fields = Bulkrax.parsers.map { |m| m[:partial] if m[:class_name] == params[:exporter][:parser_klass] }.compact.first
         @exporter.field_mapping = Bulkrax.field_mappings[fields.to_sym] if fields
+      end
+
+      def add_exporter_breadcrumbs
+        add_breadcrumb t(:'hyrax.controls.home'), main_app.root_path
+        add_breadcrumb t(:'hyrax.dashboard.breadcrumbs.admin'), hyrax.dashboard_path
+        add_breadcrumb 'Exporters', bulkrax.exporters_path
       end
 
       # Download methods

@@ -10,10 +10,13 @@
         <div class="panel-footer">
           <div class='pull-right'>
             <%= form.button :submit, value: 'Create and Validate', class: 'btn btn-primary' %>
-           <%= form.button :submit, value: 'Create and Import', class: 'btn btn-primary' %>
-            | <%= form.button :submit, value: 'Create', class: 'btn btn-primary' %>
+            |
+            <%= form.button :submit, value: 'Create and Import', class: 'btn btn-primary' %>
+            |
+            <%= form.button :submit, value: 'Create', class: 'btn btn-primary' %>
+            |
             <% cancel_path = form.object.persisted? ? importer_path(form.object) : importers_path %>
-            | <%= link_to t('.cancel'), cancel_path, class: 'btn btn-default ' %>
+            <%= link_to t('.cancel'), cancel_path, class: 'btn btn-default ' %>
           </div>
         </div>
       <% end %>

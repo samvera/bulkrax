@@ -5,8 +5,10 @@ require 'fileutils'
 module Bulkrax
   class Exporter < ApplicationRecord
     include Bulkrax::ImporterExporterBehavior
+    include Bulkrax::Status
 
     serialize :field_mapping, JSON
+    serialize :last_error, JSON
 
     belongs_to :user
     has_many :exporter_runs, dependent: :destroy, foreign_key: 'exporter_id'
@@ -27,6 +29,9 @@ module Bulkrax
       when 'worktype'
         create_from_worktype
       end
+      status_info
+    rescue StandardError => e
+      status_info(e)
     end
 
     # #export_source accessors
