@@ -9,8 +9,10 @@ module Bulkrax
     # @todo not yet supported
     def collection_entry_class; end
 
+    # @todo not yet supported
     def create_collections; end
 
+    # @todo not yet supported
     def import_fields; end
 
     def valid_import?
@@ -54,10 +56,10 @@ module Bulkrax
       @file_paths ||=
         # Relative to the file
         if file?
-          Dir.glob("#{File.dirname(real_import_file_path)}/**/*").reject { |f| File.file?(f) == false }
+          Dir.glob("#{File.dirname(import_file_path)}/**/*").reject { |f| File.file?(f) == false }
         # In the supplied directory
         else
-          Dir.glob("#{real_import_file_path}/**/*").reject { |f| File.file?(f) == false }
+          Dir.glob("#{import_file_path}/**/*").reject { |f| File.file?(f) == false }
         end
     end
 
@@ -65,8 +67,8 @@ module Bulkrax
     # Otherwise return all xml files in the given folder
     def metadata_paths
       @metadata_paths ||=
-        if file? && MIME::Types.type_for(real_import_file_path).include?('application/xml')
-          [real_import_file_path]
+        if file? && MIME::Types.type_for(import_file_path).include?('application/xml')
+          [import_file_path]
         else
           file_paths.select { |f| MIME::Types.type_for(f).include?('application/xml') }
         end

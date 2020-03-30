@@ -95,6 +95,7 @@ module Bulkrax
         params.fetch(:exporter).permit(:name, :user_id, :export_source, :export_from, :export_type, :parser_klass, :limit, field_mapping: {})
       end
 
+      # Add the field_mapping from the Bulkrax configuration
       def field_mapping_params
         # @todo replace/append once mapping GUI is in place
         fields = Bulkrax.parsers.map { |m| m[:partial] if m[:class_name] == params[:exporter][:parser_klass] }.compact.first

@@ -23,7 +23,7 @@ module Bulkrax
     end
 
     def records(_opts = {})
-      file_for_import = only_updates ? parser_fields['partial_import_file_path'] : parser_fields['import_file_path']
+      file_for_import = only_updates ? parser_fields['partial_import_file_path'] : import_file_path
       @records ||= entry_class.read_data(file_for_import).map { |record_data| entry_class.data_for_entry(record_data) }
     end
 
@@ -177,11 +177,12 @@ module Bulkrax
       end
     end
 
+    # All possible column names
     def export_headers
       headers = ['id']
-      headers << CsvEntry.source_identifier_field
+      headers << entry_class.source_identifier_field
       headers << 'model'
-      mapping.each_key { |key| headers << key unless Bulkrax.reserved_properties.include?(key) && !field_supported?(key) }.sort
+      importerexporter.mapping.each_key { |key| headers << key unless Bulkrax.reserved_properties.include?(key) && !field_supported?(key) }.sort
       headers << 'file'
       headers
     end
@@ -197,17 +198,20 @@ module Bulkrax
       @file_paths ||= records.map do |r|
         next unless r[:file].present?
         r[:file].split(/\s*[:;|]\s*/).map do |f|
-          file = File.join(files_path, f.tr(' ', '_'))
-          return file if File.exist?(file)
-          raise "File #{file} does not exist"
+          file = File.join(path_to_files, f.tr(' ', '_'))
+          if File.exist?(file)
+            file
+          else
+            raise "File #{file} does not exist"
+          end
         end
       end.flatten.compact.uniq
     end
 
-    # Retrieve the path where we expect to find files
+    # Retrieve the path where we expect to find the files
     def path_to_files
       @path_to_files ||= File.join(
-        File.file?(real_import_file_path) ? File.dirname(real_import_file_path) : real_import_file_path,
+        File.file?(import_file_path) ? File.dirname(import_file_path) : import_file_path,
         'files'
       )
     end
@@ -244,5 +248,18 @@ module Bulkrax
     def setup_errored_entries_file
       File.open(importerexporter.errored_entries_csv_path, 'w')
     end
+
+    private
+
+      # Override to return the first CSV in the path, if a zip file is supplied
+      # We expect a single CSV at the top level of the zip in the CSVParser
+      def real_import_file_path
+        if file? && zip?
+          unzip(parser_fields['import_file_path'])
+          return Dir["#{importer_unzip_path}/*.csv"].first
+        else
+          parser_fields['import_file_path']
+        end
+      end
   end
 end

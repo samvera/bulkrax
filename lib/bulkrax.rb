@@ -36,6 +36,10 @@ module Bulkrax
     # This value IS NOT used for OAI, so setting the OAI Entries here will have no effect
     # The mapping is supplied per Entry, provide the full class name as a string, eg. 'Bulkrax::CsvEntry'
     # The default value for CSV is source_identifier, for RDF it is the subject
+    # Example:
+    #   {
+    #     'Bulkrax::CsvEntry'  => 'unique_id'
+    #   }
     self.source_identifier_field_mapping = {}
 
     # @todo, merge parent_child_field_mapping and collection_field_mapping into field_mappings,
@@ -114,9 +118,9 @@ module Bulkrax
     self.default_field_mapping = lambda do |field|
       return if field.blank?
       {
-        field =>
+        field.to_s =>
         {
-          from: [field],
+          from: [field.to_s],
           split: false,
           parsed: false,
           if: nil,

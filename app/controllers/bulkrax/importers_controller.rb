@@ -68,7 +68,7 @@ module Bulkrax
       if api_request?
         return return_json_response unless valid_create_params?
       end
-      file = params.to_unsafe_h[:importer][:parser_fields].delete(:file)
+      file = params[:importer][:parser_fields].delete(:file)
       cloud_files = params.to_unsafe_h.delete(:selected_files)
       @importer = Importer.new(importer_params)
       field_mapping_params
@@ -250,6 +250,7 @@ module Bulkrax
         @sets
       end
 
+      # Add the field_mapping from the Bulkrax configuration
       def field_mapping_params
         # @todo replace/append once mapping GUI is in place
         field_mapping_key = Bulkrax.parsers.map { |m| m[:class_name] if m[:class_name] == params[:importer][:parser_klass] }.compact.first
