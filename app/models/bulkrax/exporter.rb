@@ -1,7 +1,4 @@
 # frozen_string_literal: true
-
-require 'fileutils'
-
 module Bulkrax
   class Exporter < ApplicationRecord
     include Bulkrax::ImporterExporterBehavior

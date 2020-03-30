@@ -1,7 +1,4 @@
 # frozen_string_literal: true
-
-require 'fileutils'
-
 module Bulkrax
   module ExportBehavior
     extend ActiveSupport::Concern
