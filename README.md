@@ -115,7 +115,40 @@ The install generator sets `default_work_type` to the first Work Type returned b
 
 It's unlikely that the incoming import data has fields that exactly match those in your repository. Field mappings allow you to tell bulkrax how to map field in the incoming data to a field in your application.
 
-By default, the 
+By default, a mapping for the OAI parser has been added to map standard oai_dc fields to Hyrax basic_metadata. The other parsers have no default mapping, and will map any incoming fields to Hyrax properties with the same name. Configurations can be added in `config/intializers/bulkrax.rb`
+
+Configuring field mappings is documented in the [https://github.com/samvera-labs/bulkrax/wiki/Configuration](Bulkrax Configuration Guide).
+
+## Importing Files
+
+* The BagIt Parser will import files in the data folder of the bag. 
+* The CSV folder will import files in columns named file (located local to the import csv file in a folder called files) or remote_files (where urls are supplied).
+* The OAI parser will import a thumbnail_url specified during import. Pattern matching is supported.
+* The XML Parser is not configured to import files by default. To configure URL import, map an incoming element to the remote_files Hyrax property. To map local files for import, we suggest utilizing the `HasLocalProcessing` class injected by the generator.
+
+For example:
+
+```
+module Bulkrax::HasLocalProcessing
+  def add_local
+    parsed_metadata['file'] = image_paths
+  end
+
+  # Files are in a folder called files, relative to the import file
+  #  with a sub-folder that matches the system_identifier_field
+  def image_paths
+    import_path = importerexporter.parser_fields['import_file_path']
+    import_path = File.dirname(import_path) if File.file?(import_path)
+    real_path = File.join(import_path, 'files', "#{parsed_metadata[Bulkrax.system_identifier_field].first}")
+    Dir.glob(real_path)
+  end
+end
+
+```
+
+## Customizing Bulkrax
+
+For further information on how to extend and customize Bulkrax, please see the [https://github.com/samvera-labs/bulkrax/wiki/Customizing](Bulkrax Customization Guide).
 
 ## How it Works
 Once you have Bulkrax installed, you will have access to an easy to use interface with which you are able to create, edit, delete, run, and re-run imports and exports. 
