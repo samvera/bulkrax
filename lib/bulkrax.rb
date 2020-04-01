@@ -122,7 +122,7 @@ module Bulkrax
         {
           from: [field.to_s],
           split: false,
-          parsed: false,
+          parsed: Bulkrax::ApplicationMatcher.method_defined?("parse_#{field}"),
           if: nil,
           excluded: false
         }
