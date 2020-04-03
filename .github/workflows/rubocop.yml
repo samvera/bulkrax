@@ -12,14 +12,11 @@ jobs:
         id: cache
         with:
           path: ~/local/rubies
-          key: 2.4.10
-      - uses: clupprich/ruby-build-action@master
-        id: ruby
-        with:
-          ruby-version: 2.4.10
-          cache-available: ${{ steps.cache.outputs.cache-hit == 'true' }}
+          key: 2.5.1
       - name: Print version
         run: ruby --version
+      - name: Install bundler
+        run: gem install bundler
       - name: Install dependencies
         run: bundle install
       - name: Run Rubocop
