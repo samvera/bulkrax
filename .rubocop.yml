@@ -1,7 +1,7 @@
 # Bixby coding conventions
 # Added AllCops config for further modification
 AllCops:
-  TargetRubyVersion: 2.3
+  TargetRubyVersion: 2.4
   DisabledByDefault: true
   DisplayCopNames: true
   Exclude:
