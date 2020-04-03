@@ -6,11 +6,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-    - uses: actions/checkout@v2
-
-    - name: Run Rubocop
-      run: rubocop
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+      - uses: actions/cache@preview
+        id: cache
+        with:
+          path: ~/local/rubies
+          key: 2.4.10
+      - name: Print version
+        run: ruby --version
+      - name: Install dependencies
+        run: bundle install
+      - name: Run Rubocop
+        run: rubocop
 
     # Runs a set of commands using the runners shell
     # - name: Run a multi-line script
