@@ -193,6 +193,7 @@ module Bulkrax
     end
 
     # Retrieve file paths for [:file] in records
+    #  and check all listed files exist.
     def file_paths
       raise StandardError, 'No records were found' if records.blank?
       @file_paths ||= records.map do |r|

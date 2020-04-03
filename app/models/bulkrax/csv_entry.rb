@@ -60,7 +60,11 @@ module Bulkrax
 
       # construct full file path
       self.parsed_metadata['file'] ||= []
-      self.parsed_metadata['file'] = self.parsed_metadata['file'].select { |f| f.present? && f != '[]' }
+      if record['file']&.is_a?(String)
+        self.parsed_metadata['file'] = record['file'].split(/\s*[;|]\s*/)
+      elsif record['file'].is_a?(Array)
+        self.parsed_metadata['file'] = record['file']
+      end
       self.parsed_metadata['file'] = self.parsed_metadata['file'].map { |f| path_to_file(f.tr(' ', '_')) }
 
       add_visibility
