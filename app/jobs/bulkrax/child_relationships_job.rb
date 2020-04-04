@@ -27,7 +27,7 @@ module Bulkrax
         members_works = []
         # reject any Collections, they can't be children of Works
         @child_works_hash.each_pair { |k, v| members_works << k if v[:class_name] != 'Collection' }
-        if members_works.length < @child_entries.length
+        if members_works.length < @child_entries.length # rubocop:disable Style/IfUnlessModifier
           Rails.logger.warn("Cannot add collections as children of works: #{(@child_entries.length - members_works.length)} collections were discarded for parent entry #{@entry.id} (of #{@child_entries.length})")
         end
         work_parent_work_child(members_works) unless members_works.blank?
