@@ -68,8 +68,9 @@ module Bulkrax
       if api_request?
         return return_json_response unless valid_create_params?
       end
-      file = params[:importer][:parser_fields].delete(:file)
-      cloud_files = params.to_unsafe_h.delete(:selected_files)
+      file = file_param
+      cloud_files = cloud_params
+
       @importer = Importer.new(importer_params)
       field_mapping_params
       @importer.validate_only = true if params[:commit] == 'Create and Validate'
@@ -100,12 +101,12 @@ module Bulkrax
       if api_request?
         return return_json_response unless valid_update_params?
       end
-      # skipped for calls from continue
-      if params[:importer][:parser_fields].present?
-        file = params.to_unsafe_h[:importer][:parser_fields].delete(:file)
-        cloud_files = params.to_unsafe_h.delete(:selected_files)
-        field_mapping_params
-      end
+
+      file = file_param
+      cloud_files = cloud_params
+
+      # Skipped during a continue
+      field_mapping_params if params[:importer][:parser_fields].present?
 
       if @importer.update(importer_params)
         files_for_import(file, cloud_files) unless file.nil? && cloud_files.nil?
@@ -217,9 +218,17 @@ module Bulkrax
         @importer = Importer.find(params[:id])
       end
 
+      def importable_params
+        params.except(:selected_files)
+      end
+
+      def importable_parser_fields
+        params&.[](:importer)&.[](:parser_fields)&.except(:file)&.keys
+      end
+
       # Only allow a trusted parameter "white list" through.
       def importer_params
-        params.require(:importer).permit(
+        importable_params.require(:importer).permit(
           :name,
           :admin_set_id,
           :user_id,
@@ -229,7 +238,7 @@ module Bulkrax
           :validate_only,
           selected_files: {},
           field_mapping: {},
-          parser_fields: {}
+          parser_fields: [importable_parser_fields]
         )
       end
 
@@ -248,6 +257,16 @@ module Bulkrax
         end
 
         @sets
+      end
+
+      def file_param
+        if params&.[](:importer)&.[](:parser_fields)&.[](:file)
+          params.require(:importer).require(:parser_fields).fetch(:file)
+        end
+      end
+
+      def cloud_params
+        params.permit(:selected_files).to_h
       end
 
       # Add the field_mapping from the Bulkrax configuration
