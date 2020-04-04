@@ -31,5 +31,4 @@ end
 
 group :lint do
   gem 'bixby'
-  gem 'rubocop'
 end
