@@ -13,12 +13,12 @@ jobs:
         id: cache
         with:
           path: ~/local/rubies
-          key: 2.6.5
+          key: 2.5.3
 
       - uses: clupprich/ruby-build-action@master
         id: ruby
         with:
-          ruby-version: 2.6.5
+          ruby-version: 2.5.3
           cache-available: ${{ steps.cache.outputs.cache-hit == 'true' }}
 
       - name: Print version
