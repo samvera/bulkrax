@@ -8,20 +8,25 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
+
       - uses: actions/cache@preview
         id: cache
         with:
           path: ~/local/rubies
           key: 2.6.5
+
       - uses: clupprich/ruby-build-action@master
         id: ruby
         with:
           ruby-version: 2.6.5
           cache-available: ${{ steps.cache.outputs.cache-hit == 'true' }}
+
       - name: Print version
         run: ruby --version
+
       - name: Install dependencies
-        run: bundle install
+        run: bundle install --without default development test
+
       - name: Run Rubocop
         run: rubocop
 
