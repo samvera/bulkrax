@@ -260,9 +260,7 @@ module Bulkrax
       end
 
       def file_param
-        if params&.[](:importer)&.[](:parser_fields)&.[](:file)
-          params.require(:importer).require(:parser_fields).fetch(:file)
-        end
+        params.require(:importer).require(:parser_fields).fetch(:file) if params&.[](:importer)&.[](:parser_fields)&.[](:file)
       end
 
       def cloud_params
