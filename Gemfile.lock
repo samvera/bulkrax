@@ -755,7 +755,6 @@ DEPENDENCIES
   oai
   rsolr (>= 1.0)
   rspec-rails
-  rubocop
   simplecov
   solr_wrapper (>= 0.3)
   sqlite3 (~> 1.3.13)
