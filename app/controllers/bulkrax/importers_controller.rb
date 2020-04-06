@@ -260,15 +260,11 @@ module Bulkrax
       end
 
       def file_param
-        if params&.[](:importer)&.[](:parser_fields)&.[](:file)
-          params.require(:importer).require(:parser_fields).fetch(:file)
-        end
+        params.require(:importer).require(:parser_fields).fetch(:file) if params&.[](:importer)&.[](:parser_fields)&.[](:file)
       end
 
       def cloud_params
-        if params&.[](:selected_files)
-          params.permit(selected_files: {}).fetch(:selected_files).to_h
-        end
+        params.permit(selected_files: {}).fetch(:selected_files).to_h if params&.[](:selected_files)
       end
 
       # Add the field_mapping from the Bulkrax configuration
