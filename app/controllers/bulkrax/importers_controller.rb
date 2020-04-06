@@ -266,7 +266,9 @@ module Bulkrax
       end
 
       def cloud_params
-        params.permit(:selected_files).to_h
+        if params&.[](:selected_files)
+          params.permit(selected_files: {}).fetch(:selected_files).to_h
+        end
       end
 
       # Add the field_mapping from the Bulkrax configuration
