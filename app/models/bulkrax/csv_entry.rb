@@ -60,7 +60,11 @@ module Bulkrax
 
       # construct full file path
       self.parsed_metadata['file'] ||= []
-      self.parsed_metadata['file'] = self.parsed_metadata['file'].select { |f| f.present? && f != '[]' }
+      if record['file']&.is_a?(String)
+        self.parsed_metadata['file'] = record['file'].split(/\s*[;|]\s*/)
+      elsif record['file'].is_a?(Array)
+        self.parsed_metadata['file'] = record['file']
+      end
       self.parsed_metadata['file'] = self.parsed_metadata['file'].map { |f| path_to_file(f.tr(' ', '_')) }
 
       add_visibility
@@ -72,8 +76,10 @@ module Bulkrax
     end
 
     def build_export_metadata
+      make_round_trippable
       self.parsed_metadata = {}
-      self.parsed_metadata['source_identifier'] = work.id
+      self.parsed_metadata['id'] = work.id
+      self.parsed_metadata[self.class.source_identifier_field] = work.id
       self.parsed_metadata['model'] = work.has_model.first
       mapping.each do |key, value|
         next if Bulkrax.reserved_properties.include?(key) && !field_supported?(key)
@@ -86,9 +92,19 @@ module Bulkrax
         end
       end
       unless work.is_a?(Collection)
-        self.parsed_metadata['file'] = work.file_sets.map { |fs| "#{work.id}/#{filename(fs)}" unless filename(fs).blank? }.compact.join('; ')
+        self.parsed_metadata['file'] = work.file_sets.map { |fs| filename(fs).to_s unless filename(fs).blank? }.compact.join('; ')
       end
       self.parsed_metadata
+    end
+
+    # In order for the existing exported work, to be updated by a re-import
+    # we need a unique value in Bulkrax.system_identifier_field
+    # add the existing work id to Bulkrax.system_identifier_field
+    def make_round_trippable
+      values = work.send(Bulkrax.system_identifier_field.to_s).to_a
+      values << work.id
+      work.send("#{Bulkrax.system_identifier_field}=", values)
+      work.save
     end
 
     def record

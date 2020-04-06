@@ -23,9 +23,10 @@ module Bulkrax
       Entry
     end
 
+    # Take a random sample of 10 metadata_paths and work out the import fields from that
     def import_fields
       raise StandardError, 'No metadata files were found' if metadata_paths.blank?
-      @import_fields ||= metadata_paths.map do |path|
+      @import_fields ||= metadata_paths.sample(10).map do |path|
         entry_class.fields_from_data(entry_class.read_data(path))
       end.flatten.compact.uniq
     end

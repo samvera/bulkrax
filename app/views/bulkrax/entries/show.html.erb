@@ -22,18 +22,24 @@
     <p>
       <strong>Raw Metadata:</strong><br />
       <% if @entry.raw_metadata.present? %>
+      <button id="raw_button">Toggle</button>
+      <div id="raw_metadata"> 
         <% @entry.raw_metadata.each do |key,value| %>
           <%= key %>: <%= value %> <br />
         <% end %>
+      </div>
       <% end %>
     </p>
 
     <p>
       <strong>Parsed Metadata:</strong><br />
       <% if @entry.parsed_metadata.present? %>
+      <button id="parsed_button">Toggle</button>
+      <div id="parsed_metadata"> 
         <% @entry.parsed_metadata.each do |key,value| %>
           <%= key %>: <%= value %> <br />
         <% end %>
+      </div>
       <% end %>
     </p>
 

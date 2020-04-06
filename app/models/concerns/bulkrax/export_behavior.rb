@@ -18,15 +18,14 @@ module Bulkrax
       @work ||= ActiveFedora::Base.find(self.identifier)
     end
 
-    # @todo is there a better way to do this?
     def write_files
       return if work.is_a?(Collection)
       work.file_sets.each do |fs|
-        path = File.join(exporter_export_path, 'files', work.id)
+        path = File.join(exporter_export_path, 'files')
         FileUtils.mkdir_p(path)
+        file = filename(fs)
         require 'open-uri'
         io = open(fs.original_file.uri)
-        file = filename(fs)
         next if file.blank?
         File.open(File.join(path, file), 'wb') do |f|
           f.write(io.read)
@@ -35,9 +34,18 @@ module Bulkrax
       end
     end
 
+    # Append the file_set id to ensure a unique filename
     def filename(file_set)
       return if file_set.original_file.blank?
-      "#{file_set.id}_#{file_set.original_file.file_name.first}.#{Mime::Type.lookup(file_set.original_file.mime_type).to_sym}"
+      fn = file_set.original_file.file_name.first
+      ext = Mime::Type.lookup(file_set.original_file.mime_type).to_sym
+      if fn.include?(file_set.id)
+        return fn if fn.end_with?(ext.to_s)
+        return "#{fn}.#{ext}"
+      else
+        return "#{file_set.id}_#{fn}" if fn.end_with?(ext.to_s)
+        return "#{file_set.id}_#{fn}.#{ext}"
+      end
     end
   end
 end

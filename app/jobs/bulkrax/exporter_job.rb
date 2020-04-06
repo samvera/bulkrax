@@ -8,6 +8,7 @@ module Bulkrax
       exporter = Exporter.find(exporter_id)
       exporter.export
       exporter.write
+      true
     end
   end
 end

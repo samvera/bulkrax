@@ -23,14 +23,22 @@ module Bulkrax
              :write_errored_entries_file, :visibility, to: :parser
 
     attr_accessor :only_updates, :file_style, :file
-    # TODO: validates :metadata_prefix, presence: true
-    # TODO validates :base_url, presence: true
+    # TODO: (OAI only) validates :metadata_prefix, presence: true
+    # TODO (OAI only) validates :base_url, presence: true
 
+    # If field_mapping is empty, setup a default based on the export_properties
     def mapping
-      if parser.import_fields.present?
-        self.field_mapping = parser.import_fields.reject(&:nil?).map { |m| Bulkrax.default_field_mapping.call(m) }.inject(:merge) if self.field_mapping.blank? || self.field_mapping == [{}]
-      end
-      @mapping ||= self.field_mapping || {}
+      @mapping ||= if self.field_mapping.blank? || self.field_mapping == [{}]
+                     if parser.import_fields.present? || [{}]
+                       ActiveSupport::HashWithIndifferentAccess.new(
+                         parser.import_fields.reject(&:nil?).map do |m|
+                           Bulkrax.default_field_mapping.call(m)
+                         end.inject(:merge)
+                       )
+                     end
+                   else
+                     self.field_mapping
+                   end
     end
 
     def parser_fields

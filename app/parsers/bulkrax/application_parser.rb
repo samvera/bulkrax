@@ -72,6 +72,8 @@ module Bulkrax
       path
     end
 
+    # Path where we'll store the import metadata and files
+    #  this is used for uploaded and cloud files
     def path_for_import
       path = File.join(Bulkrax.import_path, importerexporter.id.to_s)
       FileUtils.mkdir_p(path) unless File.exist?(path)
@@ -181,7 +183,7 @@ module Bulkrax
       entry
     end
 
-    # @todo - review this method
+    # @todo - review this method - is it ever used?
     def record(identifier, _opts = {})
       return @record if @record
 
@@ -221,17 +223,20 @@ module Bulkrax
       MIME::Types.type_for(parser_fields['import_file_path']).include?('application/zip')
     end
 
+    # Path for the import
     def import_file_path
       @import_file_path ||= real_import_file_path
     end
 
-    def real_import_file_path
-      if file? && zip?
-        unzip(parser_fields['import_file_path'])
-        return File.join(importer_unzip_path, parser_fields['import_file_path'].split('/').last.gsub('.zip', ''))
-      else
-        parser_fields['import_file_path']
+    private
+
+      def real_import_file_path
+        if file? && zip?
+          unzip(parser_fields['import_file_path'])
+          return File.join(importer_unzip_path, File.dirname(parser_fields['import_file_path'], '.zip'))
+        else
+          parser_fields['import_file_path']
+        end
       end
-    end
   end
 end
