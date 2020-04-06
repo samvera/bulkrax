@@ -56,12 +56,12 @@ module Bulkrax
             "description" => { "excluded" => false, "from" => ["description"], "if" => nil, "parsed" => false, "split" => false },
             "format" => { "excluded" => false, "from" => ["format"], "if" => nil, "parsed" => false, "split" => false },
             "identifier" => { "excluded" => false, "from" => ["identifier"], "if" => nil, "parsed" => false, "split" => false },
-            "language" => { "excluded" => false, "from" => ["language"], "if" => nil, "parsed" => false, "split" => false },
+            "language" => { "excluded" => false, "from" => ["language"], "if" => nil, "parsed" => true, "split" => false },
             "publisher" => { "excluded" => false, "from" => ["publisher"], "if" => nil, "parsed" => false, "split" => false },
             "relation" => { "excluded" => false, "from" => ["relation"], "if" => nil, "parsed" => false, "split" => false },
             "rights" => { "excluded" => false, "from" => ["rights"], "if" => nil, "parsed" => false, "split" => false },
             "source" => { "excluded" => false, "from" => ["source"], "if" => nil, "parsed" => false, "split" => false },
-            "subject" => { "excluded" => false, "from" => ["subject"], "if" => nil, "parsed" => false, "split" => false },
+            "subject" => { "excluded" => false, "from" => ["subject"], "if" => nil, "parsed" => true, "split" => false },
             "title" => { "excluded" => false, "from" => ["title"], "if" => nil, "parsed" => false, "split" => false },
             "type" => { "excluded" => false, "from" => ["type"], "if" => nil, "parsed" => false, "split" => false }
           )

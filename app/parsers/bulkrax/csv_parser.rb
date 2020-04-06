@@ -200,7 +200,7 @@ module Bulkrax
         next unless r[:file].present?
         r[:file].split(/\s*[:;|]\s*/).map do |f|
           file = File.join(path_to_files, f.tr(' ', '_'))
-          if File.exist?(file)
+          if File.exist?(file) # rubocop:disable Style/GuardClause
             file
           else
             raise "File #{file} does not exist"
