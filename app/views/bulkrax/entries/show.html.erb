@@ -73,7 +73,7 @@
         <% factory_record = @entry.factory.find %>
         <% if @entry.last_succeeded_at != nil && factory_record.present? %>
           <strong><%= @entry.factory_class.to_s %> Link:</strong>
-          <% if @entry.factory_class.to_s == "Collection" %>
+          <% if @entry.factory_class.to_s == 'Collection' %>
             <%= link_to @entry.factory_class.to_s, hyrax.polymorphic_path(factory_record) %>
           <% else %>
             <%= link_to @entry.factory_class.to_s, main_app.polymorphic_path(factory_record) %>
@@ -82,10 +82,16 @@
           <strong>Item Link:</strong> Item has not been imported successfully
         <% end %>
       <% else %>
-        <% record = @entry&.work %>
+        <% record = @entry&.hyrax_record %>
         <% if record.present? %>
           <strong><%= record.class.to_s %> Link:</strong>
-          <%= link_to record.class.to_s, main_app.polymorphic_path(record) %>
+          <% if record.is_a?(Collection) %>
+            <%= link_to record.class.to_s, hyrax.polymorphic_path(record) %>
+          <% else %>
+            <%= link_to record.class.to_s, main_app.polymorphic_path(record) %>
+          <% end %>
+        <% else %>
+          <strong>Item Link:</strong> No item associated with this entry
         <% end %>
       <% end %>
     </p>

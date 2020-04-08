@@ -14,13 +14,13 @@ module Bulkrax
       raise StandardError, 'not implemented'
     end
 
-    def work
-      @work ||= ActiveFedora::Base.find(self.identifier)
+    def hyrax_record
+      @hyrax_record ||= ActiveFedora::Base.find(self.identifier)
     end
 
     def write_files
-      return if work.is_a?(Collection)
-      work.file_sets.each do |fs|
+      return if hyrax_record.is_a?(Collection)
+      hyrax_record.file_sets.each do |fs|
         path = File.join(exporter_export_path, 'files')
         FileUtils.mkdir_p(path)
         file = filename(fs)
