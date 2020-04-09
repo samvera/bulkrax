@@ -124,11 +124,12 @@ module Bulkrax
     describe '#create_from_importer' do
       subject(:parser) { described_class.new(exporter) }
       let(:exporter)   { FactoryBot.create(:bulkrax_exporter, export_source: importer.id) }
-      let(:importer)   { FactoryBot.create(:bulkrax_importer_csv, entries: [entry_1, entry_2]) }
+      let(:importer)   { FactoryBot.create(:bulkrax_importer_csv, entries: [entry_1, entry_2, entry_3]) }
       let(:entry_1)    { FactoryBot.create(:bulkrax_csv_entry) }
       let(:entry_2)    { FactoryBot.create(:bulkrax_csv_entry) }
+      let(:entry_3)    { FactoryBot.create(:bulkrax_csv_entry_collection) }
 
-      it 'invokes Bulkrax::ExportWorkJob once per Entry' do
+      it 'invokes Bulkrax::ExportWorkJob once per non-Collection Entry' do
         expect(ActiveFedora::SolrService)
           .to receive(:query)
           .and_return([{ id: SecureRandom.alphanumeric(9) }])
@@ -153,7 +154,7 @@ module Bulkrax
       context 'with an export limit of 0' do
         let(:exporter) { FactoryBot.create(:bulkrax_exporter, export_source: importer.id, limit: 0) }
 
-        it 'invokes Bulkrax::ExportWorkJob once per Entry' do
+        it 'invokes Bulkrax::ExportWorkJob once per non-Collection Entry' do
           expect(ActiveFedora::SolrService)
             .to receive(:query)
             .and_return([{ id: SecureRandom.alphanumeric(9) }])
