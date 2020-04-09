@@ -80,33 +80,33 @@ module Bulkrax
     def build_export_metadata
       make_round_trippable
       self.parsed_metadata = {}
-      self.parsed_metadata['id'] = work.id
-      self.parsed_metadata[self.class.source_identifier_field] = work.id
-      self.parsed_metadata['model'] = work.has_model.first
+      self.parsed_metadata['id'] = hyrax_record.id
+      self.parsed_metadata[self.class.source_identifier_field] = hyrax_record.id
+      self.parsed_metadata['model'] = hyrax_record.has_model.first
       mapping.each do |key, value|
         next if Bulkrax.reserved_properties.include?(key) && !field_supported?(key)
-        next unless work.respond_to?(key)
-        data = work.send(key)
+        next unless hyrax_record.respond_to?(key)
+        data = hyrax_record.send(key)
         if data.is_a?(ActiveTriples::Relation)
           self.parsed_metadata[key] = data.join('; ').to_s unless value[:excluded]
         else
           self.parsed_metadata[key] = data
         end
       end
-      unless work.is_a?(Collection)
-        self.parsed_metadata['file'] = work.file_sets.map { |fs| filename(fs).to_s unless filename(fs).blank? }.compact.join('; ')
+      unless hyrax_record.is_a?(Collection)
+        self.parsed_metadata['file'] = hyrax_record.file_sets.map { |fs| filename(fs).to_s unless filename(fs).blank? }.compact.join('; ')
       end
       self.parsed_metadata
     end
 
-    # In order for the existing exported work, to be updated by a re-import
+    # In order for the existing exported hyrax_record, to be updated by a re-import
     # we need a unique value in Bulkrax.system_identifier_field
-    # add the existing work id to Bulkrax.system_identifier_field
+    # add the existing hyrax_record id to Bulkrax.system_identifier_field
     def make_round_trippable
-      values = work.send(Bulkrax.system_identifier_field.to_s).to_a
-      values << work.id
-      work.send("#{Bulkrax.system_identifier_field}=", values)
-      work.save
+      values = hyrax_record.send(Bulkrax.system_identifier_field.to_s).to_a
+      values << hyrax_record.id
+      hyrax_record.send("#{Bulkrax.system_identifier_field}=", values)
+      hyrax_record.save
     end
 
     def record
