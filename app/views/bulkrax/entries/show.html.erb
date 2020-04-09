@@ -20,26 +20,26 @@
     </p>
 
     <p>
-      <strong>Raw Metadata:</strong><br />
+      <strong>Raw Metadata:</strong>
       <% if @entry.raw_metadata.present? %>
-      <button id="raw_button">Toggle</button>
-      <div id="raw_metadata"> 
-        <% @entry.raw_metadata.each do |key,value| %>
-          <%= key %>: <%= value %> <br />
-        <% end %>
-      </div>
+        <button id='raw_button'>Toggle</button><br>
+        <span id='raw_metadata' style='display: none'>
+          <% @entry.raw_metadata.each do |k, v| %>
+            <%= k %>: <%= v %><br>
+          <% end %>
+        </span>
       <% end %>
     </p>
 
     <p>
-      <strong>Parsed Metadata:</strong><br />
+      <strong>Parsed Metadata:</strong>
       <% if @entry.parsed_metadata.present? %>
-      <button id="parsed_button">Toggle</button>
-      <div id="parsed_metadata"> 
-        <% @entry.parsed_metadata.each do |key,value| %>
-          <%= key %>: <%= value %> <br />
-        <% end %>
-      </div>
+        <button id='parsed_button'>Toggle</button><br>
+        <span id='parsed_metadata' style='display: none'>
+          <% @entry.parsed_metadata.each do |k, v| %>
+            <%= k %>: <%= v %><br>
+          <% end %>
+        </span>
       <% end %>
     </p>
 
