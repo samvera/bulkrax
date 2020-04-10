@@ -96,7 +96,7 @@ module Bulkrax
 
     def create_from_importer
       importer = Bulkrax::Importer.find(importerexporter.export_source)
-      non_errored_entries = importer.entries.where(type: entry_class.to_s, last_error: [nil, {}, ''])
+      non_errored_entries = importer.entries.where(type: importer.parser.entry_class.to_s, last_error: [nil, {}, ''])
       non_errored_entries.each_with_index do |entry, index|
         break if limit_reached?(limit, index)
         query = "#{ActiveFedora.index_field_mapper.solr_name(Bulkrax.system_identifier_field)}:\"#{entry.identifier}\""
