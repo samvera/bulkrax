@@ -233,7 +233,7 @@ module Bulkrax
       def real_import_file_path
         if file? && zip?
           unzip(parser_fields['import_file_path'])
-          return File.join(importer_unzip_path, File.dirname(parser_fields['import_file_path'], '.zip'))
+          return File.join(importer_unzip_path, File.basename(parser_fields['import_file_path'], '.zip'))
         else
           parser_fields['import_file_path']
         end
