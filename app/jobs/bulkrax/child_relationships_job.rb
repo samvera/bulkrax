@@ -13,7 +13,7 @@ module Bulkrax
       else
         work_membership
       end
-    # Not all of the Works/Collections exist yet; reschedule
+      # Not all of the Works/Collections exist yet; reschedule
     rescue Bulkrax::ChildWorksError
       reschedule(args[0], args[1], args[2])
     end
@@ -73,7 +73,7 @@ module Bulkrax
       # Work-Collection membership is added to the child as member_of_collection_ids
       # This is adding the reverse relatinship, from the child to the parent
       def work_child_collection_parent(work_id)
-        attrs = { id: work_id, collections: [{ id: entry.factory.find.id }] }
+        attrs = { id: work_id, collections: [{ id: entry&.factory&.find&.id }] }
         Bulkrax::ObjectFactory.new(attrs, child_works_hash[work_id][:source_identifier], false, user, child_works_hash[work_id][:class_name].constantize).run
         ImporterRun.find(importer_run_id).increment!(:processed_children)
       rescue StandardError => e
@@ -84,7 +84,7 @@ module Bulkrax
 
       # Collection-Collection membership is added to the as member_ids
       def collection_parent_collection_child(member_ids)
-        attrs = { id: entry.factory.find.id, children: member_ids }
+        attrs = { id: entry&.factory&.find&.id, children: member_ids }
         Bulkrax::ObjectFactory.new(attrs, entry.identifier, false, user, entry.factory_class).run
         ImporterRun.find(importer_run_id).increment!(:processed_children)
       rescue StandardError => e
@@ -96,7 +96,7 @@ module Bulkrax
       # Work-Work membership is added to the parent as member_ids
       def work_parent_work_child(member_ids)
         # build work_members_attributes
-        attrs = { id: entry.factory.find.id,
+        attrs = { id: entry&.factory&.find&.id,
                   work_members_attributes: member_ids.each.with_index.each_with_object({}) do |(member, index), ids|
                     ids[index] = { id: member }
                   end }
