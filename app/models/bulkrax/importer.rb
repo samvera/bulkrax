@@ -80,7 +80,6 @@ module Bulkrax
     def import_works(only_updates = false)
       self.only_updates = only_updates
       parser.create_works
-      remove_unseen
       status_info
     rescue StandardError => e
       status_info(e)
@@ -97,23 +96,6 @@ module Bulkrax
     # @todo - move to parser, as this is OAI specific
     def unique_collection_identifier(id)
       "#{self.parser_fields['base_url'].split('/')[2]}_#{id}"
-    end
-
-    def remove_unseen
-      # TODO
-      # if primary_collection
-      #   primary_collection.member_ids.each do |id|
-      #     w = Work.find id
-      #     unless seen[w.source[0]]
-      #       if w.in_collections.size > 1
-      #         primary_collection.members.delete w # only removes from primary collection - wants the record, not the id
-      #         primary_collection.save
-      #       else
-      #         w.delete # removes from all collections
-      #       end
-      #     end
-      #   end
-      # end
     end
 
     # The format for metadata for the incoming import; corresponds to an Entry class

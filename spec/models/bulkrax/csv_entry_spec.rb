@@ -24,7 +24,7 @@ module Bulkrax
 
       context 'with required metadata' do
         before do
-          allow_any_instance_of(ObjectFactory).to receive(:run)
+          allow_any_instance_of(ObjectFactory).to receive(:run!)
           allow(subject).to receive(:record).and_return('source_identifier' => '2', 'title' => 'some title')
         end
 
@@ -36,7 +36,7 @@ module Bulkrax
 
       context 'with files containing spaces' do
         before do
-          allow_any_instance_of(ObjectFactory).to receive(:run)
+          allow_any_instance_of(ObjectFactory).to receive(:run!)
 
           allow(subject).to receive(:record).and_return('source_identifier' => '3', 'title' => 'some title')
           allow(File).to receive(:exist?).with('./spec/fixtures/csv/test_file.csv').and_return(true)

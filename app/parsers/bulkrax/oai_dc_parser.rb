@@ -86,6 +86,9 @@ module Bulkrax
       results.full.each_with_index do |record, index|
         break if limit_reached?(limit, index)
         if record.deleted? # TODO: record.status == "deleted"
+          seen[record.identifier] = true
+          new_entry = entry_class.where(importerexporter: self.importerexporter, identifier: record.identifier).first_or_create!
+          DeleteWorkJob.send(perform_method, new_entry, importerexporter.current_importer_run)
           importerexporter.current_importer_run.deleted_records += 1
           importerexporter.current_importer_run.save!
         else

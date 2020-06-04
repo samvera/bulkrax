@@ -65,12 +65,22 @@ module Bulkrax
 
     def create_works
       records.each_with_index do |record, index|
-        next if record[:source_identifier].blank?
+        if record[:source_identifier].blank?
+          current_importer_run.invalid_records ||= ""
+          current_importer_run.invalid_records += "Missing #{Bulkrax.system_identifier_field} for #{record.to_h}\n"
+          current_importer_run.failed_records += 1
+          current_importer_run.save
+          next
+        end
         break if limit_reached?(limit, index)
 
         seen[record[:source_identifier]] = true
         new_entry = find_or_create_entry(entry_class, record[:source_identifier], 'Bulkrax::Importer', record.to_h.compact)
-        ImportWorkJob.send(perform_method, new_entry.id, current_importer_run.id)
+        if record[:delete].present?
+          DeleteWorkJob.send(perform_method, new_entry, current_importer_run)
+        else
+          ImportWorkJob.send(perform_method, new_entry.id, current_importer_run.id)
+        end
         increment_counters(index)
       end
       status_info

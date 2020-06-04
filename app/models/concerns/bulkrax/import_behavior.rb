@@ -10,7 +10,7 @@ module Bulkrax
         build_metadata
         unless self.importerexporter.validate_only
           raise CollectionsCreatedError unless collections_created?
-          @item = factory.run
+          @item = factory.run!
         end
       rescue RSolr::Error::Http, CollectionsCreatedError => e
         raise e

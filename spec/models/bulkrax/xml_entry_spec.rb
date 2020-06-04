@@ -50,7 +50,7 @@ module Bulkrax
         before do
           xml_entry.raw_metadata = raw_metadata
           allow(ObjectFactory).to receive(:new).and_return(object_factory)
-          allow(object_factory).to receive(:run).and_return(instance_of(Work))
+          allow(object_factory).to receive(:run!).and_return(instance_of(Work))
           allow(User).to receive(:batch_user)
         end
 

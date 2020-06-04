@@ -30,6 +30,14 @@ module Bulkrax
       object
     end
 
+    def run!
+      self.run
+      # Create the error exception if the object is not validly saved for some reason
+      if !object.persisted? || object.changed?
+        raise ActiveFedora::RecordInvalid.new(object)
+      end
+    end
+
     def update
       raise "Object doesn't exist" unless object
       destroy_existing_files if @replace_files && klass != Collection
