@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20200326235838) do
+ActiveRecord::Schema.define(version: 20200601204556) do
 
   create_table "bookmarks", force: :cascade do |t|
     t.integer "user_id", null: false
@@ -82,6 +82,7 @@ ActiveRecord::Schema.define(version: 20200326235838) do
     t.integer "total_collection_entries", default: 0
     t.integer "processed_children", default: 0
     t.integer "failed_children", default: 0
+    t.text "invalid_records"
     t.index ["importer_id"], name: "index_bulkrax_importer_runs_on_importer_id"
   end
 

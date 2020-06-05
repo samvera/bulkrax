@@ -85,12 +85,13 @@ module Bulkrax
       return unless results.present?
       results.full.each_with_index do |record, index|
         break if limit_reached?(limit, index)
+        seen[record.identifier] = true
+        new_entry = entry_class.where(importerexporter: self.importerexporter, identifier: record.identifier).first_or_create!
         if record.deleted? # TODO: record.status == "deleted"
+          DeleteWorkJob.send(perform_method, new_entry, importerexporter.current_importer_run)
           importerexporter.current_importer_run.deleted_records += 1
           importerexporter.current_importer_run.save!
         else
-          seen[record.identifier] = true
-          new_entry = entry_class.where(importerexporter: self.importerexporter, identifier: record.identifier).first_or_create!
           ImportWorkJob.send(perform_method, new_entry.id, importerexporter.current_importer_run.id)
           increment_counters(index)
         end

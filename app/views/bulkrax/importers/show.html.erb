@@ -47,6 +47,9 @@
         <strong>Error:</strong> <%= @importer.last_error['error_class'] %> - <%= @importer.last_error['error_message'] %><br />
         <strong>Error Trace:</strong> <button id='err_toggle'>Toggle</button><br>
         <span id='error_trace' style='display: none'><%= @importer.last_error['error_trace'] %></span>
+      <% elsif @importer.importer_runs.last&.invalid_records&.present? %>
+        <strong>Error Trace:</strong> <button id='err_toggle'>Toggle</button><br>
+        <span id='error_trace' style='display: none'><%= @importer.importer_runs.last.invalid_records %></span>
       <% elsif @importer.last_succeeded_at.present?  %>
         <strong>Succeeded At:</strong> <%= @importer.last_succeeded_at %>
       <% end %>

@@ -54,7 +54,7 @@
       <% elsif @entry.last_succeeded_at != nil %>
         <strong>Succeeded At:</strong> <%= @entry.last_succeeded_at %>
       <% else %>
-        <strong>Succeeded At:</strong> Item has not been <%= @importer.present? ? 'imported' : 'exported' %> successfully
+        <strong>Succeeded At:</strong> Item has not yet been <%= @importer.present? ? 'imported' : 'exported' %> successfully
       <% end %>
     </p>
 
@@ -79,7 +79,7 @@
             <%= link_to @entry.factory_class.to_s, main_app.polymorphic_path(factory_record) %>
           <% end %>
         <% else %>
-          <strong>Item Link:</strong> Item has not been imported successfully
+          <strong>Item Link:</strong> Item has not yet been imported successfully
         <% end %>
       <% else %>
         <% record = @entry&.hyrax_record %>

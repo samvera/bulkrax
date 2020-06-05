@@ -5,11 +5,11 @@ module Bulkrax
     belongs_to :importer
 
     def importer_status
-      import_runs = importer.importer_runs.last
+      import_run = importer.importer_runs.last
 
-      return "Failed" if import_runs&.failed_records&.positive? || import_runs&.failed_collections&.positive? || import_runs&.failed_children&.positive?
-      return "Processing" if import_runs&.enqueued_records&.positive?
-      return "Completed" if import_runs&.enqueued_records&.zero? && import_runs&.processed_records == import_runs&.total_work_entries
+      return "Failed" if import_run&.failed_records&.positive? || import_run&.failed_collections&.positive? || import_run&.failed_children&.positive? || import_run&.invalid_records&.present?
+      return "Processing" if import_run&.enqueued_records&.positive?
+      return "Completed" if import_run&.enqueued_records&.zero? && import_run&.processed_records == import_run&.total_work_entries
     end
   end
 end
