@@ -20,11 +20,6 @@ module Bulkrax
       entry.save!
     rescue Bulkrax::CollectionsCreatedError
       reschedule(args[0], args[1])
-      # Exceptions here are not an issue with building the work.
-      # Those are caught separately, these are more likely network, db or other unexpected issues.
-      # Note that these temporary type issues do not raise the failure count
-    rescue StandardError, OAIError, RSolr::Error::Http => e
-      raise e
     end
     # rubocop:enable Rails/SkipsModelValidations
 
