@@ -1,0 +1,36 @@
+name: Test
+on:
+  pull_request:
+    branches:
+      - '**'
+  push:
+    branches:
+      - master
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/cache@preview
+        id: cache
+        with:
+          path: ~/local/rubies
+          key: 2.6.5
+
+      - uses: clupprich/ruby-build-action@master
+        id: ruby
+        with:
+          ruby-version: 2.6.5
+          cache-available: ${{ steps.cache.outputs.cache-hit == 'true' }}
+
+      - name: Install dependencies
+        run: bundle install
+
+      - name: Migrate test database
+        run: bin/rails db:migrate RAILS_ENV=test
+
+      - name: Run rspec
+        run: rake
