@@ -8,7 +8,7 @@ on:
       - master
 
 jobs:
-  test:
+  rspec:
     runs-on: ubuntu-latest
 
     steps:
@@ -25,6 +25,9 @@ jobs:
         with:
           ruby-version: 2.6.5
           cache-available: ${{ steps.cache.outputs.cache-hit == 'true' }}
+
+      - name: Setup sqlite3
+        run: sudo apt-get install libsqlite3-dev
 
       - name: Install dependencies
         run: bundle install
