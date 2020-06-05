@@ -12,6 +12,7 @@ module Bulkrax
       allow(Bulkrax::Exporter).to receive(:find).with(1).and_return(exporter)
       allow(exporter).to receive(:exporter_runs).and_return([bulkrax_exporter_run])
       allow(exporter).to receive(:mapping).and_return("title" => {})
+      exporter.setup_export_path
     end
 
     describe 'successful job', clean_downloads: true do
