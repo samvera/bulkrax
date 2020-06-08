@@ -13,7 +13,7 @@ module Bulkrax
       else
         work_membership
       end
-    # Not all of the Works/Collections exist yet; reschedule
+      # Not all of the Works/Collections exist yet; reschedule
     rescue Bulkrax::ChildWorksError
       reschedule(args[0], args[1], args[2])
     end
