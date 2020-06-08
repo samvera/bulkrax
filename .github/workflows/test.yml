@@ -1,4 +1,4 @@
-name: Rubocop
+name: Test
 on:
   pull_request:
     branches:
@@ -8,7 +8,7 @@ on:
       - master
 
 jobs:
-  lint:
+  rspec:
     runs-on: ubuntu-latest
 
     steps:
@@ -26,8 +26,14 @@ jobs:
           ruby-version: 2.6.5
           cache-available: ${{ steps.cache.outputs.cache-hit == 'true' }}
 
-      - name: Install dependencies
-        run: bundle install --without default development test
+      - name: Setup sqlite3
+        run: sudo apt-get install libsqlite3-dev
 
-      - name: Run Rubocop
-        run: bin/rubocop -P
+      - name: Install dependencies
+        run: bundle install
+
+      - name: Migrate test database
+        run: bin/rails db:migrate RAILS_ENV=test
+
+      - name: Run rspec
+        run: rake

@@ -1,0 +1,33 @@
+name: Lint
+on:
+  pull_request:
+    branches:
+      - '**'
+  push:
+    branches:
+      - master
+
+jobs:
+  rubocop:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/cache@preview
+        id: cache
+        with:
+          path: ~/local/rubies
+          key: 2.6.5
+
+      - uses: clupprich/ruby-build-action@master
+        id: ruby
+        with:
+          ruby-version: 2.6.5
+          cache-available: ${{ steps.cache.outputs.cache-hit == 'true' }}
+
+      - name: Install dependencies
+        run: bundle install --without default development test
+
+      - name: Run Rubocop
+        run: bin/rubocop -P
