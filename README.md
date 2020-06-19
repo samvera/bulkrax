@@ -117,7 +117,7 @@ It's unlikely that the incoming import data has fields that exactly match those 
 
 By default, a mapping for the OAI parser has been added to map standard oai_dc fields to Hyrax basic_metadata. The other parsers have no default mapping, and will map any incoming fields to Hyrax properties with the same name. Configurations can be added in `config/intializers/bulkrax.rb`
 
-Configuring field mappings is documented in the [https://github.com/samvera-labs/bulkrax/wiki/Configuration](Bulkrax Configuration Guide).
+Configuring field mappings is documented in the [Bulkrax Configuration Guide](https://github.com/samvera-labs/bulkrax/wiki/Configuration).
 
 ## Importing Files
 
@@ -148,7 +148,7 @@ end
 
 ## Customizing Bulkrax
 
-For further information on how to extend and customize Bulkrax, please see the [https://github.com/samvera-labs/bulkrax/wiki/Customizing](Bulkrax Customization Guide).
+For further information on how to extend and customize Bulkrax, please see the [Bulkrax Customization Guide](https://github.com/samvera-labs/bulkrax/wiki/Customizing).
 
 ## How it Works
 Once you have Bulkrax installed, you will have access to an easy to use interface with which you are able to create, edit, delete, run, and re-run imports and exports. 
