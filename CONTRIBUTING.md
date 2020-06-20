@@ -2,7 +2,7 @@
 
 We encourage everyone to help improve this project.  Bug reports and pull requests are welcome on GitHub at https://github.com/samvera-labs/bulkrax.
 
-This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant](http://contributor-covenant.org) code of conduct.
+This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant](https://contributor-covenant.org) code of conduct.
 
 All Contributors should have signed the Hydra Contributor License Agreement (CLA)
 
@@ -13,12 +13,12 @@ The preferred way to submit bug reports is to submit an issue at https://github.
 
 ## Contributing Code
 
-If you would like to contribute code for this project, you can submit your pull request at https://github.com/samvera-labs/bulkrax/merge_requests
+If you would like to contribute code for this project, you can submit your pull request at https://github.com/samvera-labs/bulkrax/pulls
 
 
 ## Write, Clarify, or Fix Documentation
 
-If you would like to contribute to the documentation for this project, you can submit your pull request at https://github.com/samvera-labs/bulkrax/merge_requests
+If you would like to contribute to the documentation for this project, you can submit your pull request at https://github.com/samvera-labs/bulkrax/pulls
 
 
 ## Suggest or add new features
