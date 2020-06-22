@@ -226,7 +226,7 @@ module Bulkrax
         params&.[](:importer)&.[](:parser_fields)&.except(:file)&.keys
       end
 
-      # Only allow a trusted parameter "white list" through.
+      # Only allow a trusted parameters through.
       def importer_params
         importable_params.require(:importer).permit(
           :name,
