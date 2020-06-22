@@ -253,7 +253,7 @@ Hyrax.config do |config|
     config.browse_everything = nil
   end
 
-  ## Whitelist all directories which can be used to ingest from the local file
+  ## Permit all directories which can be used to ingest from the local file
   # system.
   #
   # Any file, and only those, that is anywhere under one of the specified
@@ -267,7 +267,13 @@ Hyrax.config do |config|
   # ingest files from the file system that are not part of the BrowseEverything
   # mount point.
   #
+  # Heads up adopter, the whitelisted_ingest_dirs method is deprecated
+  # in Hyrax 3.0.0.  Depending on your should consider using
+  # registered_ingest_dirs instead.  We've added them both, you decide
+  # which one makes sense for your implementation.
+  #
   # config.whitelisted_ingest_dirs = []
+  # config.registered_ingest_dirs = []
 end
 
 Date::DATE_FORMATS[:standard] = "%m/%d/%Y"
