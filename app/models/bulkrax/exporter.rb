@@ -81,7 +81,7 @@ module Bulkrax
     end
 
     def setup_export_path
-      FileUtils.mkdir_p(exporter_export_path)
+      FileUtils.mkdir_p(exporter_export_path) unless File.exist?(exporter_export_path)
     end
 
     def exporter_export_path
