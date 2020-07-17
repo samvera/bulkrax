@@ -42,7 +42,11 @@ RSpec.configure do |config|
   config.include FactoryBot::Syntax::Methods
 
   config.after do
-    DatabaseCleaner.clean
+    begin
+      DatabaseCleaner.clean
+    rescue
+      puts 'database clean failed'
+    end
   end
 
   config.after(:each, clean_downloads: true) do
