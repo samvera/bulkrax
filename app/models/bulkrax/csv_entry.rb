@@ -88,15 +88,23 @@ module Bulkrax
         next unless hyrax_record.respond_to?(key)
         data = hyrax_record.send(key)
         if data.is_a?(ActiveTriples::Relation)
-          self.parsed_metadata[key] = data.join('; ').to_s unless value[:excluded]
+          self.parsed_metadata[key] = data.map { |d| prepare_export_data(d) }.join('; ').to_s unless value[:excluded]
         else
-          self.parsed_metadata[key] = data
+          self.parsed_metadata[key] = prepare_export_data(data)
         end
       end
       unless hyrax_record.is_a?(Collection)
         self.parsed_metadata['file'] = hyrax_record.file_sets.map { |fs| filename(fs).to_s unless filename(fs).blank? }.compact.join('; ')
       end
       self.parsed_metadata
+    end
+
+    def prepare_export_data(datum)
+      if datum.is_a?(ActiveTriples::Resource)
+        datum.to_uri.to_s
+      else
+        datum
+      end
     end
 
     # In order for the existing exported hyrax_record, to be updated by a re-import

@@ -210,6 +210,7 @@ module Bulkrax
     end
 
     def zip
+      FileUtils.rm_rf(exporter_export_zip_path)
       WillowSword::ZipPackage.new(exporter_export_path, exporter_export_zip_path).create_zip
     end
 
