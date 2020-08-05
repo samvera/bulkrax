@@ -8,3 +8,4 @@ spec/test_app/tmp/
 coverage/**
 .byebug_history
 tmp/**
+.env.*
