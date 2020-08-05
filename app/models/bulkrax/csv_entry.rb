@@ -45,9 +45,7 @@ module Bulkrax
       raise StandardError, 'Record not found' if record.nil?
 
       unless importerexporter.parser.required_elements?(record.keys)
-        raise StandardError(
-          "Missing required elements, required elements are: #{importerexporter.parser.required_elements.join(', ')}"
-        )
+        raise StandardError, "Missing required elements, required elements are: #{importerexporter.parser.required_elements.join(', ')}"
       end
 
       self.parsed_metadata = {}
