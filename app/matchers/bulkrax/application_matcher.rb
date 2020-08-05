@@ -32,7 +32,8 @@ module Bulkrax
       if self.split.is_a?(TrueClass)
         @result = @result.split(/\s*[:;|]\s*/) # default split by : ; |
       elsif self.split
-        @result = @result.split(Regexp.new(self.split))
+        result = @result.split(Regexp.new(self.split))
+        @result = result.map {|v| v.strip}
       end
     end
 
