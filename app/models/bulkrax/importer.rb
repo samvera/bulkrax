@@ -26,6 +26,18 @@ module Bulkrax
     # TODO: (OAI only) validates :metadata_prefix, presence: true
     # TODO (OAI only) validates :base_url, presence: true
 
+    def status
+      if self.last_error_at.present?
+        'Failed'
+      elsif self.validate_only
+        'Validated'
+      elsif importer_runs.last&.importer_status
+        importer_runs.last&.importer_status
+      else
+        'Pending'
+      end
+    end
+
     # If field_mapping is empty, setup a default based on the export_properties
     def mapping
       @mapping ||= if self.field_mapping.blank? || self.field_mapping == [{}]

@@ -31,6 +31,16 @@ module Bulkrax
       status_info(e)
     end
 
+    def status
+      if self.last_error_at.present?
+        'Failed'
+      elsif exporter_runs.last&.exporter_status
+        exporter_runs.last&.exporter_status
+      else
+        'Pending'
+      end
+    end
+
     # #export_source accessors
     # Used in form to prevent it from getting confused as to which value to populate #export_source with.
     # Also, used to display the correct selected value when rendering edit form.
