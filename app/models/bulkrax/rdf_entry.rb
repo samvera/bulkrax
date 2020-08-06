@@ -23,7 +23,7 @@ module Bulkrax
         reader.each_statement do |statement|
           collections << statement.object.to_s if collection_field.present? && collection_field == statement.predicate.to_s
           children << statement.object.to_s if children_field.present? && children_field == statement.predicate.to_s
-          delete  = statement.object.to_s if statement.predicate.to_s.match(/deleted/)
+          delete = statement.object.to_s if statement.predicate.to_s =~ /deleted/
           writer << statement
         end
       end

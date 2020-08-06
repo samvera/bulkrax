@@ -48,7 +48,7 @@ module Bulkrax
         )
       end
 
-      it 'it should parse the delete as true if present' do
+      it 'parses the delete as true if present' do
         expect(raw_metadata[:delete]).to be_truthy
       end
     end
@@ -69,7 +69,7 @@ module Bulkrax
         )
       end
 
-      it 'it should parse the delete as nil if it is not present' do
+      it 'parses the delete as nil if it is not present' do
         expect(raw_metadata[:delete]).to be_nil
       end
 

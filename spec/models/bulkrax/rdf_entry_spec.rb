@@ -50,7 +50,7 @@ module Bulkrax
       context 'deleted' do
         let(:path) { './spec/fixtures/bags/deleted_bag/descMetadata.nt' }
 
-        it 'should have a deleted proeprty' do
+        it 'has a deleted proeprty' do
           expect(raw_metadata[:delete]).to be_truthy
         end
       end
