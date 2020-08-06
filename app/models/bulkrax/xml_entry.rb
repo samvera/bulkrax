@@ -20,6 +20,7 @@ module Bulkrax
       xpath_for_source_id = ".//*[name()='#{source_identifier_field}']"
       return {
         source_identifier: data.xpath(xpath_for_source_id).first.text,
+        delete: data.xpath(".//*[name()='delete']").first&.text,
         data:
           data.to_xml(
             encoding: 'UTF-8',

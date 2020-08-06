@@ -18,15 +18,18 @@ module Bulkrax
       format = reader.class.format.to_sym
       collections = []
       children = []
+      delete = nil
       data = RDF::Writer.for(format).buffer do |writer|
         reader.each_statement do |statement|
           collections << statement.object.to_s if collection_field.present? && collection_field == statement.predicate.to_s
           children << statement.object.to_s if children_field.present? && children_field == statement.predicate.to_s
+          delete = statement.object.to_s if statement.predicate.to_s =~ /deleted/
           writer << statement
         end
       end
       return {
         source_identifier: reader.subjects.first.to_s,
+        delete: delete,
         format: format,
         data: data,
         collection: collections,

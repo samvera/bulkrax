@@ -19,6 +19,7 @@ module Bulkrax
       it 'retrieves the data and constructs a hash' do
         expect(described_class.data_for_entry(data)).to eq(
           data: "<http://example.org/ns/19158> <http://purl.org/dc/terms/identifier> \"12345\" .\n<http://example.org/ns/19158> <http://purl.org/dc/terms/title> \"Test Bag\" .\n",
+          delete: nil,
           children: [],
           collection: [],
           format: :ntriples,
@@ -46,6 +47,14 @@ module Bulkrax
         Bulkrax.default_work_type = 'Work'
       end
 
+      context 'deleted' do
+        let(:path) { './spec/fixtures/bags/deleted_bag/descMetadata.nt' }
+
+        it 'has a deleted proeprty' do
+          expect(raw_metadata[:delete]).to be_truthy
+        end
+      end
+
       context 'with raw_metadata' do
         before do
           subject.raw_metadata = raw_metadata
@@ -58,6 +67,10 @@ module Bulkrax
           subject.build
           expect(subject.parsed_metadata).to eq("file" => nil, "rights_statement" => [nil], "source" => ["http://example.org/ns/19158"], "title" => ["Test Bag"], "visibility" => "open")
           expect(subject.status).to eq('succeeded')
+        end
+
+        it 'has a nil delete' do
+          expect(subject.raw_metadata[:delete]).to be_nil
         end
       end
 

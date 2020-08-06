@@ -22,11 +22,34 @@ module Bulkrax
         it 'retrieves the data and constructs a hash' do
           expect(described_class.data_for_entry(data)).to eq(
             source_identifier: '3456012',
+            delete: nil,
             data: "<!-- This grammar has been deprecated - use FMPXMLRESULT instead --><FMPDSORESULT> <ROW MODID=\"3\" RECORDID=\"000003\"> <TitleLargerEntity>Single XML Entry</TitleLargerEntity> <Abstract>Lorem ipsum dolor sit amet.</Abstract> <DrisUnique>3456012</DrisUnique> </ROW></FMPDSORESULT>",
             collection: [],
             children: []
           )
         end
+      end
+    end
+
+    describe 'deleted' do
+      subject(:xml_entry) { described_class.new(importerexporter: importer) }
+      let(:path) { './spec/fixtures/xml/deleted.xml' }
+      let(:raw_metadata) { described_class.data_for_entry(data) }
+      let(:importer) { FactoryBot.build(:bulkrax_importer_xml) }
+      let(:object_factory) { instance_double(ObjectFactory) }
+
+      before do
+        Bulkrax.default_work_type = 'Work'
+        Bulkrax.field_mappings.merge!(
+          'Bulkrax::XmlParser' => {
+            'title' => { from: ['TitleLargerEntity'] },
+            'abstract' => { from: ['Abstract'] }
+          }
+        )
+      end
+
+      it 'parses the delete as true if present' do
+        expect(raw_metadata[:delete]).to be_truthy
       end
     end
 
@@ -44,6 +67,10 @@ module Bulkrax
             'abstract' => { from: ['Abstract'] }
           }
         )
+      end
+
+      it 'parses the delete as nil if it is not present' do
+        expect(raw_metadata[:delete]).to be_nil
       end
 
       context 'with raw_metadata' do
