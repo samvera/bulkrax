@@ -44,9 +44,7 @@ module Bulkrax
     def build_metadata
       raise StandardError, 'Record not found' if record.nil?
 
-      unless importerexporter.parser.required_elements?(record.keys)
-        raise StandardError, "Missing required elements, required elements are: #{importerexporter.parser.required_elements.join(', ')}"
-      end
+      raise StandardError, "Missing required elements, required elements are: #{importerexporter.parser.required_elements.join(', ')}" unless importerexporter.parser.required_elements?(record.keys)
 
       self.parsed_metadata = {}
       self.parsed_metadata[Bulkrax.system_identifier_field] = [record['source_identifier']]
