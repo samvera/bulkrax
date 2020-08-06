@@ -6,8 +6,16 @@ module Bulkrax
     delegate :export_type, :exporter_export_path, to: :importerexporter
 
     def build_for_exporter
-      build_export_metadata
-      write_files if export_type == 'full'
+      begin
+        build_export_metadata
+        write_files if export_type == 'full'
+      rescue RSolr::Error::Http, CollectionsCreatedError => e
+        raise e
+      rescue StandardError => e
+        status_info(e)
+      else
+        status_info
+      end
     end
 
     def build_export_metadata
