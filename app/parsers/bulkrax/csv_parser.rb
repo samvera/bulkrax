@@ -265,10 +265,11 @@ module Bulkrax
 
       # Override to return the first CSV in the path, if a zip file is supplied
       # We expect a single CSV at the top level of the zip in the CSVParser
+      # but we are willing to go look for it if need be
       def real_import_file_path
         if file? && zip?
           unzip(parser_fields['import_file_path'])
-          return Dir["#{importer_unzip_path}/*.csv"].first
+          return Dir["#{importer_unzip_path}/**/*.csv"].first
         else
           parser_fields['import_file_path']
         end
