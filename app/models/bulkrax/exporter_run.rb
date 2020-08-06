@@ -7,11 +7,17 @@ module Bulkrax
     def exporter_status
       export_run = exporter.exporter_runs.last
 
-      return "Processing" if export_run&.enqueued_records&.positive?
-      return "Failed" if export_run&.processed_records&.zero?
-      return "Complete" if export_run&.enqueued_records&.zero? && export_run&.processed_records == export_run&.total_work_entries
-      return "Complete (with failures)" if export_run&.failed_records&.positive?
-      return "Not yet exported" unless File.exist?(exporter.exporter_export_zip_path) || export_run&.total_work_entries&.zero?
+      @exporter_status ||= if export_run&.enqueued_records&.positive?
+                             'Processing'
+                           elsif export_run&.processed_records&.zero?
+                             'Failed'
+                           elsif export_run&.failed_records&.positive?
+                             'Complete (with failures)'
+                           elsif export_run&.processed_records == export_run&.total_work_entries
+                             'Complete'
+                           else
+                             'Pending'
+                           end
     end
   end
 end
