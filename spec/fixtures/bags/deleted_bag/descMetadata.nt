@@ -1,0 +1,3 @@
+<http://example.org/ns/19158> <http://purl.org/dc/terms/identifier> "12345" .
+<http://example.org/ns/19158> <http://purl.org/dc/terms/title> "Test Bag" .
+<http://example.org/ns/19158> <https://www.w3.org/ns/activitystreams#deleted> "2020-01-01T00:00:00Z" .
