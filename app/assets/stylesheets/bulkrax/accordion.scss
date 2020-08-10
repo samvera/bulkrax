@@ -1,0 +1,40 @@
+.accordion-icon {
+  float: right;
+  margin: 0 auto;
+  font-size: 22px;
+  transform: rotate(45deg);
+  margin-top: -2px;
+}
+
+.accordion-container {
+  width: 100%;
+  padding: 0px;
+  margin: 10px 0px;
+  border-radius: 4px;
+  border: 1px solid #dedede;
+}
+
+.accordion-heading {
+  padding: 14px 15px;
+  background-color: #f5f5f5;
+  border-radius: 3px;
+}
+
+.accordion-title {
+  font-size: 14px;
+  font-weight: bold;
+  color: #4E4A42;
+  &:hover {
+      color: #4E4A42;
+  }
+}
+
+.accordion-collapse {
+  width: 100%;
+  padding: 0px;
+}
+
+.accordion-body {
+  padding: 14px;
+  width: 100%;
+}

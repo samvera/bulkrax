@@ -13,21 +13,3 @@
  *= require_tree .
  *= require_self
  */
-
-div.importer_parser_fields_file_style span.radio {
-  display: inline;
-  margin-right: 20px;
-}
-
-div#file_upload, div#file_path {
-  display: none
-}
-
-div.hide-required-tag .required-tag {
-  display: none;
-}
-
-div#s2id_exporter_export_source_collection {
-  border: none;
-  padding: 0;
-}

@@ -7,174 +7,161 @@
     </div>
   <% end %>
 </div>
-
-<div class="panel panel-default">
+<div class="panel panel-default bulkrax-align-text">
   <div class="panel-body">
-
-    <p>
+    <p class="bulkrax-p-align">
       <strong>Name:</strong>
       <%= @importer.name %>
     </p>
-
-    <p>
+    <p class="bulkrax-p-align">
       <strong>Admin set:</strong>
       <%= @importer.admin_set_id %>
     </p>
-
-    <p>
+    <p class="bulkrax-p-align">
       <strong>User:</strong>
       <%= @importer.user %>
     </p>
-
-    <p>
+    <p class="bulkrax-p-align">
       <strong>Frequency:</strong>
       <%= @importer.frequency %>
     </p>
-
-    <p>
+    <p class="bulkrax-p-align">
       <strong>Parser klass:</strong>
       <%= @importer.parser_klass %>
     </p>
-
-    <p>
+    <p class="bulkrax-p-align">
       <strong>Limit:</strong>
       <%= @importer.limit %>
     </p>
 
-    <p>
-      <% if @importer.last_error.present? %>
-        <strong>Errored at:</strong> <%= @importer.last_error_at %><br />
-        <strong>Error:</strong> <%= @importer.last_error['error_class'] %> - <%= @importer.last_error['error_message'] %><br />
-        <strong>Error Trace:</strong> <button id='err_toggle'>Toggle</button><br>
-        <span id='error_trace' style='display: none'><%= @importer.last_error['error_trace'] %></span>
-      <% elsif @importer.importer_runs.last&.invalid_records&.present? %>
-        <strong>Error Trace:</strong> <button id='err_toggle'>Toggle</button><br>
-        <span id='error_trace' style='display: none'><%= @importer.importer_runs.last.invalid_records %></span>
-      <% elsif @importer.last_succeeded_at.present?  %>
-        <strong>Succeeded At:</strong> <%= @importer.last_succeeded_at %>
-      <% end %>
-    </p>
+    <%= render partial: 'bulkrax/shared/bulkrax_errors', locals: {item: @importer} %>
 
-    <p>
-      <strong>Parser fields:</strong><br />
-      <% @importer.parser_fields.each do |key,value| %>
-        <%= key %>: <%= value %> <br />
-      <% end %>
-    </p>
-
-    <p>
-      <strong>Field mapping:</strong>
-      <% if @importer.field_mapping.present? %>
-        <button id='fm_toggle'>Toggle</button><br>
-        <span id='field_mapping' style='display: none'>
-          <% @importer.field_mapping.each do |k, v| %>
-            <%= k %>: <%= v %><br>
+    <div class="accordion-container">
+      <div class="accordion-heading" role="tab" id="parser-fields-heading">
+        <a class="accordion-title" role="button" data-toggle="collapse" data-target="#parser-fields-importer-show" aria-expanded="true" aria-controls="parser-fields-importer-show">
+          Parser fields:
+        </a>
+        <a role="button" data-toggle="collapse" data-target="#parser-fields-importer-show" aria-expanded="true" aria-controls="parser-fields-importer-show">
+          <div class="accordion-icon glyphicon glyphicon-remove-circle" aria-hidden="true"></div>
+        </a>
+      </div>
+      <div id="parser-fields-importer-show" class="accordion-collapse collapse" role="tabpanel" aria-labelledby="parser-fields-heading">
+        <div class="accordion-body">
+          <% @importer.parser_fields.each do |key,value| %>
+            <strong><%= key %>:</strong> <%= value %> <br />
           <% end %>
-        </span>
-      <% end %>
-    </p>
+        </div>
+      </div>
+    </div>
 
-    <p>
+    <%= render partial: 'bulkrax/shared/bulkrax_field_mapping', locals: {item: @importer} %>
+
+    <p class="bulkrax-p-align">
       <strong>Total Works:</strong>
       <%= @importer.importer_runs.last&.total_work_entries %>
     </p>
 
-    <p>
+    <p class="bulkrax-p-align">
       <strong>Total Collections:</strong>
       <%= @importer.importer_runs.last&.total_collection_entries %>
     </p>
 
-    <br />
+  <div class="bulkrax-nav-tab-bottom-margin">
+    <!-- Nav tabs -->
+      <ul class="bulkrax-nav-tab-top-margin tab-nav nav nav-tabs" role="tablist">
+        <li role="presentation" class="active"><a href="#collection-entries" aria-controls="collection-entries" role="tab" data-toggle="tab">Collection Entries</a></li>
+        <li role="presentation"><a href="#work-entries" aria-controls="work-entries" role="tab" data-toggle="tab">Work Entries</a></li>
+      </ul>
+    <!-- Tab panes -->
+      <div class="tab-content outline">
+        <div role="tabpanel" class="tab-pane fade in active bulkrax-nav-tab-table-left-align" id="collection-entries">
+          <table class='table table-striped'>
+            <thead>
+              <tr>
+                <th>Identifier</th>
+                <th>Entry ID</th>
+                <th>Status</th>
+                <th>Errors</th>
+                <th>Status Set At</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @collection_entries.each do |e| %>
+                <tr>
+                  <td><%= link_to e.identifier, bulkrax.importer_entry_path(@importer.id, e.id) %></td>
+                  <td><%= e.id %></td>
+                  <% if e.status == "succeeded" %>
+                    <td><span class="glyphicon glyphicon-ok" style="color: green;"></span> <%= e.status %></td>
+                    <% else %>
+                    <td><span class="glyphicon glyphicon-remove" style="color: red;"></span> <%= e.status %></td>
+                  <% end %>
+                  <% if e.last_error.present? %>
+                    <td><%= link_to e.last_error.dig("error_class"), bulkrax.importer_entry_path(@importer.id, e.id) %></td>
+                  <% else %>
+                    <td></td>
+                  <% end %>
+                  <td><%= e.status_at %></td>
+                  <td><%= link_to raw('<span class="glyphicon glyphicon-info-sign"></span>'), bulkrax.importer_entry_path(@importer.id, e.id) %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+          <%= page_entries_info(@collection_entries) %><br />
+          <%= paginate(@collection_entries, param_name: :collections_entries_page) %>
+        </div>
+        <div role="tabpanel" class="tab-pane fade bulkrax-nav-tab-table-left-align" id="work-entries">
+          <table class='table table-striped'>
+            <thead>
+              <tr>
+                <th>Identifier</th>
+                <th>Collection</th>
+                <th>Entry ID</th>
+                <th>Status</th>
+                <th>Errors</th>
+                <th>Status Set At</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @work_entries.each do |e| %>
+                <tr>
+                  <td><%= link_to e.identifier, bulkrax.importer_entry_path(@importer.id, e.id) %></td>
+                  <% if e.parsed_metadata.present? && e.parsed_metadata.dig("collections").present? %>
+                    <td><%= e.parsed_metadata.dig("collections").map {|c| c['id'] }.join('; ') %></td>
+                  <% elsif e.raw_metadata.present? %>
+                    <td><%= Array.wrap(e.raw_metadata.dig("collection")).join(';') %></td>
+                  <% else %>
+                  <td></td>
+                  <% end %>
+                  <td><%= e.id %></td>
+                  <% if e.status == "succeeded" %>
+                    <td><span class="glyphicon glyphicon-ok" style="color: green;"></span> <%= e.status %></td>
+                    <% else %>
+                    <td><span class="glyphicon glyphicon-remove" style="color: red;"></span> <%= e.status %></td>
+                  <% end %>
+                  <% if e.last_error.present? %>
+                    <td><%= link_to e.last_error.dig("error_class"), bulkrax.importer_entry_path(@importer.id, e.id) %></td>
+                  <% else %>
+                    <td></td>
+                  <% end %>
+                  <td><%= e.status_at %></td>
+                  <td><%= link_to raw('<span class="glyphicon glyphicon-info-sign"></span>'), bulkrax.importer_entry_path(@importer.id, e.id) %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+          <%= page_entries_info(@work_entries) %><br />
+          <%= paginate(@work_entries, param_name: :work_entries_page) %>
+        </div>
+      </div>
+    </div>
 
-    <h2>Collection Entries</h2>
-    <table class='table table-striped'>
-      <thead>
-        <tr>
-          <th>Identifier</th>
-          <th>Entry ID</th>
-          <th>Status</th>
-          <th>Errors</th>
-          <th>Status Set At</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-
-      <tbody>
-        <% @collection_entries.each do |e| %>
-          <tr>
-            <td><%= link_to e.identifier, bulkrax.importer_entry_path(@importer.id, e.id) %></td>
-            <td><%= e.id %></td>
-            <% if e.status == "succeeded" %>
-              <td><span class="glyphicon glyphicon-ok" style="color: green;"></span> <%= e.status %></td>
-              <% else %>
-              <td><span class="glyphicon glyphicon-remove" style="color: red;"></span> <%= e.status %></td>
-            <% end %>
-            <% if e.last_error.present? %>
-              <td><%= link_to e.last_error.dig("error_class"), bulkrax.importer_entry_path(@importer.id, e.id) %></td>
-            <% else %>
-              <td></td>
-            <% end %>
-            <td><%= e.status_at %></td>
-            <td><%= link_to raw('<span class="glyphicon glyphicon-info-sign"></span>'), bulkrax.importer_entry_path(@importer.id, e.id) %></td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
-    <%= page_entries_info(@collection_entries) %><br />
-    <%= paginate(@collection_entries, param_name: :collections_entries_page) %>
-
-    <br />
-
-    <h2>Work Entries</h2>
-    <table class='table table-striped'>
-      <thead>
-        <tr>
-          <th>Identifier</th>
-          <th>Collection</th>
-          <th>Entry ID</th>
-          <th>Status</th>
-          <th>Errors</th>
-          <th>Status Set At</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-
-      <tbody>
-        <% @work_entries.each do |e| %>
-          <tr>
-            <td><%= link_to e.identifier, bulkrax.importer_entry_path(@importer.id, e.id) %></td>
-            <% if e.parsed_metadata.present? && e.parsed_metadata.dig("collections").present? %>
-              <td><%= e.parsed_metadata.dig("collections").map {|c| c['id'] }.join('; ') %></td>
-            <% elsif e.raw_metadata.present? %>
-              <td><%= Array.wrap(e.raw_metadata.dig("collection")).join(';') %></td>
-            <% else %>
-            <td></td>
-            <% end %>
-            <td><%= e.id %></td>
-            <% if e.status == "succeeded" %>
-              <td><span class="glyphicon glyphicon-ok" style="color: green;"></span> <%= e.status %></td>
-              <% else %>
-              <td><span class="glyphicon glyphicon-remove" style="color: red;"></span> <%= e.status %></td>
-            <% end %>
-            <% if e.last_error.present? %>
-              <td><%= link_to e.last_error.dig("error_class"), bulkrax.importer_entry_path(@importer.id, e.id) %></td>
-            <% else %>
-              <td></td>
-            <% end %>
-            <td><%= e.status_at %></td>
-            <td><%= link_to raw('<span class="glyphicon glyphicon-info-sign"></span>'), bulkrax.importer_entry_path(@importer.id, e.id) %></td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
-    <%= page_entries_info(@work_entries) %><br />
-    <%= paginate(@work_entries, param_name: :work_entries_page) %>
-
-    <br />
-
-    <%= link_to 'Edit', edit_importer_path(@importer) %>
-    |
-    <%= link_to 'Back', importers_path %><br /><br />
+    <p class="bulkrax-p-align">
+      <%= link_to 'Edit', edit_importer_path(@importer) %>
+      |
+      <%= link_to 'Back', importers_path %><br /><br />
+    </p>
 
     <% if @importer.validate_only == true %>
       <div class='pull-left'>
