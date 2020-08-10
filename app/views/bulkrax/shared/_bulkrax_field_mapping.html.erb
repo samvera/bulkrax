@@ -1,0 +1,46 @@
+<% if item.field_mapping.present? %>
+  <div class="accordion-container">
+    <div class="accordion-heading" role="tab" id="field-mapping-show-heading">
+      <a class="accordion-title" role="button" data-toggle="collapse" data-target="#field-mapping-show" aria-expanded="true" aria-controls="field-mapping-show">
+        <strong>Field mapping:</strong>
+      </a>
+      <a role="button" data-toggle="collapse" data-target="#field-mapping-show" aria-expanded="true" aria-controls="field-mapping-show">
+        <div class="accordion-icon glyphicon glyphicon-remove-circle" aria-hidden="true"></div>
+      </a>
+    </div>
+    <div id="field-mapping-show" class="accordion-collapse collapse" role="tabpanel" aria-labelledby="field-mapping-show">
+      <div class="accordion-body">
+        <div class="bulkrax-nav-tab-bottom-margin">
+          <!-- Toggle buttons -->
+          <div class="btn-group pull-right" role="group" aria-label="...">
+            <button type="button" class="btn btn-default"><a href="#bulkrax-full-toggle-2" aria-controls="bulkrax-full-toggle-2" role="tab" data-toggle="tab">Full</a></button>
+            <button type="button" class="btn btn-default"><a href="#bulkrax-raw-toggle-2" aria-controls="bulkrax-raw-toggle-2" role="tab" data-toggle="tab">Raw</a></button>
+          </div>
+          <!-- Tab panes -->
+          <div class="tab-content">
+            <div id='bulkrax-full-toggle-2' role="tabpanel" class="tab-pane active bulkrax-clear-toggles">
+              <% item.field_mapping.each do |k, v| %>
+                <strong><%= k %>:</strong>
+                <%= CodeRay.scan(v, :ruby).html(
+                      :wrap => :page,
+                      :css => :class,
+                      :tab_width => 200,
+                      :break_lines => true
+                    ).html_safe %><br>
+              <% end %>
+            </div>
+            <div id="bulkrax-raw-toggle-2" role="tabpanel" class="tab-pane">
+              <% item.field_mapping.each do |k, v| %>
+                <%= CodeRay.scan(v, :ruby).html(
+                      :css => :class,
+                      :tab_width => 0,
+                      :break_lines => false,
+                    ).html_safe %><br>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>
