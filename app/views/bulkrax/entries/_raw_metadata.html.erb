@@ -1,0 +1,19 @@
+<% if @entry.raw_metadata.present? %>
+  <div class="accordion-container">
+    <div class="accordion-heading" role="tab" id="raw-metadata-heading">
+      <a class="accordion-title" role="button" data-toggle="collapse" data-target="#raw-metadata-show" aria-expanded="true" aria-controls="raw-metadata-show">
+        Raw Metadata:
+      </a>
+      <a role="button" data-toggle="collapse" data-target="#raw-metadata-show" aria-expanded="true" aria-controls="raw-metadata-show">
+        <div class="accordion-icon glyphicon glyphicon-remove-circle" aria-hidden="true"></div>
+      </a>
+    </div>
+    <div id="raw-metadata-show" class="accordion-collapse collapse" role="tabpanel" aria-labelledby="raw-metadata-show">
+      <div class="accordion-body">
+        <% @entry.raw_metadata.each do |k, v| %>
+          <strong><%= k %>:</strong> <%= v %><br>
+        <% end %>
+      </div>
+    </div>
+  </div>
+<% end %>

@@ -1,0 +1,19 @@
+<% if @entry.parsed_metadata.present? %>
+  <div class="accordion-container">
+    <div class="accordion-heading" role="tab" id="parsed-metadata-heading">
+      <a class="accordion-title" role="button" data-toggle="collapse" data-target="#parsed-metadata-show" aria-expanded="true" aria-controls="parsed-metadata-show">
+        Parsed Metadata:
+      </a>
+      <a role="button" data-toggle="collapse" data-target="#parsed-metadata-show" aria-expanded="true" aria-controls="parsed-metadata-show">
+        <div class="accordion-icon glyphicon glyphicon-remove-circle" aria-hidden="true"></div>
+      </a>
+    </div>
+    <div id="parsed-metadata-show" class="accordion-collapse collapse" role="tabpanel" aria-labelledby="parsed-metadata-show">
+      <div class="accordion-body">
+        <% @entry.parsed_metadata.each do |k, v| %>
+          <strong><%= k %>:</strong> <%= v %><br>
+        <% end %>
+      </div>
+    </div>
+  </div>
+<% end %>

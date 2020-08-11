@@ -6,27 +6,28 @@
 
 <div class='panel panel-default'>
   <div class='panel-body'>
-    <p>
+
+    <p class='bulkrax-p-align'>
       <strong><%= t('bulkrax.exporter.labels.name') %>:</strong>
       <%= @exporter.name %>
     </p>
 
-    <p>
+    <p class='bulkrax-p-align'>
       <strong><%= t('bulkrax.exporter.labels.user') %>:</strong>
       <%= @exporter.user %>
     </p>
 
-    <p>
+    <p class='bulkrax-p-align'>
       <strong><%= t('bulkrax.exporter.labels.export_type') %>:</strong>
       <%= @exporter.export_type %>
     </p>
 
-    <p>
+    <p class='bulkrax-p-align'>
       <strong><%= t('bulkrax.exporter.labels.export_from') %>:</strong>
       <%= @exporter.export_from %>
     </p>
 
-    <p>
+    <p class='bulkrax-p-align'>
       <strong><%= t('bulkrax.exporter.labels.export_source') %>:</strong>
       <% case @exporter.export_from %>
       <% when 'collection' %>
@@ -40,31 +41,22 @@
       <% end %>
     </p>
 
-    <p>
+    <p class='bulkrax-p-align'>
       <strong><%= t('bulkrax.exporter.labels.parser_klass') %>:</strong>
       <%= @exporter.parser_klass %>
     </p>
 
-    <p>
+    <p class='bulkrax-p-align'>
       <strong><%= t('bulkrax.exporter.labels.limit') %>:</strong>
       <%= @exporter.limit %>
     </p>
 
-    <p>
-      <% if @exporter.last_error.present? %>
-        <strong>Errored at:</strong> <%= @exporter.last_error_at %><br />
-        <strong>Error:</strong> <%= @exporter.last_error['error_class'] %> - <%= @exporter.last_error['error_message'] %><br />
-        <strong>Error Trace:</strong> <button id='err_toggle'>Toggle</button><br>
-        <span id='error_trace' style='display: none'><%= @exporter.last_error['error_trace'] %></span>
-      <% elsif @exporter.last_succeeded_at.present?  %>
-        <strong>Succeeded At:</strong> <%= @exporter.last_succeeded_at %>
-      <% end %>
-    </p>
+  <%= render partial: 'bulkrax/shared/bulkrax_field_mapping', locals: {item: @exporter} %>
 
     <%# Currently, no parser-specific fields exist on Exporter,
         thus there's no real reason to always show this field %>
     <% if @exporter.parser_fields.present? %>
-      <p>
+      <p class='bulkrax-p-align'>
         <strong><%= t('bulkrax.exporter.labels.parser_fields') %>:</strong><br>
         <% @exporter.parser_fields.each do |k, v| %>
           <%= k %>: <%= v %><br>
@@ -72,74 +64,61 @@
       </p>
     <% end %>
 
-    <p>
-      <strong><%= t('bulkrax.exporter.labels.field_mapping') %>:</strong>
-      <% if @exporter.field_mapping.present? %>
-        <button id='fm_toggle'>Toggle</button><br>
-        <span id='field_mapping' style='display: none'>
-          <% @exporter.field_mapping.each do |k, v| %>
-            <%= k %>: <%= v %><br>
-          <% end %>
-        </span>
-      <% end %>
-    </p>
+    <p class='bulkrax-p-align'><strong><%= t('bulkrax.exporter.labels.field_mapping') %>:</strong></p>
 
-    <p>
+    <p class='bulkrax-p-align'>
       <strong><%= t('bulkrax.exporter.labels.total_work_entries') %>:</strong>
       <%= @exporter.exporter_runs.last&.total_work_entries %>
     </p>
-
     <br>
-
-    <h2>Entries</h2>
-    <table class='table table-striped'>
-      <thead>
-        <tr>
-          <th>Identifier</th>
-          <th>Collection</th>
-          <th>Entry ID</th>
-          <th>Status</th>
-          <th>Errors</th>
-          <th>Status Set At</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-
-      <tbody>
-        <% @work_entries.each do |e| %>
+    <div class="bulkrax-nav-tab-table-left-align">
+      <h2>Entries</h2>
+      <table class='table table-striped'>
+        <thead>
           <tr>
-            <td><%= link_to e.identifier, bulkrax.exporter_entry_path(@exporter.id, e.id) %></td>
-            <% if e.parsed_metadata.present? && e.parsed_metadata.dig('collections').present? %>
-              <td><%= e.parsed_metadata.dig('collections').map {|c| c['id'] }.join('; ') %></td>
-            <% elsif e.raw_metadata.present? %>
-              <td><%= Array.wrap(e.raw_metadata.dig('collection')).join(';') %></td>
-            <% else %>
-            <td></td>
-            <% end %>
-            <td><%= e.id %></td>
-            <% if e.status == 'succeeded' %>
-              <td><span class='glyphicon glyphicon-ok' style='color: green;'></span> <%= e.status %></td>
-              <% else %>
-              <td><span class='glyphicon glyphicon-remove' style='color: red;'></span> <%= e.status %></td>
-            <% end %>
-            <% if e.last_error.present? %>
-              <td><%= link_to e.last_error.dig('error_class'), bulkrax.exporter_entry_path(@exporter.id, e.id) %></td>
-            <% else %>
-              <td></td>
-            <% end %>
-            <td><%= e.status_at %></td>
-            <td><%= link_to raw("<span class='glyphicon glyphicon-info-sign'></span>"), bulkrax.exporter_entry_path(@exporter.id, e.id) %></td>
+            <th>Identifier</th>
+            <th>Collection</th>
+            <th>Entry ID</th>
+            <th>Status</th>
+            <th>Errors</th>
+            <th>Status Set At</th>
+            <th>Actions</th>
           </tr>
-        <% end %>
-      </tbody>
-    </table>
-    <%= page_entries_info(@work_entries) %><br>
-    <%= paginate(@work_entries, param_name: :work_entries_page) %>
-
-    <br>
-
-    <%= link_to 'Edit', edit_exporter_path(@exporter) %>
-    |
-    <%= link_to 'Back', exporters_path %>
+        </thead>
+        <tbody>
+          <% @work_entries.each do |e| %>
+            <tr>
+              <td><%= link_to e.identifier, bulkrax.exporter_entry_path(@exporter.id, e.id) %></td>
+              <% if e.parsed_metadata.present? && e.parsed_metadata.dig('collections').present? %>
+                <td><%= e.parsed_metadata.dig('collections').map {|c| c['id'] }.join('; ') %></td>
+              <% elsif e.raw_metadata.present? %>
+                <td><%= Array.wrap(e.raw_metadata.dig('collection')).join(';') %></td>
+              <% else %>
+              <td></td>
+              <% end %>
+              <td><%= e.id %></td>
+              <% if e.status == 'succeeded' %>
+                <td><span class='glyphicon glyphicon-ok' style='color: green;'></span> <%= e.status %></td>
+                <% else %>
+                <td><span class='glyphicon glyphicon-remove' style='color: red;'></span> <%= e.status %></td>
+              <% end %>
+              <% if e.last_error.present? %>
+                <td><%= link_to e.last_error.dig('error_class'), bulkrax.exporter_entry_path(@exporter.id, e.id) %></td>
+              <% else %>
+                <td></td>
+              <% end %>
+              <td><%= e.status_at %></td>
+              <td><%= link_to raw("<span class='glyphicon glyphicon-info-sign'></span>"), bulkrax.exporter_entry_path(@exporter.id, e.id) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+      <%= page_entries_info(@work_entries) %><br>
+      <%= paginate(@work_entries, param_name: :work_entries_page) %>
+      <br>
+      <%= link_to 'Edit', edit_exporter_path(@exporter) %>
+      |
+      <%= link_to 'Back', exporters_path %>
+    </div>
   </div>
 </div>

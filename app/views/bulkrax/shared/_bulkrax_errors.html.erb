@@ -1,0 +1,59 @@
+<% if item.last_error.present? %>
+  <div class="accordion-container">
+    <div class="accordion-heading" role="tab" id="error-trace-heading">
+      <a class="accordion-title" role="button" data-toggle="collapse" data-target="#error-trace-show" aria-expanded="true" aria-controls="error-trace-show">
+        Errors:
+      </a>
+      <a role="button" data-toggle="collapse" data-target="#error-trace-show" aria-expanded="true" aria-controls="error-trace-show">
+        <div class="accordion-icon glyphicon glyphicon-remove-circle" aria-hidden="true"></div>
+      </a>
+    </div>
+    <div id="error-trace-show" class="accordion-collapse collapse" role="tabpanel" aria-labelledby="error-trace-show">
+      <div class="accordion-body">
+        <div class="bulkrax-nav-tab-bottom-margin">
+          <!-- Toggle buttons -->
+          <div class="btn-group pull-right" role="group" aria-label="...">
+            <button type="button" class="btn btn-default active"><a href="#bulkrax-full-toggle-1" aria-controls="bulkrax-full-toggle-1" role="tab" data-toggle="tab">Full</a></button>
+            <button type="button" class="btn btn-default"><a href="#bulkrax-raw-toggle-1" aria-controls="bulkrax-raw-toggle-1" role="tab" data-toggle="tab">Raw</a></button>
+          </div>
+          <!-- Tab panes -->
+          <div class="tab-content">
+            <div role="tabpanel" class="tab-pane active" id="bulkrax-full-toggle-1">
+              <strong>Errored at:</strong> <%= item.last_error_at %><br /><br />
+              <strong>Error:</strong> <%= item.last_error['error_class'] %> - <%= item.last_error['error_message'] %><br /><br />
+              <strong>Error Trace:</strong><br/><br />
+              <% item.last_error['error_trace'].each do |v| %>
+                <%= CodeRay.scan(v, :ruby).html(
+                      :wrap => :page,
+                      :css => :class,
+                      :tab_width => 200,
+                      :break_lines => true
+                    ).html_safe %><br>
+              <% end %>
+            </div>
+            <div role="tabpanel" class="tab-pane" id="bulkrax-raw-toggle-1">
+              <strong>Errored at:</strong> <%= item.last_error_at %><br /><br />
+              <strong>Error:</strong> <%= item.last_error['error_class'] %> - <%= item.last_error['error_message'] %><br /><br />
+              <strong>Error Trace:</strong><br/><br />
+              <% item.last_error['error_trace'].each do |v| %>
+                <%= CodeRay.scan(v, :ruby).html(
+                      :css => :class,
+                      :tab_width => 0,
+                      :break_lines => false,
+                    ).html_safe %><br>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+<% elsif item.last_succeeded_at != nil %>
+  <p class='bulkrax-p-align'>
+    <strong>Succeeded At:</strong> <%= item.last_succeeded_at %>
+  </p>
+<% else %>
+  <p class='bulkrax-p-align'>
+    <strong>Succeeded At:</strong> Item has not yet been <%= @importer.present? ? 'imported' : 'exported' %> successfully
+  </p>
+<% end %>
