@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'coderay'
+
 module Bulkrax
   class ApplicationController < ::ApplicationController
     helper Rails.application.class.helpers
