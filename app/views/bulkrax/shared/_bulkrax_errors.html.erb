@@ -23,12 +23,8 @@
               <strong>Error:</strong> <%= item.last_error['error_class'] %> - <%= item.last_error['error_message'] %><br /><br />
               <strong>Error Trace:</strong><br/><br />
               <% item.last_error['error_trace'].each do |v| %>
-                <%= CodeRay.scan(v, :ruby).html(
-                      :wrap => :page,
-                      :css => :class,
-                      :tab_width => 200,
-                      :break_lines => true
-                    ).html_safe %><br>
+                <%= coderay(v, { wrap: :page, css: :class, tab_width: 200, break_lines: true }) %>
+                <br>
               <% end %>
             </div>
             <div role="tabpanel" class="tab-pane" id="bulkrax-raw-toggle-1">
@@ -36,11 +32,8 @@
               <strong>Error:</strong> <%= item.last_error['error_class'] %> - <%= item.last_error['error_message'] %><br /><br />
               <strong>Error Trace:</strong><br/><br />
               <% item.last_error['error_trace'].each do |v| %>
-                <%= CodeRay.scan(v, :ruby).html(
-                      :css => :class,
-                      :tab_width => 0,
-                      :break_lines => false,
-                    ).html_safe %><br>
+                <%= coderay(v, { css: :class, tab_width: 0, break_lines: false }) %>
+                <br>
               <% end %>
             </div>
           </div>

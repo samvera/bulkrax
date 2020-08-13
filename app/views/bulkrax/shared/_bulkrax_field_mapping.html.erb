@@ -21,21 +21,14 @@
             <div id='bulkrax-full-toggle-2' role="tabpanel" class="tab-pane active bulkrax-clear-toggles">
               <% item.field_mapping.each do |k, v| %>
                 <strong><%= k %>:</strong>
-                <%= CodeRay.scan(v, :ruby).html(
-                      :wrap => :page,
-                      :css => :class,
-                      :tab_width => 200,
-                      :break_lines => true
-                    ).html_safe %><br>
+                <%= coderay(v, { wrap: :page, css: :class, tab_width: 200, break_lines: true }) %>
+                <br>
               <% end %>
             </div>
             <div id="bulkrax-raw-toggle-2" role="tabpanel" class="tab-pane">
               <% item.field_mapping.each do |k, v| %>
-                <%= CodeRay.scan(v, :ruby).html(
-                      :css => :class,
-                      :tab_width => 0,
-                      :break_lines => false,
-                    ).html_safe %><br>
+                <%= coderay(v, { css: :class, tab_width: 0, break_lines: false }) %>
+                <br>
               <% end %>
             </div>
           </div>
