@@ -10,7 +10,7 @@ module Bulkrax
       CodeRay
         .scan(value, :ruby)
         .html(opts)
-        .html_safe
+        .html_safe # rubocop:disable Rails/OutputSafety
     end
   end
 end
