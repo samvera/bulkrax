@@ -14,6 +14,7 @@ PATH
       bagit (~> 0.4)
       coderay
       iso8601 (~> 0.9.0)
+      kaminari
       language_list (~> 1.2, >= 1.2.1)
       libxml-ruby (~> 3.1.0)
       loofah (>= 2.2.3)
@@ -751,6 +752,7 @@ DEPENDENCIES
   bootstrap-sass (~> 3.0)
   bulkrax!
   byebug
+  coderay
   database_cleaner
   factory_bot_rails
   hyrax (>= 2.3)

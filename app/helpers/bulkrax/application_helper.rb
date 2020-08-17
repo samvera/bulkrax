@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'coderay'
-
 module Bulkrax
   module ApplicationHelper
     include Hyrax::HyraxHelperBehavior
