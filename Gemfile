@@ -13,12 +13,13 @@ gemspec
 # your gem to rubygems.org.
 
 gem "blacklight", "~> 6.20.0"
-gem 'bootstrap-sass', '~> 3.0'
 gem "factory_bot_rails"
 gem "hyrax", ">= 2.3"
 gem "oai"
-gem 'rsolr', '>= 1.0'
 gem "rspec-rails"
+gem 'bootstrap-sass', '~> 3.0'
+gem 'coderay'
+gem 'rsolr', '>= 1.0'
 gem 'twitter-typeahead-rails', '0.11.1.pre.corejavascript'
 gem 'willow_sword', git: 'https://github.com/notch8/willow_sword.git'
 

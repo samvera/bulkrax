@@ -108,7 +108,7 @@
             </tbody>
           </table>
           <%= page_entries_info(@collection_entries) %><br />
-          <%= paginate(@collection_entries, param_name: :collections_entries_page) %>
+          <%= paginate(@collection_entries, param_name: :collections_entries_page, params: {anchor: 'collection-entries'}) %>
         </div>
         <div role="tabpanel" class="tab-pane fade bulkrax-nav-tab-table-left-align" id="work-entries">
           <table class='table table-striped'>
@@ -152,7 +152,7 @@
             </tbody>
           </table>
           <%= page_entries_info(@work_entries) %><br />
-          <%= paginate(@work_entries, param_name: :work_entries_page) %>
+          <%= paginate(@work_entries, param_name: :work_entries_page, params: { anchor: 'work-entries'}) %>
         </div>
       </div>
     </div>
