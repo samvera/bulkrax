@@ -8,7 +8,7 @@ module Bulkrax
     include Bulkrax::HasMatchers
     include Bulkrax::ImportBehavior
     include Bulkrax::ExportBehavior
-    include Bulkrax::Status
+    include Bulkrax::StatusInfo
     include Bulkrax::HasLocalProcessing
 
     belongs_to :importerexporter, polymorphic: true

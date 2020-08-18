@@ -2,7 +2,7 @@
 module Bulkrax
   class Exporter < ApplicationRecord
     include Bulkrax::ImporterExporterBehavior
-    include Bulkrax::Status
+    include Bulkrax::StatusInfo
 
     serialize :field_mapping, JSON
     serialize :last_error, JSON
@@ -10,6 +10,7 @@ module Bulkrax
     belongs_to :user
     has_many :exporter_runs, dependent: :destroy, foreign_key: 'exporter_id'
     has_many :entries, as: :importerexporter, dependent: :destroy
+    has_many :statuses, as: :statusable, dependent: :destroy
 
     validates :name, presence: true
     validates :parser_klass, presence: true
@@ -29,16 +30,6 @@ module Bulkrax
       status_info
     rescue StandardError => e
       status_info(e)
-    end
-
-    def status
-      if self.last_error_at.present?
-        'Failed'
-      elsif exporter_runs.last&.exporter_status
-        exporter_runs.last&.exporter_status
-      else
-        'Pending'
-      end
     end
 
     # #export_source accessors
@@ -88,6 +79,10 @@ module Bulkrax
 
     def current_exporter_run
       @current_exporter_run ||= self.exporter_runs.create!(total_work_entries: self.limit || parser.total)
+    end
+
+    def last_run
+      @last_run ||= self.exporter_runs.last
     end
 
     def setup_export_path

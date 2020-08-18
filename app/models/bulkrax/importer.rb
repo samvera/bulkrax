@@ -5,7 +5,7 @@ require 'iso8601'
 module Bulkrax
   class Importer < ApplicationRecord
     include Bulkrax::ImporterExporterBehavior
-    include Bulkrax::Status
+    include Bulkrax::StatusInfo
 
     serialize :parser_fields, JSON
     serialize :field_mapping, JSON
@@ -14,6 +14,7 @@ module Bulkrax
     belongs_to :user
     has_many :importer_runs, dependent: :destroy, foreign_key: 'importer_id'
     has_many :entries, as: :importerexporter, dependent: :destroy
+    has_many :statuses, as: :statusable, dependent: :destroy
 
     validates :name, presence: true
     validates :admin_set_id, presence: true
