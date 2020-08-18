@@ -34,8 +34,8 @@ module Bulkrax
         add_importer_breadcrumbs
         add_breadcrumb @importer.name
 
-        @work_entries = @importer.entries.where(type: @importer.parser.entry_class.to_s).page(params[:work_entries_page])
-        @collection_entries = @importer.entries.where(type: @importer.parser.collection_entry_class.to_s).page(params[:collections_entries_page])
+        @work_entries = @importer.entries.where(type: @importer.parser.entry_class.to_s).page(params[:work_entries_page]).per(30)
+        @collection_entries = @importer.entries.where(type: @importer.parser.collection_entry_class.to_s).page(params[:collections_entries_page]).per(30)
       end
     end
 

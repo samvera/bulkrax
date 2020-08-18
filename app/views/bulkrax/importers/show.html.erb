@@ -66,51 +66,15 @@
       <%= @importer.importer_runs.last&.total_collection_entries %>
     </p>
 
-  <div class="bulkrax-nav-tab-bottom-margin">
-    <!-- Nav tabs -->
+    <div class="bulkrax-nav-tab-bottom-margin">
+      <!-- Nav tabs -->
       <ul class="bulkrax-nav-tab-top-margin tab-nav nav nav-tabs" role="tablist">
-        <li role="presentation" class="active"><a href="#collection-entries" aria-controls="collection-entries" role="tab" data-toggle="tab">Collection Entries</a></li>
-        <li role="presentation"><a href="#work-entries" aria-controls="work-entries" role="tab" data-toggle="tab">Work Entries</a></li>
+        <li role="presentation" class='active'><a href="#work-entries" aria-controls="work-entries" role="tab" data-toggle="tab">Work Entries</a></li>
+        <li role="presentation"><a href="#collection-entries" aria-controls="collection-entries" role="tab" data-toggle="tab">Collection Entries</a></li>
       </ul>
-    <!-- Tab panes -->
+      <!-- Tab panes -->
       <div class="tab-content outline">
-        <div role="tabpanel" class="tab-pane fade in active bulkrax-nav-tab-table-left-align" id="collection-entries">
-          <table class='table table-striped'>
-            <thead>
-              <tr>
-                <th>Identifier</th>
-                <th>Entry ID</th>
-                <th>Status</th>
-                <th>Errors</th>
-                <th>Status Set At</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <% @collection_entries.each do |e| %>
-                <tr>
-                  <td><%= link_to e.identifier, bulkrax.importer_entry_path(@importer.id, e.id) %></td>
-                  <td><%= e.id %></td>
-                  <% if e.status == "succeeded" %>
-                    <td><span class="glyphicon glyphicon-ok" style="color: green;"></span> <%= e.status %></td>
-                    <% else %>
-                    <td><span class="glyphicon glyphicon-remove" style="color: red;"></span> <%= e.status %></td>
-                  <% end %>
-                  <% if e.last_error.present? %>
-                    <td><%= link_to e.last_error.dig("error_class"), bulkrax.importer_entry_path(@importer.id, e.id) %></td>
-                  <% else %>
-                    <td></td>
-                  <% end %>
-                  <td><%= e.status_at %></td>
-                  <td><%= link_to raw('<span class="glyphicon glyphicon-info-sign"></span>'), bulkrax.importer_entry_path(@importer.id, e.id) %></td>
-                </tr>
-              <% end %>
-            </tbody>
-          </table>
-          <%= page_entries_info(@collection_entries) %><br />
-          <%= paginate(@collection_entries, param_name: :collections_entries_page, params: {anchor: 'collection-entries'}) %>
-        </div>
-        <div role="tabpanel" class="tab-pane fade bulkrax-nav-tab-table-left-align" id="work-entries">
+        <div role="tabpanel" class="tab-pane active bulkrax-nav-tab-table-left-align" id="work-entries">
           <table class='table table-striped'>
             <thead>
               <tr>
@@ -132,12 +96,12 @@
                   <% elsif e.raw_metadata.present? %>
                     <td><%= Array.wrap(e.raw_metadata.dig("collection")).join(';') %></td>
                   <% else %>
-                  <td></td>
+                    <td></td>
                   <% end %>
                   <td><%= e.id %></td>
                   <% if e.status == "succeeded" %>
                     <td><span class="glyphicon glyphicon-ok" style="color: green;"></span> <%= e.status %></td>
-                    <% else %>
+                  <% else %>
                     <td><span class="glyphicon glyphicon-remove" style="color: red;"></span> <%= e.status %></td>
                   <% end %>
                   <% if e.last_error.present? %>
@@ -152,7 +116,43 @@
             </tbody>
           </table>
           <%= page_entries_info(@work_entries) %><br />
-          <%= paginate(@work_entries, param_name: :work_entries_page, params: { anchor: 'work-entries'}) %>
+          <%= paginate(@work_entries, theme: 'blacklight', param_name: :work_entries_page, params: { anchor: 'work-entries'}) %>
+        </div>
+        <div role="tabpanel" class="tab-pane bulkrax-nav-tab-table-left-align" id="collection-entries">
+          <table class='table table-striped'>
+            <thead>
+              <tr>
+                <th>Identifier</th>
+                <th>Entry ID</th>
+                <th>Status</th>
+                <th>Errors</th>
+                <th>Status Set At</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @collection_entries.each do |e| %>
+                <tr>
+                  <td><%= link_to e.identifier, bulkrax.importer_entry_path(@importer.id, e.id) %></td>
+                  <td><%= e.id %></td>
+                  <% if e.status == "succeeded" %>
+                    <td><span class="glyphicon glyphicon-ok" style="color: green;"></span> <%= e.status %></td>
+                  <% else %>
+                    <td><span class="glyphicon glyphicon-remove" style="color: red;"></span> <%= e.status %></td>
+                  <% end %>
+                  <% if e.last_error.present? %>
+                    <td><%= link_to e.last_error.dig("error_class"), bulkrax.importer_entry_path(@importer.id, e.id) %></td>
+                  <% else %>
+                    <td></td>
+                  <% end %>
+                  <td><%= e.status_at %></td>
+                  <td><%= link_to raw('<span class="glyphicon glyphicon-info-sign"></span>'), bulkrax.importer_entry_path(@importer.id, e.id) %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+          <%= page_entries_info(@collection_entries) %><br />
+          <%= paginate(@collection_entries, theme: 'blacklight', param_name: :collections_entries_page, params: {anchor: 'collection-entries'}) %>
         </div>
       </div>
     </div>
