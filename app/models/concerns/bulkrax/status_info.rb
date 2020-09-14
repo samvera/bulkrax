@@ -5,9 +5,7 @@ module Bulkrax
 
     def current_status
       last_status = self.statuses.last
-      if last_status && last_status.runnable == last_run
-        last_status
-      end
+      last_status if last_status && last_status.runnable == last_run
     end
 
     def failed?
@@ -24,9 +22,20 @@ module Bulkrax
 
     def status_info(e = nil)
       if e.nil?
-        self.statuses.create!(status_message: 'Failed', runnable: last_run, success: true)
+        self.statuses.create!(status_message: 'Completed', runnable: last_run)
       else
-        self.statuses.create!(status_message: 'Processing', runnable: last_run, success: false, error_class: e.class.to_s, error_message: e.message, error_trace: e.backtrace)
+        self.statuses.create!(status_message: 'Failed', runnable: last_run, error_class: e.class.to_s, error_message: e.message, error_backtrace: e.backtrace)
+      end
+    end
+
+    # api compatible with previous error structure
+    def last_error
+      if current_status && current_status.error_class.present?
+        {
+          error_class: current_status.error_class,
+          error_message: current_status.error_message,
+          error_trace: current_status.error_backtrace
+        }.with_indifferent_access
       end
     end
   end

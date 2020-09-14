@@ -32,15 +32,18 @@ module Bulkrax
       subject { described_class.new(importerexporter: importer) }
       let(:raw_metadata) { described_class.data_for_entry(data) }
       let(:importer) do
-        FactoryBot.build(:bulkrax_importer_bagit, parser_fields: {
-                           'import_file_path' => './spec/fixtures/bags/bag',
-                           'metadata_file_name' => 'descMetadata.nt',
-                           'metadata_format' => 'Bulkrax::RdfEntry'
-                         },
-                                                  field_mapping: {
-                                                    'identifier' => { from: ['http://purl.org/dc/terms/identifier'] },
-                                                    'title' => { from: ['http://purl.org/dc/terms/title'] }
-                                                  })
+        i = FactoryBot.create(:bulkrax_importer_bagit,
+                              parser_fields: {
+                                'import_file_path' => './spec/fixtures/bags/bag',
+                                'metadata_file_name' => 'descMetadata.nt',
+                                'metadata_format' => 'Bulkrax::RdfEntry'
+                              },
+                              field_mapping: {
+                                'identifier' => { from: ['http://purl.org/dc/terms/identifier'] },
+                                'title' => { from: ['http://purl.org/dc/terms/title'] }
+                              })
+        i.current_run
+        i
       end
 
       before do
@@ -66,7 +69,7 @@ module Bulkrax
         it 'succeeds' do
           subject.build
           expect(subject.parsed_metadata).to eq("file" => nil, "rights_statement" => [nil], "source" => ["http://example.org/ns/19158"], "title" => ["Test Bag"], "visibility" => "open")
-          expect(subject.status).to eq('succeeded')
+          expect(subject.status).to eq('Completed')
         end
 
         it 'has a nil delete' do
@@ -82,7 +85,7 @@ module Bulkrax
 
         it 'fails' do
           subject.build
-          expect(subject.status).to eq('failed')
+          expect(subject.status).to eq('Failed')
         end
       end
     end

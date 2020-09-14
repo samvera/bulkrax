@@ -6,7 +6,7 @@ module Bulkrax
 
     def perform(importer_id, only_updates_since_last_import = false)
       importer = Importer.find(importer_id)
-
+      importer.current_run
       import(importer, only_updates_since_last_import)
       schedule(importer) if importer.schedulable?
     end

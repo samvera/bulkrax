@@ -78,7 +78,6 @@ module Bulkrax
         ImporterRun.find(importer_run_id).increment!(:processed_children)
       rescue StandardError => e
         entry.status_info(e)
-        entry.save!
         ImporterRun.find(importer_run_id).increment!(:failed_children)
       end
 
@@ -89,7 +88,6 @@ module Bulkrax
         ImporterRun.find(importer_run_id).increment!(:processed_children)
       rescue StandardError => e
         entry.status_info(e)
-        entry.save!
         ImporterRun.find(importer_run_id).increment!(:failed_children)
       end
 
@@ -104,7 +102,6 @@ module Bulkrax
         ImporterRun.find(importer_run_id).increment!(:processed_children)
       rescue StandardError => e
         entry.status_info(e)
-        entry.save!
         ImporterRun.find(importer_run_id).increment!(:failed_children)
       end
       # rubocop:enable Rails/SkipsModelValidations

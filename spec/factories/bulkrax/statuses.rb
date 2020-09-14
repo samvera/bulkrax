@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 FactoryBot.define do
   factory :bulkrax_status, class: 'Status' do
     status_message { "MyString" }

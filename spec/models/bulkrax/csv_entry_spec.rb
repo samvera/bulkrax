@@ -6,7 +6,7 @@ module Bulkrax
   RSpec.describe CsvEntry, type: :model do
     describe 'builds entry' do
       subject { described_class.new(importerexporter: importer) }
-      let(:importer) { FactoryBot.build(:bulkrax_importer_csv) }
+      let(:importer) { FactoryBot.create(:bulkrax_importer_csv) }
 
       before do
         Bulkrax.default_work_type = 'Work'
@@ -30,7 +30,7 @@ module Bulkrax
 
         it 'succeeds' do
           subject.build
-          expect(subject.status).to eq('succeeded')
+          expect(subject.status).to eq('Completed')
         end
       end
 
@@ -44,7 +44,7 @@ module Bulkrax
 
         it 'sets up the file_path and removes spaces from filenames' do
           subject.build
-          expect(subject.status).to eq('succeeded')
+          expect(subject.status).to eq('Completed')
         end
       end
     end

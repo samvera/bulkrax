@@ -26,20 +26,23 @@ module Bulkrax
       end
 
       it 'creates an ImporterRun with total_work_entries set to the value of limit' do
-        importer.current_importer_run
-        expect(importer.current_importer_run.total_work_entries).to eq(10)
-        expect(importer.current_importer_run.total_collection_entries).to eq(1)
+        importer.current_run
+        expect(importer.current_run.total_work_entries).to eq(10)
+        expect(importer.current_run.total_collection_entries).to eq(1)
       end
     end
 
     describe 'import works' do
       before do
         allow(Bulkrax::OaiDcParser).to receive(:new).and_return(Bulkrax::OaiDcParser.new(importer)) # .with(subject).and_return(parser)
+        allow_any_instance_of(Bulkrax::OaiDcParser).to receive(:collections_total).and_return 5
+        allow_any_instance_of(Bulkrax::OaiDcParser).to receive(:total).and_return 5
         allow_any_instance_of(Bulkrax::OaiDcParser).to receive(:create_collections)
         allow_any_instance_of(Bulkrax::OaiDcParser).to receive(:create_works)
       end
 
       it 'calls parser run' do
+        importer.current_run
         importer.import_works
         expect(importer.only_updates).to eq(false)
       end

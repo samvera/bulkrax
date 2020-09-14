@@ -18,7 +18,7 @@ module Bulkrax
     delegate :write, :create_from_collection, :create_from_importer, :create_from_worktype, to: :parser
 
     def export
-      current_exporter_run && setup_export_path
+      current_run && setup_export_path
       case self.export_from
       when 'collection'
         create_from_collection
@@ -77,8 +77,8 @@ module Bulkrax
       Importer.all.map { |i| [i.name, i.id] }
     end
 
-    def current_exporter_run
-      @current_exporter_run ||= self.exporter_runs.create!(total_work_entries: self.limit || parser.total)
+    def current_run
+      @current_run ||= self.exporter_runs.create!(total_work_entries: self.limit || parser.total)
     end
 
     def last_run

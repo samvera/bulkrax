@@ -26,7 +26,7 @@ module Bulkrax
         # rubocop:enable Rails/SkipsModelValidations
       end
       exporter_run = ExporterRun.find(args[1])
-      if !exporter_run.enqueued_records.positive?
+      unless exporter_run.enqueued_records.positive?
         if exporter_run.failed_records.positive?
           entry.exporter&.current_status&.update(status_message: 'Complete (with failures)')
         else

@@ -35,7 +35,11 @@ module Bulkrax
       subject(:xml_entry) { described_class.new(importerexporter: importer) }
       let(:path) { './spec/fixtures/xml/deleted.xml' }
       let(:raw_metadata) { described_class.data_for_entry(data) }
-      let(:importer) { FactoryBot.build(:bulkrax_importer_xml) }
+      let(:importer) do
+        i = FactoryBot.create(:bulkrax_importer_xml)
+        i.current_run
+        i
+      end
       let(:object_factory) { instance_double(ObjectFactory) }
 
       before do
@@ -56,7 +60,11 @@ module Bulkrax
     describe '#build' do
       subject(:xml_entry) { described_class.new(importerexporter: importer) }
       let(:raw_metadata) { described_class.data_for_entry(data) }
-      let(:importer) { FactoryBot.build(:bulkrax_importer_xml) }
+      let(:importer) do
+        i = FactoryBot.create(:bulkrax_importer_xml)
+        i.current_run
+        i
+      end
       let(:object_factory) { instance_double(ObjectFactory) }
 
       before do
@@ -83,7 +91,7 @@ module Bulkrax
 
         it 'succeeds' do
           xml_entry.build
-          expect(xml_entry.status).to eq('succeeded')
+          expect(xml_entry.status).to eq('Completed')
         end
 
         it 'builds entry' do
@@ -105,7 +113,7 @@ module Bulkrax
 
         it 'fails' do
           xml_entry.build
-          expect(xml_entry.status).to eq('failed')
+          expect(xml_entry.status).to eq('Failed')
         end
       end
     end

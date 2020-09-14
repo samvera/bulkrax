@@ -23,12 +23,12 @@ module Bulkrax
     def increment_counters(index, collection = false)
       # Only set the totals if they were not set on initialization
       if collection
-        current_importer_run.total_collection_entries = index + 1 unless parser.collections_total.positive?
+        current_run.total_collection_entries = index + 1 unless parser.collections_total.positive?
       else
-        current_importer_run.total_work_entries = index + 1 unless limit.to_i.positive? || parser.total.positive?
+        current_run.total_work_entries = index + 1 unless limit.to_i.positive? || parser.total.positive?
       end
-      current_importer_run.enqueued_records = index + 1
-      current_importer_run.save!
+      current_run.enqueued_records = index + 1
+      current_run.save!
     end
   end
 end

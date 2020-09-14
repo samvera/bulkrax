@@ -78,8 +78,12 @@ module Bulkrax
       frequency.to_seconds != 0
     end
 
-    def current_importer_run
-      @current_importer_run ||= self.importer_runs.create!(total_work_entries: self.limit || parser.total, total_collection_entries: parser.collections_total)
+    def current_run
+      @current_run ||= self.importer_runs.create!(total_work_entries: self.limit || parser.total, total_collection_entries: parser.collections_total)
+    end
+
+    def last_run
+      @last_run ||= self.importer_runs.last
     end
 
     def seen
@@ -91,6 +95,7 @@ module Bulkrax
     end
 
     def import_works(only_updates = false)
+      self.save if self.new_record? # Object needs to be saved for statuses
       self.only_updates = only_updates
       parser.create_works
       status_info
@@ -99,6 +104,7 @@ module Bulkrax
     end
 
     def import_collections
+      self.save if self.new_record? # Object needs to be saved for statuses
       parser.create_collections
       status_info
     rescue StandardError => e
