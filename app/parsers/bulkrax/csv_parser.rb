@@ -269,7 +269,6 @@ module Bulkrax
       def real_import_file_path
         if file? && zip?
           unzip(parser_fields['import_file_path'])
-          debugger
           return Dir["#{importer_unzip_path}/**/*.csv"].first
         else
           parser_fields['import_file_path']

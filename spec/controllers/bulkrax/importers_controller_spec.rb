@@ -36,6 +36,7 @@ module Bulkrax
         end
       end
       Bulkrax::ImportersController.prepend Bulkrax::Auth
+      allow(Bulkrax::ImporterJob).to receive(:perform_later).and_return(true)
     end
 
     # This should return the minimal set of attributes required to create a valid
