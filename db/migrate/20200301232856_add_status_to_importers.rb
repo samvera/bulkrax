@@ -1,7 +1,9 @@
 class AddStatusToImporters < ActiveRecord::Migration[5.1]
   def change
-    add_column :bulkrax_importers, :last_error, :text
-    add_column :bulkrax_importers, :last_error_at, :datetime
-    add_column :bulkrax_importers, :last_succeeded_at, :datetime
+    if table_exists?(:bulkrax_importers)
+      add_column :bulkrax_importers, :last_error, :text unless column_exists?(:bulkrax_importers, :last_error)
+      add_column :bulkrax_importers, :last_error_at, :datetime unless column_exists?(:bulkrax_importers, :last_error_at)
+      add_column :bulkrax_importers, :last_succeeded_at, :datetime unless column_exists?(:bulkrax_importers, :last_succeeded_at)
+    end
   end
 end
