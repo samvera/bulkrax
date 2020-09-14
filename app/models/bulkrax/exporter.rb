@@ -27,7 +27,6 @@ module Bulkrax
       when 'worktype'
         create_from_worktype
       end
-      status_info
     rescue StandardError => e
       status_info(e)
     end

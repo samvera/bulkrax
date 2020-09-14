@@ -28,14 +28,10 @@ module Bulkrax
     # TODO (OAI only) validates :base_url, presence: true
 
     def status
-      if self.last_error_at.present?
-        'Failed'
-      elsif self.validate_only
+      if self.validate_only
         'Validated'
-      elsif importer_runs.last&.importer_status
-        importer_runs.last&.importer_status
       else
-        'Pending'
+        super
       end
     end
 
@@ -98,7 +94,6 @@ module Bulkrax
       self.save if self.new_record? # Object needs to be saved for statuses
       self.only_updates = only_updates
       parser.create_works
-      status_info
     rescue StandardError => e
       status_info(e)
     end
@@ -106,7 +101,6 @@ module Bulkrax
     def import_collections
       self.save if self.new_record? # Object needs to be saved for statuses
       parser.create_collections
-      status_info
     rescue StandardError => e
       status_info(e)
     end

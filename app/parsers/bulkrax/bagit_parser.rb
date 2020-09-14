@@ -77,7 +77,6 @@ module Bulkrax
         end
         increment_counters(index)
       end
-      status_info
     rescue StandardError => e
       status_info(e)
     end

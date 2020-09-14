@@ -18,6 +18,14 @@ module Bulkrax
         ImporterRun.find(args[1]).decrement!(:enqueued_records) # rubocop:disable Style/IdenticalConditionalBranches
       end
       entry.save!
+      importer_run = ImporterRun.find(args[1])
+      return if importer_run.enqueued_records.positive?
+      if exporter_run.failed_records.positive?
+        entry.exporter&.current_status&.update(status_message: 'Complete (with failures)')
+      else
+        entry.exporter&.current_status&.update(status_message: 'Complete')
+      end
+
     rescue Bulkrax::CollectionsCreatedError
       reschedule(args[0], args[1])
     end
