@@ -76,13 +76,14 @@ module Bulkrax
       @importer.validate_only = true if params[:commit] == 'Create and Validate'
       if @importer.save
         files_for_import(file, cloud_files)
-        Bulkrax::ImporterJob.send(@importer.parser.perform_method, @importer.id) if params[:commit] == 'Create and Import'
-        if api_request?
-          json_response('create', :created, 'Importer was successfully created.')
-        elsif @importer.validate_only
-          redirect_to importer_path(@importer.id), notice: 'Importer validation completed. Please review and choose to either Continue with or Discard the import.'
+        if params[:commit] == 'Create and Import'
+          Bulkrax::ImporterJob.send(@importer.parser.perform_method, @importer.id)
+          render_request('Importer was successfully created and import has been queued.')
+        elsif params[:commit] == 'Create and Validate'
+          Bulkrax::ImporterJob.send(@importer.parser.perform_method, @importer.id)
+          render_request('Importer validation completed. Please review and choose to either Continue with or Discard the import.', true)
         else
-          redirect_to importers_path, notice: 'Importer was successfully created.'
+          render_request('Importer was successfully created.')
         end
       else
         if api_request?
@@ -91,7 +92,6 @@ module Bulkrax
           render :new
         end
       end
-
       # rubocop:enable Style/IfInsideElse
     end
 
@@ -294,6 +294,15 @@ module Bulkrax
 
       def download_content_type
         'text/csv'
+      end
+
+      def render_request(message, validate_only = false)
+        if api_request?
+          json_response('create', :created, message)
+        else
+          path = validate_only ? importer_path(@importer) : importers_path
+          redirect_to path, notice: message
+        end
       end
   end
 end
