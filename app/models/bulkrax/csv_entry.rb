@@ -90,10 +90,16 @@ module Bulkrax
           self.parsed_metadata[key] = prepare_export_data(data)
         end
       end
-      unless hyrax_record.is_a?(Collection)
-        self.parsed_metadata['file'] = hyrax_record.file_sets.map { |fs| filename(fs).to_s unless filename(fs).blank? }.compact.join('; ')
-      end
+
+      add_files_and_collections
       self.parsed_metadata
+    end
+
+    def add_files_and_collections
+      return if hyrax_record.is_a?(Collection)
+      self.collection_ids = hyrax_record.member_of_collection_ids
+      self.parsed_metadata['collections'] = hyrax_record.member_of_collection_ids.map { |cid| { 'id' => cid } }
+      self.parsed_metadata['file'] = hyrax_record.file_sets.map { |fs| filename(fs).to_s unless filename(fs).blank? }.compact.join('; ')
     end
 
     def prepare_export_data(datum)

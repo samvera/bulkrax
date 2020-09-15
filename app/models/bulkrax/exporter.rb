@@ -77,7 +77,8 @@ module Bulkrax
     end
 
     def current_run
-      @current_run ||= self.exporter_runs.create!(total_work_entries: self.limit || parser.total)
+      total = self.limit.to_i.postitive? ? self.limit : parser.total
+      @current_run ||= self.exporter_runs.create!(total_work_entries: total)
     end
 
     def last_run

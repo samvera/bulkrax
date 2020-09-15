@@ -21,8 +21,8 @@ module Bulkrax
     def show
       add_exporter_breadcrumbs
       add_breadcrumb @exporter.name
-
-      @work_entries = @exporter.entries.where(type: @exporter.parser.entry_class.to_s).page(params[:work_entries_page])
+      @work_entries = @exporter.entries.where(type: @exporter.parser.entry_class.to_s).page(params[:work_entries_page]).per(30)
+      @collection_entries = @exporter.entries.where(type: @exporter.parser.collection_entry_class.to_s).page(params[:collections_entries_page]).per(30)
     end
 
     # GET /exporters/new
