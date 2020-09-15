@@ -30,7 +30,7 @@ module Bulkrax
 
         it 'succeeds' do
           subject.build
-          expect(subject.status).to eq('Completed')
+          expect(subject.status).to eq('Complete')
         end
       end
 
@@ -44,7 +44,7 @@ module Bulkrax
 
         it 'sets up the file_path and removes spaces from filenames' do
           subject.build
-          expect(subject.status).to eq('Completed')
+          expect(subject.status).to eq('Complete')
         end
       end
     end

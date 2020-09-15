@@ -3,7 +3,7 @@
 module Bulkrax
   class ApplicationParser
     attr_accessor :importerexporter
-    delegate :only_updates, :limit, :current_run, :current_run, :errors,
+    delegate :only_updates, :limit, :current_run, :errors,
              :seen, :increment_counters, :parser_fields, :user,
              :exporter_export_path, :exporter_export_zip_path, :importer_unzip_path, :validate_only,
              :status, :status_info, :status_at,

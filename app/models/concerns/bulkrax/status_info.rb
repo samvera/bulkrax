@@ -22,7 +22,9 @@ module Bulkrax
 
     def status_info(e = nil)
       if e.nil?
-        self.statuses.create!(status_message: 'Completed', runnable: last_run)
+        self.statuses.create!(status_message: 'Complete', runnable: last_run)
+      elsif e.is_a?(String)
+        self.statuses.create!(status_message: e, runnable: last_run)
       else
         self.statuses.create!(status_message: 'Failed', runnable: last_run, error_class: e.class.to_s, error_message: e.message, error_backtrace: e.backtrace)
       end

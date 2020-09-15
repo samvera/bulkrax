@@ -69,7 +69,7 @@ module Bulkrax
         it 'succeeds' do
           subject.build
           expect(subject.parsed_metadata).to eq("file" => nil, "rights_statement" => [nil], "source" => ["http://example.org/ns/19158"], "title" => ["Test Bag"], "visibility" => "open")
-          expect(subject.status).to eq('Completed')
+          expect(subject.status).to eq('Complete')
         end
 
         it 'has a nil delete' do

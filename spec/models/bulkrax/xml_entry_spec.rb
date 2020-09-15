@@ -91,7 +91,7 @@ module Bulkrax
 
         it 'succeeds' do
           xml_entry.build
-          expect(xml_entry.status).to eq('Completed')
+          expect(xml_entry.status).to eq('Complete')
         end
 
         it 'builds entry' do
