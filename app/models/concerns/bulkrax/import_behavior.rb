@@ -71,7 +71,7 @@ module Bulkrax
              Bulkrax.default_work_type
            end
       fc.constantize
-    rescue NameError => e
+    rescue NameError
       nil
     rescue
       Bulkrax.default_work_type.constantize
