@@ -37,6 +37,7 @@ FactoryBot.define do
     limit { 10 }
     parser_fields { { 'import_file_path' => 'spec/fixtures/csv/good.csv' } }
     field_mapping { {} }
+    after :create, &:current_run
   end
 
   factory :bulkrax_importer_csv_complex, class: 'Bulkrax::Importer' do
@@ -57,8 +58,15 @@ FactoryBot.define do
     frequency { 'PT0S' }
     parser_klass { 'Bulkrax::BagitParser' }
     limit { 10 }
-    parser_fields { {} }
+    parser_fields do
+      {
+        'import_file_path' => 'spec/fixtures/bags/bag',
+        'metadata_file_name' => 'descMetadata.nt',
+        'metadata_format' => 'Bulkrax::RdfEntry'
+      }
+    end
     field_mapping { {} }
+    after :create, &:current_run
   end
 
   factory :bulkrax_importer_csv_bad, class: 'Bulkrax::Importer' do

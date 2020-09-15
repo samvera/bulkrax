@@ -8,10 +8,12 @@ module Bulkrax
     include Bulkrax::HasMatchers
     include Bulkrax::ImportBehavior
     include Bulkrax::ExportBehavior
-    include Bulkrax::Status
+    include Bulkrax::StatusInfo
     include Bulkrax::HasLocalProcessing
 
     belongs_to :importerexporter, polymorphic: true
+    has_many :statuses, as: :statusable, dependent: :destroy
+
     serialize :parsed_metadata, JSON
     # Do not serialize raw_metadata as so we can support xml or other formats
     serialize :collection_ids, Array
@@ -65,6 +67,8 @@ module Bulkrax
 
     def build
       return if type.nil?
+      self.save if self.new_record? # must be saved for statuses
+
       return build_for_importer if importer?
       return build_for_exporter if exporter?
     end
@@ -82,6 +86,10 @@ module Bulkrax
       raise(
         "#{model_class} does not implement the system_identifier_field: #{Bulkrax.system_identifier_field}"
       )
+    end
+
+    def last_run
+      self.importerexporter&.last_run
     end
 
     def find_collection(collection_identifier)

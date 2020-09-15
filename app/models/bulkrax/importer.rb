@@ -5,7 +5,7 @@ require 'iso8601'
 module Bulkrax
   class Importer < ApplicationRecord
     include Bulkrax::ImporterExporterBehavior
-    include Bulkrax::Status
+    include Bulkrax::StatusInfo
 
     serialize :parser_fields, JSON
     serialize :field_mapping, JSON
@@ -14,6 +14,7 @@ module Bulkrax
     belongs_to :user
     has_many :importer_runs, dependent: :destroy, foreign_key: 'importer_id'
     has_many :entries, as: :importerexporter, dependent: :destroy
+    has_many :statuses, as: :statusable, dependent: :destroy
 
     validates :name, presence: true
     validates :admin_set_id, presence: true
@@ -27,14 +28,10 @@ module Bulkrax
     # TODO (OAI only) validates :base_url, presence: true
 
     def status
-      if self.last_error_at.present?
-        'Failed'
-      elsif self.validate_only
+      if self.validate_only
         'Validated'
-      elsif importer_runs.last&.importer_status
-        importer_runs.last&.importer_status
       else
-        'Pending'
+        super
       end
     end
 
@@ -77,8 +74,12 @@ module Bulkrax
       frequency.to_seconds != 0
     end
 
-    def current_importer_run
-      @current_importer_run ||= self.importer_runs.create!(total_work_entries: self.limit || parser.total, total_collection_entries: parser.collections_total)
+    def current_run
+      @current_run ||= self.importer_runs.create!(total_work_entries: self.limit || parser.total, total_collection_entries: parser.collections_total)
+    end
+
+    def last_run
+      @last_run ||= self.importer_runs.last
     end
 
     def seen
@@ -90,16 +91,16 @@ module Bulkrax
     end
 
     def import_works(only_updates = false)
+      self.save if self.new_record? # Object needs to be saved for statuses
       self.only_updates = only_updates
       parser.create_works
-      status_info
     rescue StandardError => e
       status_info(e)
     end
 
     def import_collections
+      self.save if self.new_record? # Object needs to be saved for statuses
       parser.create_collections
-      status_info
     rescue StandardError => e
       status_info(e)
     end

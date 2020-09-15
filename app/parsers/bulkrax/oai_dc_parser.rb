@@ -75,7 +75,7 @@ module Bulkrax
 
         new_entry = collection_entry_class.where(importerexporter: importerexporter, identifier: unique_collection_identifier, raw_metadata: metadata).first_or_create!
         # perform now to ensure this gets created before work imports start
-        ImportWorkCollectionJob.perform_now(new_entry.id, importerexporter.current_importer_run.id)
+        ImportWorkCollectionJob.perform_now(new_entry.id, importerexporter.current_run.id)
         increment_counters(index, true)
       end
     end
@@ -88,11 +88,11 @@ module Bulkrax
         seen[record.identifier] = true
         new_entry = entry_class.where(importerexporter: self.importerexporter, identifier: record.identifier).first_or_create!
         if record.deleted? # TODO: record.status == "deleted"
-          DeleteWorkJob.send(perform_method, new_entry, importerexporter.current_importer_run)
-          importerexporter.current_importer_run.deleted_records += 1
-          importerexporter.current_importer_run.save!
+          DeleteWorkJob.send(perform_method, new_entry, importerexporter.current_run)
+          importerexporter.current_run.deleted_records += 1
+          importerexporter.current_run.save!
         else
-          ImportWorkJob.send(perform_method, new_entry.id, importerexporter.current_importer_run.id)
+          ImportWorkJob.send(perform_method, new_entry.id, importerexporter.current_run.id)
           increment_counters(index)
         end
       end

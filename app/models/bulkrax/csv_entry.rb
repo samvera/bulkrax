@@ -12,6 +12,7 @@ module Bulkrax
 
     # there's a risk that this reads the whole file into memory and could cause a memory leak
     def self.read_data(path)
+      raise StandardError, 'CSV path empty' if path.blank?
       CSV.read(path,
                headers: true,
                header_converters: :symbol,

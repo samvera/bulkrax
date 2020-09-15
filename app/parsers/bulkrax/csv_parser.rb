@@ -58,7 +58,7 @@ module Bulkrax
           collection_type_gid: Hyrax::CollectionType.find_or_create_default_collection_type.gid
         }
         new_entry = find_or_create_entry(collection_entry_class, collection, 'Bulkrax::Importer', metadata)
-        ImportWorkCollectionJob.perform_now(new_entry.id, current_importer_run.id)
+        ImportWorkCollectionJob.perform_now(new_entry.id, current_run.id)
         increment_counters(index, true)
       end
     end
@@ -66,10 +66,10 @@ module Bulkrax
     def create_works
       records.each_with_index do |record, index|
         if record[:source_identifier].blank?
-          current_importer_run.invalid_records ||= ""
-          current_importer_run.invalid_records += "Missing #{Bulkrax.system_identifier_field} for #{record.to_h}\n"
-          current_importer_run.failed_records += 1
-          current_importer_run.save
+          current_run.invalid_records ||= ""
+          current_run.invalid_records += "Missing #{Bulkrax.system_identifier_field} for #{record.to_h}\n"
+          current_run.failed_records += 1
+          current_run.save
           next
         end
         break if limit_reached?(limit, index)
@@ -77,13 +77,12 @@ module Bulkrax
         seen[record[:source_identifier]] = true
         new_entry = find_or_create_entry(entry_class, record[:source_identifier], 'Bulkrax::Importer', record.to_h.compact)
         if record[:delete].present?
-          DeleteWorkJob.send(perform_method, new_entry, current_importer_run)
+          DeleteWorkJob.send(perform_method, new_entry, current_run)
         else
-          ImportWorkJob.send(perform_method, new_entry.id, current_importer_run.id)
+          ImportWorkJob.send(perform_method, new_entry.id, current_run.id)
         end
         increment_counters(index)
       end
-      status_info
     rescue StandardError => e
       status_info(e)
     end
@@ -112,7 +111,7 @@ module Bulkrax
         query = "#{ActiveFedora.index_field_mapper.solr_name(Bulkrax.system_identifier_field)}:\"#{entry.identifier}\""
         work_id = ActiveFedora::SolrService.query(query, fl: 'id', rows: 1).first['id']
         new_entry = find_or_create_entry(entry_class, work_id, 'Bulkrax::Exporter')
-        Bulkrax::ExportWorkJob.perform_now(new_entry.id, current_exporter_run.id)
+        Bulkrax::ExportWorkJob.perform_now(new_entry.id, current_run.id)
       end
     end
 
@@ -121,7 +120,7 @@ module Bulkrax
       work_ids.each_with_index do |wid, index|
         break if limit_reached?(limit, index)
         new_entry = find_or_create_entry(entry_class, wid, 'Bulkrax::Exporter')
-        Bulkrax::ExportWorkJob.perform_now(new_entry.id, current_exporter_run.id)
+        Bulkrax::ExportWorkJob.perform_now(new_entry.id, current_run.id)
       end
     end
 
@@ -130,7 +129,7 @@ module Bulkrax
       work_ids.each_with_index do |wid, index|
         break if limit_reached?(limit, index)
         new_entry = find_or_create_entry(entry_class, wid, 'Bulkrax::Exporter')
-        Bulkrax::ExportWorkJob.perform_now(new_entry.id, current_exporter_run.id)
+        Bulkrax::ExportWorkJob.perform_now(new_entry.id, current_run.id)
       end
     end
 

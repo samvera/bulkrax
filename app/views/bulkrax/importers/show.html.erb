@@ -99,7 +99,7 @@
                     <td></td>
                   <% end %>
                   <td><%= e.id %></td>
-                  <% if e.status == "succeeded" %>
+                  <% if e.status == "Complete" %>
                     <td><span class="glyphicon glyphicon-ok" style="color: green;"></span> <%= e.status %></td>
                   <% else %>
                     <td><span class="glyphicon glyphicon-remove" style="color: red;"></span> <%= e.status %></td>
@@ -135,7 +135,7 @@
                 <tr>
                   <td><%= link_to e.identifier, bulkrax.importer_entry_path(@importer.id, e.id) %></td>
                   <td><%= e.id %></td>
-                  <% if e.status == "succeeded" %>
+                  <% if e.status == "Complete" %>
                     <td><span class="glyphicon glyphicon-ok" style="color: green;"></span> <%= e.status %></td>
                   <% else %>
                     <td><span class="glyphicon glyphicon-remove" style="color: red;"></span> <%= e.status %></td>

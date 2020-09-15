@@ -3,7 +3,7 @@
 module Bulkrax
   class ApplicationParser
     attr_accessor :importerexporter
-    delegate :only_updates, :limit, :current_exporter_run, :current_importer_run, :errors,
+    delegate :only_updates, :limit, :current_run, :errors,
              :seen, :increment_counters, :parser_fields, :user,
              :exporter_export_path, :exporter_export_zip_path, :importer_unzip_path, :validate_only,
              :status, :status_info, :status_at,
@@ -110,9 +110,8 @@ module Bulkrax
         end
         parent_id = parent.id
         child_entry_ids = children.map(&:id)
-        ChildRelationshipsJob.perform_later(parent_id, child_entry_ids, current_importer_run.id)
+        ChildRelationshipsJob.perform_later(parent_id, child_entry_ids, current_run.id)
       end
-      status_info
     rescue StandardError => e
       status_info(e)
     end
@@ -216,12 +215,12 @@ module Bulkrax
 
     # Is this a file?
     def file?
-      File.file?(parser_fields['import_file_path'])
+      parser_fields&.[]('import_file_path') && File.file?(parser_fields['import_file_path'])
     end
 
     # Is this a zip file?
     def zip?
-      MIME::Types.type_for(parser_fields['import_file_path']).include?('application/zip')
+      parser_fields&.[]('import_file_path') && MIME::Types.type_for(parser_fields['import_file_path']).include?('application/zip')
     end
 
     # Path for the import

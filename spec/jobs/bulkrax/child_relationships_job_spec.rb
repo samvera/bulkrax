@@ -5,9 +5,9 @@ require 'rails_helper'
 module Bulkrax
   RSpec.describe ChildRelationshipsJob, type: :job do
     subject(:child_relationship_job) { described_class.new }
-    let(:importer) { FactoryBot.build(:bulkrax_importer_csv_complex) }
-    let(:entry_work) { FactoryBot.build(:bulkrax_csv_entry_work, importerexporter: importer) }
-    let(:child_entry) { FactoryBot.build(:bulkrax_csv_entry, importerexporter: importer) }
+    let(:importer) { FactoryBot.create(:bulkrax_importer_csv_complex) }
+    let(:entry_work) { FactoryBot.create(:bulkrax_csv_entry_work, importerexporter: importer) }
+    let(:child_entry) { FactoryBot.create(:bulkrax_csv_entry, importerexporter: importer) }
     let(:entry_collection) { FactoryBot.create(:bulkrax_csv_entry_collection, importerexporter: importer) }
     let(:work_parent) { FactoryBot.build(:work) }
     let(:work_child) { FactoryBot.build(:another_work) }
@@ -20,7 +20,7 @@ module Bulkrax
       allow(entry_work).to receive_message_chain(:factory, :find).and_return(work_parent)
       allow(entry_collection).to receive(:factory_class).and_return(Collection)
       allow(entry_collection).to receive_message_chain(:factory, :find).and_return(collection_parent)
-      allow(Bulkrax::ImporterRun).to receive(:find).with(3).and_return(importer.current_importer_run)
+      allow(Bulkrax::ImporterRun).to receive(:find).with(3).and_return(importer.current_run)
       allow(factory).to receive(:run)
     end
 
@@ -54,7 +54,7 @@ module Bulkrax
         end
 
         it 'increments processed children' do
-          expect(importer.current_importer_run).to receive(:increment!).with(:processed_children)
+          expect(importer.current_run).to receive(:increment!).with(:processed_children)
           child_relationship_job.perform(1, [2], 3)
         end
       end
@@ -69,8 +69,8 @@ module Bulkrax
         end
 
         it 'does not increment processed or failed children' do
-          expect(importer.current_importer_run).not_to receive(:increment!).with(:processed_children)
-          expect(importer.current_importer_run).not_to receive(:increment!).with(:failed_children)
+          expect(importer.current_run).not_to receive(:increment!).with(:processed_children)
+          expect(importer.current_run).not_to receive(:increment!).with(:failed_children)
           child_relationship_job.perform(1, [2], 3)
         end
       end
@@ -106,7 +106,7 @@ module Bulkrax
         end
 
         it 'increments processed children' do
-          expect(importer.current_importer_run).to receive(:increment!).with(:processed_children)
+          expect(importer.current_run).to receive(:increment!).with(:processed_children)
           child_relationship_job.perform(1, [2], 3)
         end
       end
@@ -142,7 +142,7 @@ module Bulkrax
         end
 
         it 'increments processed children' do
-          expect(importer.current_importer_run).to receive(:increment!).with(:processed_children)
+          expect(importer.current_run).to receive(:increment!).with(:processed_children)
           child_relationship_job.perform(1, [2], 3)
         end
       end
@@ -155,7 +155,7 @@ module Bulkrax
         end
         it 'does not increment failed children' do
           expect { child_relationship_job.perform(1, [2], 3) } .to raise_error(StandardError)
-          expect(importer.current_importer_run).not_to receive(:increment!).with(:failed_children)
+          expect(importer.current_run).not_to receive(:increment!).with(:failed_children)
         end
       end
 
@@ -168,7 +168,7 @@ module Bulkrax
           allow(child_entry).to receive_message_chain(:factory, :find).and_return(work_child)
         end
         it 'increments failed children' do
-          expect(importer.current_importer_run).to receive(:increment!).with(:failed_children)
+          expect(importer.current_run).to receive(:increment!).with(:failed_children)
           child_relationship_job.perform(1, [2], 3)
         end
       end

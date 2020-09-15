@@ -58,7 +58,7 @@ module Bulkrax
           collection_type_gid: Hyrax::CollectionType.find_or_create_default_collection_type.gid
         }
         new_entry = find_or_create_entry(collection_entry_class, collection, 'Bulkrax::Importer', metadata)
-        ImportWorkCollectionJob.perform_now(new_entry.id, current_importer_run.id)
+        ImportWorkCollectionJob.perform_now(new_entry.id, current_run.id)
         increment_counters(index, true)
       end
     end
@@ -71,13 +71,12 @@ module Bulkrax
         seen[record[:source_identifier]] = true
         new_entry = find_or_create_entry(entry_class, record[:source_identifier], 'Bulkrax::Importer', record)
         if record[:delete].present?
-          DeleteWorkJob.send(perform_method, new_entry, current_importer_run)
+          DeleteWorkJob.send(perform_method, new_entry, current_run)
         else
-          ImportWorkJob.send(perform_method, new_entry.id, current_importer_run.id)
+          ImportWorkJob.send(perform_method, new_entry.id, current_run.id)
         end
         increment_counters(index)
       end
-      status_info
     rescue StandardError => e
       status_info(e)
     end
@@ -151,18 +150,8 @@ module Bulkrax
         Dir.glob("#{bag.bag_dir}/**/*").detect { |f| File.file?(f) && f.ends_with?(metadata_file_name) }
       end
 
-      # Is this a file?
-      def file?
-        File.file?(parser_fields['import_file_path'])
-      end
-
-      # Is this a zip file?
-      def zip?
-        MIME::Types.type_for(parser_fields['import_file_path']).include?('application/zip')
-      end
-
       def bag(path)
-        return nil unless File.exist?(File.join(path, 'bagit.txt'))
+        return nil unless path && File.exist?(File.join(path, 'bagit.txt'))
         bag = BagIt::Bag.new(path)
         return nil unless bag.valid?
         bag
