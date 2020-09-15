@@ -76,7 +76,7 @@ module Bulkrax
       @importer.validate_only = true if params[:commit] == 'Create and Validate'
       if @importer.save
         files_for_import(file, cloud_files)
-        Bulkrax::ImporterJob.send(@importer.parser.perform_method, @importer.id)
+        Bulkrax::ImporterJob.send(@importer.parser.perform_method, @importer.id) if params[:commit] == 'Create and Import'
         if api_request?
           json_response('create', :created, 'Importer was successfully created.')
         elsif @importer.validate_only
