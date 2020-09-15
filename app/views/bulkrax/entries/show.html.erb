@@ -15,7 +15,7 @@
 
     <p class='bulkrax-p-align'>
       <strong>Type:</strong>
-      <%= @entry.factory_class %>
+      <%= @entry.factory_class || 'Unknown' %>
     </p>
     <%= render partial: 'raw_metadata'%>
 
@@ -36,7 +36,7 @@
     <p class='bulkrax-p-align'>
       <% if @importer.present? %>
         <% factory_record = @entry.factory.find %>
-        <% if @entry.last_succeeded_at != nil && factory_record.present? %>
+        <% if @entry.last_succeeded_at != nil && factory_record.present? && @entry.factory_class %>
           <strong><%= @entry.factory_class.to_s %> Link:</strong>
           <% if @entry.factory_class.to_s == 'Collection' %>
             <%= link_to @entry.factory_class.to_s, hyrax.polymorphic_path(factory_record) %>
@@ -48,7 +48,7 @@
         <% end %>
       <% else %>
         <% record = @entry&.hyrax_record %>
-        <% if record.present? %>
+        <% if record.present? && @entry.factory_class %>
           <strong><%= record.class.to_s %> Link:</strong>
           <% if record.is_a?(Collection) %>
             <%= link_to record.class.to_s, hyrax.polymorphic_path(record) %>
@@ -56,7 +56,7 @@
             <%= link_to record.class.to_s, main_app.polymorphic_path(record) %>
           <% end %>
         <% else %>
-          <strong>Item Link:</strong> No item associated with this entry
+          <strong>Item Link:</strong> No item associated with this entry or class unknown
         <% end %>
       <% end %>
     </p>
