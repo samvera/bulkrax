@@ -16,7 +16,7 @@
   %>
 
   <% rights_statements = Hyrax.config.rights_statement_service_class.new %>
-  <%= fi.input :rights_statement, required: false,
+  <%= fi.input :rights_statement,
         collection: rights_statements.select_active_options,
         selected: importer.parser_fields['rights_statement'],
         include_blank: true,
