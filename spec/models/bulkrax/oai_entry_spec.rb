@@ -71,5 +71,19 @@ module Bulkrax
         expect(entry.collection_ids.length).to eq(0)
       end
     end
+
+    context 'with specified admin set' do
+      before do
+        importer.parser_fields['thumbnail_url'] = ''
+      end
+
+      it 'adds admin set id to parsed metadata' do
+        allow(entry).to receive_message_chain(:record, :header, :identifier).and_return("some_identifier")
+        allow(entry).to receive_message_chain(:record, :header, :set_spec).and_return([])
+        allow(entry).to receive_message_chain(:record, :metadata, :children).and_return([])
+        entry.build_metadata
+        expect(entry.parsed_metadata['admin_set_id']).to eq 'MyString'
+      end
+    end
   end
 end

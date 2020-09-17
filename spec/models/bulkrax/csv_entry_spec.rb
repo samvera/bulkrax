@@ -31,6 +31,7 @@ module Bulkrax
         it 'succeeds' do
           subject.build
           expect(subject.status).to eq('Complete')
+          expect(subject.parsed_metadata['admin_set_id']).to eq 'MyString'
         end
       end
 
