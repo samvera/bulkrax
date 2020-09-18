@@ -58,6 +58,7 @@ module Bulkrax
       add_file
       add_visibility
       add_rights_statement
+      add_admin_set_id
       add_collections
       add_local
 

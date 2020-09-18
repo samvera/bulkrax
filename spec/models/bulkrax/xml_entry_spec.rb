@@ -96,7 +96,7 @@ module Bulkrax
 
         it 'builds entry' do
           xml_entry.build
-          expect(xml_entry.parsed_metadata).to eq("file" => nil, "rights_statement" => [nil], "source" => ["3456012"], "title" => ["Single XML Entry"], "visibility" => "open")
+          expect(xml_entry.parsed_metadata).to eq("file" => nil, "rights_statement" => [nil], "source" => ["3456012"], "title" => ["Single XML Entry"], "visibility" => "open", "admin_set_id" => "MyString")
         end
 
         it 'does not add unsupported fields' do

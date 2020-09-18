@@ -52,6 +52,10 @@ module Bulkrax
       self.parsed_metadata['visibility'] = importerexporter.visibility if self.parsed_metadata['visibility'].blank?
     end
 
+    def add_admin_set_id
+      self.parsed_metadata['admin_set_id'] = importerexporter.admin_set_id if self.parsed_metadata['admin_set_id'].blank?
+    end
+
     def add_collections
       return unless find_or_create_collection_ids.present?
       self.parsed_metadata['collections'] = []
