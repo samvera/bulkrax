@@ -92,6 +92,7 @@ module Bulkrax
 
     def import_works
       self.save if self.new_record? # Object needs to be saved for statuses
+      self.only_updates ||= false
       parser.create_works
     rescue StandardError => e
       status_info(e)

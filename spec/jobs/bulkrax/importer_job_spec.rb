@@ -13,12 +13,12 @@ module Bulkrax
 
     describe 'successful job' do
       it 'calls import_works with false' do
-        expect(importer).to receive(:import_works).with(false)
+        expect(importer).to receive(:import_works)
         importer_job.perform(1)
       end
 
       it 'calls import_works with true if only_updates_since_last_import=true' do
-        expect(importer).to receive(:import_works).with(true)
+        expect(importer).to receive(:import_works)
         importer_job.perform(1, true)
       end
     end
@@ -39,7 +39,7 @@ module Bulkrax
       end
 
       it 'schedules import_works when schedulable?' do
-        expect(importer).to receive(:import_works).with(false)
+        expect(importer).to receive(:import_works)
         expect(ImporterJob).to receive(:set).with(wait_until: 1).and_return(ImporterJob)
         importer_job.perform(1)
       end
