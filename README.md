@@ -55,6 +55,11 @@ If using Sidekiq, setup queues for `import` and `export`.
 //= require bulkrax/application
 ```
 
+```ruby
+# in app/assets/stylesheets/application.css
+*= require 'bulkrax/application'
+```
+
 You'll want to add an intializer to configure the importer to your needs:
 
 ```ruby
