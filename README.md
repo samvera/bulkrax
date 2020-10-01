@@ -56,7 +56,7 @@ If using Sidekiq, setup queues for `import` and `export`.
 ```
 
 ```ruby
-# in app/assets/stylesheets/application.css
+# in app/assets/stylesheets/application.css - before *= require_self
 *= require 'bulkrax/application'
 ```
 
