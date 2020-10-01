@@ -55,6 +55,21 @@ class Bulkrax::InstallGenerator < Rails::Generators::Base
     end
   end
 
+  def add_css
+    ['css', 'scss', 'sass'].map do |ext|
+      file = "app/assets/stylesheets/application.#{ext}"
+      next unless File.exist?(file)
+
+      file_text = File.read(file)
+      css = "*= require 'bulkrax/application'"
+      next if file_text.include?(css)
+
+      insert_into_file file, before: /\s\*= require_self/ do
+        "\s#{css}\n"
+      end
+    end
+  end
+
   def display_readme
     readme 'README'
   end
