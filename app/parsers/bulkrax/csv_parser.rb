@@ -116,7 +116,7 @@ module Bulkrax
     end
 
     def create_from_collection
-      work_ids = ActiveFedora::SolrService.query("member_of_collection_ids_ssim:#{importerexporter.export_source}").map(&:id)
+      work_ids = ActiveFedora::SolrService.query("member_of_collection_ids_ssim:#{importerexporter.export_source}", rows: 2_000_000_000).map(&:id)
       work_ids.each_with_index do |wid, index|
         break if limit_reached?(limit, index)
         new_entry = find_or_create_entry(entry_class, wid, 'Bulkrax::Exporter')
@@ -125,7 +125,7 @@ module Bulkrax
     end
 
     def create_from_worktype
-      work_ids = ActiveFedora::SolrService.query("has_model_ssim:#{importerexporter.export_source}").map(&:id)
+      work_ids = ActiveFedora::SolrService.query("has_model_ssim:#{importerexporter.export_source}", rows: 2_000_000_000).map(&:id)
       work_ids.each_with_index do |wid, index|
         break if limit_reached?(limit, index)
         new_entry = find_or_create_entry(entry_class, wid, 'Bulkrax::Exporter')
