@@ -90,9 +90,9 @@ module Bulkrax
       self.parser_fields['replace_files']
     end
 
-    def import_works(only_updates = false)
+    def import_works
       self.save if self.new_record? # Object needs to be saved for statuses
-      self.only_updates = only_updates
+      self.only_updates ||= false
       parser.create_works
     rescue StandardError => e
       status_info(e)
