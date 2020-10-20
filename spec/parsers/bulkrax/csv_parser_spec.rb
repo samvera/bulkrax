@@ -72,7 +72,7 @@ module Bulkrax
 
       it 'returns the path of the partial import file' do
         expect(subject.write_partial_import_file(file))
-            .to eq("tmp/imports/#{importer.id}/failed_corrected_entries.csv")
+          .to eq("tmp/imports/#{importer.id}/failed_corrected_entries.csv")
       end
 
       it 'moves the partial import file to the correct path' do
@@ -131,9 +131,9 @@ module Bulkrax
 
       it 'invokes Bulkrax::ExportWorkJob once per non-Collection Entry' do
         expect(ActiveFedora::SolrService)
-            .to receive(:query)
-                    .and_return([{ id: SecureRandom.alphanumeric(9) }])
-                    .exactly(2).times
+          .to receive(:query)
+          .and_return([{ id: SecureRandom.alphanumeric(9) }])
+          .exactly(2).times
         expect(Bulkrax::ExportWorkJob).to receive(:perform_now).exactly(2).times
         parser.create_from_importer
       end
@@ -143,9 +143,9 @@ module Bulkrax
 
         it 'invokes Bulkrax::ExportWorkJob once' do
           expect(ActiveFedora::SolrService)
-              .to receive(:query)
-                      .and_return([{ id: SecureRandom.alphanumeric(9) }])
-                      .exactly(1).times
+            .to receive(:query)
+            .and_return([{ id: SecureRandom.alphanumeric(9) }])
+            .exactly(1).times
           expect(Bulkrax::ExportWorkJob).to receive(:perform_now).exactly(1).times
           parser.create_from_importer
         end
@@ -156,9 +156,9 @@ module Bulkrax
 
         it 'invokes Bulkrax::ExportWorkJob once per non-Collection Entry' do
           expect(ActiveFedora::SolrService)
-              .to receive(:query)
-                      .and_return([{ id: SecureRandom.alphanumeric(9) }])
-                      .exactly(2).times
+            .to receive(:query)
+            .and_return([{ id: SecureRandom.alphanumeric(9) }])
+            .exactly(2).times
           expect(Bulkrax::ExportWorkJob).to receive(:perform_now).exactly(2).times
           parser.create_from_importer
         end
@@ -172,7 +172,6 @@ module Bulkrax
       it 'invokes Bulkrax::ExportWorkJob once per Entry' do
         # Use OpenStructs to simulate the behavior of ActiveFedora::SolrHit instances.
         work_ids = [OpenStruct.new(id: SecureRandom.alphanumeric(9)), OpenStruct.new(id: SecureRandom.alphanumeric(9))]
-        expect(ActiveFedora::SolrService).to receive(:get).and_return('response' => { 'numFound' => '2' })
         expect(ActiveFedora::SolrService).to receive(:query).and_return(work_ids)
         expect(Bulkrax::ExportWorkJob).to receive(:perform_now).exactly(2).times
         parser.create_from_collection
@@ -184,7 +183,6 @@ module Bulkrax
         it 'invokes Bulkrax::ExportWorkJob once' do
           # Use OpenStructs to simulate the behavior of ActiveFedora::SolrHit instances.
           work_ids = [OpenStruct.new(id: SecureRandom.alphanumeric(9)), OpenStruct.new(id: SecureRandom.alphanumeric(9))]
-          expect(ActiveFedora::SolrService).to receive(:get).and_return('response' => { 'numFound' => '2' })
           expect(ActiveFedora::SolrService).to receive(:query).and_return(work_ids)
           expect(Bulkrax::ExportWorkJob).to receive(:perform_now).exactly(1).times
           parser.create_from_collection
@@ -197,7 +195,6 @@ module Bulkrax
         it 'invokes Bulkrax::ExportWorkJob once per Entry' do
           # Use OpenStructs to simulate the behavior of ActiveFedora::SolrHit instances.
           work_ids = [OpenStruct.new(id: SecureRandom.alphanumeric(9)), OpenStruct.new(id: SecureRandom.alphanumeric(9))]
-          expect(ActiveFedora::SolrService).to receive(:get).and_return('response' => { ' numFound' => '2' })
           expect(ActiveFedora::SolrService).to receive(:query).and_return(work_ids)
           expect(Bulkrax::ExportWorkJob).to receive(:perform_now).exactly(2).times
           parser.create_from_collection
@@ -212,7 +209,6 @@ module Bulkrax
       it 'invokes Bulkrax::ExportWorkJob once per Entry' do
         # Use OpenStructs to simulate the behavior of ActiveFedora::SolrHit instances.
         work_ids = [OpenStruct.new(id: SecureRandom.alphanumeric(9)), OpenStruct.new(id: SecureRandom.alphanumeric(9))]
-        expect(ActiveFedora::SolrService).to receive(:get).and_return('response' => { 'numFound' => '2' })
         expect(ActiveFedora::SolrService).to receive(:query).and_return(work_ids)
         expect(Bulkrax::ExportWorkJob).to receive(:perform_now).exactly(2).times
         parser.create_from_worktype
@@ -224,7 +220,6 @@ module Bulkrax
         it 'invokes Bulkrax::ExportWorkJob once' do
           # Use OpenStructs to simulate the behavior of ActiveFedora::SolrHit instances.
           work_ids = [OpenStruct.new(id: SecureRandom.alphanumeric(9)), OpenStruct.new(id: SecureRandom.alphanumeric(9))]
-          expect(ActiveFedora::SolrService).to receive(:get).and_return('response' => { 'numFound' => '2' })
           expect(ActiveFedora::SolrService).to receive(:query).and_return(work_ids)
           expect(Bulkrax::ExportWorkJob).to receive(:perform_now).exactly(1).times
           parser.create_from_worktype
@@ -237,7 +232,6 @@ module Bulkrax
         it 'invokes Bulkrax::ExportWorkJob once per Entry' do
           # Use OpenStructs to simulate the behavior of ActiveFedora::SolrHit instances.
           work_ids = [OpenStruct.new(id: SecureRandom.alphanumeric(9)), OpenStruct.new(id: SecureRandom.alphanumeric(9))]
-          expect(ActiveFedora::SolrService).to receive(:get).and_return('response' => { 'numFound' => '2' })
           expect(ActiveFedora::SolrService).to receive(:query).and_return(work_ids)
           expect(Bulkrax::ExportWorkJob).to receive(:perform_now).exactly(2).times
           parser.create_from_worktype
