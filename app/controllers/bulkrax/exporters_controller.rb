@@ -98,8 +98,8 @@ module Bulkrax
       # Add the field_mapping from the Bulkrax configuration
       def field_mapping_params
         # @todo replace/append once mapping GUI is in place
-        fields = Bulkrax.parsers.map { |m| m[:partial] if m[:class_name] == params[:exporter][:parser_klass] }.compact.first
-        @exporter.field_mapping = Bulkrax.field_mappings[fields.to_sym] if fields
+        field_mapping_key = Bulkrax.parsers.map { |m| m[:class_name] if m[:class_name] == params[:exporter][:parser_klass] }.compact.first
+        @exporter.field_mapping = Bulkrax.field_mappings[field_mapping_key] if field_mapping_key
       end
 
       def add_exporter_breadcrumbs
