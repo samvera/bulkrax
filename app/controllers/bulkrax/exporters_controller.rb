@@ -92,7 +92,8 @@ module Bulkrax
       # Only allow a trusted parameters through.
       def exporter_params
         params[:exporter][:export_source] = params[:exporter]["export_source_#{params[:exporter][:export_from]}".to_sym]
-        params.fetch(:exporter).permit(:name, :user_id, :export_source, :export_from, :export_type, :parser_klass, :limit, field_mapping: {})
+        params.fetch(:exporter).permit(:name, :user_id, :export_source, :export_from, :export_type,
+                                       :parser_klass, :limit, :start_date, :finish_date, :work_visibility, field_mapping: {})
       end
 
       # Add the field_mapping from the Bulkrax configuration

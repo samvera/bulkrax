@@ -60,6 +60,24 @@
     hint: 'leave blank or 0 for all records',
     label: t('bulkrax.exporter.labels.limit') %>
 
+  <%= form.input :date_filter,
+                 as: :boolean,
+                 label: "Filter by Date" %>
+  <div id="date_filter_picker" class="hidden">
+    <%= form.input :start_date,
+                   as: :date,
+                   label: "Start Date" %>
+
+    <%= form.input :finish_date,
+                   as: :date,
+                   label: t('bulkrax.exporter.labels.date_finish') %>
+  </div>
+  <%= form.input :work_visibility,
+                 prompt: "Any",
+                 collection: form.object.work_status_list,
+                 label: "Status" %>
+
+
   <%= form.input :parser_klass, 
     collection: Bulkrax.parsers.map {|p| [p[:name], p[:class_name], {'data-partial' => p[:partial]}] if p[:class_name].constantize.export_supported? }.compact, 
     label: t('bulkrax.exporter.labels.export_format') %>
@@ -85,5 +103,16 @@
       var selectedVal = $('.exporter_export_from option:selected').val();
       hideUnhide(selectedVal);
     });
+
+    // get the date filter option and show the corresponding date selectors
+    $('.exporter_date_filter').change(function() {
+        if($('.exporter_date_filter').find(".boolean").is(":checked"))
+            $('#date_filter_picker').removeClass('hidden');
+        else
+            $('#date_filter_picker').addClass('hidden');
+    });
+
+    if($('.exporter_date_filter').find(".boolean").is(":checked"))
+        $('#date_filter_picker').removeClass('hidden');
   });
 </script>
