@@ -62,20 +62,19 @@
 
   <%= form.input :date_filter,
                  as: :boolean,
-                 label: "Filter by Date" %>
+                 label: t('bulkrax.exporter.labels.filter_by__date') %>
   <div id="date_filter_picker" class="hidden">
     <%= form.input :start_date,
                    as: :date,
-                   label: "Start Date" %>
+                   label: t('bulkrax.exporter.labels.start_date') %>
 
     <%= form.input :finish_date,
                    as: :date,
-                   label: t('bulkrax.exporter.labels.date_finish') %>
+                   label: t('bulkrax.exporter.labels.finish_date') %>
   </div>
   <%= form.input :work_visibility,
-                 prompt: "Any",
                  collection: form.object.work_status_list,
-                 label: "Status" %>
+                 label: t('bulkrax.exporter.labels.status') %>
 
 
   <%= form.input :parser_klass, 

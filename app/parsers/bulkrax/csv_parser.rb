@@ -103,10 +103,33 @@ module Bulkrax
       super
     end
 
+    def extra_filters
+      output = ""
+      if importerexporter.start_date.present?
+        start_dt = importerexporter.start_date.to_datetime.strftime('%FT%TZ')
+        finish_dt = importerexporter.finish_date.present? ? importerexporter.finish_date.to_datetime.end_of_day.strftime('%FT%TZ') : "NOW"
+        output += " AND system_modified_dtsi:[#{start_dt} TO #{finish_dt}]"
+      end
+      output += importerexporter.work_visibility.present? ? " AND visibility_ssi:#{importerexporter.work_visibility}" : ""
+      output
+    end
+
+    def current_entry_ids
+      case importerexporter.export_from
+      when 'collection'
+        ActiveFedora::SolrService.query("member_of_collection_ids_ssim:#{importerexporter.export_source}"+extra_filters, rows: 2_000_000_000).map(&:id)
+      when 'worktype'
+        ActiveFedora::SolrService.query("has_model_ssim:#{importerexporter.export_source}"+extra_filters, rows: 2_000_000_000).map(&:id)
+      when 'importer'
+        importer = Bulkrax::Importer.find(importerexporter.export_source)
+        importer_ids = importer.entries.where(type: importer.parser.entry_class.to_s, last_error: [nil, {}, '']).map(&:identifier)
+        ActiveFedora::SolrService.query("doc_id_tesim:(#{importer_ids.join(" OR ")})"+extra_filters, rows:2_000_000_000).map(&:id)
+      end
+    end
+
+=begin
     def create_from_importer
-      importer = Bulkrax::Importer.find(importerexporter.export_source)
-      non_errored_entries = importer.entries.where(type: importer.parser.entry_class.to_s, last_error: [nil, {}, ''])
-      non_errored_entries.each_with_index do |entry, index|
+      current_entry_ids.each_with_index do |entry, index|
         break if limit_reached?(limit, index)
         query = "#{ActiveFedora.index_field_mapper.solr_name(Bulkrax.system_identifier_field)}:\"#{entry.identifier}\""
         work_id = ActiveFedora::SolrService.query(query, fl: 'id', rows: 1).first['id']
@@ -114,24 +137,18 @@ module Bulkrax
         Bulkrax::ExportWorkJob.perform_now(new_entry.id, current_run.id)
       end
     end
+=end
 
-    def create_from_collection
-      work_ids = ActiveFedora::SolrService.query("member_of_collection_ids_ssim:#{importerexporter.export_source}", rows: 2_000_000_000).map(&:id)
-      work_ids.each_with_index do |wid, index|
+    def create_new_entries
+      current_entry_ids.each_with_index do |wid, index|
         break if limit_reached?(limit, index)
         new_entry = find_or_create_entry(entry_class, wid, 'Bulkrax::Exporter')
         Bulkrax::ExportWorkJob.perform_now(new_entry.id, current_run.id)
       end
     end
-
-    def create_from_worktype
-      work_ids = ActiveFedora::SolrService.query("has_model_ssim:#{importerexporter.export_source}", rows: 2_000_000_000).map(&:id)
-      work_ids.each_with_index do |wid, index|
-        break if limit_reached?(limit, index)
-        new_entry = find_or_create_entry(entry_class, wid, 'Bulkrax::Exporter')
-        Bulkrax::ExportWorkJob.perform_now(new_entry.id, current_run.id)
-      end
-    end
+    alias_method :create_from_collection, :create_new_entries
+    alias_method :create_from_importer, :create_new_entries
+    alias_method :create_from_worktype, :create_new_entries
 
     def entry_class
       CsvEntry
@@ -181,7 +198,7 @@ module Bulkrax
 
     def write_files
       CSV.open(setup_export_file, "w", headers: export_headers, write_headers: true) do |csv|
-        importerexporter.entries.each do |e|
+        importerexporter.entries.where(identifier: current_entry_ids)[0..limit||total].each do |e|
           csv << e.parsed_metadata
         end
       end
