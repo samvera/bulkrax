@@ -83,8 +83,8 @@ module Bulkrax
       self.parsed_metadata['model'] = hyrax_record.has_model.first
       mapping.each do |key, value|
         next if Bulkrax.reserved_properties.include?(key) && !field_supported?(key)
-        next unless hyrax_record.respond_to?(key)
-        data = hyrax_record.send(key)
+        next unless hyrax_record.respond_to?(value['from']&.first.to_s)
+        data = hyrax_record.send(value['from'].first)
         if data.is_a?(ActiveTriples::Relation)
           self.parsed_metadata[key] = data.map { |d| prepare_export_data(d) }.join('; ').to_s unless value[:excluded]
         else
