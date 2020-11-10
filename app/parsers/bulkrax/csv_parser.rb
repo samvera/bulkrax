@@ -121,13 +121,10 @@ module Bulkrax
       when 'worktype'
         ActiveFedora::SolrService.query("has_model_ssim:#{importerexporter.export_source + extra_filters}", rows: 2_000_000_000).map(&:id)
       when 'importer'
+        importer = Bulkrax::Importer.find(importerexporter.export_source)
         entry_ids = importer.entries.where(type: importer.parser.entry_class.to_s, last_error: [nil, {}, '']).map(&:identifier)
         ActiveFedora::SolrService.query("#{Bulkrax.system_identifier_field}_tesim:(#{entry_ids.join(' OR ')})#{extra_filters}", rows: 2_000_000_000).map(&:id)
       end
-    end
-
-    def importer
-      @importer ||= Bulkrax::Importer.find(importerexporter.export_source)
     end
 
     def create_new_entries

@@ -6,10 +6,12 @@ module Bulkrax
   RSpec.describe ExporterJob, type: :job do
     subject(:exporter_job) { described_class.new }
     let(:exporter) { FactoryBot.create(:bulkrax_exporter) }
+    let(:importer) { FactoryBot.create(:bulkrax_importer) }
     let(:bulkrax_exporter_run) { FactoryBot.create(:bulkrax_exporter_run, exporter: exporter) }
 
     before do
       allow(Bulkrax::Exporter).to receive(:find).with(1).and_return(exporter)
+      allow(Bulkrax::Importer).to receive(:find).with(1).and_return(importer)
       allow(exporter).to receive(:exporter_runs).and_return([bulkrax_exporter_run])
       allow(exporter).to receive(:mapping).and_return("title" => {})
       exporter.setup_export_path
