@@ -94,10 +94,10 @@ module Bulkrax
         params[:exporter][:export_source] = params[:exporter]["export_source_#{params[:exporter][:export_from]}".to_sym]
         if params[:exporter][:date_filter] == "1"
           params.fetch(:exporter).permit(:name, :user_id, :export_source, :export_from, :export_type,
-                                       :parser_klass, :limit, :start_date, :finish_date, :work_visibility, field_mapping: {})
+                                         :parser_klass, :limit, :start_date, :finish_date, :work_visibility, field_mapping: {})
         else
           params.fetch(:exporter).permit(:name, :user_id, :export_source, :export_from, :export_type,
-                                         :parser_klass, :limit, :work_visibility, field_mapping: {}).merge(start_date:nil, finish_date:nil)
+                                         :parser_klass, :limit, :work_visibility, field_mapping: {}).merge(start_date: nil, finish_date: nil)
         end
       end
 
