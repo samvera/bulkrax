@@ -11,7 +11,7 @@ module Bulkrax
 
     before do
       allow(Bulkrax::Exporter).to receive(:find).with(1).and_return(exporter)
-      allow(Bulkrax::Importer).to receive(:find).with(1).and_return(importer)
+      allow(Bulkrax::Importer).to receive(:find).with("1").and_return(importer)
       allow(exporter).to receive(:exporter_runs).and_return([bulkrax_exporter_run])
       allow(exporter).to receive(:mapping).and_return("title" => {})
       exporter.setup_export_path
