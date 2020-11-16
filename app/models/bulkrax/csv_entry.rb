@@ -76,7 +76,6 @@ module Bulkrax
     end
 
     def build_export_metadata
-      hyrax_record
       make_round_trippable
       self.parsed_metadata = {}
       self.parsed_metadata['id'] = hyrax_record.id
