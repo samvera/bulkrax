@@ -92,14 +92,20 @@ module Bulkrax
       # Only allow a trusted parameters through.
       def exporter_params
         params[:exporter][:export_source] = params[:exporter]["export_source_#{params[:exporter][:export_from]}".to_sym]
-        params.fetch(:exporter).permit(:name, :user_id, :export_source, :export_from, :export_type, :parser_klass, :limit, field_mapping: {})
+        if params[:exporter][:date_filter] == "1"
+          params.fetch(:exporter).permit(:name, :user_id, :export_source, :export_from, :export_type,
+                                         :parser_klass, :limit, :start_date, :finish_date, :work_visibility, field_mapping: {})
+        else
+          params.fetch(:exporter).permit(:name, :user_id, :export_source, :export_from, :export_type,
+                                         :parser_klass, :limit, :work_visibility, field_mapping: {}).merge(start_date: nil, finish_date: nil)
+        end
       end
 
       # Add the field_mapping from the Bulkrax configuration
       def field_mapping_params
         # @todo replace/append once mapping GUI is in place
-        fields = Bulkrax.parsers.map { |m| m[:partial] if m[:class_name] == params[:exporter][:parser_klass] }.compact.first
-        @exporter.field_mapping = Bulkrax.field_mappings[fields.to_sym] if fields
+        field_mapping_key = Bulkrax.parsers.map { |m| m[:class_name] if m[:class_name] == params[:exporter][:parser_klass] }.compact.first
+        @exporter.field_mapping = Bulkrax.field_mappings[field_mapping_key] if field_mapping_key
       end
 
       def add_exporter_breadcrumbs

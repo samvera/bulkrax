@@ -12,6 +12,8 @@ en:
         export_source: Export Source
         export_type: Type of Export
         field_mapping: Field Mapping
+        filter_by_date: Filter By Date
+        finish_date: End Date
         full: Metadata and Files
         importer: Importer
         limit: Limit
@@ -19,6 +21,8 @@ en:
         name: Name
         parser_fields: Parser Fields
         parser_klass: Parser
+        start_date: Start Date
+        status: Status
         total_work_entries: Total Works
         user: User
         worktype: Work Type

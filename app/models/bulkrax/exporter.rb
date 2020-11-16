@@ -46,6 +46,19 @@ module Bulkrax
       self.export_source if self.export_from == 'worktype'
     end
 
+    def date_filter
+      self.start_date.present? || self.finish_date.present?
+    end
+
+    def work_status_list
+      [
+        ['Any', ''],
+        [I18n.t('hyrax.visibility.open.text'), Hydra::AccessControls::AccessRight::VISIBILITY_TEXT_VALUE_PUBLIC],
+        [I18n.t('hyrax.visibility.restricted.text'), Hydra::AccessControls::AccessRight::VISIBILITY_TEXT_VALUE_PRIVATE],
+        [I18n.t('hyrax.visibility.authenticated.text', institution: I18n.t('hyrax.institution_name')), Hydra::AccessControls::AccessRight::VISIBILITY_TEXT_VALUE_AUTHENTICATED]
+      ]
+    end
+
     # If field_mapping is empty, setup a default based on the export_properties
     def mapping
       @mapping ||= self.field_mapping ||

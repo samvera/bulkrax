@@ -81,20 +81,24 @@ module Bulkrax
       self.parsed_metadata['id'] = hyrax_record.id
       self.parsed_metadata[self.class.source_identifier_field] = hyrax_record.id
       self.parsed_metadata['model'] = hyrax_record.has_model.first
+      build_mapping_metadata
+      unless hyrax_record.is_a?(Collection)
+        self.parsed_metadata['file'] = hyrax_record.file_sets.map { |fs| filename(fs).to_s unless filename(fs).blank? }.compact.join('; ')
+      end
+      self.parsed_metadata
+    end
+
+    def build_mapping_metadata
       mapping.each do |key, value|
         next if Bulkrax.reserved_properties.include?(key) && !field_supported?(key)
-        next unless hyrax_record.respond_to?(key)
-        data = hyrax_record.send(key)
+        next unless hyrax_record.respond_to?(value['from']&.first.to_s)
+        data = hyrax_record.send(value['from'].first)
         if data.is_a?(ActiveTriples::Relation)
           self.parsed_metadata[key] = data.map { |d| prepare_export_data(d) }.join('; ').to_s unless value[:excluded]
         else
           self.parsed_metadata[key] = prepare_export_data(data)
         end
       end
-      unless hyrax_record.is_a?(Collection)
-        self.parsed_metadata['file'] = hyrax_record.file_sets.map { |fs| filename(fs).to_s unless filename(fs).blank? }.compact.join('; ')
-      end
-      self.parsed_metadata
     end
 
     def prepare_export_data(datum)
@@ -137,7 +141,7 @@ module Bulkrax
           self.collection_ids << c.id unless c.blank? || self.collection_ids.include?(c.id)
         end
       end
-      return self.collection_ids
+      self.collection_ids
     end
 
     def required_elements?(keys)
