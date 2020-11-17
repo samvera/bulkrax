@@ -26,11 +26,3 @@ en:
         total_work_entries: Total Works
         user: User
         worktype: Work Type
-        workflow_status:
-          approved: "Approved"
-          deleted: "Deleted"
-          in_process: "In Process"
-          broken_url: "Broken Url"
-          ingested: "Ingested"
-          unapproved: "Unapproved"
-          needs_repair: "Needs Repair"
