@@ -111,6 +111,7 @@ module Bulkrax
         output += " AND system_modified_dtsi:[#{start_dt} TO #{finish_dt}]"
       end
       output += importerexporter.work_visibility.present? ? " AND visibility_ssi:#{importerexporter.work_visibility}" : ""
+      output += importerexporter.workflow_status.present? ? " AND workflow_state_name_ssim:#{importerexporter.workflow_status}" : ""
       output
     end
 
