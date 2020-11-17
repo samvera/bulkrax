@@ -60,16 +60,7 @@ module Bulkrax
     end
 
     def workflow_status_list
-      [
-        ['Any', ''],
-        [I18n.t('bulkrax.exporter.labels.workflow_status.approved'), "approved"],
-        [I18n.t('bulkrax.exporter.labels.workflow_status.deleted'), "deleted"],
-        [I18n.t('bulkrax.exporter.labels.workflow_status.in_process'), "in_process"],
-        [I18n.t('bulkrax.exporter.labels.workflow_status.broken_url'), "broken_url"],
-        [I18n.t('bulkrax.exporter.labels.workflow_status.ingested'), "ingested"],
-        [I18n.t('bulkrax.exporter.labels.workflow_status.unapproved'), "unapproved"],
-        [I18n.t('bulkrax.exporter.labels.workflow_status.needs_repair'), "needs_repair"],
-      ]
+      Sipity::WorkflowState.all.map {|s| [s.name&.titleize, s.name] }
     end
 
     # If field_mapping is empty, setup a default based on the export_properties
