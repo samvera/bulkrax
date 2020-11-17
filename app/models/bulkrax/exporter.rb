@@ -50,12 +50,25 @@ module Bulkrax
       self.start_date.present? || self.finish_date.present?
     end
 
-    def work_status_list
+    def work_visibility_list
       [
         ['Any', ''],
         [I18n.t('hyrax.visibility.open.text'), Hydra::AccessControls::AccessRight::VISIBILITY_TEXT_VALUE_PUBLIC],
         [I18n.t('hyrax.visibility.restricted.text'), Hydra::AccessControls::AccessRight::VISIBILITY_TEXT_VALUE_PRIVATE],
         [I18n.t('hyrax.visibility.authenticated.text', institution: I18n.t('hyrax.institution_name')), Hydra::AccessControls::AccessRight::VISIBILITY_TEXT_VALUE_AUTHENTICATED]
+      ]
+    end
+
+    def workflow_status_list
+      [
+        ['Any', ''],
+        [I18n.t('bulkrax.exporter.labels.workflow_status.approved'), "approved"],
+        [I18n.t('bulkrax.exporter.labels.workflow_status.deleted'), "deleted"],
+        [I18n.t('bulkrax.exporter.labels.workflow_status.in_process'), "in_process"],
+        [I18n.t('bulkrax.exporter.labels.workflow_status.broken_url'), "broken_url"],
+        [I18n.t('bulkrax.exporter.labels.workflow_status.ingested'), "ingested"],
+        [I18n.t('bulkrax.exporter.labels.workflow_status.unapproved'), "unapproved"],
+        [I18n.t('bulkrax.exporter.labels.workflow_status.needs_repair'), "needs_repair"],
       ]
     end
 

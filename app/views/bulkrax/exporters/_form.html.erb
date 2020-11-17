@@ -73,9 +73,12 @@
                    label: t('bulkrax.exporter.labels.finish_date') %>
   </div>
   <%= form.input :work_visibility,
-                 collection: form.object.work_status_list,
-                 label: t('bulkrax.exporter.labels.status') %>
+                 collection: form.object.work_visibility_list,
+                 label: t('bulkrax.exporter.labels.visibility') %>
 
+  <%= form.input :workflow_status,
+                 collection: form.object.workflow_status_list,
+                 label: t('bulkrax.exporter.labels.status') %>
 
   <%= form.input :parser_klass, 
     collection: Bulkrax.parsers.map {|p| [p[:name], p[:class_name], {'data-partial' => p[:partial]}] if p[:class_name].constantize.export_supported? }.compact, 
