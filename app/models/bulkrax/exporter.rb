@@ -110,9 +110,9 @@ module Bulkrax
     end
 
     def exporter_export_zip_path
-      @exporter_export_zip_path ||= File.join(ENV.fetch('RAILS_TMP', Dir.tmpdir).to_s, "export_#{self.id}_#{self.exporter_runs.last.id}.zip")
+      @exporter_export_zip_path ||= File.join(Bulkrax.export_path, "export_#{self.id}_#{self.exporter_runs.last.id}.zip")
     rescue
-      @exporter_export_zip_path ||= File.join(ENV.fetch('RAILS_TMP', Dir.tmpdir).to_s, "export_#{self.id}_0.zip")
+      @exporter_export_zip_path ||= File.join(Bulkrax.export_path, "export_#{self.id}_0.zip")
     end
 
     def export_properties
