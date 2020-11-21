@@ -42,7 +42,10 @@ module Bulkrax
     end
 
     def valid_import?
-      required_elements?(import_fields) && file_paths.is_a?(Array)
+      error_msg = "Missing required elements, required elements are: #{required_elements.join(', ')}"
+      raise StandardError, error_msg unless required_elements?(import_fields)
+
+      file_paths.is_a?(Array)
     rescue StandardError => e
       status_info(e)
       false
