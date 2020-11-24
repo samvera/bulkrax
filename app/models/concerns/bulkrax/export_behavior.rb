@@ -48,10 +48,10 @@ module Bulkrax
       ext_mime = MIME::Types.of(file_set.original_file.file_name).first
       if fn.include?(file_set.id)
         return fn if mime.to_s == ext_mime.to_s
-        return "#{fn}.#{ext.to_sym.to_s}"
+        return "#{fn}.#{mime.to_sym.to_s}"
       else
         return "#{file_set.id}_#{fn}" if mime.to_s == ext_mime.to_s
-        return "#{file_set.id}_#{fn}.#{ext.to_sym.to_s}"
+        return "#{file_set.id}_#{fn}.#{mime.to_sym.to_s}"
       end
     end
   end
