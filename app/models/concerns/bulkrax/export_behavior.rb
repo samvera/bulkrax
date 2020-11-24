@@ -44,13 +44,14 @@ module Bulkrax
     def filename(file_set)
       return if file_set.original_file.blank?
       fn = file_set.original_file.file_name.first
-      ext = Mime::Type.lookup(file_set.original_file.mime_type).to_sym
+      mime = Mime::Type.lookup(file_set.original_file.mime_type)
+      ext_mime = MIME::Types.of(file_set.original_file.file_name).first
       if fn.include?(file_set.id)
-        return fn if fn.end_with?(ext.to_s)
-        return "#{fn}.#{ext}"
+        return fn if mime.to_s == ext_mime.to_s
+        return "#{fn}.#{ext.to_sym.to_s}"
       else
-        return "#{file_set.id}_#{fn}" if fn.end_with?(ext.to_s)
-        return "#{file_set.id}_#{fn}.#{ext}"
+        return "#{file_set.id}_#{fn}" if mime.to_s == ext_mime.to_s
+        return "#{file_set.id}_#{fn}.#{ext.to_sym.to_s}"
       end
     end
   end
