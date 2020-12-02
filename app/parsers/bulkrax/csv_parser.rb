@@ -228,7 +228,7 @@ module Bulkrax
     # Retrieve the path where we expect to find the files
     def path_to_files
       @path_to_files ||= File.join(
-        File.file?(import_file_path) ? File.dirname(import_file_path) : import_file_path,
+        zip? ? importer_unzip_path : File.dirname(import_file_path),
         'files'
       )
     end
@@ -273,7 +273,6 @@ module Bulkrax
       # but we are willing to go look for it if need be
       def real_import_file_path
         if file? && zip?
-          unzip(parser_fields['import_file_path'])
           return Dir["#{importer_unzip_path}/**/*.csv"].first
         else
           parser_fields['import_file_path']

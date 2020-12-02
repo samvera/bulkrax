@@ -75,7 +75,7 @@ module Bulkrax
     end
 
     def current_run
-      @current_run ||= self.importer_runs.create!(total_work_entries: self.limit || parser.total, total_collection_entries: parser.collections_total)
+      @current_run ||= self.importer_runs.create!
     end
 
     def last_run
@@ -123,15 +123,15 @@ module Bulkrax
 
     # If the import data is zipped, unzip it to this path
     def importer_unzip_path
-      @importer_unzip_path ||= File.join(ENV.fetch('RAILS_TMP', Dir.tmpdir).to_s, "import_#{self.id}_#{self.importer_runs.last.id}")
-    rescue
-      @importer_unzip_path ||= File.join(ENV.fetch('RAILS_TMP', Dir.tmpdir).to_s, "import_#{self.id}_0")
+      run_id = self.current_run.id || self.last_run&.id || 0
+
+      @importer_unzip_path ||= File.join(Bulkrax.import_path, self.id.to_s, "import_run_#{run_id}")
     end
 
     def errored_entries_csv_path
-      @errored_entries_csv_path ||= File.join(ENV.fetch('RAILS_TMP', Dir.tmpdir).to_s, "import_#{self.id}_#{self.importer_runs.last.id}_errored_entries.csv")
-    rescue
-      @errored_entries_csv_path ||= File.join(ENV.fetch('RAILS_TMP', Dir.tmpdir).to_s, "import_#{self.id}_0_errored_entries.csv")
+      run_id = self.current_run.id || self.last_run&.id || 0
+
+      @errored_entries_csv_path ||= File.join(Bulkrax.import_path, self.id.to_s, "import_run_#{run_id}_errored_entries.csv")
     end
   end
 end

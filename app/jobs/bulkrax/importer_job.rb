@@ -6,7 +6,10 @@ module Bulkrax
 
     def perform(importer_id, only_updates_since_last_import = false)
       importer = Importer.find(importer_id)
+
       importer.current_run
+      unzip_imported_file(importer.parser)
+      update_current_run_counters(importer)
       import(importer, only_updates_since_last_import)
       schedule(importer) if importer.schedulable?
     end
@@ -14,9 +17,22 @@ module Bulkrax
     def import(importer, only_updates_since_last_import)
       importer.only_updates = only_updates_since_last_import || false
       return unless importer.valid_import?
+
       importer.import_collections
       importer.import_works
       importer.create_parent_child_relationships unless importer.validate_only
+    end
+
+    def unzip_imported_file(parser)
+      if parser.file? && parser.zip?
+        parser.unzip(parser.parser_fields['import_file_path'])
+      end
+    end
+
+    def update_current_run_counters(importer)
+      importer.current_run.total_work_entries = importer.limit || importer.parser.total
+      importer.current_run.total_collection_entries = parser.collections_total
+      importer.current_run.save!
     end
 
     def schedule(importer)
