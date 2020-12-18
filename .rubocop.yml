@@ -12,6 +12,7 @@ AllCops:
     - 'node_modules/**/*'
     # Additions by Notch8
     - 'spec/test_app/**/*'
+    - 'bin/*'
 
 inherit_from: .rubocop_todo.yml
 
