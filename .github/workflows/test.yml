@@ -37,4 +37,4 @@ jobs:
         run: bin/rails db:migrate RAILS_ENV=test
 
       - name: Run rspec
-        run: rake
+        run: rspec
