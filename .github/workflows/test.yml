@@ -14,26 +14,27 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - uses: actions/cache@preview
-        id: cache
+      - name: Cache
+        uses: actions/cache@v2.1.3
         with:
-          path: ~/local/rubies
+          path: vendor/bundle
           key: 2.6.5
 
-      - uses: clupprich/ruby-build-action@master
-        id: ruby
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1.59.1
         with:
           ruby-version: 2.6.5
-          cache-available: ${{ steps.cache.outputs.cache-hit == 'true' }}
 
       - name: Setup sqlite3
         run: sudo apt-get install libsqlite3-dev
 
       - name: Install dependencies
-        run: bundle install
+        run: |
+          bundle config path vendor/bundle
+          bundle install
 
       - name: Migrate test database
         run: bin/rails db:migrate RAILS_ENV=test
 
       - name: Run rspec
-        run: rake
+        run: bin/rspec
