@@ -67,14 +67,14 @@ module Bulkrax
     # Otherwise return all xml files in the given folder
     def metadata_paths
       @metadata_paths ||=
-          if file? && MIME::Types.type_for(import_file_path).include?('application/xml')
-            [import_file_path]
-          else
-            file_paths.select do |f|
-              MIME::Types.type_for(f).include?('application/xml') &&
-                  f.include?("import_#{importerexporter.id}")
-            end
+        if file? && MIME::Types.type_for(import_file_path).include?('application/xml')
+          [import_file_path]
+        else
+          file_paths.select do |f|
+            MIME::Types.type_for(f).include?('application/xml') &&
+              f.include?("import_#{importerexporter.id}")
           end
+        end
     end
 
     def create_works
