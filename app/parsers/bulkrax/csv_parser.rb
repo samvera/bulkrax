@@ -152,7 +152,7 @@ module Bulkrax
     def total
       if importer?
         # @total ||= `wc -l #{parser_fields['import_file_path']}`.to_i - 1
-        @total ||= `grep -vc ^$ #{parser_fields['import_file_path']}`.to_i - 1
+        @total ||= `grep -vc ^$ #{real_import_file_path}`.to_i - 1
       elsif exporter?
         @total ||= importerexporter.entries.count
       else
