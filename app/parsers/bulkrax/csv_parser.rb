@@ -213,7 +213,7 @@ module Bulkrax
     def file_paths
       raise StandardError, 'No records were found' if records.blank?
       @file_paths ||= records.map do |r|
-        file_mapping = Bulkrax.field_mappings.dig(self.class.to_s, 'file', :from).first.to_sym
+        file_mapping = Bulkrax.field_mappings.dig(self.class.to_s, 'file', :from)&.first&.to_sym || :file
         next unless r[file_mapping].present?
 
         r[file_mapping].split(/\s*[:;|]\s*/).map do |f|
