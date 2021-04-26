@@ -465,7 +465,7 @@ GEM
     mime-types-data (3.2019.0331)
     mini_magick (4.9.5)
     mini_mime (1.0.1)
-    mini_portile2 (2.4.0)
+    mini_portile2 (2.5.0)
     minitest (5.14.1)
     multi_json (1.13.1)
     multi_xml (0.6.0)
@@ -479,8 +479,9 @@ GEM
     noid-rails (3.0.1)
       actionpack (>= 5.0.0, < 6)
       noid (~> 0.9)
-    nokogiri (1.10.9)
-      mini_portile2 (~> 2.4.0)
+    nokogiri (1.11.1)
+      mini_portile2 (~> 2.5.0)
+      racc (~> 1.4)
     nokogumbo (1.5.0)
       nokogiri
     oai (1.0.0)
@@ -512,6 +513,7 @@ GEM
       nokogiri (~> 1.6)
       rails (~> 5.0)
       rdf
+    racc (1.5.2)
     rack (2.2.3)
     rack-test (1.1.0)
       rack (>= 1.0, < 3)
