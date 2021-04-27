@@ -121,6 +121,7 @@ module Bulkrax
         object.attributes = attrs
         object.apply_depositor_metadata(@user)
         object.save!
+        Collections::PermissionsCreateService.create_default(collection: object, creating_user: @user)
       end
 
       def update_collection(attrs)
