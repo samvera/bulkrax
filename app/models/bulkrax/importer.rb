@@ -90,6 +90,10 @@ module Bulkrax
       self.parser_fields['replace_files']
     end
 
+    def update_files
+      self.parser_fields['update_files']
+    end
+
     def import_works
       self.save if self.new_record? # Object needs to be saved for statuses
       self.only_updates ||= false
@@ -123,15 +127,15 @@ module Bulkrax
 
     # If the import data is zipped, unzip it to this path
     def importer_unzip_path
-      @importer_unzip_path ||= File.join(ENV.fetch('RAILS_TMP', Dir.tmpdir).to_s, "import_#{self.id}_#{self.importer_runs.last.id}")
+      @importer_unzip_path ||= File.join(Bulkrax.import_path, "import_#{self.id}_#{self.importer_runs.last.id}")
     rescue
-      @importer_unzip_path ||= File.join(ENV.fetch('RAILS_TMP', Dir.tmpdir).to_s, "import_#{self.id}_0")
+      @importer_unzip_path ||= File.join(Bulkrax.import_path, "import_#{self.id}_0")
     end
 
     def errored_entries_csv_path
-      @errored_entries_csv_path ||= File.join(ENV.fetch('RAILS_TMP', Dir.tmpdir).to_s, "import_#{self.id}_#{self.importer_runs.last.id}_errored_entries.csv")
+      @errored_entries_csv_path ||= File.join(Bulkrax.import_path, "import_#{self.id}_#{self.importer_runs.last.id}_errored_entries.csv")
     rescue
-      @errored_entries_csv_path ||= File.join(ENV.fetch('RAILS_TMP', Dir.tmpdir).to_s, "import_#{self.id}_0_errored_entries.csv")
+      @errored_entries_csv_path ||= File.join(Bulkrax.import_path, "import_#{self.id}_0_errored_entries.csv")
     end
   end
 end

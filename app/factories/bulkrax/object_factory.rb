@@ -7,12 +7,13 @@ module Bulkrax
     include Bulkrax::FileFactory
     define_model_callbacks :save, :create
     class_attribute :system_identifier_field
-    attr_reader :attributes, :object, :unique_identifier, :klass, :replace_files
+    attr_reader :attributes, :object, :unique_identifier, :klass, :replace_files, :update_files
     self.system_identifier_field = Bulkrax.system_identifier_field
 
-    def initialize(attributes, unique_identifier, replace_files = false, user = nil, klass = nil)
+    def initialize(attributes, unique_identifier, replace_files = false, user = nil, klass = nil, update_files = false)
       @attributes = ActiveSupport::HashWithIndifferentAccess.new(attributes)
       @replace_files = replace_files
+      @update_files = update_files
       @user = user || User.batch_user
       @unique_identifier = unique_identifier
       @klass = klass || Bulkrax.default_work_type.constantize
@@ -218,7 +219,7 @@ module Bulkrax
       # a way that is compatible with how the factory needs them.
       def transform_attributes
         attributes.slice(*permitted_attributes)
-                  .merge(file_attributes)
+                  .merge(file_attributes(@update_files))
       end
 
       # Regardless of what the Parser gives us, these are the properties we are prepared to accept.

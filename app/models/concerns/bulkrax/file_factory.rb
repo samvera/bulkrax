@@ -13,10 +13,11 @@ module Bulkrax
     def upload_ids
       return [] if klass == Collection
       attributes[:file] = file_paths
-      work_files_filenames && (work_files_filenames & import_files_filenames).present? ? [] : import_files
+      import_files
     end
 
-    def file_attributes
+    def file_attributes(update_files = false)
+      @update_files = update_files
       hash = {}
       return hash if klass == Collection
       hash[:uploaded_files] = upload_ids if attributes[:file].present?
@@ -84,16 +85,56 @@ module Bulkrax
       log_deleted_fs(object)
     end
 
+    def set_removed_filesets
+      removed_file = '/data/vendor/engines/bulkrax/spec/fixtures/Removed.png'
+      @filesets.each do |fileset|
+        fileset.files.first.create_version
+        opts = {}
+        opts[:path] = fileset.files.first.id.split('/',2).last
+        opts[:original_name] = 'Removed.png'
+        opts[:mime_type] = 'image/png'
+
+        fileset.add_file(File.open(removed_file), opts)
+        fileset.save
+        ::CreateDerivativesJob.set(wait: 1.minute).perform_later(fileset, fileset.files.first.id)
+      end
+    end
+
     def import_files
-      file_paths.map { |path| import_file(path) }
+      (@filesets ||= object.file_sets) if @update_files
+      paths = file_paths.map { |path| import_file(path) }.compact
+      if @filesets.present?
+        set_removed_filesets
+      end
+      paths
     end
 
     def import_file(path)
       u = Hyrax::UploadedFile.new
       u.user_id = @user.id
       u.file = CarrierWave::SanitizedFile.new(path)
-      u.save
-      u.id
+      update_filesets(u)
+    end
+
+    def update_filesets(current_file)
+      if @update_files && @filesets.present?
+        fileset = @filesets.shift
+        return nil if fileset.files.first.checksum.value == Digest::SHA1.file(current_file.file.path).to_s
+
+        fileset.files.first.create_version
+        opts = {}
+        opts[:path] = fileset.files.first.id.split('/',2).last
+        opts[:original_name] = current_file.file.file.original_filename
+        opts[:mime_type] = current_file.file.content_type
+
+        fileset.add_file(File.open(current_file.file.to_s), opts)
+        fileset.save
+        ::CreateDerivativesJob.set(wait: 1.minute).perform_later(fileset, fileset.files.first.id)
+        nil
+      else
+        current_file.save
+        current_file.id
+      end
     end
   end
 end

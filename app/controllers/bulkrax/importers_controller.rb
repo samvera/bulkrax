@@ -116,8 +116,13 @@ module Bulkrax
         # OAI-only - selective re-harvest
         elsif params[:commit] == 'Update and Harvest Updated Items'
           Bulkrax::ImporterJob.perform_later(@importer.id, true)
+        elsif params[:commit] == ('Update All (update metadata and update files)')
+          @importer.parser_fields['update_files'] = true
+          @importer.save
+          Bulkrax::ImporterJob.perform_later(@importer.id)
+          # In all other cases, perform a metadata-only re-import
         # Perform a full metadata and files re-import; do the same for an OAI re-harvest of all items
-        elsif params[:commit] == ('Update and Re-Import (update metadata and replace files)' || 'Update and Re-Harvest All Items')
+        elsif params[:commit] == ('Update and Replace (update metadata and replace files)' || 'Update and Re-Harvest All Items')
           @importer.parser_fields['replace_files'] = true
           @importer.save
           Bulkrax::ImporterJob.perform_later(@importer.id)
