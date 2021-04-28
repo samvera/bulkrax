@@ -72,7 +72,7 @@ module Bulkrax
 
       it 'returns the path of the partial import file' do
         expect(subject.write_partial_import_file(file))
-          .to eq("tmp/imports/#{importer.id}/failed_corrected_entries.csv")
+          .to eq("tmp/imports/#{importer.id}_#{importer.created_at.strftime('%Y%m%d%H%M%S')}/failed_corrected_entries.csv")
       end
 
       it 'moves the partial import file to the correct path' do
@@ -175,6 +175,8 @@ module Bulkrax
       end
 
       it 'writes a CSV file to the correct location' do
+        # ensure path is clean before we start
+        FileUtils.rm_rf(import_file_path)
         expect(File.exist?(import_file_path)).to eq(false)
 
         subject.write_errored_entries_file
