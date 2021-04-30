@@ -152,7 +152,7 @@ module Bulkrax
     def total
       if importer?
         # @total ||= `wc -l #{parser_fields['import_file_path']}`.to_i - 1
-        @total ||= `grep -vc ^$ #{parser_fields['import_file_path']}`.to_i - 1
+        @total ||= `grep -vc ^$ #{real_import_file_path}`.to_i - 1
       elsif exporter?
         @total ||= importerexporter.entries.count
       else
@@ -208,13 +208,15 @@ module Bulkrax
       File.join(importerexporter.exporter_export_path, 'export.csv')
     end
 
-    # Retrieve file paths for [:file] in records
+    # Retrieve file paths for [:file] mapping in records
     #  and check all listed files exist.
     def file_paths
       raise StandardError, 'No records were found' if records.blank?
       @file_paths ||= records.map do |r|
-        next unless r[:file].present?
-        r[:file].split(/\s*[:;|]\s*/).map do |f|
+        file_mapping = Bulkrax.field_mappings.dig(self.class.to_s, 'file', :from)&.first&.to_sym || :file
+        next unless r[file_mapping].present?
+
+        r[file_mapping].split(/\s*[:;|]\s*/).map do |f|
           file = File.join(path_to_files, f.tr(' ', '_'))
           if File.exist?(file) # rubocop:disable Style/GuardClause
             file
@@ -263,6 +265,7 @@ module Bulkrax
     end
 
     def setup_errored_entries_file
+      FileUtils.mkdir_p(File.dirname(importerexporter.errored_entries_csv_path))
       File.open(importerexporter.errored_entries_csv_path, 'w')
     end
 
