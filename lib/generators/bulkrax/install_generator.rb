@@ -73,4 +73,8 @@ class Bulkrax::InstallGenerator < Rails::Generators::Base
   def display_readme
     readme 'README'
   end
+
+  def add_removed_image
+    copy_file 'app/assets/images/bulkrax/removed.png', 'app/assets/images/bulkrax/removed.png'
+  end
 end

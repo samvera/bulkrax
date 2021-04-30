@@ -86,15 +86,14 @@ module Bulkrax
     end
 
     def set_removed_filesets
-      removed_file = '/data/vendor/engines/bulkrax/spec/fixtures/Removed.png'
       @filesets.each do |fileset|
         fileset.files.first.create_version
         opts = {}
         opts[:path] = fileset.files.first.id.split('/',2).last
-        opts[:original_name] = 'Removed.png'
+        opts[:original_name] = 'removed.png'
         opts[:mime_type] = 'image/png'
 
-        fileset.add_file(File.open(removed_file), opts)
+        fileset.add_file(File.open(Bulkrax.removed_image_path), opts)
         fileset.save
         ::CreateDerivativesJob.set(wait: 1.minute).perform_later(fileset, fileset.files.first.id)
       end
