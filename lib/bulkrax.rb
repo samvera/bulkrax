@@ -162,7 +162,7 @@ module Bulkrax
     )
   end
 
-  self.removed_image_path = Rails.root.join('app', 'assets', 'images', 'bulkrax', 'removed.png')
+  self.removed_image_path = 'app/assets/images/bulkrax/removed.png'
 
   # this function maps the vars from your app into your engine
   def self.setup

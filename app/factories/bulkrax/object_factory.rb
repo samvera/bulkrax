@@ -10,6 +10,7 @@ module Bulkrax
     attr_reader :attributes, :object, :unique_identifier, :klass, :replace_files, :update_files
     self.system_identifier_field = Bulkrax.system_identifier_field
 
+    # rubocop:disable Metrics/ParameterLists
     def initialize(attributes, unique_identifier, replace_files = false, user = nil, klass = nil, update_files = false)
       @attributes = ActiveSupport::HashWithIndifferentAccess.new(attributes)
       @replace_files = replace_files
@@ -18,6 +19,7 @@ module Bulkrax
       @unique_identifier = unique_identifier
       @klass = klass || Bulkrax.default_work_type.constantize
     end
+    # rubocop:enable Metrics/ParameterLists
 
     def run
       arg_hash = { id: attributes[:id], name: 'UPDATE', klass: klass }

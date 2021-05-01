@@ -4,6 +4,7 @@ require_dependency 'bulkrax/application_controller'
 require_dependency 'oai'
 
 module Bulkrax
+  # rubocop:disable Metrics/ClassLength
   class ImportersController < ApplicationController
     include Hyrax::ThemedLayoutController
     include Bulkrax::DownloadBehavior
@@ -96,8 +97,8 @@ module Bulkrax
     end
 
     # PATCH/PUT /importers/1
+    # rubocop:disable all
     def update
-      # rubocop:disable Style/IfInsideElse
       if api_request?
         return return_json_response unless valid_update_params?
       end
@@ -116,12 +117,11 @@ module Bulkrax
         # OAI-only - selective re-harvest
         elsif params[:commit] == 'Update and Harvest Updated Items'
           Bulkrax::ImporterJob.perform_later(@importer.id, true)
-        elsif params[:commit] == ('Update All (update metadata and update files)')
+        elsif params[:commit] == 'Update All (update metadata and update files)'
           @importer.parser_fields['update_files'] = true
           @importer.save
           Bulkrax::ImporterJob.perform_later(@importer.id)
-          # In all other cases, perform a metadata-only re-import
-        # Perform a full metadata and files re-import; do the same for an OAI re-harvest of all items
+          # Perform a full metadata and files re-import; do the same for an OAI re-harvest of all items
         elsif params[:commit] == ('Update and Replace (update metadata and replace files)' || 'Update and Re-Harvest All Items')
           @importer.parser_fields['replace_files'] = true
           @importer.save
@@ -142,8 +142,8 @@ module Bulkrax
           render :edit
         end
       end
-      # rubocop:enable Style/IfInsideElse
     end
+    # rubocop:enable all
     # rubocop:enable Metrics/MethodLength
 
     # DELETE /importers/1
@@ -310,4 +310,5 @@ module Bulkrax
         end
       end
   end
+  # rubocop:enable Metrics/ClassLength
 end
