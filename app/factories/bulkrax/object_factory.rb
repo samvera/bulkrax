@@ -226,7 +226,7 @@ module Bulkrax
 
       # Regardless of what the Parser gives us, these are the properties we are prepared to accept.
       def permitted_attributes
-        klass.properties.keys.map(&:to_sym) + %i[id edit_users edit_groups read_groups visibility work_members_attributes]
+        klass.properties.keys.map(&:to_sym) + %i[id edit_users edit_groups read_groups visibility work_members_attributes admin_set_id]
       end
   end
 end

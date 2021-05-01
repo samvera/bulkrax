@@ -127,15 +127,17 @@ module Bulkrax
 
     # If the import data is zipped, unzip it to this path
     def importer_unzip_path
-      @importer_unzip_path ||= File.join(Bulkrax.import_path, "import_#{self.id}_#{self.importer_runs.last.id}")
-    rescue
-      @importer_unzip_path ||= File.join(Bulkrax.import_path, "import_#{self.id}_0")
+      @importer_unzip_path ||= File.join(Bulkrax.import_path, "import_#{path_string}")
     end
 
     def errored_entries_csv_path
-      @errored_entries_csv_path ||= File.join(Bulkrax.import_path, "import_#{self.id}_#{self.importer_runs.last.id}_errored_entries.csv")
+      @errored_entries_csv_path ||= File.join(Bulkrax.import_path, "import_#{path_string}_errored_entries.csv")
+    end
+
+    def path_string
+      "#{self.id}_#{self.created_at.strftime('%Y%m%d%H%M%S')}_#{self.importer_runs.last.id}"
     rescue
-      @errored_entries_csv_path ||= File.join(Bulkrax.import_path, "import_#{self.id}_0_errored_entries.csv")
+      "#{self.id}_#{self.created_at.strftime('%Y%m%d%H%M%S')}"
     end
   end
 end

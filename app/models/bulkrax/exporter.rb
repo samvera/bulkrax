@@ -60,7 +60,7 @@ module Bulkrax
     end
 
     def workflow_status_list
-      Sipity::WorkflowState.all.map {|s| [s.name&.titleize, s.name] }.uniq
+      Sipity::WorkflowState.all.map { |s| [s.name&.titleize, s.name] }.uniq
     end
 
     # If field_mapping is empty, setup a default based on the export_properties
