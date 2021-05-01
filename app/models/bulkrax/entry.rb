@@ -23,7 +23,7 @@ module Bulkrax
 
     attr_accessor :all_attrs
 
-    delegate :parser, :mapping, :replace_files, to: :importerexporter
+    delegate :parser, :mapping, :replace_files, :update_files, to: :importerexporter
 
     delegate :client,
              :collection_name,

@@ -78,6 +78,7 @@ module Bulkrax
         it 'creates a default mapping from the column headers' do
           expect(importer.mapping).to eq(
             "collection" => { "excluded" => false, "from" => ["collection"], "if" => nil, "parsed" => false, "split" => false },
+            "model" => { "excluded" => false, "from" => ["model"], "if" => nil, "parsed" => true, "split" => false },
             "source_identifier" => { "excluded" => false, "from" => ["source_identifier"], "if" => nil, "parsed" => false, "split" => false },
             "title" => { "excluded" => false, "from" => ["title"], "if" => nil, "parsed" => false, "split" => false }
           )

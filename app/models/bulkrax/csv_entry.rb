@@ -22,7 +22,9 @@ module Bulkrax
     def self.data_for_entry(data)
       # If a multi-line CSV data is passed, grab the first row
       data = data.first if data.is_a?(CSV::Table)
+      raw_model = data[:model]
       raw_data = data.to_h
+      raw_data[:model] = raw_model
       # If the collection field mapping is not 'collection', add 'collection' - the parser needs it
       raw_data[:collection] = raw_data[collection_field.to_sym] if raw_data.keys.include?(collection_field.to_sym) && collection_field != 'collection'
       # If the children field mapping is not 'children', add 'children' - the parser needs it
@@ -49,7 +51,6 @@ module Bulkrax
 
       self.parsed_metadata = {}
       self.parsed_metadata[Bulkrax.system_identifier_field] = [record['source_identifier']]
-
       record.each do |key, value|
         next if key == 'collection'
         add_metadata(key, value)
@@ -61,7 +62,7 @@ module Bulkrax
       add_admin_set_id
       add_collections
       add_local
-
+      self.save
       self.parsed_metadata
     end
 
@@ -91,6 +92,7 @@ module Bulkrax
     def build_mapping_metadata
       mapping.each do |key, value|
         next if Bulkrax.reserved_properties.include?(key) && !field_supported?(key)
+        next if key == "model"
         next unless hyrax_record.respond_to?(value['from']&.first.to_s)
         data = hyrax_record.send(value['from'].first)
         if data.is_a?(ActiveTriples::Relation)
