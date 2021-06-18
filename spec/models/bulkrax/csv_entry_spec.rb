@@ -61,7 +61,6 @@ module Bulkrax
         end
       end
 
-
       context 'with files containing spaces' do
         before do
           allow_any_instance_of(ObjectFactory).to receive(:run!)
