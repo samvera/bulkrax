@@ -44,16 +44,24 @@ module Bulkrax
       Bulkrax.parent_child_field_mapping[self.to_s] || 'children'
     end
 
+    def keys_without_numbers(keys)
+      keys.map { |key| key_without_numbers(key) }
+    end
+
+    def key_without_numbers(key)
+      key.sub(/_\d+/, '').sub(/^\d+_/, '')
+    end
+
     def build_metadata
       raise StandardError, 'Record not found' if record.nil?
 
-      raise StandardError, "Missing required elements, required elements are: #{importerexporter.parser.required_elements.join(', ')}" unless importerexporter.parser.required_elements?(record.keys)
+      raise StandardError, "Missing required elements, required elements are: #{importerexporter.parser.required_elements.join(', ')}" unless importerexporter.parser.required_elements?(keys_without_numbers(record.keys))
 
       self.parsed_metadata = {}
       self.parsed_metadata[Bulkrax.system_identifier_field] = [record['source_identifier']]
       record.each do |key, value|
         next if key == 'collection'
-        add_metadata(key, value)
+        add_metadata(key_without_numbers(key), value)
       end
 
       add_file
