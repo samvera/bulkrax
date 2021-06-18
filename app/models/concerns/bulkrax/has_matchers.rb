@@ -28,10 +28,32 @@ module Bulkrax
 
     def add_metadata(node_name, node_content)
       field_to(node_name).each do |name|
-        next unless field_supported?(name)
         matcher = self.class.matcher(name, mapping[name].symbolize_keys) if mapping[name]
         multiple = multiple?(name)
-        if matcher
+        object = object_name(name)
+        next unless field_supported?(name) || (object && field_supported?(object))
+        if object
+          Rails.logger.info("Bulkrax Column automatically matched object #{node_name}, #{node_content}")
+          parsed_metadata[object] ||= {}
+          if matcher
+            result = matcher.result(self, node_content)
+            if result
+              if multiple
+                parsed_metadata[object][name] ||= []
+                parsed_metadata[object][name] += Array.wrap(result)
+              else
+                parsed_metadata[object][name] = Array.wrap(result).join('; ')
+              end
+            end
+          elsif multiple
+            node_content = node_content.content if node_content.is_a?(Nokogiri::XML::NodeSet)
+            parsed_metadata[object][name] ||= []
+            parsed_metadata[object][name] += node_content.is_a?(Array) ? node_content : Array.wrap(node_content.strip)
+          else
+            node_content = node_content.content if node_content.is_a?(Nokogiri::XML::NodeSet)
+            parsed_metadata[object][name] = Array.wrap(node_content.to_s.strip).join('; ') if node_content
+          end
+        elsif matcher
           result = matcher.result(self, node_content)
           if result
             if multiple
@@ -67,6 +89,10 @@ module Bulkrax
       return true if field == 'file' || field == 'remote_files'
       return false if field == 'model'
       field_supported?(field) && factory_class&.properties&.[](field)&.[]('multiple')
+    end
+
+    def object_name(field)
+      mapping&.[](field)&.[]('object')
     end
 
     # Hyrax field to use for the given import field

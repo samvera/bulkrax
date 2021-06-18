@@ -61,7 +61,6 @@ module Bulkrax
         end
       end
 
-
       context 'with files containing spaces' do
         before do
           allow_any_instance_of(ObjectFactory).to receive(:run!)
@@ -73,6 +72,36 @@ module Bulkrax
         it 'sets up the file_path and removes spaces from filenames' do
           subject.build
           expect(subject.status).to eq('Complete')
+        end
+      end
+
+      context 'with object fields prefixed' do
+        let(:importer) { FactoryBot.create(:bulkrax_importer_csv, field_mapping: { 'creator_first_name' => { from: ['creator_first_name'], object: 'creator' }, 'creator_last_name' => { from: ['creator_last_name'], object: 'creator' } }) }
+
+        before do
+          allow_any_instance_of(ObjectFactory).to receive(:run!)
+          allow(subject).to receive(:record).and_return('source_identifier' => '2', 'title' => 'some title', 'creator_first_name' => 'Fake', 'creator_last_name' => 'Fakerson')
+        end
+
+        it 'succeeds' do
+          metadata = subject.build_metadata
+          expect(metadata['creator']['creator_first_name']).to eq('Fake')
+          expect(metadata['creator']['creator_last_name']).to eq('Fakerson')
+        end
+      end
+
+      context 'with object fields and no prefix' do
+        let(:importer) { FactoryBot.create(:bulkrax_importer_csv, field_mapping: { 'first_name' => { from: ['creator_first_name'], object: 'creator' }, 'last_name' => { from: ['creator_last_name'], object: 'creator' } }) }
+
+        before do
+          allow_any_instance_of(ObjectFactory).to receive(:run!)
+          allow(subject).to receive(:record).and_return('source_identifier' => '2', 'title' => 'some title', 'creator_first_name' => 'Fake', 'creator_last_name' => 'Fakerson')
+        end
+
+        it 'succeeds' do
+          metadata = subject.build_metadata
+          expect(metadata['creator']['first_name']).to eq('Fake')
+          expect(metadata['creator']['last_name']).to eq('Fakerson')
         end
       end
     end
