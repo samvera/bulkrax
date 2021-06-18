@@ -35,6 +35,33 @@ module Bulkrax
         end
       end
 
+      context 'with enumerated columns appended' do
+        before do
+          allow_any_instance_of(ObjectFactory).to receive(:run!)
+          allow(subject).to receive(:record).and_return('source_identifier' => '2', 'title_1' => 'some title', 'title_2' => 'another title')
+        end
+
+        it 'succeeds' do
+          metadata = subject.build_metadata
+          expect(metadata['title']).to include('some title')
+          expect(metadata['title']).to include('another title')
+        end
+      end
+
+      context 'with enumerated columns prepended' do
+        before do
+          allow_any_instance_of(ObjectFactory).to receive(:run!)
+          allow(subject).to receive(:record).and_return('source_identifier' => '2', '1_title' => 'some title', '2_title' => 'another title')
+        end
+
+        it 'succeeds' do
+          metadata = subject.build_metadata
+          expect(metadata['title']).to include('some title')
+          expect(metadata['title']).to include('another title')
+        end
+      end
+
+
       context 'with files containing spaces' do
         before do
           allow_any_instance_of(ObjectFactory).to receive(:run!)
