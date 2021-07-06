@@ -16,9 +16,9 @@ module Bulkrax
                    :field_mappings,
                    :import_path,
                    :export_path,
+                   :removed_image_path,
                    :server_name,
-                   :api_definition,
-                   :removed_image_path
+                   :api_definition
 
     self.parsers = [
       { name: "OAI - Dublin Core", class_name: "Bulkrax::OaiDcParser", partial: "oai_fields" },
@@ -31,6 +31,7 @@ module Bulkrax
     self.system_identifier_field = "source"
     self.import_path = 'tmp/imports'
     self.export_path = 'tmp/exports'
+    self.removed_image_path = Bulkrax::Engine.root.join('spec', 'fixtures', 'removed.png').to_s
     self.server_name = 'bulkrax@example.com'
 
     # Field_mapping for establishing a source_identifier to use as the unique identifier for the entry
@@ -161,8 +162,6 @@ module Bulkrax
       )
     )
   end
-
-  self.removed_image_path = 'app/assets/images/bulkrax/removed.png'
 
   # this function maps the vars from your app into your engine
   def self.setup
