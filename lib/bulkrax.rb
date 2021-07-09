@@ -18,7 +18,8 @@ module Bulkrax
                    :export_path,
                    :removed_image_path,
                    :server_name,
-                   :api_definition
+                   :api_definition,
+                   :removed_image_path
 
     self.parsers = [
       { name: "OAI - Dublin Core", class_name: "Bulkrax::OaiDcParser", partial: "oai_fields" },
@@ -162,6 +163,8 @@ module Bulkrax
       )
     )
   end
+
+  self.removed_image_path = 'app/assets/images/bulkrax/removed.png'
 
   # this function maps the vars from your app into your engine
   def self.setup
