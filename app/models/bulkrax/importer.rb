@@ -91,7 +91,7 @@ module Bulkrax
     end
 
     def update_files
-      @update_files = self.parser_fields['update_files']
+      self.parser_fields['update_files']
     end
 
     def import_works

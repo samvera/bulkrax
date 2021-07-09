@@ -97,6 +97,7 @@ module Bulkrax
     end
 
     # PATCH/PUT /importers/1
+    # # @todo refactor so as to not need to disable rubocop
     # rubocop:disable all
     def update
       if api_request?
