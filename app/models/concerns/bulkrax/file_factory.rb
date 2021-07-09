@@ -86,7 +86,7 @@ module Bulkrax
     end
 
     def set_removed_filesets
-      @filesets.each do |fileset|
+      local_file_sets.each do |fileset|
         fileset.files.first.create_version
         opts = {}
         opts[:path] = fileset.files.first.id.split('/', 2).last
@@ -99,10 +99,13 @@ module Bulkrax
       end
     end
 
+    def local_file_sets
+      @local_file_sets ||= object&.ordered_file_sets
+    end
+
     def import_files
-      (@filesets ||= object.file_sets) if @update_files
       paths = file_paths.map { |path| import_file(path) }.compact
-      set_removed_filesets if @filesets.present?
+      set_removed_filesets if local_file_sets.present?
       paths
     end
 
@@ -114,8 +117,8 @@ module Bulkrax
     end
 
     def update_filesets(current_file)
-      if @update_files && @filesets.present?
-        fileset = @filesets.shift
+      if @update_files && local_file_sets.present?
+        fileset = local_file_sets.shift
         return nil if fileset.files.first.checksum.value == Digest::SHA1.file(current_file.file.path).to_s
 
         fileset.files.first.create_version

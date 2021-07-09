@@ -16,6 +16,7 @@ module Bulkrax
                    :field_mappings,
                    :import_path,
                    :export_path,
+                   :removed_image_path,
                    :server_name,
                    :api_definition,
                    :removed_image_path
@@ -31,6 +32,7 @@ module Bulkrax
     self.system_identifier_field = "source"
     self.import_path = 'tmp/imports'
     self.export_path = 'tmp/exports'
+    self.removed_image_path = Bulkrax::Engine.root.join('spec', 'fixtures', 'removed.png').to_s
     self.server_name = 'bulkrax@example.com'
 
     # Field_mapping for establishing a source_identifier to use as the unique identifier for the entry
