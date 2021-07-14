@@ -221,7 +221,7 @@ module Bulkrax
       # a way that is compatible with how the factory needs them.
       def transform_attributes
         attributes.slice(*permitted_attributes)
-                  .merge(file_attributes(@update_files))
+                  .merge(file_attributes(update_files))
       end
 
       # Regardless of what the Parser gives us, these are the properties we are prepared to accept.

@@ -4,6 +4,7 @@ module Bulkrax
     include Bulkrax::ImporterExporterBehavior
     include Bulkrax::StatusInfo
 
+    serialize :parser_fields, JSON
     serialize :field_mapping, JSON
     serialize :last_error, JSON
 

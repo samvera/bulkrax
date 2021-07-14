@@ -7,7 +7,7 @@ module Bulkrax
 
     def build_for_exporter
       build_export_metadata
-      write_files if export_type == 'full'
+      write_files if export_type == 'full' && !importerexporter.parser_klass.include?('Bagit')
     rescue RSolr::Error::Http, CollectionsCreatedError => e
       raise e
     rescue StandardError => e
