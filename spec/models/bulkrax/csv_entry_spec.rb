@@ -91,17 +91,31 @@ module Bulkrax
       end
 
       context 'with object fields and no prefix' do
-        let(:importer) { FactoryBot.create(:bulkrax_importer_csv, field_mapping: { 'first_name' => { from: ['creator_first_name'], object: 'creator' }, 'last_name' => { from: ['creator_last_name'], object: 'creator' } }) }
+        let(:importer) { FactoryBot.create(:bulkrax_importer_csv, field_mapping: {
+          'first_name' => { from: ['creator_first_name'], object: 'creator' },
+          'last_name' => { from: ['creator_last_name'], object: 'creator' },
+          'position' => { from: ['creator_position'], object: 'creator' },
+          'language' => { from: ['creator_language'], object: 'creator', parsed: true }
+        }) }
 
         before do
           allow_any_instance_of(ObjectFactory).to receive(:run!)
-          allow(subject).to receive(:record).and_return('source_identifier' => '2', 'title' => 'some title', 'creator_first_name' => 'Fake', 'creator_last_name' => 'Fakerson')
+          allow(subject).to receive(:record).and_return(
+            'source_identifier' => '2',
+            'title' => 'some title',
+            'creator_first_name' => 'Fake',
+            'creator_last_name' => 'Fakerson',
+            'creator_position' => 'Leader, Jester, Queen',
+            'creator_language' => 'english'
+          )
         end
 
         it 'succeeds' do
           metadata = subject.build_metadata
           expect(metadata['creator']['first_name']).to eq('Fake')
           expect(metadata['creator']['last_name']).to eq('Fakerson')
+          expect(metadata['creator']['position']).to include('Leader', 'Jester', 'Queen')
+          expect(metadata['creator']['language']).to eq('English')
         end
       end
     end
