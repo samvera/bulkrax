@@ -28,28 +28,27 @@ module Bulkrax
 
     def add_metadata(node_name, node_content)
       field_to(node_name).each do |name|
-        next unless field_supported?(name)
-        matcher = self.class.matcher(name, mapping[name].symbolize_keys) if mapping[name]
-        multiple = multiple?(name)
+        matcher = self.class.matcher(name, mapping[name].symbolize_keys) if mapping[name] # the field matched to a pre parsed value in application_matcher.rb
+        multiple = multiple?(name) # the field has multiple values. e.g. ['a', 'b', 'c']
+        object = object_name(name) || false # the field is an object of key:value pairs. e.g. { obj: { key: value }}
+
+        next unless field_supported?(name) || (object && field_supported?(object))
+
+        if object
+          Rails.logger.info("Bulkrax Column automatically matched object #{node_name}, #{node_content}")
+          parsed_metadata[object] ||= {}
+        end
+
         if matcher
-          result = matcher.result(self, node_content)
-          if result
-            if multiple
-              parsed_metadata[name] ||= []
-              parsed_metadata[name] += Array.wrap(result)
-            else
-              parsed_metadata[name] = Array.wrap(result).join('; ')
-            end
-          end
-        # we didn't find a match, add by default
+          matched_metadata?(matcher, multiple, name, node_content, object)
         elsif multiple
           Rails.logger.info("Bulkrax Column automatically matched #{node_name}, #{node_content}")
-          node_content = node_content.content if node_content.is_a?(Nokogiri::XML::NodeSet)
-          parsed_metadata[name] ||= []
-          parsed_metadata[name] += node_content.is_a?(Array) ? node_content : Array.wrap(node_content.strip)
+          multiple_metadata?(name, node_name, node_content, object)
         else
           Rails.logger.info("Bulkrax Column automatically matched #{node_name}, #{node_content}")
+
           node_content = node_content.content if node_content.is_a?(Nokogiri::XML::NodeSet)
+          next parsed_metadata[object][name] = Array.wrap(node_content.to_s.strip).join('; ') if object && node_content
           parsed_metadata[name] = Array.wrap(node_content.to_s.strip).join('; ') if node_content
         end
       end
@@ -69,6 +68,10 @@ module Bulkrax
       field_supported?(field) && factory_class&.properties&.[](field)&.[]('multiple')
     end
 
+    def object_name(field)
+      mapping&.[](field)&.[]('object')
+    end
+
     # Hyrax field to use for the given import field
     # @param field [String] the importer field name
     # @return [Array] hyrax fields
@@ -85,6 +88,38 @@ module Bulkrax
     def excluded?(field)
       return false unless mapping[field].present?
       mapping[field]['excluded'] || false
+    end
+
+    def multiple_metadata?(name, node_name, node_content, object = false)
+      Rails.logger.info("Bulkrax Column automatically matched #{node_name}, #{node_content}")
+      node_content = node_content.content if node_content.is_a?(Nokogiri::XML::NodeSet)
+
+      if object
+        parsed_metadata[object][name] ||= []
+        parsed_metadata[object][name] += node_content.is_a?(Array) ? node_content : Array.wrap(node_content.strip)
+      else
+        parsed_metadata[name] ||= []
+        parsed_metadata[name] += node_content.is_a?(Array) ? node_content : Array.wrap(node_content.strip)
+      end
+    end
+
+    def matched_metadata?(matcher, multiple, name, node_content, object = false)
+      result = matcher.result(self, node_content)
+      return unless result
+
+      if object
+        if multiple
+          parsed_metadata[object][name] ||= []
+          parsed_metadata[object][name] += Array.wrap(result)
+        else
+          parsed_metadata[object][name] = Array.wrap(result).join('; ')
+        end
+      elsif multiple
+        parsed_metadata[name] ||= []
+        parsed_metadata[name] += Array.wrap(result)
+      else
+        parsed_metadata[name] = Array.wrap(result).join('; ')
+      end
     end
   end
 end

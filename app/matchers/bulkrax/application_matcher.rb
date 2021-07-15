@@ -38,13 +38,18 @@ module Bulkrax
     end
 
     def process_parse
-      if @result.is_a?(Array) && self.parsed && self.respond_to?("parse_#{to}")
+      # New parse methods will need to be added here
+      parsed_fields = ['remote_files', 'language', 'subject', 'types', 'model', 'resource_type', 'format_original']
+      # This accounts for prefixed matchers
+      parser = parsed_fields.find { |field| to&.include? field }
+
+      if @result.is_a?(Array) && self.parsed && self.respond_to?("parse_#{parser}")
         @result.each_with_index do |res, index|
-          @result[index] = send("parse_#{to}", res.strip)
+          @result[index] = send("parse_#{parser}", res.strip)
         end
         @result.delete(nil)
-      elsif self.parsed && self.respond_to?("parse_#{to}")
-        @result = send("parse_#{to}", @result)
+      elsif self.parsed && self.respond_to?("parse_#{parser}")
+        @result = send("parse_#{parser}", @result)
       end
     end
 
