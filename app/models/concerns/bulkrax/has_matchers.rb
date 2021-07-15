@@ -41,7 +41,6 @@ module Bulkrax
 
         if matcher
           matched_metadata?(matcher, multiple, name, node_content, object)
-        # we didn't find a match, add by default
         elsif multiple
           Rails.logger.info("Bulkrax Column automatically matched #{node_name}, #{node_content}")
           multiple_metadata?(name, node_name, node_content, object)
