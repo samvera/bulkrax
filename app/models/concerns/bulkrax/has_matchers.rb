@@ -40,11 +40,11 @@ module Bulkrax
         end
 
         if matcher
-          has_matched(matcher, multiple, name, node_content, object)
+          matched_metadata?(matcher, multiple, name, node_content, object)
         # we didn't find a match, add by default
         elsif multiple
           Rails.logger.info("Bulkrax Column automatically matched #{node_name}, #{node_content}")
-          has_multiple(name, node_name, node_content, object)
+          multiple_metadata?(name, node_name, node_content, object)
         else
           Rails.logger.info("Bulkrax Column automatically matched #{node_name}, #{node_content}")
 
@@ -69,40 +69,6 @@ module Bulkrax
       field_supported?(field) && factory_class&.properties&.[](field)&.[]('multiple')
     end
 
-    def has_multiple(name, node_name, node_content, object = false)
-      Rails.logger.info("Bulkrax Column automatically matched #{node_name}, #{node_content}")
-      node_content = node_content.content if node_content.is_a?(Nokogiri::XML::NodeSet)
-
-      if object
-        parsed_metadata[object][name] ||= []
-        parsed_metadata[object][name] += node_content.is_a?(Array) ? node_content : Array.wrap(node_content.strip)
-      else
-        parsed_metadata[name] ||= []
-        parsed_metadata[name] += node_content.is_a?(Array) ? node_content : Array.wrap(node_content.strip)
-      end
-    end
-
-    def has_matched(matcher, multiple, name, node_content, object = false)
-      result = matcher.result(self, node_content)
-      return unless result
-
-      if object
-        if multiple
-          parsed_metadata[object][name] ||= []
-          parsed_metadata[object][name] += Array.wrap(result)
-        else
-          parsed_metadata[object][name] = Array.wrap(result).join('; ')
-        end
-      else
-        if multiple
-          parsed_metadata[name] ||= []
-          parsed_metadata[name] += Array.wrap(result)
-        else
-          parsed_metadata[name] = Array.wrap(result).join('; ')
-        end
-      end
-    end
-
     def object_name(field)
       mapping&.[](field)&.[]('object')
     end
@@ -123,6 +89,38 @@ module Bulkrax
     def excluded?(field)
       return false unless mapping[field].present?
       mapping[field]['excluded'] || false
+    end
+
+    def multiple_metadata?(name, node_name, node_content, object = false)
+      Rails.logger.info("Bulkrax Column automatically matched #{node_name}, #{node_content}")
+      node_content = node_content.content if node_content.is_a?(Nokogiri::XML::NodeSet)
+
+      if object
+        parsed_metadata[object][name] ||= []
+        parsed_metadata[object][name] += node_content.is_a?(Array) ? node_content : Array.wrap(node_content.strip)
+      else
+        parsed_metadata[name] ||= []
+        parsed_metadata[name] += node_content.is_a?(Array) ? node_content : Array.wrap(node_content.strip)
+      end
+    end
+
+    def matched_metadata?(matcher, multiple, name, node_content, object = false)
+      result = matcher.result(self, node_content)
+      return unless result
+
+      if object
+        if multiple
+          parsed_metadata[object][name] ||= []
+          parsed_metadata[object][name] += Array.wrap(result)
+        else
+          parsed_metadata[object][name] = Array.wrap(result).join('; ')
+        end
+      elsif multiple
+        parsed_metadata[name] ||= []
+        parsed_metadata[name] += Array.wrap(result)
+      else
+        parsed_metadata[name] = Array.wrap(result).join('; ')
+      end
     end
   end
 end

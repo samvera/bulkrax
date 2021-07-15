@@ -4,5 +4,4 @@
 class Work < ActiveFedora::Base
   include ::Hyrax::WorkBehavior
   property :creator, predicate: ::RDF::Vocab::DC.creator
-
 end
