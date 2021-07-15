@@ -47,6 +47,7 @@ module Bulkrax
           has_multiple(name, node_name, node_content, object)
         else
           Rails.logger.info("Bulkrax Column automatically matched #{node_name}, #{node_content}")
+
           node_content = node_content.content if node_content.is_a?(Nokogiri::XML::NodeSet)
           next parsed_metadata[object][name] = Array.wrap(node_content.to_s.strip).join('; ') if object && node_content
           parsed_metadata[name] = Array.wrap(node_content.to_s.strip).join('; ') if node_content

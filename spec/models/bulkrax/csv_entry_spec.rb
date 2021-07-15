@@ -76,12 +76,14 @@ module Bulkrax
       end
 
       context 'with object fields prefixed' do
-        let(:importer) { FactoryBot.create(:bulkrax_importer_csv, field_mapping: {
-          'creator_first_name' => { from: ['creator_first_name'], object: 'creator' },
-          'creator_last_name' => { from: ['creator_last_name'], object: 'creator' },
-          'creator_position' => { from: ['creator_position'], object: 'creator' },
-          'creator_language' => { from: ['creator_language'], object: 'creator', parsed: true }
-        }) }
+        let(:importer) do
+          FactoryBot.create(:bulkrax_importer_csv, field_mapping: {
+                              'creator_first_name' => { from: ['creator_first_name'], object: 'creator' },
+                              'creator_last_name' => { from: ['creator_last_name'], object: 'creator' },
+                              'creator_position' => { from: ['creator_position'], object: 'creator' },
+                              'creator_language' => { from: ['creator_language'], object: 'creator', parsed: true }
+                            })
+        end
 
         before do
           allow_any_instance_of(ObjectFactory).to receive(:run!)
@@ -97,7 +99,6 @@ module Bulkrax
 
         it 'succeeds' do
           metadata = subject.build_metadata
-          puts "metadata >> #{metadata}"
           expect(metadata['creator']['creator_first_name']).to eq('Fake')
           expect(metadata['creator']['creator_last_name']).to eq('Fakerson')
           expect(metadata['creator']['creator_position']).to include('Leader', 'Jester', 'Queen')
@@ -106,12 +107,14 @@ module Bulkrax
       end
 
       context 'with object fields and no prefix' do
-        let(:importer) { FactoryBot.create(:bulkrax_importer_csv, field_mapping: {
-          'first_name' => { from: ['creator_first_name'], object: 'creator' },
-          'last_name' => { from: ['creator_last_name'], object: 'creator' },
-          'position' => { from: ['creator_position'], object: 'creator' },
-          'language' => { from: ['creator_language'], object: 'creator', parsed: true }
-        }) }
+        let(:importer) do
+          FactoryBot.create(:bulkrax_importer_csv, field_mapping: {
+                              'first_name' => { from: ['creator_first_name'], object: 'creator' },
+                              'last_name' => { from: ['creator_last_name'], object: 'creator' },
+                              'position' => { from: ['creator_position'], object: 'creator' },
+                              'language' => { from: ['creator_language'], object: 'creator', parsed: true }
+                            })
+        end
 
         before do
           allow_any_instance_of(ObjectFactory).to receive(:run!)
