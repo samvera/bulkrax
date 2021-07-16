@@ -46,6 +46,13 @@ module Bulkrax
           multiple_metadata?(name, node_name, node_content, object)
         else
           Rails.logger.info("Bulkrax Column automatically matched #{node_name}, #{node_content}")
+          # if object
+          #   puts "node_content >> #{node_content}"
+          #   puts "object >> #{object}"
+          #   puts "parsed_metadata >> #{parsed_metadata}"
+          #   puts "name >> #{name}"
+            # debugger
+          # end
 
           node_content = node_content.content if node_content.is_a?(Nokogiri::XML::NodeSet)
           next parsed_metadata[object][name] = Array.wrap(node_content.to_s.strip).join('; ') if object && node_content
@@ -93,6 +100,14 @@ module Bulkrax
     def multiple_metadata?(name, node_name, node_content, object = false)
       Rails.logger.info("Bulkrax Column automatically matched #{node_name}, #{node_content}")
       node_content = node_content.content if node_content.is_a?(Nokogiri::XML::NodeSet)
+      # if object
+      #   puts "name >> #{name}"
+      #   puts "node_name >> #{node_name}"
+      #   puts "node_content >> #{node_content}"
+      #   puts "object >> #{object}"
+      #   puts "parsed_metadata >> #{parsed_metadata}"
+        # debugger
+      # end
 
       if object
         parsed_metadata[object][name] ||= []
@@ -106,6 +121,16 @@ module Bulkrax
     def matched_metadata?(matcher, multiple, name, node_content, object = false)
       result = matcher.result(self, node_content)
       return unless result
+      # if object
+      #   puts "result >> #{result}"
+      #   puts "matcher >> #{matcher.inspect}"
+      #   puts "multiple >> #{multiple}"
+      #   puts "name >> #{name}"
+      #   puts "node_content >> #{node_content}"
+      #   puts "object >> #{object}"
+      #   puts "parsed_metadata >> #{parsed_metadata}"
+        # debugger
+      # end
 
       if object
         if multiple

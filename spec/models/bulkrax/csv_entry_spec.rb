@@ -99,6 +99,22 @@ module Bulkrax
 
         it 'succeeds' do
           metadata = subject.build_metadata
+          # puts "METADATA>> #{metadata}"
+          # metadata = {
+          #   "source"=>["2"],
+          #   "title"=>["some title"],
+          #   "creator"=>{
+          #     "creator_first_name"=>"Fake",
+          #     "creator_last_name"=>"Fakerson",
+          #     "creator_position"=>"Leader, Jester, Queen",
+          #     "creator_language"=>"English"
+          #   },
+          #   "file"=>[],
+          #   "visibility"=>"open",
+          #   "rights_statement"=>[nil],
+          #   "admin_set_id"=>"MyString"
+          # }
+
           expect(metadata['creator']['creator_first_name']).to eq('Fake')
           expect(metadata['creator']['creator_last_name']).to eq('Fakerson')
           expect(metadata['creator']['creator_position']).to include('Leader', 'Jester', 'Queen')
