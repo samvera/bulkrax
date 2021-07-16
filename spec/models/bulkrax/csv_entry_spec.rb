@@ -136,6 +136,39 @@ module Bulkrax
           expect(metadata['creator']['language']).to eq('English')
         end
       end
+
+      context 'with multiple object fields prefixed' do
+        let(:importer) do
+          FactoryBot.create(:bulkrax_importer_csv, field_mapping: {
+                              'creator_first_name' => { from: ['creator_first_name_1'], object: 'creator' },
+                              'creator_last_name' => { from: ['creator_last_name_1'], object: 'creator' },
+                              'creator_position' => { from: ['creator_position_1'], object: 'creator' },
+                              'creator_language' => { from: ['creator_language_1'], object: 'creator', parsed: true },
+                              'creator_first_name' => { from: ['creator_first_name_2'], object: 'creator' },
+                              'creator_last_name' => { from: ['creator_last_name_2'], object: 'creator' },
+                              'creator_position' => { from: ['creator_position_2'], object: 'creator' }
+                            })
+        end
+
+        before do
+          allow_any_instance_of(ObjectFactory).to receive(:run!)
+          allow(subject).to receive(:record).and_return(
+            'source_identifier' => '2',
+            'title' => 'some title',
+            'creator_first_name' => 'Fake',
+            'creator_last_name' => 'Fakerson',
+            'creator_position' => 'Leader, Jester, Queen',
+            'creator_language' => 'english'
+            'creator_first_name' => 'Judge',
+            'creator_last_name' => 'Hines',
+            'creator_position' => 'King, Lord, Duke',
+          )
+        end
+
+        it 'succeeds' do
+          metadata = subject.build_metadata
+        end
+      end
     end
   end
 end
