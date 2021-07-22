@@ -78,10 +78,10 @@ module Bulkrax
       context 'with object fields prefixed' do
         let(:importer) do
           FactoryBot.create(:bulkrax_importer_csv, field_mapping: {
-                              'creator_first_name' => { from: ['creator_first_name'], object: 'creator' },
-                              'creator_last_name' => { from: ['creator_last_name'], object: 'creator' },
-                              'creator_position' => { from: ['creator_position'], object: 'creator' },
-                              'creator_language' => { from: ['creator_language'], object: 'creator', parsed: true }
+                              'single_object_first_name' => { from: ['single_object_first_name'], object: 'single_object' },
+                              'single_object_last_name' => { from: ['single_object_last_name'], object: 'single_object' },
+                              'single_object_position' => { from: ['single_object_position'], object: 'single_object' },
+                              'single_object_language' => { from: ['single_object_language'], object: 'single_object', parsed: true }
                             })
         end
 
@@ -90,19 +90,19 @@ module Bulkrax
           allow(subject).to receive(:record).and_return(
             'source_identifier' => '2',
             'title' => 'some title',
-            'creator_first_name' => 'Fake',
-            'creator_last_name' => 'Fakerson',
-            'creator_position' => 'Leader, Jester, Queen',
-            'creator_language' => 'english'
+            'single_object_first_name' => 'Fake',
+            'single_object_last_name' => 'Fakerson',
+            'single_object_position' => 'Leader, Jester, Queen',
+            'single_object_language' => 'english'
           )
         end
 
         it 'succeeds' do
           metadata = subject.build_metadata
-          expect(metadata['creator']['creator_first_name']).to eq('Fake')
-          expect(metadata['creator']['creator_last_name']).to eq('Fakerson')
-          expect(metadata['creator']['creator_position']).to include('Leader', 'Jester', 'Queen')
-          expect(metadata['creator']['creator_language']).to eq('English')
+          expect(metadata['single_object']['single_object_first_name']).to eq('Fake')
+          expect(metadata['single_object']['single_object_last_name']).to eq('Fakerson')
+          expect(metadata['single_object']['single_object_position']).to include('Leader', 'Jester', 'Queen')
+          expect(metadata['single_object']['single_object_language']).to eq('English')
         end
       end
 

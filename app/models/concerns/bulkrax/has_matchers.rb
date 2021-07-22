@@ -29,15 +29,15 @@ module Bulkrax
     def add_metadata(node_name, node_content)
       field_to(node_name).each do |name|
         matcher = self.class.matcher(name, mapping[name].symbolize_keys) if mapping[name] # the field matched to a pre parsed value in application_matcher.rb
-        multiple = multiple?(name) # the field has multiple values. e.g. ['a', 'b', 'c']
         object = object_name(name) || false # the field is an object of key:value pairs. e.g. { obj: { key: value }}
+        multiple = multiple?(name) # the field has multiple values. e.g. ['a', 'b', 'c']
 
         next unless field_supported?(name) || (object && field_supported?(object))
 
         if object
           Rails.logger.info("Bulkrax Column automatically matched object #{node_name}, #{node_content}")
-          parsed_metadata[object] ||= {}
-        end
+            parsed_metadata[object] ||= {}
+          end
 
         if matcher
           matched_metadata?(matcher, multiple, name, node_content, object)
