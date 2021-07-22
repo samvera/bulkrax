@@ -30,7 +30,7 @@ module Bulkrax
       field_to(node_name).each do |name|
         matcher = self.class.matcher(name, mapping[name].symbolize_keys) if mapping[name] # the field matched to a pre parsed value in application_matcher.rb
         object = object_name(name) || false # the field is an object of key:value pairs. e.g. { obj: { key: value }}
-        multiple = multiple?(name, object) # the field has multiple values. e.g. ['a', 'b', 'c']
+        multiple = multiple?(name) # the field has multiple values. e.g. ['a', 'b', 'c']
 
         next unless field_supported?(name) || (object && field_supported?(object))
 
@@ -62,13 +62,11 @@ module Bulkrax
       return factory_class.method_defined?(field) && factory_class.properties[field].present?
     end
 
-    def multiple?(field, object)
+    def multiple?(field)
       return true if field == 'file' || field == 'remote_files'
       return false if field == 'model'
 
-      field_supported?(field) &&
-      factory_class&.properties&.[](field)&.[]('multiple') &&
-      factory_class&.properties&.[](object)&.[]('multiple')
+      field_supported?(field) && factory_class&.properties&.[](field)&.[]('multiple')
     end
 
     def object_name(field)

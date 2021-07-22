@@ -133,7 +133,7 @@ module Bulkrax
           expect(metadata['single_object']['first_name']).to eq('Fake')
           expect(metadata['single_object']['last_name']).to eq('Fakerson')
           expect(metadata['single_object']['position']).to include('Leader', 'Jester', 'Queen')
-          expect(metadata['single_object']['language']).to eq('English')
+          expect(metadata['single_object']['language']).to eq(['English'])
         end
       end
 
