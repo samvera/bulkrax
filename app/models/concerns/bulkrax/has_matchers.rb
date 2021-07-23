@@ -49,7 +49,7 @@ module Bulkrax
           matched_metadata?(matcher, multiple, name, node_content, object, object_multiple)
         elsif multiple
           Rails.logger.info("Bulkrax Column automatically matched #{node_name}, #{node_content}")
-          multiple_metadata?(name, node_name, node_content, object)
+          multiple_metadata?(name, node_name, node_content, object, object_multiple)
         else
           Rails.logger.info("Bulkrax Column automatically matched #{node_name}, #{node_content}")
 
@@ -84,6 +84,10 @@ module Bulkrax
     # @return [Array] hyrax fields
     def field_to(field)
       fields = mapping&.map do |key, value|
+        if value['from'].instance_of?(Array)
+          value['from'] = value['from'].join(', ')
+        end
+
         key if (value.present? && value['from']&.include?(field)) || key == field
       end&.compact
 
@@ -97,7 +101,7 @@ module Bulkrax
       mapping[field]['excluded'] || false
     end
 
-    def multiple_metadata?(name, node_name, node_content, object = false)
+    def multiple_metadata?(name, node_name, node_content, object, object_multiple)
       Rails.logger.info("Bulkrax Column automatically matched #{node_name}, #{node_content}")
       node_content = node_content.content if node_content.is_a?(Nokogiri::XML::NodeSet)
 
