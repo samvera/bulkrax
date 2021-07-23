@@ -162,6 +162,7 @@ module Bulkrax
           )
         end
 
+        # rubocop:disable RSpec/ExampleLength
         it 'succeeds' do
           metadata = subject.build_metadata
           expect(metadata['multiple_object'][0]['multiple_object_first_name']).to eq('Fake')
@@ -209,6 +210,7 @@ module Bulkrax
           expect(metadata['multiple_object'][1]['last_name']).to eq('Hines')
           expect(metadata['multiple_object'][1]['position']).to include('King', 'Lord', 'Duke')
         end
+        # rubocop:enable RSpec/ExampleLength
       end
     end
   end

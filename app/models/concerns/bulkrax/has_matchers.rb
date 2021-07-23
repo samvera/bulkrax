@@ -1,5 +1,10 @@
 # frozen_string_literal: true
 
+# TODO(alishaevn): see if these rules can be adhered to, instead of disabled
+# rubocop:disable Metrics/AbcSize
+# rubocop:disable Metrics/ParameterLists
+# rubocop:disable Metrics/CyclomaticComplexity
+
 module Bulkrax
   module HasMatchers
     extend ActiveSupport::Concern
@@ -38,18 +43,18 @@ module Bulkrax
         if object
           Rails.logger.info("Bulkrax Column automatically matched object #{node_name}, #{node_content}")
 
-          if object_multiple
-            parsed_metadata[object] ||= [{}]
-          else
-            parsed_metadata[object] ||= {}
-          end
+          parsed_metadata[object] ||= if object_multiple
+                                        [{}]
+                                      else
+                                        {}
+                                      end
         end
 
         if matcher
           matched_metadata?(matcher, multiple, name, node_content, object, object_multiple)
         elsif multiple
           Rails.logger.info("Bulkrax Column automatically matched #{node_name}, #{node_content}")
-          multiple_metadata?(name, node_name, node_content, object, object_multiple)
+          multiple_metadata?(name, node_name, node_content, object)
         else
           Rails.logger.info("Bulkrax Column automatically matched #{node_name}, #{node_content}")
 
@@ -84,9 +89,7 @@ module Bulkrax
     # @return [Array] hyrax fields
     def field_to(field)
       fields = mapping&.map do |key, value|
-        if value['from'].instance_of?(Array)
-          value['from'] = value['from'].join(', ')
-        end
+        value['from'] = value['from'].join(', ') if value['from'].instance_of?(Array)
 
         key if (value.present? && value['from']&.include?(field)) || key == field
       end&.compact
@@ -101,7 +104,7 @@ module Bulkrax
       mapping[field]['excluded'] || false
     end
 
-    def multiple_metadata?(name, node_name, node_content, object, object_multiple)
+    def multiple_metadata?(name, node_name, node_content, object)
       Rails.logger.info("Bulkrax Column automatically matched #{node_name}, #{node_content}")
       node_content = node_content.content if node_content.is_a?(Nokogiri::XML::NodeSet)
 
