@@ -31,16 +31,22 @@ module Bulkrax
         matcher = self.class.matcher(name, mapping[name].symbolize_keys) if mapping[name] # the field matched to a pre parsed value in application_matcher.rb
         object = object_name(name) || false # the field is an object of key:value pairs. e.g. { obj: { key: value }}
         multiple = multiple?(name) # the field has multiple values. e.g. ['a', 'b', 'c']
+        object_multiple = object && multiple?(object) # the field is an array of objects
 
         next unless field_supported?(name) || (object && field_supported?(object))
 
         if object
           Rails.logger.info("Bulkrax Column automatically matched object #{node_name}, #{node_content}")
+
+          if object_multiple
+            parsed_metadata[object] ||= [{}]
+          else
             parsed_metadata[object] ||= {}
           end
+        end
 
         if matcher
-          matched_metadata?(matcher, multiple, name, node_content, object)
+          matched_metadata?(matcher, multiple, name, node_content, object, object_multiple)
         elsif multiple
           Rails.logger.info("Bulkrax Column automatically matched #{node_name}, #{node_content}")
           multiple_metadata?(name, node_name, node_content, object)
@@ -104,12 +110,21 @@ module Bulkrax
       end
     end
 
-    def matched_metadata?(matcher, multiple, name, node_content, object = false)
+    def matched_metadata?(matcher, multiple, name, node_content, object, object_multiple)
       result = matcher.result(self, node_content)
       return unless result
 
       if object
-        if multiple
+        if object_multiple
+          index = parsed_metadata[object].find_index { |obj| obj[name].nil? }
+
+          if index.nil?
+            parsed_metadata[object] << {}
+            parsed_metadata[object][parsed_metadata[object].length - 1][name] = Array.wrap(result).join('; ')
+          else
+            parsed_metadata[object][index][name] = Array.wrap(result).join('; ')
+          end
+        elsif multiple
           parsed_metadata[object][name] ||= []
           parsed_metadata[object][name] += Array.wrap(result)
         else

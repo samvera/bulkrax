@@ -137,16 +137,13 @@ module Bulkrax
         end
       end
 
-      context 'with multiple object fields prefixed' do
+      context 'with multiple objects and fields prefixed' do
         let(:importer) do
           FactoryBot.create(:bulkrax_importer_csv, field_mapping: {
-                              'creator_first_name' => { from: ['creator_first_name_1'], object: 'creator' },
-                              'creator_last_name' => { from: ['creator_last_name_1'], object: 'creator' },
-                              'creator_position' => { from: ['creator_position_1'], object: 'creator' },
-                              'creator_language' => { from: ['creator_language_1'], object: 'creator', parsed: true },
-                              'creator_first_name' => { from: ['creator_first_name_2'], object: 'creator' },
-                              'creator_last_name' => { from: ['creator_last_name_2'], object: 'creator' },
-                              'creator_position' => { from: ['creator_position_2'], object: 'creator' }
+                              'multiple_object_first_name' => { from: ['multiple_object_first_name_1', 'multiple_object_first_name_2'], object: 'multiple_object' },
+                              'multiple_object_last_name' => { from: ['multiple_object_last_name_1', 'multiple_object_last_name_2'], object: 'multiple_object' },
+                              'multiple_object_position' => { from: ['multiple_object_position_1', 'multiple_object_position_2'], object: 'multiple_object' },
+                              'multiple_object_language' => { from: ['multiple_object_language_1'], object: 'multiple_object', parsed: true },
                             })
         end
 
@@ -155,18 +152,25 @@ module Bulkrax
           allow(subject).to receive(:record).and_return(
             'source_identifier' => '2',
             'title' => 'some title',
-            'creator_first_name' => 'Fake',
-            'creator_last_name' => 'Fakerson',
-            'creator_position' => 'Leader, Jester, Queen',
-            'creator_language' => 'english'
-            'creator_first_name' => 'Judge',
-            'creator_last_name' => 'Hines',
-            'creator_position' => 'King, Lord, Duke',
+            'multiple_object_first_name_1' => 'Fake',
+            'multiple_object_last_name_1' => 'Fakerson',
+            'multiple_object_position_1' => 'Leader, Jester, Queen',
+            'multiple_object_language_1' => 'english',
+            'multiple_object_first_name_2' => 'Judge',
+            'multiple_object_last_name_2' => 'Hines',
+            'multiple_object_position_2' => 'King, Lord, Duke'
           )
         end
 
         it 'succeeds' do
           metadata = subject.build_metadata
+          expect(metadata['multiple_object'][0]['multiple_object_first_name']).to eq('Fake')
+          expect(metadata['multiple_object'][0]['multiple_object_last_name']).to eq('Fakerson')
+          expect(metadata['multiple_object'][0]['multiple_object_position']).to include('Leader', 'Jester', 'Queen')
+          expect(metadata['multiple_object'][0]['multiple_object_language']).to eq('English')
+          expect(metadata['multiple_object'][1]['multiple_object_first_name']).to eq('Judge')
+          expect(metadata['multiple_object'][1]['multiple_object_last_name']).to eq('Hines')
+          expect(metadata['multiple_object'][1]['multiple_object_position']).to include('King', 'Lord', 'Duke')
         end
       end
     end
