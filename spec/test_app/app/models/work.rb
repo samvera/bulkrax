@@ -4,5 +4,5 @@
 class Work < ActiveFedora::Base
   include ::Hyrax::WorkBehavior
   property :single_object, predicate: ::RDF::Vocab::DC.creator, multiple: false
-  property :multiple_object, predicate: ::RDF::Vocab::DC.creator
+  property :multiple_objects, predicate: ::RDF::Vocab::DC.creator
 end

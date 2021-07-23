@@ -140,10 +140,10 @@ module Bulkrax
       context 'with multiple objects and fields prefixed' do
         let(:importer) do
           FactoryBot.create(:bulkrax_importer_csv, field_mapping: {
-                              'multiple_object_first_name' => { from: ['multiple_object_first_name_1', 'multiple_object_first_name_2'], object: 'multiple_object' },
-                              'multiple_object_last_name' => { from: ['multiple_object_last_name_1', 'multiple_object_last_name_2'], object: 'multiple_object' },
-                              'multiple_object_position' => { from: ['multiple_object_position_1', 'multiple_object_position_2'], object: 'multiple_object' },
-                              'multiple_object_language' => { from: ['multiple_object_language_1'], object: 'multiple_object', parsed: true }
+                              'multiple_objects_first_name' => { from: ['multiple_objects_first_name_1', 'multiple_objects_first_name_2'], object: 'multiple_objects' },
+                              'multiple_objects_last_name' => { from: ['multiple_objects_last_name_1', 'multiple_objects_last_name_2'], object: 'multiple_objects' },
+                              'multiple_objects_position' => { from: ['multiple_objects_position_1', 'multiple_objects_position_2'], object: 'multiple_objects' },
+                              'multiple_objects_language' => { from: ['multiple_objects_language_1'], object: 'multiple_objects', parsed: true }
                             })
         end
 
@@ -152,36 +152,36 @@ module Bulkrax
           allow(subject).to receive(:record).and_return(
             'source_identifier' => '2',
             'title' => 'some title',
-            'multiple_object_first_name_1' => 'Fake',
-            'multiple_object_last_name_1' => 'Fakerson',
-            'multiple_object_position_1' => 'Leader, Jester, Queen',
-            'multiple_object_language_1' => 'english',
-            'multiple_object_first_name_2' => 'Judge',
-            'multiple_object_last_name_2' => 'Hines',
-            'multiple_object_position_2' => 'King, Lord, Duke'
+            'multiple_objects_first_name_1' => 'Fake',
+            'multiple_objects_last_name_1' => 'Fakerson',
+            'multiple_objects_position_1' => 'Leader, Jester, Queen',
+            'multiple_objects_language_1' => 'english',
+            'multiple_objects_first_name_2' => 'Judge',
+            'multiple_objects_last_name_2' => 'Hines',
+            'multiple_objects_position_2' => 'King, Lord, Duke'
           )
         end
 
         # rubocop:disable RSpec/ExampleLength
         it 'succeeds' do
           metadata = subject.build_metadata
-          expect(metadata['multiple_object'][0]['multiple_object_first_name']).to eq('Fake')
-          expect(metadata['multiple_object'][0]['multiple_object_last_name']).to eq('Fakerson')
-          expect(metadata['multiple_object'][0]['multiple_object_position']).to include('Leader', 'Jester', 'Queen')
-          expect(metadata['multiple_object'][0]['multiple_object_language']).to eq('English')
-          expect(metadata['multiple_object'][1]['multiple_object_first_name']).to eq('Judge')
-          expect(metadata['multiple_object'][1]['multiple_object_last_name']).to eq('Hines')
-          expect(metadata['multiple_object'][1]['multiple_object_position']).to include('King', 'Lord', 'Duke')
+          expect(metadata['multiple_objects'][0]['multiple_objects_first_name']).to eq('Fake')
+          expect(metadata['multiple_objects'][0]['multiple_objects_last_name']).to eq('Fakerson')
+          expect(metadata['multiple_objects'][0]['multiple_objects_position']).to include('Leader', 'Jester', 'Queen')
+          expect(metadata['multiple_objects'][0]['multiple_objects_language']).to eq('English')
+          expect(metadata['multiple_objects'][1]['multiple_objects_first_name']).to eq('Judge')
+          expect(metadata['multiple_objects'][1]['multiple_objects_last_name']).to eq('Hines')
+          expect(metadata['multiple_objects'][1]['multiple_objects_position']).to include('King', 'Lord', 'Duke')
         end
       end
 
       context 'with multiple objects and no fields prefixed' do
         let(:importer) do
           FactoryBot.create(:bulkrax_importer_csv, field_mapping: {
-                              'first_name' => { from: ['multiple_object_first_name_1', 'multiple_object_first_name_2'], object: 'multiple_object' },
-                              'last_name' => { from: ['multiple_object_last_name_1', 'multiple_object_last_name_2'], object: 'multiple_object' },
-                              'position' => { from: ['multiple_object_position_1', 'multiple_object_position_2'], object: 'multiple_object' },
-                              'language' => { from: ['multiple_object_language_1'], object: 'multiple_object', parsed: true }
+                              'first_name' => { from: ['multiple_objects_first_name_1', 'multiple_objects_first_name_2'], object: 'multiple_objects' },
+                              'last_name' => { from: ['multiple_objects_last_name_1', 'multiple_objects_last_name_2'], object: 'multiple_objects' },
+                              'position' => { from: ['multiple_objects_position_1', 'multiple_objects_position_2'], object: 'multiple_objects' },
+                              'language' => { from: ['multiple_objects_language_1'], object: 'multiple_objects', parsed: true }
                             })
         end
 
@@ -190,25 +190,25 @@ module Bulkrax
           allow(subject).to receive(:record).and_return(
             'source_identifier' => '2',
             'title' => 'some title',
-            'multiple_object_first_name_1' => 'Fake',
-            'multiple_object_last_name_1' => 'Fakerson',
-            'multiple_object_position_1' => 'Leader, Jester, Queen',
-            'multiple_object_language_1' => 'english',
-            'multiple_object_first_name_2' => 'Judge',
-            'multiple_object_last_name_2' => 'Hines',
-            'multiple_object_position_2' => 'King, Lord, Duke'
+            'multiple_objects_first_name_1' => 'Fake',
+            'multiple_objects_last_name_1' => 'Fakerson',
+            'multiple_objects_position_1' => 'Leader, Jester, Queen',
+            'multiple_objects_language_1' => 'english',
+            'multiple_objects_first_name_2' => 'Judge',
+            'multiple_objects_last_name_2' => 'Hines',
+            'multiple_objects_position_2' => 'King, Lord, Duke'
           )
         end
 
         it 'succeeds' do
           metadata = subject.build_metadata
-          expect(metadata['multiple_object'][0]['first_name']).to eq('Fake')
-          expect(metadata['multiple_object'][0]['last_name']).to eq('Fakerson')
-          expect(metadata['multiple_object'][0]['position']).to include('Leader', 'Jester', 'Queen')
-          expect(metadata['multiple_object'][0]['language']).to eq('English')
-          expect(metadata['multiple_object'][1]['first_name']).to eq('Judge')
-          expect(metadata['multiple_object'][1]['last_name']).to eq('Hines')
-          expect(metadata['multiple_object'][1]['position']).to include('King', 'Lord', 'Duke')
+          expect(metadata['multiple_objects'][0]['first_name']).to eq('Fake')
+          expect(metadata['multiple_objects'][0]['last_name']).to eq('Fakerson')
+          expect(metadata['multiple_objects'][0]['position']).to include('Leader', 'Jester', 'Queen')
+          expect(metadata['multiple_objects'][0]['language']).to eq('English')
+          expect(metadata['multiple_objects'][1]['first_name']).to eq('Judge')
+          expect(metadata['multiple_objects'][1]['last_name']).to eq('Hines')
+          expect(metadata['multiple_objects'][1]['position']).to include('King', 'Lord', 'Duke')
         end
         # rubocop:enable RSpec/ExampleLength
       end
