@@ -119,12 +119,16 @@ module Bulkrax
 
       if object
         if object_multiple
+          # find the index of the first object in the `object` array where the `name` key doesn't already exist
           index = parsed_metadata[object].find_index { |obj| obj[name].nil? }
 
           if index.nil?
+            # if all existing objects have our `name` key in it already
+            # push a new object to the end of the array and add the `result` to it
             parsed_metadata[object] << {}
             parsed_metadata[object][parsed_metadata[object].length - 1][name] = Array.wrap(result).join('; ')
           else
+            # if an object already exists that doesn't have our `name` key in it, add the `result` to that object
             parsed_metadata[object][index][name] = Array.wrap(result).join('; ')
           end
         elsif multiple
