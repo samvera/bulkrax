@@ -38,7 +38,7 @@ module Bulkrax
     end
 
     def required_elements
-      %w[title source_identifier]
+      [:title, source_identifier_key]
     end
 
     def valid_import?
@@ -63,9 +63,13 @@ module Bulkrax
       end
     end
 
+    def source_identifier_key
+      @source_identifier_key = entry_class.source_identifier_field.to_sym
+    end
+
     def create_works
       records.each_with_index do |record, index|
-        if record[:source_identifier].blank?
+        if record[source_identifier_key].blank?
           current_run.invalid_records ||= ""
           current_run.invalid_records += "Missing #{Bulkrax.system_identifier_field} for #{record.to_h}\n"
           current_run.failed_records += 1
@@ -74,8 +78,8 @@ module Bulkrax
         end
         break if limit_reached?(limit, index)
 
-        seen[record[:source_identifier]] = true
-        new_entry = find_or_create_entry(entry_class, record[:source_identifier], 'Bulkrax::Importer', record.to_h.compact)
+        seen[record[source_identifier_key]] = true
+        new_entry = find_or_create_entry(entry_class, record[source_identifier_key], 'Bulkrax::Importer', record.to_h.compact)
         if record[:delete].present?
           DeleteWorkJob.send(perform_method, new_entry, current_run)
         else
