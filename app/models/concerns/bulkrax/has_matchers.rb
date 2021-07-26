@@ -142,3 +142,7 @@ module Bulkrax
     end
   end
 end
+
+# rubocop:enable Metrics/AbcSize
+# rubocop:enable Metrics/ParameterLists
+# rubocop:enable Metrics/CyclomaticComplexity
