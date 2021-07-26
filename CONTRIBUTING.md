@@ -42,9 +42,15 @@ bundle exec rake bin/rails db:migrate RAILS_ENV=test
 ### Run the specs
 ```
 bundle exec rake (all specs)
+bundle exec rspec (all specs)
 bundle exec rspec <path-to-file> (single file)
 ```
 
+## Running rubocop
+Learn about the `-a` flag [here](https://docs.rubocop.org/rubocop/usage/basic_usage.html#auto-correcting-offenses)
+```
+bundle exec rubocop -a <path-to-file> (single file)
+```
 # Thank You!
 
 Thank you for your interest in contributing to Bulkrax.  We appreciate you for taking the time to contribute.
