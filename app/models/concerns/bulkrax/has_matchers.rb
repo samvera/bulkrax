@@ -43,11 +43,7 @@ module Bulkrax
         if object
           Rails.logger.info("Bulkrax Column automatically matched object #{node_name}, #{node_content}")
 
-          parsed_metadata[object] ||= if object_multiple
-                                        [{}]
-                                      else
-                                        {}
-                                      end
+          parsed_metadata[object] ||= object_multiple ? [{}] : {}
         end
 
         if matcher
