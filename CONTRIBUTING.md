@@ -47,6 +47,7 @@ bundle exec rspec <path-to-file> (single file)
 ```
 
 ## Running rubocop
+Learn about the `-a` flag [here](https://docs.rubocop.org/rubocop/usage/basic_usage.html#auto-correcting-offenses)
 ```
 bundle exec rubocop -a <path-to-file> (single file)
 ```
