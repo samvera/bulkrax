@@ -38,7 +38,7 @@ module Bulkrax
     end
 
     def required_elements
-      [:title, source_identifier_key]
+      ['title', source_identifier_key]
     end
 
     def valid_import?
@@ -64,7 +64,7 @@ module Bulkrax
     end
 
     def source_identifier_key
-      @source_identifier_key = entry_class.source_identifier_field.to_sym
+      @source_identifier_key = entry_class.source_identifier_field
     end
 
     def create_works
