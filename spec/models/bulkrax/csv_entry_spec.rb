@@ -191,7 +191,7 @@ module Bulkrax
             'source_identifier' => '2',
             'title' => 'some title',
             'multiple_objects_first_name_1' => 'Fake',
-            'multiple_objects_last_name_1' => 'Fakerson',
+            'multiple_objects_last_name_1' => '',
             'multiple_objects_position_1' => 'Leader, Jester, Queen',
             'multiple_objects_language_1' => 'english',
             'multiple_objects_first_name_2' => 'Judge',
@@ -203,17 +203,21 @@ module Bulkrax
         it 'succeeds' do
           metadata = subject.build_metadata
           expect(metadata['multiple_objects'][0]['first_name']).to eq('Fake')
-          expect(metadata['multiple_objects'][0]['last_name']).to eq('Fakerson')
+          expect(metadata['multiple_objects'][0]['last_name']).to eq('')
           expect(metadata['multiple_objects'][0]['position']).to include('Leader', 'Jester', 'Queen')
           expect(metadata['multiple_objects'][0]['language']).to eq('English')
           expect(metadata['multiple_objects'][1]['first_name']).to eq('Judge')
           expect(metadata['multiple_objects'][1]['last_name']).to eq('Hines')
           expect(metadata['multiple_objects'][1]['position']).to include('King', 'Lord', 'Duke')
         end
+      end
+
       context 'with object fields prefixed and properties with multiple values' do
         let(:importer) do
           FactoryBot.create(:bulkrax_importer_csv, field_mapping: {
                               'multiple_objects_position' => { from: ['multiple_objects_position'], object: 'multiple_objects', nested_type: 'Array' },
+                            })
+        end
 
         before do
           allow_any_instance_of(ObjectFactory).to receive(:run!)
