@@ -42,7 +42,7 @@ module Bulkrax
         next unless field_supported?(name) || (object_name && field_supported?(object_name))
 
         if object_name
-          Rails.logger.info("Bulkrax Column automatically matched object_name #{node_name}, #{node_content}")
+          Rails.logger.info("Bulkrax Column automatically matched object #{node_name}, #{node_content}")
 
           parsed_metadata[object_name] ||= object_multiple ? [{}] : {}
         end
