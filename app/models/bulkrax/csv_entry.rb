@@ -61,8 +61,9 @@ module Bulkrax
       self.parsed_metadata[Bulkrax.system_identifier_field] = [record['source_identifier']]
       record.each do |key, value|
         next if key == 'collection'
+
         index = key[/\d+/].to_i - 1 if key[/\d+/].to_i != 0
-        add_metadata(index, key_without_numbers(key), value)
+        add_metadata(key_without_numbers(key), value, index)
       end
 
       add_file

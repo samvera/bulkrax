@@ -32,7 +32,7 @@ module Bulkrax
       end
     end
 
-    def add_metadata(index, node_name, node_content)
+    def add_metadata(node_name, node_content, index = nil)
       field_to(node_name).each do |name|
         matcher = self.class.matcher(name, mapping[name].symbolize_keys) if mapping[name] # the field matched to a pre parsed value in application_matcher.rb
         object_name = get_object_name(name) || false # the "key" of an object property. e.g. { object_name: { alpha: 'beta' } }
