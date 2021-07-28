@@ -4,7 +4,7 @@ require 'language_list'
 
 module Bulkrax
   class ApplicationMatcher
-    attr_accessor :to, :from, :parsed, :if, :split, :excluded
+    attr_accessor :to, :from, :parsed, :if, :split, :excluded, :nested_type
 
     def initialize(args)
       args.each do |k, v|
