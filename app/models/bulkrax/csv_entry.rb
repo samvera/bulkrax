@@ -49,7 +49,7 @@ module Bulkrax
     end
 
     def key_without_numbers(key)
-      key.sub(/_\d+/, '').sub(/_\d+/, '').sub(/^\d+_/, '')
+      key.gsub(/_\d+/, '').sub(/^\d+_/, '')
     end
 
     def build_metadata
