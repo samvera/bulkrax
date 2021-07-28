@@ -215,7 +215,9 @@ module Bulkrax
       context 'with object fields prefixed and properties with multiple values' do
         let(:importer) do
           FactoryBot.create(:bulkrax_importer_csv, field_mapping: {
-                              'multiple_objects_position' => { from: ['multiple_objects_position'], object: 'multiple_objects', nested_type: 'Array' },
+                              'multiple_objects_first_name' => { from: ['multiple_objects_first_name'], object: 'multiple_objects' },
+                              'multiple_objects_last_name' => { from: ['multiple_objects_last_name'], object: 'multiple_objects' },
+                              'multiple_objects_position' => { from: ['multiple_objects_position'], object: 'multiple_objects', nested_type: 'Array' }
                             })
         end
 
@@ -224,16 +226,22 @@ module Bulkrax
           allow(subject).to receive(:record).and_return(
             'source_identifier' => '2',
             'title' => 'some title',
+            'multiple_objects_first_name_1' => 'Fake',
+            'multiple_objects_last_name_1' => 'Fakerson',
             'multiple_objects_position_1_1' => 'Leader',
             'multiple_objects_position_1_2' => 'Jester',
-            'multiple_objects_position_2_1' => 'Queen',
+            'multiple_objects_last_name_2' => 'Hines',
+            'multiple_objects_position_2_1' => 'Queen'
           )
         end
 
         it 'succeeds' do
           metadata = subject.build_metadata
+          expect(metadata['multiple_objects'][0]['multiple_objects_first_name']).to eq('Fake')
+          expect(metadata['multiple_objects'][0]['multiple_objects_last_name']).to eq('Fakerson')
           expect(metadata['multiple_objects'][0]['multiple_objects_position'][0]).to eq('Leader')
           expect(metadata['multiple_objects'][0]['multiple_objects_position'][1]).to eq('Jester')
+          expect(metadata['multiple_objects'][1]['multiple_objects_last_name']).to eq('Hines')
           expect(metadata['multiple_objects'][1]['multiple_objects_position'][0]).to eq('Queen')
         end
       end

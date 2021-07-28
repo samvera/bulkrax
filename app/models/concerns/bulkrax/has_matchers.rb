@@ -120,18 +120,13 @@ module Bulkrax
 
       if object_name
         if object_multiple
+          parsed_metadata[object_name] << {} unless parsed_metadata[object_name][index]
+
           if mapping[name]['nested_type'] && mapping[name]['nested_type'] == 'Array'
-            parsed_metadata[object_name] << {} unless parsed_metadata[object_name][index]
             parsed_metadata[object_name][index][name] ||= []
             parsed_metadata[object_name][index][name] += Array.wrap(result)
           else
-
-            if index.nil?
-              parsed_metadata[object_name] << {}
-              parsed_metadata[object_name][parsed_metadata[object_name].length - 1][name] = Array.wrap(result).join('; ')
-            else
-              parsed_metadata[object_name][index][name] = Array.wrap(result).join('; ')
-            end
+            parsed_metadata[object_name][index][name] = Array.wrap(result).join('; ')
           end
         elsif multiple
           parsed_metadata[object_name][name] ||= []
