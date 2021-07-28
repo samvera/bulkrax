@@ -25,18 +25,19 @@ module Bulkrax
           parsed: args[:parsed],
           split: args[:split],
           if: args[:if],
-          excluded: args[:excluded]
+          excluded: args[:excluded],
+          nested_type: args[:nested_type]
         )
         self.matchers[name] = matcher
       end
     end
 
-    def add_metadata(node_name, node_content)
+    def add_metadata(node_name, node_content, index = nil)
       field_to(node_name).each do |name|
         matcher = self.class.matcher(name, mapping[name].symbolize_keys) if mapping[name] # the field matched to a pre parsed value in application_matcher.rb
         object_name = get_object_name(name) || false # the "key" of an object property. e.g. { object_name: { alpha: 'beta' } }
-        multiple = multiple?(name) # the field has multiple values. e.g. ['a', 'b', 'c']
-        object_multiple = object_name && multiple?(object_name) # the field is an array of objects
+        multiple = multiple?(name) # the property has multiple values. e.g. 'letters': ['a', 'b', 'c']
+        object_multiple = object_name && multiple?(object_name) # the property's value is an array of object(s)
 
         next unless field_supported?(name) || (object_name && field_supported?(object_name))
 
@@ -47,7 +48,7 @@ module Bulkrax
         end
 
         if matcher
-          matched_metadata?(matcher, multiple, name, node_content, object_name, object_multiple)
+          matched_metadata?(matcher, multiple, name, index, node_content, object_name, object_multiple)
         elsif multiple
           Rails.logger.info("Bulkrax Column automatically matched #{node_name}, #{node_content}")
           multiple_metadata?(name, node_name, node_content, object_name)
@@ -113,22 +114,18 @@ module Bulkrax
       end
     end
 
-    def matched_metadata?(matcher, multiple, name, node_content, object_name, object_multiple)
+    def matched_metadata?(matcher, multiple, name, index, node_content, object_name, object_multiple)
       result = matcher.result(self, node_content)
       return unless result
 
       if object_name
         if object_multiple
-          # find the index of the first object in the `object_name` array where the `name` key doesn't already exist
-          index = parsed_metadata[object_name].find_index { |obj| obj[name].nil? }
+          parsed_metadata[object_name] << {} unless parsed_metadata[object_name][index]
 
-          if index.nil?
-            # if all existing objects have our `name` key in it already
-            # push a new object to the end of the array and add the `result` to it
-            parsed_metadata[object_name] << {}
-            parsed_metadata[object_name][parsed_metadata[object_name].length - 1][name] = Array.wrap(result).join('; ')
+          if mapping[name]['nested_type'] && mapping[name]['nested_type'] == 'Array'
+            parsed_metadata[object_name][index][name] ||= []
+            parsed_metadata[object_name][index][name] += Array.wrap(result)
           else
-            # if an object already exists that doesn't have our `name` key in it, add the `result` to that object
             parsed_metadata[object_name][index][name] = Array.wrap(result).join('; ')
           end
         elsif multiple

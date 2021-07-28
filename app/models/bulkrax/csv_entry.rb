@@ -49,7 +49,7 @@ module Bulkrax
     end
 
     def key_without_numbers(key)
-      key.sub(/_\d+/, '').sub(/^\d+_/, '')
+      key.gsub(/_\d+/, '').sub(/^\d+_/, '')
     end
 
     def build_metadata
@@ -61,7 +61,9 @@ module Bulkrax
       self.parsed_metadata[Bulkrax.system_identifier_field] = [record['source_identifier']]
       record.each do |key, value|
         next if key == 'collection'
-        add_metadata(key_without_numbers(key), value)
+
+        index = key[/\d+/].to_i - 1 if key[/\d+/].to_i != 0
+        add_metadata(key_without_numbers(key), value, index)
       end
 
       add_file
