@@ -86,9 +86,11 @@ module Bulkrax
     # @return [Array] hyrax fields
     def field_to(field)
       fields = mapping&.map do |key, value|
-        value['from'] = value['from'].join(', ') if value['from'].instance_of?(Array)
-
-        key if (value.present? && value['from']&.include?(field)) || key == field
+        if value&.[]('from').instance_of?(Array)
+          key if value&.[]('from').include?(field) || key == field
+        else
+          key if((value&.[]('from') == field) || key == field)
+        end
       end&.compact
 
       return [field] if fields.blank?
@@ -120,7 +122,7 @@ module Bulkrax
 
       if object_name
         if object_multiple
-          parsed_metadata[object_name] << {} unless parsed_metadata[object_name][index]
+          parsed_metadata[object_name][index] = {} unless parsed_metadata[object_name][index]
 
           if mapping[name]['nested_type'] && mapping[name]['nested_type'] == 'Array'
             parsed_metadata[object_name][index][name] ||= []
