@@ -86,10 +86,12 @@ module Bulkrax
     # @return [Array] hyrax fields
     def field_to(field)
       fields = mapping&.map do |key, value|
-        if value&.[]('from').instance_of?(Array)
-          key if value&.[]('from').include?(field) || key == field
-        else
-          key if((value&.[]('from') == field) || key == field)
+        return unless value
+
+        if value['from'].instance_of?(Array)
+          key if value['from'].include?(field) || key == field
+        elsif (value['from'] == field) || key == field
+          key
         end
       end&.compact
 
