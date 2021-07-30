@@ -40,6 +40,12 @@ module Bulkrax
       raise StandardError, 'must be defined'
     end
 
+    def source_identifier
+      @source_identifier ||=  importerexporter.mapping.select do |_, h|
+        h.key?("source_identifier")
+      end.values.first&["from"]&.to_sym || Bulkrax.system_identifier_field.to_sym
+    end
+
     def perform_method
       if self.validate_only
         'perform_now'
@@ -87,7 +93,7 @@ module Bulkrax
       parents.each do |key, value|
         parent = entry_class.where(
           identifier: key,
-          importerexporter_id: importerexporter.id,
+          # importerexporter_id: importerexporter.id,
           importerexporter_type: 'Bulkrax::Importer'
         ).first
 
@@ -96,7 +102,7 @@ module Bulkrax
         children = value.map do |child|
           entry_class.where(
             identifier: child,
-            importerexporter_id: importerexporter.id,
+            # importerexporter_id: importerexporter.id,
             importerexporter_type: 'Bulkrax::Importer'
           ).first
         end.compact.uniq
@@ -173,8 +179,8 @@ module Bulkrax
 
     def find_or_create_entry(entryclass, identifier, type, raw_metadata = nil)
       entry = entryclass.where(
-        importerexporter_id: importerexporter.id,
-        importerexporter_type: type,
+          # importerexporter_id: importerexporter.id,
+          # importerexporter_type: type,
         identifier: identifier
       ).first_or_create!
       entry.raw_metadata = raw_metadata

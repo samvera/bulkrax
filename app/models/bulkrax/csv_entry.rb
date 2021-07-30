@@ -32,8 +32,8 @@ module Bulkrax
       return raw_data
     end
 
-    def self.source_identifier_field
-      Bulkrax.source_identifier_field_mapping[self.to_s] || 'source_identifier'
+    def source_identifier
+      importerexporter&.parser&.source_identifier.to_s || 'source_identifier'
     end
 
     def self.collection_field
@@ -55,10 +55,10 @@ module Bulkrax
     def build_metadata
       raise StandardError, 'Record not found' if record.nil?
 
-      raise StandardError, "Missing required elements, required elements are: #{importerexporter.parser.required_elements.join(', ')}" unless importerexporter.parser.required_elements?(keys_without_numbers(record.keys))
+      raise StandardError, "Missing required elements, missing element(s) are: #{importerexporter.parser.missing_elements(keys_without_numbers(record.keys)).join(', ')}" unless importerexporter.parser.required_elements?(keys_without_numbers(record.keys))
 
       self.parsed_metadata = {}
-      self.parsed_metadata[Bulkrax.system_identifier_field] = [record['source_identifier']]
+      self.parsed_metadata[Bulkrax.system_identifier_field] = [record[source_identifier]]
       record.each do |key, value|
         next if key == 'collection'
 
@@ -86,10 +86,10 @@ module Bulkrax
     end
 
     def build_export_metadata
-      make_round_trippable
+      #make_round_trippable
       self.parsed_metadata = {}
       self.parsed_metadata['id'] = hyrax_record.id
-      self.parsed_metadata[self.class.source_identifier_field] = hyrax_record.id
+      self.parsed_metadata[source_identifier] = hyrax_record.send(Bulkrax.system_identifier_field)
       self.parsed_metadata['model'] = hyrax_record.has_model.first
       build_mapping_metadata
       unless hyrax_record.is_a?(Collection)
@@ -160,7 +160,7 @@ module Bulkrax
     end
 
     def required_elements
-      %w[title source_identifier]
+      %w[title] + [source_identifier]
     end
 
     # If only filename is given, construct the path (/files/my_file)

@@ -33,16 +33,29 @@ module Bulkrax
     end
 
     def required_elements?(keys)
-      return if keys.blank?
-      !required_elements.map { |el| keys.map(&:to_s).include?(el) }.include?(false)
+      return unless keys.present?
+      !missing_elements(keys).present?
+    end
+
+    def missing_elements(keys)
+      required_elements - keys.map(&:to_s)
+    end
+
+    def source_identifier
+      @source_identifier ||=  importerexporter.mapping.select do |_, h|
+        h.key?("source_identifier")
+      end.values.first&.[]("from")&.first&.to_sym || :source_identifier
     end
 
     def required_elements
-      %w[title source_identifier]
+      %w[title] + [source_identifier.to_s]
     end
 
     def valid_import?
-      required_elements?(import_fields) && file_paths.is_a?(Array)
+      error_alert = "Missing at least one required element, missing element(s) are: #{missing_elements(import_fields).join(', ')}"
+      raise StandardError, error_alert unless required_elements?(import_fields)
+
+      file_paths.is_a?(Array)
     rescue StandardError => e
       status_info(e)
       false
@@ -65,17 +78,17 @@ module Bulkrax
 
     def create_works
       records.each_with_index do |record, index|
-        if record[:source_identifier].blank?
+        if record[source_identifier].blank?
           current_run.invalid_records ||= ""
-          current_run.invalid_records += "Missing #{Bulkrax.system_identifier_field} for #{record.to_h}\n"
+          current_run.invalid_records += "Missing #{source_identifier} for #{record.to_h}\n"
           current_run.failed_records += 1
           current_run.save
           next
         end
         break if limit_reached?(limit, index)
 
-        seen[record[:source_identifier]] = true
-        new_entry = find_or_create_entry(entry_class, record[:source_identifier], 'Bulkrax::Importer', record.to_h.compact)
+        seen[record[source_identifier]] = true
+        new_entry = find_or_create_entry(entry_class, record[source_identifier], 'Bulkrax::Importer', record.to_h.compact)
         if record[:delete].present?
           DeleteWorkJob.send(perform_method, new_entry, current_run)
         else
@@ -186,6 +199,7 @@ module Bulkrax
     # export methods
 
     def write_files
+      #byebug
       CSV.open(setup_export_file, "w", headers: export_headers, write_headers: true) do |csv|
         importerexporter.entries.where(identifier: current_work_ids)[0..limit || total].each do |e|
           csv << e.parsed_metadata
@@ -196,11 +210,11 @@ module Bulkrax
     # All possible column names
     def export_headers
       headers = ['id']
-      headers << entry_class.source_identifier_field
+      headers << source_identifier.to_s
       headers << 'model'
-      importerexporter.mapping.each_key { |key| headers << key unless Bulkrax.reserved_properties.include?(key) && !field_supported?(key) }.sort
+      importerexporter.mapping.each_key { |key| headers << key unless Bulkrax.reserved_properties.include?(key) && !field_supported?(key) && key != source_identifier.to_s }
       headers << 'file'
-      headers
+      headers.uniq
     end
 
     # in the parser as it is specific to the format

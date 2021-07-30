@@ -7,16 +7,16 @@ module Bulkrax
     include Bulkrax::FileFactory
     define_model_callbacks :save, :create
     class_attribute :system_identifier_field
-    attr_reader :attributes, :object, :unique_identifier, :klass, :replace_files, :update_files
+    attr_reader :attributes, :object, :source_identifier_value, :klass, :replace_files, :update_files
     self.system_identifier_field = Bulkrax.system_identifier_field
 
     # rubocop:disable Metrics/ParameterLists
-    def initialize(attributes, unique_identifier, replace_files = false, user = nil, klass = nil, update_files = false)
+    def initialize(attributes, source_identifier_value, replace_files = false, user = nil, klass = nil, update_files = false)
       @attributes = ActiveSupport::HashWithIndifferentAccess.new(attributes)
       @replace_files = replace_files
       @update_files = update_files
       @user = user || User.batch_user
-      @unique_identifier = unique_identifier
+      @source_identifier_value = source_identifier_value
       @klass = klass || Bulkrax.default_work_type.constantize
     end
     # rubocop:enable Metrics/ParameterLists
@@ -67,11 +67,11 @@ module Bulkrax
 
     def search_by_identifier
       query = { system_identifier_field =>
-                unique_identifier }
+                source_identifier_value }
       # Query can return partial matches (something6 matches both something6 and something68)
       # so we need to weed out any that are not the correct full match. But other items might be
       # in the multivalued field, so we have to go through them one at a time.
-      match = klass.where(query).detect { |m| m.send(system_identifier_field).include?(unique_identifier) }
+      match = klass.where(query).detect { |m| m.send(system_identifier_field).include?(source_identifier_value) }
       return match if match
     end
 
