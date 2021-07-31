@@ -32,14 +32,6 @@ module Bulkrax
       return raw_data
     end
 
-    def source_identifier
-      parser&.source_identifier.to_s || 'source_identifier'
-    end
-
-    def system_identifier
-      parser&.source_identifier.to_s || 'source'
-    end
-
     def self.collection_field
       Bulkrax.collection_field_mapping[self.class.to_s] || 'collection'
     end

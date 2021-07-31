@@ -52,9 +52,12 @@ module Bulkrax
       raise StandardError, 'Not Implemented'
     end
 
-    def self.source_identifier_field
-      raise "Source identifier must be configured for #{self}" if Bulkrax.source_identifier_field_mapping[self.to_s].blank?
-      Bulkrax.source_identifier_field_mapping[self.to_s]
+    def source_identifier
+      parser&.source_identifier.to_s || 'source_identifier'
+    end
+
+    def system_identifier
+      parser&.source_identifier.to_s || 'source'
     end
 
     def self.collection_field
@@ -82,9 +85,9 @@ module Bulkrax
     end
 
     def valid_system_id(model_class)
-      return true if model_class.properties.keys.include?(Bulkrax.system_identifier_field)
+      return true if model_class.properties.keys.include?(system_identifier)
       raise(
-        "#{model_class} does not implement the system_identifier_field: #{Bulkrax.system_identifier_field}"
+        "#{model_class} does not implement the system_identifier_field: #{system_identifier}"
       )
     end
 
@@ -94,8 +97,8 @@ module Bulkrax
 
     def find_collection(collection_identifier)
       Collection.where(
-        Bulkrax.system_identifier_field => collection_identifier
-      ).detect { |m| m.send(Bulkrax.system_identifier_field).include?(collection_identifier) }
+        system_identifier => collection_identifier
+      ).detect { |m| m.send(system_identifier).include?(collection_identifier) }
     end
   end
 end
