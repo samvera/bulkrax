@@ -41,12 +41,6 @@ module Bulkrax
       required_elements - keys.map(&:to_s)
     end
 
-    def source_identifier
-      @source_identifier ||=  importerexporter.mapping.select do |_, h|
-        h.key?("source_identifier")
-      end.values.first&.[]("from")&.first&.to_sym || :source_identifier
-    end
-
     def required_elements
       %w[title] + [source_identifier.to_s]
     end
@@ -66,7 +60,7 @@ module Bulkrax
         next if collection.blank?
         metadata = {
           title: [collection],
-          Bulkrax.system_identifier_field => [collection],
+          system_identifier => [collection],
           visibility: 'open',
           collection_type_gid: Hyrax::CollectionType.find_or_create_default_collection_type.gid
         }
@@ -137,7 +131,7 @@ module Bulkrax
       when 'importer'
         importer = Bulkrax::Importer.find(importerexporter.export_source)
         entry_ids = importer.entries.where(type: importer.parser.entry_class.to_s, last_error: [nil, {}, '']).map(&:identifier)
-        ActiveFedora::SolrService.query("#{Bulkrax.system_identifier_field}_tesim:(#{entry_ids.join(' OR ')})#{extra_filters}", rows: 2_000_000_000).map(&:id)
+        ActiveFedora::SolrService.query("#{system_identifier}_tesim:(#{entry_ids.join(' OR ')})#{extra_filters}", rows: 2_000_000_000).map(&:id)
       end
     end
 

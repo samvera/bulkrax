@@ -23,6 +23,7 @@ module Bulkrax
 
     def initialize(importerexporter)
       @importerexporter = importerexporter
+      set_source_and_system_ids
     end
 
     # @api
@@ -41,9 +42,20 @@ module Bulkrax
     end
 
     def source_identifier
-      @source_identifier ||=  importerexporter.mapping.select do |_, h|
+      @source_identifier ||=  identifier_hash.values.first&.[]("from")&.first&.to_sym || :source_identifier
+    end
+
+    def system_identifier
+      @system_identifier ||=  identifier_hash.keys.first&.to_sym || :source
+    end
+
+    def identifier_hash
+      @identifier_hash ||= importerexporter.mapping.select do |_, h|
         h.key?("source_identifier")
-      end.values.first&["from"]&.to_sym || Bulkrax.system_identifier_field.to_sym
+      end
+      raise StandardError, "more than one source_identifier declared: #{@identifier_hash.keys.join(', ')}" if @identifier_hash.length > 1
+
+      @identifier_hash
     end
 
     def perform_method
