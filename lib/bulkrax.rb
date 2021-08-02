@@ -8,7 +8,6 @@ module Bulkrax
     mattr_accessor :parsers,
                    :default_work_type,
                    :default_field_mapping,
-                   :source_identifier_field_mapping,
                    :collection_field_mapping,
                    :parent_child_field_mapping,
                    :reserved_properties,

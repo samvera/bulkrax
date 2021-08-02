@@ -42,7 +42,7 @@ module Bulkrax
     end
 
     def required_elements
-      %w[title] + [source_identifier.to_s]
+      ['title', source_identifier.to_s]
     end
 
     def valid_import?

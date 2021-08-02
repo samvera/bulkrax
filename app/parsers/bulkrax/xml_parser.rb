@@ -79,11 +79,11 @@ module Bulkrax
 
     def create_works
       records.each_with_index do |record, index|
-        next if record[:source_identifier].blank?
+        next if record[source_identifier].blank?
         break if !limit.nil? && index >= limit
 
-        seen[record[:source_identifier]] = true
-        new_entry = find_or_create_entry(entry_class, record[:source_identifier], 'Bulkrax::Importer', record)
+        seen[record[source_identifier]] = true
+        new_entry = find_or_create_entry(entry_class, record[source_identifier], 'Bulkrax::Importer', record)
         if record[:delete].present?
           DeleteWorkJob.send(perform_method, new_entry, current_run)
         else

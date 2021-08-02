@@ -17,9 +17,9 @@ module Bulkrax
     def self.data_for_entry(data)
       collections = []
       children = []
-      xpath_for_source_id = ".//*[name()='#{source_identifier_field}']"
+      xpath_for_source_id = ".//*[name()='#{source_identifier}']"
       return {
-        source_identifier: data.xpath(xpath_for_source_id).first.text,
+        source_identifier => data.xpath(xpath_for_source_id).first.text,
         delete: data.xpath(".//*[name()='delete']").first&.text,
         data:
           data.to_xml(
@@ -40,9 +40,9 @@ module Bulkrax
 
     def build_metadata
       raise StandardError, 'Record not found' if record.nil?
-      raise StandardError, 'Missing source identifier' if self.raw_metadata['source_identifier'].blank?
+      raise StandardError, "Missing source identifier (#{source_identifier})" if self.raw_metadata[source_identifier].blank?
       self.parsed_metadata = {}
-      self.parsed_metadata[work_identifier] = [self.raw_metadata['source_identifier']]
+      self.parsed_metadata[work_identifier] = [self.raw_metadata[source_identifier]]
       xml_elements.each do |element_name|
         elements = record.xpath("//*[name()='#{element_name}']")
         next if elements.blank?

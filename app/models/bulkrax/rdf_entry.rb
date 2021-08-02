@@ -28,7 +28,7 @@ module Bulkrax
         end
       end
       return {
-        source_identifier: reader.subjects.first.to_s,
+        source_identifier => reader.subjects.first.to_s,
         delete: delete,
         format: format,
         data: data,
@@ -51,14 +51,14 @@ module Bulkrax
 
     def build_metadata
       raise StandardError, 'Record not found' if record.nil?
-      raise StandardError, 'Missing source identifier' if self.raw_metadata['source_identifier'].blank?
+      raise StandardError, "Missing source identifier (#{source_identifier})" if self.raw_metadata[source_identifier].blank?
 
       self.parsed_metadata = {}
-      self.parsed_metadata[work_identifier] = [self.raw_metadata['source_identifier']]
+      self.parsed_metadata[work_identifier] = [self.raw_metadata[source_identifier]]
 
       record.each_statement do |statement|
         # Only process the subject for our record (in case other data is in the file)
-        next unless statement.subject.to_s == self.raw_metadata['source_identifier']
+        next unless statement.subject.to_s == self.raw_metadata[source_identifier]
         add_metadata(statement.predicate.to_s, statement.object.to_s)
       end
       add_visibility

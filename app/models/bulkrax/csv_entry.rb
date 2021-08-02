@@ -156,7 +156,7 @@ module Bulkrax
     end
 
     def required_elements
-      %w[title] + [source_identifier]
+      ['title', source_identifier]
     end
 
     # If only filename is given, construct the path (/files/my_file)

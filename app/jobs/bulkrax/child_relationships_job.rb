@@ -55,7 +55,7 @@ module Bulkrax
         work = child_entry.factory.find
         # If we can't find the Work/Collection, raise a custom error
         raise ChildWorksError if work.blank?
-        hash[work.id] = { class_name: work.class.to_s, source_identifier: child_entry.identifier }
+        hash[work.id] = { class_name: work.class.to_s, entry.parser.source_identifier => child_entry.identifier }
       end
     end
 

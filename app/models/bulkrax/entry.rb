@@ -57,7 +57,7 @@ module Bulkrax
     end
 
     def work_identifier
-      parser&.source_identifier.to_s || 'source'
+      parser&.work_identifier.to_s || 'source'
     end
 
     def self.collection_field

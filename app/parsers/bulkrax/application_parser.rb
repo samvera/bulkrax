@@ -154,7 +154,7 @@ module Bulkrax
                    end
         next if children.blank?
         pts << {
-          r[:source_identifier] => children
+          r[source_identifier] => children
         }
       end
       pts.blank? ? pts : pts.inject(:merge)
