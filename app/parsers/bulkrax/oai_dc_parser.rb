@@ -71,7 +71,7 @@ module Bulkrax
         next unless collection_name == 'all' || collection_name == set.spec
         unique_collection_identifier = importerexporter.unique_collection_identifier(set.spec)
         metadata[:title] = [set.name]
-        metadata[Bulkrax.system_identifier_field] = [unique_collection_identifier]
+        metadata[work_identifier] = [unique_collection_identifier]
 
         new_entry = collection_entry_class.where(importerexporter: importerexporter, identifier: unique_collection_identifier, raw_metadata: metadata).first_or_create!
         # perform now to ensure this gets created before work imports start

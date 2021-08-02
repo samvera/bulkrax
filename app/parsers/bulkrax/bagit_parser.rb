@@ -53,7 +53,7 @@ module Bulkrax
         next if collection.blank?
         metadata = {
           title: [collection],
-          Bulkrax.system_identifier_field => [collection],
+          work_identifier => [collection],
           visibility: 'open',
           collection_type_gid: Hyrax::CollectionType.find_or_create_default_collection_type.gid
         }

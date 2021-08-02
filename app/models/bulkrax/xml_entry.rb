@@ -42,7 +42,7 @@ module Bulkrax
       raise StandardError, 'Record not found' if record.nil?
       raise StandardError, 'Missing source identifier' if self.raw_metadata['source_identifier'].blank?
       self.parsed_metadata = {}
-      self.parsed_metadata[Bulkrax.system_identifier_field] = [self.raw_metadata['source_identifier']]
+      self.parsed_metadata[work_identifier] = [self.raw_metadata['source_identifier']]
       xml_elements.each do |element_name|
         elements = record.xpath("//*[name()='#{element_name}']")
         next if elements.blank?

@@ -6,7 +6,6 @@ require 'active_support/all'
 module Bulkrax
   class << self
     mattr_accessor :parsers,
-                   :system_identifier_field,
                    :default_work_type,
                    :default_field_mapping,
                    :source_identifier_field_mapping,
@@ -29,21 +28,10 @@ module Bulkrax
       { name: "XML", class_name: "Bulkrax::XmlParser", partial: "xml_fields" }
     ]
 
-    self.system_identifier_field = "source"
     self.import_path = 'tmp/imports'
     self.export_path = 'tmp/exports'
     self.removed_image_path = Bulkrax::Engine.root.join('spec', 'fixtures', 'removed.png').to_s
     self.server_name = 'bulkrax@example.com'
-
-    # Field_mapping for establishing a source_identifier to use as the unique identifier for the entry
-    # This value IS NOT used for OAI, so setting the OAI Entries here will have no effect
-    # The mapping is supplied per Entry, provide the full class name as a string, eg. 'Bulkrax::CsvEntry'
-    # The default value for CSV is source_identifier, for RDF it is the subject
-    # Example:
-    #   {
-    #     'Bulkrax::CsvEntry'  => 'unique_id'
-    #   }
-    self.source_identifier_field_mapping = {}
 
     # @todo, merge parent_child_field_mapping and collection_field_mapping into field_mappings,
     # or make them settable per import some other way.
