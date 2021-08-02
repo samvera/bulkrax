@@ -59,10 +59,10 @@ module Bulkrax
       collections.each_with_index do |collection, index|
         next if collection.blank?
         metadata = {
-          title: [collection],
-          system_identifier => [collection],
-          visibility: 'open',
-          collection_type_gid: Hyrax::CollectionType.find_or_create_default_collection_type.gid
+            title: [collection],
+            work_identifier => [collection],
+            visibility: 'open',
+            collection_type_gid: Hyrax::CollectionType.find_or_create_default_collection_type.gid
         }
         new_entry = find_or_create_entry(collection_entry_class, collection, 'Bulkrax::Importer', metadata)
         ImportWorkCollectionJob.perform_now(new_entry.id, current_run.id)
@@ -131,7 +131,7 @@ module Bulkrax
       when 'importer'
         importer = Bulkrax::Importer.find(importerexporter.export_source)
         entry_ids = importer.entries.where(type: importer.parser.entry_class.to_s, last_error: [nil, {}, '']).map(&:identifier)
-        ActiveFedora::SolrService.query("#{system_identifier}_tesim:(#{entry_ids.join(' OR ')})#{extra_filters}", rows: 2_000_000_000).map(&:id)
+        ActiveFedora::SolrService.query("#{work_identifier}_tesim:(#{entry_ids.join(' OR ')})#{extra_filters}", rows: 2_000_000_000).map(&:id)
       end
     end
 

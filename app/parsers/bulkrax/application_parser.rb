@@ -45,8 +45,8 @@ module Bulkrax
       @source_identifier ||=  identifier_hash.values.first&.[]("from")&.first&.to_sym || :source_identifier
     end
 
-    def system_identifier
-      @system_identifier ||=  identifier_hash.keys.first&.to_sym || :source
+    def work_identifier
+      @work_identifier ||=  identifier_hash.keys.first&.to_sym || :source
     end
 
     def identifier_hash

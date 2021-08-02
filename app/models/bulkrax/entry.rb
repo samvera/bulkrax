@@ -56,7 +56,7 @@ module Bulkrax
       parser&.source_identifier.to_s || 'source_identifier'
     end
 
-    def system_identifier
+    def work_identifier
       parser&.source_identifier.to_s || 'source'
     end
 
@@ -85,9 +85,9 @@ module Bulkrax
     end
 
     def valid_system_id(model_class)
-      return true if model_class.properties.keys.include?(system_identifier)
+      return true if model_class.properties.keys.include?(work_identifier)
       raise(
-        "#{model_class} does not implement the system_identifier_field: #{system_identifier}"
+        "#{model_class} does not implement the system_identifier_field: #{work_identifier}"
       )
     end
 
@@ -97,8 +97,8 @@ module Bulkrax
 
     def find_collection(collection_identifier)
       Collection.where(
-        system_identifier => collection_identifier
-      ).detect { |m| m.send(system_identifier).include?(collection_identifier) }
+          work_identifier => collection_identifier
+      ).detect { |m| m.send(work_identifier).include?(collection_identifier) }
     end
   end
 end

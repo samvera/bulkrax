@@ -54,7 +54,7 @@ module Bulkrax
       raise StandardError, "Missing required elements, missing element(s) are: #{importerexporter.parser.missing_elements(keys_without_numbers(record.keys)).join(', ')}" unless importerexporter.parser.required_elements?(keys_without_numbers(record.keys))
 
       self.parsed_metadata = {}
-      self.parsed_metadata[system_identifier] = [record[source_identifier]]
+      self.parsed_metadata[work_identifier] = [record[source_identifier]]
       record.each do |key, value|
         next if key == 'collection'
 
@@ -85,7 +85,7 @@ module Bulkrax
       #make_round_trippable
       self.parsed_metadata = {}
       self.parsed_metadata['id'] = hyrax_record.id
-      self.parsed_metadata[source_identifier] = hyrax_record.send(system_identifier)
+      self.parsed_metadata[source_identifier] = hyrax_record.send(work_identifier)
       self.parsed_metadata['model'] = hyrax_record.has_model.first
       build_mapping_metadata
       unless hyrax_record.is_a?(Collection)
@@ -120,9 +120,9 @@ module Bulkrax
     # we need a unique value in system_identifier
     # add the existing hyrax_record id to system_identifier
     def make_round_trippable
-      values = hyrax_record.send(system_identifier.to_s).to_a
+      values = hyrax_record.send(work_identifier.to_s).to_a
       values << hyrax_record.id
-      hyrax_record.send("#{system_identifier}=", values)
+      hyrax_record.send("#{work_identifier}=", values)
       hyrax_record.save
     end
 
