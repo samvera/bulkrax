@@ -24,6 +24,7 @@ module Bulkrax
              :write_errored_entries_file, :visibility, to: :parser
 
     attr_accessor :only_updates, :file_style, :file
+    attr_writer :current_run
     # TODO: (OAI only) validates :metadata_prefix, presence: true
     # TODO (OAI only) validates :base_url, presence: true
 
