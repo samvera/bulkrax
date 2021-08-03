@@ -150,9 +150,7 @@ module Bulkrax
         @total ||= `grep -c ^M #{real_import_file_path}`.to_i - 1
         # @total ||= `wc -l #{parser_fields['import_file_path']}`.to_i - 1
         # unix encoded
-        if @total < 1
-          @total ||= `grep -vc ^$ #{real_import_file_path}`.to_i - 1
-        end
+        @total ||= `grep -vc ^$ #{real_import_file_path}`.to_i - 1 if @total < 1
       elsif exporter?
         @total ||= importerexporter.entries.count
       else
