@@ -84,14 +84,15 @@ module Bulkrax
       results = self.records(quick: true)
       return unless results.present?
       results.full.each_with_index do |record, index|
-        if record[source_identifier_symbol].blank?
+        identifier = record.send(source_identifier_symbol)
+        if identifier.blank?
           invalid_record("Missing #{source_identifier_symbol} for #{record.to_h}\n")
           next
         end
 
         break if limit_reached?(limit, index)
-        seen[record.identifier] = true
-        new_entry = entry_class.where(importerexporter: self.importerexporter, identifier: record.identifier).first_or_create!
+        seen[identifier] = true
+        new_entry = entry_class.where(importerexporter: self.importerexporter, identifier: identifier).first_or_create!
         if record.deleted? # TODO: record.status == "deleted"
           DeleteWorkJob.send(perform_method, new_entry, importerexporter.current_run)
         else

@@ -79,14 +79,14 @@ module Bulkrax
 
     def create_works
       records.each_with_index do |record, index|
-        if record[source_identifier_symbol].blank?
+        if record[:source_identifier].blank?
           invalid_record("Missing #{source_identifier_symbol} for #{record.to_h}\n")
           next
         end
         break if !limit.nil? && index >= limit
 
-        seen[record[source_identifier_sybol]] = true
-        new_entry = find_or_create_entry(entry_class, record[source_identifier_sybol], 'Bulkrax::Importer', record)
+        seen[record[:source_identifier]] = true
+        new_entry = find_or_create_entry(entry_class, record[:source_identifier], 'Bulkrax::Importer', record)
         if record[:delete].present?
           DeleteWorkJob.send(perform_method, new_entry, current_run)
         else

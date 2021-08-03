@@ -8,7 +8,12 @@ FactoryBot.define do
     frequency { "PT0S" }
     parser_klass { "Bulkrax::OaiDcParser" }
     limit { 10 }
-    parser_fields { {} }
+    parser_fields do
+      {
+        'base_url' => 'http://commons.ptsem.edu/api/oai-pmh',
+        'metadata_prefix' => 'oai_dc'
+      }
+    end
     field_mapping { [{}] }
   end
 
