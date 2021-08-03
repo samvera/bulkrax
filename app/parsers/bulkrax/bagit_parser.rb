@@ -65,11 +65,14 @@ module Bulkrax
 
     def create_works
       records.each_with_index do |record, index|
-        next if record[:source_identifier].blank?
+        if record[source_identifier_symbol].blank?
+          invalid_record("Missing #{source_identifier_symbol} for #{record.to_h}\n")
+          next
+        end
         break if limit_reached?(limit, index)
 
-        seen[record[:source_identifier]] = true
-        new_entry = find_or_create_entry(entry_class, record[:source_identifier], 'Bulkrax::Importer', record)
+        seen[record[source_identifier_symbol]] = true
+        new_entry = find_or_create_entry(entry_class, record[source_identifier_symbol], 'Bulkrax::Importer', record)
         if record[:delete].present?
           DeleteWorkJob.send(perform_method, new_entry, current_run)
         else
@@ -77,6 +80,7 @@ module Bulkrax
         end
         increment_counters(index)
       end
+      importer.record_status
     rescue StandardError => e
       status_info(e)
     end
@@ -96,10 +100,6 @@ module Bulkrax
     def required_elements?(keys)
       return if keys.blank?
       !required_elements.map { |el| keys.map(&:to_s).include?(el) }.include?(false)
-    end
-
-    def required_elements
-      %w[title source_identifier]
     end
 
     # @todo - investigate getting directory structure

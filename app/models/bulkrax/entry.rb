@@ -12,6 +12,8 @@ module Bulkrax
     include Bulkrax::HasLocalProcessing
 
     belongs_to :importerexporter, polymorphic: true
+    alias_method :importer, :importerexporter
+    alias_method :exporter, :importerexporter
     has_many :statuses, as: :statusable, dependent: :destroy
 
     serialize :parsed_metadata, JSON

@@ -35,6 +35,22 @@ module Bulkrax
       end
     end
 
+    def record_status
+      importer_run = ImporterRun.find(current_run.id) # make sure fresh
+      return if importer_run.enqueued_records.positive? # still processing
+      if importer_run.failed_records.positive?
+        if importer_run.invalid_records.present?
+          e = Bulkrax::ImportFailed.new('Failed with Invalid Records', importer_run.invalid_records.split("\n"))
+          importer_run.importer.status_info(e)
+        else
+          importer_run.importer.status_info('Complete (with failures)')
+        end
+      else
+        importer_run.importer.status_info('Complete')
+      end
+    end
+
+
     # If field_mapping is empty, setup a default based on the export_properties
     def mapping
       @mapping ||= if self.field_mapping.blank? || self.field_mapping == [{}]

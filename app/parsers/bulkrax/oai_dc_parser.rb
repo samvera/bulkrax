@@ -84,18 +84,22 @@ module Bulkrax
       results = self.records(quick: true)
       return unless results.present?
       results.full.each_with_index do |record, index|
+        if record[source_identifier_symbol].blank?
+          invalid_record("Missing #{source_identifier_symbol} for #{record.to_h}\n")
+          next
+        end
+
         break if limit_reached?(limit, index)
         seen[record.identifier] = true
         new_entry = entry_class.where(importerexporter: self.importerexporter, identifier: record.identifier).first_or_create!
         if record.deleted? # TODO: record.status == "deleted"
           DeleteWorkJob.send(perform_method, new_entry, importerexporter.current_run)
-          importerexporter.current_run.deleted_records += 1
-          importerexporter.current_run.save!
         else
           ImportWorkJob.send(perform_method, new_entry.id, importerexporter.current_run.id)
-          increment_counters(index)
         end
+        increment_counters(index)
       end
+      importer.record_status
     end
 
     def collections
