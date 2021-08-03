@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 
 # this is a PORO to help pass errors around
 module Bulkrax

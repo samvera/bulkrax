@@ -50,7 +50,6 @@ module Bulkrax
       end
     end
 
-
     # If field_mapping is empty, setup a default based on the export_properties
     def mapping
       @mapping ||= if self.field_mapping.blank? || self.field_mapping == [{}]

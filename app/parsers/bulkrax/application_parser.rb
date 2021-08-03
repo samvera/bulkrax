@@ -3,8 +3,8 @@
 module Bulkrax
   class ApplicationParser
     attr_accessor :importerexporter
-    alias_method :importer, :importerexporter
-    alias_method :exporter, :importerexporter
+    alias importer importerexporter
+    alias exporter importerexporter
     delegate :only_updates, :limit, :current_run, :errors,
              :seen, :increment_counters, :parser_fields, :user,
              :exporter_export_path, :exporter_export_zip_path, :importer_unzip_path, :validate_only,
@@ -173,6 +173,7 @@ module Bulkrax
       true
     end
 
+    # rubocop:disable Rails/SkipsModelValidations
     def invalid_record(message)
       current_run.invalid_records ||= ""
       current_run.invalid_records += message
@@ -180,6 +181,7 @@ module Bulkrax
       ImporterRun.find(current_run.id).increment!(:failed_records)
       ImporterRun.find(current_run.id).decrement!(:enqueued_records) unless ImporterRun.find(current_run.id).enqueued_records <= 0 # rubocop:disable Style/IdenticalConditionalBranches
     end
+    # rubocop:enable Rails/SkipsModelValidations
 
     def source_identifier_key
       @source_identifier_key ||= entry_class.source_identifier_field
