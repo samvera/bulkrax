@@ -154,10 +154,10 @@ module Bulkrax
       context 'with multiple objects and fields prefixed' do
         let(:importer) do
           FactoryBot.create(:bulkrax_importer_csv, field_mapping: {
-                              'multiple_objects_first_name' => { from: ['multiple_objects_first_name_1', 'multiple_objects_first_name_2'], object: 'multiple_objects' },
-                              'multiple_objects_last_name' => { from: ['multiple_objects_last_name_1', 'multiple_objects_last_name_2'], object: 'multiple_objects' },
-                              'multiple_objects_position' => { from: ['multiple_objects_position_1', 'multiple_objects_position_2'], object: 'multiple_objects' },
-                              'multiple_objects_language' => { from: ['multiple_objects_language_1'], object: 'multiple_objects', parsed: true }
+                              'multiple_objects_first_name' => { from: ['multiple_objects_first_name'], object: 'multiple_objects' },
+                              'multiple_objects_last_name' => { from: ['multiple_objects_last_name'], object: 'multiple_objects' },
+                              'multiple_objects_position' => { from: ['multiple_objects_position'], object: 'multiple_objects' },
+                              'multiple_objects_language' => { from: ['multiple_objects_language'], object: 'multiple_objects', parsed: true }
                             })
         end
 
@@ -192,10 +192,10 @@ module Bulkrax
       context 'with multiple objects and no fields prefixed' do
         let(:importer) do
           FactoryBot.create(:bulkrax_importer_csv, field_mapping: {
-                              'first_name' => { from: ['multiple_objects_first_name_1', 'multiple_objects_first_name_2'], object: 'multiple_objects' },
-                              'last_name' => { from: ['multiple_objects_last_name_1', 'multiple_objects_last_name_2'], object: 'multiple_objects' },
-                              'position' => { from: ['multiple_objects_position_1', 'multiple_objects_position_2'], object: 'multiple_objects' },
-                              'language' => { from: ['multiple_objects_language_1'], object: 'multiple_objects', parsed: true }
+                              'first_name' => { from: ['multiple_objects_first_name'], object: 'multiple_objects' },
+                              'last_name' => { from: ['multiple_objects_last_name'], object: 'multiple_objects' },
+                              'position' => { from: ['multiple_objects_position'], object: 'multiple_objects' },
+                              'language' => { from: ['multiple_objects_language'], object: 'multiple_objects', parsed: true }
                             })
         end
 
