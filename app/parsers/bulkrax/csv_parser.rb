@@ -37,10 +37,6 @@ module Bulkrax
       !required_elements.map { |el| keys.map(&:to_s).include?(el) }.include?(false)
     end
 
-    def required_elements
-      ['title', source_identifier_key]
-    end
-
     def valid_import?
       required_elements?(import_fields) && file_paths.is_a?(Array)
     rescue StandardError => e
@@ -63,21 +59,10 @@ module Bulkrax
       end
     end
 
-    def source_identifier_key
-      @source_identifier_key ||= entry_class.source_identifier_field
-    end
-
-    def source_identifier_symbol
-      @source_identifier_symbol ||= source_identifier_key.to_sym
-    end
-
     def create_works
       records.each_with_index do |record, index|
         if record[source_identifier_symbol].blank?
-          current_run.invalid_records ||= ""
-          current_run.invalid_records += "Missing #{Bulkrax.system_identifier_field} for #{record.to_h}\n"
-          current_run.failed_records += 1
-          current_run.save
+          invalid_record("Missing #{source_identifier_symbol} for #{record.to_h}\n")
           next
         end
         break if limit_reached?(limit, index)
@@ -91,6 +76,7 @@ module Bulkrax
         end
         increment_counters(index)
       end
+      importer.record_status
     rescue StandardError => e
       status_info(e)
     end
@@ -131,6 +117,7 @@ module Bulkrax
         ActiveFedora::SolrService.query("has_model_ssim:#{importerexporter.export_source + extra_filters}", rows: 2_000_000_000).map(&:id)
       when 'importer'
         importer = Bulkrax::Importer.find(importerexporter.export_source)
+        # TODO: this seems likely to be broken
         entry_ids = importer.entries.where(type: importer.parser.entry_class.to_s, last_error: [nil, {}, '']).map(&:identifier)
         ActiveFedora::SolrService.query("#{Bulkrax.system_identifier_field}_tesim:(#{entry_ids.join(' OR ')})#{extra_filters}", rows: 2_000_000_000).map(&:id)
       end
@@ -159,14 +146,18 @@ module Bulkrax
     #   Changed to grep as wc -l counts blank lines, and ignores the final unescaped line (which may or may not contain data)
     def total
       if importer?
-        # @total ||= `wc -l #{parser_fields['import_file_path']}`.to_i - 1
-        @total ||= `grep -vc ^$ #{real_import_file_path}`.to_i - 1
+        return @total if @total&.positive?
+        # windows enocded
+        @total = `grep -c ^M #{real_import_file_path}`.to_i - 1
+        # unix encoded
+        @total = `grep -vc ^$ #{real_import_file_path}`.to_i - 1 if @total < 1
       elsif exporter?
-        @total ||= importerexporter.entries.count
+        @total = importerexporter.entries.count
       else
         @total = 0
       end
-    rescue StandardError
+      return @total
+    rescue StandardErrorr
       @total = 0
     end
 

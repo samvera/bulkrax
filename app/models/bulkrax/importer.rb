@@ -24,6 +24,7 @@ module Bulkrax
              :write_errored_entries_file, :visibility, to: :parser
 
     attr_accessor :only_updates, :file_style, :file
+    attr_writer :current_run
     # TODO: (OAI only) validates :metadata_prefix, presence: true
     # TODO (OAI only) validates :base_url, presence: true
 
@@ -32,6 +33,21 @@ module Bulkrax
         'Validated'
       else
         super
+      end
+    end
+
+    def record_status
+      importer_run = ImporterRun.find(current_run.id) # make sure fresh
+      return if importer_run.enqueued_records.positive? # still processing
+      if importer_run.failed_records.positive?
+        if importer_run.invalid_records.present?
+          e = Bulkrax::ImportFailed.new('Failed with Invalid Records', importer_run.invalid_records.split("\n"))
+          importer_run.importer.status_info(e)
+        else
+          importer_run.importer.status_info('Complete (with failures)')
+        end
+      else
+        importer_run.importer.status_info('Complete')
       end
     end
 
