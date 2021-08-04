@@ -9,7 +9,11 @@ module Bulkrax
     end
 
     def failed?
-      current_status&.status_message == 'Failed'
+      current_status&.status_message&.match(/fail/i)
+    end
+
+    def succeeded?
+      current_status&.status_message&.match(/^Complete$/)
     end
 
     def status

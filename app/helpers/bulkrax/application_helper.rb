@@ -3,7 +3,7 @@ require 'coderay'
 
 module Bulkrax
   module ApplicationHelper
-    include Hyrax::HyraxHelperBehavior
+    include ::Hyrax::HyraxHelperBehavior
 
     def coderay(value, opts)
       CodeRay

@@ -12,6 +12,12 @@ module Bulkrax
     end
     let(:collection) { FactoryBot.build(:collection) }
 
+    around do |sample|
+      Bulkrax.source_identifier_field_mapping = { 'Bulkrax::OaiDcEntry' => 'identifier' }
+      sample.run
+      Bulkrax.source_identifier_field_mapping = {}
+    end
+
     it 'creates a work' do
       allow(Collection).to receive(:where).and_return([collection])
       importer.import_works
