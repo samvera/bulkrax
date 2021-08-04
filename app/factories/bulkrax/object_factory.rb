@@ -65,7 +65,7 @@ module Bulkrax
     end
 
     def search_by_identifier
-      query = {work_identifier =>
+      query = { work_identifier =>
                 source_identifier_value }
       # Query can return partial matches (something6 matches both something6 and something68)
       # so we need to weed out any that are not the correct full match. But other items might be

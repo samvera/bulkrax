@@ -4,7 +4,6 @@ require 'rails_helper'
 
 RSpec.describe Bulkrax do
   describe '#mattr_accessor' do
-
     context 'default_work_type' do
       it 'responds to default_work_type' do
         expect(described_class).to respond_to(:default_work_type)
