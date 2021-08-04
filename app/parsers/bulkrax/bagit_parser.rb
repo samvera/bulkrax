@@ -65,7 +65,10 @@ module Bulkrax
 
     def create_works
       records.each_with_index do |record, index|
-        next if record[source_identifier].blank?
+        if record[source_identifier].blank?
+          invalid_record("Missing #{source_identifier} for #{record.to_h}\n")
+          next
+        end
         break if limit_reached?(limit, index)
 
         seen[record[source_identifier]] = true
@@ -77,6 +80,7 @@ module Bulkrax
         end
         increment_counters(index)
       end
+      importer.record_status
     rescue StandardError => e
       status_info(e)
     end
@@ -96,10 +100,6 @@ module Bulkrax
     def required_elements?(keys)
       return if keys.blank?
       !required_elements.map { |el| keys.map(&:to_s).include?(el) }.include?(false)
-    end
-
-    def required_elements
-      ['title', source_identifier]
     end
 
     # @todo - investigate getting directory structure

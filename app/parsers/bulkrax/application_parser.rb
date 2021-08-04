@@ -3,6 +3,8 @@
 module Bulkrax
   class ApplicationParser
     attr_accessor :importerexporter
+    alias importer importerexporter
+    alias exporter importerexporter
     delegate :only_updates, :limit, :current_run, :errors,
              :seen, :increment_counters, :parser_fields, :user,
              :exporter_export_path, :exporter_export_zip_path, :importer_unzip_path, :validate_only,
@@ -186,6 +188,20 @@ module Bulkrax
     # Override to add specific validations
     def valid_import?
       true
+    end
+
+    # rubocop:disable Rails/SkipsModelValidations
+    def invalid_record(message)
+      current_run.invalid_records ||= ""
+      current_run.invalid_records += message
+      current_run.save
+      ImporterRun.find(current_run.id).increment!(:failed_records)
+      ImporterRun.find(current_run.id).decrement!(:enqueued_records) unless ImporterRun.find(current_run.id).enqueued_records <= 0 # rubocop:disable Style/IdenticalConditionalBranches
+    end
+    # rubocop:enable Rails/SkipsModelValidations
+
+    def required_elements
+      ['title', source_identifier]
     end
 
     def find_or_create_entry(entryclass, identifier, type, raw_metadata = nil)
