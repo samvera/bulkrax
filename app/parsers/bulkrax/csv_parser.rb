@@ -146,17 +146,18 @@ module Bulkrax
     #   Changed to grep as wc -l counts blank lines, and ignores the final unescaped line (which may or may not contain data)
     def total
       if importer?
+        return @total if @total&.positive?
         # windows enocded
-        @total ||= `grep -c ^M #{real_import_file_path}`.to_i - 1
-        # @total ||= `wc -l #{parser_fields['import_file_path']}`.to_i - 1
+        @total = `grep -c ^M #{real_import_file_path}`.to_i - 1
         # unix encoded
-        @total ||= `grep -vc ^$ #{real_import_file_path}`.to_i - 1 if @total < 1
+        @total = `grep -vc ^$ #{real_import_file_path}`.to_i - 1 if @total < 1
       elsif exporter?
-        @total ||= importerexporter.entries.count
+        @total = importerexporter.entries.count
       else
         @total = 0
       end
-    rescue StandardError
+      return @total
+    rescue StandardErrorr
       @total = 0
     end
 
