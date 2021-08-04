@@ -82,7 +82,7 @@ module Bulkrax
     end
 
     def build_export_metadata
-      #make_round_trippable
+      # make_round_trippable
       self.parsed_metadata = {}
       self.parsed_metadata['id'] = hyrax_record.id
       self.parsed_metadata[source_identifier] = hyrax_record.send(work_identifier)
