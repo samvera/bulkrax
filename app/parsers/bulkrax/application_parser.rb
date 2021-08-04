@@ -114,7 +114,7 @@ module Bulkrax
         children = value.map do |child|
           entry_class.where(
             identifier: child,
-            # importerexporter_id: importerexporter.id,
+            importerexporter_id: importerexporter.id,
             importerexporter_type: 'Bulkrax::Importer'
           ).first
         end.compact.uniq
@@ -191,9 +191,9 @@ module Bulkrax
 
     def find_or_create_entry(entryclass, identifier, type, raw_metadata = nil)
       entry = entryclass.where(
-          # importerexporter_id: importerexporter.id,
-          # importerexporter_type: type,
-        identifier: identifier
+          importerexporter_id: importerexporter.id,
+          importerexporter_type: type,
+          identifier: identifier
       ).first_or_create!
       entry.raw_metadata = raw_metadata
       entry.save!
