@@ -84,9 +84,9 @@ module Bulkrax
       results = self.records(quick: true)
       return unless results.present?
       results.full.each_with_index do |record, index|
-        identifier = record.send(source_identifier_symbol)
+        identifier = record.send(source_identifier)
         if identifier.blank?
-          invalid_record("Missing #{source_identifier_symbol} for #{record.to_h}\n")
+          invalid_record("Missing #{source_identifier} for #{record.to_h}\n")
           next
         end
 

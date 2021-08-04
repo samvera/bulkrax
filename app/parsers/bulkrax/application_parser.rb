@@ -200,16 +200,8 @@ module Bulkrax
     end
     # rubocop:enable Rails/SkipsModelValidations
 
-    def source_identifier_key
-      @source_identifier_key ||= entry_class.source_identifier_field
-    end
-
-    def source_identifier_symbol
-      @source_identifier_symbol ||= source_identifier_key.to_sym
-    end
-
     def required_elements
-      ['title', source_identifier_key]
+      ['title', source_identifier]
     end
 
     def find_or_create_entry(entryclass, identifier, type, raw_metadata = nil)
