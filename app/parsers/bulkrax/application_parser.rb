@@ -104,7 +104,7 @@ module Bulkrax
       parents.each do |key, value|
         parent = entry_class.where(
           identifier: key,
-          # importerexporter_id: importerexporter.id,
+          importerexporter_id: importerexporter.id,
           importerexporter_type: 'Bulkrax::Importer'
         ).first
 
@@ -190,9 +190,9 @@ module Bulkrax
 
     def find_or_create_entry(entryclass, identifier, type, raw_metadata = nil)
       entry = entryclass.where(
-          importerexporter_id: importerexporter.id,
-          importerexporter_type: type,
-          identifier: identifier
+        importerexporter_id: importerexporter.id,
+        importerexporter_type: type,
+        identifier: identifier
       ).first_or_create!
       entry.raw_metadata = raw_metadata
       entry.save!
