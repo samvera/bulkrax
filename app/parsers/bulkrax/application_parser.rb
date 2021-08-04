@@ -23,7 +23,6 @@ module Bulkrax
 
     def initialize(importerexporter)
       @importerexporter = importerexporter
-      set_source_and_system_ids
     end
 
     # @api
