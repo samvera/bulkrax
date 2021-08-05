@@ -100,7 +100,7 @@ module Bulkrax
     def find_collection(collection_identifier)
       Collection.where(
         work_identifier => collection_identifier
-        ).detect { |m| m.send(work_identifier).include?(collection_identifier) }
+      ).detect { |m| m.send(work_identifier).include?(collection_identifier) }
     end
   end
 end
