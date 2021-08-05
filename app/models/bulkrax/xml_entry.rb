@@ -14,12 +14,12 @@ module Bulkrax
       Nokogiri::XML(open(path)).remove_namespaces!
     end
 
-    def self.data_for_entry(data)
+    def self.data_for_entry(data, source_id)
       collections = []
       children = []
-      xpath_for_source_id = ".//*[name()='#{source_identifier}']"
+      xpath_for_source_id = ".//*[name()='#{source_id}']"
       return {
-        source_identifier => data.xpath(xpath_for_source_id).first.text,
+        source_id => data.xpath(xpath_for_source_id).first.text,
         delete: data.xpath(".//*[name()='delete']").first&.text,
         data:
           data.to_xml(

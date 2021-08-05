@@ -19,7 +19,7 @@ module Bulkrax
                encoding: 'utf-8')
     end
 
-    def self.data_for_entry(data)
+    def self.data_for_entry(data, source_id)
       # If a multi-line CSV data is passed, grab the first row
       data = data.first if data.is_a?(CSV::Table)
       # model has to be separated so that it doesn't get mistranslated by to_h

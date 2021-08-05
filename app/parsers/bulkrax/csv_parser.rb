@@ -24,7 +24,7 @@ module Bulkrax
 
     def records(_opts = {})
       file_for_import = only_updates ? parser_fields['partial_import_file_path'] : import_file_path
-      @records ||= entry_class.read_data(file_for_import).map { |record_data| entry_class.data_for_entry(record_data) }
+      @records ||= entry_class.read_data(file_for_import).map { |record_data| entry_class.data_for_entry(record_data, source_identifier) }
     end
 
     # We could use CsvEntry#fields_from_data(data) but that would mean re-reading the data

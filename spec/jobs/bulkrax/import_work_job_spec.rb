@@ -10,13 +10,8 @@ module Bulkrax
     let(:importer_run) { FactoryBot.create(:bulkrax_importer_run, id: importer_run_id) }
 
     before do
-      Bulkrax.source_identifier_field_mapping = { 'Bulkrax::OaiDcEntry' => 'identifier' }
       allow(Bulkrax::Entry).to receive(:find).with(1).and_return(entry)
       allow(Bulkrax::ImporterRun).to receive(:find).with(importer_run_id).and_return(importer_run)
-    end
-
-    after do
-      Bulkrax.source_identifier_field_mapping = {}
     end
 
     describe 'successful job' do

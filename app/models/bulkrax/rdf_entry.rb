@@ -13,7 +13,7 @@ module Bulkrax
       data.predicates.map(&:to_s)
     end
 
-    def self.data_for_entry(data)
+    def self.data_for_entry(data, source_id)
       reader = data
       format = reader.class.format.to_sym
       collections = []
@@ -28,7 +28,7 @@ module Bulkrax
         end
       end
       return {
-        self.source_identifier => reader.subjects.first.to_s,
+        source_id => reader.subjects.first.to_s,
         delete: delete,
         format: format,
         data: data,

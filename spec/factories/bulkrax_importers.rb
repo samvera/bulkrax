@@ -30,7 +30,7 @@ FactoryBot.define do
         'metadata_prefix' => 'oai_dc'
       }
     end
-    field_mapping { {} }
+    field_mapping { {'identifier' => {from: ['identifier'], source_identifier: true}} }
   end
 
   factory :bulkrax_importer_csv, class: 'Bulkrax::Importer' do
@@ -70,7 +70,7 @@ FactoryBot.define do
         'metadata_format' => 'Bulkrax::RdfEntry'
       }
     end
-    field_mapping { {} }
+    field_mapping { {'source_identifier' => {from: ['source_identifier'], source_identifier: true}} }
     after :create, &:current_run
   end
 
@@ -107,7 +107,8 @@ FactoryBot.define do
     field_mapping do
       {
         'title': { from: ['TitleLargerEntity'] },
-        'abstract': { from: ['Abstract'] }
+        'abstract': { from: ['Abstract'] },
+        'source' => {from: ['DrisUnique'], source_identifier: true}
       }
     end
   end
