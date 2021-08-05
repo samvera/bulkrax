@@ -7,10 +7,6 @@ module Bulkrax
     let(:path) { './spec/fixtures/xml/single.xml' }
     let(:data) { described_class.read_data(path) }
 
-    before do
-      Bulkrax.source_identifier_field_mapping = { 'Bulkrax::XmlEntry' => 'DrisUnique' }
-    end
-
     describe 'class methods' do
       context '#read_data' do
         it 'reads the data from an xml file' do

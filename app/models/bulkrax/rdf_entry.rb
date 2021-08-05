@@ -28,7 +28,7 @@ module Bulkrax
         end
       end
       return {
-        source_identifier => reader.subjects.first.to_s,
+        self.source_identifier => reader.subjects.first.to_s,
         delete: delete,
         format: format,
         data: data,
