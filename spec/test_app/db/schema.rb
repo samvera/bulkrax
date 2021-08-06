@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20201117220007) do
+ActiveRecord::Schema.define(version: 20210806044408) do
 
   create_table "bookmarks", force: :cascade do |t|
     t.integer "user_id", null: false
@@ -33,7 +33,6 @@ ActiveRecord::Schema.define(version: 20201117220007) do
     t.text "parsed_metadata"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.text "last_error"
     t.datetime "last_error_at"
     t.datetime "last_succeeded_at"
     t.string "importerexporter_type", default: "Bulkrax::Importer"
@@ -62,7 +61,6 @@ ActiveRecord::Schema.define(version: 20201117220007) do
     t.string "export_type"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.text "last_error"
     t.datetime "last_error_at"
     t.datetime "last_succeeded_at"
     t.date "start_date"
@@ -102,7 +100,6 @@ ActiveRecord::Schema.define(version: 20201117220007) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.boolean "validate_only"
-    t.text "last_error"
     t.datetime "last_error_at"
     t.datetime "last_succeeded_at"
     t.index ["user_id"], name: "index_bulkrax_importers_on_user_id"

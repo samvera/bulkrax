@@ -3,6 +3,7 @@
 require 'csv'
 module Bulkrax
   class CsvParser < ApplicationParser
+    include ErroredEntries
     def self.export_supported?
       true
     end
@@ -128,10 +129,13 @@ module Bulkrax
       when 'worktype'
         ActiveFedora::SolrService.query("has_model_ssim:#{importerexporter.export_source + extra_filters}", rows: 2_000_000_000).map(&:id)
       when 'importer'
-        importer = Bulkrax::Importer.find(importerexporter.export_source)
-        # TODO: this seems likely to be broken
-        entry_ids = importer.entries.where(type: importer.parser.entry_class.to_s, last_error: [nil, {}, '']).map(&:identifier)
-        ActiveFedora::SolrService.query("#{work_identifier}_tesim:(#{entry_ids.join(' OR ')})#{extra_filters}", rows: 2_000_000_000).map(&:id)
+        entry_ids = importer.entries.pluck(:id)
+        complete_statuses = Bulkrax::Status.latest_by_statusable
+                                           .includes(:statusable)
+                                           .where('bulkrax_statuses.statusable_id IN (?) AND bulkrax_statuses.statusable_type = ? AND status_message = ?', entry_ids, 'Bulkrax::Entry', 'Complete')
+        complete_entry_identifiers = complete_statuses.map { |s| s.statusable&.identifier }
+
+        ActiveFedora::SolrService.query("#{work_identifier}_tesim:(#{complete_entry_identifiers.join(' OR ')})#{extra_filters}", rows: 2_000_000_000).map(&:id)
       end
     end
 
@@ -244,40 +248,6 @@ module Bulkrax
         File.file?(import_file_path) ? File.dirname(import_file_path) : import_file_path,
         'files'
       )
-    end
-
-    # errored entries methods
-
-    def write_errored_entries_file
-      @errored_entries ||= importerexporter.entries.where.not(last_error: [nil, {}, ''], type: 'Bulkrax::CsvCollectionEntry')
-      return unless @errored_entries.present?
-
-      file = setup_errored_entries_file
-      headers = import_fields
-      file.puts(headers.to_csv)
-      @errored_entries.each do |ee|
-        row = build_errored_entry_row(headers, ee)
-        file.puts(row)
-      end
-      file.close
-      true
-    end
-
-    def build_errored_entry_row(headers, errored_entry)
-      row = {}
-      # Ensure each header has a value, even if it's just an empty string
-      headers.each do |h|
-        row.merge!("#{h}": nil)
-      end
-      # Match each value to its corresponding header
-      row.merge!(errored_entry.raw_metadata.symbolize_keys)
-
-      row.values.to_csv
-    end
-
-    def setup_errored_entries_file
-      FileUtils.mkdir_p(File.dirname(importerexporter.errored_entries_csv_path))
-      File.open(importerexporter.errored_entries_csv_path, 'w')
     end
 
     private

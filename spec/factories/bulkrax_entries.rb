@@ -39,7 +39,7 @@ FactoryBot.define do
     importerexporter { FactoryBot.build(:bulkrax_importer) }
     raw_metadata { { title: 'Title' } }
     parsed_metadata { {} }
-    last_error { 'failed' }
+    statuses { [association(:bulkrax_status, status_message: 'Failed')] }
   end
 
   factory :bulkrax_rdf_entry, class: 'Bulkrax::RdfEntry' do
