@@ -10,11 +10,10 @@ module Bulkrax
       let(:entry) { FactoryBot.create(:bulkrax_entry, importerexporter: importer) }
 
       before do
-        Bulkrax.default_work_type = 'Work'
         Bulkrax.field_mappings['Bulkrax::XmlParser'] = {
           'title' => { from: ['TitleLargerEntity'] },
           'abstract' => { from: ['Abstract'] },
-          'source' => {from: ['DrisUnique'], source_identifier: true}
+          'source' => { from: ['DrisUnique'], source_identifier: true }
         }
         allow(Bulkrax::XmlEntry).to receive_message_chain(:where, :first_or_create!).and_return(entry)
         allow(entry).to receive(:id)

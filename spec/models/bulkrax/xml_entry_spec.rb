@@ -40,12 +40,11 @@ module Bulkrax
       let(:object_factory) { instance_double(ObjectFactory) }
 
       before do
-        Bulkrax.default_work_type = 'Work'
         Bulkrax.field_mappings.merge!(
           'Bulkrax::XmlParser' => {
             'title' => { from: ['TitleLargerEntity'] },
             'abstract' => { from: ['Abstract'] },
-            'source' => {from: ['DrisUnique'], source_identifier: true}
+            'source' => { from: ['DrisUnique'], source_identifier: true }
           }
         )
       end
@@ -60,19 +59,18 @@ module Bulkrax
       let(:raw_metadata) { described_class.data_for_entry(data, source_identifier) }
       let(:importer) do
         i = FactoryBot.create(:bulkrax_importer_xml)
-        i.field_mapping.merge!('source' => {'from' => ['DrisUnique'], 'source_identifier' => true})
+        i.field_mapping['source'] = { 'from' => ['DrisUnique'], 'source_identifier' => true }
         i.current_run
         i
       end
       let(:object_factory) { instance_double(ObjectFactory) }
 
       before do
-        Bulkrax.default_work_type = 'Work'
         Bulkrax.field_mappings.merge!(
           'Bulkrax::XmlParser' => {
             'title' => { from: ['TitleLargerEntity'] },
             'abstract' => { from: ['Abstract'] },
-            'source' => {from: ['DrisUnique'], source_identifier: true}
+            'source' => { from: ['DrisUnique'], source_identifier: true }
           }
         )
       end

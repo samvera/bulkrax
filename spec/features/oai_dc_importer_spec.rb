@@ -7,7 +7,7 @@ module Bulkrax
     let(:importer) do
       f = FactoryBot.build(:bulkrax_importer_oai)
       f.user = User.new(email: 'test@example.com')
-      f.field_mapping.merge!('identifier' => {'from' => ['identifier'], 'source_identifier' => true})
+      f.field_mapping['identifier'] = { 'from' => ['identifier'], 'source_identifier' => true }
       f.save
       f
     end
