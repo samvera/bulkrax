@@ -14,12 +14,10 @@ module Bulkrax
     belongs_to :importerexporter, polymorphic: true
     alias importer importerexporter
     alias exporter importerexporter
-    has_many :statuses, as: :statusable, dependent: :destroy
 
     serialize :parsed_metadata, JSON
     # Do not serialize raw_metadata as so we can support xml or other formats
     serialize :collection_ids, Array
-    serialize :last_error, JSON
 
     paginates_per 5
 

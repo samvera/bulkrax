@@ -3,6 +3,15 @@ module Bulkrax
   module StatusInfo
     extend ActiveSupport::Concern
 
+    included do
+      has_many :statuses, as: :statusable, dependent: :destroy
+      has_one :latest_status,
+              -> { merge(Status.latest_by_statusable) },
+              as: :statusable,
+              class_name: "Bulkrax::Status",
+              inverse_of: :statusable
+    end
+
     def current_status
       last_status = self.statuses.last
       last_status if last_status && last_status.runnable == last_run

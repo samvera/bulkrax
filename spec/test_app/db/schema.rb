@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20201117220007) do
+ActiveRecord::Schema.define(version: 20210806065737) do
 
   create_table "bookmarks", force: :cascade do |t|
     t.integer "user_id", null: false
@@ -29,11 +29,10 @@ ActiveRecord::Schema.define(version: 20201117220007) do
     t.string "collection_ids"
     t.string "type"
     t.integer "importerexporter_id"
-    t.text "raw_metadata"
-    t.text "parsed_metadata"
+    t.text "raw_metadata", limit: 16777215
+    t.text "parsed_metadata", limit: 16777215
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.text "last_error"
     t.datetime "last_error_at"
     t.datetime "last_succeeded_at"
     t.string "importerexporter_type", default: "Bulkrax::Importer"
@@ -55,14 +54,13 @@ ActiveRecord::Schema.define(version: 20201117220007) do
     t.integer "user_id"
     t.string "parser_klass"
     t.integer "limit"
-    t.text "parser_fields"
-    t.text "field_mapping"
+    t.text "parser_fields", limit: 16777215
+    t.text "field_mapping", limit: 16777215
     t.string "export_source"
     t.string "export_from"
     t.string "export_type"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.text "last_error"
     t.datetime "last_error_at"
     t.datetime "last_succeeded_at"
     t.date "start_date"
@@ -86,7 +84,7 @@ ActiveRecord::Schema.define(version: 20201117220007) do
     t.integer "total_collection_entries", default: 0
     t.integer "processed_children", default: 0
     t.integer "failed_children", default: 0
-    t.text "invalid_records"
+    t.text "invalid_records", limit: 16777215
     t.index ["importer_id"], name: "index_bulkrax_importer_runs_on_importer_id"
   end
 
@@ -97,12 +95,11 @@ ActiveRecord::Schema.define(version: 20201117220007) do
     t.string "frequency"
     t.string "parser_klass"
     t.integer "limit"
-    t.text "parser_fields"
-    t.text "field_mapping"
+    t.text "parser_fields", limit: 16777215
+    t.text "field_mapping", limit: 16777215
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.boolean "validate_only"
-    t.text "last_error"
     t.datetime "last_error_at"
     t.datetime "last_succeeded_at"
     t.index ["user_id"], name: "index_bulkrax_importers_on_user_id"
@@ -112,7 +109,7 @@ ActiveRecord::Schema.define(version: 20201117220007) do
     t.string "status_message"
     t.string "error_class"
     t.string "error_message"
-    t.text "error_backtrace"
+    t.text "error_backtrace", limit: 16777215
     t.integer "statusable_id"
     t.string "statusable_type"
     t.integer "runnable_id"
