@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'oai'
-require 'byebug'
+
 module Bulkrax
   class Engine < ::Rails::Engine
     isolate_namespace Bulkrax
@@ -18,6 +18,7 @@ module Bulkrax
       begin
         g.fixture_replacement :factory_bot, dir: 'spec/factories'
       rescue
+        nil
       end
     end
 
