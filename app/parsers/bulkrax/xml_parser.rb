@@ -79,10 +79,7 @@ module Bulkrax
 
     def create_works
       records.each_with_index do |record, index|
-        if record[source_identifier].blank?
-          invalid_record("Missing #{source_identifier} for #{record.to_h}\n")
-          next
-        end
+        next unless record_has_source_identifier(record, index)
         break if !limit.nil? && index >= limit
 
         seen[record[source_identifier]] = true

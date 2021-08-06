@@ -86,8 +86,12 @@ module Bulkrax
       results.full.each_with_index do |record, index|
         identifier = record.send(source_identifier)
         if identifier.blank?
-          invalid_record("Missing #{source_identifier} for #{record.to_h}\n")
-          next
+          if Bulkrax.fill_in_blank_source_identifiers.present?
+            identifier = Bulkrax.fill_in_blank_source_identifiers.call
+          else
+            invalid_record("Missing #{source_identifier} for #{record.to_h}\n")
+            next
+          end
         end
 
         break if limit_reached?(limit, index)

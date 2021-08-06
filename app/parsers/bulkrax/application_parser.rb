@@ -190,6 +190,19 @@ module Bulkrax
       true
     end
 
+    def record_has_source_identifier(record, _index)
+      if record[source_identifier].blank?
+        if Bulkrax.fill_in_blank_source_identifiers.present?
+          record[source_identifier] = Bulkrax.fill_in_blank_source_identifiers.call
+        else
+          invalid_record("Missing #{source_identifier} for #{record.to_h}\n")
+          false
+        end
+      else
+        true
+      end
+    end
+
     # rubocop:disable Rails/SkipsModelValidations
     def invalid_record(message)
       current_run.invalid_records ||= ""
