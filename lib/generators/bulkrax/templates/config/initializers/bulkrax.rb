@@ -57,7 +57,7 @@ Bulkrax.setup do |config|
   #   config.field_mappings["Bulkrax::OaiDcParser"].each {|key,value| config.field_mappings["Bulkrax::OaiOmekaParser"][key] = value }
 
   # Should Bulkrax make up source identifiers for you? This allow round tripping and download errored entries to still work, but does
-  # mean if you upload the same source record in two differnet files you WILL get duplicates.
+  # mean if you upload the same source record in two different files you WILL get duplicates.
   # for the importer id and the row in the file
   #    config.fill_in_blank_source_identifiers.call = -> { "b-#{importer.id}-#{_index}"}
   # or use a uuid
