@@ -9,6 +9,7 @@ module Bulkrax
                    :default_work_type,
                    :default_field_mapping,
                    :collection_field_mapping,
+                   :fill_in_blank_source_identifiers,
                    :parent_child_field_mapping,
                    :reserved_properties,
                    :field_mappings,

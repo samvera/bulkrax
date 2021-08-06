@@ -50,10 +50,18 @@ Bulkrax.setup do |config|
   #
   # #   e.g. to add the required source_identifier field
   #   #   config.field_mappings["Bulkrax::CsvParser"]["source_id"] = { from: ["old_source_id"], source_identifier: true  }
+  # If you want Bulkrax to fill in source_identifiers for you, see below
 
   # To duplicate a set of mappings from one parser to another
   #   config.field_mappings["Bulkrax::OaiOmekaParser"] = {}
   #   config.field_mappings["Bulkrax::OaiDcParser"].each {|key,value| config.field_mappings["Bulkrax::OaiOmekaParser"][key] = value }
+
+  # Should Bulkrax make up source identifiers for you? This allow round tripping and download errored entries to still work, but does
+  # mean if you upload the same source record in two differnet files you WILL get duplicates.
+  # for the importer id and the row in the file
+  #    config.fill_in_blank_source_identifiers.call = -> { "b-#{importer.id}-#{_index}"}
+  # or use a uuid
+  #    config.fill_in_blank_source_identifiers.call = -> { SecureRandom.uuid }
 
   # Properties that should not be used in imports/exports. They are reserved for use by Hyrax.
   # config.reserved_properties += ['my_field']

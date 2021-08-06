@@ -46,6 +46,16 @@ module Bulkrax
           expect(subject).to receive(:increment_counters).once
           subject.create_works
         end
+
+        context 'with fill_in_source_identifier set' do
+          it 'fills in the source_identifier if fill_in_source_identifier is set' do
+            expect(subject).to receive(:increment_counters).twice
+            # once for presetn? and once to execture
+            expect(Bulkrax).to receive(:fill_in_blank_source_identifiers).twice.and_return(-> { "4649ee79-7d7a-4df0-86d6-d6865e2925ca" })
+            subject.create_works
+            expect(subject.seen).to include("2", "4649ee79-7d7a-4df0-86d6-d6865e2925ca")
+          end
+        end
       end
 
       context 'with good data' do
