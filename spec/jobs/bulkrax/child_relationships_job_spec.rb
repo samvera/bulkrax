@@ -41,6 +41,7 @@ module Bulkrax
         expect(Bulkrax::ObjectFactory).to receive(:new).with(
           { id: "work_id", work_members_attributes: { 0 => { id: "another_work_id" } } },
           'entry_work',
+          :source,
           false,
           importer.user,
           Work
@@ -93,6 +94,7 @@ module Bulkrax
         expect(Bulkrax::ObjectFactory).to receive(:new).with(
           { collections: [{ id: "collection_id" }], id: "another_work_id" },
           'csv_entry',
+          :source,
           false,
           importer.user,
           Work
@@ -129,6 +131,7 @@ module Bulkrax
         expect(Bulkrax::ObjectFactory).to receive(:new).with(
           { children: ["collection_id"], id: "collection_id" },
           'entry_collection',
+          :source,
           false,
           importer.user,
           Collection

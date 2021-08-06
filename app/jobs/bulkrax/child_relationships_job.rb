@@ -55,7 +55,7 @@ module Bulkrax
         work = child_entry.factory.find
         # If we can't find the Work/Collection, raise a custom error
         raise ChildWorksError if work.blank?
-        hash[work.id] = { class_name: work.class.to_s, source_identifier: child_entry.identifier }
+        hash[work.id] = { class_name: work.class.to_s, entry.parser.source_identifier => child_entry.identifier }
       end
     end
 
@@ -74,7 +74,7 @@ module Bulkrax
       # This is adding the reverse relatinship, from the child to the parent
       def work_child_collection_parent(work_id)
         attrs = { id: work_id, collections: [{ id: entry&.factory&.find&.id }] }
-        Bulkrax::ObjectFactory.new(attrs, child_works_hash[work_id][:source_identifier], false, user, child_works_hash[work_id][:class_name].constantize).run
+        Bulkrax::ObjectFactory.new(attrs, child_works_hash[work_id][entry.parser.source_identifier], entry.parser.work_identifier, false, user, child_works_hash[work_id][:class_name].constantize).run
         ImporterRun.find(importer_run_id).increment!(:processed_children)
       rescue StandardError => e
         entry.status_info(e)
@@ -84,7 +84,7 @@ module Bulkrax
       # Collection-Collection membership is added to the as member_ids
       def collection_parent_collection_child(member_ids)
         attrs = { id: entry&.factory&.find&.id, children: member_ids }
-        Bulkrax::ObjectFactory.new(attrs, entry.identifier, false, user, entry.factory_class).run
+        Bulkrax::ObjectFactory.new(attrs, entry.identifier, entry.parser.work_identifier, false, user, entry.factory_class).run
         ImporterRun.find(importer_run_id).increment!(:processed_children)
       rescue StandardError => e
         entry.status_info(e)
@@ -98,7 +98,7 @@ module Bulkrax
                   work_members_attributes: member_ids.each.with_index.each_with_object({}) do |(member, index), ids|
                     ids[index] = { id: member }
                   end }
-        Bulkrax::ObjectFactory.new(attrs, entry.identifier, false, user, entry.factory_class).run
+        Bulkrax::ObjectFactory.new(attrs, entry.identifier, entry.parser.work_identifier, false, user, entry.factory_class).run
         ImporterRun.find(importer_run_id).increment!(:processed_children)
       rescue StandardError => e
         entry.status_info(e)

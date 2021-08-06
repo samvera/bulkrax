@@ -42,6 +42,23 @@ module Bulkrax
       raise StandardError, 'must be defined'
     end
 
+    def source_identifier
+      @source_identifier ||= identifier_hash.values.first&.[]("from")&.first&.to_sym || :source_identifier
+    end
+
+    def work_identifier
+      @work_identifier ||= identifier_hash.keys.first&.to_sym || :source
+    end
+
+    def identifier_hash
+      @identifier_hash ||= importerexporter.mapping.select do |_, h|
+        h.key?("source_identifier")
+      end
+      raise StandardError, "more than one source_identifier declared: #{@identifier_hash.keys.join(', ')}" if @identifier_hash.length > 1
+
+      @identifier_hash
+    end
+
     def perform_method
       if self.validate_only
         'perform_now'
@@ -138,7 +155,7 @@ module Bulkrax
                    end
         next if children.blank?
         pts << {
-          r[:source_identifier] => children
+          r[source_identifier] => children
         }
       end
       pts.blank? ? pts : pts.inject(:merge)
@@ -183,16 +200,8 @@ module Bulkrax
     end
     # rubocop:enable Rails/SkipsModelValidations
 
-    def source_identifier_key
-      @source_identifier_key ||= entry_class.source_identifier_field
-    end
-
-    def source_identifier_symbol
-      @source_identifier_symbol ||= source_identifier_key.to_sym
-    end
-
     def required_elements
-      ['title', source_identifier_key]
+      ['title', source_identifier]
     end
 
     def find_or_create_entry(entryclass, identifier, type, raw_metadata = nil)

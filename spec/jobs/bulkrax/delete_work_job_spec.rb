@@ -8,14 +8,6 @@ module Bulkrax
     let(:entry) { FactoryBot.build(:bulkrax_entry) }
     let(:importer_run) { FactoryBot.build(:bulkrax_importer_run) }
 
-    before do
-      Bulkrax.default_work_type = 'Work'
-    end
-
-    after do
-      Bulkrax.default_work_type = nil
-    end
-
     describe 'successful job object removed' do
       before do
         work = instance_double("Work")

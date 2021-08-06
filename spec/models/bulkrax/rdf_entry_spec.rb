@@ -17,7 +17,7 @@ module Bulkrax
       end
 
       it 'retrieves the data and constructs a hash' do
-        expect(described_class.data_for_entry(data)).to eq(
+        expect(described_class.data_for_entry(data, :source_identifier)).to eq(
           data: "<http://example.org/ns/19158> <http://purl.org/dc/terms/identifier> \"12345\" .\n<http://example.org/ns/19158> <http://purl.org/dc/terms/title> \"Test Bag\" .\n",
           delete: nil,
           children: [],
@@ -30,7 +30,7 @@ module Bulkrax
 
     describe 'builds entry' do
       subject { described_class.new(importerexporter: importer) }
-      let(:raw_metadata) { described_class.data_for_entry(data) }
+      let(:raw_metadata) { described_class.data_for_entry(data, :source_identifier) }
       let(:importer) do
         i = FactoryBot.create(:bulkrax_importer_bagit,
                               parser_fields: {
@@ -44,10 +44,6 @@ module Bulkrax
                               })
         i.current_run
         i
-      end
-
-      before do
-        Bulkrax.default_work_type = 'Work'
       end
 
       context 'deleted' do

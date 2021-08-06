@@ -5,5 +5,6 @@ FactoryBot.define do
     id { 'collection_id' }
     title { ['MyCollection'] }
     source { ['commons.ptsem.edu_MyCollection'] }
+    identifier { ['commons.ptsem.edu_MyCollection'] }
   end
 end

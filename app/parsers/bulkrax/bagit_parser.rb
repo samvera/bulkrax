@@ -39,7 +39,7 @@ module Bulkrax
         path = metadata_path(bag)
         raise StandardError, 'No metadata files were found' if path.blank?
         data = entry_class.read_data(path)
-        data = entry_class.data_for_entry(data)
+        data = entry_class.data_for_entry(data, source_identifier)
         data[:file] = bag.bag_files.join('|')
         data
       end
@@ -53,7 +53,7 @@ module Bulkrax
         next if collection.blank?
         metadata = {
           title: [collection],
-          Bulkrax.system_identifier_field => [collection],
+          work_identifier => [collection],
           visibility: 'open',
           collection_type_gid: Hyrax::CollectionType.find_or_create_default_collection_type.gid
         }
@@ -65,14 +65,14 @@ module Bulkrax
 
     def create_works
       records.each_with_index do |record, index|
-        if record[source_identifier_symbol].blank?
-          invalid_record("Missing #{source_identifier_symbol} for #{record.to_h}\n")
+        if record[source_identifier].blank?
+          invalid_record("Missing #{source_identifier} for #{record.to_h}\n")
           next
         end
         break if limit_reached?(limit, index)
 
-        seen[record[source_identifier_symbol]] = true
-        new_entry = find_or_create_entry(entry_class, record[source_identifier_symbol], 'Bulkrax::Importer', record)
+        seen[record[source_identifier]] = true
+        new_entry = find_or_create_entry(entry_class, record[source_identifier], 'Bulkrax::Importer', record)
         if record[:delete].present?
           DeleteWorkJob.send(perform_method, new_entry, current_run)
         else

@@ -4,15 +4,6 @@ require 'rails_helper'
 
 RSpec.describe Bulkrax do
   describe '#mattr_accessor' do
-    context 'system_identifier_field' do
-      it 'responds to system_identifier_field' do
-        expect(described_class).to respond_to(:system_identifier_field)
-      end
-      it 'system_identifier_field is settable' do
-        expect(described_class).to respond_to(:system_identifier_field=)
-      end
-    end
-
     context 'default_work_type' do
       it 'responds to default_work_type' do
         expect(described_class).to respond_to(:default_work_type)
@@ -20,20 +11,8 @@ RSpec.describe Bulkrax do
       it 'default_work_type is settable' do
         expect(described_class).to respond_to(:default_work_type=)
       end
-      it 'has no default value' do
-        expect(described_class.default_work_type).to eq(nil)
-      end
-    end
-
-    context 'source_identifier_field_mapping' do
-      it 'responds to source_identifier_field_mapping' do
-        expect(described_class).to respond_to(:source_identifier_field_mapping)
-      end
-      it 'source_identifier_field_mapping is settable' do
-        expect(described_class).to respond_to(:source_identifier_field_mapping=)
-      end
-      it 'has no default value' do
-        expect(described_class.source_identifier_field_mapping).to eq({})
+      it 'reads default work type from rails_helper' do
+        expect(described_class.default_work_type).to eq('Work')
       end
     end
 

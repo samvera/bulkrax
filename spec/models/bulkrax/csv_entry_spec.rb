@@ -8,10 +8,6 @@ module Bulkrax
       subject { described_class.new(importerexporter: importer) }
       let(:importer) { FactoryBot.create(:bulkrax_importer_csv) }
 
-      before do
-        Bulkrax.default_work_type = 'Work'
-      end
-
       context 'without required metadata' do
         before do
           allow(subject).to receive(:record).and_return(source_identifier: '1', some_field: 'some data')
@@ -32,6 +28,20 @@ module Bulkrax
           subject.build
           expect(subject.status).to eq('Complete')
           expect(subject.parsed_metadata['admin_set_id']).to eq 'MyString'
+        end
+
+        it 'has a source id field' do
+          expect(subject.source_identifier).to eq('source_identifier')
+        end
+
+        it 'has a work id field' do
+          expect(subject.work_identifier).to eq('source')
+        end
+
+        it 'has custom source and work id fields' do
+          subject.importerexporter.field_mapping['title'] = { 'from' => ['title'], 'source_identifier' => true }
+          expect(subject.source_identifier).to eq('title')
+          expect(subject.work_identifier).to eq('title')
         end
       end
 

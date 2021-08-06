@@ -8,7 +8,6 @@ module Bulkrax
     let(:importer) { FactoryBot.create(:bulkrax_importer_bagit) }
 
     before do
-      Bulkrax.source_identifier_field_mapping = { 'Bulkrax::RdfEntry' => 'source_identifier' }
       allow(entry).to receive(:id)
       allow(Bulkrax::ImportWorkJob).to receive(:perform_later)
     end

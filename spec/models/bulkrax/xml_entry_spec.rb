@@ -6,10 +6,7 @@ module Bulkrax
   RSpec.describe XmlEntry, type: :model do
     let(:path) { './spec/fixtures/xml/single.xml' }
     let(:data) { described_class.read_data(path) }
-
-    before do
-      Bulkrax.source_identifier_field_mapping = { 'Bulkrax::XmlEntry' => 'DrisUnique' }
-    end
+    let(:source_identifier) { :DrisUnique }
 
     describe 'class methods' do
       context '#read_data' do
@@ -20,8 +17,8 @@ module Bulkrax
 
       context '#data_for_entry' do
         it 'retrieves the data and constructs a hash' do
-          expect(described_class.data_for_entry(data)).to eq(
-            source_identifier: '3456012',
+          expect(described_class.data_for_entry(data, source_identifier)).to eq(
+            DrisUnique: '3456012',
             delete: nil,
             data: "<!-- This grammar has been deprecated - use FMPXMLRESULT instead --><FMPDSORESULT> <ROW MODID=\"3\" RECORDID=\"000003\"> <TitleLargerEntity>Single XML Entry</TitleLargerEntity> <Abstract>Lorem ipsum dolor sit amet.</Abstract> <DrisUnique>3456012</DrisUnique> </ROW></FMPDSORESULT>",
             collection: [],
@@ -34,7 +31,7 @@ module Bulkrax
     describe 'deleted' do
       subject(:xml_entry) { described_class.new(importerexporter: importer) }
       let(:path) { './spec/fixtures/xml/deleted.xml' }
-      let(:raw_metadata) { described_class.data_for_entry(data) }
+      let(:raw_metadata) { described_class.data_for_entry(data, source_identifier) }
       let(:importer) do
         i = FactoryBot.create(:bulkrax_importer_xml)
         i.current_run
@@ -43,11 +40,11 @@ module Bulkrax
       let(:object_factory) { instance_double(ObjectFactory) }
 
       before do
-        Bulkrax.default_work_type = 'Work'
         Bulkrax.field_mappings.merge!(
           'Bulkrax::XmlParser' => {
             'title' => { from: ['TitleLargerEntity'] },
-            'abstract' => { from: ['Abstract'] }
+            'abstract' => { from: ['Abstract'] },
+            'source' => { from: ['DrisUnique'], source_identifier: true }
           }
         )
       end
@@ -59,20 +56,21 @@ module Bulkrax
 
     describe '#build' do
       subject(:xml_entry) { described_class.new(importerexporter: importer) }
-      let(:raw_metadata) { described_class.data_for_entry(data) }
+      let(:raw_metadata) { described_class.data_for_entry(data, source_identifier) }
       let(:importer) do
         i = FactoryBot.create(:bulkrax_importer_xml)
+        i.field_mapping['source'] = { 'from' => ['DrisUnique'], 'source_identifier' => true }
         i.current_run
         i
       end
       let(:object_factory) { instance_double(ObjectFactory) }
 
       before do
-        Bulkrax.default_work_type = 'Work'
         Bulkrax.field_mappings.merge!(
           'Bulkrax::XmlParser' => {
             'title' => { from: ['TitleLargerEntity'] },
-            'abstract' => { from: ['Abstract'] }
+            'abstract' => { from: ['Abstract'] },
+            'source' => { from: ['DrisUnique'], source_identifier: true }
           }
         )
       end

@@ -35,14 +35,14 @@ module Bulkrax
           metadata_paths.map do |md|
             # Retrieve all records
             elements = entry_class.read_data(md).xpath("//#{record_element}")
-            r += elements.map { |el| entry_class.data_for_entry(el) }
+            r += elements.map { |el| entry_class.data_for_entry(el, source_identifier) }
           end
           # Flatten because we may have multiple records per array
           r.compact.flatten
         elsif parser_fields['import_type'] == 'single'
           metadata_paths.map do |md|
             data = entry_class.read_data(md).xpath("//#{record_element}").first # Take only the first record
-            entry_class.data_for_entry(data)
+            entry_class.data_for_entry(data, source_identifier)
           end.compact # No need to flatten because we take only the first record
         end
     end
@@ -79,14 +79,14 @@ module Bulkrax
 
     def create_works
       records.each_with_index do |record, index|
-        if record[:source_identifier].blank?
-          invalid_record("Missing #{source_identifier_symbol} for #{record.to_h}\n")
+        if record[source_identifier].blank?
+          invalid_record("Missing #{source_identifier} for #{record.to_h}\n")
           next
         end
         break if !limit.nil? && index >= limit
 
-        seen[record[:source_identifier]] = true
-        new_entry = find_or_create_entry(entry_class, record[:source_identifier], 'Bulkrax::Importer', record)
+        seen[record[source_identifier]] = true
+        new_entry = find_or_create_entry(entry_class, record[source_identifier], 'Bulkrax::Importer', record)
         if record[:delete].present?
           DeleteWorkJob.send(perform_method, new_entry, current_run)
         else

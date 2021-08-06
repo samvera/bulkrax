@@ -24,7 +24,8 @@ module Bulkrax
 
     def records(_opts = {})
       file_for_import = only_updates ? parser_fields['partial_import_file_path'] : import_file_path
-      @records ||= entry_class.read_data(file_for_import).map { |record_data| entry_class.data_for_entry(record_data) }
+      # data for entry does not need source_identifier for csv, because csvs are read sequentially and mapped after raw data is read.
+      @records ||= entry_class.read_data(file_for_import).map { |record_data| entry_class.data_for_entry(record_data, nil) }
     end
 
     # We could use CsvEntry#fields_from_data(data) but that would mean re-reading the data
@@ -33,12 +34,23 @@ module Bulkrax
     end
 
     def required_elements?(keys)
-      return if keys.blank?
-      !required_elements.map { |el| keys.map(&:to_s).include?(el) }.include?(false)
+      return unless keys.present?
+      !missing_elements(keys).present?
+    end
+
+    def missing_elements(keys)
+      required_elements - keys.map(&:to_s)
+    end
+
+    def required_elements
+      ['title', source_identifier.to_s]
     end
 
     def valid_import?
-      required_elements?(import_fields) && file_paths.is_a?(Array)
+      error_alert = "Missing at least one required element, missing element(s) are: #{missing_elements(import_fields).join(', ')}"
+      raise StandardError, error_alert unless required_elements?(import_fields)
+
+      file_paths.is_a?(Array)
     rescue StandardError => e
       status_info(e)
       false
@@ -49,7 +61,7 @@ module Bulkrax
         next if collection.blank?
         metadata = {
           title: [collection],
-          Bulkrax.system_identifier_field => [collection],
+          work_identifier => [collection],
           visibility: 'open',
           collection_type_gid: Hyrax::CollectionType.find_or_create_default_collection_type.gid
         }
@@ -61,14 +73,14 @@ module Bulkrax
 
     def create_works
       records.each_with_index do |record, index|
-        if record[source_identifier_symbol].blank?
-          invalid_record("Missing #{source_identifier_symbol} for #{record.to_h}\n")
+        if record[source_identifier].blank?
+          current_run.invalid_records += "Missing #{source_identifier} for #{record.to_h}\n"
           next
         end
         break if limit_reached?(limit, index)
 
-        seen[record[source_identifier_symbol]] = true
-        new_entry = find_or_create_entry(entry_class, record[source_identifier_symbol], 'Bulkrax::Importer', record.to_h.compact)
+        seen[record[source_identifier]] = true
+        new_entry = find_or_create_entry(entry_class, record[source_identifier], 'Bulkrax::Importer', record.to_h.compact)
         if record[:delete].present?
           DeleteWorkJob.send(perform_method, new_entry, current_run)
         else
@@ -119,7 +131,7 @@ module Bulkrax
         importer = Bulkrax::Importer.find(importerexporter.export_source)
         # TODO: this seems likely to be broken
         entry_ids = importer.entries.where(type: importer.parser.entry_class.to_s, last_error: [nil, {}, '']).map(&:identifier)
-        ActiveFedora::SolrService.query("#{Bulkrax.system_identifier_field}_tesim:(#{entry_ids.join(' OR ')})#{extra_filters}", rows: 2_000_000_000).map(&:id)
+        ActiveFedora::SolrService.query("#{work_identifier}_tesim:(#{entry_ids.join(' OR ')})#{extra_filters}", rows: 2_000_000_000).map(&:id)
       end
     end
 
@@ -195,11 +207,11 @@ module Bulkrax
     # All possible column names
     def export_headers
       headers = ['id']
-      headers << entry_class.source_identifier_field
+      headers << source_identifier.to_s
       headers << 'model'
-      importerexporter.mapping.each_key { |key| headers << key unless Bulkrax.reserved_properties.include?(key) && !field_supported?(key) }.sort
+      importerexporter.mapping.each_key { |key| headers << key unless Bulkrax.reserved_properties.include?(key) && !field_supported?(key) && key != source_identifier.to_s }
       headers << 'file'
-      headers
+      headers.uniq
     end
 
     # in the parser as it is specific to the format

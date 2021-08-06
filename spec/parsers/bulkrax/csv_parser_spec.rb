@@ -58,6 +58,20 @@ module Bulkrax
           subject.create_works
         end
 
+        it 'has a source id field' do
+          expect(subject.source_identifier).to eq(:source_identifier)
+        end
+
+        it 'has a work id field' do
+          expect(subject.work_identifier).to eq(:source)
+        end
+
+        it 'has custom source and work id fields' do
+          subject.importerexporter.field_mapping['title'] = { 'from' => ['title'], 'source_identifier' => true }
+          expect(subject.source_identifier).to eq(:title)
+          expect(subject.work_identifier).to eq(:title)
+        end
+
         it 'counts the correct number of works and collections' do
           expect(subject.total).to eq(2)
           expect(subject.collections_total).to eq(2)

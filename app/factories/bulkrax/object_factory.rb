@@ -6,17 +6,16 @@ module Bulkrax
     extend ActiveModel::Callbacks
     include Bulkrax::FileFactory
     define_model_callbacks :save, :create
-    class_attribute :system_identifier_field
-    attr_reader :attributes, :object, :unique_identifier, :klass, :replace_files, :update_files
-    self.system_identifier_field = Bulkrax.system_identifier_field
+    attr_reader :attributes, :object, :source_identifier_value, :klass, :replace_files, :update_files, :work_identifier
 
     # rubocop:disable Metrics/ParameterLists
-    def initialize(attributes, unique_identifier, replace_files = false, user = nil, klass = nil, update_files = false)
+    def initialize(attributes, source_identifier_value, work_identifier, replace_files = false, user = nil, klass = nil, update_files = false)
       @attributes = ActiveSupport::HashWithIndifferentAccess.new(attributes)
       @replace_files = replace_files
       @update_files = update_files
       @user = user || User.batch_user
-      @unique_identifier = unique_identifier
+      @work_identifier = work_identifier
+      @source_identifier_value = source_identifier_value
       @klass = klass || Bulkrax.default_work_type.constantize
     end
     # rubocop:enable Metrics/ParameterLists
@@ -52,7 +51,7 @@ module Bulkrax
 
     def find
       return find_by_id if attributes[:id]
-      return search_by_identifier if attributes[system_identifier_field].present?
+      return search_by_identifier if attributes[work_identifier].present?
     end
 
     def find_by_id
@@ -66,12 +65,12 @@ module Bulkrax
     end
 
     def search_by_identifier
-      query = { system_identifier_field =>
-                unique_identifier }
+      query = { work_identifier =>
+                source_identifier_value }
       # Query can return partial matches (something6 matches both something6 and something68)
       # so we need to weed out any that are not the correct full match. But other items might be
       # in the multivalued field, so we have to go through them one at a time.
-      match = klass.where(query).detect { |m| m.send(system_identifier_field).include?(unique_identifier) }
+      match = klass.where(query).detect { |m| m.send(work_identifier).include?(source_identifier_value) }
       return match if match
     end
 
@@ -92,17 +91,17 @@ module Bulkrax
 
     def log_created(obj)
       msg = "Created #{klass.model_name.human} #{obj.id}"
-      Rails.logger.info("#{msg} (#{Array(attributes[system_identifier_field]).first})")
+      Rails.logger.info("#{msg} (#{Array(attributes[work_identifier]).first})")
     end
 
     def log_updated(obj)
       msg = "Updated #{klass.model_name.human} #{obj.id}"
-      Rails.logger.info("#{msg} (#{Array(attributes[system_identifier_field]).first})")
+      Rails.logger.info("#{msg} (#{Array(attributes[work_identifier]).first})")
     end
 
     def log_deleted_fs(obj)
       msg = "Deleted All Files from #{obj.id}"
-      Rails.logger.info("#{msg} (#{Array(attributes[system_identifier_field]).first})")
+      Rails.logger.info("#{msg} (#{Array(attributes[work_identifier]).first})")
     end
 
     private

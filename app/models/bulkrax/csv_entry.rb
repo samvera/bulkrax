@@ -19,7 +19,7 @@ module Bulkrax
                encoding: 'utf-8')
     end
 
-    def self.data_for_entry(data)
+    def self.data_for_entry(data, _source_id)
       # If a multi-line CSV data is passed, grab the first row
       data = data.first if data.is_a?(CSV::Table)
       # model has to be separated so that it doesn't get mistranslated by to_h
@@ -30,10 +30,6 @@ module Bulkrax
       # If the children field mapping is not 'children', add 'children' - the parser needs it
       raw_data[:children] = raw_data[collection_field.to_sym] if raw_data.keys.include?(children_field.to_sym) && children_field != 'children'
       return raw_data
-    end
-
-    def self.source_identifier_field
-      Bulkrax.source_identifier_field_mapping[self.to_s] || 'source_identifier'
     end
 
     def self.collection_field
@@ -55,10 +51,10 @@ module Bulkrax
     def build_metadata
       raise StandardError, 'Record not found' if record.nil?
 
-      raise StandardError, "Missing required elements, required elements are: #{importerexporter.parser.required_elements.join(', ')}" unless importerexporter.parser.required_elements?(keys_without_numbers(record.keys))
+      raise StandardError, "Missing required elements, missing element(s) are: #{importerexporter.parser.missing_elements(keys_without_numbers(record.keys)).join(', ')}" unless importerexporter.parser.required_elements?(keys_without_numbers(record.keys))
 
       self.parsed_metadata = {}
-      self.parsed_metadata[Bulkrax.system_identifier_field] = [record['source_identifier']]
+      self.parsed_metadata[work_identifier] = [record[source_identifier]]
       record.each do |key, value|
         next if key == 'collection'
 
@@ -86,10 +82,10 @@ module Bulkrax
     end
 
     def build_export_metadata
-      make_round_trippable
+      # make_round_trippable
       self.parsed_metadata = {}
       self.parsed_metadata['id'] = hyrax_record.id
-      self.parsed_metadata[self.class.source_identifier_field] = hyrax_record.id
+      self.parsed_metadata[source_identifier] = hyrax_record.send(work_identifier)
       self.parsed_metadata['model'] = hyrax_record.has_model.first
       build_mapping_metadata
       unless hyrax_record.is_a?(Collection)
@@ -121,12 +117,12 @@ module Bulkrax
     end
 
     # In order for the existing exported hyrax_record, to be updated by a re-import
-    # we need a unique value in Bulkrax.system_identifier_field
-    # add the existing hyrax_record id to Bulkrax.system_identifier_field
+    # we need a unique value in system_identifier
+    # add the existing hyrax_record id to system_identifier
     def make_round_trippable
-      values = hyrax_record.send(Bulkrax.system_identifier_field.to_s).to_a
+      values = hyrax_record.send(work_identifier.to_s).to_a
       values << hyrax_record.id
-      hyrax_record.send("#{Bulkrax.system_identifier_field}=", values)
+      hyrax_record.send("#{work_identifier}=", values)
       hyrax_record.save
     end
 
@@ -160,7 +156,7 @@ module Bulkrax
     end
 
     def required_elements
-      %w[title source_identifier]
+      ['title', source_identifier]
     end
 
     # If only filename is given, construct the path (/files/my_file)
