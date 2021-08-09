@@ -66,12 +66,12 @@ module Bulkrax
       field = field.gsub('_attributes', '')
 
       return false if excluded?(field)
-      return true if ['file', 'remote_files', 'model', 'delete'].include?(field)
+      return true if ['collections', 'file', 'remote_files', 'model', 'delete'].include?(field)
       return factory_class.method_defined?(field) && factory_class.properties[field].present?
     end
 
     def multiple?(field)
-      return true if field == 'file' || field == 'remote_files'
+      return true if field == 'file' || field == 'remote_files' || field == 'collections'
       return false if field == 'model'
 
       field_supported?(field) && factory_class&.properties&.[](field)&.[]('multiple')
