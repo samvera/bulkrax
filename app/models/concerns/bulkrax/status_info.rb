@@ -51,8 +51,6 @@ module Bulkrax
           error_message: current_status.error_message,
           error_trace: current_status.error_backtrace
         }.with_indifferent_access
-      else
-        super
       end
     end
   end
