@@ -190,10 +190,10 @@ module Bulkrax
       true
     end
 
-    def record_has_source_identifier(record, _index)
+    def record_has_source_identifier(record, index)
       if record[source_identifier].blank?
         if Bulkrax.fill_in_blank_source_identifiers.present?
-          record[source_identifier] = Bulkrax.fill_in_blank_source_identifiers.call
+          record[source_identifier] = Bulkrax.fill_in_blank_source_identifiers.call(self, index)
         else
           invalid_record("Missing #{source_identifier} for #{record.to_h}\n")
           false
@@ -214,7 +214,11 @@ module Bulkrax
     # rubocop:enable Rails/SkipsModelValidations
 
     def required_elements
-      ['title', source_identifier]
+      if Bulkrax.fill_in_blank_source_identifiers
+        ['title']
+      else
+        ['title', source_identifier]
+      end
     end
 
     def find_or_create_entry(entryclass, identifier, type, raw_metadata = nil)

@@ -151,14 +151,6 @@ module Bulkrax
       self.collection_ids
     end
 
-    def required_elements?(keys)
-      !required_elements.map { |el| keys.include?(el) }.include?(false)
-    end
-
-    def required_elements
-      ['title', source_identifier]
-    end
-
     # If only filename is given, construct the path (/files/my_file)
     def path_to_file(file)
       # return if we already have the full file path

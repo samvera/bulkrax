@@ -43,10 +43,6 @@ module Bulkrax
       required_elements - keys.map(&:to_s)
     end
 
-    def required_elements
-      ['title', source_identifier.to_s]
-    end
-
     def valid_import?
       error_alert = "Missing at least one required element, missing element(s) are: #{missing_elements(import_fields).join(', ')}"
       raise StandardError, error_alert unless required_elements?(import_fields)
