@@ -87,7 +87,7 @@ module Bulkrax
         identifier = record.send(source_identifier)
         if identifier.blank?
           if Bulkrax.fill_in_blank_source_identifiers.present?
-            identifier = Bulkrax.fill_in_blank_source_identifiers.call
+            identifier = Bulkrax.fill_in_blank_source_identifiers.call(self, index)
           else
             invalid_record("Missing #{source_identifier} for #{record.to_h}\n")
             next

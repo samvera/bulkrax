@@ -40,7 +40,7 @@ module Bulkrax
     end
 
     def missing_elements(keys)
-      required_elements - keys.map(&:to_s)
+      required_elements.map(&:to_s) - keys.map(&:to_s)
     end
 
     def valid_import?
