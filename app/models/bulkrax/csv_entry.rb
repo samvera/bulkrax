@@ -50,7 +50,6 @@ module Bulkrax
 
     def build_metadata
       raise StandardError, 'Record not found' if record.nil?
-
       raise StandardError, "Missing required elements, missing element(s) are: #{importerexporter.parser.missing_elements(keys_without_numbers(record.keys)).join(', ')}" unless importerexporter.parser.required_elements?(keys_without_numbers(record.keys))
 
       self.parsed_metadata = {}
@@ -149,14 +148,6 @@ module Bulkrax
         end
       end
       self.collection_ids
-    end
-
-    def required_elements?(keys)
-      !required_elements.map { |el| keys.include?(el) }.include?(false)
-    end
-
-    def required_elements
-      ['title', source_identifier]
     end
 
     # If only filename is given, construct the path (/files/my_file)
