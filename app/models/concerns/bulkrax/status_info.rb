@@ -45,13 +45,12 @@ module Bulkrax
 
     # api compatible with previous error structure
     def last_error
-      if current_status && current_status.error_class.present?
-        {
-          error_class: current_status.error_class,
-          error_message: current_status.error_message,
-          error_trace: current_status.error_backtrace
-        }.with_indifferent_access
-      end
+      return unless current_status && current_status.error_class.present?
+      {
+        error_class: current_status.error_class,
+        error_message: current_status.error_message,
+        error_trace: current_status.error_backtrace
+      }.with_indifferent_access
     end
   end
 end
