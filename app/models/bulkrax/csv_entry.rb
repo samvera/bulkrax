@@ -60,7 +60,6 @@ module Bulkrax
         index = key[/\d+/].to_i - 1 if key[/\d+/].to_i != 0
         add_metadata(key_without_numbers(key), value, index)
       end
-
       add_file
       add_visibility
       add_rights_statement
@@ -87,6 +86,7 @@ module Bulkrax
       self.parsed_metadata[source_identifier] = hyrax_record.send(work_identifier)
       self.parsed_metadata['model'] = hyrax_record.has_model.first
       build_mapping_metadata
+      self.parsed_metadata['collections'] = hyrax_record.member_of_collection_ids.join('; ')
       unless hyrax_record.is_a?(Collection)
         self.parsed_metadata['file'] = hyrax_record.file_sets.map { |fs| filename(fs).to_s unless filename(fs).blank? }.compact.join('; ')
       end
@@ -97,8 +97,8 @@ module Bulkrax
       mapping.each do |key, value|
         next if Bulkrax.reserved_properties.include?(key) && !field_supported?(key)
         next if key == "model"
-        next unless hyrax_record.respond_to?(value['from']&.first.to_s)
-        data = hyrax_record.send(value['from'].first)
+        next unless hyrax_record.respond_to?(key.to_s)
+        data = hyrax_record.send(key.to_s)
         if data.is_a?(ActiveTriples::Relation)
           self.parsed_metadata[key] = data.map { |d| prepare_export_data(d) }.join('; ').to_s unless value[:excluded]
         else
