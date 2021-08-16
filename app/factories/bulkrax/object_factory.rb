@@ -9,7 +9,7 @@ module Bulkrax
     attr_reader :attributes, :object, :source_identifier_value, :klass, :replace_files, :update_files, :work_identifier
 
     # rubocop:disable Metrics/ParameterLists
-    def initialize(attributes, source_identifier_value, work_identifier, replace_files = false, user = nil, klass = nil, update_files = false)
+    def initialize(attributes:, source_identifier_value:, work_identifier:, replace_files: false, user: nil, klass: nil, update_files: false)
       @attributes = ActiveSupport::HashWithIndifferentAccess.new(attributes)
       @replace_files = replace_files
       @update_files = update_files
