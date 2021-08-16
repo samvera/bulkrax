@@ -221,6 +221,13 @@ module Bulkrax
       end
     end
 
+    def new_entry(entryclass, type)
+      entryclass.new(
+        importerexporter_id: importerexporter.id,
+        importerexporter_type: type
+      )
+    end
+
     def find_or_create_entry(entryclass, identifier, type, raw_metadata = nil)
       entry = entryclass.where(
         importerexporter_id: importerexporter.id,
