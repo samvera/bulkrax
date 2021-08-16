@@ -201,12 +201,18 @@ module Bulkrax
       end
     end
 
+    def key_allowed(key)
+      !Bulkrax.reserved_properties.include?(key) &&
+        new_entry(entry_class, 'Bulkrax::Exporter').field_supported?(key) &&
+        key != source_identifier.to_s
+    end
+
     # All possible column names
     def export_headers
       headers = ['id']
       headers << source_identifier.to_s
       headers << 'model'
-      importerexporter.mapping.each_key { |key| headers << key unless Bulkrax.reserved_properties.include?(key) && !field_supported?(key) && key != source_identifier.to_s }
+      importerexporter.mapping.each_key { |key| headers << key if key_allowed(key) }
       headers << 'file'
       headers.uniq
     end
