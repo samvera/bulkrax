@@ -39,7 +39,7 @@ Mount the engine in your routes file
 mount Bulkrax::Engine, at: '/'
 ```
 
-If using Sidekiq, setup queues for `import` and `export`.
+If using Sidekiq, set up queues for `import` and `export`.
 
 ```ruby
 # in config/sidekiq.yml
