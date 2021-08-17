@@ -18,7 +18,7 @@ $ bundle update
 $ rails generate bulkrax:install
 ```
 
-If using Sidekiq, setup queues for `import` and `export`. 
+If using Sidekiq, set up queues for `import` and `export`.
 
 ### Manual Installation
 
@@ -35,13 +35,13 @@ $ bundle install
 
 Mount the engine in your routes file
 
-```ruby 
+```ruby
 mount Bulkrax::Engine, at: '/'
 ```
 
-If using Sidekiq, setup queues for `import` and `export`. 
+If using Sidekiq, set up queues for `import` and `export`.
 
-```ruby 
+```ruby
 # in config/sidekiq.yml
 :queues:
   - default
@@ -50,7 +50,7 @@ If using Sidekiq, setup queues for `import` and `export`.
   # your other queues ...
 ```
 
-```ruby 
+```ruby
 # in app/assets/javascripts/application.js - before //= require_tree .
 //= require bulkrax/application
 ```
@@ -75,7 +75,7 @@ Example:
 
 ```
 Bulkrax.setup do | config |
-  # If the work type isn't provided during import, use Image 
+  # If the work type isn't provided during import, use Image
   config.default_work_type = 'Image'
 
   # Use identifier to store the unique import identifier
@@ -126,7 +126,7 @@ Configuring field mappings is documented in the [Bulkrax Configuration Guide](ht
 
 ## Importing Files
 
-* The BagIt Parser will import files in the data folder of the bag. 
+* The BagIt Parser will import files in the data folder of the bag.
 * The CSV folder will import files in columns named file (located local to the import csv file in a folder called files) or remote_files (where urls are supplied).
 * The OAI parser will import a thumbnail_url specified during import. Pattern matching is supported.
 * The XML Parser is not configured to import files by default. To configure URL import, map an incoming element to the remote_files Hyrax property. To map local files for import, we suggest utilizing the `HasLocalProcessing` class injected by the generator.
@@ -156,9 +156,9 @@ end
 For further information on how to extend and customize Bulkrax, please see the [Bulkrax Customization Guide](https://github.com/samvera-labs/bulkrax/wiki/Customizing).
 
 ## How it Works
-Once you have Bulkrax installed, you will have access to an easy to use interface with which you are able to create, edit, delete, run, and re-run imports and exports. 
+Once you have Bulkrax installed, you will have access to an easy to use interface with which you are able to create, edit, delete, run, and re-run imports and exports.
 
-Imports can be scheduled to run once or on a daily, monthly or yearly interval. 
+Imports can be scheduled to run once or on a daily, monthly or yearly interval.
 
 Import and export is available to admins via the Importers tab on the dashboard. Export currently supports CSV only.
 
@@ -181,15 +181,19 @@ To delete an importer or exporter, select the delete (x) icon.
 Once your the exporter has run, a download icon will apear on the exporters menu page.
 
 ## Contributing
+If you're working on a PR for this project, create a feature branch off of `main`.
+
+This repository follows the [Samvera Community Code of Conduct](https://samvera.atlassian.net/wiki/spaces/samvera/pages/405212316/Code+of+Conduct) and [language recommendations](https://github.com/samvera/maintenance/blob/master/templates/CONTRIBUTING.md#language).  Please ***do not*** create a branch called `master` for this repository or as part of your pull request; the branch will either need to be removed or renamed before it can be considered for inclusion in the code base and history of this repository.
+
 See
-[CONTRIBUTING.md](https://github.com/samvera-labs/bulkrax/blob/master/CONTRIBUTING.md)
+[CONTRIBUTING.md](https://github.com/samvera-labs/bulkrax/blob/main/CONTRIBUTING.md)
 for contributing guidelines.
 
 We encourage everyone to help improve this project.  Bug reports and pull requests are welcome on GitHub at https://github.com/samvera-labs/bulkrax.
 
 This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant](https://contributor-covenant.org) code of conduct.
 
-All Contributors should have signed the Hydra Contributor License Agreement (CLA)
+All Contributors should have signed the Samvera Contributor License Agreement (CLA)
 
 ## Questions
 Questions can be sent to support@notch8.com. Please make sure to include "Bulkrax" in the subject line of your email.
@@ -197,4 +201,3 @@ Questions can be sent to support@notch8.com. Please make sure to include "Bulkra
 
 ## License
 The gem is available as open source under the terms of the [Apache 2.0 License](https://opensource.org/licenses/Apache-2.0).
-

@@ -1,0 +1,24 @@
+name: Lint
+on:
+  pull_request:
+    branches:
+      - '**'
+  push:
+    branches:
+      - master
+
+jobs:
+  branches:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Check branch names
+        run: |
+          git fetch --all --quiet --prune --prune-tags
+          if [[ -n "$(git branch --all --list master */master)" ]]; then
+            echo "A branch named 'master' was found. Please remove it."
+            echo "$(git branch --all --list master */master)"
+          fi
+          [[ -z "$(git branch --all --list master */master)" ]]
