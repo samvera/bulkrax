@@ -39,12 +39,12 @@ module Bulkrax
 
       it 'creates the object factory' do
         expect(Bulkrax::ObjectFactory).to receive(:new).with(
-          { id: "work_id", work_members_attributes: { 0 => { id: "another_work_id" } } },
-          'entry_work',
-          :source,
-          false,
-          importer.user,
-          Work
+          attributes: { id: "work_id", work_members_attributes: { 0 => { id: "another_work_id" } } },
+          source_identifier_value: 'entry_work',
+          work_identifier: :source,
+          replace_files: false,
+          user: importer.user,
+          klass: Work
         )
         child_relationship_job.perform(1, [2], 3)
       end
@@ -92,12 +92,12 @@ module Bulkrax
 
       it 'creates the object factory' do
         expect(Bulkrax::ObjectFactory).to receive(:new).with(
-          { collections: [{ id: "collection_id" }], id: "another_work_id" },
-          'csv_entry',
-          :source,
-          false,
-          importer.user,
-          Work
+          attributes: { collections: [{ id: "collection_id" }], id: "another_work_id" },
+          source_identifier_value: 'csv_entry',
+          work_identifier: :source,
+          replace_files: false,
+          user: importer.user,
+          klass: Work
         )
         child_relationship_job.perform(1, [2], 3)
       end
@@ -129,12 +129,12 @@ module Bulkrax
 
       it 'creates the object factory' do
         expect(Bulkrax::ObjectFactory).to receive(:new).with(
-          { children: ["collection_id"], id: "collection_id" },
-          'entry_collection',
-          :source,
-          false,
-          importer.user,
-          Collection
+          attributes: { children: ["collection_id"], id: "collection_id" },
+          source_identifier_value: 'entry_collection',
+          work_identifier: :source,
+          replace_files: false,
+          user: importer.user,
+          klass: Collection
         )
         child_relationship_job.perform(1, [2], 3)
       end

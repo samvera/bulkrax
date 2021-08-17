@@ -63,7 +63,13 @@ module Bulkrax
     end
 
     def factory
-      @factory ||= Bulkrax::ObjectFactory.new(self.parsed_metadata, identifier, parser.work_identifier, replace_files, user, factory_class, update_files)
+      @factory ||= Bulkrax::ObjectFactory.new(attributes: self.parsed_metadata,
+                                              source_identifier_value: identifier,
+                                              work_identifier: parser.work_identifier,
+                                              replace_files: replace_files,
+                                              user: user,
+                                              klass: factory_class,
+                                              update_files: update_files)
     end
 
     def factory_class
