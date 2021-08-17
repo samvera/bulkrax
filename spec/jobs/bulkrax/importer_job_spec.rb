@@ -40,7 +40,7 @@ module Bulkrax
 
       it 'schedules import_works when schedulable?' do
         expect(importer).to receive(:import_works)
-        expect(ImporterJob).to receive(:set).with(wait_until: 1).and_return(ImporterJob)
+        expect(described_class).to receive(:set).with(wait_until: 1).and_return(described_class)
         importer_job.perform(1)
       end
     end

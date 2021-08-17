@@ -83,7 +83,7 @@ module Bulkrax
     end
 
     def collections
-      records.map { |r| r[:collection].split(/\s*[;|]\s*/) unless r[:collection].blank? }.flatten.compact.uniq
+      records.map { |r| r[:collection].split(/\s*[;|]\s*/) if r[:collection].present? }.flatten.compact.uniq
     end
 
     def collections_total
@@ -104,7 +104,7 @@ module Bulkrax
     #   DownloadCloudFileJob before it starts
     def retrieve_cloud_files(files)
       # There should only be one zip file for Bagit, take the first
-      return unless files['0'].present?
+      return if files['0'].blank?
       target_file = File.join(path_for_import, files['0']['file_name'].tr(' ', '_'))
       # Now because we want the files in place before the importer runs
       Bulkrax::DownloadCloudFileJob.perform_now(files['0'], target_file)
@@ -113,45 +113,45 @@ module Bulkrax
 
     private
 
-      def bags
-        return @bags if @bags.present?
-        new_bag = bag(import_file_path)
-        @bags = if new_bag
-                  [new_bag]
-                else
-                  Dir.glob("#{import_file_path}/**/*").map { |d| bag(d) }
-                end
-        @bags.delete(nil)
-        raise StandardError, 'No valid bags found' if @bags.blank?
-        return @bags
-      end
+    def bags
+      return @bags if @bags.present?
+      new_bag = bag(import_file_path)
+      @bags = if new_bag
+                [new_bag]
+              else
+                Dir.glob("#{import_file_path}/**/*").map { |d| bag(d) }
+              end
+      @bags.delete(nil)
+      raise StandardError, 'No valid bags found' if @bags.blank?
+      return @bags
+    end
 
-      # Gather the paths to all bags; skip any stray files
-      def bag_paths
-        bags.map(&:bag_dir)
-      end
+    # Gather the paths to all bags; skip any stray files
+    def bag_paths
+      bags.map(&:bag_dir)
+    end
 
-      def metadata_file_name
-        raise StandardError, 'The metadata file name must be specified' if parser_fields['metadata_file_name'].blank?
-        parser_fields['metadata_file_name']
-      end
+    def metadata_file_name
+      raise StandardError, 'The metadata file name must be specified' if parser_fields['metadata_file_name'].blank?
+      parser_fields['metadata_file_name']
+    end
 
-      # Gather the paths to all metadata files matching the metadata_file_name
-      def metadata_paths
-        @metadata_paths ||= bag_paths.map do |b|
-          Dir.glob("#{b}/**/*").select { |f| File.file?(f) && f.ends_with?(metadata_file_name) }
-        end.flatten.compact
-      end
+    # Gather the paths to all metadata files matching the metadata_file_name
+    def metadata_paths
+      @metadata_paths ||= bag_paths.map do |b|
+        Dir.glob("#{b}/**/*").select { |f| File.file?(f) && f.ends_with?(metadata_file_name) }
+      end.flatten.compact
+    end
 
-      def metadata_path(bag)
-        Dir.glob("#{bag.bag_dir}/**/*").detect { |f| File.file?(f) && f.ends_with?(metadata_file_name) }
-      end
+    def metadata_path(bag)
+      Dir.glob("#{bag.bag_dir}/**/*").detect { |f| File.file?(f) && f.ends_with?(metadata_file_name) }
+    end
 
-      def bag(path)
-        return nil unless path && File.exist?(File.join(path, 'bagit.txt'))
-        bag = BagIt::Bag.new(path)
-        return nil unless bag.valid?
-        bag
-      end
+    def bag(path)
+      return nil unless path && File.exist?(File.join(path, 'bagit.txt'))
+      bag = BagIt::Bag.new(path)
+      return nil unless bag.valid?
+      bag
+    end
   end
 end

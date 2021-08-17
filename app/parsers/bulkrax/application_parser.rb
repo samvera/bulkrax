@@ -287,13 +287,13 @@ module Bulkrax
 
     private
 
-      def real_import_file_path
-        if file? && zip?
-          unzip(parser_fields['import_file_path'])
-          return importer_unzip_path
-        else
-          parser_fields['import_file_path']
-        end
+    def real_import_file_path
+      if file? && zip?
+        unzip(parser_fields['import_file_path'])
+        return importer_unzip_path
+      else
+        parser_fields['import_file_path']
       end
+    end
   end
 end

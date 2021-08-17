@@ -57,7 +57,7 @@ module Bulkrax
     end
 
     def add_collections
-      return unless find_or_create_collection_ids.present?
+      return if find_or_create_collection_ids.blank?
       self.parsed_metadata['collections'] = []
       self.parsed_metadata['collections'] += find_or_create_collection_ids.map { |c| { id: c } }
     end

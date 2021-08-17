@@ -101,7 +101,7 @@ module Bulkrax
 
     # Check whether a field is explicitly excluded in the mapping
     def excluded?(field)
-      return false unless mapping[field].present?
+      return false if mapping[field].blank?
       mapping[field]['excluded'] || false
     end
 

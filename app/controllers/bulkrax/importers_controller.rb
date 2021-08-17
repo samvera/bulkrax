@@ -206,110 +206,110 @@ module Bulkrax
 
     private
 
-      def files_for_import(file, cloud_files)
-        return if file.blank? && cloud_files.blank?
-        @importer[:parser_fields]['import_file_path'] = @importer.parser.write_import_file(file) if file.present?
-        if cloud_files.present?
-          # For BagIt, there will only be one bag, so we get the file_path back and set import_file_path
-          # For CSV, we expect only file uploads, so we won't get the file_path back
-          # and we expect the import_file_path to be set already
-          target = @importer.parser.retrieve_cloud_files(cloud_files)
-          @importer[:parser_fields]['import_file_path'] = target unless target.blank?
+    def files_for_import(file, cloud_files)
+      return if file.blank? && cloud_files.blank?
+      @importer[:parser_fields]['import_file_path'] = @importer.parser.write_import_file(file) if file.present?
+      if cloud_files.present?
+        # For BagIt, there will only be one bag, so we get the file_path back and set import_file_path
+        # For CSV, we expect only file uploads, so we won't get the file_path back
+        # and we expect the import_file_path to be set already
+        target = @importer.parser.retrieve_cloud_files(cloud_files)
+        @importer[:parser_fields]['import_file_path'] = target if target.present?
+      end
+      @importer.save
+    end
+
+    # Use callbacks to share common setup or constraints between actions.
+    def set_importer
+      @importer = Importer.find(params[:id])
+    end
+
+    def importable_params
+      params.except(:selected_files)
+    end
+
+    def importable_parser_fields
+      params&.[](:importer)&.[](:parser_fields)&.except(:file)&.keys
+    end
+
+    # Only allow a trusted parameters through.
+    def importer_params
+      importable_params.require(:importer).permit(
+        :name,
+        :admin_set_id,
+        :user_id,
+        :frequency,
+        :parser_klass,
+        :limit,
+        :validate_only,
+        selected_files: {},
+        field_mapping: {},
+        parser_fields: [importable_parser_fields]
+      )
+    end
+
+    def list_external_sets
+      url = params[:base_url] || (@harvester ? @harvester.base_url : nil)
+      setup_client(url) if url.present?
+
+      @sets = [['All', 'all']]
+
+      begin
+        @client.list_sets.each do |s|
+          @sets << [s.name, s.spec]
         end
-        @importer.save
+      rescue
+        return false
       end
 
-      # Use callbacks to share common setup or constraints between actions.
-      def set_importer
-        @importer = Importer.find(params[:id])
+      @sets
+    end
+
+    def file_param
+      params.require(:importer).require(:parser_fields).fetch(:file) if params&.[](:importer)&.[](:parser_fields)&.[](:file)
+    end
+
+    def cloud_params
+      params.permit(selected_files: {}).fetch(:selected_files).to_h if params&.[](:selected_files)
+    end
+
+    # Add the field_mapping from the Bulkrax configuration
+    def field_mapping_params
+      # @todo replace/append once mapping GUI is in place
+      field_mapping_key = Bulkrax.parsers.map { |m| m[:class_name] if m[:class_name] == params[:importer][:parser_klass] }.compact.first
+      @importer.field_mapping = Bulkrax.field_mappings[field_mapping_key] if field_mapping_key
+    end
+
+    def add_importer_breadcrumbs
+      add_breadcrumb t(:'hyrax.controls.home'), main_app.root_path
+      add_breadcrumb t(:'hyrax.dashboard.breadcrumbs.admin'), hyrax.dashboard_path
+      add_breadcrumb 'Importers', bulkrax.importers_path
+    end
+
+    def setup_client(url)
+      return false if url.nil?
+      headers = { from: Bulkrax.server_name }
+      @client ||= OAI::Client.new(url, headers: headers, parser: 'libxml', metadata_prefix: 'oai_dc')
+    end
+
+    # Download methods
+
+    def file_path
+      @importer.errored_entries_csv_path
+    end
+
+    def download_content_type
+      'text/csv'
+    end
+
+    def render_request(message, validate_only = false)
+      if api_request?
+        json_response('create', :created, message)
+      else
+        path = validate_only ? importer_path(@importer) : importers_path
+        redirect_to path, notice: message
       end
-
-      def importable_params
-        params.except(:selected_files)
-      end
-
-      def importable_parser_fields
-        params&.[](:importer)&.[](:parser_fields)&.except(:file)&.keys
-      end
-
-      # Only allow a trusted parameters through.
-      def importer_params
-        importable_params.require(:importer).permit(
-          :name,
-          :admin_set_id,
-          :user_id,
-          :frequency,
-          :parser_klass,
-          :limit,
-          :validate_only,
-          selected_files: {},
-          field_mapping: {},
-          parser_fields: [importable_parser_fields]
-        )
-      end
-
-      def list_external_sets
-        url = params[:base_url] || (@harvester ? @harvester.base_url : nil)
-        setup_client(url) if url.present?
-
-        @sets = [['All', 'all']]
-
-        begin
-          @client.list_sets.each do |s|
-            @sets << [s.name, s.spec]
-          end
-        rescue
-          return false
-        end
-
-        @sets
-      end
-
-      def file_param
-        params.require(:importer).require(:parser_fields).fetch(:file) if params&.[](:importer)&.[](:parser_fields)&.[](:file)
-      end
-
-      def cloud_params
-        params.permit(selected_files: {}).fetch(:selected_files).to_h if params&.[](:selected_files)
-      end
-
-      # Add the field_mapping from the Bulkrax configuration
-      def field_mapping_params
-        # @todo replace/append once mapping GUI is in place
-        field_mapping_key = Bulkrax.parsers.map { |m| m[:class_name] if m[:class_name] == params[:importer][:parser_klass] }.compact.first
-        @importer.field_mapping = Bulkrax.field_mappings[field_mapping_key] if field_mapping_key
-      end
-
-      def add_importer_breadcrumbs
-        add_breadcrumb t(:'hyrax.controls.home'), main_app.root_path
-        add_breadcrumb t(:'hyrax.dashboard.breadcrumbs.admin'), hyrax.dashboard_path
-        add_breadcrumb 'Importers', bulkrax.importers_path
-      end
-
-      def setup_client(url)
-        return false if url.nil?
-        headers = { from: Bulkrax.server_name }
-        @client ||= OAI::Client.new(url, headers: headers, parser: 'libxml', metadata_prefix: 'oai_dc')
-      end
-
-      # Download methods
-
-      def file_path
-        @importer.errored_entries_csv_path
-      end
-
-      def download_content_type
-        'text/csv'
-      end
-
-      def render_request(message, validate_only = false)
-        if api_request?
-          json_response('create', :created, message)
-        else
-          path = validate_only ? importer_path(@importer) : importers_path
-          redirect_to path, notice: message
-        end
-      end
+    end
   end
   # rubocop:enable Metrics/ClassLength
 end

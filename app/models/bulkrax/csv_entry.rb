@@ -88,7 +88,7 @@ module Bulkrax
       build_mapping_metadata
       self.parsed_metadata['collections'] = hyrax_record.member_of_collection_ids.join('; ')
       unless hyrax_record.is_a?(Collection)
-        self.parsed_metadata['file'] = hyrax_record.file_sets.map { |fs| filename(fs).to_s unless filename(fs).blank? }.compact.join('; ')
+        self.parsed_metadata['file'] = hyrax_record.file_sets.map { |fs| filename(fs).to_s if filename(fs).present? }.compact.join('; ')
       end
       self.parsed_metadata
     end
@@ -141,7 +141,7 @@ module Bulkrax
     def find_or_create_collection_ids
       return self.collection_ids if collections_created?
       valid_system_id(Collection)
-      unless record[self.class.collection_field].blank?
+      if record[self.class.collection_field].present?
         record[self.class.collection_field].split(/\s*[:;|]\s*/).each do |collection|
           c = find_collection(collection)
           self.collection_ids << c.id unless c.blank? || self.collection_ids.include?(c.id)

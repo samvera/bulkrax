@@ -11,7 +11,7 @@ module Bulkrax
     serialize :field_mapping, JSON
 
     belongs_to :user
-    has_many :importer_runs, dependent: :destroy, foreign_key: 'importer_id'
+    has_many :importer_runs, dependent: :destroy
     has_many :entries, as: :importerexporter, dependent: :destroy
 
     validates :name, presence: true
