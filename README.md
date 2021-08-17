@@ -18,7 +18,7 @@ $ bundle update
 $ rails generate bulkrax:install
 ```
 
-If using Sidekiq, setup queues for `import` and `export`.
+If using Sidekiq, set up queues for `import` and `export`.
 
 ### Manual Installation
 
