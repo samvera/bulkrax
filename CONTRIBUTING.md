@@ -133,7 +133,7 @@ be considered for inclusion in the code base and history of this repository.
 
 * Make sure you have added the necessary tests for your changes.
 * Run _all_ the tests to assure nothing else was accidentally broken.
-* When you are ready to submit a pull request
+* When you are ready to, submit a pull request
 
 ### Submitting Changes
 
