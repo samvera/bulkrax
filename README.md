@@ -181,6 +181,10 @@ To delete an importer or exporter, select the delete (x) icon.
 Once your the exporter has run, a download icon will apear on the exporters menu page.
 
 ## Contributing
+If you're working on PR for this project, create a feature branch off of `main`.
+
+This repository follows the [Samvera Community Code of Conduct](https://samvera.atlassian.net/wiki/spaces/samvera/pages/405212316/Code+of+Conduct) and [language recommendations](https://github.com/samvera/maintenance/blob/master/templates/CONTRIBUTING.md#language).  Please ***do not*** create a branch called `master` for this repository or as part of your pull request; the branch will either need to be removed or renamed before it can be considered for inclusion in the code base and history of this repository.
+
 See
 [CONTRIBUTING.md](https://github.com/samvera-labs/bulkrax/blob/main/CONTRIBUTING.md)
 for contributing guidelines.
@@ -189,7 +193,7 @@ We encourage everyone to help improve this project.  Bug reports and pull reques
 
 This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant](https://contributor-covenant.org) code of conduct.
 
-All Contributors should have signed the Hydra Contributor License Agreement (CLA)
+All Contributors should have signed the Samvera Contributor License Agreement (CLA)
 
 ## Questions
 Questions can be sent to support@notch8.com. Please make sure to include "Bulkrax" in the subject line of your email.
