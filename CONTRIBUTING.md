@@ -110,7 +110,7 @@ be considered for inclusion in the code base and history of this repository.
     should add such description also if it's already present in bug tracker,
     it should not be necessary to visit a webpage to check the history.
 
-    Include Closes #<issue-number> when relavent.
+    Include Closes #<issue-number> when relevent.
 
     Description can have multiple paragraphs and you can use code examples
     inside, just indent it with 4 spaces:
