@@ -122,7 +122,7 @@ module Bulkrax
       when 'worktype'
         ActiveFedora::SolrService.query("has_model_ssim:#{importerexporter.export_source + extra_filters}", rows: 2_000_000_000).map(&:id)
       when 'importer'
-        entry_ids = importer.entries.pluck(:id)
+        entry_ids = Bulkrax::Importer.find(importerexporter.export_source).entries.pluck(:id)
         complete_statuses = Bulkrax::Status.latest_by_statusable
                                            .includes(:statusable)
                                            .where('bulkrax_statuses.statusable_id IN (?) AND bulkrax_statuses.statusable_type = ? AND status_message = ?', entry_ids, 'Bulkrax::Entry', 'Complete')
