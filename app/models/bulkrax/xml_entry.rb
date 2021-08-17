@@ -48,7 +48,7 @@ module Bulkrax
         next if elements.blank?
         elements.each do |el|
           el.children.map(&:content).each do |content|
-            add_metadata(element_name, content) unless content.blank?
+            add_metadata(element_name, content) if content.present?
           end
         end
       end

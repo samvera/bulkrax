@@ -3,6 +3,6 @@
 module Bulkrax
   class ImporterRun < ApplicationRecord
     belongs_to :importer
-    has_many :statuses, as: :runnable
+    has_many :statuses, as: :runnable, dependent: :destroy
   end
 end

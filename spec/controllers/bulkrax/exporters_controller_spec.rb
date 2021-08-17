@@ -35,7 +35,7 @@ module Bulkrax
           true
         end
       end
-      Bulkrax::ExportersController.prepend Bulkrax::Auth
+      described_class.prepend Bulkrax::Auth
     end
 
     # This should return the minimal set of attributes required to create a valid

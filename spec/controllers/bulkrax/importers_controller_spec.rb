@@ -35,7 +35,7 @@ module Bulkrax
           true
         end
       end
-      Bulkrax::ImportersController.prepend Bulkrax::Auth
+      described_class.prepend Bulkrax::Auth
       allow(Bulkrax::ImporterJob).to receive(:perform_later).and_return(true)
     end
 

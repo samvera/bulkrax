@@ -64,7 +64,7 @@ module Bulkrax
 
     def parse_subject(src)
       string = src.to_s.strip.downcase
-      return unless string.present?
+      return if string.blank?
 
       string.slice(0, 1).capitalize + string.slice(1..-1)
     end
@@ -78,7 +78,7 @@ module Bulkrax
       model = nil
       if src.is_a?(Array)
         models = src.map { |m| extract_model(m) }.compact
-        model = models.first unless models.blank?
+        model = models.first if models.present?
       else
         model = extract_model(src)
       end
@@ -105,7 +105,7 @@ module Bulkrax
     def parse_format_original(src)
       # drop the case completely then upcase the first letter
       string = src.to_s.strip.downcase
-      return unless string.present?
+      return if string.blank?
 
       string.slice(0, 1).capitalize + string.slice(1..-1)
     end

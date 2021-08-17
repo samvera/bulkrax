@@ -16,7 +16,7 @@ module Bulkrax
       # does the CSV contain a collection column?
       return [] unless import_fields.include?(:collection)
       # retrieve a list of unique collections
-      records.map { |r| r[:collection].split(/\s*[;|]\s*/) unless r[:collection].blank? }.flatten.compact.uniq
+      records.map { |r| r[:collection].split(/\s*[;|]\s*/) if r[:collection].present? }.flatten.compact.uniq
     end
 
     def collections_total
@@ -35,8 +35,8 @@ module Bulkrax
     end
 
     def required_elements?(keys)
-      return unless keys.present?
-      !missing_elements(keys).present?
+      return if keys.blank?
+      missing_elements(keys).blank?
     end
 
     def missing_elements(keys)
@@ -228,7 +228,7 @@ module Bulkrax
       raise StandardError, 'No records were found' if records.blank?
       @file_paths ||= records.map do |r|
         file_mapping = Bulkrax.field_mappings.dig(self.class.to_s, 'file', :from)&.first&.to_sym || :file
-        next unless r[file_mapping].present?
+        next if r[file_mapping].blank?
 
         r[file_mapping].split(/\s*[:;|]\s*/).map do |f|
           file = File.join(path_to_files, f.tr(' ', '_'))
@@ -251,16 +251,16 @@ module Bulkrax
 
     private
 
-      # Override to return the first CSV in the path, if a zip file is supplied
-      # We expect a single CSV at the top level of the zip in the CSVParser
-      # but we are willing to go look for it if need be
-      def real_import_file_path
-        if file? && zip?
-          unzip(parser_fields['import_file_path'])
-          return Dir["#{importer_unzip_path}/**/*.csv"].first
-        else
-          parser_fields['import_file_path']
-        end
+    # Override to return the first CSV in the path, if a zip file is supplied
+    # We expect a single CSV at the top level of the zip in the CSVParser
+    # but we are willing to go look for it if need be
+    def real_import_file_path
+      if file? && zip?
+        unzip(parser_fields['import_file_path'])
+        return Dir["#{importer_unzip_path}/**/*.csv"].first
+      else
+        parser_fields['import_file_path']
       end
+    end
   end
 end

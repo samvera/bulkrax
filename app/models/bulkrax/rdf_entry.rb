@@ -23,7 +23,7 @@ module Bulkrax
         reader.each_statement do |statement|
           collections << statement.object.to_s if collection_field.present? && collection_field == statement.predicate.to_s
           children << statement.object.to_s if children_field.present? && children_field == statement.predicate.to_s
-          delete = statement.object.to_s if statement.predicate.to_s =~ /deleted/
+          delete = statement.object.to_s if /deleted/.match?(statement.predicate.to_s)
           writer << statement
         end
       end
@@ -78,7 +78,7 @@ module Bulkrax
 
     def find_or_create_collection_ids
       return self.collection_ids if collections_created?
-      unless self.raw_metadata['collection'].blank?
+      if self.raw_metadata['collection'].present?
         self.raw_metadata['collection'].each do |collection|
           c = find_collection(collection)
           self.collection_ids << c.id unless c.blank? || self.collection_ids.include?(c.id)

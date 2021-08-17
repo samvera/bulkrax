@@ -42,7 +42,7 @@ module Bulkrax
     def update
       raise "Object doesn't exist" unless object
       destroy_existing_files if @replace_files && klass != Collection
-      attrs = update_attributes
+      attrs = update
       run_callbacks :save do
         klass == Collection ? update_collection(attrs) : work_actor.update(environment(attrs))
       end
@@ -106,126 +106,126 @@ module Bulkrax
 
     private
 
-      # @param [Hash] attrs the attributes to put in the environment
-      # @return [Hyrax::Actors::Environment]
-      def environment(attrs)
-        Hyrax::Actors::Environment.new(object, Ability.new(@user), attrs)
-      end
+    # @param [Hash] attrs the attributes to put in the environment
+    # @return [Hyrax::Actors::Environment]
+    def environment(attrs)
+      Hyrax::Actors::Environment.new(object, Ability.new(@user), attrs)
+    end
 
-      def work_actor
-        Hyrax::CurationConcern.actor
-      end
+    def work_actor
+      Hyrax::CurationConcern.actor
+    end
 
-      def create_collection(attrs)
-        attrs = collection_type(attrs)
-        object.members = members
-        object.member_of_collections = member_of_collections
-        object.attributes = attrs
-        object.apply_depositor_metadata(@user)
-        object.save!
-      end
+    def create_collection(attrs)
+      attrs = collection_type(attrs)
+      object.members = members
+      object.member_of_collections = member_of_collections
+      object.attributes = attrs
+      object.apply_depositor_metadata(@user)
+      object.save!
+    end
 
-      def update_collection(attrs)
-        object.members = members
-        object.member_of_collections = member_of_collections
-        object.attributes = attrs
-        object.save!
-      end
+    def update_collection(attrs)
+      object.members = members
+      object.member_of_collections = member_of_collections
+      object.attributes = attrs
+      object.save!
+    end
 
-      # Collections don't respond to member_of_collections_attributes or member_of_collection_ids=
-      #   or member_ids=
-      # Add them directly with members / member_of_collections
-      # collection should be in the form  { id: collection_id }
-      # and collections [{ id: collection_id }]
-      # member_ids comes from
-      # @todo - consider performance implications although we wouldn't expect a Collection to be a member of many Collections
-      def members
-        ms = object.members.to_a
-        [:children].each do |atat|
-          next unless attributes[atat].present?
-          ms.concat(
-            Array.wrap(
-              find_collection(attributes[atat])
-            )
+    # Collections don't respond to member_of_collections_attributes or member_of_collection_ids=
+    #   or member_ids=
+    # Add them directly with members / member_of_collections
+    # collection should be in the form  { id: collection_id }
+    # and collections [{ id: collection_id }]
+    # member_ids comes from
+    # @todo - consider performance implications although we wouldn't expect a Collection to be a member of many Collections
+    def members
+      ms = object.members.to_a
+      [:children].each do |atat|
+        next if attributes[atat].blank?
+        ms.concat(
+          Array.wrap(
+            find_collection(attributes[atat])
           )
-        end
-        ms.flatten.compact.uniq
+        )
       end
+      ms.flatten.compact.uniq
+    end
 
-      def member_of_collections
-        ms = object.member_of_collection_ids.to_a.map { |id| find_collection(id) }
-        [:collection, :collections].each do |atat|
-          next unless attributes[atat].present?
-          ms.concat(
-            Array.wrap(
-              find_collection(attributes[atat])
-            )
+    def member_of_collections
+      ms = object.member_of_collection_ids.to_a.map { |id| find_collection(id) }
+      [:collection, :collections].each do |atat|
+        next if attributes[atat].blank?
+        ms.concat(
+          Array.wrap(
+            find_collection(attributes[atat])
           )
+        )
+      end
+      ms.flatten.compact.uniq
+    end
+
+    def find_collection(id)
+      case id
+      when Hash
+        Collection.find(id[:id])
+      when String
+        Collection.find(id)
+      when Array
+        id.map { |i| find_collection(i) }
+      else
+        []
+      end
+    end
+
+    def collection_type(attrs)
+      return attrs if attrs['collection_type_gid'].present?
+      attrs['collection_type_gid'] = Hyrax::CollectionType.find_or_create_default_collection_type.gid
+      attrs
+    end
+
+    # Strip out the :collection key, and add the member_of_collection_ids,
+    # which is used by Hyrax::Actors::AddAsMemberOfCollectionsActor
+    def create_attributes
+      return transform_attributes if klass == Collection
+      if attributes[:collection].present?
+        transform_attributes.except(:collection).merge(member_of_collections_attributes: { 0 => { id: collection.id } })
+      elsif attributes[:collections].present?
+        collection_ids = attributes[:collections].each.with_index.each_with_object({}) do |(element, index), ids|
+          ids[index] = { id: element }
         end
-        ms.flatten.compact.uniq
+        transform_attributes.except(:collections).merge(member_of_collections_attributes: collection_ids)
+      else
+        transform_attributes
       end
+    end
 
-      def find_collection(id)
-        case id
-        when Hash
-          Collection.find(id[:id])
-        when String
-          Collection.find(id)
-        when Array
-          id.map { |i| find_collection(i) }
-        else
-          []
+    # Strip out the :collection key, and add the member_of_collection_ids,
+    # which is used by Hyrax::Actors::AddAsMemberOfCollectionsActor
+    def update_attributes
+      return transform_attributes.except(:id) if klass == Collection
+      if attributes[:collection].present?
+        transform_attributes.except(:id).except(:collection).merge(member_of_collections_attributes: { 0 => { id: collection.id } })
+      elsif attributes[:collections].present?
+        collection_ids = attributes[:collections].each.with_index.each_with_object({}) do |(element, index), ids|
+          ids[index] = element
         end
+        transform_attributes.except(:id).except(:collections).merge(member_of_collections_attributes: collection_ids)
+      else
+        transform_attributes.except(:id)
       end
+    end
 
-      def collection_type(attrs)
-        return attrs if attrs['collection_type_gid'].present?
-        attrs['collection_type_gid'] = Hyrax::CollectionType.find_or_create_default_collection_type.gid
-        attrs
-      end
+    # Override if we need to map the attributes from the parser in
+    # a way that is compatible with how the factory needs them.
+    def transform_attributes
+      attributes.slice(*permitted_attributes)
+                .merge(file_attributes(update_files))
+    end
 
-      # Strip out the :collection key, and add the member_of_collection_ids,
-      # which is used by Hyrax::Actors::AddAsMemberOfCollectionsActor
-      def create_attributes
-        return transform_attributes if klass == Collection
-        if attributes[:collection].present?
-          transform_attributes.except(:collection).merge(member_of_collections_attributes: { 0 => { id: collection.id } })
-        elsif attributes[:collections].present?
-          collection_ids = attributes[:collections].each.with_index.each_with_object({}) do |(element, index), ids|
-            ids[index] = { id: element }
-          end
-          transform_attributes.except(:collections).merge(member_of_collections_attributes: collection_ids)
-        else
-          transform_attributes
-        end
-      end
-
-      # Strip out the :collection key, and add the member_of_collection_ids,
-      # which is used by Hyrax::Actors::AddAsMemberOfCollectionsActor
-      def update_attributes
-        return transform_attributes.except(:id) if klass == Collection
-        if attributes[:collection].present?
-          transform_attributes.except(:id).except(:collection).merge(member_of_collections_attributes: { 0 => { id: collection.id } })
-        elsif attributes[:collections].present?
-          collection_ids = attributes[:collections].each.with_index.each_with_object({}) do |(element, index), ids|
-            ids[index] = element
-          end
-          transform_attributes.except(:id).except(:collections).merge(member_of_collections_attributes: collection_ids)
-        else
-          transform_attributes.except(:id)
-        end
-      end
-
-      # Override if we need to map the attributes from the parser in
-      # a way that is compatible with how the factory needs them.
-      def transform_attributes
-        attributes.slice(*permitted_attributes)
-                  .merge(file_attributes(update_files))
-      end
-
-      # Regardless of what the Parser gives us, these are the properties we are prepared to accept.
-      def permitted_attributes
-        klass.properties.keys.map(&:to_sym) + %i[id edit_users edit_groups read_groups visibility work_members_attributes admin_set_id]
-      end
+    # Regardless of what the Parser gives us, these are the properties we are prepared to accept.
+    def permitted_attributes
+      klass.properties.keys.map(&:to_sym) + %i[id edit_users edit_groups read_groups visibility work_members_attributes admin_set_id]
+    end
   end
 end

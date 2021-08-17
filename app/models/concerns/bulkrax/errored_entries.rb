@@ -12,7 +12,7 @@ module Bulkrax
                                         .where('bulkrax_statuses.statusable_id IN (?) AND bulkrax_statuses.statusable_type = ? AND status_message = ?', entry_ids, 'Bulkrax::Entry', 'Failed')
         @errored_entries = error_statuses.map(&:statusable)
       end
-      return unless @errored_entries.present?
+      return if @errored_entries.blank?
 
       file = setup_errored_entries_file
       headers = import_fields

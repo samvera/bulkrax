@@ -82,7 +82,7 @@ module Bulkrax
 
     def create_works
       results = self.records(quick: true)
-      return unless results.present?
+      return if results.blank?
       results.full.each_with_index do |record, index|
         identifier = record.send(source_identifier)
         if identifier.blank?

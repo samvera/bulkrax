@@ -84,42 +84,42 @@ module Bulkrax
 
     private
 
-      # Use callbacks to share common setup or constraints between actions.
-      def set_exporter
-        @exporter = Exporter.find(params[:id])
-      end
+    # Use callbacks to share common setup or constraints between actions.
+    def set_exporter
+      @exporter = Exporter.find(params[:id])
+    end
 
-      # Only allow a trusted parameters through.
-      def exporter_params
-        params[:exporter][:export_source] = params[:exporter]["export_source_#{params[:exporter][:export_from]}".to_sym]
-        if params[:exporter][:date_filter] == "1"
-          params.fetch(:exporter).permit(:name, :user_id, :export_source, :export_from, :export_type,
-                                         :parser_klass, :limit, :start_date, :finish_date, :work_visibility,
-                                         :workflow_status, field_mapping: {})
-        else
-          params.fetch(:exporter).permit(:name, :user_id, :export_source, :export_from, :export_type,
-                                         :parser_klass, :limit, :work_visibility, :workflow_status,
-                                         field_mapping: {}).merge(start_date: nil, finish_date: nil)
-        end
+    # Only allow a trusted parameters through.
+    def exporter_params
+      params[:exporter][:export_source] = params[:exporter]["export_source_#{params[:exporter][:export_from]}".to_sym]
+      if params[:exporter][:date_filter] == "1"
+        params.fetch(:exporter).permit(:name, :user_id, :export_source, :export_from, :export_type,
+                                       :parser_klass, :limit, :start_date, :finish_date, :work_visibility,
+                                       :workflow_status, field_mapping: {})
+      else
+        params.fetch(:exporter).permit(:name, :user_id, :export_source, :export_from, :export_type,
+                                       :parser_klass, :limit, :work_visibility, :workflow_status,
+                                       field_mapping: {}).merge(start_date: nil, finish_date: nil)
       end
+    end
 
-      # Add the field_mapping from the Bulkrax configuration
-      def field_mapping_params
-        # @todo replace/append once mapping GUI is in place
-        field_mapping_key = Bulkrax.parsers.map { |m| m[:class_name] if m[:class_name] == params[:exporter][:parser_klass] }.compact.first
-        @exporter.field_mapping = Bulkrax.field_mappings[field_mapping_key] if field_mapping_key
-      end
+    # Add the field_mapping from the Bulkrax configuration
+    def field_mapping_params
+      # @todo replace/append once mapping GUI is in place
+      field_mapping_key = Bulkrax.parsers.map { |m| m[:class_name] if m[:class_name] == params[:exporter][:parser_klass] }.compact.first
+      @exporter.field_mapping = Bulkrax.field_mappings[field_mapping_key] if field_mapping_key
+    end
 
-      def add_exporter_breadcrumbs
-        add_breadcrumb t(:'hyrax.controls.home'), main_app.root_path
-        add_breadcrumb t(:'hyrax.dashboard.breadcrumbs.admin'), hyrax.dashboard_path
-        add_breadcrumb 'Exporters', bulkrax.exporters_path
-      end
+    def add_exporter_breadcrumbs
+      add_breadcrumb t(:'hyrax.controls.home'), main_app.root_path
+      add_breadcrumb t(:'hyrax.dashboard.breadcrumbs.admin'), hyrax.dashboard_path
+      add_breadcrumb 'Exporters', bulkrax.exporters_path
+    end
 
-      # Download methods
+    # Download methods
 
-      def file_path
-        @exporter.exporter_export_zip_path
-      end
+    def file_path
+      @exporter.exporter_export_zip_path
+    end
   end
 end
