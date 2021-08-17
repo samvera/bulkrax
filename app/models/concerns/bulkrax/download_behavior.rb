@@ -3,7 +3,7 @@
 module Bulkrax
   module DownloadBehavior
     # The following download code is based on
-    # https://github.com/samvera/hydra-head/blob/master/hydra-core/app/controllers/concerns/hydra/controller/download_behavior.rb
+    # https://github.com/samvera/hydra-head/blob/main/hydra-core/app/controllers/concerns/hydra/controller/download_behavior.rb
 
     def file
       @file ||= File.open(file_path, 'r')
