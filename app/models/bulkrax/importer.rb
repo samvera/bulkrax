@@ -23,8 +23,6 @@ module Bulkrax
 
     attr_accessor :only_updates, :file_style, :file
     attr_writer :current_run
-    # TODO: (OAI only) validates :metadata_prefix, presence: true
-    # TODO (OAI only) validates :base_url, presence: true
 
     def status
       if self.validate_only
