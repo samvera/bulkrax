@@ -41,3 +41,28 @@ jobs:
 
       - name: Run rspec
         run: bin/rspec
+
+      - name: Upload coverage results
+        uses: actions/upload-artifact@v2
+        with:
+          name: coverage-report-${{ matrix.ruby }}
+          path: coverage
+
+  coverage:
+    runs-on: ubuntu-latest
+
+    # This line will only run the coverage job if the test job passed
+    needs: test
+
+    steps:
+    - name: Download coverage report
+      uses: actions/download-artifact@v2
+      with:
+        name: coverage-reporti-2.6
+        path: coverage
+
+    - name: Check coverage
+      uses: vigetlabs/simplecov-check@v1.0
+      with:
+        minimum_coverage: 80
+        coverage_path: coverage/.last_run.json
