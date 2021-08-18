@@ -9,6 +9,8 @@ Bulkrax is a batteries included importer for Samvera applications. It currently 
 Add this line to your application's Gemfile:
 
 ```ruby
+gem 'bulkrax', '1.0.0'
+# or if using from github
 gem 'bulkrax', git: 'https://github.com/samvera-labs/bulkrax.git'
 ```
 
@@ -78,9 +80,6 @@ Bulkrax.setup do | config |
   # If the work type isn't provided during import, use Image
   config.default_work_type = 'Image'
 
-  # Use identifier to store the unique import identifier
-  config.system_identifier_field = 'identifier'
-
   # Setup a field mapping for the OaiDcParser
   # Your application metadata fields are the key
   #   from: fields in the incoming source data
@@ -95,7 +94,7 @@ Bulkrax.setup do | config |
       "publisher" => { from: ["publisher"] },
       "related_url" => { from: ["relation"] },
       "rights_statement" => { from: ["rights"] },
-      "source" => { from: ["source"] },
+      "source" => { from: ["source"], source_identifier: true },
       "subject" => { from: ["subject"], parsed: true },
       "title" => { from: ["title"] },
       "resource_type" => { from: ["type"], parsed: true },
