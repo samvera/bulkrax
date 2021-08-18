@@ -1,10 +1,5 @@
 # frozen_string_literal: true
 
-# TODO(alishaevn): see if these rules can be adhered to, instead of disabled
-# rubocop:disable Metrics/AbcSize
-# rubocop:disable Metrics/ParameterLists
-# rubocop:disable Metrics/CyclomaticComplexity
-
 module Bulkrax
   module HasMatchers
     extend ActiveSupport::Concern
@@ -43,22 +38,74 @@ module Bulkrax
 
         if object_name
           Rails.logger.info("Bulkrax Column automatically matched object #{node_name}, #{node_content}")
-
           parsed_metadata[object_name] ||= object_multiple ? [{}] : {}
         end
 
-        if matcher
-          matched_metadata?(matcher, multiple, name, index, node_content, object_name, object_multiple)
-        elsif multiple
-          Rails.logger.info("Bulkrax Column automatically matched #{node_name}, #{node_content}")
-          multiple_metadata?(name, node_name, node_content, object_name)
-        else
-          Rails.logger.info("Bulkrax Column automatically matched #{node_name}, #{node_content}")
+        value = if matcher
+                  result = matcher.result(self, node_content)
+                  next unless result
+                  matched_metadata(multiple, name, result, object_multiple)
+                elsif multiple
+                  Rails.logger.info("Bulkrax Column automatically matched #{node_name}, #{node_content}")
+                  multiple_metadata(node_content)
+                else
+                  Rails.logger.info("Bulkrax Column automatically matched #{node_name}, #{node_content}")
+                  single_metadata(node_content)
+                end
 
-          node_content = node_content.content if node_content.is_a?(Nokogiri::XML::NodeSet)
-          next parsed_metadata[object_name][name] = Array.wrap(node_content.to_s.strip).join('; ') if object_name && node_content
-          parsed_metadata[name] = Array.wrap(node_content.to_s.strip).join('; ') if node_content
+        set_parsed_data(object_multiple, object_name, name, index, value) if value
+      end
+    end
+
+    def set_parsed_data(object_multiple, object_name, name, index, value)
+      if object_multiple
+        parsed_metadata[object_name][index] ||= {}
+        parsed_metadata[object_name][index][name] ||= []
+        if value.is_a?(Array)
+          parsed_metadata[object_name][index][name] += value
+        else
+          parsed_metadata[object_name][index][name] = value
         end
+      elsif object_name
+        parsed_metadata[object_name][name] ||= []
+        if value.is_a?(Array)
+          parsed_metadata[object_name][name] += value
+        else
+          parsed_metadata[object_name][name] = value
+        end
+      else
+        parsed_metadata[name] ||= []
+        if value.is_a?(Array)
+          parsed_metadata[name] += value
+        else
+          parsed_metadata[name] = value
+        end
+      end
+    end
+
+    def single_metadata(content)
+      content = content.content if content.is_a?(Nokogiri::XML::NodeSet)
+      return unless content
+      Array.wrap(content.to_s.strip).join('; ')
+    end
+
+    def multiple_metadata(content)
+      content = content.content if content.is_a?(Nokogiri::XML::NodeSet)
+      return unless content
+      content.is_a?(Array) ? content : Array.wrap(content.strip)
+    end
+
+    def matched_metadata(multiple, name, result, object_multiple)
+      if object_multiple
+        if mapping[name]['nested_type'] && mapping[name]['nested_type'] == 'Array'
+          multiple_metadata(result)
+        else
+          single_metadata(result)
+        end
+      elsif multiple
+        multiple_metadata(result)
+      else
+        single_metadata(result)
       end
     end
 
@@ -104,50 +151,5 @@ module Bulkrax
       return false if mapping[field].blank?
       mapping[field]['excluded'] || false
     end
-
-    def multiple_metadata?(name, node_name, node_content, object_name)
-      Rails.logger.info("Bulkrax Column automatically matched #{node_name}, #{node_content}")
-      node_content = node_content.content if node_content.is_a?(Nokogiri::XML::NodeSet)
-
-      if object_name
-        parsed_metadata[object_name][name] ||= []
-        parsed_metadata[object_name][name] += node_content.is_a?(Array) ? node_content : Array.wrap(node_content.strip)
-      else
-        parsed_metadata[name] ||= []
-        parsed_metadata[name] += node_content.is_a?(Array) ? node_content : Array.wrap(node_content.strip)
-      end
-    end
-
-    def matched_metadata?(matcher, multiple, name, index, node_content, object_name, object_multiple)
-      result = matcher.result(self, node_content)
-      return unless result
-
-      if object_name
-        if object_multiple
-          parsed_metadata[object_name][index] = {} unless parsed_metadata[object_name][index]
-
-          if mapping[name]['nested_type'] && mapping[name]['nested_type'] == 'Array'
-            parsed_metadata[object_name][index][name] ||= []
-            parsed_metadata[object_name][index][name] += Array.wrap(result)
-          else
-            parsed_metadata[object_name][index][name] = Array.wrap(result).join('; ')
-          end
-        elsif multiple
-          parsed_metadata[object_name][name] ||= []
-          parsed_metadata[object_name][name] += Array.wrap(result)
-        else
-          parsed_metadata[object_name][name] = Array.wrap(result).join('; ')
-        end
-      elsif multiple
-        parsed_metadata[name] ||= []
-        parsed_metadata[name] += Array.wrap(result)
-      else
-        parsed_metadata[name] = Array.wrap(result).join('; ')
-      end
-    end
   end
 end
-
-# rubocop:enable Metrics/AbcSize
-# rubocop:enable Metrics/ParameterLists
-# rubocop:enable Metrics/CyclomaticComplexity

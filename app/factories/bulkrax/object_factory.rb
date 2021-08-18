@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-# TODO: require 'importer/log_subscriber'
 module Bulkrax
   class ObjectFactory
     extend ActiveModel::Callbacks
