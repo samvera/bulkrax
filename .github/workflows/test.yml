@@ -52,7 +52,7 @@ jobs:
     runs-on: ubuntu-latest
 
     # This line will only run the coverage job if the test job passed
-    needs: test
+    needs: rspec
 
     steps:
     - name: Download coverage report
