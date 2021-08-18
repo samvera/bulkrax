@@ -41,7 +41,7 @@ module Bulkrax
     def update
       raise "Object doesn't exist" unless object
       destroy_existing_files if @replace_files && klass != Collection
-      attrs = update
+      attrs = attribute_update
       run_callbacks :save do
         klass == Collection ? update_collection(attrs) : work_actor.update(environment(attrs))
       end
@@ -201,7 +201,7 @@ module Bulkrax
 
     # Strip out the :collection key, and add the member_of_collection_ids,
     # which is used by Hyrax::Actors::AddAsMemberOfCollectionsActor
-    def update_attributes
+    def attribute_update
       return transform_attributes.except(:id) if klass == Collection
       if attributes[:collection].present?
         transform_attributes.except(:id).except(:collection).merge(member_of_collections_attributes: { 0 => { id: collection.id } })
