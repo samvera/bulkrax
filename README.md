@@ -18,7 +18,7 @@ $ bundle update
 $ rails generate bulkrax:install
 ```
 
-If using Sidekiq, setup queues for `import` and `export`.
+If using Sidekiq, set up queues for `import` and `export`.
 
 ### Manual Installation
 
@@ -39,7 +39,7 @@ Mount the engine in your routes file
 mount Bulkrax::Engine, at: '/'
 ```
 
-If using Sidekiq, setup queues for `import` and `export`.
+If using Sidekiq, set up queues for `import` and `export`.
 
 ```ruby
 # in config/sidekiq.yml
@@ -181,7 +181,7 @@ To delete an importer or exporter, select the delete (x) icon.
 Once your the exporter has run, a download icon will apear on the exporters menu page.
 
 ## Contributing
-If you're working on PR for this project, create a feature branch off of `main`.
+If you're working on a PR for this project, create a feature branch off of `main`.
 
 This repository follows the [Samvera Community Code of Conduct](https://samvera.atlassian.net/wiki/spaces/samvera/pages/405212316/Code+of+Conduct) and [language recommendations](https://github.com/samvera/maintenance/blob/master/templates/CONTRIBUTING.md#language).  Please ***do not*** create a branch called `master` for this repository or as part of your pull request; the branch will either need to be removed or renamed before it can be considered for inclusion in the code base and history of this repository.
 

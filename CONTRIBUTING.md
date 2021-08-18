@@ -110,7 +110,7 @@ be considered for inclusion in the code base and history of this repository.
     should add such description also if it's already present in bug tracker,
     it should not be necessary to visit a webpage to check the history.
 
-    Include Closes #<issue-number> when relavent.
+    Include Closes #<issue-number> when relevant.
 
     Description can have multiple paragraphs and you can use code examples
     inside, just indent it with 4 spaces:
@@ -133,7 +133,7 @@ be considered for inclusion in the code base and history of this repository.
 
 * Make sure you have added the necessary tests for your changes.
 * Run _all_ the tests to assure nothing else was accidentally broken.
-* When you are ready to submit a pull request
+* When you are ready to, submit a pull request
 
 ### Submitting Changes
 
