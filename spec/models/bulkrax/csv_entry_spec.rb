@@ -298,19 +298,20 @@ module Bulkrax
       context 'with object fields prefixed' do
         let(:exporter) do
           FactoryBot.create(:bulkrax_exporter_worktype, field_mapping: {
+                              'id' => { from: ['id'], source_identifier: true }
                               'single_object_first_name' => { from: ['single_object_first_name'], object: 'single_object' },
                               'single_object_last_name' => { from: ['single_object_last_name'], object: 'single_object' },
                               'single_object_position' => { from: ['single_object_position'], object: 'single_object' },
                               'single_object_language' => { from: ['single_object_language'], object: 'single_object', parsed: true },
-                              'id' => { from: ['id'], source_identifier: true }
-                            })
+          })
         end
 
         let(:work_obj) do
           Work.new(
             title: ["test"],
             single_object: [{
-              'single_object_first_name' => 'Fake','single_object_last_name' => 'Fakerson',
+              'single_object_first_name' => 'Fake',
+              'single_object_last_name' => 'Fakerson',
               'single_object_position' => 'Leader, Jester, Queen',
               'single_object_language' => 'english'
             }].to_s
