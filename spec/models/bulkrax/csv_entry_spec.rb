@@ -291,5 +291,46 @@ module Bulkrax
       end
       # rubocop:enable RSpec/ExampleLength
     end
+
+    describe 'reads entry' do
+      subject { described_class.new(importerexporter: exporter) }
+
+      context 'with object fields prefixed' do
+        let(:exporter) do
+          FactoryBot.create(:bulkrax_exporter_worktype, field_mapping: {
+                              'single_object_first_name' => { from: ['single_object_first_name'], object: 'single_object' },
+                              'single_object_last_name' => { from: ['single_object_last_name'], object: 'single_object' },
+                              'single_object_position' => { from: ['single_object_position'], object: 'single_object' },
+                              'single_object_language' => { from: ['single_object_language'], object: 'single_object', parsed: true },
+                              'id' => { from: ['id'], source_identifier: true }
+                            })
+        end
+
+        let(:work_obj) do
+          Work.new(
+            title: ["test"],
+            single_object: [{
+              'single_object_first_name' => 'Fake','single_object_last_name' => 'Fakerson',
+              'single_object_position' => 'Leader, Jester, Queen',
+              'single_object_language' => 'english'
+            }].to_s
+          )
+        end
+
+        before do
+          allow_any_instance_of(ObjectFactory).to receive(:run!)
+          allow(subject).to receive(:hyrax_record).and_return(work_obj)
+          allow(work_obj).to receive(:id).and_return("test123")
+        end
+
+        it 'succeeds' do
+          metadata = subject.build_export_metadata
+          expect(metadata['single_object_first_name']).to eq('Fake')
+          expect(metadata['single_object_last_name']).to eq('Fakerson')
+          expect(metadata['single_object_position']).to include('Leader', 'Jester', 'Queen')
+          expect(metadata['single_object_language']).to eq('english')
+        end
+      end
+    end
   end
 end

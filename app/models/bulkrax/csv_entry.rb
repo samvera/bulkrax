@@ -97,10 +97,14 @@ module Bulkrax
       mapping.each do |key, value|
         next if Bulkrax.reserved_properties.include?(key) && !field_supported?(key)
         next if key == "model"
-        next unless hyrax_record.respond_to?(key.to_s)
-        data = hyrax_record.send(key.to_s)
+        object_key = key if value.key?('object')
+        next unless hyrax_record.respond_to?(key.to_s) || object_key.present?
+        data = object_key.present? ? hyrax_record.send(value['object']) : hyrax_record.send(key.to_s)
         if data.is_a?(ActiveTriples::Relation)
           self.parsed_metadata[key] = data.map { |d| prepare_export_data(d) }.join('; ').to_s unless value[:excluded]
+        elsif object_key.present?
+          data = JSON.parse(data.gsub(/[\[\]]/,'').gsub('=>', ':'))
+          self.parsed_metadata[key] = prepare_export_data(data[object_key])
         else
           self.parsed_metadata[key] = prepare_export_data(data)
         end
