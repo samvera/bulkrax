@@ -25,6 +25,7 @@ module Bulkrax
     attr_writer :current_run
 
     def self.safe_uri_filename(uri)
+      uri = URI.parse(uri) unless uri.is_a?(URI)
       r = Faraday.head(uri.to_s)
       return CGI.parse(r.headers['content-disposition'])["filename"][0].delete("\"")
     rescue
