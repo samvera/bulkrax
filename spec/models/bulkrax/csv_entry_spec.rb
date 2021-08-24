@@ -460,6 +460,51 @@ module Bulkrax
           expect(metadata['language']).to eq('english; ')
         end
       end
+
+
+      context 'with object fields prefixed and properties with multiple values' do
+        let(:exporter) do
+          FactoryBot.create(:bulkrax_exporter_worktype, field_mapping: {
+                              'id' => { from: ['id'], source_identifier: true },
+                              'multiple_objects_first_name' => { from: ['multiple_objects_first_name'], object: 'multiple_objects' },
+                              'multiple_objects_last_name' => { from: ['multiple_objects_last_name'], object: 'multiple_objects' },
+                              'multiple_objects_position' => { from: ['multiple_objects_position'], object: 'multiple_objects', nested_type: 'Array' },
+                            })
+        end
+
+        let(:work_obj) do
+          Work.new(
+            title: ['test'],
+            multiple_objects: [
+              [{
+                'multiple_objects_first_name' => 'Fake',
+                'multiple_objects_last_name' => 'Fakerson',
+                'multiple_objects_position' => 'Leader, Jester, Queen',
+                'multiple_objects_language' => 'english'
+              },
+              {
+                'multiple_objects_first_name' => 'Judge',
+                'multiple_objects_last_name' => 'Hines',
+                'multiple_objects_position' => 'King, Lord, Duke',
+              }].to_s
+            ]
+          )
+        end
+
+        before do
+          allow_any_instance_of(ObjectFactory).to receive(:run!)
+          allow(subject).to receive(:hyrax_record).and_return(work_obj)
+          allow(work_obj).to receive(:id).and_return('test123')
+        end
+
+        it 'succeeds' do
+          metadata = subject.build_export_metadata
+          # expect(metadata['first_name']).to eq('Fake; Judge')
+          # expect(metadata['last_name']).to eq('Fakerson; Hines')
+          # expect(metadata['position']).to include('Leader, Jester, Queen; King, Lord, Duke')
+          # expect(metadata['language']).to eq('english; ')
+        end
+      end
     end
   end
 end
