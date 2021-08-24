@@ -25,14 +25,12 @@ module Bulkrax
     attr_writer :current_run
 
     def self.safe_uri_filename(uri)
-      begin
-        r = Faraday.head(uri.to_s)
-        return CGI::parse(r.headers['content-disposition'])["filename"][0].gsub("\"", '')
-      rescue
-        filename = File.basename(uri.path)
-        filename.gsub!('/', '')
-        filename.present? ? filename : file_set.id
-      end
+      r = Faraday.head(uri.to_s)
+      return CGI.parse(r.headers['content-disposition'])["filename"][0].delete("\"")
+    rescue
+      filename = File.basename(uri.path)
+      filename.delete!('/')
+      filename.presence || file_set.id
     end
 
     def status
