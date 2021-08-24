@@ -100,13 +100,14 @@ module Bulkrax
         object_key = key if value.key?('object')
         next unless hyrax_record.respond_to?(key.to_s) || object_key.present?
         data = object_key.present? ? hyrax_record.send(value['object']) : hyrax_record.send(key.to_s)
-        if data.is_a?(ActiveTriples::Relation)
-          self.parsed_metadata[key] = data.map { |d| prepare_export_data(d) }.join('; ').to_s unless value[:excluded]
-        elsif object_key.present?
-          gsub_data = data.gsub(/[\[\]]/,'').gsub('=>', ':').gsub("},{","}},{{").split("},{")
+        if object_key.present?
+          data = data.first if data.is_a?(Array) || data.is_a?(ActiveTriples::Relation)
+          gsub_data = data.gsub(/[\[\]]/,'').gsub('=>', ':').gsub(/},\s?{/,"}},{{").split("},{")
           gsub_data = [gsub_data] if gsub_data.is_a?(String)
           data = gsub_data.map{ |m| JSON.parse(m) }
           self.parsed_metadata[key] = prepare_export_data(data.map { |d| d[object_key]}.join('; '))
+        elsif data.is_a?(ActiveTriples::Relation)
+          self.parsed_metadata[key] = data.map { |d| prepare_export_data(d) }.join('; ').to_s unless value[:excluded]
         else
           self.parsed_metadata[key] = prepare_export_data(data)
         end
