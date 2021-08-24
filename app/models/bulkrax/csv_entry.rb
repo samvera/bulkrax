@@ -101,7 +101,9 @@ module Bulkrax
         next unless hyrax_record.respond_to?(key.to_s) || object_key.present?
         data = object_key.present? ? hyrax_record.send(value['object']) : hyrax_record.send(key.to_s)
         if object_key.present?
-          data = data.first if data.is_a?(Array) || data.is_a?(ActiveTriples::Relation)
+          data = data.first if data.first && (data.is_a?(Array) || data.is_a?(ActiveTriples::Relation))
+          next self.parsed_metadata[key] = '' if data.empty?
+
           gsub_data = data.gsub(/[\[\]]/,'').gsub('=>', ':').gsub(/},\s?{/,"}},{{").split("},{")
           gsub_data = [gsub_data] if gsub_data.is_a?(String)
           data = gsub_data.map{ |m| JSON.parse(m) }
