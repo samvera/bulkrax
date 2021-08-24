@@ -426,6 +426,40 @@ module Bulkrax
                               'language' => { from: ['multiple_objects_language'], object: 'multiple_objects', parsed: true }
                             })
         end
+
+        let(:work_obj) do
+          Work.new(
+            title: ['test'],
+            multiple_objects: [
+              [{
+                'first_name' => 'Fake',
+                'last_name' => 'Fakerson',
+                'position' => 'Leader, Jester, Queen',
+                'language' => 'english'
+              },
+              {
+                'first_name' => 'Judge',
+                'last_name' => 'Hines',
+                'position' => 'King, Lord, Duke',
+              }].to_s
+            ]
+          )
+        end
+
+        before do
+          allow_any_instance_of(ObjectFactory).to receive(:run!)
+          allow(subject).to receive(:hyrax_record).and_return(work_obj)
+          allow(work_obj).to receive(:id).and_return('test123')
+        end
+
+        it 'succeeds' do
+          metadata = subject.build_export_metadata
+          expect(metadata['first_name']).to eq('Fake; Judge')
+          expect(metadata['last_name']).to eq('Fakerson; Hines')
+          expect(metadata['position']).to include('Leader, Jester, Queen; King, Lord, Duke')
+          expect(metadata['language']).to eq('english; ')
+        end
+      end
     end
   end
 end
