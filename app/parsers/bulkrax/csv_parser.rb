@@ -212,6 +212,7 @@ module Bulkrax
       headers = ['id']
       headers << source_identifier.to_s
       headers << 'model'
+      headers << 'collections'
       importerexporter.mapping.each_key { |key| headers << key if key_allowed(key) }
       headers << 'file'
       headers.uniq
