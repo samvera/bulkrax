@@ -24,6 +24,17 @@ module Bulkrax
     attr_accessor :only_updates, :file_style, :file
     attr_writer :current_run
 
+    def self.safe_uri_filename(uri)
+      begin
+        r = Faraday.head(uri.to_s)
+        return CGI::parse(r.headers['content-disposition'])["filename"][0].gsub("\"", '')
+      rescue
+        filename = File.basename(uri.path)
+        filename.gsub!('/', '')
+        filename.present? ? filename : file_set.id
+      end
+    end
+
     def status
       if self.validate_only
         'Validated'

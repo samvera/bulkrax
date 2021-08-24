@@ -54,7 +54,10 @@ module Bulkrax
     end
 
     def parse_remote_files(src)
-      { url: src.strip } if src.present?
+      return unless src.present?
+      src.strip!
+      name = Bulkrax::Importer.safe_uri_filename(src)
+      { url: src, file_name: name }
     end
 
     def parse_language(src)
