@@ -484,17 +484,18 @@ module Bulkrax
           Work.new(
             title: ['test'],
             multiple_objects: [
-              [{
-                'multiple_objects_first_name' => 'Fake',
-                'multiple_objects_last_name' => 'Fakerson',
-                'multiple_objects_position' => 'Leader, Jester, Queen',
-                'multiple_objects_language' => 'english'
-              },
-              {
-                'multiple_objects_first_name' => 'Judge',
-                'multiple_objects_last_name' => 'Hines',
-                'multiple_objects_position' => 'King, Lord, Duke',
-              }].to_s
+              [
+                {
+                  'multiple_objects_first_name' => 'Fake',
+                  'multiple_objects_last_name' => 'Fakerson',
+                  'multiple_objects_position' => ['Leader, Jester, Queen'],
+                },
+                {
+                  'multiple_objects_first_name' => 'Judge',
+                  'multiple_objects_last_name' => 'Hines',
+                  'multiple_objects_position' => ['King, Lord, Duke'],
+                }
+              ].to_s
             ]
           )
         end
@@ -505,12 +506,9 @@ module Bulkrax
           allow(work_obj).to receive(:id).and_return('test123')
         end
 
-        xit 'succeeds' do
+        it 'succeeds' do
           metadata = subject.build_export_metadata
-          # expect(metadata['first_name']).to eq('Fake; Judge')
-          # expect(metadata['last_name']).to eq('Fakerson; Hines')
-          # expect(metadata['position']).to include('Leader, Jester, Queen; King, Lord, Duke')
-          # expect(metadata['language']).to eq('english; ')
+          byebug
         end
       end
       # rubocop:enable RSpec/ExampleLength
