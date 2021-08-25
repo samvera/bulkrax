@@ -33,7 +33,8 @@ module Bulkrax
         if file_value.is_a?(Hash)
           file_value
         elsif file_value.is_a?(String)
-          { url: file_value }
+          name = Bulkrax::Importer.safe_uri_filename(file_value)
+          { url: file_value, file_name: name }
         else
           Rails.logger.error("skipped remote file #{file_value} because we do not recognize the type")
           nil
