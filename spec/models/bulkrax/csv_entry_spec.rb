@@ -302,8 +302,8 @@ module Bulkrax
                               'single_object_first_name' => { from: ['single_object_first_name'], object: 'single_object' },
                               'single_object_last_name' => { from: ['single_object_last_name'], object: 'single_object' },
                               'single_object_position' => { from: ['single_object_position'], object: 'single_object' },
-                              'single_object_language' => { from: ['single_object_language'], object: 'single_object', parsed: true },
-          })
+                              'single_object_language' => { from: ['single_object_language'], object: 'single_object', parsed: true }
+                            })
         end
 
         let(:work_obj) do
@@ -326,10 +326,10 @@ module Bulkrax
 
         it 'succeeds' do
           metadata = subject.build_export_metadata
-          expect(metadata['single_object_first_name']).to eq('Fake')
-          expect(metadata['single_object_last_name']).to eq('Fakerson')
-          expect(metadata['single_object_position']).to include('Leader', 'Jester', 'Queen')
-          expect(metadata['single_object_language']).to eq('english')
+          expect(metadata['single_object_first_name_1']).to eq('Fake')
+          expect(metadata['single_object_last_name_1']).to eq('Fakerson')
+          expect(metadata['single_object_position_1']).to include('Leader', 'Jester', 'Queen')
+          expect(metadata['single_object_language_1']).to eq('english')
         end
       end
 
@@ -340,7 +340,7 @@ module Bulkrax
                               'first_name' => { from: ['single_object_first_name'], object: 'single_object' },
                               'last_name' => { from: ['single_object_last_name'], object: 'single_object' },
                               'position' => { from: ['single_object_position'], object: 'single_object' },
-                              'language' => { from: ['single_object_language'], object: 'single_object', parsed: true },
+                              'language' => { from: ['single_object_language'], object: 'single_object', parsed: true }
                             })
         end
 
@@ -364,10 +364,10 @@ module Bulkrax
 
         it 'succeeds' do
           metadata = subject.build_export_metadata
-          expect(metadata['first_name']).to eq('Fake')
-          expect(metadata['last_name']).to eq('Fakerson')
-          expect(metadata['position']).to include('Leader', 'Jester', 'Queen')
-          expect(metadata['language']).to eq('english')
+          expect(metadata['first_name_1']).to eq('Fake')
+          expect(metadata['last_name_1']).to eq('Fakerson')
+          expect(metadata['position_1']).to include('Leader', 'Jester', 'Queen')
+          expect(metadata['language_1']).to eq('english')
         end
       end
 
