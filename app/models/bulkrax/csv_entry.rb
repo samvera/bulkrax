@@ -107,15 +107,7 @@ module Bulkrax
           data = data.first if data.first && (data.is_a?(Array) || data.is_a?(ActiveTriples::Relation))
           next self.parsed_metadata[key] = '' if data.empty?
 
-          gsub_data = data.gsub(/[\[\]]/,'').gsub('=>', ':').gsub(/},\s?{/,"}},{{").split("},{")
-          gsub_data = [gsub_data] if gsub_data.is_a?(String)
-          data = gsub_data.map{ |m| JSON.parse(m) }
-          self.parsed_metadata[key] = prepare_export_data(data.map { |d| d[object_key]}.join('; '))
-=======
-          data = data.first if data.is_a?(Array) || data.is_a?(ActiveTriples::Relation)
-
-          object_metadata(data, key, object_key)
->>>>>>> 321-export-single-object-fields
+          object_metadata(data, object_key)
         elsif data.is_a?(ActiveTriples::Relation)
           self.parsed_metadata[key] = data.map { |d| prepare_export_data(d) }.join('; ').to_s unless value[:excluded]
         else
@@ -132,14 +124,16 @@ module Bulkrax
       end
     end
 
-    def object_metadata(data, key, object_key)
+    def object_metadata(data, object_key)
       gsub_data = data.gsub(/[\[\]]/, '').gsub('=>', ':').gsub(/},\s?{/, "}},{{").split("},{")
       # square and curly brace, replace with curly brace
       gsub_data = [gsub_data] if gsub_data.is_a?(String)
       data = gsub_data.map { |d| JSON.parse(d) }
 
       data.each_with_index do |obj, index|
-        self.parsed_metadata["#{key}_#{index + 1}"] = prepare_export_data(obj[object_key])
+        if obj[object_key]
+          self.parsed_metadata["#{object_key}_#{index + 1}"] = prepare_export_data(obj[object_key])
+        end
       end
     end
 
