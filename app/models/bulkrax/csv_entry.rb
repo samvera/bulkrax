@@ -140,10 +140,10 @@ module Bulkrax
     def convert_to_hash(data)
       # converts data from `'[{}]'` to `[{}]`
       gsub_data = data.gsub(/\[{/, '{')
-        .gsub(/}\]/, '}')
-        .gsub('=>', ':')
-        .gsub(/},\s?{/, "}},{{")
-        .split("},{")
+                      .gsub(/}\]/, '}')
+                      .gsub('=>', ':')
+                      .gsub(/},\s?{/, "}},{{")
+                      .split("},{")
       gsub_data = [gsub_data] if gsub_data.is_a?(String)
 
       return gsub_data.map { |d| JSON.parse(d) }
@@ -195,3 +195,159 @@ module Bulkrax
     end
   end
 end
+
+
+
+
+
+# build_mapping_metadata >>> self.parsed_metadata {
+#   "id"=>"5d228436-4a2a-4cdc-860f-41af0f63a2f7",
+#   "bulkrax_identifier"=>nil,
+#   "model"=>"Article",
+#   "abstract"=>"abstract",
+#   "access_control_id"=>"03408d5a-ed55-4f2e-bd93-a8b6458fb8e9",
+#   "add_info"=>"Additional information",
+#   "admin_set_id"=>"admin_set/default",
+#   "alt_title"=>"",
+#   "alternate_identifier"=>"Alternate identifier 1",
+#   "alternate_identifier_type"=>"Type of alternate identifier 1",
+#   "alternative_journal_title"=>"Alternative journal title 1",
+#   "article_num"=>"Article number",
+#   "based_near"=>"",
+#   "bibliographic_citation"=>"",
+#   "book_title"=>nil,
+#   "contributor_family_name"=>"Contributor family name 1; Contributor family name 2; ",
+#   "contributor_given_name"=>"Contributor given name 1; Contributor given name 2; ",
+#   "contributor_grid"=>"; ; www.contributor-organisation-GRID-3.com",
+#   "contributor_isni"=>"ontributor1; ontributor2; ontributor3",
+#   "contributor_name_type"=>"Personal; Personal; Organisational",
+#   "contributor_orcid"=>"ontributor1; ontributor2; ",
+#   "contributor_organization_name"=>"; ; contributor organisation name 3",
+#   "contributor_researchassociate"=>"; ; ",
+#   "contributor_ror"=>"; ; www.contributor-organisation-ROR-3.com",
+#   "contributor_staffmember"=>"; ; ",
+#   "contributor_type"=>"Author; Author; Author",
+#   "contributor_wikidata"=>"; ; www.contributor-organisation-wikidata-3.com",
+#   "creator_family_name"=>"Creator family name 1; Creator family name 2; ",
+#   "creator_given_name"=>"Creator given name 1; Creator given name 2; ",
+#   "creator_grid"=>"; ; www.Creator-organisation-GRID-3.com",
+#   "creator_isni"=>"reator1; reator2; reator3",
+#   "creator_name_type"=>"Personal; Personal; Organisational",
+#   "creator_orcid"=>"reator1; reator2; ",
+#   "creator_organization_name"=>"; ; Creator organisation name 3",
+#   "creator_researchassociate"=>"; ; ",
+#   "creator_ror"=>"; ; www.Creator-organisation-ROR-3.com",
+#   "creator_staffmember"=>"; ; ",
+#   "creator_type"=>"; ; ",
+#   "creator_wikidata"=>"; ; www.Creator-organisation-Wikidata-3.com",
+#   "current_he_institution"=>"",
+#   "date_accepted"=>"2021-8-17",
+#   "date_published"=>"2021-8-17",
+#   "date_submitted"=>"2021-8-17",
+#   "description"=>"",
+#   "dewey"=>"Dewey",
+#   "disable_draft_doi"=>nil,
+#   "doi"=>"DOI",
+#   "doi_options"=>nil,
+#   "draft_doi"=>nil,
+#   "duration"=>"",
+#   "edition"=>nil,
+#   "editor_family_name"=>"",
+#   "editor_given_name"=>"",
+#   "editor_isni"=>"",
+#   "editor_name_type"=>"",
+#   "editor_orcid"=>"",
+#   "editor_organization_name"=>"",
+#   "editor_researchassociate"=>"",
+#   "editor_staffmember"=>"",
+#   "eissn"=>"eISSN",
+#   "embargo_id"=>nil,
+#   "event_date"=>"",
+#   "event_location"=>"",
+#   "event_title"=>"",
+#   "file_availability"=>"External link (access may be restricted)",
+# }
+
+# build_mapping_metadata >>> data before: ["[{
+#   \"funder_name\":\"ABBEY AWARDS\",
+#   \"funder_doi\":\"http://dx.doi.org/10.13039/501100000314\",
+#   \"funder_position\":\"1\",
+#   \"funder_isni\":\"Funder ISNI 1\",
+#   \"funder_ror\":\"Funder ROR 1\",
+#   \"funder_award\":[
+#     \"Funder Awards 1\",\"Funder Awards 2\"
+#   ]
+# }]"]
+
+# build_mapping_metadata >>> data after: "[{
+#   \"funder_name\":\"ABBEY AWARDS\",
+#   \"funder_doi\":\"http://dx.doi.org/10.13039/501100000314\",
+#   \"funder_position\":\"1\",
+#   \"funder_isni\":\"Funder ISNI 1\",
+#   \"funder_ror\":\"FunderROR 1\",
+#   \"funder_award\":[
+#     \"Funder Awards 1\",\"Funder Awards 2\"
+#   ]
+# }]"
+
+# build_mapping_metadata >>> data before: ["[
+#   {
+#     \"creator_given_name\":\"Creator given name 1\",
+#     \"creator_family_name\":\"Creator family name 1\",
+#     \"creator_name_type\":\"Personal\",
+#     \"creator_orcid\":\"reator1\",
+#     \"creator_isni\":\"reator1\",
+#     \"creator_position\":\"1\",
+#     \"creator_institutional_relationship\":[\"Staff member\"]
+#   },
+#   {
+#     \"creator_given_name\":\"Creator given name 2\",
+#     \"creator_family_name\":\"Creator family name 2\",
+#     \"creator_name_type\":\"Personal\",
+#     \"creator_orcid\":\"reator2\",
+#     \"creator_isni\":\"reator2\",
+#     \"creator_position\":\"2\",
+#     \"creator_institutional_relationship\":[\"Research associate\"]
+#   },
+#   {
+#     \"creator_organization_name\":\"Creator organisation name 3\",
+#     \"creator_name_type\":\"Organisational\",
+#     \"creator_isni\":\"reator3\",
+#     \"creator_ror\":\"www.Creator-organisation-ROR-3.com\",
+#     \"creator_grid\":\"www.Creator-organisation-GRID-3.com\",
+#     \"creator_wikidata\":\"www.Creator-organisation-Wikidata-3.com\",
+#     \"creator_position\":\"3\",
+#     \"creator_institutional_relationship\":[\"\"]
+#   }
+# ]"]
+
+# build_mapping_metadata >>> data after: "[
+#   {
+#     \"creator_given_name\":\"Creator given name 1\",
+#     \"creator_family_name\":\"Creator family name 1\",
+#     \"creator_name_type\":\"Personal\",
+#     \"creator_orcid\":\"reator1\",
+#     \"creator_isni\":\"reator1\",
+#     \"creator_position\":\"1\",
+#     \"creator_institutional_relationship\":[\"Staff member\"]
+#   },
+#   {
+#     \"creator_given_name\":\"Creator given name 2\",
+#     \"creator_family_name\":\"Creator family name 2\",
+#     \"creator_name_type\":\"Personal\",
+#     \"creator_orcid\":\"reator2\",
+#     \"creator_isni\":\"reator2\",
+#     \"creator_position\":\"2\",
+#     \"creator_institutional_relationship\":[\"Research associate\"]
+#   },
+#   {
+#     \"creator_organization_name\":\"Creator organisation name 3\",
+#     \"creator_name_type\":\"Organisational\",
+#     \"creator_isni\":\"reator3\",
+#     \"creator_ror\":\"www.Creator-organisation-ROR-3.com\",
+#     \"creator_grid\":\"www.Creator-organisation-GRID-3.com\",
+#     \"creator_wikidata\":\"www.Creator-organisation-Wikidata-3.com\",
+#     \"creator_position\":\"3\",
+#     \"creator_institutional_relationship\":[\"\"]
+#   }
+# ]"
