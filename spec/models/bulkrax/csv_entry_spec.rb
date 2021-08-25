@@ -302,8 +302,8 @@ module Bulkrax
                               'single_object_first_name' => { from: ['single_object_first_name'], object: 'single_object' },
                               'single_object_last_name' => { from: ['single_object_last_name'], object: 'single_object' },
                               'single_object_position' => { from: ['single_object_position'], object: 'single_object' },
-                              'single_object_language' => { from: ['single_object_language'], object: 'single_object', parsed: true },
-          })
+                              'single_object_language' => { from: ['single_object_language'], object: 'single_object', parsed: true }
+                            })
         end
 
         let(:work_obj) do
@@ -340,7 +340,7 @@ module Bulkrax
                               'first_name' => { from: ['single_object_first_name'], object: 'single_object' },
                               'last_name' => { from: ['single_object_last_name'], object: 'single_object' },
                               'position' => { from: ['single_object_position'], object: 'single_object' },
-                              'language' => { from: ['single_object_language'], object: 'single_object', parsed: true },
+                              'language' => { from: ['single_object_language'], object: 'single_object', parsed: true }
                             })
         end
 
