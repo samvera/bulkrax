@@ -516,6 +516,53 @@ module Bulkrax
           expect(metadata['multiple_objects_position_2_3']).to eq('Duke')
         end
       end
+
+      context 'with object fields not prefixed and properties with multiple values' do
+        let(:exporter) do
+          FactoryBot.create(:bulkrax_exporter_worktype, field_mapping: {
+                              'id' => { from: ['id'], source_identifier: true },
+                              'first_name' => { from: ['multiple_objects_first_name'], object: 'multiple_objects' },
+                              'last_name' => { from: ['multiple_objects_last_name'], object: 'multiple_objects' },
+                              'position' => { from: ['multiple_objects_position'], object: 'multiple_objects', nested_type: 'Array' },
+                            })
+        end
+
+        let(:work_obj) do
+          Work.new(
+            title: ['test'],
+            multiple_objects: [
+              [
+                {
+                  'first_name' => 'Fake',
+                  'last_name' => 'Fakerson'
+                },
+                {
+                  'first_name' => 'Judge',
+                  'last_name' => 'Hines',
+                  'position' => ['King', 'Lord', 'Duke'],
+                }
+              ].to_s
+            ]
+          )
+        end
+
+        before do
+          allow_any_instance_of(ObjectFactory).to receive(:run!)
+          allow(subject).to receive(:hyrax_record).and_return(work_obj)
+          allow(work_obj).to receive(:id).and_return('test123')
+        end
+
+        it 'succeeds' do
+          metadata = subject.build_export_metadata
+          expect(metadata['first_name_1']).to eq('Fake')
+          expect(metadata['last_name_1']).to eq('Fakerson')
+          expect(metadata['first_name_2']).to eq('Judge')
+          expect(metadata['last_name_2']).to eq('Hines')
+          expect(metadata['position_2_1']).to eq('King')
+          expect(metadata['position_2_2']).to eq('Lord')
+          expect(metadata['position_2_3']).to eq('Duke')
+        end
+      end
       # rubocop:enable RSpec/ExampleLength
     end
   end
