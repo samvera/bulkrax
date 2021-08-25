@@ -391,8 +391,8 @@ module Bulkrax
                   'multiple_objects_last_name' => 'Fakerson',
                   'multiple_objects_position' => 'Leader, Jester, Queen',
                   'multiple_objects_language' => 'english'
-                  },
-                  {
+                },
+                {
                   'multiple_objects_first_name' => 'Judge',
                   'multiple_objects_last_name' => 'Hines',
                   'multiple_objects_position' => 'King, Lord, Duke'
