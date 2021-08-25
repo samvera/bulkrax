@@ -105,7 +105,9 @@ module Bulkrax
           gsub_data = data.gsub(/[\[\]]/,'').gsub('=>', ':').gsub(/},\s?{/,"}},{{").split("},{")
           gsub_data = [gsub_data] if gsub_data.is_a?(String)
           data = gsub_data.map{ |m| JSON.parse(m) }
-          self.parsed_metadata[key] = prepare_export_data(data.map { |d| d[object_key]}.join('; '))
+          data.each_with_index do |obj, index|
+            self.parsed_metadata["#{key}_#{index + 1}"] = prepare_export_data(obj[object_key])
+          end
         elsif data.is_a?(ActiveTriples::Relation)
           self.parsed_metadata[key] = data.map { |d| prepare_export_data(d) }.join('; ').to_s unless value[:excluded]
         else
