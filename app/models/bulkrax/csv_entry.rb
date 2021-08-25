@@ -103,7 +103,6 @@ module Bulkrax
 
         data = object_key.present? ? hyrax_record.send(value['object']) : hyrax_record.send(key.to_s)
         if object_key.present?
-<<<<<<< HEAD
           data = data.first if data.first && (data.is_a?(Array) || data.is_a?(ActiveTriples::Relation))
           next self.parsed_metadata[key] = '' if data.empty?
 

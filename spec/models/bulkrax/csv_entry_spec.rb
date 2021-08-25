@@ -289,7 +289,6 @@ module Bulkrax
           expect(metadata['multiple_objects'][1]['position'][0]).to eq('Queen')
         end
       end
-      # rubocop:enable RSpec/ExampleLength
     end
 
     describe 'reads entry' do
@@ -386,17 +385,19 @@ module Bulkrax
           Work.new(
             title: ['test'],
             multiple_objects: [
-              [{
-                'multiple_objects_first_name' => 'Fake',
-                'multiple_objects_last_name' => 'Fakerson',
-                'multiple_objects_position' => 'Leader, Jester, Queen',
-                'multiple_objects_language' => 'english'
-              },
-              {
-                'multiple_objects_first_name' => 'Judge',
-                'multiple_objects_last_name' => 'Hines',
-                'multiple_objects_position' => 'King, Lord, Duke',
-              }].to_s
+              [
+                {
+                  'multiple_objects_first_name' => 'Fake',
+                  'multiple_objects_last_name' => 'Fakerson',
+                  'multiple_objects_position' => 'Leader, Jester, Queen',
+                  'multiple_objects_language' => 'english'
+                  },
+                  {
+                  'multiple_objects_first_name' => 'Judge',
+                  'multiple_objects_last_name' => 'Hines',
+                  'multiple_objects_position' => 'King, Lord, Duke'
+                }
+              ].to_s
             ]
           )
         end
@@ -434,17 +435,19 @@ module Bulkrax
           Work.new(
             title: ['test'],
             multiple_objects: [
-              [{
-                'first_name' => 'Fake',
-                'last_name' => 'Fakerson',
-                'position' => 'Leader, Jester, Queen',
-                'language' => 'english'
-              },
-              {
-                'first_name' => 'Judge',
-                'last_name' => 'Hines',
-                'position' => 'King, Lord, Duke',
-              }].to_s
+              [
+                {
+                  'first_name' => 'Fake',
+                  'last_name' => 'Fakerson',
+                  'position' => 'Leader, Jester, Queen',
+                  'language' => 'english'
+                },
+                {
+                  'first_name' => 'Judge',
+                  'last_name' => 'Hines',
+                  'position' => 'King, Lord, Duke'
+                }
+              ].to_s
             ]
           )
         end
@@ -466,6 +469,7 @@ module Bulkrax
           expect(metadata['position_2']).to include('King, Lord, Duke')
         end
       end
+      # rubocop:enable RSpec/ExampleLength
     end
   end
 end
