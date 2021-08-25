@@ -125,17 +125,19 @@ module Bulkrax
 
     def object_metadata(data, object_key)
       # TODO: adjust the gsubbing below so that nested array's stay as an array
-      gsub_data = data.gsub(/[\[\]]/, '').gsub('=>', ':').gsub(/},\s?{/, "}},{{").split("},{")
+      gsub_data = data.gsub(/\[{/, '{')
+                      .gsub(/}\]/, '}')
+                      .gsub('=>', ':')
+                      .gsub(/},\s?{/, "}},{{")
+                      .split("},{")
       gsub_data = [gsub_data] if gsub_data.is_a?(String)
       data = gsub_data.map { |d| JSON.parse(d) }
 
       data.each_with_index do |obj, index|
         if obj[object_key]
-          byebug
           if obj[object_key].is_a?(Array)
             return obj[object_key].each_with_index do |nested_item, nested_index|
-              byebug
-              self.parsed_metadata["#{object_key}_#{index + 1}_#{nested_index + 1}"] = prepare_export_data(obj[object_key])
+              self.parsed_metadata["#{object_key}_#{index + 1}_#{nested_index + 1}"] = prepare_export_data(obj[object_key][nested_index])
             end
           end
 

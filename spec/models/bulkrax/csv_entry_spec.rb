@@ -487,13 +487,12 @@ module Bulkrax
               [
                 {
                   'multiple_objects_first_name' => 'Fake',
-                  'multiple_objects_last_name' => 'Fakerson',
-                  'multiple_objects_position' => ['Leader, Jester, Queen'],
+                  'multiple_objects_last_name' => 'Fakerson'
                 },
                 {
                   'multiple_objects_first_name' => 'Judge',
                   'multiple_objects_last_name' => 'Hines',
-                  'multiple_objects_position' => ['King, Lord, Duke'],
+                  'multiple_objects_position' => ['King', 'Lord', 'Duke'],
                 }
               ].to_s
             ]
@@ -508,90 +507,16 @@ module Bulkrax
 
         it 'succeeds' do
           metadata = subject.build_export_metadata
-          byebug
+          expect(metadata['multiple_objects_first_name_1']).to eq('Fake')
+          expect(metadata['multiple_objects_last_name_1']).to eq('Fakerson')
+          expect(metadata['multiple_objects_first_name_2']).to eq('Judge')
+          expect(metadata['multiple_objects_last_name_2']).to eq('Hines')
+          expect(metadata['multiple_objects_position_2_1']).to eq('King')
+          expect(metadata['multiple_objects_position_2_2']).to eq('Lord')
+          expect(metadata['multiple_objects_position_2_3']).to eq('Duke')
         end
       end
       # rubocop:enable RSpec/ExampleLength
-    end
-
-    describe 'reads entry' do
-      subject { described_class.new(importerexporter: exporter) }
-
-      context 'with object fields prefixed' do
-        let(:exporter) do
-          FactoryBot.create(:bulkrax_exporter_worktype, field_mapping: {
-                              'id' => { from: ['id'], source_identifier: true },
-                              'single_object_first_name' => { from: ['single_object_first_name'], object: 'single_object' },
-                              'single_object_last_name' => { from: ['single_object_last_name'], object: 'single_object' },
-                              'single_object_position' => { from: ['single_object_position'], object: 'single_object' },
-                              'single_object_language' => { from: ['single_object_language'], object: 'single_object', parsed: true }
-                            })
-        end
-
-        let(:work_obj) do
-          Work.new(
-            title: ['test'],
-            single_object: [{
-              'single_object_first_name' => 'Fake',
-              'single_object_last_name' => 'Fakerson',
-              'single_object_position' => 'Leader, Jester, Queen',
-              'single_object_language' => 'english'
-            }].to_s
-          )
-        end
-
-        before do
-          allow_any_instance_of(ObjectFactory).to receive(:run!)
-          allow(subject).to receive(:hyrax_record).and_return(work_obj)
-          allow(work_obj).to receive(:id).and_return('test123')
-        end
-
-        it 'succeeds' do
-          metadata = subject.build_export_metadata
-          expect(metadata['single_object_first_name_1']).to eq('Fake')
-          expect(metadata['single_object_last_name_1']).to eq('Fakerson')
-          expect(metadata['single_object_position_1']).to include('Leader', 'Jester', 'Queen')
-          expect(metadata['single_object_language_1']).to eq('english')
-        end
-      end
-
-      context 'with object fields and no prefix' do
-        let(:exporter) do
-          FactoryBot.create(:bulkrax_exporter_worktype, field_mapping: {
-                              'id' => { from: ['id'], source_identifier: true },
-                              'first_name' => { from: ['single_object_first_name'], object: 'single_object' },
-                              'last_name' => { from: ['single_object_last_name'], object: 'single_object' },
-                              'position' => { from: ['single_object_position'], object: 'single_object' },
-                              'language' => { from: ['single_object_language'], object: 'single_object', parsed: true }
-                            })
-        end
-
-        let(:work_obj) do
-          Work.new(
-            title: ['test'],
-            single_object: [{
-              'first_name' => 'Fake',
-              'last_name' => 'Fakerson',
-              'position' => 'Leader, Jester, Queen',
-              'language' => 'english'
-            }].to_s
-          )
-        end
-
-        before do
-          allow_any_instance_of(ObjectFactory).to receive(:run!)
-          allow(subject).to receive(:hyrax_record).and_return(work_obj)
-          allow(work_obj).to receive(:id).and_return('test123')
-        end
-
-        it 'succeeds' do
-          metadata = subject.build_export_metadata
-          expect(metadata['first_name_1']).to eq('Fake')
-          expect(metadata['last_name_1']).to eq('Fakerson')
-          expect(metadata['position_1']).to include('Leader', 'Jester', 'Queen')
-          expect(metadata['language_1']).to eq('english')
-        end
-      end
     end
   end
 end
