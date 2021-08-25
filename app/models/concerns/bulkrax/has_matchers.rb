@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-
+# rubocop:disable Metrics/ModuleLength
 module Bulkrax
   module HasMatchers
     extend ActiveSupport::Concern
@@ -90,9 +90,20 @@ module Bulkrax
     end
 
     def multiple_metadata(content)
-      content = content.content if content.is_a?(Nokogiri::XML::NodeSet)
       return unless content
-      content.is_a?(Array) ? content : Array.wrap(content.strip)
+
+      case content
+      when Nokogiri::XML::NodeSet
+        content&.content
+      when Array
+        content
+      when Hash
+        Array.wrap(content)
+      when String
+        Array.wrap(content.strip)
+      else
+        Array.wrap(content)
+      end
     end
 
     def matched_metadata(multiple, name, result, object_multiple)
@@ -153,3 +164,4 @@ module Bulkrax
     end
   end
 end
+# rubocop:enable Metrics/ModuleLength
