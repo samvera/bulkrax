@@ -124,13 +124,7 @@ module Bulkrax
     end
 
     def object_metadata(data, object_key)
-      gsub_data = data.gsub(/\[{/, '{')
-                      .gsub(/}\]/, '}')
-                      .gsub('=>', ':')
-                      .gsub(/},\s?{/, "}},{{")
-                      .split("},{")
-      gsub_data = [gsub_data] if gsub_data.is_a?(String)
-      data = gsub_data.map { |d| JSON.parse(d) }
+      data = convert_to_hash(data)
 
       data.each_with_index do |obj, index|
         next unless obj[object_key]
@@ -141,6 +135,18 @@ module Bulkrax
           self.parsed_metadata["#{object_key}_#{index + 1}_#{nested_index + 1}"] = prepare_export_data(obj[object_key][nested_index])
         end
       end
+    end
+
+    def convert_to_hash(data)
+      # converts data from `'[{}]'` to `[{}]`
+      gsub_data = data.gsub(/\[{/, '{')
+        .gsub(/}\]/, '}')
+        .gsub('=>', ':')
+        .gsub(/},\s?{/, "}},{{")
+        .split("},{")
+      gsub_data = [gsub_data] if gsub_data.is_a?(String)
+
+      return gsub_data.map { |d| JSON.parse(d) }
     end
 
     # In order for the existing exported hyrax_record, to be updated by a re-import
