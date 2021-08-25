@@ -409,10 +409,13 @@ module Bulkrax
 
         it 'succeeds' do
           metadata = subject.build_export_metadata
-          expect(metadata['multiple_objects_first_name']).to eq('Fake; Judge')
-          expect(metadata['multiple_objects_last_name']).to eq('Fakerson; Hines')
-          expect(metadata['multiple_objects_position']).to include('Leader, Jester, Queen; King, Lord, Duke')
-          expect(metadata['multiple_objects_language']).to eq('english; ')
+          expect(metadata['multiple_objects_first_name_1']).to eq('Fake')
+          expect(metadata['multiple_objects_last_name_1']).to eq('Fakerson')
+          expect(metadata['multiple_objects_position_1']).to include('Leader, Jester, Queen')
+          expect(metadata['multiple_objects_language_1']).to eq('english')
+          expect(metadata['multiple_objects_first_name_2']).to eq('Judge')
+          expect(metadata['multiple_objects_last_name_2']).to eq('Hines')
+          expect(metadata['multiple_objects_position_2']).to include('King, Lord, Duke')
         end
       end
 
@@ -454,10 +457,13 @@ module Bulkrax
 
         it 'succeeds' do
           metadata = subject.build_export_metadata
-          expect(metadata['first_name']).to eq('Fake; Judge')
-          expect(metadata['last_name']).to eq('Fakerson; Hines')
-          expect(metadata['position']).to include('Leader, Jester, Queen; King, Lord, Duke')
-          expect(metadata['language']).to eq('english; ')
+          expect(metadata['first_name_1']).to eq('Fake')
+          expect(metadata['last_name_1']).to eq('Fakerson')
+          expect(metadata['position_1']).to include('Leader, Jester, Queen')
+          expect(metadata['language_1']).to eq('english')
+          expect(metadata['first_name_2']).to eq('Judge')
+          expect(metadata['last_name_2']).to eq('Hines')
+          expect(metadata['position_2']).to include('King, Lord, Duke')
         end
       end
     end
