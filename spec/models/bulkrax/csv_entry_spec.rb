@@ -289,7 +289,6 @@ module Bulkrax
           expect(metadata['multiple_objects'][1]['position'][0]).to eq('Queen')
         end
       end
-      # rubocop:enable RSpec/ExampleLength
     end
 
     describe 'reads entry' do
@@ -302,8 +301,8 @@ module Bulkrax
                               'single_object_first_name' => { from: ['single_object_first_name'], object: 'single_object' },
                               'single_object_last_name' => { from: ['single_object_last_name'], object: 'single_object' },
                               'single_object_position' => { from: ['single_object_position'], object: 'single_object' },
-                              'single_object_language' => { from: ['single_object_language'], object: 'single_object', parsed: true },
-          })
+                              'single_object_language' => { from: ['single_object_language'], object: 'single_object', parsed: true }
+                            })
         end
 
         let(:work_obj) do
@@ -326,10 +325,10 @@ module Bulkrax
 
         it 'succeeds' do
           metadata = subject.build_export_metadata
-          expect(metadata['single_object_first_name']).to eq('Fake')
-          expect(metadata['single_object_last_name']).to eq('Fakerson')
-          expect(metadata['single_object_position']).to include('Leader', 'Jester', 'Queen')
-          expect(metadata['single_object_language']).to eq('english')
+          expect(metadata['single_object_first_name_1']).to eq('Fake')
+          expect(metadata['single_object_last_name_1']).to eq('Fakerson')
+          expect(metadata['single_object_position_1']).to include('Leader', 'Jester', 'Queen')
+          expect(metadata['single_object_language_1']).to eq('english')
         end
       end
 
@@ -340,7 +339,7 @@ module Bulkrax
                               'first_name' => { from: ['single_object_first_name'], object: 'single_object' },
                               'last_name' => { from: ['single_object_last_name'], object: 'single_object' },
                               'position' => { from: ['single_object_position'], object: 'single_object' },
-                              'language' => { from: ['single_object_language'], object: 'single_object', parsed: true },
+                              'language' => { from: ['single_object_language'], object: 'single_object', parsed: true }
                             })
         end
 
@@ -364,10 +363,10 @@ module Bulkrax
 
         it 'succeeds' do
           metadata = subject.build_export_metadata
-          expect(metadata['first_name']).to eq('Fake')
-          expect(metadata['last_name']).to eq('Fakerson')
-          expect(metadata['position']).to include('Leader', 'Jester', 'Queen')
-          expect(metadata['language']).to eq('english')
+          expect(metadata['first_name_1']).to eq('Fake')
+          expect(metadata['last_name_1']).to eq('Fakerson')
+          expect(metadata['position_1']).to include('Leader', 'Jester', 'Queen')
+          expect(metadata['language_1']).to eq('english')
         end
       end
 
@@ -386,17 +385,19 @@ module Bulkrax
           Work.new(
             title: ['test'],
             multiple_objects: [
-              [{
-                'multiple_objects_first_name' => 'Fake',
-                'multiple_objects_last_name' => 'Fakerson',
-                'multiple_objects_position' => 'Leader, Jester, Queen',
-                'multiple_objects_language' => 'english'
-              },
-              {
-                'multiple_objects_first_name' => 'Judge',
-                'multiple_objects_last_name' => 'Hines',
-                'multiple_objects_position' => 'King, Lord, Duke',
-              }].to_s
+              [
+                {
+                  'multiple_objects_first_name' => 'Fake',
+                  'multiple_objects_last_name' => 'Fakerson',
+                  'multiple_objects_position' => 'Leader, Jester, Queen',
+                  'multiple_objects_language' => 'english'
+                },
+                {
+                  'multiple_objects_first_name' => 'Judge',
+                  'multiple_objects_last_name' => 'Hines',
+                  'multiple_objects_position' => 'King, Lord, Duke'
+                }
+              ].to_s
             ]
           )
         end
@@ -409,10 +410,13 @@ module Bulkrax
 
         it 'succeeds' do
           metadata = subject.build_export_metadata
-          expect(metadata['multiple_objects_first_name']).to eq('Fake; Judge')
-          expect(metadata['multiple_objects_last_name']).to eq('Fakerson; Hines')
-          expect(metadata['multiple_objects_position']).to include('Leader, Jester, Queen; King, Lord, Duke')
-          expect(metadata['multiple_objects_language']).to eq('english; ')
+          expect(metadata['multiple_objects_first_name_1']).to eq('Fake')
+          expect(metadata['multiple_objects_last_name_1']).to eq('Fakerson')
+          expect(metadata['multiple_objects_position_1']).to include('Leader, Jester, Queen')
+          expect(metadata['multiple_objects_language_1']).to eq('english')
+          expect(metadata['multiple_objects_first_name_2']).to eq('Judge')
+          expect(metadata['multiple_objects_last_name_2']).to eq('Hines')
+          expect(metadata['multiple_objects_position_2']).to include('King, Lord, Duke')
         end
       end
 
@@ -431,17 +435,19 @@ module Bulkrax
           Work.new(
             title: ['test'],
             multiple_objects: [
-              [{
-                'first_name' => 'Fake',
-                'last_name' => 'Fakerson',
-                'position' => 'Leader, Jester, Queen',
-                'language' => 'english'
-              },
-              {
-                'first_name' => 'Judge',
-                'last_name' => 'Hines',
-                'position' => 'King, Lord, Duke',
-              }].to_s
+              [
+                {
+                  'first_name' => 'Fake',
+                  'last_name' => 'Fakerson',
+                  'position' => 'Leader, Jester, Queen',
+                  'language' => 'english'
+                },
+                {
+                  'first_name' => 'Judge',
+                  'last_name' => 'Hines',
+                  'position' => 'King, Lord, Duke'
+                }
+              ].to_s
             ]
           )
         end
@@ -454,13 +460,15 @@ module Bulkrax
 
         it 'succeeds' do
           metadata = subject.build_export_metadata
-          expect(metadata['first_name']).to eq('Fake; Judge')
-          expect(metadata['last_name']).to eq('Fakerson; Hines')
-          expect(metadata['position']).to include('Leader, Jester, Queen; King, Lord, Duke')
-          expect(metadata['language']).to eq('english; ')
+          expect(metadata['first_name_1']).to eq('Fake')
+          expect(metadata['last_name_1']).to eq('Fakerson')
+          expect(metadata['position_1']).to include('Leader, Jester, Queen')
+          expect(metadata['language_1']).to eq('english')
+          expect(metadata['first_name_2']).to eq('Judge')
+          expect(metadata['last_name_2']).to eq('Hines')
+          expect(metadata['position_2']).to include('King, Lord, Duke')
         end
       end
-
 
       context 'with object fields prefixed and properties with multiple values' do
         let(:exporter) do
@@ -497,7 +505,7 @@ module Bulkrax
           allow(work_obj).to receive(:id).and_return('test123')
         end
 
-        it 'succeeds' do
+        xit 'succeeds' do
           metadata = subject.build_export_metadata
           # expect(metadata['first_name']).to eq('Fake; Judge')
           # expect(metadata['last_name']).to eq('Fakerson; Hines')
@@ -505,6 +513,7 @@ module Bulkrax
           # expect(metadata['language']).to eq('english; ')
         end
       end
+      # rubocop:enable RSpec/ExampleLength
     end
   end
 end
