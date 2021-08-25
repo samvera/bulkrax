@@ -133,14 +133,12 @@ module Bulkrax
       data = gsub_data.map { |d| JSON.parse(d) }
 
       data.each_with_index do |obj, index|
-        if obj[object_key]
-          if obj[object_key].is_a?(Array)
-            return obj[object_key].each_with_index do |nested_item, nested_index|
-              self.parsed_metadata["#{object_key}_#{index + 1}_#{nested_index + 1}"] = prepare_export_data(obj[object_key][nested_index])
-            end
-          end
+        next unless obj[object_key]
 
-          self.parsed_metadata["#{object_key}_#{index + 1}"] = prepare_export_data(obj[object_key])
+        next self.parsed_metadata["#{object_key}_#{index + 1}"] = prepare_export_data(obj[object_key]) unless obj[object_key].is_a?(Array)
+
+        obj[object_key].each_with_index do |_nested_item, nested_index|
+          self.parsed_metadata["#{object_key}_#{index + 1}_#{nested_index + 1}"] = prepare_export_data(obj[object_key][nested_index])
         end
       end
     end

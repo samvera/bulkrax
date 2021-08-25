@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+# rubocop: disable Metrics/BlockLength
 
 require 'rails_helper'
 
@@ -476,7 +477,7 @@ module Bulkrax
                               'id' => { from: ['id'], source_identifier: true },
                               'multiple_objects_first_name' => { from: ['multiple_objects_first_name'], object: 'multiple_objects' },
                               'multiple_objects_last_name' => { from: ['multiple_objects_last_name'], object: 'multiple_objects' },
-                              'multiple_objects_position' => { from: ['multiple_objects_position'], object: 'multiple_objects', nested_type: 'Array' },
+                              'multiple_objects_position' => { from: ['multiple_objects_position'], object: 'multiple_objects', nested_type: 'Array' }
                             })
         end
 
@@ -492,7 +493,7 @@ module Bulkrax
                 {
                   'multiple_objects_first_name' => 'Judge',
                   'multiple_objects_last_name' => 'Hines',
-                  'multiple_objects_position' => ['King', 'Lord', 'Duke'],
+                  'multiple_objects_position' => ['King', 'Lord', 'Duke']
                 }
               ].to_s
             ]
@@ -523,7 +524,7 @@ module Bulkrax
                               'id' => { from: ['id'], source_identifier: true },
                               'first_name' => { from: ['multiple_objects_first_name'], object: 'multiple_objects' },
                               'last_name' => { from: ['multiple_objects_last_name'], object: 'multiple_objects' },
-                              'position' => { from: ['multiple_objects_position'], object: 'multiple_objects', nested_type: 'Array' },
+                              'position' => { from: ['multiple_objects_position'], object: 'multiple_objects', nested_type: 'Array' }
                             })
         end
 
@@ -539,7 +540,7 @@ module Bulkrax
                 {
                   'first_name' => 'Judge',
                   'last_name' => 'Hines',
-                  'position' => ['King', 'Lord', 'Duke'],
+                  'position' => ['King', 'Lord', 'Duke']
                 }
               ].to_s
             ]
@@ -567,3 +568,4 @@ module Bulkrax
     end
   end
 end
+# rubocop: enable Metrics/BlockLength
