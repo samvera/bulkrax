@@ -103,8 +103,8 @@ module Bulkrax
 
         data = object_key.present? ? hyrax_record.send(value['object']) : hyrax_record.send(key.to_s)
         if object_key.present?
-          data = data.first if data.is_a?(ActiveTriples::Relation)
           next self.parsed_metadata[key] = '' if data.empty?
+          data = data.first if data.is_a?(ActiveTriples::Relation)
 
           object_metadata(data, object_key)
         elsif data.is_a?(ActiveTriples::Relation)
@@ -124,7 +124,6 @@ module Bulkrax
     end
 
     def object_metadata(data, object_key)
-      # TODO: adjust the gsubbing below so that nested array's stay as an array
       gsub_data = data.gsub(/\[{/, '{')
                       .gsub(/}\]/, '}')
                       .gsub('=>', ':')
