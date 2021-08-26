@@ -103,8 +103,8 @@ module Bulkrax
 
         data = object_key.present? ? hyrax_record.send(value['object']) : hyrax_record.send(key.to_s)
         if object_key.present?
-          data = data.first if data.is_a?(ActiveTriples::Relation)
           next self.parsed_metadata[key] = '' if data.empty?
+          data = data.first if data.is_a?(ActiveTriples::Relation)
 
           object_metadata(data, object_key)
         elsif data.is_a?(ActiveTriples::Relation)
@@ -124,13 +124,29 @@ module Bulkrax
     end
 
     def object_metadata(data, object_key)
-      gsub_data = data.gsub(/[\[\]]/, '').gsub('=>', ':').gsub(/},\s?{/, "}},{{").split("},{")
-      gsub_data = [gsub_data] if gsub_data.is_a?(String)
-      data = gsub_data.map { |d| JSON.parse(d) }
+      data = convert_to_hash(data)
 
       data.each_with_index do |obj, index|
-        self.parsed_metadata["#{object_key}_#{index + 1}"] = prepare_export_data(obj[object_key]) if obj[object_key]
+        next unless obj[object_key]
+
+        next self.parsed_metadata["#{object_key}_#{index + 1}"] = prepare_export_data(obj[object_key]) unless obj[object_key].is_a?(Array)
+
+        obj[object_key].each_with_index do |_nested_item, nested_index|
+          self.parsed_metadata["#{object_key}_#{index + 1}_#{nested_index + 1}"] = prepare_export_data(obj[object_key][nested_index])
+        end
       end
+    end
+
+    def convert_to_hash(data)
+      # converts data from `'[{}]'` to `[{}]`
+      gsub_data = data.gsub(/\[{/, '{')
+                      .gsub(/}\]/, '}')
+                      .gsub('=>', ':')
+                      .gsub(/},\s?{/, "}},{{")
+                      .split("},{")
+      gsub_data = [gsub_data] if gsub_data.is_a?(String)
+
+      return gsub_data.map { |d| JSON.parse(d) }
     end
 
     # In order for the existing exported hyrax_record, to be updated by a re-import
