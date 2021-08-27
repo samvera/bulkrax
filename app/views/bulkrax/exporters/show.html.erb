@@ -7,6 +7,13 @@
 <div class='panel panel-default'>
   <div class='panel-body'>
 
+    <% if File.exist?(@exporter.exporter_export_zip_path) %>
+      <p class='bulkrax-p-align'>
+        <strong>Download:</strong>
+        <%= link_to raw('<span class="glyphicon glyphicon-download"></span>'), exporter_download_path(@exporter) %>
+      </p>
+    <% end%>
+
     <p class='bulkrax-p-align'>
       <strong><%= t('bulkrax.exporter.labels.name') %>:</strong>
       <%= @exporter.name %>
@@ -116,6 +123,10 @@
       <%= page_entries_info(@work_entries) %><br>
       <%= paginate(@work_entries, param_name: :work_entries_page) %>
       <br>
+      <% if File.exist?(@exporter.exporter_export_zip_path) %>
+        <%= link_to 'Download', exporter_download_path(@exporter) %>
+        |
+      <% end%>
       <%= link_to 'Edit', edit_exporter_path(@exporter) %>
       |
       <%= link_to 'Back', exporters_path %>
