@@ -12,7 +12,7 @@
         <strong>Download:</strong>
         <%= link_to raw('<span class="glyphicon glyphicon-download"></span>'), exporter_download_path(@exporter) %>
       </p>
-    <% end%>
+    <% end %>
 
     <p class='bulkrax-p-align'>
       <strong><%= t('bulkrax.exporter.labels.name') %>:</strong>
@@ -126,7 +126,7 @@
       <% if File.exist?(@exporter.exporter_export_zip_path) %>
         <%= link_to 'Download', exporter_download_path(@exporter) %>
         |
-      <% end%>
+      <% end %>
       <%= link_to 'Edit', edit_exporter_path(@exporter) %>
       |
       <%= link_to 'Back', exporters_path %>
