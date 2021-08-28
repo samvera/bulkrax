@@ -219,16 +219,16 @@ module Bulkrax
     # a way that is compatible with how the factory needs them.
     def transform_update_attributes
       if update_files || replace_files
-      attributes.slice(*permitted_attributes)
-                .merge(file_attributes(update_files))
+        attributes.slice(*permitted_attributes)
+                  .merge(file_attributes(update_files))
       else
         attributes.slice(*permitted_attributes)
       end
     end
 
     def transform_create_attributes
-        attributes.slice(*permitted_attributes)
-            .merge(file_attributes(update_files))
+      attributes.slice(*permitted_attributes)
+                .merge(file_attributes(update_files))
     end
 
     # Regardless of what the Parser gives us, these are the properties we are prepared to accept.
