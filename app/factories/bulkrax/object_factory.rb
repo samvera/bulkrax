@@ -19,6 +19,11 @@ module Bulkrax
     end
     # rubocop:enable Metrics/ParameterLists
 
+    # update files is set, replace files is set or this is a create
+    def with_files
+      update_files || replace_files || !object
+    end
+
     def run
       arg_hash = { id: attributes[:id], name: 'UPDATE', klass: klass }
       @object = find
@@ -218,8 +223,9 @@ module Bulkrax
     # Override if we need to map the attributes from the parser in
     # a way that is compatible with how the factory needs them.
     def transform_attributes
-      attributes.slice(*permitted_attributes)
-                .merge(file_attributes(update_files))
+      @transform_attributes = attributes.slice(*permitted_attributes)
+      @transform_attributes.merge!(file_attributes(update_files)) if with_files
+      @transform_attributes
     end
 
     # Regardless of what the Parser gives us, these are the properties we are prepared to accept.
