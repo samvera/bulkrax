@@ -186,40 +186,49 @@ module Bulkrax
     # Strip out the :collection key, and add the member_of_collection_ids,
     # which is used by Hyrax::Actors::AddAsMemberOfCollectionsActor
     def create_attributes
-      return transform_attributes if klass == Collection
+      return transform_create_attributes if klass == Collection
       if attributes[:collection].present?
-        transform_attributes.except(:collection).merge(member_of_collections_attributes: { 0 => { id: collection.id } })
+        transform_create_attributes.except(:collection).merge(member_of_collections_attributes: { 0 => { id: collection.id } })
       elsif attributes[:collections].present?
         collection_ids = attributes[:collections].each.with_index.each_with_object({}) do |(element, index), ids|
           ids[index] = { id: element }
         end
-        transform_attributes.except(:collections).merge(member_of_collections_attributes: collection_ids)
+        transform_create_attributes.except(:collections).merge(member_of_collections_attributes: collection_ids)
       else
-        transform_attributes
+        transform_create_attributes
       end
     end
 
     # Strip out the :collection key, and add the member_of_collection_ids,
     # which is used by Hyrax::Actors::AddAsMemberOfCollectionsActor
     def attribute_update
-      return transform_attributes.except(:id) if klass == Collection
+      return transform_update_attributes.except(:id) if klass == Collection
       if attributes[:collection].present?
-        transform_attributes.except(:id).except(:collection).merge(member_of_collections_attributes: { "0" => { id: collection.id } })
+        transform_update_attributes.except(:id).except(:collection).merge(member_of_collections_attributes: { "0" => { id: collection.id } })
       elsif attributes[:collections].present?
         collection_ids = attributes[:collections].each.with_index.each_with_object({}) do |(element, index), ids|
           ids[index.to_s] = element
         end
-        transform_attributes.except(:id).except(:collections).merge(member_of_collections_attributes: collection_ids)
+        transform_update_attributes.except(:id).except(:collections).merge(member_of_collections_attributes: collection_ids)
       else
-        transform_attributes.except(:id)
+        transform_update_attributes.except(:id)
       end
     end
 
     # Override if we need to map the attributes from the parser in
     # a way that is compatible with how the factory needs them.
-    def transform_attributes
+    def transform_update_attributes
+      if update_files || replace_files
       attributes.slice(*permitted_attributes)
                 .merge(file_attributes(update_files))
+      else
+        attributes.slice(*permitted_attributes)
+      end
+    end
+
+    def transform_create_attributes
+        attributes.slice(*permitted_attributes)
+            .merge(file_attributes(update_files))
     end
 
     # Regardless of what the Parser gives us, these are the properties we are prepared to accept.
