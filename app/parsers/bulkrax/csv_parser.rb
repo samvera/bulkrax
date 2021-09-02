@@ -209,22 +209,31 @@ module Bulkrax
 
     # All possible column names
     def export_headers
+      # need to find the numerated headers, which may be different per entry
+      # and then remove the duplicates
       parsed_metadata_keys = []
       importerexporter.entries.where(identifier: current_work_ids)[0..limit || total].each do |entry|
         parsed_metadata_keys += entry.parsed_metadata.keys
       end
-      parsed_metadata_keys = parsed_metadata_keys.uniq
+      parsed_metadata_keys.uniq!
 
+      # although these 4 items are in the parsed_metadata_keys we list them here specifically for ordering on the csv
       headers = ['id']
       headers << source_identifier.to_s
       headers << 'model'
       headers << 'collections'
+
+      # the object keys are not part of a work types default metadata but the object itself is,
+      # so we check according to it and add the acceptable headers
       importerexporter.mapping.each do |key, value|
         if value.key?('object') && key_allowed(value['object'])
           object_keys = parsed_metadata_keys.each { |key| key.to_s.include?(value['object']) }
-          next object_keys.each { |key| headers << key }
+          next object_keys.each { |key| headers << key unless key == 'file' }
+        end
+
         headers << key if key_allowed(key)
       end
+
       headers << 'file'
       headers.uniq
     end
