@@ -209,11 +209,22 @@ module Bulkrax
 
     # All possible column names
     def export_headers
+      parsed_metadata_keys = []
+      importerexporter.entries.where(identifier: current_work_ids)[0..limit || total].each do |entry|
+        parsed_metadata_keys += entry.parsed_metadata.keys
+      end
+      parsed_metadata_keys = parsed_metadata_keys.uniq
+
       headers = ['id']
       headers << source_identifier.to_s
       headers << 'model'
       headers << 'collections'
-      importerexporter.mapping.each_key { |key| headers << key if key_allowed(key) }
+      importerexporter.mapping.each do |key, value|
+        if value.key?('object') && key_allowed(value['object'])
+          object_keys = parsed_metadata_keys.each { |key| key.to_s.include?(value['object']) }
+          next object_keys.each { |key| headers << key }
+        headers << key if key_allowed(key)
+      end
       headers << 'file'
       headers.uniq
     end
