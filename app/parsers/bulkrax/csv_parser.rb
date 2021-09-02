@@ -228,7 +228,7 @@ module Bulkrax
       importerexporter.mapping.each do |key, value|
         if value.key?('object') && key_allowed(value['object'])
           object_keys = parsed_metadata_keys.each { |pm| pm.to_s.include?(value['object']) }
-          next object_keys.each { |item| headers << item unless item == 'file' }
+          next object_keys.each { |item| headers << item }
         end
 
         headers << key if key_allowed(key)
