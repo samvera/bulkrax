@@ -134,7 +134,7 @@ module Bulkrax
         new_entry = find_or_create_entry(entry_class, wid, 'Bulkrax::Exporter')
         entry = Bulkrax::ExportWorkJob.perform_now(new_entry.id, current_run.id)
 
-        if entry
+        if entry.parsed_metadata
           self.headers ||= []
           self.headers |= entry.parsed_metadata.keys
         end
@@ -227,7 +227,7 @@ module Bulkrax
       end
 
       headers << 'file'
-      headers.delete(access_control_id) if access_control_id
+      headers.delete('access_control_id') if headers.include?('access_control_id')
       headers.uniq
     end
 
