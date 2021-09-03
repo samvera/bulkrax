@@ -196,8 +196,7 @@ module Bulkrax
         transform_attributes.except(:collection).merge(member_of_collections_attributes: { "0" => { id: collection.id } })
       elsif attributes[:collections].present?
         collection_ids = attributes[:collections].each.with_index.each_with_object({}) do |(element, index), ids|
-          col_element = element.is_a?(Hash) && element.keys.include?('id') ? element['id'] : element
-          ids[index.to_s] = { id: col_element }
+          ids[index.to_s] = element.is_a?(Hash) && element.keys.include?('id') ? element : { id: element }
         end
         transform_attributes.except(:collections).merge(member_of_collections_attributes: collection_ids)
       else
@@ -213,8 +212,7 @@ module Bulkrax
         transform_attributes.except(:id).except(:collection).merge(member_of_collections_attributes: { "0" => { id: collection.id } })
       elsif attributes[:collections].present?
         collection_ids = attributes[:collections].each.with_index.each_with_object({}) do |(element, index), ids|
-          col_element = element.is_a?(Hash) && element.keys.include?('id') ? element['id'] : element
-          ids[index.to_s] = { id: col_element }
+          ids[index.to_s] = element.is_a?(Hash) && element.keys.include?('id') ? element : { id: element }
         end
         transform_attributes.except(:id).except(:collections).merge(member_of_collections_attributes: collection_ids)
       else
