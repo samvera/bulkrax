@@ -250,6 +250,7 @@ module Bulkrax
       before do
         allow(ActiveFedora::SolrService).to receive(:query).and_return(OpenStruct.new(id: work_id))
         allow(exporter.entries).to receive(:where).and_return([entry])
+        allow(parser).to receive(:headers).and_return(entry.parsed_metadata.keys)
       end
 
       it 'returns an array of single, numerated and double numerated header values' do
