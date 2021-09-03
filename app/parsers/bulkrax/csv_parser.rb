@@ -133,7 +133,8 @@ module Bulkrax
         break if limit_reached?(limit, index)
         new_entry = find_or_create_entry(entry_class, wid, 'Bulkrax::Exporter')
         entry = Bulkrax::ExportWorkJob.perform_now(new_entry.id, current_run.id)
-        headers |= entry.parsed_metadata.keys
+        self.headers ||= []
+        self.headers |= entry.parsed_metadata.keys
       end
     end
     alias create_from_collection create_new_entries
@@ -216,7 +217,7 @@ module Bulkrax
       # so we check according to it and add the acceptable headers
       importerexporter.mapping.each do |key, value|
         if value.key?('object') && key_allowed(value['object'])
-          object_keys = self.headers.each { |pm| pm.to_s.include?(value['object']) }
+          object_keys = self.headers.select { |sh| sh.to_s.include?(value['object']) }
           next object_keys.each { |item| headers << item }
         end
 
