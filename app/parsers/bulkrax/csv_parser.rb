@@ -134,7 +134,7 @@ module Bulkrax
         new_entry = find_or_create_entry(entry_class, wid, 'Bulkrax::Exporter')
         entry = Bulkrax::ExportWorkJob.perform_now(new_entry.id, current_run.id)
 
-        if entry.parsed_metadata
+        if entry
           self.headers ||= []
           self.headers |= entry.parsed_metadata.keys
         end
@@ -210,11 +210,7 @@ module Bulkrax
 
     # All possible column names
     def export_headers
-      headers = ['id']
-      headers << source_identifier.to_s
-      headers << 'model'
-      headers << 'collections'
-
+      headers = []
       # the object keys are not part of a work types default metadata but the object itself is,
       # so we check according to it and add the acceptable headers
       importerexporter.mapping.each do |key, value|
@@ -226,8 +222,19 @@ module Bulkrax
         headers << key if key_allowed(key)
       end
 
-      headers << 'file'
+      # we don't want access_control_id exported and we want file at the end
+      # also sort the headers so they're grouped and easier to find
       headers.delete('access_control_id') if headers.include?('access_control_id')
+      headers.delete('file') if headers.include?('file')
+      headers.sort!
+
+      # add the headers below at the beginning or end to maintain the preexisting export behavior
+      headers.prepend('collections')
+      headers.prepend('model')
+      headers.prepend(source_identifier.to_s)
+      headers.prepend('id')
+
+      headers << 'file'
       headers.uniq
     end
 
