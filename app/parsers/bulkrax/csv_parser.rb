@@ -227,6 +227,7 @@ module Bulkrax
       end
 
       headers << 'file'
+      headers.delete(access_control_id) if access_control_id
       headers.uniq
     end
 
