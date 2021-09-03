@@ -236,14 +236,16 @@ module Bulkrax
                           })
       end
 
-      let(:entry) { FactoryBot.create(:bulkrax_csv_entry, importerexporter: exporter, parsed_metadata: {
-        'id' => work_id,
-        'first_name_1' => 'Judge',
-        'last_name_1' => 'Hines',
-        'position_1_1' => 'King',
-        'position_1_2' => 'Lord',
-        'first_name_2' => 'Aaliyah',
-      }) }
+      let(:entry) do
+        FactoryBot.create(:bulkrax_csv_entry, importerexporter: exporter, parsed_metadata: {
+                            'id' => work_id,
+                            'first_name_1' => 'Judge',
+                            'last_name_1' => 'Hines',
+                            'position_1_1' => 'King',
+                            'position_1_2' => 'Lord',
+                            'first_name_2' => 'Aaliyah'
+                          })
+        end
 
       before do
         allow(ActiveFedora::SolrService).to receive(:query).and_return(OpenStruct.new(id: work_id))
