@@ -245,7 +245,7 @@ module Bulkrax
                             'position_1_2' => 'Lord',
                             'first_name_2' => 'Aaliyah'
                           })
-        end
+      end
 
       before do
         allow(ActiveFedora::SolrService).to receive(:query).and_return(OpenStruct.new(id: work_id))
