@@ -8,10 +8,6 @@ module Bulkrax
       true
     end
 
-    def initialize(importerexporter)
-      @importerexporter = importerexporter
-    end
-
     def collections
       # does the CSV contain a collection column?
       return [] unless import_fields.include?(:collection)
@@ -136,7 +132,8 @@ module Bulkrax
       current_work_ids.each_with_index do |wid, index|
         break if limit_reached?(limit, index)
         new_entry = find_or_create_entry(entry_class, wid, 'Bulkrax::Exporter')
-        Bulkrax::ExportWorkJob.perform_now(new_entry.id, current_run.id)
+        entry = Bulkrax::ExportWorkJob.perform_now(new_entry.id, current_run.id)
+        headers |= entry.parsed_metadata.keys
       end
     end
     alias create_from_collection create_new_entries
@@ -209,15 +206,7 @@ module Bulkrax
 
     # All possible column names
     def export_headers
-      # need to find the numerated headers, which may be different per entry
-      # and then remove the duplicates
-      parsed_metadata_keys = []
-      importerexporter.entries.where(identifier: current_work_ids)[0..limit || total].each do |entry|
-        parsed_metadata_keys += entry.parsed_metadata.keys
-      end
-      parsed_metadata_keys.uniq!
-
-      # although these 4 items are in the parsed_metadata_keys we list them here specifically for ordering on the csv
+      # although these 4 items are in self.headers we list them here specifically for ordering on the csv
       headers = ['id']
       headers << source_identifier.to_s
       headers << 'model'
@@ -227,7 +216,7 @@ module Bulkrax
       # so we check according to it and add the acceptable headers
       importerexporter.mapping.each do |key, value|
         if value.key?('object') && key_allowed(value['object'])
-          object_keys = parsed_metadata_keys.each { |pm| pm.to_s.include?(value['object']) }
+          object_keys = self.headers.each { |pm| pm.to_s.include?(value['object']) }
           next object_keys.each { |item| headers << item }
         end
 

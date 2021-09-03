@@ -2,7 +2,7 @@
 
 module Bulkrax
   class ApplicationParser
-    attr_accessor :importerexporter
+    attr_accessor :importerexporter, :headers
     alias importer importerexporter
     alias exporter importerexporter
     delegate :only_updates, :limit, :current_run, :errors,
