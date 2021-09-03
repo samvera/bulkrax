@@ -192,9 +192,7 @@ module Bulkrax
     # which is used by Hyrax::Actors::AddAsMemberOfCollectionsActor
     def create_attributes
       return transform_attributes if klass == Collection
-      if attributes[:collection].present? || attributes[:collections].present?
-        ActiveSupport::Deprecation.warn("Passing collection or collections directly to the ObjectFactory is no longer supported. Please update your Entry class to call add_collections instead.")
-      end
+      ActiveSupport::Deprecation.warn("Passing collection or collections directly to the ObjectFactory is no longer supported. Please update your Entry class to call add_collections instead.") if attributes[:collection].present? || attributes[:collections].present?
       transform_attributes.except(:collections, :collection)
     end
 
@@ -202,9 +200,7 @@ module Bulkrax
     # which is used by Hyrax::Actors::AddAsMemberOfCollectionsActor
     def attribute_update
       return transform_attributes.except(:id) if klass == Collection
-      if attributes[:collection].present? || attributes[:collections].present?
-        ActiveSupport::Deprecation.warn("Passing collection or collections directly to the ObjectFactory is no longer supported. Please update your Entry class to call add_collections instead.")
-      end
+      ActiveSupport::Deprecation.warn("Passing collection or collections directly to the ObjectFactory is no longer supported. Please update your Entry class to call add_collections instead.") if attributes[:collection].present? || attributes[:collections].present?
       transform_attributes.except(:collections, :collection, :id)
     end
 
