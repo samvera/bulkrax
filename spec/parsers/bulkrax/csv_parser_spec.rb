@@ -223,5 +223,45 @@ module Bulkrax
         expect(file_contents).not_to include('Collection')
       end
     end
+
+    describe '#export_headers' do
+      subject(:parser) { described_class.new(exporter) }
+      let(:work_id) { SecureRandom.alphanumeric(9) }
+      let(:exporter) do
+        FactoryBot.create(:bulkrax_exporter_worktype, field_mapping: {
+                            'id' => { from: ['id'], source_identifier: true },
+                            'first_name' => { from: ['multiple_objects_first_name'], object: 'multiple_objects' },
+                            'last_name' => { from: ['multiple_objects_last_name'], object: 'multiple_objects' },
+                            'position' => { from: ['multiple_objects_position'], object: 'multiple_objects', nested_type: 'Array' }
+                          })
+      end
+
+      let(:entry) { FactoryBot.create(:bulkrax_csv_entry, importerexporter: exporter, parsed_metadata: {
+        'id' => work_id,
+        'first_name_1' => 'Judge',
+        'last_name_1' => 'Hines',
+        'position_1_1' => 'King',
+        'position_1_2' => 'Lord',
+        'first_name_2' => 'Aaliyah',
+      }) }
+
+      before do
+        allow(ActiveFedora::SolrService).to receive(:query).and_return(OpenStruct.new(id: work_id))
+        allow(exporter.entries).to receive(:where).and_return([entry])
+      end
+
+      it 'returns an array of single, numerated and double numerated header values' do
+        headers = parser.export_headers
+        expect(headers).to include('id')
+        expect(headers).to include('model')
+        expect(headers).to include('collections')
+        expect(headers).to include('first_name_1')
+        expect(headers).to include('last_name_1')
+        expect(headers).to include('position_1_1')
+        expect(headers).to include('position_1_2')
+        expect(headers).to include('first_name_2')
+        expect(headers).to include('file')
+      end
+    end
   end
 end
