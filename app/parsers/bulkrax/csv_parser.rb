@@ -8,10 +8,6 @@ module Bulkrax
       true
     end
 
-    def initialize(importerexporter)
-      @importerexporter = importerexporter
-    end
-
     def collections
       # does the CSV contain a collection column?
       return [] unless import_fields.include?(:collection)
@@ -136,7 +132,8 @@ module Bulkrax
       current_work_ids.each_with_index do |wid, index|
         break if limit_reached?(limit, index)
         new_entry = find_or_create_entry(entry_class, wid, 'Bulkrax::Exporter')
-        Bulkrax::ExportWorkJob.perform_now(new_entry.id, current_run.id)
+        entry = Bulkrax::ExportWorkJob.perform_now(new_entry.id, current_run.id)
+        headers |= entry.parsed_metadata.keys
       end
     end
     alias create_from_collection create_new_entries
