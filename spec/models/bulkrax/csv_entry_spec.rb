@@ -364,10 +364,10 @@ module Bulkrax
 
         it 'succeeds' do
           metadata = subject.build_export_metadata
-          expect(metadata['first_name_1']).to eq('Fake')
-          expect(metadata['last_name_1']).to eq('Fakerson')
-          expect(metadata['position_1']).to include('Leader', 'Jester', 'Queen')
-          expect(metadata['language_1']).to eq('english')
+          expect(metadata['single_object_first_name_1']).to eq('Fake')
+          expect(metadata['single_object_last_name_1']).to eq('Fakerson')
+          expect(metadata['single_object_position_1']).to include('Leader', 'Jester', 'Queen')
+          expect(metadata['single_object_language_1']).to eq('english')
         end
       end
 
@@ -461,13 +461,13 @@ module Bulkrax
 
         it 'succeeds' do
           metadata = subject.build_export_metadata
-          expect(metadata['first_name_1']).to eq('Fake')
-          expect(metadata['last_name_1']).to eq('Fakerson')
-          expect(metadata['position_1']).to include('Leader, Jester, Queen')
-          expect(metadata['language_1']).to eq('english')
-          expect(metadata['first_name_2']).to eq('Judge')
-          expect(metadata['last_name_2']).to eq('Hines')
-          expect(metadata['position_2']).to include('King, Lord, Duke')
+          expect(metadata['multiple_objects_first_name_1']).to eq('Fake')
+          expect(metadata['multiple_objects_last_name_1']).to eq('Fakerson')
+          expect(metadata['multiple_objects_position_1']).to include('Leader, Jester, Queen')
+          expect(metadata['multiple_objects_language_1']).to eq('english')
+          expect(metadata['multiple_objects_first_name_2']).to eq('Judge')
+          expect(metadata['multiple_objects_last_name_2']).to eq('Hines')
+          expect(metadata['multiple_objects_position_2']).to include('King, Lord, Duke')
         end
       end
 
@@ -555,13 +555,13 @@ module Bulkrax
 
         it 'succeeds' do
           metadata = subject.build_export_metadata
-          expect(metadata['first_name_1']).to eq('Fake')
-          expect(metadata['last_name_1']).to eq('Fakerson')
-          expect(metadata['first_name_2']).to eq('Judge')
-          expect(metadata['last_name_2']).to eq('Hines')
-          expect(metadata['position_2_1']).to eq('King')
-          expect(metadata['position_2_2']).to eq('Lord')
-          expect(metadata['position_2_3']).to eq('Duke')
+          expect(metadata['multiple_objects_first_name_1']).to eq('Fake')
+          expect(metadata['multiple_objects_last_name_1']).to eq('Fakerson')
+          expect(metadata['multiple_objects_first_name_2']).to eq('Judge')
+          expect(metadata['multiple_objects_last_name_2']).to eq('Hines')
+          expect(metadata['multiple_objects_position_2_1']).to eq('King')
+          expect(metadata['multiple_objects_position_2_2']).to eq('Lord')
+          expect(metadata['multiple_objects_position_2_3']).to eq('Duke')
         end
       end
       # rubocop:enable RSpec/ExampleLength

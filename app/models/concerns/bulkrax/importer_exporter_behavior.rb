@@ -30,5 +30,13 @@ module Bulkrax
       current_run.enqueued_records = index + 1
       current_run.save!
     end
+
+    def keys_without_numbers(keys)
+      keys.map { |key| key_without_numbers(key) }
+    end
+
+    def key_without_numbers(key)
+      key.gsub(/_\d+/, '').sub(/^\d+_/, '')
+    end
   end
 end

@@ -134,10 +134,7 @@ module Bulkrax
         new_entry = find_or_create_entry(entry_class, wid, 'Bulkrax::Exporter')
         entry = Bulkrax::ExportWorkJob.perform_now(new_entry.id, current_run.id)
 
-        if entry
-          self.headers ||= []
-          self.headers |= entry.parsed_metadata.keys
-        end
+        self.headers |= entry.parsed_metadata.keys if entry
       end
     end
     alias create_from_collection create_new_entries
@@ -202,25 +199,14 @@ module Bulkrax
       end
     end
 
-    def key_allowed(key)
-      !Bulkrax.reserved_properties.include?(key) &&
-        new_entry(entry_class, 'Bulkrax::Exporter').field_supported?(key) &&
+    def export_key_allowed(key)
+      new_entry(entry_class, 'Bulkrax::Exporter').field_supported?(key) &&
         key != source_identifier.to_s
     end
 
     # All possible column names
     def export_headers
-      headers = []
-      # the object keys are not part of a work types default metadata but the object itself is,
-      # so we check according to it and add the acceptable headers
-      importerexporter.mapping.each do |key, value|
-        if value.key?('object') && key_allowed(value['object'])
-          object_keys = self.headers.each { |sh| sh.to_s.include?(value['object']) }
-          next object_keys.each { |item| headers << item }
-        end
-
-        headers << key if key_allowed(key)
-      end
+      headers = self.headers
 
       # we don't want access_control_id exported and we want file at the end
       # also sort the headers so they're grouped and easier to find
