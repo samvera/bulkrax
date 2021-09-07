@@ -108,7 +108,7 @@ module Bulkrax
 
     def build_object(object_key, value)
       data = hyrax_record.send(value['object'])
-      next if data.empty?
+      return if data.empty?
 
       data = data.to_a if data.is_a?(ActiveTriples::Relation)
       object_metadata(Array.wrap(data), object_key)
@@ -148,7 +148,11 @@ module Bulkrax
 
     def object_metadata(data, object_key)
       data = data.map { |d| eval(d) }.flatten # rubocop:disable Security/Eval
+
       data.each_with_index do |obj, index|
+        # allow the object_key to be valid whether it's a string or symbol
+        obj = obj.with_indifferent_access
+
         next unless obj[object_key]
         if obj[object_key].is_a?(Array)
           obj[object_key].each_with_index do |_nested_item, nested_index|
