@@ -214,10 +214,12 @@ module Bulkrax
       headers.sort!
 
       # add the headers below at the beginning or end to maintain the preexisting export behavior
+      headers.prepend('collection') unless headers.detect {|header| header.match(/^collection/)}
       headers.prepend('model')
       headers.prepend(source_identifier.to_s)
       headers.prepend('id')
 
+      headers << 'file' unless headers.detect {|header| header.match(/^file/)}
       headers.uniq
     end
 
