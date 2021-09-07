@@ -5,11 +5,11 @@ module Bulkrax
     attr_accessor :importerexporter, :headers
     alias importer importerexporter
     alias exporter importerexporter
-    delegate :only_updates, :limit, :current_run, :errors,
-             :seen, :increment_counters, :parser_fields, :user,
-             :exporter_export_path, :exporter_export_zip_path, :importer_unzip_path, :validate_only,
-             :status, :status_info, :status_at,
-             to: :importerexporter
+    delegate :only_updates, :limit, :current_run, :errors, :mapping,
+      :seen, :increment_counters, :parser_fields, :user, :keys_without_numbers,
+      :key_without_numbers, :status, :status_info, :status_at,
+      :exporter_export_path, :exporter_export_zip_path, :importer_unzip_path, :validate_only,
+      to: :importerexporter
 
     def self.parser_fields
       {}
@@ -25,6 +25,7 @@ module Bulkrax
 
     def initialize(importerexporter)
       @importerexporter = importerexporter
+      @headers = []
     end
 
     # @api

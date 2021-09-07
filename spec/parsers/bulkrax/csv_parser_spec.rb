@@ -230,6 +230,7 @@ module Bulkrax
       let(:exporter) do
         FactoryBot.create(:bulkrax_exporter_worktype, field_mapping: {
                             'id' => { from: ['id'], source_identifier: true },
+                            'title' => { from: ['display_title'] },
                             'first_name' => { from: ['multiple_objects_first_name'], object: 'multiple_objects' },
                             'last_name' => { from: ['multiple_objects_last_name'], object: 'multiple_objects' },
                             'position' => { from: ['multiple_objects_position'], object: 'multiple_objects', nested_type: 'Array' }
@@ -239,11 +240,12 @@ module Bulkrax
       let(:entry) do
         FactoryBot.create(:bulkrax_csv_entry, importerexporter: exporter, parsed_metadata: {
                             'id' => work_id,
-                            'first_name_1' => 'Judge',
-                            'last_name_1' => 'Hines',
-                            'position_1_1' => 'King',
-                            'position_1_2' => 'Lord',
-                            'first_name_2' => 'Aaliyah'
+                            'display_title' => 'First',
+                            'multiple_objects_first_name_1' => 'Judge',
+                            'multiple_objects_last_name_1' => 'Hines',
+                            'multiple_objects_position_1_1' => 'King',
+                            'multiple_objects_position_1_2' => 'Lord',
+                            'multiple_objects_first_name_2' => 'Aaliyah'
                           })
       end
 
@@ -257,13 +259,12 @@ module Bulkrax
         headers = parser.export_headers
         expect(headers).to include('id')
         expect(headers).to include('model')
-        expect(headers).to include('collections')
-        expect(headers).to include('first_name_1')
-        expect(headers).to include('last_name_1')
-        expect(headers).to include('position_1_1')
-        expect(headers).to include('position_1_2')
-        expect(headers).to include('first_name_2')
-        expect(headers).to include('file')
+        expect(headers).to include('display_title')
+        expect(headers).to include('multiple_objects_first_name_1')
+        expect(headers).to include('multiple_objects_last_name_1')
+        expect(headers).to include('multiple_objects_position_1_1')
+        expect(headers).to include('multiple_objects_position_1_2')
+        expect(headers).to include('multiple_objects_first_name_2')
       end
     end
   end
