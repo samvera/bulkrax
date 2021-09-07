@@ -108,11 +108,10 @@ module Bulkrax
 
     def build_object(object_key, value)
       data = hyrax_record.send(value['object'])
+      return if data.empty?
 
-      unless data.empty?
-        data = data.to_a if data.is_a?(ActiveTriples::Relation)
-        object_metadata(Array.wrap(data), object_key)
-      end
+      data = data.to_a if data.is_a?(ActiveTriples::Relation)
+      object_metadata(Array.wrap(data), object_key)
     end
 
     def build_value(key, value)
