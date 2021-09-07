@@ -108,7 +108,6 @@ module Bulkrax
 
     def build_object(object_key, value)
       data = hyrax_record.send(value['object'])
-      # byebug
       return if data.empty?
 
       data = data.to_a if data.is_a?(ActiveTriples::Relation)
