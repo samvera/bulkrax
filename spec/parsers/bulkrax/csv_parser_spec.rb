@@ -259,14 +259,12 @@ module Bulkrax
         headers = parser.export_headers
         expect(headers).to include('id')
         expect(headers).to include('model')
-        expect(headers).to include('collections')
         expect(headers).to include('display_title')
         expect(headers).to include('multiple_objects_first_name_1')
         expect(headers).to include('multiple_objects_last_name_1')
         expect(headers).to include('multiple_objects_position_1_1')
         expect(headers).to include('multiple_objects_position_1_2')
         expect(headers).to include('multiple_objects_first_name_2')
-        expect(headers).to include('file')
       end
     end
   end

@@ -108,6 +108,7 @@ module Bulkrax
 
     def build_object(object_key, value)
       data = hyrax_record.send(value['object'])
+      # byebug
       return if data.empty?
 
       data = data.to_a if data.is_a?(ActiveTriples::Relation)
@@ -147,17 +148,19 @@ module Bulkrax
     end
 
     def object_metadata(data, object_key)
-      # eval turns all of the keys into symbols
       data = data.map { |d| eval(d) }.flatten # rubocop:disable Security/Eval
+
       data.each_with_index do |obj, index|
-        object_symbol = object_key.to_sym
-        next unless obj[object_symbol]
-        if obj[object_symbol].is_a?(Array)
-          obj[object_symbol].each_with_index do |_nested_item, nested_index|
-            self.parsed_metadata["#{key_for_export(object_key)}_#{index + 1}_#{nested_index + 1}"] = prepare_export_data(obj[object_symbol][nested_index])
+        # allow the object_key to be valid whether it's a string or symbol
+        obj = obj.with_indifferent_access
+
+        next unless obj[object_key]
+        if obj[object_key].is_a?(Array)
+          obj[object_key].each_with_index do |_nested_item, nested_index|
+            self.parsed_metadata["#{key_for_export(object_key)}_#{index + 1}_#{nested_index + 1}"] = prepare_export_data(obj[object_key][nested_index])
           end
         else
-          self.parsed_metadata["#{key_for_export(object_key)}_#{index + 1}"] = prepare_export_data(obj[object_symbol])
+          self.parsed_metadata["#{key_for_export(object_key)}_#{index + 1}"] = prepare_export_data(obj[object_key])
         end
       end
     end
