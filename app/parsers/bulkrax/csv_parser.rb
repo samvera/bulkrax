@@ -32,7 +32,7 @@ module Bulkrax
 
     def required_elements?(keys)
       return if keys.blank?
-      missing_elements(keys).blank?
+      missing_elements(keys_without_numbers(keys)).blank?
     end
 
     def missing_elements(keys)
