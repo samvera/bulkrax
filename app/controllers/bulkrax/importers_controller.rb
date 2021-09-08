@@ -113,9 +113,7 @@ module Bulkrax
       if @importer.update(importer_params)
         files_for_import(file, cloud_files) unless file.nil? && cloud_files.nil?
         # do not perform the import
-        if params[:commit] == 'Update Importer'
-        # do nothing
-        else
+        unless params[:commit] == 'Update Importer'
           set_files_parser_fields
           Bulkrax::ImporterJob.send(@importer.parser.perform_method, @importer.id, update_harvest)
         end
