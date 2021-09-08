@@ -227,7 +227,7 @@ module Bulkrax
     #  and check all listed files exist.
     def file_paths
       raise StandardError, 'No records were found' if records.blank?
-      return [] if parser_fields['metadata_only'] == true
+      return [] if importerexporter.metadata_only?
 
       @file_paths ||= records.map do |r|
         file_mapping = Bulkrax.field_mappings.dig(self.class.to_s, 'file', :from)&.first&.to_sym || :file
