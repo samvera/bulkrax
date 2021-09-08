@@ -17,6 +17,14 @@ module Bulkrax
       end
     end
 
+    def update
+      @entry = Entry.find(params[:id])
+      @entry.build
+      @entry.save
+      redirect_to @entry, notice: "Entry update ran, new status is #{@entry.status}"
+    end
+
+    protected
     # GET /importers/1/entries/1
     def show_importer
       @importer = Importer.find(params[:importer_id])
