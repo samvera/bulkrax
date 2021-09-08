@@ -124,7 +124,7 @@ module Bulkrax
       field = field.gsub('_attributes', '')
 
       return false if excluded?(field)
-      return true if ['collections', 'file', 'remote_files', 'model', 'delete'].include?(field)
+      return true if ['id', 'collections', 'file', 'remote_files', 'model', 'delete'].include?(field)
       return factory_class.method_defined?(field) && factory_class.properties[field].present?
     end
 
