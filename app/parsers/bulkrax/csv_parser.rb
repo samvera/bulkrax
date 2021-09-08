@@ -127,8 +127,9 @@ module Bulkrax
                                            .includes(:statusable)
                                            .where('bulkrax_statuses.statusable_id IN (?) AND bulkrax_statuses.statusable_type = ? AND status_message = ?', entry_ids, 'Bulkrax::Entry', 'Complete')
         complete_entry_identifiers = complete_statuses.map { |s| s.statusable&.identifier }
+        extra_filters = extra_filters.blank? ? '*:*' : extra_filters
 
-        ActiveFedora::SolrService.query("#{work_identifier}_tesim:(#{complete_entry_identifiers.join(' OR ')})#{extra_filters}", rows: 2_000_000_000).map(&:id)
+        ActiveFedora::SolrService.get("#{extra_filters}", fq: "#{work_identifier}_sim:(#{complete_entry_identifiers.join(' OR ')})", rows: 2_000_000_000).map(&:id)
       end
     end
 
