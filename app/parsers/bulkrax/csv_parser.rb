@@ -129,7 +129,12 @@ module Bulkrax
         complete_entry_identifiers = complete_statuses.map { |s| s.statusable&.identifier }
         extra_filters = extra_filters.presence || '*:*'
 
-        ActiveFedora::SolrService.get(extra_filters.to_s, fq: "#{work_identifier}_sim:(#{complete_entry_identifiers.join(' OR ')})", rows: 2_000_000_000).map(&:id)
+        ActiveFedora::SolrService.get(
+                                      extra_filters.to_s,
+                                      fq: "#{work_identifier}_sim:(#{complete_entry_identifiers.join(' OR ')})",
+                                      fl: 'id',
+                                      rows: 2_000_000_000
+                                    )
       end
     end
 
