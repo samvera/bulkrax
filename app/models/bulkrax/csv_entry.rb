@@ -47,7 +47,7 @@ module Bulkrax
       self.parsed_metadata = {}
       self.parsed_metadata[work_identifier] = [record[source_identifier]]
       record.each do |key, value|
-        next if key == 'collection'
+        next if %w[collection collections].include?(key_without_numbers(key))
 
         index = key[/\d+/].to_i - 1 if key[/\d+/].to_i != 0
         add_metadata(key_without_numbers(key), value, index)
