@@ -52,7 +52,7 @@ module Bulkrax
         index = key[/\d+/].to_i - 1 if key[/\d+/].to_i != 0
         add_metadata(key_without_numbers(key), value, index)
       end
-      add_file
+      add_file unless importerexporter.parser.parser_fields['metadata_only'] == true
       add_visibility
       add_rights_statement
       add_admin_set_id

@@ -40,7 +40,7 @@ module Bulkrax
         raise StandardError, 'No metadata files were found' if path.blank?
         data = entry_class.read_data(path)
         data = entry_class.data_for_entry(data, source_identifier)
-        data[:file] = bag.bag_files.join('|')
+        data[:file] = bag.bag_files.join('|') unless parser_fields['metadata_only'] == true
         data
       end
     end
