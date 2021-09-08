@@ -59,6 +59,7 @@ module Bulkrax
 
     def set_parsed_data(object_multiple, object_name, name, index, value)
       if object_multiple
+        index ||= 0
         parsed_metadata[object_name][index] ||= {}
         parsed_metadata[object_name][index][name] ||= []
         if value.is_a?(Array)
