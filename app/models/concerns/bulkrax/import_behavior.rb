@@ -58,8 +58,10 @@ module Bulkrax
 
     def add_collections
       return if find_or_create_collection_ids.blank?
-      self.parsed_metadata['collections'] = []
-      self.parsed_metadata['collections'] += find_or_create_collection_ids.map { |c| { id: c } }
+      self.parsed_metadata['member_of_collections_attributes'] = {}
+      find_or_create_collection_ids.each_with_index do |c, i|
+        self.parsed_metadata['member_of_collections_attributes'][i.to_s] = { id: c }
+      end
     end
 
     def factory
