@@ -127,8 +127,13 @@ module Bulkrax
                                            .includes(:statusable)
                                            .where('bulkrax_statuses.statusable_id IN (?) AND bulkrax_statuses.statusable_type = ? AND status_message = ?', entry_ids, 'Bulkrax::Entry', 'Complete')
         complete_entry_identifiers = complete_statuses.map { |s| s.statusable&.identifier&.gsub(':', '\:') }
-
-        ActiveFedora::SolrService.query("#{work_identifier}_tesim:(#{complete_entry_identifiers.join(' OR ')})#{extra_filters}", rows: 2_000_000_000).map(&:id)
+        extra_filters = extra_filters.presence || '*:*'
+        ActiveFedora::SolrService.get(
+            extra_filters.to_s,
+            fq: "#{work_identifier}_sim:(#{complete_entry_identifiers.join(' OR ')})",
+            fl: 'id',
+            rows: 2_000_000_000
+        )['response']['docs'].map{ |obj| obj['id'] }
       end
     end
 
