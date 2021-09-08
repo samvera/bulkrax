@@ -121,7 +121,7 @@ module Bulkrax
           self.parsed_metadata[key_for_export(key)] = data.map { |d| prepare_export_data(d) }.join('; ').to_s
         else
           data.each_with_index do |d, i|
-            self.parsed_metadata["#{key_for_export(key)}_#{i + i}"] = prepare_export_data(d)
+            self.parsed_metadata["#{key_for_export(key)}_#{i + 1}"] = prepare_export_data(d)
           end
         end
       else
