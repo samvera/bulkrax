@@ -32,7 +32,7 @@ module Bulkrax
 
     def required_elements?(keys)
       return if keys.blank?
-      missing_elements(keys_without_numbers(keys)).blank?
+      missing_elements(keys).blank?
     end
 
     def missing_elements(keys)
@@ -40,8 +40,9 @@ module Bulkrax
     end
 
     def valid_import?
-      error_alert = "Missing at least one required element, missing element(s) are: #{missing_elements(import_fields).join(', ')}"
-      raise StandardError, error_alert unless required_elements?(import_fields)
+      import_strings = keys_without_numbers(import_fields.map(&:to_s))
+      error_alert = "Missing at least one required element, missing element(s) are: #{missing_elements(import_strings).join(', ')}"
+      raise StandardError, error_alert unless required_elements?(import_strings)
 
       file_paths.is_a?(Array)
     rescue StandardError => e
