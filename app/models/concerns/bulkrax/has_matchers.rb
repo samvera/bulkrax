@@ -59,6 +59,7 @@ module Bulkrax
 
     def set_parsed_data(object_multiple, object_name, name, index, value)
       if object_multiple
+        index ||= 0
         parsed_metadata[object_name][index] ||= {}
         parsed_metadata[object_name][index][name] ||= []
         if value.is_a?(Array)
@@ -124,7 +125,7 @@ module Bulkrax
       field = field.gsub('_attributes', '')
 
       return false if excluded?(field)
-      return true if ['collections', 'file', 'remote_files', 'model', 'delete'].include?(field)
+      return true if ['id', 'collections', 'file', 'remote_files', 'model', 'delete'].include?(field)
       return factory_class.method_defined?(field) && factory_class.properties[field].present?
     end
 
