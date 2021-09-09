@@ -113,23 +113,9 @@ module Bulkrax
       if @importer.update(importer_params)
         files_for_import(file, cloud_files) unless file.nil? && cloud_files.nil?
         # do not perform the import
-        if params[:commit] == 'Update Importer'
-        # do nothing
-        # OAI-only - selective re-harvest
-        elsif params[:commit] == 'Update and Harvest Updated Items'
-          Bulkrax::ImporterJob.perform_later(@importer.id, true)
-        elsif params[:commit] == 'Update Metadata and Files'
-          @importer.parser_fields['update_files'] = true
-          @importer.save
-          Bulkrax::ImporterJob.perform_later(@importer.id)
-          # Perform a full metadata and files re-import; do the same for an OAI re-harvest of all items
-        elsif params[:commit] == ('Update and Replace Files' || 'Update and Re-Harvest All Items')
-          @importer.parser_fields['replace_files'] = true
-          @importer.save
-          Bulkrax::ImporterJob.perform_later(@importer.id)
-        # In all other cases, perform a metadata-only re-import
-        else
-          Bulkrax::ImporterJob.perform_later(@importer.id)
+        unless params[:commit] == 'Update Importer'
+          set_files_parser_fields
+          Bulkrax::ImporterJob.send(@importer.parser.perform_method, @importer.id, update_harvest)
         end
         if api_request?
           json_response('updated', :ok, 'Importer was successfully updated.')
@@ -309,6 +295,25 @@ module Bulkrax
         path = validate_only ? importer_path(@importer) : importers_path
         redirect_to path, notice: message
       end
+    end
+
+    # update methods (for commit deciphering)
+    def update_harvest
+      # OAI-only - selective re-harvest
+      params[:commit] == 'Update and Harvest Updated Items'
+    end
+
+    def set_files_parser_fields
+      if params[:commit] == 'Update Metadata and Files'
+        @importer.parser_fields['update_files'] = true
+      elsif params[:commit] == ('Update and Replace Files' || 'Update and Re-Harvest All Items')
+        @importer.parser_fields['replace_files'] = true
+      elsif params[:commit] == 'Update and Harvest Updated Items'
+        return
+      else
+        @importer.parser_fields['metadata_only'] = true
+      end
+      @importer.save
     end
   end
   # rubocop:enable Metrics/ClassLength

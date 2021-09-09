@@ -14,9 +14,9 @@ module Bulkrax
     def self.read_data(path)
       raise StandardError, 'CSV path empty' if path.blank?
       CSV.read(path,
-               headers: true,
-               header_converters: :symbol,
-               encoding: 'utf-8')
+        headers: true,
+        header_converters: :symbol,
+        encoding: 'utf-8')
     end
 
     def self.data_for_entry(data, _source_id)
@@ -40,14 +40,6 @@ module Bulkrax
       Bulkrax.parent_child_field_mapping[self.to_s] || 'children'
     end
 
-    def keys_without_numbers(keys)
-      keys.map { |key| key_without_numbers(key) }
-    end
-
-    def key_without_numbers(key)
-      key.gsub(/_\d+/, '').sub(/^\d+_/, '')
-    end
-
     def build_metadata
       raise StandardError, 'Record not found' if record.nil?
       raise StandardError, "Missing required elements, missing element(s) are: #{importerexporter.parser.missing_elements(keys_without_numbers(record.keys)).join(', ')}" unless importerexporter.parser.required_elements?(keys_without_numbers(record.keys))
@@ -60,7 +52,7 @@ module Bulkrax
         index = key[/\d+/].to_i - 1 if key[/\d+/].to_i != 0
         add_metadata(key_without_numbers(key), value, index)
       end
-      add_file
+      add_file unless importerexporter.metadata_only?
       add_visibility
       add_rights_statement
       add_admin_set_id
@@ -86,10 +78,14 @@ module Bulkrax
       self.parsed_metadata[source_identifier] = hyrax_record.send(work_identifier)
       self.parsed_metadata['model'] = hyrax_record.has_model.first
       build_mapping_metadata
-      self.parsed_metadata['collections'] = hyrax_record.member_of_collection_ids.join('; ')
-      unless hyrax_record.is_a?(Collection)
-        self.parsed_metadata['file'] = hyrax_record.file_sets.map { |fs| filename(fs).to_s if filename(fs).present? }.compact.join('; ')
+      if mapping['collections']&.[]('join')
+        self.parsed_metadata['collections'] = hyrax_record.member_of_collection_ids.join('; ')
+      else
+        hyrax_record.member_of_collection_ids.each_with_index do |collection_id, i|
+          self.parsed_metadata["collections_#{i + 1}"] = collection_id
+        end
       end
+      build_files unless hyrax_record.is_a?(Collection)
       self.parsed_metadata
     end
 
@@ -97,22 +93,49 @@ module Bulkrax
       mapping.each do |key, value|
         next if Bulkrax.reserved_properties.include?(key) && !field_supported?(key)
         next if key == "model"
+        next if value['excluded']
 
         object_key = key if value.key?('object')
         next unless hyrax_record.respond_to?(key.to_s) || object_key.present?
 
-        data = object_key.present? ? hyrax_record.send(value['object']) : hyrax_record.send(key.to_s)
         if object_key.present?
-          next self.parsed_metadata[key] = '' if data.empty?
-          data = data.first if data.is_a?(ActiveTriples::Relation)
-
-          object_metadata(data, object_key)
-        elsif data.is_a?(ActiveTriples::Relation)
-          self.parsed_metadata[key] = data.map { |d| prepare_export_data(d) }.join('; ').to_s unless value[:excluded]
+          build_object(object_key, value)
         else
-          self.parsed_metadata[key] = prepare_export_data(data)
+          build_value(key, value)
         end
       end
+    end
+
+    def build_object(object_key, value)
+      data = hyrax_record.send(value['object'])
+      return if data.empty?
+
+      data = data.to_a if data.is_a?(ActiveTriples::Relation)
+      object_metadata(Array.wrap(data), object_key)
+    end
+
+    def build_value(key, value)
+      data = hyrax_record.send(key.to_s)
+      if data.is_a?(ActiveTriples::Relation)
+        if value['join']
+          self.parsed_metadata[key_for_export(key)] = data.map { |d| prepare_export_data(d) }.join('; ').to_s
+        else
+          data.each_with_index do |d, i|
+            self.parsed_metadata["#{key_for_export(key)}_#{i + 1}"] = prepare_export_data(d)
+          end
+        end
+      else
+        self.parsed_metadata[key_for_export(key)] = prepare_export_data(data)
+      end
+    end
+
+    # On export the key becomes the from and the from becomes the destination. It is the opposite of the import because we are moving data the opposite direction
+    # metadata that does not have a specific Bulkrax entry is mapped to the key name, as matching keys coming in are mapped by the csv parser automatically
+    def key_for_export(key)
+      clean_key = key_without_numbers(key)
+      unnumbered_key = mapping[clean_key] ? mapping[clean_key]['from'].first : clean_key
+      # Bring the number back if there is one
+      "#{unnumbered_key}#{key.sub(clean_key, '')}"
     end
 
     def prepare_export_data(datum)
@@ -124,29 +147,31 @@ module Bulkrax
     end
 
     def object_metadata(data, object_key)
-      data = convert_to_hash(data)
+      data = data.map { |d| eval(d) }.flatten # rubocop:disable Security/Eval
 
       data.each_with_index do |obj, index|
+        # allow the object_key to be valid whether it's a string or symbol
+        obj = obj.with_indifferent_access
+
         next unless obj[object_key]
-
-        next self.parsed_metadata["#{object_key}_#{index + 1}"] = prepare_export_data(obj[object_key]) unless obj[object_key].is_a?(Array)
-
-        obj[object_key].each_with_index do |_nested_item, nested_index|
-          self.parsed_metadata["#{object_key}_#{index + 1}_#{nested_index + 1}"] = prepare_export_data(obj[object_key][nested_index])
+        if obj[object_key].is_a?(Array)
+          obj[object_key].each_with_index do |_nested_item, nested_index|
+            self.parsed_metadata["#{key_for_export(object_key)}_#{index + 1}_#{nested_index + 1}"] = prepare_export_data(obj[object_key][nested_index])
+          end
+        else
+          self.parsed_metadata["#{key_for_export(object_key)}_#{index + 1}"] = prepare_export_data(obj[object_key])
         end
       end
     end
 
-    def convert_to_hash(data)
-      # converts data from `'[{}]'` to `[{}]`
-      gsub_data = data.gsub(/\[{/, '{')
-                      .gsub(/}\]/, '}')
-                      .gsub('=>', ':')
-                      .gsub(/},\s?{/, "}},{{")
-                      .split("},{")
-      gsub_data = [gsub_data] if gsub_data.is_a?(String)
-
-      return gsub_data.map { |d| JSON.parse(d) }
+    def build_files
+      if mapping['file']&.[]('join')
+        self.parsed_metadata['file'] = hyrax_record.file_sets.map { |fs| filename(fs).to_s if filename(fs).present? }.compact.join('; ')
+      else
+        hyrax_record.file_sets.each_with_index do |fs, i|
+          self.parsed_metadata["file_#{i + 1}"] = filename(fs).to_s if filename(fs).present?
+        end
+      end
     end
 
     # In order for the existing exported hyrax_record, to be updated by a re-import
