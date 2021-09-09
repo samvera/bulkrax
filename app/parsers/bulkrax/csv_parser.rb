@@ -133,7 +133,7 @@ module Bulkrax
             fq: "#{work_identifier}_sim:(#{complete_entry_identifiers.join(' OR ')})",
             fl: 'id',
             rows: 2_000_000_000
-        )['response']['docs'].map{ |obj| obj['id'] }
+        )['response']['docs'].map { |obj| obj['id'] }
       end
     end
 
