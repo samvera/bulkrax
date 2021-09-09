@@ -118,5 +118,9 @@ module Bulkrax
       properties = Hyrax.config.registered_curation_concern_types.map { |work| work.constantize.properties.keys }.flatten.uniq.sort
       properties.reject { |prop| Bulkrax.reserved_properties.include?(prop) }
     end
+
+    def metadata_only?
+      export_type == 'metadata'
+    end
   end
 end
