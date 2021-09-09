@@ -78,13 +78,15 @@ module Bulkrax
       self.parsed_metadata[source_identifier] = hyrax_record.send(work_identifier)
       self.parsed_metadata['model'] = hyrax_record.has_model.first
       build_mapping_metadata
-      if mapping['collections']&.[]('join')
-        self.parsed_metadata['collections'] = hyrax_record.member_of_collection_ids.join('; ')
+
+      if mapping['collection']&.[]('join')
+        self.parsed_metadata['collection'] = hyrax_record.member_of_collections.map { |c| c.send(work_identifier)&.first }.compact.uniq.join(';')
       else
-        hyrax_record.member_of_collection_ids.each_with_index do |collection_id, i|
-          self.parsed_metadata["collections_#{i + 1}"] = collection_id
+        hyrax_record.member_of_collections.each_with_index do |collection, i|
+          self.parsed_metadata["collection_#{i + 1}"] = collection.send(work_identifier)&.first
         end
-      end
+      end        
+
       build_files unless hyrax_record.is_a?(Collection)
       self.parsed_metadata
     end
