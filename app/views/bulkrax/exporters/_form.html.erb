@@ -32,7 +32,7 @@
     prompt: 'Select from the list',
     label_html: { class: 'importer export-source-option hidden' },
     input_html: { class: 'importer export-source-option hidden' },
-    collection:  form.object.importers_list %>
+    collection:  form.object.importers_list.sort %>
 
   <%= form.input :export_source_collection,
     prompt: 'Start typing ...',

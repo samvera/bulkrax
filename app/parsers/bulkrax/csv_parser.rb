@@ -14,9 +14,14 @@ module Bulkrax
 
     def collections
       # does the CSV contain a collection column?
-      return [] unless import_fields.include?(:collection)
+      return [] unless (import_fields & [:collection, :collections]).any?
       # retrieve a list of unique collections
-      records.map { |r| r[:collection].split(/\s*[;|]\s*/) if r[:collection].present? }.flatten.compact.uniq
+      records.map do |r|
+        collections = []
+        collections += r[:collection].split(/\s*[;|]\s*/) if r[:collection].present?
+        collections += r[:collections].split(/\s*[;|]\s*/) if r[:collections].present?
+        collections
+      end.flatten.compact.uniq
     end
 
     def collections_total
@@ -217,7 +222,7 @@ module Bulkrax
       headers = ['id']
       headers << source_identifier.to_s
       headers << 'model'
-      headers << 'collections'
+      headers << 'collection'
       importerexporter.mapping.each_key { |key| headers << key if key_allowed(key) }
       headers << 'file'
       headers.uniq
