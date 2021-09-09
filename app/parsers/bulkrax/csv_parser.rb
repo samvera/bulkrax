@@ -8,10 +8,6 @@ module Bulkrax
       true
     end
 
-    def initialize(importerexporter)
-      @importerexporter = importerexporter
-    end
-
     def collections
       # does the CSV contain a collection column?
       return [] unless (import_fields & [:collection, :collections]).any?
@@ -49,8 +45,9 @@ module Bulkrax
     end
 
     def valid_import?
-      error_alert = "Missing at least one required element, missing element(s) are: #{missing_elements(import_fields).join(', ')}"
-      raise StandardError, error_alert unless required_elements?(import_fields)
+      import_strings = keys_without_numbers(import_fields.map(&:to_s))
+      error_alert = "Missing at least one required element, missing element(s) are: #{missing_elements(import_strings).join(', ')}"
+      raise StandardError, error_alert unless required_elements?(import_strings)
 
       file_paths.is_a?(Array)
     rescue StandardError => e
@@ -133,6 +130,7 @@ module Bulkrax
                                            .where('bulkrax_statuses.statusable_id IN (?) AND bulkrax_statuses.statusable_type = ? AND status_message = ?', entry_ids, 'Bulkrax::Entry', 'Complete')
         complete_entry_identifiers = complete_statuses.map { |s| s.statusable&.identifier&.gsub(':', '\:') }
         extra_filters = extra_filters.presence || '*:*'
+
         ActiveFedora::SolrService.get(
           extra_filters.to_s,
           fq: "#{work_identifier}_sim:(#{complete_entry_identifiers.join(' OR ')})",
@@ -146,7 +144,9 @@ module Bulkrax
       current_work_ids.each_with_index do |wid, index|
         break if limit_reached?(limit, index)
         new_entry = find_or_create_entry(entry_class, wid, 'Bulkrax::Exporter')
-        Bulkrax::ExportWorkJob.perform_now(new_entry.id, current_run.id)
+        entry = Bulkrax::ExportWorkJob.perform_now(new_entry.id, current_run.id)
+
+        self.headers |= entry.parsed_metadata.keys if entry
       end
     end
     alias create_from_collection create_new_entries
@@ -211,20 +211,25 @@ module Bulkrax
       end
     end
 
-    def key_allowed(key)
-      !Bulkrax.reserved_properties.include?(key) &&
-        new_entry(entry_class, 'Bulkrax::Exporter').field_supported?(key) &&
+    def export_key_allowed(key)
+      new_entry(entry_class, 'Bulkrax::Exporter').field_supported?(key) &&
         key != source_identifier.to_s
     end
 
     # All possible column names
     def export_headers
-      headers = ['id']
-      headers << source_identifier.to_s
-      headers << 'model'
-      headers << 'collection'
-      importerexporter.mapping.each_key { |key| headers << key if key_allowed(key) }
-      headers << 'file'
+      headers = self.headers
+
+      # we don't want access_control_id exported and we want file at the end
+      # also sort the headers so they're grouped and easier to find
+      headers.delete('access_control_id') if headers.include?('access_control_id')
+      headers.sort!
+
+      # add the headers below at the beginning or end to maintain the preexisting export behavior
+      headers.prepend('model')
+      headers.prepend(source_identifier.to_s)
+      headers.prepend('id')
+
       headers.uniq
     end
 
