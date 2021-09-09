@@ -40,13 +40,13 @@ module Bulkrax
       end
     end
 
-    # Append the file_set id to ensure a unique filename
+    # Prepend the file_set id to ensure a unique filename
     def filename(file_set)
       return if file_set.original_file.blank?
       fn = file_set.original_file.file_name.first
       mime = Mime::Type.lookup(file_set.original_file.mime_type)
       ext_mime = MIME::Types.of(file_set.original_file.file_name).first
-      if fn.include?(file_set.id)
+      if fn.include?(file_set.id) || importerexporter.metadata_only?
         return fn if mime.to_s == ext_mime.to_s
         return "#{fn}.#{mime.to_sym}"
       else

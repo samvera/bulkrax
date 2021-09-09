@@ -10,9 +10,14 @@ module Bulkrax
 
     def collections
       # does the CSV contain a collection column?
-      return [] unless import_fields.include?(:collection)
+      return [] unless (import_fields & [:collection, :collections]).any?
       # retrieve a list of unique collections
-      records.map { |r| r[:collection].split(/\s*[;|]\s*/) if r[:collection].present? }.flatten.compact.uniq
+      records.map do |r|
+        collections = []
+        collections += r[:collection].split(/\s*[;|]\s*/) if r[:collection].present?
+        collections += r[:collections].split(/\s*[;|]\s*/) if r[:collections].present?
+        collections
+      end.flatten.compact.uniq
     end
 
     def collections_total
@@ -123,9 +128,16 @@ module Bulkrax
         complete_statuses = Bulkrax::Status.latest_by_statusable
                                            .includes(:statusable)
                                            .where('bulkrax_statuses.statusable_id IN (?) AND bulkrax_statuses.statusable_type = ? AND status_message = ?', entry_ids, 'Bulkrax::Entry', 'Complete')
-        complete_entry_identifiers = complete_statuses.map { |s| s.statusable&.identifier }
 
-        ActiveFedora::SolrService.query("#{work_identifier}_tesim:(#{complete_entry_identifiers.join(' OR ')})#{extra_filters}", rows: 2_000_000_000).map(&:id)
+        complete_entry_identifiers = complete_statuses.map { |s| s.statusable&.identifier&.gsub(':', '\:') }
+        extra_filters = extra_filters.presence || '*:*'
+
+        ActiveFedora::SolrService.get(
+          extra_filters.to_s,
+          fq: "#{work_identifier}_sim:(#{complete_entry_identifiers.join(' OR ')})",
+          fl: 'id',
+          rows: 2_000_000_000
+        )['response']['docs'].map { |obj| obj['id'] }
       end
     end
 
@@ -231,6 +243,8 @@ module Bulkrax
     #  and check all listed files exist.
     def file_paths
       raise StandardError, 'No records were found' if records.blank?
+      return [] if importerexporter.metadata_only?
+
       @file_paths ||= records.map do |r|
         file_mapping = Bulkrax.field_mappings.dig(self.class.to_s, 'file', :from)&.first&.to_sym || :file
         next if r[file_mapping].blank?

@@ -161,5 +161,9 @@ module Bulkrax
     rescue
       "#{self.id}_#{self.created_at.strftime('%Y%m%d%H%M%S')}"
     end
+
+    def metadata_only?
+      parser.parser_fields['metadata_only'] == true
+    end
   end
 end
