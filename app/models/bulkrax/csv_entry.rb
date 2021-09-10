@@ -85,7 +85,7 @@ module Bulkrax
         hyrax_record.member_of_collections.each_with_index do |collection, i|
           self.parsed_metadata["collection_#{i + 1}"] = collection.send(work_identifier)&.first
         end
-      end        
+      end
 
       build_files unless hyrax_record.is_a?(Collection)
       self.parsed_metadata
