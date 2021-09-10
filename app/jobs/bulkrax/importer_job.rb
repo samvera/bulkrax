@@ -24,9 +24,9 @@ module Bulkrax
     end
 
     def unzip_imported_file(parser)
-      if parser.file? && parser.zip?
-        parser.unzip(parser.parser_fields['import_file_path'])
-      end
+      return unless parser.file? && parser.zip?
+
+      parser.unzip(parser.parser_fields['import_file_path'])
     end
 
     def update_current_run_counters(importer)
