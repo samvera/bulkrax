@@ -33,7 +33,7 @@ module Bulkrax
           failed_collections: 0,
           total_collection_entries: 0,
           processed_children: 0,
-          failed_children: 0,
+          failed_children: 0
         )
       end
     end
