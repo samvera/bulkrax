@@ -38,5 +38,15 @@ module Bulkrax
     def key_without_numbers(key)
       key.gsub(/_\d+/, '').sub(/^\d+_/, '')
     end
+
+    # Is this a file?
+    def file?
+      parser_fields&.[]('import_file_path') && File.file?(parser_fields['import_file_path'])
+    end
+
+    # Is this a zip file?
+    def zip?
+      parser_fields&.[]('import_file_path') && MIME::Types.type_for(parser_fields['import_file_path']).include?('application/zip')
+    end
   end
 end

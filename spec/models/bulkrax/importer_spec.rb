@@ -21,20 +21,14 @@ module Bulkrax
     end
 
     describe 'importer run' do
-      it 'finds or creates a new ImporterRun' do
+      before do
+        allow_any_instance_of(Bulkrax::OaiDcParser).to receive(:collections_total).and_return(1)
+      end
+
+      it 'creates an ImporterRun with total_work_entries set to the value of limit' do
         importer.current_run
-        expect(importer.current_run).to have_attributes(
-          total_work_entries: 0,
-          enqueued_records: 0,
-          processed_records: 0,
-          deleted_records: 0,
-          failed_records: 0,
-          processed_collections: 0,
-          failed_collections: 0,
-          total_collection_entries: 0,
-          processed_children: 0,
-          failed_children: 0
-        )
+        expect(importer.current_run.total_work_entries).to eq(10)
+        expect(importer.current_run.total_collection_entries).to eq(1)
       end
     end
 

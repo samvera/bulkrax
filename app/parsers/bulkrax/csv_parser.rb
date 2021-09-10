@@ -177,7 +177,7 @@ module Bulkrax
         @total = 0
       end
       return @total
-    rescue StandardErrorr
+    rescue StandardError
       @total = 0
     end
 
