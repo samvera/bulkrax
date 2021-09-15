@@ -41,6 +41,7 @@ module Bulkrax
       self.run
       # Create the error exception if the object is not validly saved for some reason
       raise ActiveFedora::RecordInvalid, object if !object.persisted? || object.changed?
+      object
     end
 
     def update
