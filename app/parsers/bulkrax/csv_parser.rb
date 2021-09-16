@@ -27,7 +27,10 @@ module Bulkrax
     def records(_opts = {})
       file_for_import = only_updates ? parser_fields['partial_import_file_path'] : import_file_path
       # data for entry does not need source_identifier for csv, because csvs are read sequentially and mapped after raw data is read.
-      @records ||= entry_class.read_data(file_for_import).map { |record_data| entry_class.data_for_entry(record_data, nil) }
+      csv_data = entry_class.read_data(file_for_import)
+      importer.parser_fields['total'] = csv_data.count
+      importer.save
+      @records ||= csv_data.map { |record_data| entry_class.data_for_entry(record_data, nil) }
     end
 
     # We could use CsvEntry#fields_from_data(data) but that would mean re-reading the data
@@ -166,11 +169,7 @@ module Bulkrax
     #   Changed to grep as wc -l counts blank lines, and ignores the final unescaped line (which may or may not contain data)
     def total
       if importer?
-        return @total if @total&.positive?
-        # windows enocded
-        @total = `grep -c ^M #{real_import_file_path}`.to_i - 1
-        # unix encoded
-        @total = `grep -vc ^$ #{real_import_file_path}`.to_i - 1 if @total < 1
+        @total = importer.parser_fields['total'] || 0
       elsif exporter?
         @total = importerexporter.entries.count
       else
