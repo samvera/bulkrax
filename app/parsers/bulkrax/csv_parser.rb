@@ -168,14 +168,10 @@ module Bulkrax
     # See https://stackoverflow.com/questions/2650517/count-the-number-of-lines-in-a-file-without-reading-entire-file-into-memory
     #   Changed to grep as wc -l counts blank lines, and ignores the final unescaped line (which may or may not contain data)
     def total
-      if importer?
-        @total = importer.parser_fields['total'] || 0
-      elsif exporter?
-        @total = importerexporter.entries.count
-      else
-        @total = 0
-      end
-      return @total
+      @total = importer.parser_fields['total'] || 0 if importer?
+      @total = importerexporter.entries.count if exporter?
+
+      return @total || 0
     rescue StandardError
       @total = 0
     end
