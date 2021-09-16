@@ -83,6 +83,7 @@ module Bulkrax
         end
 
         it 'counts the correct number of works and collections' do
+          subject.records
           expect(subject.total).to eq(2)
           expect(subject.collections_total).to eq(2)
         end
