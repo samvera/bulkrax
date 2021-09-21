@@ -105,19 +105,19 @@ module Bulkrax
         next unless hyrax_record.respond_to?(key.to_s) || object_key.present?
 
         if object_key.present?
-          build_object(object_key, value)
+          build_object(value)
         else
           build_value(key, value)
         end
       end
     end
 
-    def build_object(object_key, value)
+    def build_object(value)
       data = hyrax_record.send(value['object'])
       return if data.empty?
 
       data = data.to_a if data.is_a?(ActiveTriples::Relation)
-      object_metadata(Array.wrap(data), object_key)
+      object_metadata(Array.wrap(data))
     end
 
     def build_value(key, value)
@@ -152,7 +152,7 @@ module Bulkrax
       end
     end
 
-    def object_metadata(data, object_key)
+    def object_metadata(data)
       data = data.map { |d| eval(d) }.flatten # rubocop:disable Security/Eval
 
       data.each_with_index do |obj, index|
