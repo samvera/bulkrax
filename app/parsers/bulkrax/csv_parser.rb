@@ -231,7 +231,7 @@ module Bulkrax
 
     # in the parser as it is specific to the format
     def setup_export_file
-      File.join(importerexporter.exporter_export_path, 'export.csv')
+      File.join(importerexporter.exporter_export_path, "export_#{importerexporter.export_source}_from_#{importerexporter.export_from}.csv")
     end
 
     # Retrieve file paths for [:file] mapping in records
