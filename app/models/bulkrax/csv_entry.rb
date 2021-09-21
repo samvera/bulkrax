@@ -76,7 +76,7 @@ module Bulkrax
       self.parsed_metadata = {}
       self.parsed_metadata['id'] = hyrax_record.id
       self.parsed_metadata[source_identifier] = hyrax_record.send(work_identifier)
-      self.parsed_metadata[mapping['model']['from'].first || 'model'] = hyrax_record.has_model.first
+      self.parsed_metadata[mapping['model']&['from']&.first || 'model'] = hyrax_record.has_model.first
       build_mapping_metadata
 
       # TODO: fix the "send" parameter in the conditional below

@@ -222,7 +222,7 @@ module Bulkrax
       headers.delete('model')
 
       # add the headers below at the beginning to maintain the preexisting export behavior
-      headers.prepend(mapping['model']['from'].first || 'model')
+      headers.prepend(mapping['model']&['from']&.first || 'model')
       headers.prepend(source_identifier.to_s)
       headers.prepend('id')
 
