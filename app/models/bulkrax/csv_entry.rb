@@ -159,13 +159,14 @@ module Bulkrax
         # allow the object_key to be valid whether it's a string or symbol
         obj = obj.with_indifferent_access
 
-        next unless obj[object_key]
-        if obj[object_key].is_a?(Array)
-          obj[object_key].each_with_index do |_nested_item, nested_index|
-            self.parsed_metadata["#{key_for_export(object_key)}_#{index + 1}_#{nested_index + 1}"] = prepare_export_data(obj[object_key][nested_index])
+        obj.each_key do |key|
+          if obj[key].is_a?(Array)
+            obj[key].each_with_index do |_nested_item, nested_index|
+              self.parsed_metadata["#{key_for_export(key)}_#{index + 1}_#{nested_index + 1}"] = prepare_export_data(obj[key][nested_index])
+            end
+          else
+            self.parsed_metadata["#{key_for_export(key)}_#{index + 1}"] = prepare_export_data(obj[key])
           end
-        else
-          self.parsed_metadata["#{key_for_export(object_key)}_#{index + 1}"] = prepare_export_data(obj[object_key])
         end
       end
     end
