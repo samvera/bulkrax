@@ -9,8 +9,8 @@ module Bulkrax
 
       importer.current_run
       unzip_imported_file(importer.parser)
-      update_current_run_counters(importer)
       import(importer, only_updates_since_last_import)
+      update_current_run_counters(importer)
       schedule(importer) if importer.schedulable?
     end
 
