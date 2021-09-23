@@ -156,6 +156,7 @@ module Bulkrax
       data = data.map { |d| eval(d) }.flatten # rubocop:disable Security/Eval
 
       data.each_with_index do |obj, index|
+        next if obj.nil?
         # allow the object_key to be valid whether it's a string or symbol
         obj = obj.with_indifferent_access
 
