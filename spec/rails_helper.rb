@@ -53,8 +53,8 @@ RSpec.configure do |config|
 
   config.after(:each, clean_downloads: true) do
     FileUtils.rm_rf(Dir.glob("#{ENV.fetch('RAILS_TMP', Dir.tmpdir)}/*_entries.csv"))
-    FileUtils.rm_rf(Dir.glob(File.join(Bulkrax.import_path, '1', '/*_entries.csv').to_s))
-    FileUtils.rm_rf(Dir.glob(File.join(Bulkrax.export_path, '1', '1', '/*.csv').to_s))
+    FileUtils.rm_rf(Dir.glob(File.join(import_base_path, '1', '/*_entries.csv').to_s))
+    FileUtils.rm_rf(Dir.glob(File.join(export_base_path, '1', '1', '/*.csv').to_s))
   end
 
   # Remove this line if you're not using ActiveRecord or ActiveRecord fixtures
