@@ -95,9 +95,13 @@ module Bulkrax
     # Path where we'll store the import metadata and files
     #  this is used for uploaded and cloud files
     def path_for_import
-      @path_for_import = File.join(Bulkrax.import_path, importerexporter.path_string)
+      @path_for_import = File.join(import_base_path, importerexporter.path_string)
       FileUtils.mkdir_p(@path_for_import) unless File.exist?(@path_for_import)
       @path_for_import
+    end
+
+    def import_base_path
+      ENV['HYKU_MULTITENANT'] ? File.join(Bulkrax.import_path, Site.instance.account.name) : Bulkrax.import_path
     end
 
     # Optional, only used by certain parsers
