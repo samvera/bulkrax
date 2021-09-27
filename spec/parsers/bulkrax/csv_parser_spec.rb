@@ -95,29 +95,32 @@ module Bulkrax
       let(:importer) { FactoryBot.create(:bulkrax_importer_csv_failed) }
       let(:file)     { fixture_file_upload('./spec/fixtures/csv/ok.csv') }
 
-      it 'returns the path of the partial import file' do
-        expect(subject.write_partial_import_file(file))
-          .to eq("tmp/imports/#{importer.id}_#{importer.created_at.strftime('%Y%m%d%H%M%S')}/failed_corrected_entries.csv")
+      context 'in a single tenant application' do
+        it 'returns the path of the partial import file' do
+          expect(subject.write_partial_import_file(file))
+            .to eq("tmp/imports/#{importer.id}_#{importer.created_at.strftime('%Y%m%d%H%M%S')}/failed_corrected_entries.csv")
+        end
+
+        it 'moves the partial import file to the correct path' do
+          expect(File.exist?(file.path)).to eq(true)
+
+          new_path = subject.write_partial_import_file(file)
+
+          expect(File.exist?(file.path)).to eq(false)
+          expect(File.exist?(new_path)).to eq(true)
+        end
+
+        it 'renames the uploaded file to the original import filename + _corrected_entries' do
+          import_filename = importer.parser_fields['import_file_path'].split('/').last
+          uploaded_filename = file.original_filename
+          partial_import_filename = subject.write_partial_import_file(file).split('/').last
+
+          expect(import_filename).to eq('failed.csv')
+          expect(uploaded_filename).to eq('ok.csv')
+          expect(partial_import_filename).not_to eq(uploaded_filename)
+          expect(partial_import_filename).to eq('failed_corrected_entries.csv')
+        end
       end
-
-      it 'moves the partial import file to the correct path' do
-        expect(File.exist?(file.path)).to eq(true)
-
-        new_path = subject.write_partial_import_file(file)
-
-        expect(File.exist?(file.path)).to eq(false)
-        expect(File.exist?(new_path)).to eq(true)
-      end
-
-      it 'renames the uploaded file to the original import filename + _corrected_entries' do
-        import_filename = importer.parser_fields['import_file_path'].split('/').last
-        uploaded_filename = file.original_filename
-        partial_import_filename = subject.write_partial_import_file(file).split('/').last
-
-        expect(import_filename).to eq('failed.csv')
-        expect(uploaded_filename).to eq('ok.csv')
-        expect(partial_import_filename).not_to eq(uploaded_filename)
-        expect(partial_import_filename).to eq('failed_corrected_entries.csv')
       end
     end
 
