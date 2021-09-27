@@ -121,6 +121,18 @@ module Bulkrax
           expect(partial_import_filename).to eq('failed_corrected_entries.csv')
         end
       end
+
+      context 'in a multi tenant application' do
+        # TODO(alishaevn): get this spec to work
+        before do
+          ENV['HYKU_MULTITENANT'] = 'true'
+          # Site.instance.account.name = 'hyku'
+        end
+
+        xit 'returns the path of the partial import file' do
+          expect(subject.write_partial_import_file(file))
+            .to eq("tmp/imports/hyku/#{importer.id}_#{importer.created_at.strftime('%Y%m%d%H%M%S')}/failed_corrected_entries.csv")
+        end
       end
     end
 
