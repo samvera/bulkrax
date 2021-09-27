@@ -114,7 +114,6 @@ module Bulkrax
       @exporter_export_zip_path ||= File.join(Bulkrax.base_path.call('export'), "export_#{self.id}_0.zip")
     end
 
-
     def export_properties
       properties = Hyrax.config.registered_curation_concern_types.map { |work| work.constantize.properties.keys }.flatten.uniq.sort
       properties.reject { |prop| Bulkrax.reserved_properties.include?(prop) }
