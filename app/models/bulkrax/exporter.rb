@@ -105,18 +105,15 @@ module Bulkrax
     end
 
     def exporter_export_path
-      @exporter_export_path ||= File.join(export_base_path, self.id.to_s, self.exporter_runs.last.id.to_s)
+      @exporter_export_path ||= File.join(Bulkrax.base_path.call('export'), self.id.to_s, self.exporter_runs.last.id.to_s)
     end
 
     def exporter_export_zip_path
-      @exporter_export_zip_path ||= File.join(export_base_path, "export_#{self.id}_#{self.exporter_runs.last.id}.zip")
+      @exporter_export_zip_path ||= File.join(Bulkrax.base_path.call('export'), "export_#{self.id}_#{self.exporter_runs.last.id}.zip")
     rescue
-      @exporter_export_zip_path ||= File.join(export_base_path, "export_#{self.id}_0.zip")
+      @exporter_export_zip_path ||= File.join(Bulkrax.base_path.call('export'), "export_#{self.id}_0.zip")
     end
 
-    def export_base_path
-      ENV['HYKU_MULTITENANT'] ? File.join(Bulkrax.export_path, Site.instance.account.name) : Bulkrax.export_path
-    end
 
     def export_properties
       properties = Hyrax.config.registered_curation_concern_types.map { |work| work.constantize.properties.keys }.flatten.uniq.sort
