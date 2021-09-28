@@ -92,10 +92,15 @@ module Bulkrax
       path
     end
 
+    # Base path for imported and exported files
+    def base_path(type = 'import')
+      ENV['HYKU_MULTITENANT'] ? File.join(Bulkrax.send("#{type}_path"), Site.instance.account.name) : Bulkrax.send("#{type}_path")
+    end
+
     # Path where we'll store the import metadata and files
     #  this is used for uploaded and cloud files
     def path_for_import
-      @path_for_import = File.join(Bulkrax.base_path.call('import'), importerexporter.path_string)
+      @path_for_import = File.join(base_path, importerexporter.path_string)
       FileUtils.mkdir_p(@path_for_import) unless File.exist?(@path_for_import)
       @path_for_import
     end

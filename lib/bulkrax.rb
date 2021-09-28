@@ -17,7 +17,6 @@ module Bulkrax
                    :export_path,
                    :removed_image_path,
                    :server_name,
-                   :base_path,
                    :api_definition,
                    :removed_image_path
 
@@ -33,10 +32,6 @@ module Bulkrax
     self.export_path = 'tmp/exports'
     self.removed_image_path = Bulkrax::Engine.root.join('spec', 'fixtures', 'removed.png').to_s
     self.server_name = 'bulkrax@example.com'
-
-    self.base_path = lambda do |type|
-      ENV['HYKU_MULTITENANT'] ? File.join(Bulkrax.send("#{type}_path"), Site.instance.account.name) : Bulkrax.send("#{type}_path")
-    end
 
     # @todo, merge parent_child_field_mapping and collection_field_mapping into field_mappings,
     # or make them settable per import some other way.

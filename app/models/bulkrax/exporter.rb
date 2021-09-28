@@ -105,13 +105,13 @@ module Bulkrax
     end
 
     def exporter_export_path
-      @exporter_export_path ||= File.join(Bulkrax.base_path.call('export'), self.id.to_s, self.exporter_runs.last.id.to_s)
+      @exporter_export_path ||= File.join(parser.base_path('export'), self.id.to_s, self.exporter_runs.last.id.to_s)
     end
 
     def exporter_export_zip_path
-      @exporter_export_zip_path ||= File.join(Bulkrax.base_path.call('export'), "export_#{self.id}_#{self.exporter_runs.last.id}.zip")
+      @exporter_export_zip_path ||= File.join(parser.base_path('export'), "export_#{self.id}_#{self.exporter_runs.last.id}.zip")
     rescue
-      @exporter_export_zip_path ||= File.join(Bulkrax.base_path.call('export'), "export_#{self.id}_0.zip")
+      @exporter_export_zip_path ||= File.join(parser.base_path('export'), "export_#{self.id}_0.zip")
     end
 
     def export_properties
