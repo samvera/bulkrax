@@ -126,7 +126,11 @@ module Bulkrax
         # TODO(alishaevn): get this spec to work
         before do
           ENV['HYKU_MULTITENANT'] = 'true'
-          # Site.instance.account.name = 'hyku'
+          # allow(Site).to receive(instance).and_return({})
+          # allow(Site.instance).to receive(account).and_return({})
+          # allow(Site.instance.account).to receive(name).and_return('hyku')
+
+          # allow('base_path').to receive(::Site.instance.account.name).and_return('hyku')
         end
 
         xit 'returns the path of the partial import file' do
