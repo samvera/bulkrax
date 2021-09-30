@@ -9,13 +9,14 @@ module Bulkrax
     end
 
     def collections
-      # does the CSV contain a collection column?
-      return [] unless (import_fields & [:collection, :collections]).any?
+      collection_field_mapping = Bulkrax.collection_field_mapping[self.entry_class.to_s]&.to_sym || :collection
       # retrieve a list of unique collections
       records.map do |r|
         collections = []
-        collections += r[:collection].split(/\s*[;|]\s*/) if r[:collection].present?
-        collections += r[:collections].split(/\s*[;|]\s*/) if r[:collections].present?
+        collections << r if r[:model]&.downcase == 'collection'
+        if r[collection_field_mapping].present?
+          r[collection_field_mapping].split(/\s*[;|]\s*/).each { |title| collections << { title: title } }
+        end
         collections
       end.flatten.compact.uniq
     end
@@ -61,13 +62,15 @@ module Bulkrax
     def create_collections
       collections.each_with_index do |collection, index|
         next if collection.blank?
+        title_array = collection[:title].split(/\s*[;|]\s*/)
+        identifier = collection[work_identifier] || title_array.first
         metadata = {
-          title: [collection],
-          work_identifier => [collection],
+          title: title_array,
+          work_identifier => identifier,
           visibility: 'open',
           collection_type_gid: Hyrax::CollectionType.find_or_create_default_collection_type.gid
         }
-        new_entry = find_or_create_entry(collection_entry_class, collection, 'Bulkrax::Importer', metadata)
+        new_entry = find_or_create_entry(collection_entry_class, identifier, 'Bulkrax::Importer', metadata)
         ImportWorkCollectionJob.perform_now(new_entry.id, current_run.id)
         increment_counters(index, true)
       end
@@ -76,6 +79,7 @@ module Bulkrax
     def create_works
       records.each_with_index do |record, index|
         next unless record_has_source_identifier(record, index)
+        next if record[:model]&.downcase == 'collection'
         break if limit_reached?(limit, index)
 
         seen[record[source_identifier]] = true
