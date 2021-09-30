@@ -9,14 +9,12 @@ module Bulkrax
     end
 
     def collections
-      collection_field_mapping = Bulkrax.collection_field_mapping[self.entry_class.to_s]&.to_sym || :collection
+      col_mapping = Bulkrax.collection_field_mapping[self.entry_class.to_s]&.to_sym || :collection
       # retrieve a list of unique collections
       records.map do |r|
         collections = []
         collections << r if r[:model]&.downcase == 'collection'
-        if r[collection_field_mapping].present?
-          r[collection_field_mapping].split(/\s*[;|]\s*/).each { |title| collections << { title: title } }
-        end
+        r[col_mapping].split(/\s*[;|]\s*/).each { |title| collections << { title: title } } if r[col_mapping].present?
         collections
       end.flatten.compact.uniq
     end
