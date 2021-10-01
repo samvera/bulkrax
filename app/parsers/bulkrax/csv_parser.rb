@@ -62,12 +62,14 @@ module Bulkrax
         next if collection.blank?
         title_array = collection[:title].split(/\s*[;|]\s*/)
         identifier = collection[work_identifier] || title_array.first
+
         metadata = {
-          title: title_array,
-          work_identifier => identifier,
           visibility: 'open',
           collection_type_gid: Hyrax::CollectionType.find_or_create_default_collection_type.gid
-        }
+        }.merge!(collection.select { |k, _v| ::Collection.attribute_method?(k) })
+        metadata[:title] = title_array
+        metadata[work_identifier] = identifier
+
         new_entry = find_or_create_entry(collection_entry_class, identifier, 'Bulkrax::Importer', metadata)
         ImportWorkCollectionJob.perform_now(new_entry.id, current_run.id)
         increment_counters(index, true)
