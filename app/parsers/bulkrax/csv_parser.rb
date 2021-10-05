@@ -13,7 +13,9 @@ module Bulkrax
       # retrieve a list of unique collections
       records.map do |r|
         collections = []
-        collections << r if r[:model]&.downcase == 'collection'
+        Bulkrax.field_mappings[self.class.to_s].dig('model', :from).each do |model_mapping|
+          collections << r if r[model_mapping.to_sym]&.downcase == 'collection'
+        end
         r[col_mapping].split(/\s*[;|]\s*/).each { |title| collections << { title: title } } if r[col_mapping].present?
         collections
       end.flatten.compact.uniq
@@ -60,17 +62,8 @@ module Bulkrax
     def create_collections
       collections.each_with_index do |collection, index|
         next if collection.blank?
-        title_array = collection[:title].split(/\s*[;|]\s*/)
-        identifier = collection[work_identifier] || title_array.first
 
-        metadata = {
-          visibility: 'open',
-          collection_type_gid: Hyrax::CollectionType.find_or_create_default_collection_type.gid
-        }.merge!(collection.select { |k, _v| ::Collection.attribute_method?(k) })
-        metadata[:title] = title_array
-        metadata[work_identifier] = identifier
-
-        new_entry = find_or_create_entry(collection_entry_class, identifier, 'Bulkrax::Importer', metadata)
+        new_entry = find_or_create_entry(collection_entry_class, collection_entry_identifier(collection), 'Bulkrax::Importer', collection.to_h.compact)
         ImportWorkCollectionJob.perform_now(new_entry.id, current_run.id)
         increment_counters(index, true)
       end
@@ -78,8 +71,8 @@ module Bulkrax
 
     def create_works
       records.each_with_index do |record, index|
+        next if collections.include?(record)
         next unless record_has_source_identifier(record, index)
-        next if record[:model]&.downcase == 'collection'
         break if limit_reached?(limit, index)
 
         seen[record[source_identifier]] = true
@@ -267,6 +260,17 @@ module Bulkrax
     end
 
     private
+
+    def collection_entry_identifier(collection_hash)
+      entry_uid = collection_hash[work_identifier]
+      entry_uid ||= if Bulkrax.fill_in_blank_source_identifiers.present?
+                      Bulkrax.fill_in_blank_source_identifiers.call(self, records.find_index(collection_hash))
+                    else
+                      collection_hash[:title].split(/\s*[;|]\s*/).first
+                    end
+
+      entry_uid
+    end
 
     # Override to return the first CSV in the path, if a zip file is supplied
     # We expect a single CSV at the top level of the zip in the CSVParser

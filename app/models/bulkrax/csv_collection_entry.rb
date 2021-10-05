@@ -7,13 +7,25 @@ module Bulkrax
     end
 
     def build_metadata
-      self.parsed_metadata = self.raw_metadata
+      self.parsed_metadata = {}
+      self.parsed_metadata[work_identifier] = self.identifier
+      record.each do |key, value|
+        next if %w[collection collections].include?(key_without_numbers(key))
+
+        index = key[/\d+/].to_i - 1 if key[/\d+/].to_i != 0
+        add_metadata(key_without_numbers(key), value, index)
+      end
+      add_collection_type_gid
+      add_visibility
+      add_rights_statement
+      add_collections
       add_local
-      return self.parsed_metadata
+
+      self.parsed_metadata
     end
 
-    def collections_created?
-      true
+    def add_collection_type_gid
+      self.parsed_metadata['collection_type_gid'] = ::Hyrax::CollectionType.find_or_create_default_collection_type.gid if self.parsed_metadata['collection_type_gid'].blank?
     end
   end
 end
