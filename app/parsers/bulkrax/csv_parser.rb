@@ -8,6 +8,15 @@ module Bulkrax
       true
     end
 
+    def records(_opts = {})
+      file_for_import = only_updates ? parser_fields['partial_import_file_path'] : import_file_path
+      # data for entry does not need source_identifier for csv, because csvs are read sequentially and mapped after raw data is read.
+      csv_data = entry_class.read_data(file_for_import)
+      importer.parser_fields['total'] = csv_data.count
+      importer.save
+      @records ||= csv_data.map { |record_data| entry_class.data_for_entry(record_data, nil) }
+    end
+
     def collections
       col_mapping = Bulkrax.collection_field_mapping[self.entry_class.to_s]&.to_sym || :collection
       # retrieve a list of unique collections
@@ -25,13 +34,12 @@ module Bulkrax
       collections.size
     end
 
-    def records(_opts = {})
-      file_for_import = only_updates ? parser_fields['partial_import_file_path'] : import_file_path
-      # data for entry does not need source_identifier for csv, because csvs are read sequentially and mapped after raw data is read.
-      csv_data = entry_class.read_data(file_for_import)
-      importer.parser_fields['total'] = csv_data.count
-      importer.save
-      @records ||= csv_data.map { |record_data| entry_class.data_for_entry(record_data, nil) }
+    def works
+      records - collections
+    end
+
+    def works_total
+      works.size
     end
 
     # We could use CsvEntry#fields_from_data(data) but that would mean re-reading the data
@@ -62,6 +70,7 @@ module Bulkrax
     def create_collections
       collections.each_with_index do |collection, index|
         next if collection.blank?
+        break if limit_reached?(limit, records.find_index(collection))
 
         new_entry = find_or_create_entry(collection_entry_class, collection_entry_identifier(collection), 'Bulkrax::Importer', collection.to_h.compact)
         ImportWorkCollectionJob.perform_now(new_entry.id, current_run.id)
