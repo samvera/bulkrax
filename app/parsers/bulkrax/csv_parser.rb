@@ -214,10 +214,9 @@ module Bulkrax
 
     # All possible column names
     def export_headers
-      headers = self.headers
+      headers = sort_headers(self.headers)
 
       # we don't want access_control_id exported and we want file at the end
-      # also sort the headers so they're grouped and easier to find
       headers.delete('access_control_id') if headers.include?('access_control_id')
 
       # add the headers below at the beginning or end to maintain the preexisting export behavior
@@ -226,6 +225,27 @@ module Bulkrax
       headers.prepend('id')
 
       headers.uniq
+    end
+
+    def object_names
+      return @object_names if @object_names
+
+      @object_names = mapping.values.map { |value| value['object'] }
+      @object_names.uniq!.delete(nil)
+
+      @object_names
+    end
+
+    def sort_headers(headers)
+      # converting headers like creator_name_1 to creator_1_name so they get sorted by numerical order
+      # while keeping objects grouped together
+      headers.sort_by do |item|
+        number = item.match(/\d+/)&.[](0) || 0.to_s
+        sort_number = number.rjust(4, "0")
+        object_prefix = object_names.detect { |o| item.match(/^#{o}/) } || item
+        remainder = item.gsub(/^#{object_prefix}_/, '').gsub(/_#{number}/, '')
+        "#{object_prefix}_#{sort_number}_#{remainder}"
+      end
     end
 
     # in the parser as it is specific to the format
