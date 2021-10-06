@@ -4,8 +4,9 @@ require 'rails_helper'
 
 module Bulkrax
   RSpec.describe CsvParser do
+    subject { described_class.new(importer) }
+
     describe '#create_works' do
-      subject { described_class.new(importer) }
       let(:importer) { FactoryBot.create(:bulkrax_importer_csv) }
       let(:entry) { FactoryBot.create(:bulkrax_entry, importerexporter: importer) }
 
@@ -90,8 +91,46 @@ module Bulkrax
       end
     end
 
+    describe '#create_collections' do
+      let(:importer) { FactoryBot.create(:bulkrax_importer_csv) }
+      # let(:entry) { FactoryBot.create(:bulkrax_csv_entry_collection, importerexporter: importer) }
+
+      context 'when importing collections by title through works' do
+        before do
+          importer.parser_fields = { import_file_path: './spec/fixtures/csv/good.csv' }
+          allow(ImportCollectionJob).to receive(:perform_now)
+        end
+
+        it 'creates CSV collection entries for each collection' do
+          expect { subject.create_collections }.to change(CsvCollectionEntry, :count).by(2)
+        end
+
+        it 'runs an ImportCollectionJob for each entry' do
+          expect(ImportCollectionJob).to receive(:perform_now).twice
+
+          subject.create_collections
+        end
+      end
+
+      context 'when importing collections with metadata' do
+        before do
+          importer.parser_fields = { import_file_path: './spec/fixtures/csv/collections.csv' }
+          allow(ImportCollectionJob).to receive(:perform_now)
+        end
+
+        it 'creates CSV collection entries for each collection' do
+          expect { subject.create_collections }.to change(CsvCollectionEntry, :count).by(2)
+        end
+
+        it 'runs an ImportCollectionJob for each entry' do
+          expect(ImportCollectionJob).to receive(:perform_now).twice
+
+          subject.create_collections
+        end
+      end
+    end
+
     describe '#write_partial_import_file', clean_downloads: true do
-      subject        { described_class.new(importer) }
       let(:importer) { FactoryBot.create(:bulkrax_importer_csv_failed) }
       let(:file)     { fixture_file_upload('./spec/fixtures/csv/ok.csv') }
 
@@ -141,7 +180,6 @@ module Bulkrax
     end
 
     describe '#create_parent_child_relationships' do
-      subject { described_class.new(importer) }
       let(:importer) { FactoryBot.create(:bulkrax_importer_csv_complex) }
       let(:entry_1) { FactoryBot.build(:bulkrax_entry, importerexporter: importer, identifier: '123456789') }
       let(:entry_2) { FactoryBot.build(:bulkrax_entry, importerexporter: importer, identifier: '234567891') }
@@ -207,7 +245,6 @@ module Bulkrax
     end
 
     describe '#write_errored_entries_file', clean_downloads: true do
-      subject                { described_class.new(importer) }
       let(:importer)         { FactoryBot.create(:bulkrax_importer_csv_failed, entries: [entry_failed, entry_succeeded, entry_collection]) }
       let(:entry_failed)     { FactoryBot.create(:bulkrax_csv_entry_failed, raw_metadata: { title: 'Failed' }) }
       let(:entry_succeeded)  { FactoryBot.create(:bulkrax_csv_entry, raw_metadata: { title: 'Succeeded' }) }

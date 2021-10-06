@@ -19,10 +19,12 @@ module Bulkrax
 
     def collections
       col_mapping = Bulkrax.collection_field_mapping[self.entry_class.to_s]&.to_sym || :collection
+      model_mappings = Bulkrax.field_mappings[self.class.to_s].dig('model', :from) || []
+      model_mappings |= ['model']
       # retrieve a list of unique collections
       records.map do |r|
         collections = []
-        Bulkrax.field_mappings[self.class.to_s].dig('model', :from)&.each do |model_mapping|
+        model_mappings.each do |model_mapping|
           collections << r if r[model_mapping.to_sym]&.downcase == 'collection'
         end
         r[col_mapping].split(/\s*[;|]\s*/).each { |title| collections << { title: title } } if r[col_mapping].present?
@@ -70,7 +72,7 @@ module Bulkrax
     def create_collections
       collections.each_with_index do |collection, index|
         next if collection.blank?
-        break if limit_reached?(limit, records.find_index(collection))
+        break if records.find_index(collection).present? && limit_reached?(limit, records.find_index(collection))
 
         new_entry = find_or_create_entry(collection_entry_class, collection_entry_identifier(collection), 'Bulkrax::Importer', collection.to_h.compact)
         # TODO: add support for :delete option
