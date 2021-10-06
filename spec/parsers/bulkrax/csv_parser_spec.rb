@@ -6,6 +6,62 @@ module Bulkrax
   RSpec.describe CsvParser do
     subject { described_class.new(importer) }
 
+    describe '#collections' do
+      let(:importer) { FactoryBot.create(:bulkrax_importer_csv) }
+
+      before do
+        importer.parser_fields = { import_file_path: './spec/fixtures/csv/mixed_works_and_collections.csv' }
+      end
+
+      it 'includes collection titles listed in the :collection column' do
+        expect(subject.collections).to include({ title: "Second Work's Collection" })
+      end
+
+      it 'includes rows whose :model is set to Collection' do
+        collection_1_raw_data = {
+          source_identifier: 'col_1',
+          model: 'Collection',
+          title: 'Collection 1 Title',
+          description: "First collection's description",
+          collection: nil
+        }
+        collection_2_raw_data = {
+          source_identifier: 'col_2',
+          model: 'collection',
+          title: 'Collection 2 Title',
+          description: "Second collection's description",
+          collection: nil
+        }
+
+        expect(subject.collections).to include(collection_1_raw_data)
+        expect(subject.collections).to include(collection_2_raw_data)
+      end
+
+      it 'matches :model column case-insensitively' do
+        allow(subject).to receive_message_chain(:records, :map).and_return([{ model: 'cOlEcTiOn' }])
+
+        expect(subject.collections).to include({ model: 'cOlEcTiOn' })
+      end
+
+      # TODO: WIP
+      xcontext 'when Bulkrax.collection_field_mapping is set' do
+        before do
+          allow(Bulkrax).to receive(:collection_field_mapping).and_return({ 'Bulkrax::CsvEntry' => 'parent' })
+          allow(subject)
+            .to receive_message_chain(:records, :map)
+            .and_return([
+              { collection: 'collection mapping', title: 'W1', model: 'work' },
+              { parent: 'parent mapping', title: 'W2', model: 'work' }
+            ])
+        end
+
+        it 'the collection field mapping is used' do
+          expect(subject.collections).to include({ title: 'W2' })
+          expect(subject.collections).not_to include({ title: 'W1' })
+        end
+      end
+    end
+
     describe '#create_collections' do
       let(:importer) { FactoryBot.create(:bulkrax_importer_csv) }
       # let(:entry) { FactoryBot.create(:bulkrax_csv_entry_collection, importerexporter: importer) }

@@ -82,7 +82,7 @@ module Bulkrax
            else
              Bulkrax.default_work_type
            end
-      fc.camelcase.constantize
+      fc.downcase.camelcase.constantize
     rescue NameError
       nil
     rescue

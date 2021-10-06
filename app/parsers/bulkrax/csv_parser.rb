@@ -24,10 +24,10 @@ module Bulkrax
       # retrieve a list of unique collections
       records.map do |r|
         collections = []
+        r[col_mapping].split(/\s*[;|]\s*/).each { |title| collections << { title: title } } if r[col_mapping].present?
         model_mappings.each do |model_mapping|
           collections << r if r[model_mapping.to_sym]&.downcase == 'collection'
         end
-        r[col_mapping].split(/\s*[;|]\s*/).each { |title| collections << { title: title } } if r[col_mapping].present?
         collections
       end.flatten.compact.uniq
     end
