@@ -13,6 +13,9 @@ module Bulkrax
     def create_collections; end
 
     # @todo not yet supported
+    def works_total; end
+
+    # @todo not yet supported
     def import_fields; end
 
     def valid_import?

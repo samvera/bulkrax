@@ -100,7 +100,7 @@ module Bulkrax
       @current_run ||= if file? && zip?
                          self.importer_runs.create!
                        else
-                         self.importer_runs.create!(total_work_entries: parser.works_total, total_collection_entries: parser.collections_total)
+                         self.importer_runs.create!(total_work_entries: self.limit || parser.works_total || parser.total, total_collection_entries: parser.collections_total)
                        end
     end
 

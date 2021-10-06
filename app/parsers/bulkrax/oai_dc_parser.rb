@@ -119,6 +119,9 @@ module Bulkrax
       end
     end
 
+    # @todo not yet supported
+    def works_total; end
+
     def create_parent_child_relationships; end
 
     def total

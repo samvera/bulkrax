@@ -22,7 +22,7 @@ module Bulkrax
       # retrieve a list of unique collections
       records.map do |r|
         collections = []
-        Bulkrax.field_mappings[self.class.to_s].dig('model', :from).each do |model_mapping|
+        Bulkrax.field_mappings[self.class.to_s].dig('model', :from)&.each do |model_mapping|
           collections << r if r[model_mapping.to_sym]&.downcase == 'collection'
         end
         r[col_mapping].split(/\s*[;|]\s*/).each { |title| collections << { title: title } } if r[col_mapping].present?

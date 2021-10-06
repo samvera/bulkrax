@@ -90,6 +90,9 @@ module Bulkrax
       collections.size
     end
 
+    # @todo not yet supported
+    def works_total; end
+
     def total
       metadata_paths.count
     end
