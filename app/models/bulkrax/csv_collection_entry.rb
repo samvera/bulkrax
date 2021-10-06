@@ -25,7 +25,9 @@ module Bulkrax
     end
 
     def add_collection_type_gid
-      self.parsed_metadata['collection_type_gid'] = ::Hyrax::CollectionType.find_or_create_default_collection_type.gid if self.parsed_metadata['collection_type_gid'].blank?
+      return if self.parsed_metadata['collection_type_gid'].present?
+
+      self.parsed_metadata['collection_type_gid'] = ::Hyrax::CollectionType.find_or_create_default_collection_type.gid
     end
   end
 end

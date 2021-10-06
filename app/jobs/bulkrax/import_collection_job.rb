@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Bulkrax
-  class ImportWorkCollectionJob < ApplicationJob
+  class ImportCollectionJob < ApplicationJob
     queue_as :import
 
     # rubocop:disable Rails/SkipsModelValidations
