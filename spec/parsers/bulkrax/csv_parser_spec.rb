@@ -6,6 +6,45 @@ module Bulkrax
   RSpec.describe CsvParser do
     subject { described_class.new(importer) }
 
+    describe '#create_collections' do
+      let(:importer) { FactoryBot.create(:bulkrax_importer_csv) }
+      # let(:entry) { FactoryBot.create(:bulkrax_csv_entry_collection, importerexporter: importer) }
+
+      context 'when importing collections by title through works' do
+        before do
+          importer.parser_fields = { import_file_path: './spec/fixtures/csv/good.csv' }
+          allow(ImportCollectionJob).to receive(:perform_now)
+        end
+
+        it 'creates CSV collection entries for each collection' do
+          expect { subject.create_collections }.to change(CsvCollectionEntry, :count).by(2)
+        end
+
+        it 'runs an ImportCollectionJob for each entry' do
+          expect(ImportCollectionJob).to receive(:perform_now).twice
+
+          subject.create_collections
+        end
+      end
+
+      context 'when importing collections with metadata' do
+        before do
+          importer.parser_fields = { import_file_path: './spec/fixtures/csv/collections.csv' }
+          allow(ImportCollectionJob).to receive(:perform_now)
+        end
+
+        it 'creates CSV collection entries for each collection' do
+          expect { subject.create_collections }.to change(CsvCollectionEntry, :count).by(2)
+        end
+
+        it 'runs an ImportCollectionJob for each entry' do
+          expect(ImportCollectionJob).to receive(:perform_now).twice
+
+          subject.create_collections
+        end
+      end
+    end
+
     describe '#create_works' do
       let(:importer) { FactoryBot.create(:bulkrax_importer_csv) }
       let(:entry) { FactoryBot.create(:bulkrax_entry, importerexporter: importer) }
@@ -87,45 +126,6 @@ module Bulkrax
           subject.records
           expect(subject.total).to eq(2)
           expect(subject.collections_total).to eq(2)
-        end
-      end
-    end
-
-    describe '#create_collections' do
-      let(:importer) { FactoryBot.create(:bulkrax_importer_csv) }
-      # let(:entry) { FactoryBot.create(:bulkrax_csv_entry_collection, importerexporter: importer) }
-
-      context 'when importing collections by title through works' do
-        before do
-          importer.parser_fields = { import_file_path: './spec/fixtures/csv/good.csv' }
-          allow(ImportCollectionJob).to receive(:perform_now)
-        end
-
-        it 'creates CSV collection entries for each collection' do
-          expect { subject.create_collections }.to change(CsvCollectionEntry, :count).by(2)
-        end
-
-        it 'runs an ImportCollectionJob for each entry' do
-          expect(ImportCollectionJob).to receive(:perform_now).twice
-
-          subject.create_collections
-        end
-      end
-
-      context 'when importing collections with metadata' do
-        before do
-          importer.parser_fields = { import_file_path: './spec/fixtures/csv/collections.csv' }
-          allow(ImportCollectionJob).to receive(:perform_now)
-        end
-
-        it 'creates CSV collection entries for each collection' do
-          expect { subject.create_collections }.to change(CsvCollectionEntry, :count).by(2)
-        end
-
-        it 'runs an ImportCollectionJob for each entry' do
-          expect(ImportCollectionJob).to receive(:perform_now).twice
-
-          subject.create_collections
         end
       end
     end
