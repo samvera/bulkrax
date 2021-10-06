@@ -90,8 +90,10 @@ module Bulkrax
       collections.size
     end
 
-    # @todo not yet supported
-    def works_total; end
+    # TODO: change to differentiate between collection and work records when adding ability to import collection metadata
+    def works_total
+      total
+    end
 
     def total
       metadata_paths.count
