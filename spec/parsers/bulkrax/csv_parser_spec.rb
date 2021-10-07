@@ -19,7 +19,7 @@ module Bulkrax
 
       it 'includes rows whose :model is set to Collection' do
         expect(subject.collections.collect { |w| w[:title] })
-          .to contain_exactly(*['Collection 1 Title', 'Collection 2 Title', "Second Work's Collection"])
+          .to contain_exactly('Collection 1 Title', 'Collection 2 Title', "Second Work's Collection")
       end
 
       it 'matches :model column case-insensitively' do
@@ -32,10 +32,12 @@ module Bulkrax
         before do
           allow(subject)
             .to receive(:records)
-            .and_return([
-              { collection: 'collection mapping', title: 'W1', model: 'work' },
-              { parent: 'parent mapping', title: 'W2', model: 'work' }
-            ])
+            .and_return(
+              [
+                { collection: 'collection mapping', title: 'W1', model: 'work' },
+                { parent: 'parent mapping', title: 'W2', model: 'work' }
+              ]
+            )
         end
 
         context 'is set' do
@@ -65,11 +67,13 @@ module Bulkrax
         before do
           allow(subject)
             .to receive(:records)
-            .and_return([
-              { map_1: 'Collection', title: 'C1' },
-              { map_2: 'Collection', title: 'C2' },
-              { model: 'Collection', title: 'C3' }
-            ])
+            .and_return(
+              [
+                { map_1: 'Collection', title: 'C1' },
+                { map_2: 'Collection', title: 'C2' },
+                { model: 'Collection', title: 'C3' }
+              ]
+            )
         end
 
         context 'when :model has field mappings' do
@@ -110,7 +114,7 @@ module Bulkrax
 
       it 'returns all work records' do
         expect(subject.works.collect { |w| w[:source_identifier] })
-          .to contain_exactly(*['work_1', 'work_2'])
+          .to contain_exactly('work_1', 'work_2')
       end
     end
 
