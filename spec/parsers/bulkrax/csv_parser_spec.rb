@@ -42,7 +42,7 @@ module Bulkrax
 
         context 'is set' do
           before do
-            allow(Bulkrax).to receive(:collection_field_mapping).and_return({ 'Bulkrax::CsvEntry' => 'parent' })
+            allow(subject).to receive(:collection_field_mapping).and_return(:parent)
           end
 
           it 'the collection field mapping is used' do
@@ -52,10 +52,6 @@ module Bulkrax
         end
 
         context 'is not set' do
-          before do
-            allow(Bulkrax).to receive(:collection_field_mapping).and_return({})
-          end
-
           it 'the mapping falls back on :collection' do
             expect(subject.collections).not_to include({ title: 'parent mapping' })
             expect(subject.collections).to include({ title: 'collection mapping' })
@@ -474,6 +470,30 @@ module Bulkrax
         expect(headers).to include('multiple_objects_position_1_1')
         expect(headers).to include('multiple_objects_position_1_2')
         expect(headers).to include('multiple_objects_first_name_2')
+      end
+    end
+
+    describe '#collection_field_mapping' do
+      let(:importer) { FactoryBot.create(:bulkrax_importer_csv) }
+
+      context 'when the mapping is set' do
+        before do
+          allow(Bulkrax).to receive(:collection_field_mapping).and_return({ 'Bulkrax::CsvEntry' => 'parent' })
+        end
+
+        it 'returns the mapping' do
+          expect(subject.collection_field_mapping).to eq(:parent)
+        end
+      end
+
+      context 'when the mapping is not set' do
+        before do
+          allow(Bulkrax).to receive(:collection_field_mapping).and_return({})
+        end
+
+        it 'returns :collection' do
+          expect(subject.collection_field_mapping).to eq(:collection)
+        end
       end
     end
   end
