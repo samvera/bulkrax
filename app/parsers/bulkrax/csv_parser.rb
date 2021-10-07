@@ -276,7 +276,7 @@ module Bulkrax
     private
 
     def collection_entry_identifier(collection_hash)
-      entry_uid = collection_hash[work_identifier]
+      entry_uid = collection_hash[source_identifier]
       entry_uid ||= if Bulkrax.fill_in_blank_source_identifiers.present?
                       Bulkrax.fill_in_blank_source_identifiers.call(self, records.find_index(collection_hash))
                     else

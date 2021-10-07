@@ -154,6 +154,47 @@ module Bulkrax
           subject.create_collections
         end
       end
+
+      describe 'setting collection entry identifiers' do
+        before do
+          allow(subject)
+            .to receive(:collections)
+            .and_return([record_hash])
+        end
+
+        context 'when collection record has a source_identifier' do
+          let(:record_hash) { { source_identifier: 'csid' } }
+
+          it "uses the record's source_identifier as the entry's identifier" do
+            subject.create_collections
+
+            expect(importer.entries.last.identifier).to eq('csid')
+          end
+        end
+
+        context 'when collection record does not have a source_identifier' do
+          let(:record_hash) { { title: 'no source id | alt title' } }
+
+          it "uses the record's first title as the entry's identifier" do
+            subject.create_collections
+
+            expect(importer.entries.last.identifier).to eq('no source id')
+          end
+
+          context 'when Bulkrax is set to fill in blank source_identifiers' do
+            before do
+              allow(Bulkrax).to receive_message_chain(:fill_in_blank_source_identifiers, :present?).and_return(true)
+              allow(Bulkrax).to receive_message_chain(:fill_in_blank_source_identifiers, :call).and_return("#{importer.id}-99")
+            end
+
+            it "uses the generated identifier as the entry's identifier" do
+              subject.create_collections
+
+              expect(importer.entries.last.identifier).to eq("#{importer.id}-99")
+            end
+          end
+        end
+      end
     end
 
     describe '#create_works' do
