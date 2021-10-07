@@ -18,23 +18,8 @@ module Bulkrax
       end
 
       it 'includes rows whose :model is set to Collection' do
-        collection_1_raw_data = {
-          source_identifier: 'col_1',
-          model: 'Collection',
-          title: 'Collection 1 Title',
-          description: "First collection's description",
-          collection: nil
-        }
-        collection_2_raw_data = {
-          source_identifier: 'col_2',
-          model: 'collection',
-          title: 'Collection 2 Title',
-          description: "Second collection's description",
-          collection: nil
-        }
-
-        expect(subject.collections).to include(collection_1_raw_data)
-        expect(subject.collections).to include(collection_2_raw_data)
+        expect(subject.collections.collect { |w| w[:title] })
+          .to contain_exactly(*['Collection 1 Title', 'Collection 2 Title', "Second Work's Collection"])
       end
 
       it 'matches :model column case-insensitively' do
@@ -113,6 +98,19 @@ module Bulkrax
             expect(subject.collections).not_to include({ map_2: 'Collection', title: 'C2' })
           end
         end
+      end
+    end
+
+    describe '#works' do
+      let(:importer) { FactoryBot.create(:bulkrax_importer_csv) }
+
+      before do
+        importer.parser_fields = { import_file_path: './spec/fixtures/csv/mixed_works_and_collections.csv' }
+      end
+
+      it 'returns all work records' do
+        expect(subject.works.collect { |w| w[:source_identifier] })
+          .to contain_exactly(*['work_1', 'work_2'])
       end
     end
 
