@@ -5,10 +5,9 @@ require 'rails_helper'
 module Bulkrax
   RSpec.describe CsvParser do
     subject { described_class.new(importer) }
+    let(:importer) { FactoryBot.create(:bulkrax_importer_csv) }
 
     describe '#collections' do
-      let(:importer) { FactoryBot.create(:bulkrax_importer_csv) }
-
       before do
         importer.parser_fields = { import_file_path: './spec/fixtures/csv/mixed_works_and_collections.csv' }
       end
@@ -94,8 +93,6 @@ module Bulkrax
     end
 
     describe '#works' do
-      let(:importer) { FactoryBot.create(:bulkrax_importer_csv) }
-
       before do
         importer.parser_fields = { import_file_path: './spec/fixtures/csv/mixed_works_and_collections.csv' }
       end
@@ -107,8 +104,6 @@ module Bulkrax
     end
 
     describe '#create_collections' do
-      let(:importer) { FactoryBot.create(:bulkrax_importer_csv) }
-
       context 'when importing collections by title through works' do
         before do
           importer.parser_fields = { import_file_path: './spec/fixtures/csv/good.csv' }
@@ -186,7 +181,6 @@ module Bulkrax
     end
 
     describe '#create_works' do
-      let(:importer) { FactoryBot.create(:bulkrax_importer_csv) }
       let(:entry) { FactoryBot.create(:bulkrax_entry, importerexporter: importer) }
 
       before do
@@ -466,8 +460,6 @@ module Bulkrax
     end
 
     describe '#collection_field_mapping' do
-      let(:importer) { FactoryBot.create(:bulkrax_importer_csv) }
-
       context 'when the mapping is set' do
         before do
           allow(Bulkrax).to receive(:collection_field_mapping).and_return({ 'Bulkrax::CsvEntry' => 'parent' })
@@ -490,8 +482,6 @@ module Bulkrax
     end
 
     describe '#model_field_mappings' do
-      let(:importer) { FactoryBot.create(:bulkrax_importer_csv) }
-
       context 'when mappings are set' do
         before do
           allow(Bulkrax)
