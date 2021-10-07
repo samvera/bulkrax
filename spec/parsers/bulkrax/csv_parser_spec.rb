@@ -74,9 +74,7 @@ module Bulkrax
 
         context 'when :model has field mappings' do
           before do
-            allow(Bulkrax)
-              .to receive(:field_mappings)
-              .and_return({ 'Bulkrax::CsvParser' => { 'model' => { from: ['map_1', 'map_2'] } } })
+            allow(subject).to receive(:model_field_mappings).and_return(['map_1', 'map_2', 'model'])
           end
 
           it 'uses the field mappings' do
@@ -86,12 +84,6 @@ module Bulkrax
         end
 
         context 'when :model does not have field mappings' do
-          before do
-            allow(Bulkrax)
-              .to receive(:field_mappings)
-              .and_return({})
-          end
-
           it 'uses :model' do
             expect(subject.collections).to include({ model: 'Collection', title: 'C3' })
             expect(subject.collections).not_to include({ map_1: 'Collection', title: 'C1' })
@@ -493,6 +485,32 @@ module Bulkrax
 
         it 'returns :collection' do
           expect(subject.collection_field_mapping).to eq(:collection)
+        end
+      end
+    end
+
+    describe '#model_field_mappings' do
+      let(:importer) { FactoryBot.create(:bulkrax_importer_csv) }
+
+      context 'when mappings are set' do
+        before do
+          allow(Bulkrax)
+            .to receive(:field_mappings)
+            .and_return({ 'Bulkrax::CsvParser' => { 'model' => { from: ['map_1', 'map_2'] } } })
+        end
+
+        it 'includes the mappings' do
+          expect(subject.model_field_mappings).to include('map_1', 'map_2')
+        end
+
+        it 'always includes "model"' do
+          expect(subject.model_field_mappings).to include('model')
+        end
+      end
+
+      context 'when mappings are set' do
+        it 'falls back on "model"' do
+          expect(subject.model_field_mappings).to eq(['model'])
         end
       end
     end

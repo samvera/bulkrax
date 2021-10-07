@@ -86,5 +86,32 @@ module Bulkrax
         end
       end
     end
+
+    describe '#model_field_mappings' do
+      subject(:xml_parser) { described_class.new(importer) }
+      let(:importer) { FactoryBot.create(:bulkrax_importer_xml) }
+
+      context 'when mappings are set' do
+        before do
+          allow(Bulkrax)
+            .to receive(:field_mappings)
+            .and_return({ 'Bulkrax::XmlParser' => { 'model' => { from: ['map_1', 'map_2'] } } })
+        end
+
+        it 'includes the mappings' do
+          expect(xml_parser.model_field_mappings).to include('map_1', 'map_2')
+        end
+
+        it 'always includes "model"' do
+          expect(xml_parser.model_field_mappings).to include('model')
+        end
+      end
+
+      context 'when mappings are set' do
+        it 'falls back on "model"' do
+          expect(xml_parser.model_field_mappings).to eq(['model'])
+        end
+      end
+    end
   end
 end
