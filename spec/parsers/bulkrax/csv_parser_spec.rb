@@ -43,28 +43,81 @@ module Bulkrax
         expect(subject.collections).to include({ model: 'cOlEcTiOn' })
       end
 
-      # TODO: WIP
-      xcontext 'when Bulkrax.collection_field_mapping is set' do
+      context 'when Bulkrax.collection_field_mapping' do
         before do
-          allow(Bulkrax).to receive(:collection_field_mapping).and_return({ 'Bulkrax::CsvEntry' => 'parent' })
           allow(subject)
-            .to receive_message_chain(:records, :map)
+            .to receive(:records)
             .and_return([
               { collection: 'collection mapping', title: 'W1', model: 'work' },
               { parent: 'parent mapping', title: 'W2', model: 'work' }
             ])
         end
 
-        it 'the collection field mapping is used' do
-          expect(subject.collections).to include({ title: 'W2' })
-          expect(subject.collections).not_to include({ title: 'W1' })
+        context 'is set' do
+          before do
+            allow(Bulkrax).to receive(:collection_field_mapping).and_return({ 'Bulkrax::CsvEntry' => 'parent' })
+          end
+
+          it 'the collection field mapping is used' do
+            expect(subject.collections).to include({ title: 'parent mapping' })
+            expect(subject.collections).not_to include({ title: 'collection mapping' })
+          end
+        end
+
+        context 'is not set' do
+          before do
+            allow(Bulkrax).to receive(:collection_field_mapping).and_return({})
+          end
+
+          it 'the mapping falls back on :collection' do
+            expect(subject.collections).not_to include({ title: 'parent mapping' })
+            expect(subject.collections).to include({ title: 'collection mapping' })
+          end
+        end
+      end
+
+      describe ':model field mappings' do
+        before do
+          allow(subject)
+            .to receive(:records)
+            .and_return([
+              { map_1: 'Collection', title: 'C1' },
+              { map_2: 'Collection', title: 'C2' },
+              { model: 'Collection', title: 'C3' }
+            ])
+        end
+
+        context 'when :model has field mappings' do
+          before do
+            allow(Bulkrax)
+              .to receive(:field_mappings)
+              .and_return({ 'Bulkrax::CsvParser' => { 'model' => { from: ['map_1', 'map_2'] } } })
+          end
+
+          it 'uses the field mappings' do
+            expect(subject.collections).to include({ map_1: 'Collection', title: 'C1' })
+            expect(subject.collections).to include({ map_2: 'Collection', title: 'C2' })
+          end
+        end
+
+        context 'when :model does not have field mappings' do
+          before do
+            allow(Bulkrax)
+              .to receive(:field_mappings)
+              .and_return({})
+          end
+
+          it 'uses :model' do
+            expect(subject.collections).to include({ model: 'Collection', title: 'C3' })
+            expect(subject.collections).not_to include({ map_1: 'Collection', title: 'C1' })
+            expect(subject.collections).not_to include({ map_2: 'Collection', title: 'C2' })
+          end
         end
       end
     end
 
     describe '#create_collections' do
       let(:importer) { FactoryBot.create(:bulkrax_importer_csv) }
-      # let(:entry) { FactoryBot.create(:bulkrax_csv_entry_collection, importerexporter: importer) }
 
       context 'when importing collections by title through works' do
         before do

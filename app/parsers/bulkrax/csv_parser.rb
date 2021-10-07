@@ -19,7 +19,7 @@ module Bulkrax
 
     def collections
       col_mapping = Bulkrax.collection_field_mapping[self.entry_class.to_s]&.to_sym || :collection
-      model_mappings = Bulkrax.field_mappings[self.class.to_s].dig('model', :from) || []
+      model_mappings = Bulkrax.field_mappings[self.class.to_s]&.dig('model', :from) || []
       model_mappings |= ['model']
       # retrieve a list of unique collections
       records.map do |r|
