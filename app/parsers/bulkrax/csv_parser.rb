@@ -18,14 +18,11 @@ module Bulkrax
     end
 
     def collections
-      col_mapping = Bulkrax.collection_field_mapping[self.entry_class.to_s]&.to_sym || :collection
-      model_mappings = Bulkrax.field_mappings[self.class.to_s]&.dig('model', :from) || []
-      model_mappings |= ['model']
       # retrieve a list of unique collections
       records.map do |r|
         collections = []
-        r[col_mapping].split(/\s*[;|]\s*/).each { |title| collections << { title: title } } if r[col_mapping].present?
-        model_mappings.each do |model_mapping|
+        r[collection_field_mapping].split(/\s*[;|]\s*/).each { |title| collections << { title: title } } if r[collection_field_mapping].present?
+        model_field_mappings.each do |model_mapping|
           collections << r if r[model_mapping.to_sym]&.downcase == 'collection'
         end
         collections

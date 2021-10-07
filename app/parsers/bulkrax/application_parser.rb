@@ -60,6 +60,17 @@ module Bulkrax
       @identifier_hash
     end
 
+    def collection_field_mapping
+      Bulkrax.collection_field_mapping[self.entry_class.to_s]&.to_sym || :collection
+    end
+
+    def model_field_mappings
+      model_mappings = Bulkrax.field_mappings[self.class.to_s]&.dig('model', :from) || []
+      model_mappings |= ['model']
+
+      model_mappings
+    end
+
     def perform_method
       if self.validate_only
         'perform_now'
