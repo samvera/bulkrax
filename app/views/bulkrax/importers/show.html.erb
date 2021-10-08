@@ -101,6 +101,8 @@
                   <td><%= e.id %></td>
                   <% if e.status == "Complete" %>
                     <td><span class="glyphicon glyphicon-ok" style="color: green;"></span> <%= e.status %></td>
+                  <% elsif e.status == "Pending" %>
+                    <td><span class="glyphicon glyphicon-option-horizontal" style="color: blue;"></span> <%= e.status %></td>
                   <% else %>
                     <td><span class="glyphicon glyphicon-remove" style="color: red;"></span> <%= e.status %></td>
                   <% end %>
@@ -137,6 +139,8 @@
                   <td><%= e.id %></td>
                   <% if e.status == "Complete" %>
                     <td><span class="glyphicon glyphicon-ok" style="color: green;"></span> <%= e.status %></td>
+                  <% elsif e.status == "Pending" %>
+                    <td><span class="glyphicon glyphicon-option-horizontal" style="color: blue;"></span> <%= e.status %></td>
                   <% else %>
                     <td><span class="glyphicon glyphicon-remove" style="color: red;"></span> <%= e.status %></td>
                   <% end %>
