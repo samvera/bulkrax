@@ -42,6 +42,7 @@ module Bulkrax
           attributes: { id: "work_id", work_members_attributes: { 0 => { id: "another_work_id" } } },
           source_identifier_value: 'entry_work',
           work_identifier: :source,
+          collection_field_mapping: :collection,
           replace_files: false,
           user: importer.user,
           klass: Work
@@ -95,6 +96,7 @@ module Bulkrax
           attributes: { collections: [{ id: "collection_id" }], id: "another_work_id" },
           source_identifier_value: 'csv_entry',
           work_identifier: :source,
+          collection_field_mapping: :collection,
           replace_files: false,
           user: importer.user,
           klass: Work
@@ -132,6 +134,7 @@ module Bulkrax
           attributes: { children: ["collection_id"], id: "collection_id" },
           source_identifier_value: 'entry_collection',
           work_identifier: :source,
+          collection_field_mapping: :collection,
           replace_files: false,
           user: importer.user,
           klass: Collection
