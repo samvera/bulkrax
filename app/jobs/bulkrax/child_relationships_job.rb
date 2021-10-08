@@ -77,6 +77,7 @@ module Bulkrax
       Bulkrax::ObjectFactory.new(attributes: attrs,
                                  source_identifier_value: child_works_hash[work_id][entry.parser.source_identifier],
                                  work_identifier: entry.parser.work_identifier,
+                                 collection_field_mapping: entry.parser.collection_field_mapping,
                                  replace_files: false,
                                  user: user,
                                  klass: child_works_hash[work_id][:class_name].constantize).run
@@ -92,6 +93,7 @@ module Bulkrax
       Bulkrax::ObjectFactory.new(attributes: attrs,
                                  source_identifier_value: entry.identifier,
                                  work_identifier: entry.parser.work_identifier,
+                                 collection_field_mapping: entry.parser.collection_field_mapping,
                                  replace_files: false,
                                  user: user,
                                  klass: entry.factory_class).run
@@ -111,6 +113,7 @@ module Bulkrax
       Bulkrax::ObjectFactory.new(attributes: attrs,
                                  source_identifier_value: entry.identifier,
                                  work_identifier: entry.parser.work_identifier,
+                                 collection_field_mapping: entry.parser.collection_field_mapping,
                                  replace_files: false,
                                  user: user,
                                  klass: entry.factory_class).run

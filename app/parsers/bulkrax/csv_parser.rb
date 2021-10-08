@@ -2,26 +2,10 @@
 
 require 'csv'
 module Bulkrax
-  class CsvParser < ApplicationParser
+  class CsvParser < ApplicationParser # rubocop:disable Metrics/ClassLength
     include ErroredEntries
     def self.export_supported?
       true
-    end
-
-    def collections
-      # does the CSV contain a collection column?
-      return [] unless (import_fields & [:collection, :collections]).any?
-      # retrieve a list of unique collections
-      records.map do |r|
-        collections = []
-        collections += r[:collection].split(/\s*[;|]\s*/) if r[:collection].present?
-        collections += r[:collections].split(/\s*[;|]\s*/) if r[:collections].present?
-        collections
-      end.flatten.compact.uniq
-    end
-
-    def collections_total
-      collections.size
     end
 
     def records(_opts = {})
@@ -31,6 +15,30 @@ module Bulkrax
       importer.parser_fields['total'] = csv_data.count
       importer.save
       @records ||= csv_data.map { |record_data| entry_class.data_for_entry(record_data, nil) }
+    end
+
+    def collections
+      # retrieve a list of unique collections
+      records.map do |r|
+        collections = []
+        r[collection_field_mapping].split(/\s*[;|]\s*/).each { |title| collections << { title: title } } if r[collection_field_mapping].present?
+        model_field_mappings.each do |model_mapping|
+          collections << r if r[model_mapping.to_sym]&.downcase == 'collection'
+        end
+        collections
+      end.flatten.compact.uniq
+    end
+
+    def collections_total
+      collections.size
+    end
+
+    def works
+      records - collections
+    end
+
+    def works_total
+      works.size
     end
 
     # We could use CsvEntry#fields_from_data(data) but that would mean re-reading the data
@@ -61,26 +69,26 @@ module Bulkrax
     def create_collections
       collections.each_with_index do |collection, index|
         next if collection.blank?
-        metadata = {
-          title: [collection],
-          work_identifier => [collection],
-          visibility: 'open',
-          collection_type_gid: Hyrax::CollectionType.find_or_create_default_collection_type.gid
-        }
-        new_entry = find_or_create_entry(collection_entry_class, collection, 'Bulkrax::Importer', metadata)
-        ImportWorkCollectionJob.perform_now(new_entry.id, current_run.id)
+        break if records.find_index(collection).present? && limit_reached?(limit, records.find_index(collection))
+
+        new_entry = find_or_create_entry(collection_entry_class, unique_collection_identifier(collection), 'Bulkrax::Importer', collection.to_h.compact)
+        # TODO: add support for :delete option
+        ImportCollectionJob.perform_now(new_entry.id, current_run.id)
         increment_counters(index, true)
       end
+      importer.record_status
+    rescue StandardError => e
+      status_info(e)
     end
 
     def create_works
-      records.each_with_index do |record, index|
-        next unless record_has_source_identifier(record, index)
-        break if limit_reached?(limit, index)
+      works.each_with_index do |work, index|
+        next unless record_has_source_identifier(work, records.find_index(work))
+        break if limit_reached?(limit, records.find_index(work))
 
-        seen[record[source_identifier]] = true
-        new_entry = find_or_create_entry(entry_class, record[source_identifier], 'Bulkrax::Importer', record.to_h.compact)
-        if record[:delete].present?
+        seen[work[source_identifier]] = true
+        new_entry = find_or_create_entry(entry_class, work[source_identifier], 'Bulkrax::Importer', work.to_h.compact)
+        if work[:delete].present?
           DeleteWorkJob.send(perform_method, new_entry, current_run)
         else
           ImportWorkJob.send(perform_method, new_entry.id, current_run.id)
@@ -283,6 +291,17 @@ module Bulkrax
     end
 
     private
+
+    def unique_collection_identifier(collection_hash)
+      entry_uid = collection_hash[source_identifier]
+      entry_uid ||= if Bulkrax.fill_in_blank_source_identifiers.present?
+                      Bulkrax.fill_in_blank_source_identifiers.call(self, records.find_index(collection_hash))
+                    else
+                      collection_hash[:title].split(/\s*[;|]\s*/).first
+                    end
+
+      entry_uid
+    end
 
     # Override to return the first CSV in the path, if a zip file is supplied
     # We expect a single CSV at the top level of the zip in the CSVParser

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Bulkrax
-  class ApplicationParser
+  class ApplicationParser # rubocop:disable Metrics/ClassLength
     attr_accessor :importerexporter, :headers
     alias importer importerexporter
     alias exporter importerexporter
@@ -58,6 +58,17 @@ module Bulkrax
       raise StandardError, "more than one source_identifier declared: #{@identifier_hash.keys.join(', ')}" if @identifier_hash.length > 1
 
       @identifier_hash
+    end
+
+    def collection_field_mapping
+      Bulkrax.collection_field_mapping[self.entry_class.to_s]&.to_sym || :collection
+    end
+
+    def model_field_mappings
+      model_mappings = Bulkrax.field_mappings[self.class.to_s]&.dig('model', :from) || []
+      model_mappings |= ['model']
+
+      model_mappings
     end
 
     def perform_method

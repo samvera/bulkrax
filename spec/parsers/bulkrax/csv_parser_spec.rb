@@ -4,9 +4,183 @@ require 'rails_helper'
 
 module Bulkrax
   RSpec.describe CsvParser do
+    subject { described_class.new(importer) }
+    let(:importer) { FactoryBot.create(:bulkrax_importer_csv) }
+
+    describe '#collections' do
+      before do
+        importer.parser_fields = { import_file_path: './spec/fixtures/csv/mixed_works_and_collections.csv' }
+      end
+
+      it 'includes collection titles listed in the :collection column' do
+        expect(subject.collections).to include({ title: "Second Work's Collection" })
+      end
+
+      it 'includes rows whose :model is set to Collection' do
+        expect(subject.collections.collect { |w| w[:title] })
+          .to contain_exactly('Collection 1 Title', 'Collection 2 Title', "Second Work's Collection")
+      end
+
+      it 'matches :model column case-insensitively' do
+        allow(subject).to receive_message_chain(:records, :map).and_return([{ model: 'cOlEcTiOn' }])
+
+        expect(subject.collections).to include({ model: 'cOlEcTiOn' })
+      end
+
+      context 'when Bulkrax.collection_field_mapping' do
+        before do
+          allow(subject)
+            .to receive(:records)
+            .and_return(
+              [
+                { collection: 'collection mapping', title: 'W1', model: 'work' },
+                { parent: 'parent mapping', title: 'W2', model: 'work' }
+              ]
+            )
+        end
+
+        context 'is set' do
+          before do
+            allow(subject).to receive(:collection_field_mapping).and_return(:parent)
+          end
+
+          it 'the collection field mapping is used' do
+            expect(subject.collections).to include({ title: 'parent mapping' })
+            expect(subject.collections).not_to include({ title: 'collection mapping' })
+          end
+        end
+
+        context 'is not set' do
+          it 'the mapping falls back on :collection' do
+            expect(subject.collections).not_to include({ title: 'parent mapping' })
+            expect(subject.collections).to include({ title: 'collection mapping' })
+          end
+        end
+      end
+
+      describe ':model field mappings' do
+        before do
+          allow(subject)
+            .to receive(:records)
+            .and_return(
+              [
+                { map_1: 'Collection', title: 'C1' },
+                { map_2: 'Collection', title: 'C2' },
+                { model: 'Collection', title: 'C3' }
+              ]
+            )
+        end
+
+        context 'when :model has field mappings' do
+          before do
+            allow(subject).to receive(:model_field_mappings).and_return(['map_1', 'map_2', 'model'])
+          end
+
+          it 'uses the field mappings' do
+            expect(subject.collections).to include({ map_1: 'Collection', title: 'C1' })
+            expect(subject.collections).to include({ map_2: 'Collection', title: 'C2' })
+          end
+        end
+
+        context 'when :model does not have field mappings' do
+          it 'uses :model' do
+            expect(subject.collections).to include({ model: 'Collection', title: 'C3' })
+            expect(subject.collections).not_to include({ map_1: 'Collection', title: 'C1' })
+            expect(subject.collections).not_to include({ map_2: 'Collection', title: 'C2' })
+          end
+        end
+      end
+    end
+
+    describe '#works' do
+      before do
+        importer.parser_fields = { import_file_path: './spec/fixtures/csv/mixed_works_and_collections.csv' }
+      end
+
+      it 'returns all work records' do
+        expect(subject.works.collect { |w| w[:source_identifier] })
+          .to contain_exactly('work_1', 'work_2')
+      end
+    end
+
+    describe '#create_collections' do
+      context 'when importing collections by title through works' do
+        before do
+          importer.parser_fields = { import_file_path: './spec/fixtures/csv/good.csv' }
+          allow(ImportCollectionJob).to receive(:perform_now)
+        end
+
+        it 'creates CSV collection entries for each collection' do
+          expect { subject.create_collections }.to change(CsvCollectionEntry, :count).by(2)
+        end
+
+        it 'runs an ImportCollectionJob for each entry' do
+          expect(ImportCollectionJob).to receive(:perform_now).twice
+
+          subject.create_collections
+        end
+      end
+
+      context 'when importing collections with metadata' do
+        before do
+          importer.parser_fields = { import_file_path: './spec/fixtures/csv/collections.csv' }
+          allow(ImportCollectionJob).to receive(:perform_now)
+        end
+
+        it 'creates CSV collection entries for each collection' do
+          expect { subject.create_collections }.to change(CsvCollectionEntry, :count).by(2)
+        end
+
+        it 'runs an ImportCollectionJob for each entry' do
+          expect(ImportCollectionJob).to receive(:perform_now).twice
+
+          subject.create_collections
+        end
+      end
+
+      describe 'setting collection entry identifiers' do
+        before do
+          allow(subject)
+            .to receive(:collections)
+            .and_return([record_hash])
+        end
+
+        context 'when collection record has a source_identifier' do
+          let(:record_hash) { { source_identifier: 'csid' } }
+
+          it "uses the record's source_identifier as the entry's identifier" do
+            subject.create_collections
+
+            expect(importer.entries.last.identifier).to eq('csid')
+          end
+        end
+
+        context 'when collection record does not have a source_identifier' do
+          let(:record_hash) { { title: 'no source id | alt title' } }
+
+          it "uses the record's first title as the entry's identifier" do
+            subject.create_collections
+
+            expect(importer.entries.last.identifier).to eq('no source id')
+          end
+
+          context 'when Bulkrax is set to fill in blank source_identifiers' do
+            before do
+              allow(Bulkrax).to receive_message_chain(:fill_in_blank_source_identifiers, :present?).and_return(true)
+              allow(Bulkrax).to receive_message_chain(:fill_in_blank_source_identifiers, :call).and_return("#{importer.id}-99")
+            end
+
+            it "uses the generated identifier as the entry's identifier" do
+              subject.create_collections
+
+              expect(importer.entries.last.identifier).to eq("#{importer.id}-99")
+            end
+          end
+        end
+      end
+    end
+
     describe '#create_works' do
-      subject { described_class.new(importer) }
-      let(:importer) { FactoryBot.create(:bulkrax_importer_csv) }
       let(:entry) { FactoryBot.create(:bulkrax_entry, importerexporter: importer) }
 
       before do
@@ -91,7 +265,6 @@ module Bulkrax
     end
 
     describe '#write_partial_import_file', clean_downloads: true do
-      subject        { described_class.new(importer) }
       let(:importer) { FactoryBot.create(:bulkrax_importer_csv_failed) }
       let(:file)     { fixture_file_upload('./spec/fixtures/csv/ok.csv') }
 
@@ -141,7 +314,6 @@ module Bulkrax
     end
 
     describe '#create_parent_child_relationships' do
-      subject { described_class.new(importer) }
       let(:importer) { FactoryBot.create(:bulkrax_importer_csv_complex) }
       let(:entry_1) { FactoryBot.build(:bulkrax_entry, importerexporter: importer, identifier: '123456789') }
       let(:entry_2) { FactoryBot.build(:bulkrax_entry, importerexporter: importer, identifier: '234567891') }
@@ -207,7 +379,6 @@ module Bulkrax
     end
 
     describe '#write_errored_entries_file', clean_downloads: true do
-      subject                { described_class.new(importer) }
       let(:importer)         { FactoryBot.create(:bulkrax_importer_csv_failed, entries: [entry_failed, entry_succeeded, entry_collection]) }
       let(:entry_failed)     { FactoryBot.create(:bulkrax_csv_entry_failed, raw_metadata: { title: 'Failed' }) }
       let(:entry_succeeded)  { FactoryBot.create(:bulkrax_csv_entry, raw_metadata: { title: 'Succeeded' }) }
@@ -285,6 +456,52 @@ module Bulkrax
         expect(headers).to include('multiple_objects_position_1_1')
         expect(headers).to include('multiple_objects_position_1_2')
         expect(headers).to include('multiple_objects_first_name_2')
+      end
+    end
+
+    describe '#collection_field_mapping' do
+      context 'when the mapping is set' do
+        before do
+          allow(Bulkrax).to receive(:collection_field_mapping).and_return({ 'Bulkrax::CsvEntry' => 'parent' })
+        end
+
+        it 'returns the mapping' do
+          expect(subject.collection_field_mapping).to eq(:parent)
+        end
+      end
+
+      context 'when the mapping is not set' do
+        before do
+          allow(Bulkrax).to receive(:collection_field_mapping).and_return({})
+        end
+
+        it 'returns :collection' do
+          expect(subject.collection_field_mapping).to eq(:collection)
+        end
+      end
+    end
+
+    describe '#model_field_mappings' do
+      context 'when mappings are set' do
+        before do
+          allow(Bulkrax)
+            .to receive(:field_mappings)
+            .and_return({ 'Bulkrax::CsvParser' => { 'model' => { from: ['map_1', 'map_2'] } } })
+        end
+
+        it 'includes the mappings' do
+          expect(subject.model_field_mappings).to include('map_1', 'map_2')
+        end
+
+        it 'always includes "model"' do
+          expect(subject.model_field_mappings).to include('model')
+        end
+      end
+
+      context 'when mappings are set' do
+        it 'falls back on "model"' do
+          expect(subject.model_field_mappings).to eq(['model'])
+        end
       end
     end
   end

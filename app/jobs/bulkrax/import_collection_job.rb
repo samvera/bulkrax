@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Bulkrax
-  class ImportWorkCollectionJob < ApplicationJob
+  class ImportCollectionJob < ApplicationJob
     queue_as :import
 
     # rubocop:disable Rails/SkipsModelValidations
@@ -28,7 +28,7 @@ module Bulkrax
       collection          = entry.factory.find
       permission_template = Hyrax::PermissionTemplate.find_or_create_by!(source_id: collection.id)
 
-      Hyrax::PermissionTemplateAccess.create!(
+      Hyrax::PermissionTemplateAccess.find_or_create_by!(
         permission_template_id: permission_template.id,
         agent_id: user.user_key,
         agent_type: 'user',

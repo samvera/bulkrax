@@ -45,20 +45,37 @@ module Bulkrax
       raise StandardError, "Missing required elements, missing element(s) are: #{importerexporter.parser.missing_elements(keys_without_numbers(record.keys)).join(', ')}" unless importerexporter.parser.required_elements?(keys_without_numbers(record.keys))
 
       self.parsed_metadata = {}
+      add_identifier
+      add_metadata_for_model
+      add_visibility
+      add_ingested_metadata
+      add_rights_statement
+      add_collections
+      add_local
+
+      self.parsed_metadata
+    end
+
+    def add_identifier
       self.parsed_metadata[work_identifier] = [record[source_identifier]]
+    end
+
+    def add_metadata_for_model
+      if factory_class == Collection
+        add_collection_type_gid
+      else
+        add_file unless importerexporter.metadata_only?
+        add_admin_set_id
+      end
+    end
+
+    def add_ingested_metadata
       record.each do |key, value|
-        next if %w[collection collections].include?(key_without_numbers(key))
+        next if self.parser.collection_field_mapping.to_s == key_without_numbers(key)
 
         index = key[/\d+/].to_i - 1 if key[/\d+/].to_i != 0
         add_metadata(key_without_numbers(key), value, index)
       end
-      add_file unless importerexporter.metadata_only?
-      add_visibility
-      add_rights_statement
-      add_admin_set_id
-      add_collections
-      add_local
-      self.parsed_metadata
     end
 
     def add_file

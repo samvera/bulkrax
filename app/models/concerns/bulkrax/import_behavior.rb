@@ -68,6 +68,7 @@ module Bulkrax
       @factory ||= Bulkrax::ObjectFactory.new(attributes: self.parsed_metadata,
                                               source_identifier_value: identifier,
                                               work_identifier: parser.work_identifier,
+                                              collection_field_mapping: parser.collection_field_mapping,
                                               replace_files: replace_files,
                                               user: user,
                                               klass: factory_class,
@@ -82,7 +83,7 @@ module Bulkrax
            else
              Bulkrax.default_work_type
            end
-      fc.constantize
+      fc.downcase.camelcase.constantize
     rescue NameError
       nil
     rescue

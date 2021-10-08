@@ -5,15 +5,16 @@ module Bulkrax
     extend ActiveModel::Callbacks
     include Bulkrax::FileFactory
     define_model_callbacks :save, :create
-    attr_reader :attributes, :object, :source_identifier_value, :klass, :replace_files, :update_files, :work_identifier
+    attr_reader :attributes, :object, :source_identifier_value, :klass, :replace_files, :update_files, :work_identifier, :collection_field_mapping
 
     # rubocop:disable Metrics/ParameterLists
-    def initialize(attributes:, source_identifier_value:, work_identifier:, replace_files: false, user: nil, klass: nil, update_files: false)
+    def initialize(attributes:, source_identifier_value:, work_identifier:, collection_field_mapping:, replace_files: false, user: nil, klass: nil, update_files: false)
       @attributes = ActiveSupport::HashWithIndifferentAccess.new(attributes)
       @replace_files = replace_files
       @update_files = update_files
       @user = user || User.batch_user
       @work_identifier = work_identifier
+      @collection_field_mapping = collection_field_mapping
       @source_identifier_value = source_identifier_value
       @klass = klass || Bulkrax.default_work_type.constantize
     end
@@ -159,11 +160,10 @@ module Bulkrax
 
     def member_of_collections
       ms = object.member_of_collection_ids.to_a.map { |id| find_collection(id) }
-      [:collection, :collections].each do |atat|
-        next if attributes[atat].blank?
+      if attributes[collection_field_mapping].present?
         ms.concat(
           Array.wrap(
-            find_collection(attributes[atat])
+            find_collection(attributes[collection_field_mapping])
           )
         )
       end
@@ -194,7 +194,7 @@ module Bulkrax
     def create_attributes
       return transform_attributes if klass == Collection
       ActiveSupport::Deprecation.warn("Passing collection or collections directly to the ObjectFactory is no longer supported. Please update your Entry class to call add_collections instead.") if attributes[:collection].present? || attributes[:collections].present?
-      transform_attributes.except(:collections, :collection)
+      transform_attributes.except(:collections, :collection, collection_field_mapping)
     end
 
     # Strip out the :collection key, and add the member_of_collection_ids,
@@ -202,7 +202,7 @@ module Bulkrax
     def attribute_update
       return transform_attributes.except(:id) if klass == Collection
       ActiveSupport::Deprecation.warn("Passing collection or collections directly to the ObjectFactory is no longer supported. Please update your Entry class to call add_collections instead.") if attributes[:collection].present? || attributes[:collections].present?
-      transform_attributes.except(:collections, :collection, :id)
+      transform_attributes.except(:id, :collections, :collection, collection_field_mapping)
     end
 
     # Override if we need to map the attributes from the parser in

@@ -58,7 +58,7 @@ module Bulkrax
           collection_type_gid: Hyrax::CollectionType.find_or_create_default_collection_type.gid
         }
         new_entry = find_or_create_entry(collection_entry_class, collection, 'Bulkrax::Importer', metadata)
-        ImportWorkCollectionJob.perform_now(new_entry.id, current_run.id)
+        ImportCollectionJob.perform_now(new_entry.id, current_run.id)
         increment_counters(index, true)
       end
     end
@@ -83,11 +83,16 @@ module Bulkrax
     end
 
     def collections
-      records.map { |r| r[:collection].split(/\s*[;|]\s*/) if r[:collection].present? }.flatten.compact.uniq
+      records.map { |r| r[collection_field_mapping].split(/\s*[;|]\s*/) if r[collection_field_mapping].present? }.flatten.compact.uniq
     end
 
     def collections_total
       collections.size
+    end
+
+    # TODO: change to differentiate between collection and work records when adding ability to import collection metadata
+    def works_total
+      total
     end
 
     def total
