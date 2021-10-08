@@ -2,7 +2,7 @@
 
 require 'csv'
 module Bulkrax
-  class CsvParser < ApplicationParser
+  class CsvParser < ApplicationParser # rubocop:disable Metrics/ClassLength
     include ErroredEntries
     def self.export_supported?
       true
