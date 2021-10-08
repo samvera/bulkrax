@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Bulkrax
-  class ApplicationParser
+  class ApplicationParser # rubocop:disable Metrics/ClassLength
     attr_accessor :importerexporter, :headers
     alias importer importerexporter
     alias exporter importerexporter
