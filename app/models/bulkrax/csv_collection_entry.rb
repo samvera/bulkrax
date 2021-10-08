@@ -6,22 +6,10 @@ module Bulkrax
       Collection
     end
 
-    def build_metadata
-      self.parsed_metadata = {}
+    # Use identifier set by CsvParser#unique_collection_identifier, which falls back
+    # on the Collection's first title if record[source_identifier] is not present
+    def add_identifier
       self.parsed_metadata[work_identifier] = self.identifier
-      record.each do |key, value|
-        next if self.parser.collection_field_mapping.to_s == key_without_numbers(key)
-
-        index = key[/\d+/].to_i - 1 if key[/\d+/].to_i != 0
-        add_metadata(key_without_numbers(key), value, index)
-      end
-      add_collection_type_gid
-      add_visibility
-      add_rights_statement
-      add_collections
-      add_local
-
-      self.parsed_metadata
     end
 
     def add_collection_type_gid
