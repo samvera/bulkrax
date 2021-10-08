@@ -20,6 +20,7 @@ module Bulkrax
       it 'increments :deleted_records' do
         expect(importer_run).to receive(:increment!).with(:deleted_records)
         expect(importer_run).to receive(:decrement!).with(:enqueued_records)
+        entry.save
         delete_work_job.perform(entry, importer_run)
       end
     end
@@ -34,6 +35,7 @@ module Bulkrax
       it 'increments :deleted_records' do
         expect(importer_run).to receive(:increment!).with(:deleted_records)
         expect(importer_run).to receive(:decrement!).with(:enqueued_records)
+        entry.save
         delete_work_job.perform(entry, importer_run)
       end
     end
