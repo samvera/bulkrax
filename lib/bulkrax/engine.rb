@@ -25,7 +25,7 @@ module Bulkrax
     config.after_initialize do
       my_engine_root = Bulkrax::Engine.root.to_s
       paths = ActionController::Base.view_paths.collect(&:to_s)
-      hyrax_path = paths.detect { |path| path.match('/hyrax-') }
+      hyrax_path = paths.detect { |path| path.match(/\/hyrax-[\d\.]+.*/) }
       paths = if hyrax_path
                 paths.insert(paths.index(hyrax_path), my_engine_root + '/app/views')
               else
