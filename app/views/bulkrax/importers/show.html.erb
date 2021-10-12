@@ -104,7 +104,7 @@
                   <% elsif e.status == "Pending" %>
                     <td><span class="glyphicon glyphicon-option-horizontal" style="color: blue;"></span> <%= e.status %></td>
                   <% else %>
-                    <td><span class="glyphicon glyphicon-remove" style="color: red;"></span> <%= e.status %></td>
+                    <td><span class="glyphicon glyphicon-remove" style="color: <%= e.status == 'Deleted' ? 'green' : 'red' %>;"></span> <%= e.status %></td>
                   <% end %>
                   <% if e.last_error.present? %>
                     <td><%= link_to e.last_error.dig("error_class"), bulkrax.importer_entry_path(@importer.id, e.id) %></td>
@@ -142,7 +142,7 @@
                   <% elsif e.status == "Pending" %>
                     <td><span class="glyphicon glyphicon-option-horizontal" style="color: blue;"></span> <%= e.status %></td>
                   <% else %>
-                    <td><span class="glyphicon glyphicon-remove" style="color: red;"></span> <%= e.status %></td>
+                    <td><span class="glyphicon glyphicon-remove" style="color: <%= e.status == 'Deleted' ? 'green' : 'red' %>;"></span> <%= e.status %></td>
                   <% end %>
                   <% if e.last_error.present? %>
                     <td><%= link_to e.last_error.dig("error_class"), bulkrax.importer_entry_path(@importer.id, e.id) %></td>

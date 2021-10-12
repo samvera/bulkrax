@@ -8,10 +8,12 @@ module Bulkrax
     def perform(entry, importer_run)
       work = entry.factory.find
       work&.delete
-      entry.status_info("Deleted", importer_run)
-      importer_run.increment!(:deleted_records)
-      importer_run.decrement!(:enqueued_records)
+      ImporterRun.find(importer_run.id).increment!(:deleted_records)
+      ImporterRun.find(importer_run.id).decrement!(:enqueued_records)
+      entry.save!
+      entry.importer.current_run = ImporterRun.find(importer_run.id)
       entry.importer.record_status
+      entry.status_info("Deleted", ImporterRun.find(importer_run.id))
     end
     # rubocop:enable Rails/SkipsModelValidations
   end
