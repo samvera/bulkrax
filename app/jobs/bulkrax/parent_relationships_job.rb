@@ -2,19 +2,15 @@
 
 module Bulkrax
   class ParentMissingError < RuntimeError; end
-  class ParentRelationshipsJob < ApplicationJob
-    queue_as :import
-
-    def perform(child_id, parent_identifiers, current_run_id)
-      @child_id = child_id
-      @parent_identifiers = parent_identifiers
-      @current_run_id = current_run_id
+  class ParentRelationshipsJob < RelationshipsJob
+    def perform(*args)
+      @args = args
     rescue ParentMissingError
-      reschedule(child_id, parent_identifiers, current_run_id)
+      reschedule(args[0], args[1], args[2])
     end
 
     def add_parent_relationships
-      @parent_identifiers.each do |p_id|
+      parent_identifiers.each do |p_id|
         related_record = Entry.find_by(identifier: p_id)
         related_record ||= ::Collection.find(p_id)
         if related_record.blank?
@@ -43,6 +39,10 @@ module Bulkrax
       end
     end
 
+    def parent_identifiers
+      @args[1]
+    end
+
     def create_collection_relationship
       # TODO
     end
@@ -51,14 +51,10 @@ module Bulkrax
       # TODO
     end
 
-    def entry
-      @entry ||= Entry.find(@child_id)
-    end
-
     private
 
-    def reschedule(child_id, parent_identifiers, current_run_id)
-      ParentRelationshipsJob.set(wait: 10.minutes).perform_later(child_id, parent_identifiers, current_run_id)
+    def reschedule(child_id, parent_identifiers, importer_run_id)
+      ParentRelationshipsJob.set(wait: 10.minutes).perform_later(child_id, parent_identifiers, importer_run_id)
     end
   end
 end
