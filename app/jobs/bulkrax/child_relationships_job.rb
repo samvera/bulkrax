@@ -12,7 +12,7 @@ module Bulkrax
         work_membership
       end
       # Not all of the Works/Collections exist yet; reschedule
-    rescue Bulkrax::ChildWorksError
+    rescue ChildWorksError
       reschedule(args[0], args[1], args[2])
     end
 
@@ -41,7 +41,7 @@ module Bulkrax
     end
 
     def child_entries
-      @child_entries ||= @args[1].map { |e| Bulkrax::Entry.find(e) }
+      @child_entries ||= @args[1].map { |e| Entry.find(e) }
     end
 
     def child_works_hash
