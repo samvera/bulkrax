@@ -11,6 +11,7 @@ module Bulkrax
                    :collection_field_mapping,
                    :fill_in_blank_source_identifiers,
                    :parent_child_field_mapping,
+                   :related_parent_id_mapping,
                    :reserved_properties,
                    :field_mappings,
                    :import_path,
@@ -47,6 +48,9 @@ module Bulkrax
     #   }
     # By default no parent-child relationships are added
     self.parent_child_field_mapping = {}
+
+    # TODO: documentation
+    self.related_parent_id_mapping = {}
 
     # Field_mapping for establishing a collection relationship (FROM work TO collection)
     # This value IS NOT used for OAI, so setting the OAI Entries here will have no effect

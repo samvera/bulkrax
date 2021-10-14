@@ -64,6 +64,10 @@ module Bulkrax
       Bulkrax.collection_field_mapping[self.entry_class.to_s]&.to_sym || :collection
     end
 
+    def related_parent_field_mapping
+      Bulkrax.related_parent_id_mapping[self.entry_class.to_s]&.to_sym
+    end
+
     def model_field_mappings
       model_mappings = Bulkrax.field_mappings[self.class.to_s]&.dig('model', :from) || []
       model_mappings |= ['model']
@@ -89,6 +93,22 @@ module Bulkrax
 
     def create_works
       raise StandardError, 'must be defined' if importer?
+    end
+
+    def create_parent_relationships
+      records.each do |r|
+        next if r[related_parent_field_mapping].blank?
+
+        parent_identifiers = r[related_parent_field_mapping].split(/\s*[;|]\s*/)
+        child_id = entry_class.find_by(
+          identifier: r[source_identifier],
+          importerexporter_id: importerexporter.id,
+          importerexporter_type: 'Bulkrax::Importer'
+        ).id
+        ParentRelationshipsJob.perform_later(child_id, parent_identifiers, current_run.id)
+      end
+    rescue StandardError => e
+      status_info(e)
     end
 
     # Optional, define if using browse everything for file upload
