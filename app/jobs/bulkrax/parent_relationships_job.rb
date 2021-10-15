@@ -16,12 +16,8 @@ module Bulkrax
     def add_parent_relationships
       parent_identifiers.each do |p_id|
         parent_record = find_parent_record!(p_id)
-        parent_record_class = parent_record.is_a?(Entry) ? parent_record.factory.find.class : parent_record.class
 
-        case parent_record_class
-        when ::NilClass
-          raise ParentNotFoundError, "the record for entry #{parent_record&.identifier} has not been created yet"
-        when ::Collection
+        if parent_record.is_a?(::Collection)
           create_collection_relationship(parent_record)
         else
           create_work_relationship(parent_record)
@@ -41,9 +37,11 @@ module Bulkrax
           parent_record ||= work_type.where(parent_identifier).first
         end
       end
+      parent_record = parent_record.factory.find if parent_record.is_a?(Entry)
+
       return parent_record if parent_record.present?
 
-      raise ParentNotFoundError, "the record with identifier #{parent_identifier} could not be found"
+      raise ParentNotFoundError, %(the record with identifier "#{parent_identifier}" could not be found)
     end
 
     def create_collection_relationship(parent_record)
@@ -54,7 +52,7 @@ module Bulkrax
       end
     end
 
-    def create_work_relationship
+    def create_work_relationship(parent_record)
       raise ::StandardError, 'a Collection may not be assigned as a child of a Work' if child_record.is_a?(::Collection)
 
       work_parent_work_child(parent_id: parent_record.id, child_ids: [child_record&.id])
