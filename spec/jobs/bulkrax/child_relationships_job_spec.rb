@@ -24,7 +24,7 @@ module Bulkrax
       allow(factory).to receive(:run)
     end
 
-    describe '#work-parent-work-child' do
+    describe '#work_parent_work_child' do
       before do
         allow(Bulkrax::Entry).to receive(:find).with(1).and_return(entry_work)
         allow(Bulkrax::Entry).to receive(:find).with(2).and_return(child_entry)
@@ -32,8 +32,8 @@ module Bulkrax
         allow(child_entry).to receive_message_chain(:factory, :find).and_return(work_child)
       end
 
-      it 'calls work_parent_work_child' do
-        expect(child_relationship_job).to receive(:work_parent_work_child).with([work_child.id])
+      it 'calls #work_parent_work_child' do
+        expect(child_relationship_job).to receive(:work_parent_work_child).with(parent_id: entry_work.factory.find.id, child_ids: [work_child.id])
         child_relationship_job.perform(1, [2], 3)
       end
 
@@ -86,8 +86,8 @@ module Bulkrax
         allow(child_entry).to receive_message_chain(:factory, :find).and_return(work_child)
       end
 
-      it 'calls collection_parent_work_child' do
-        expect(child_relationship_job).to receive(:collection_parent_work_child).with(work_child.id)
+      it 'calls #collection_parent_work_child' do
+        expect(child_relationship_job).to receive(:collection_parent_work_child).with(parent_id: entry_collection.factory.find.id, child_id: work_child.id)
         child_relationship_job.perform(1, [2], 3)
       end
 
@@ -116,7 +116,7 @@ module Bulkrax
       end
     end
 
-    describe 'collection_parent_collection_child' do
+    describe '#collection_parent_collection_child' do
       before do
         allow(Bulkrax::Entry).to receive(:find).with(1).and_return(entry_collection)
         allow(Bulkrax::Entry).to receive(:find).with(2).and_return(child_entry)
@@ -125,7 +125,7 @@ module Bulkrax
       end
 
       it 'calls collection_parent_collection_child' do
-        expect(child_relationship_job).to receive(:collection_parent_collection_child).with([collection_child.id])
+        expect(child_relationship_job).to receive(:collection_parent_collection_child).with(parent_id: entry_collection.factory.find.id, child_ids: [collection_child.id])
         child_relationship_job.perform(1, [2], 3)
       end
 
