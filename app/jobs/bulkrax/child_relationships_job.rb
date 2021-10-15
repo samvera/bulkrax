@@ -20,12 +20,12 @@ module Bulkrax
       # add collection to works
       member_of_collection = []
       child_works_hash.each { |k, v| member_of_collection << k if v[:class_name] != 'Collection' }
-      member_of_collection.each { |work| work_child_collection_parent(work) }
+      member_of_collection.each { |work_id| collection_parent_work_child(parent_id: entry&.factory&.find&.id, child_id: work_id) }
 
       # add collections to collection
       members_collections = []
       child_works_hash.each { |k, v| members_collections << k if v[:class_name] == 'Collection' }
-      collection_parent_collection_child(members_collections) if members_collections.present?
+      collection_parent_collection_child(parent_id: entry&.factory&.find&.id, child_ids: members_collections) if members_collections.present?
     end
 
     def work_membership
@@ -37,7 +37,7 @@ module Bulkrax
       if members_works.length < child_entries.length # rubocop:disable Style/IfUnlessModifier
         Rails.logger.warn("Cannot add collections as children of works: #{(@child_entries.length - members_works.length)} collections were discarded for parent entry #{@entry.id} (of #{@child_entries.length})")
       end
-      work_parent_work_child(members_works) if members_works.present?
+      work_parent_work_child(parent_id: entry&.factory&.find&.id, child_ids: members_works) if members_works.present?
     end
 
     def child_entries

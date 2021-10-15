@@ -78,7 +78,7 @@ module Bulkrax
       end
     end
 
-    describe '#work_child_collection_parent' do
+    describe '#collection_parent_work_child' do
       before do
         allow(Bulkrax::Entry).to receive(:find).with(1).and_return(entry_collection)
         allow(Bulkrax::Entry).to receive(:find).with(2).and_return(child_entry)
@@ -86,8 +86,8 @@ module Bulkrax
         allow(child_entry).to receive_message_chain(:factory, :find).and_return(work_child)
       end
 
-      it 'calls work_child_collection_parent' do
-        expect(child_relationship_job).to receive(:work_child_collection_parent).with(work_child.id)
+      it 'calls collection_parent_work_child' do
+        expect(child_relationship_job).to receive(:collection_parent_work_child).with(work_child.id)
         child_relationship_job.perform(1, [2], 3)
       end
 
