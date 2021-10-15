@@ -11,22 +11,16 @@ module Bulkrax
       reschedule(args[0], args[1], args[2])
     end
 
+    private
+
     def add_parent_relationships
       parent_identifiers.each do |p_id|
-        related_record = Entry.find_by(identifier: p_id)
-        related_record ||= ::Collection.find(p_id)
-        if related_record.blank?
-          ::Hyrax.config.curation_concerns.each do |work_type|
-            related_record ||= work_type.constantize.find(p_id)
-          end
-        end
-
-        raise ParentMissingError if related_record.blank?
-
+        related_record = find_related_record!(p_id)
         related_record_class = related_record.is_a?(Entry) ? related_record.factory.find.class : related_record.class
+
         case related_record_class
-        when ::NilClass # the entry's record has not been created yet
-          raise ParentMissingError
+        when ::NilClass
+          raise ParentMissingError, "the record for entry #{related_record&.identifier} has not been created yet"
         when ::Collection
           create_collection_relationship(related_record)
         else
@@ -39,9 +33,20 @@ module Bulkrax
       @args[1]
     end
 
-    def create_collection_relationship(related_record)
-      child_object = entry.factory.find # TODO: make method?
+    def find_related_record!(parent_identifier)
+      related_record = Entry.find_by(identifier: parent_identifier)
+      related_record ||= ::Collection.find(parent_identifier)
+      if related_record.blank?
+        ::Hyrax.config.curation_concerns.each do |work_type|
+          related_record ||= work_type.constantize.find(parent_identifier)
+        end
+      end
+      return related_record if related_record.present?
 
+      raise ParentMissingError, "the record with identifier #{parent_identifier} could not be found"
+    end
+
+    def create_collection_relationship(related_record)
       if child_object.is_a?(::Collection)
         collection_parent_collection_child(parent_id: related_record.id, child_ids: [child_object&.id])
       else
@@ -50,13 +55,14 @@ module Bulkrax
     end
 
     def create_work_relationship
-      raise ::StandardError, 'A Collection may not be assigned as a child of a Work' if entry.factory.find.is_a?(::Collection)
+      raise ::StandardError, 'a Collection may not be assigned as a child of a Work' if child_object.is_a?(::Collection)
 
-      # TODO: child_ids must be a hash? see #child_works_hash
-      work_parent_work_child(parent_id: related_record.id, child_ids: entry.factory.find&.id)
+      work_parent_work_child(parent_id: related_record.id, child_ids: [child_object&.id])
     end
 
-    private
+    def child_object
+      @child_object ||= entry.factory.find
+    end
 
     def reschedule(child_id, parent_identifiers, importer_run_id)
       ParentRelationshipsJob.set(wait: 10.minutes).perform_later(child_id, parent_identifiers, importer_run_id)
