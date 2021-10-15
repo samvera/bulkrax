@@ -1,13 +1,13 @@
 # frozen_string_literal: true
 
 module Bulkrax
-  class ParentMissingError < RuntimeError; end
+  class ParentNotFoundError < RuntimeError; end
   class ParentRelationshipsJob < RelationshipsJob
     def perform(*args)
       @args = args
 
       add_parent_relationships
-    rescue ParentMissingError
+    rescue ParentNotFoundError
       reschedule(args[0], args[1], args[2])
     end
 
@@ -15,16 +15,16 @@ module Bulkrax
 
     def add_parent_relationships
       parent_identifiers.each do |p_id|
-        related_record = find_related_record!(p_id)
-        related_record_class = related_record.is_a?(Entry) ? related_record.factory.find.class : related_record.class
+        parent_record = find_parent_record!(p_id)
+        parent_record_class = parent_record.is_a?(Entry) ? parent_record.factory.find.class : parent_record.class
 
-        case related_record_class
+        case parent_record_class
         when ::NilClass
-          raise ParentMissingError, "the record for entry #{related_record&.identifier} has not been created yet"
+          raise ParentNotFoundError, "the record for entry #{parent_record&.identifier} has not been created yet"
         when ::Collection
-          create_collection_relationship(related_record)
+          create_collection_relationship(parent_record)
         else
-          create_work_relationship(related_record)
+          create_work_relationship(parent_record)
         end
       end
     end
@@ -33,39 +33,39 @@ module Bulkrax
       @args[1]
     end
 
-    def find_related_record!(parent_identifier)
-      related_record = Entry.find_by(identifier: parent_identifier)
-      related_record ||= ::Collection.find(parent_identifier)
-      if related_record.blank?
+    def find_parent_record!(parent_identifier)
+      parent_record = Entry.find_by(identifier: parent_identifier)
+      parent_record ||= ::Collection.where(id: parent_identifier).first
+      if parent_record.blank?
         ::Hyrax.config.curation_concerns.each do |work_type|
-          related_record ||= work_type.constantize.find(parent_identifier)
+          parent_record ||= work_type.where(parent_identifier).first
         end
       end
-      return related_record if related_record.present?
+      return parent_record if parent_record.present?
 
-      raise ParentMissingError, "the record with identifier #{parent_identifier} could not be found"
+      raise ParentNotFoundError, "the record with identifier #{parent_identifier} could not be found"
     end
 
-    def create_collection_relationship(related_record)
-      if child_object.is_a?(::Collection)
-        collection_parent_collection_child(parent_id: related_record.id, child_ids: [child_object&.id])
+    def create_collection_relationship(parent_record)
+      if child_record.is_a?(::Collection)
+        collection_parent_collection_child(parent_id: parent_record.id, child_ids: [child_record&.id])
       else
-        collection_parent_work_child(parent_id: related_record.id, child_id: child_object&.id)
+        collection_parent_work_child(parent_id: parent_record.id, child_id: child_record&.id)
       end
     end
 
     def create_work_relationship
-      raise ::StandardError, 'a Collection may not be assigned as a child of a Work' if child_object.is_a?(::Collection)
+      raise ::StandardError, 'a Collection may not be assigned as a child of a Work' if child_record.is_a?(::Collection)
 
-      work_parent_work_child(parent_id: related_record.id, child_ids: [child_object&.id])
+      work_parent_work_child(parent_id: parent_record.id, child_ids: [child_record&.id])
     end
 
-    def child_object
-      @child_object ||= entry.factory.find
+    def child_record
+      @child_record ||= entry.factory.find
     end
 
-    def reschedule(child_id, parent_identifiers, importer_run_id)
-      ParentRelationshipsJob.set(wait: 10.minutes).perform_later(child_id, parent_identifiers, importer_run_id)
+    def reschedule(child_entry_id, parent_identifiers, importer_run_id)
+      ParentRelationshipsJob.set(wait: 10.minutes).perform_later(child_entry_id, parent_identifiers, importer_run_id)
     end
   end
 end
