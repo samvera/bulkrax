@@ -83,9 +83,12 @@ module Bulkrax
            else
              Bulkrax.default_work_type
            end
+
+      # return the name of the collection
       fc.downcase.camelcase.constantize
-    rescue NameError
-      nil
+    rescue NameError => e
+      # return the name of the model, or nil
+      fc.constantize || nil
     rescue
       Bulkrax.default_work_type.constantize
     end
