@@ -86,7 +86,7 @@ module Bulkrax
 
       # return the name of the collection
       fc.downcase.camelcase.constantize
-    rescue NameError => e
+    rescue NameError
       # return the name of the model, or nil
       fc.constantize || nil
     rescue
