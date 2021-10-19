@@ -25,11 +25,28 @@ module Bulkrax
         let(:child_entry) { create(:bulkrax_csv_entry_work, importerexporter: importer) }
         let(:parent_record) { build(:collection) }
         let(:child_record) { build(:work) }
+        let(:factory_attrs) do
+          {
+            attributes: { id: child_record.id, collections: [{ id: parent_record.id }] },
+            source_identifier_value: child_entry.identifier,
+            work_identifier: :source,
+            collection_field_mapping: :collection,
+            replace_files: false,
+            user: importer.user,
+            klass: Work
+          }
+        end
 
         it 'calls #collection_parent_work_child' do
           expect(parent_relationship_job)
             .to receive(:collection_parent_work_child)
             .with(parent_id: parent_record.id, child_id: child_record.id)
+
+          parent_relationship_job.perform(child_entry.id, [parent_entry.identifier], importer.current_run.id)
+        end
+
+        it 'creates the object factory' do
+          expect(ObjectFactory).to receive(:new).with(factory_attrs)
 
           parent_relationship_job.perform(child_entry.id, [parent_entry.identifier], importer.current_run.id)
         end

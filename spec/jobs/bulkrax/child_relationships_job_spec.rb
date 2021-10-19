@@ -157,7 +157,7 @@ module Bulkrax
     describe 'error handling' do
       context 'error outside adding relationships' do
         before do
-          allow(child_relationship_job).to receive(:child_works_hash).and_raise(StandardError)
+          allow(child_relationship_job).to receive(:child_records_hash).and_raise(StandardError)
         end
         it 'does not increment failed children' do
           expect { child_relationship_job.perform(1, [2], 3) } .to raise_error(StandardError)
@@ -185,7 +185,7 @@ module Bulkrax
           allow(Bulkrax::Entry).to receive(:find).with(2).and_return(child_entry)
           allow(child_entry).to receive(:factory_class).and_return(Work)
           allow(child_entry).to receive_message_chain(:factory, :find).and_return(nil)
-          allow(child_relationship_job).to receive(:child_works_hash).and_raise(Bulkrax::ChildWorksError)
+          allow(child_relationship_job).to receive(:child_records_hash).and_raise(Bulkrax::ChildNotFoundError)
         end
         it 'does not increment failed children' do
           expect(child_relationship_job).to receive(:reschedule).with(1, [2], 3)

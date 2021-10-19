@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 module Bulkrax
-  class ChildWorksError < RuntimeError; end
   class ChildRelationshipsJob < RelationshipsJob
     def perform(*args)
       @args = args
@@ -12,19 +11,19 @@ module Bulkrax
         work_membership
       end
       # Not all of the Works/Collections exist yet; reschedule
-    rescue ChildWorksError
+    rescue ChildNotFoundError
       reschedule(args[0], args[1], args[2])
     end
 
     def collection_membership
       # add collection to works
       member_of_collection = []
-      child_works_hash.each { |k, v| member_of_collection << k if v[:class_name] != 'Collection' }
+      child_records_hash.each { |k, v| member_of_collection << k if v[:class_name] != 'Collection' }
       member_of_collection.each { |work_id| collection_parent_work_child(parent_id: entry&.factory&.find&.id, child_id: work_id) }
 
       # add collections to collection
       members_collections = []
-      child_works_hash.each { |k, v| members_collections << k if v[:class_name] == 'Collection' }
+      child_records_hash.each { |k, v| members_collections << k if v[:class_name] == 'Collection' }
       collection_parent_collection_child(parent_id: entry&.factory&.find&.id, child_ids: members_collections) if members_collections.present?
     end
 
@@ -33,7 +32,7 @@ module Bulkrax
       # reject any Collections, they can't be children of Works
       members_works = []
       # reject any Collections, they can't be children of Works
-      child_works_hash.each { |k, v| members_works << k if v[:class_name] != 'Collection' }
+      child_records_hash.each { |k, v| members_works << k if v[:class_name] != 'Collection' }
       if members_works.length < child_entries.length # rubocop:disable Style/IfUnlessModifier
         Rails.logger.warn("Cannot add collections as children of works: #{(@child_entries.length - members_works.length)} collections were discarded for parent entry #{@entry.id} (of #{@child_entries.length})")
       end
@@ -41,16 +40,13 @@ module Bulkrax
     end
 
     def child_entries
-      @child_entries ||= @args[1].map { |e| Entry.find(e) }
+      @child_entries ||= @args[1].map do |e|
+        Entry.find_by(identifier: e) || Entry.find(e)
+      end
     end
 
-    def child_works_hash
-      @child_works_hash ||= child_entries.each_with_object({}) do |child_entry, hash|
-        work = child_entry.factory.find
-        # If we can't find the Work/Collection, raise a custom error
-        raise ChildWorksError if work.blank?
-        hash[work.id] = { class_name: work.class.to_s, entry.parser.source_identifier => child_entry.identifier }
-      end
+    def parent_entries
+      @parent_entries ||= [entry]
     end
 
     private

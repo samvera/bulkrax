@@ -1,13 +1,12 @@
 # frozen_string_literal: true
 
 module Bulkrax
-  class ParentNotFoundError < RuntimeError; end
   class ParentRelationshipsJob < RelationshipsJob
     def perform(*args)
       @args = args
 
       add_parent_relationships
-    rescue ParentNotFoundError
+    rescue ParentNotFoundError, ChildNotFoundError
       reschedule(args[0], args[1], args[2])
     end
 
@@ -56,6 +55,16 @@ module Bulkrax
       raise ::StandardError, 'a Collection may not be assigned as a child of a Work' if child_record.is_a?(::Collection)
 
       work_parent_work_child(parent_id: parent_record.id, child_ids: [child_record&.id])
+    end
+
+    def child_entries
+      @child_entries ||= [entry]
+    end
+
+    def parent_entries
+      @parent_entries ||= @args[1].map do |e|
+        Entry.find_by(identifier: e) || Entry.find(e)
+      end
     end
 
     def child_record
