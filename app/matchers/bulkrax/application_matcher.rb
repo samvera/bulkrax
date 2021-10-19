@@ -20,9 +20,9 @@ module Bulkrax
         return unless content.send(self.if[0], Regexp.new(self.if[1]))
       end
 
-      @result = content.to_s.gsub(/\s/, ' ') # remove any line feeds and tabs
-      @result.strip!
-      process_split
+      # @result will evaluate to an empty string for nil content values
+      @result = content.to_s.gsub(/\s/, ' ').strip # remove any line feeds and tabs
+      process_split if @result.present?
       @result = @result[0] if @result.is_a?(Array) && @result.size == 1
       process_parse
       return @result
@@ -66,14 +66,14 @@ module Bulkrax
     end
 
     def parse_subject(src)
-      string = src.to_s.strip.downcase
+      string = src.strip.downcase
       return if string.blank?
 
       string.slice(0, 1).capitalize + string.slice(1..-1)
     end
 
     def parse_types(src)
-      src.to_s.strip.titleize
+      src.strip.titleize
     end
 
     # Allow for mapping a model field to the work type or collection

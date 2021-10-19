@@ -71,7 +71,7 @@ module Bulkrax
         next if collection.blank?
         break if records.find_index(collection).present? && limit_reached?(limit, records.find_index(collection))
 
-        new_entry = find_or_create_entry(collection_entry_class, unique_collection_identifier(collection), 'Bulkrax::Importer', collection.to_h.compact)
+        new_entry = find_or_create_entry(collection_entry_class, unique_collection_identifier(collection), 'Bulkrax::Importer', collection.to_h)
         # TODO: add support for :delete option
         ImportCollectionJob.perform_now(new_entry.id, current_run.id)
         increment_counters(index, true)
@@ -87,7 +87,7 @@ module Bulkrax
         break if limit_reached?(limit, records.find_index(work))
 
         seen[work[source_identifier]] = true
-        new_entry = find_or_create_entry(entry_class, work[source_identifier], 'Bulkrax::Importer', work.to_h.compact)
+        new_entry = find_or_create_entry(entry_class, work[source_identifier], 'Bulkrax::Importer', work.to_h)
         if work[:delete].present?
           DeleteWorkJob.send(perform_method, new_entry, current_run)
         else
