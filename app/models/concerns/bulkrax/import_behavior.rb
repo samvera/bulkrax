@@ -85,8 +85,8 @@ module Bulkrax
            end
 
       # return the name of the collection or work
-      fc.gsub!(' ', '_')
-      fc.downcase! if fc =~ /[-_]/
+      fc.tr!(' ', '_')
+      fc.downcase! if fc.match? /[-_]/
       fc.camelcase.constantize
     rescue NameError
       nil
