@@ -43,7 +43,6 @@ module Bulkrax
 
         value = if matcher
                   result = matcher.result(self, node_content)
-                  next unless result
                   matched_metadata(multiple, name, result, object_multiple)
                 elsif multiple
                   Rails.logger.info("Bulkrax Column automatically matched #{node_name}, #{node_content}")
@@ -53,7 +52,7 @@ module Bulkrax
                   single_metadata(node_content)
                 end
 
-        set_parsed_data(object_multiple, object_name, name, index, value) if value
+        set_parsed_data(object_multiple, object_name, name, index, value)
       end
     end
 
