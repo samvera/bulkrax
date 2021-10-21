@@ -21,10 +21,10 @@ module Bulkrax
       end
 
       context 'when adding a child work to a parent collection' do
-        let(:parent_entry) { create(:bulkrax_csv_entry_collection, importerexporter: importer) }
-        let(:child_entry) { create(:bulkrax_csv_entry_work, importerexporter: importer) }
+        let(:parent_entry)  { create(:bulkrax_csv_entry_collection, importerexporter: importer) }
+        let(:child_entry)   { create(:bulkrax_csv_entry_work, importerexporter: importer) }
         let(:parent_record) { build(:collection) }
-        let(:child_record) { build(:work) }
+        let(:child_record)  { build(:work) }
         let(:factory_attrs) do
           {
             attributes: { id: child_record.id, collections: [{ id: parent_record.id }] },

@@ -41,7 +41,7 @@ module Bulkrax
     # Work-Collection membership is added to the child as member_of_collection_ids
     # This is adding the reverse relationship, from the child to the parent
     def collection_parent_work_child(parent_id:, child_id:)
-      attrs = { id: child_id, collections: [{ id: parent_id }] }
+      attrs = { id: child_id, member_of_collections_attributes: { 0 => { id: parent_id } } }
       ObjectFactory.new(attributes: attrs,
                         source_identifier_value: child_records_hash[child_id][entry.parser.source_identifier],
                         work_identifier: entry.parser.work_identifier,
