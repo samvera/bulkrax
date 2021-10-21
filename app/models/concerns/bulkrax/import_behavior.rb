@@ -12,6 +12,8 @@ module Bulkrax
           raise CollectionsCreatedError unless collections_created?
           @item = factory.run!
         end
+        parent_job if self.parsed_metadata['parent'].present?
+        child_job if self.parsed_metadata['children'].present?
       rescue RSolr::Error::Http, CollectionsCreatedError => e
         raise e
       rescue StandardError => e
@@ -20,6 +22,18 @@ module Bulkrax
         status_info
       end
       return @item
+    end
+
+    def parent_job
+      self.parsed_metadata['parent'].each do |parent_source_idenifier|
+        AttachItemsJob.perform_later(child: self.parsed_metadata[source_identifier], parent: parent_source_identifier)
+     end
+    end
+
+    def child_job
+      self.parsed_metadata['children'].each do |child_source_identifier|
+        AttachItemsJob.perform_later(parent: self.parsed_metadata[source_identifier], child: child_source_identifier)
+      end
     end
 
     def find_or_create_collection_ids
