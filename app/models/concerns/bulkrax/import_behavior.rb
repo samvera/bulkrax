@@ -83,7 +83,11 @@ module Bulkrax
            else
              Bulkrax.default_work_type
            end
-      fc.downcase.camelcase.constantize
+
+      # return the name of the collection or work
+      fc.tr!(' ', '_')
+      fc.downcase! if fc.match?(/[-_]/)
+      fc.camelcase.constantize
     rescue NameError
       nil
     rescue

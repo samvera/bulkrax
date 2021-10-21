@@ -56,7 +56,7 @@ module Bulkrax
     end
 
     def find
-      return find_by_id if attributes[:id]
+      return find_by_id if attributes[:id].present?
       return search_by_identifier if attributes[work_identifier].present?
     end
 
