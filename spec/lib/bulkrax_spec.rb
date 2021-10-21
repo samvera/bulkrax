@@ -16,15 +16,15 @@ RSpec.describe Bulkrax do
       end
     end
 
-    context 'parent_child_field_mapping' do
-      it 'responds to parent_child_field_mapping' do
-        expect(described_class).to respond_to(:parent_child_field_mapping)
+    context 'related_children_field_mapping' do
+      it 'responds to related_children_field_mapping' do
+        expect(described_class).to respond_to(:related_children_field_mapping)
       end
-      it 'parent_child_field_mapping is settable' do
-        expect(described_class).to respond_to(:parent_child_field_mapping=)
+      it 'related_children_field_mapping is settable' do
+        expect(described_class).to respond_to(:related_children_field_mapping=)
       end
       it 'has no default value' do
-        expect(described_class.parent_child_field_mapping).to eq({})
+        expect(described_class.related_children_field_mapping).to eq({})
       end
     end
 

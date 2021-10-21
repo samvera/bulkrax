@@ -10,8 +10,8 @@ module Bulkrax
                    :default_field_mapping,
                    :collection_field_mapping,
                    :fill_in_blank_source_identifiers,
-                   :parent_child_field_mapping,
-                   :related_parent_id_mapping,
+                   :related_children_field_mapping,
+                   :related_parents_field_mapping,
                    :reserved_properties,
                    :field_mappings,
                    :import_path,
@@ -34,7 +34,7 @@ module Bulkrax
     self.removed_image_path = Bulkrax::Engine.root.join('spec', 'fixtures', 'removed.png').to_s
     self.server_name = 'bulkrax@example.com'
 
-    # @todo, merge parent_child_field_mapping and collection_field_mapping into field_mappings,
+    # @todo, merge related_children_field_mapping and collection_field_mapping into field_mappings,
     # or make them settable per import some other way.
 
     # Field_mapping for establishing a parent-child relationship (FROM parent TO child)
@@ -47,10 +47,10 @@ module Bulkrax
     #     'Bulkrax::CsvEntry'  => 'children'
     #   }
     # By default no parent-child relationships are added
-    self.parent_child_field_mapping = {}
+    self.related_children_field_mapping = {}
 
     # TODO: documentation
-    self.related_parent_id_mapping = {}
+    self.related_parents_field_mapping = {}
 
     # Field_mapping for establishing a collection relationship (FROM work TO collection)
     # This value IS NOT used for OAI, so setting the OAI Entries here will have no effect

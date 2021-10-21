@@ -26,9 +26,12 @@ module Bulkrax
       raw_data = data.to_h
       raw_data[:model] = data[:model]
       # If the collection field mapping is not 'collection', add 'collection' - the parser needs it
+      # TODO: rename to 'collections'
       raw_data[:collection] = raw_data[collection_field.to_sym] if raw_data.keys.include?(collection_field.to_sym) && collection_field != 'collection'
+      # If the parents field mapping is not 'parents', add 'parents' - the parser needs it
+      raw_data[:parents] = raw_data[parents_field.to_sym] if raw_data.keys.include?(parents_field.to_sym) && parents_field != 'parents'
       # If the children field mapping is not 'children', add 'children' - the parser needs it
-      raw_data[:children] = raw_data[collection_field.to_sym] if raw_data.keys.include?(children_field.to_sym) && children_field != 'children'
+      raw_data[:children] = raw_data[children_field.to_sym] if raw_data.keys.include?(children_field.to_sym) && children_field != 'children'
       return raw_data
     end
 
@@ -36,8 +39,12 @@ module Bulkrax
       Bulkrax.collection_field_mapping[self.class.to_s] || 'collection'
     end
 
+    def self.parents_field
+      Bulkrax.related_parents_field_mapping[self.to_s] || 'parents'
+    end
+
     def self.children_field
-      Bulkrax.parent_child_field_mapping[self.to_s] || 'children'
+      Bulkrax.related_children_field_mapping[self.to_s] || 'children'
     end
 
     def build_metadata

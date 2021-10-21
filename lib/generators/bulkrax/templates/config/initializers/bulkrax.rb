@@ -29,10 +29,10 @@ Bulkrax.setup do |config|
   #     'Bulkrax::CsvEntry'  => 'children'
   #   }
   # By default no parent-child relationships are added
-  # config.parent_child_field_mapping = { }
+  # config.related_children_field_mapping = { }
 
   # TODO: documentation
-  # self.related_parent_id_mapping = {}
+  # self.related_parents_field_mapping = {}
 
   # Field_mapping for establishing a collection relationship (FROM work TO collection)
   # This value IS NOT used for OAI, so setting the OAI parser here will have no effect

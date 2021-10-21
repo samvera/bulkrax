@@ -1,47 +1,76 @@
 # frozen_string_literal: true
 
+# TODO: rename file
 module Bulkrax
   class ChildNotFoundError < RuntimeError; end
   class ParentNotFoundError < RuntimeError; end
-  class RelationshipsJob < ApplicationJob
+  class CreateRelationshipsJob < ApplicationJob
     queue_as :import
+
+    attr_accessor :child_record, :parent_record, :importer_run
+
+    def perform(entry_identifier:, parent_identifier: nil, child_identifier: nil, importer_run:)
+      @importer_run = importer_run
+      if parent_identifier.present?
+        @child_record = find_record(entry_identifier)
+        @parent_record = find_record(parent_identifier)
+      elsif child_identifier.present?
+        @parent_record = find_record(entry_identifier)
+        @child_record = find_record(child_identifier)
+      else
+        raise ::StandardError, %("#{entry_identifier}" needs either a child or a parent to create a relationship)
+      end
+
+      if @child_record.blank? || @parent_record.blank?
+        reschedule(
+          entry_identifier: entry_identifier,
+          parent_identifier: parent_identifier,
+          child_identifier: child_identifier,
+          importer_run: importer_run
+        )
+      end
+
+      if @parent_record.is_a?(::Collection) && @child_record.is_a?(::Collection)
+        collection_parent_collection_child
+      elsif @parent_record.is_a?(::Collection) && curation_concern?(@child_record)
+        collection_parent_work_child
+      elsif curation_concern?(@parent_record) && @child_record.is_a?(::Collection)
+        raise ActiveFedora::RecordInvalid, 'a Collection may not be assigned as a child of a Work'
+      else
+        work_parent_work_child
+      end
+    end
 
     private
 
-    def entry
-      @entry ||= Entry.find(@args[0])
+    def find_record(identifier)
+      record = Entry.find_by(identifier: identifier)
+      record ||= ::Collection.where(id: identifier).first
+      if record.blank?
+        ::Hyrax.config.curation_concerns.each do |work_type|
+          record ||= work_type.where(identifier).first
+        end
+      end
+      record = record.factory.find if record.is_a?(Entry)
+
+      record
     end
 
-    def importer_run_id
-      @args[2]
+    def curation_concern?(record)
+      ::Hyrax.config.curation_concerns.include?(record.class)
     end
 
     def user
-      @user ||= entry.importerexporter.user
-    end
-
-    def child_records_hash
-      @child_records_hash ||= records_hash(child_entries, ChildNotFoundError)
-    end
-
-    def parent_records_hash
-      @parent_records_hash ||= records_hash(parent_entries, ParentNotFoundError)
-    end
-
-    def records_hash(set, error_class)
-      set.each_with_object({}) do |entry, hash|
-        record = entry.factory.find
-        # If we can't find the Work/Collection, raise a custom error
-        raise error_class if record.blank?
-        hash[record.id] = { class_name: record.class.to_s, entry.parser.source_identifier => entry.identifier }
-      end
+      @user ||= importer_run.importer.user
     end
 
     # rubocop:disable Rails/SkipsModelValidations
     # Work-Collection membership is added to the child as member_of_collection_ids
     # This is adding the reverse relationship, from the child to the parent
+    # TODO: update to use @child_record and @parent_record
     def collection_parent_work_child(parent_id:, child_id:)
       attrs = { id: child_id, member_of_collections_attributes: { 0 => { id: parent_id } } }
+      # TODO: add resulting record's id to entry's parsed_metadata?
       ObjectFactory.new(attributes: attrs,
                         source_identifier_value: child_records_hash[child_id][entry.parser.source_identifier],
                         work_identifier: entry.parser.work_identifier,
@@ -56,8 +85,10 @@ module Bulkrax
     end
 
     # Collection-Collection membership is added to the as child_ids
+    # TODO: update to use @child_record and @parent_record
     def collection_parent_collection_child(parent_id:, child_ids:)
       attrs = { id: parent_id, children: child_ids }
+      # TODO: add resulting record's id to entry's parsed_metadata?
       ObjectFactory.new(attributes: attrs,
                         source_identifier_value: parent_records_hash[parent_id][entry.parser.source_identifier],
                         work_identifier: entry.parser.work_identifier,
@@ -72,12 +103,14 @@ module Bulkrax
     end
 
     # Work-Work membership is added to the parent as child_ids
+    # TODO: update to use @child_record and @parent_record
     def work_parent_work_child(parent_id:, child_ids:)
       # build work_members_attributes
       attrs = { id: parent_id,
                 work_members_attributes: child_ids.each.with_index.each_with_object({}) do |(member, index), ids|
                   ids[index] = { id: member }
                 end }
+      # TODO: add resulting record's id to entry's parsed_metadata?
       ObjectFactory.new(attributes: attrs,
                         source_identifier_value: parent_records_hash[parent_id][entry.parser.source_identifier],
                         work_identifier: entry.parser.work_identifier,
@@ -91,5 +124,14 @@ module Bulkrax
       ImporterRun.find(importer_run_id).increment!(:failed_children)
     end
     # rubocop:enable Rails/SkipsModelValidations
+  end
+
+  def reschedule(entry_identifier:, parent_identifier:, child_identifier:, importer_run:)
+    CreateRelationshipsJob.set(wait: 10.minutes).perform_later(
+      entry_identifier: entry_identifier,
+      parent_identifier: parent_identifier,
+      child_identifier: child_identifier,
+      importer_run: importer_run
+    )
   end
 end

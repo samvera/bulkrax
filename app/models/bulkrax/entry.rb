@@ -70,8 +70,12 @@ module Bulkrax
       Bulkrax.collection_field_mapping[self.to_s]
     end
 
+    def self.parents_field
+      Bulkrax.related_parents_field_mapping[self.to_s] # TODO
+    end
+
     def self.children_field
-      Bulkrax.parent_child_field_mapping[self.to_s]
+      Bulkrax.related_children_field_mapping[self.to_s]
     end
 
     def build

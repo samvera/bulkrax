@@ -112,10 +112,6 @@ module Bulkrax
       path
     end
 
-    def create_parent_child_relationships
-      super
-    end
-
     def extra_filters
       output = ""
       if importerexporter.start_date.present?

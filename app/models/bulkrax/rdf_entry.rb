@@ -42,7 +42,7 @@ module Bulkrax
     end
 
     def self.children_field
-      Bulkrax.parent_child_field_mapping[self.to_s]
+      Bulkrax.related_children_field_mapping[self.to_s]
     end
 
     def record

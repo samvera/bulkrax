@@ -65,7 +65,7 @@ module Bulkrax
     end
 
     def related_parent_field_mapping
-      Bulkrax.related_parent_id_mapping[self.entry_class.to_s]&.to_sym
+      Bulkrax.related_parents_field_mapping[self.entry_class.to_s]&.to_sym
     end
 
     def model_field_mappings

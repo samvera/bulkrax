@@ -12,6 +12,9 @@ module Bulkrax
           raise CollectionsCreatedError unless collections_created?
           @item = factory.run!
         end
+        # TODO: use parsed_metadata instead? -- or set post-relationship ids in parsed_metadata after jobs run?
+        parent_jobs if record['parents'].present?
+        child_jobs if record['children'].present?
       rescue RSolr::Error::Http, CollectionsCreatedError => e
         raise e
       rescue StandardError => e
@@ -20,6 +23,18 @@ module Bulkrax
         status_info
       end
       return @item
+    end
+
+    def parent_jobs
+      record['parents'].each do |parent_identifier|
+        CreateRelationshipsJob.perform_later(entry_identifier: self.identifier, parent_identifier: parent_identifier, importer_run: self.last_run)
+      end
+    end
+
+    def child_jobs
+      record['children'].each do |child_identifier|
+        CreateRelationshipsJob.perform_later(entry_identifier: self.identifier, child_identifier: child_identifier, importer_run: self.last_run)
+      end
     end
 
     def find_or_create_collection_ids
