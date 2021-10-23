@@ -1,15 +1,15 @@
 # frozen_string_literal: true
 
-# TODO: rename file
 module Bulkrax
   class ChildNotFoundError < RuntimeError; end
   class ParentNotFoundError < RuntimeError; end
   class CreateRelationshipsJob < ApplicationJob
     queue_as :import
 
-    attr_accessor :child_record, :parent_record, :importer_run
+    attr_accessor :entry, :child_record, :parent_record, :importer_run
 
     def perform(entry_identifier:, parent_identifier: nil, child_identifier: nil, importer_run:)
+      @entry = Entry.find_by(identifier: entry_identifier)
       @importer_run = importer_run
       if parent_identifier.present?
         @child_record = find_record(entry_identifier)
@@ -67,61 +67,60 @@ module Bulkrax
     # rubocop:disable Rails/SkipsModelValidations
     # Work-Collection membership is added to the child as member_of_collection_ids
     # This is adding the reverse relationship, from the child to the parent
-    # TODO: update to use @child_record and @parent_record
-    def collection_parent_work_child(parent_id:, child_id:)
-      attrs = { id: child_id, member_of_collections_attributes: { 0 => { id: parent_id } } }
+    def collection_parent_work_child
+      attrs = { id: child_record.id, member_of_collections_attributes: { 0 => { id: parent_record.id } } }
       # TODO: add resulting record's id to entry's parsed_metadata?
       ObjectFactory.new(attributes: attrs,
-                        source_identifier_value: child_records_hash[child_id][entry.parser.source_identifier],
+                        source_identifier_value: nil, # sending the :id in the attrs means the factory doesn't need a :source_identifier_value
                         work_identifier: entry.parser.work_identifier,
                         collection_field_mapping: entry.parser.collection_field_mapping,
                         replace_files: false,
                         user: user,
-                        klass: child_records_hash[child_id][:class_name].constantize).run
-      ImporterRun.find(importer_run_id).increment!(:processed_children)
+                        klass: child_record.class).run
+      # TODO: add counters for :processed_parents and :failed_parents
+      importer_run.increment!(:processed_children)
     rescue StandardError => e
       entry.status_info(e)
-      ImporterRun.find(importer_run_id).increment!(:failed_children)
+      importer_run.increment!(:failed_children)
     end
 
-    # Collection-Collection membership is added to the as child_ids
-    # TODO: update to use @child_record and @parent_record
-    def collection_parent_collection_child(parent_id:, child_ids:)
-      attrs = { id: parent_id, children: child_ids }
+    # Collection-Collection membership is added to the as member_ids
+    def collection_parent_collection_child
+      attrs = { id: parent_record.id, children: [child_record.id] }
       # TODO: add resulting record's id to entry's parsed_metadata?
       ObjectFactory.new(attributes: attrs,
-                        source_identifier_value: parent_records_hash[parent_id][entry.parser.source_identifier],
+                        source_identifier_value: nil, # sending the :id in the attrs means the factory doesn't need a :source_identifier_value
                         work_identifier: entry.parser.work_identifier,
                         collection_field_mapping: entry.parser.collection_field_mapping,
                         replace_files: false,
                         user: user,
-                        klass: parent_records_hash[parent_id][:class_name].constantize).run
-      ImporterRun.find(importer_run_id).increment!(:processed_children)
+                        klass: parent_record.class).run
+      # TODO: add counters for :processed_parents and :failed_parents
+      importer_run.increment!(:processed_children)
     rescue StandardError => e
       entry.status_info(e)
-      ImporterRun.find(importer_run_id).increment!(:failed_children)
+      importer_run.increment!(:failed_children)
     end
 
-    # Work-Work membership is added to the parent as child_ids
-    # TODO: update to use @child_record and @parent_record
-    def work_parent_work_child(parent_id:, child_ids:)
-      # build work_members_attributes
-      attrs = { id: parent_id,
-                work_members_attributes: child_ids.each.with_index.each_with_object({}) do |(member, index), ids|
-                  ids[index] = { id: member }
-                end }
+    # Work-Work membership is added to the parent as member_ids
+    def work_parent_work_child
+      attrs = {
+        id: parent_record.id,
+        work_members_attributes: { 0 => { id: child_record.id } }
+      }
       # TODO: add resulting record's id to entry's parsed_metadata?
       ObjectFactory.new(attributes: attrs,
-                        source_identifier_value: parent_records_hash[parent_id][entry.parser.source_identifier],
+                        source_identifier_value: nil, # sending the :id in the attrs means the factory doesn't need a :source_identifier_value
                         work_identifier: entry.parser.work_identifier,
                         collection_field_mapping: entry.parser.collection_field_mapping,
                         replace_files: false,
                         user: user,
-                        klass: parent_records_hash[parent_id][:class_name].constantize).run
-      ImporterRun.find(importer_run_id).increment!(:processed_children)
+                        klass: parent_record.class).run
+      # TODO: add counters for :processed_parents and :failed_parents
+      importer_run.increment!(:processed_children)
     rescue StandardError => e
       entry.status_info(e)
-      ImporterRun.find(importer_run_id).increment!(:failed_children)
+      importer_run.increment!(:failed_children)
     end
     # rubocop:enable Rails/SkipsModelValidations
   end

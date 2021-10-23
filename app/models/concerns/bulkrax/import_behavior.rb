@@ -13,8 +13,8 @@ module Bulkrax
           @item = factory.run!
         end
         # TODO: use parsed_metadata instead? -- or set post-relationship ids in parsed_metadata after jobs run?
-        parent_jobs if record['parents'].present?
-        child_jobs if record['children'].present?
+        parent_jobs if self.parsed_metadata['parents'].present?
+        child_jobs if self.parsed_metadata['children'].present?
       rescue RSolr::Error::Http, CollectionsCreatedError => e
         raise e
       rescue StandardError => e
@@ -26,13 +26,13 @@ module Bulkrax
     end
 
     def parent_jobs
-      record['parents'].each do |parent_identifier|
+      self.parsed_metadata['parents'].each do |parent_identifier|
         CreateRelationshipsJob.perform_later(entry_identifier: self.identifier, parent_identifier: parent_identifier, importer_run: self.last_run)
       end
     end
 
     def child_jobs
-      record['children'].each do |child_identifier|
+      self.parsed_metadata['children'].each do |child_identifier|
         CreateRelationshipsJob.perform_later(entry_identifier: self.identifier, child_identifier: child_identifier, importer_run: self.last_run)
       end
     end
@@ -71,6 +71,35 @@ module Bulkrax
       self.parsed_metadata['admin_set_id'] = importerexporter.admin_set_id if self.parsed_metadata['admin_set_id'].blank?
     end
 
+    def add_relationships
+      add_parents
+      add_children
+      add_collections
+    end
+
+    def add_parents
+      return if record[self.class.parents_field].blank?
+
+      parents_matcher = self.class.matcher(self.class.parents_field, self.mapping[self.class.parents_field].symbolize_keys)
+      self.parsed_metadata['parents'] = if parents_matcher.present?
+                                          [parents_matcher.result(self, record[self.class.parents_field])].flatten
+                                        else
+                                          record[self.class.parents_field].split(/\s*[;|]\s*/)
+                                        end
+    end
+
+    def add_children
+      return if record[self.class.children_field].blank?
+
+      children_matcher = self.class.matcher(self.class.children_field, self.mapping[self.class.children_field].symbolize_keys)
+      self.parsed_metadata['children'] = if children_matcher.present?
+                                           [children_matcher.result(self, record[self.class.children_field])].flatten
+                                         else
+                                           record[self.class.children_field].split(/\s*[;|]\s*/)
+                                         end
+    end
+
+    # TODO: deprecate
     def add_collections
       return if find_or_create_collection_ids.blank?
       self.parsed_metadata['member_of_collections_attributes'] = {}

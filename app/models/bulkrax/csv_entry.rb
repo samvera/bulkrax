@@ -27,11 +27,8 @@ module Bulkrax
       raw_data[:model] = data[:model]
       # If the collection field mapping is not 'collection', add 'collection' - the parser needs it
       # TODO: rename to 'collections'
+      # TODO: necessary to standardize key in raw metadata? should that logic be moved to parsed_metadata?
       raw_data[:collection] = raw_data[collection_field.to_sym] if raw_data.keys.include?(collection_field.to_sym) && collection_field != 'collection'
-      # If the parents field mapping is not 'parents', add 'parents' - the parser needs it
-      raw_data[:parents] = raw_data[parents_field.to_sym] if raw_data.keys.include?(parents_field.to_sym) && parents_field != 'parents'
-      # If the children field mapping is not 'children', add 'children' - the parser needs it
-      raw_data[:children] = raw_data[children_field.to_sym] if raw_data.keys.include?(children_field.to_sym) && children_field != 'children'
       return raw_data
     end
 
@@ -57,7 +54,7 @@ module Bulkrax
       add_visibility
       add_ingested_metadata
       add_rights_statement
-      add_collections
+      add_relationships
       add_local
 
       self.parsed_metadata

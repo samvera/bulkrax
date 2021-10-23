@@ -136,7 +136,7 @@ module Bulkrax
       @path_for_import
     end
 
-    # TODO: replace with #create_parent_relationships
+    # TODO: remove method in favor of #parent_jobs and #child_jobs
     # Optional, only used by certain parsers
     # Other parsers should override with a custom or empty method
     # Will be skipped unless the #record is a Hash

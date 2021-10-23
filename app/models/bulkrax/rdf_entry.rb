@@ -64,7 +64,7 @@ module Bulkrax
       add_visibility
       add_rights_statement
       add_admin_set_id
-      add_collections
+      add_relationships
       add_local
       self.parsed_metadata['file'] = self.raw_metadata['file']
 
