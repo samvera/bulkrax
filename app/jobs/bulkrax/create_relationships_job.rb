@@ -35,7 +35,7 @@ module Bulkrax
       elsif @parent_record.is_a?(::Collection) && curation_concern?(@child_record)
         collection_parent_work_child
       elsif curation_concern?(@parent_record) && @child_record.is_a?(::Collection)
-        raise ActiveFedora::RecordInvalid, 'a Collection may not be assigned as a child of a Work'
+        raise ::StandardError, 'a Collection may not be assigned as a child of a Work'
       else
         work_parent_work_child
       end
@@ -70,13 +70,15 @@ module Bulkrax
     def collection_parent_work_child
       attrs = { id: child_record.id, member_of_collections_attributes: { 0 => { id: parent_record.id } } }
       # TODO: add resulting record's id to entry's parsed_metadata?
-      ObjectFactory.new(attributes: attrs,
-                        source_identifier_value: nil, # sending the :id in the attrs means the factory doesn't need a :source_identifier_value
-                        work_identifier: entry.parser.work_identifier,
-                        collection_field_mapping: entry.parser.collection_field_mapping,
-                        replace_files: false,
-                        user: user,
-                        klass: child_record.class).run
+      ObjectFactory.new(
+        attributes: attrs,
+        source_identifier_value: nil, # sending the :id in the attrs means the factory doesn't need a :source_identifier_value
+        work_identifier: entry.parser.work_identifier,
+        collection_field_mapping: entry.parser.collection_field_mapping,
+        replace_files: false,
+        user: user,
+        klass: child_record.class
+      ).run
       # TODO: add counters for :processed_parents and :failed_parents
       importer_run.increment!(:processed_children)
     rescue StandardError => e
@@ -88,13 +90,15 @@ module Bulkrax
     def collection_parent_collection_child
       attrs = { id: parent_record.id, child_collection_id: child_record.id }
       # TODO: add resulting record's id to entry's parsed_metadata?
-      ObjectFactory.new(attributes: attrs,
-                        source_identifier_value: nil, # sending the :id in the attrs means the factory doesn't need a :source_identifier_value
-                        work_identifier: entry.parser.work_identifier,
-                        collection_field_mapping: entry.parser.collection_field_mapping,
-                        replace_files: false,
-                        user: user,
-                        klass: parent_record.class).run
+      ObjectFactory.new(
+        attributes: attrs,
+        source_identifier_value: nil, # sending the :id in the attrs means the factory doesn't need a :source_identifier_value
+        work_identifier: entry.parser.work_identifier,
+        collection_field_mapping: entry.parser.collection_field_mapping,
+        replace_files: false,
+        user: user,
+        klass: parent_record.class
+      ).run
       # TODO: add counters for :processed_parents and :failed_parents
       importer_run.increment!(:processed_children)
     rescue StandardError => e
@@ -109,13 +113,15 @@ module Bulkrax
         work_members_attributes: { 0 => { id: child_record.id } }
       }
       # TODO: add resulting record's id to entry's parsed_metadata?
-      ObjectFactory.new(attributes: attrs,
-                        source_identifier_value: nil, # sending the :id in the attrs means the factory doesn't need a :source_identifier_value
-                        work_identifier: entry.parser.work_identifier,
-                        collection_field_mapping: entry.parser.collection_field_mapping,
-                        replace_files: false,
-                        user: user,
-                        klass: parent_record.class).run
+      ObjectFactory.new(
+        attributes: attrs,
+        source_identifier_value: nil, # sending the :id in the attrs means the factory doesn't need a :source_identifier_value
+        work_identifier: entry.parser.work_identifier,
+        collection_field_mapping: entry.parser.collection_field_mapping,
+        replace_files: false,
+        user: user,
+        klass: parent_record.class
+      ).run
       # TODO: add counters for :processed_parents and :failed_parents
       importer_run.increment!(:processed_children)
     rescue StandardError => e
