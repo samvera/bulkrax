@@ -124,7 +124,7 @@ module Bulkrax
 
     def create_collection(attrs)
       attrs = collection_type(attrs)
-      persist_collection_memberships(parent: object, child: find_collection(attributes[:children])) if attributes[:children].present?
+      persist_collection_memberships(parent: object, child: find_collection(attributes[:child_collection_id])) if attributes[:child_collection_id].present?
       persist_collection_memberships(parent: find_collection(attributes[collection_field_mapping]), child: object) if attributes[collection_field_mapping].present?
       object.attributes = attrs
       object.apply_depositor_metadata(@user)
@@ -132,12 +132,14 @@ module Bulkrax
     end
 
     def update_collection(attrs)
-      persist_collection_memberships(parent: object, child: find_collection(attributes[:children])) if attributes[:children].present?
+      persist_collection_memberships(parent: object, child: find_collection(attributes[:child_collection_id])) if attributes[:child_collection_id].present?
       persist_collection_memberships(parent: find_collection(attributes[collection_field_mapping]), child: object) if attributes[collection_field_mapping].present?
       object.attributes = attrs
       object.save!
     end
 
+    # Add child to parent's #member_collections
+    # Add parent to child's #member_of_collections
     def persist_collection_memberships(parent:, child:)
       ::Hyrax::Collections::NestedCollectionPersistenceService.persist_nested_collection_for(parent: parent, child: child)
     end
