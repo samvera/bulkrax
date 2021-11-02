@@ -124,50 +124,22 @@ module Bulkrax
 
     def create_collection(attrs)
       attrs = collection_type(attrs)
-      object.members = members
-      object.member_of_collections = member_of_collections
+      persist_collection_memberships(parent: object, child: find_collection(attributes[:children])) if attributes[:children].present?
+      persist_collection_memberships(parent: find_collection(attributes[collection_field_mapping]), child: object) if attributes[collection_field_mapping].present?
       object.attributes = attrs
       object.apply_depositor_metadata(@user)
       object.save!
     end
 
     def update_collection(attrs)
-      object.members = members
-      object.member_of_collections = member_of_collections
+      persist_collection_memberships(parent: object, child: find_collection(attributes[:children])) if attributes[:children].present?
+      persist_collection_memberships(parent: find_collection(attributes[collection_field_mapping]), child: object) if attributes[collection_field_mapping].present?
       object.attributes = attrs
       object.save!
     end
 
-    # Collections don't respond to member_of_collections_attributes or member_of_collection_ids=
-    #   or member_ids=
-    # Add them directly with members / member_of_collections
-    # collection should be in the form  { id: collection_id }
-    # and collections [{ id: collection_id }]
-    # member_ids comes from
-    # @todo - consider performance implications although we wouldn't expect a Collection to be a member of many Collections
-    def members
-      ms = object.members.to_a
-      [:children].each do |atat|
-        next if attributes[atat].blank?
-        ms.concat(
-          Array.wrap(
-            find_collection(attributes[atat])
-          )
-        )
-      end
-      ms.flatten.compact.uniq
-    end
-
-    def member_of_collections
-      ms = object.member_of_collection_ids.to_a.map { |id| find_collection(id) }
-      if attributes[collection_field_mapping].present?
-        ms.concat(
-          Array.wrap(
-            find_collection(attributes[collection_field_mapping])
-          )
-        )
-      end
-      ms.flatten.compact.uniq
+    def persist_collection_memberships(parent:, child:)
+      ::Hyrax::Collections::NestedCollectionPersistenceService.persist_nested_collection_for(parent: parent, child: child)
     end
 
     def find_collection(id)

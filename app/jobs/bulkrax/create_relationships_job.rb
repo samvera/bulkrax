@@ -86,7 +86,7 @@ module Bulkrax
 
     # Collection-Collection membership is added to the as member_ids
     def collection_parent_collection_child
-      attrs = { id: parent_record.id, children: [child_record.id] }
+      attrs = { id: parent_record.id, children: child_record.id }
       # TODO: add resulting record's id to entry's parsed_metadata?
       ObjectFactory.new(attributes: attrs,
                         source_identifier_value: nil, # sending the :id in the attrs means the factory doesn't need a :source_identifier_value
