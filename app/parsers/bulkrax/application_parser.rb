@@ -167,7 +167,7 @@ module Bulkrax
         end
         parent_id = parent.id
         child_entry_ids = children.map(&:id)
-        ChildRelationshipsJob.perform_later(parent_id, child_entry_ids, current_run.id)
+        CreateRelationshipsJob.perform_later(parent_id, child_entry_ids, current_run.id)
       end
     rescue StandardError => e
       status_info(e)
