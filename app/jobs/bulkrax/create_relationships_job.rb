@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 module Bulkrax
-  class ChildNotFoundError < RuntimeError; end
-  class ParentNotFoundError < RuntimeError; end
   class CreateRelationshipsJob < ApplicationJob
     queue_as :import
 
@@ -30,18 +28,25 @@ module Bulkrax
         )
       end
 
-      if @parent_record.is_a?(::Collection) && @child_record.is_a?(::Collection)
+      create_relationship
+    rescue ::StandardError => e
+      entry.status_info(e)
+      importer_run.increment!(:failed_children) # rubocop:disable Rails/SkipsModelValidations
+    end
+
+    private
+
+    def create_relationship
+      if parent_record.is_a?(::Collection) && child_record.is_a?(::Collection)
         collection_parent_collection_child
-      elsif @parent_record.is_a?(::Collection) && curation_concern?(@child_record)
+      elsif parent_record.is_a?(::Collection) && curation_concern?(child_record)
         collection_parent_work_child
-      elsif curation_concern?(@parent_record) && @child_record.is_a?(::Collection)
+      elsif curation_concern?(parent_record) && child_record.is_a?(::Collection)
         raise ::StandardError, 'a Collection may not be assigned as a child of a Work'
       else
         work_parent_work_child
       end
     end
-
-    private
 
     def find_record(identifier)
       record = Entry.find_by(identifier: identifier)
@@ -81,9 +86,6 @@ module Bulkrax
       ).run
       # TODO: add counters for :processed_parents and :failed_parents
       importer_run.increment!(:processed_children)
-    rescue StandardError => e
-      entry.status_info(e)
-      importer_run.increment!(:failed_children)
     end
 
     # Collection-Collection membership is added to the as member_ids
@@ -101,9 +103,6 @@ module Bulkrax
       ).run
       # TODO: add counters for :processed_parents and :failed_parents
       importer_run.increment!(:processed_children)
-    rescue StandardError => e
-      entry.status_info(e)
-      importer_run.increment!(:failed_children)
     end
 
     # Work-Work membership is added to the parent as member_ids
@@ -124,19 +123,16 @@ module Bulkrax
       ).run
       # TODO: add counters for :processed_parents and :failed_parents
       importer_run.increment!(:processed_children)
-    rescue StandardError => e
-      entry.status_info(e)
-      importer_run.increment!(:failed_children)
     end
     # rubocop:enable Rails/SkipsModelValidations
-  end
 
-  def reschedule(entry_identifier:, parent_identifier:, child_identifier:, importer_run:)
-    CreateRelationshipsJob.set(wait: 10.minutes).perform_later(
-      entry_identifier: entry_identifier,
-      parent_identifier: parent_identifier,
-      child_identifier: child_identifier,
-      importer_run: importer_run
-    )
+    def reschedule(entry_identifier:, parent_identifier:, child_identifier:, importer_run:)
+      CreateRelationshipsJob.set(wait: 10.minutes).perform_later(
+        entry_identifier: entry_identifier,
+        parent_identifier: parent_identifier,
+        child_identifier: child_identifier,
+        importer_run: importer_run
+      )
+    end
   end
 end

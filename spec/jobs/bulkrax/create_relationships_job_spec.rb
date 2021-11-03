@@ -64,6 +64,24 @@ module Bulkrax
             importer_run: importer.current_run
           )
         end
+
+        context 'importer run' do
+          let(:factory) { instance_double(ObjectFactory, run: child_record) }
+
+          before do
+            allow(ObjectFactory).to receive(:new).and_return(factory)
+          end
+
+          it 'increments processed children' do
+            expect(importer.current_run).to receive(:increment!).with(:processed_children)
+
+            create_relationships_job.perform(
+              entry_identifier: child_entry.identifier,
+              parent_identifier: parent_entry.identifier,
+              importer_run: importer.current_run
+            )
+          end
+        end
       end
 
       context 'when adding a child collection to a parent collection' do
@@ -99,6 +117,24 @@ module Bulkrax
             parent_identifier: parent_entry.identifier,
             importer_run: importer.current_run
           )
+        end
+
+        context 'importer run' do
+          let(:factory) { instance_double(ObjectFactory, run: child_record) }
+
+          before do
+            allow(ObjectFactory).to receive(:new).and_return(factory)
+          end
+
+          it 'increments processed children' do
+            expect(importer.current_run).to receive(:increment!).with(:processed_children)
+
+            create_relationships_job.perform(
+              entry_identifier: child_entry.identifier,
+              parent_identifier: parent_entry.identifier,
+              importer_run: importer.current_run
+            )
+          end
         end
       end
 
@@ -136,6 +172,24 @@ module Bulkrax
             importer_run: importer.current_run
           )
         end
+
+        context 'importer run' do
+          let(:factory) { instance_double(ObjectFactory, run: child_record) }
+
+          before do
+            allow(ObjectFactory).to receive(:new).and_return(factory)
+          end
+
+          it 'increments processed children' do
+            expect(importer.current_run).to receive(:increment!).with(:processed_children)
+
+            create_relationships_job.perform(
+              entry_identifier: child_entry.identifier,
+              parent_identifier: parent_entry.identifier,
+              importer_run: importer.current_run
+            )
+          end
+        end
       end
 
       context 'when adding a child collection to a parent work' do
@@ -144,32 +198,66 @@ module Bulkrax
         let(:parent_record) { build(:work) }
         let(:child_record) { build(:collection) }
 
-        it 'raises a StandardError' do
-          expect do
-            create_relationships_job.perform(
-              entry_identifier: child_entry.identifier,
-              parent_identifier: parent_entry.identifier,
-              importer_run: importer.current_run
-            )
-          end.to raise_error(::StandardError, 'a Collection may not be assigned as a child of a Work')
-        end
-      end
-
-      describe 'importer run' do
-        let(:factory) { instance_double(ObjectFactory, run: child_record) }
-
-        before do
-          allow(ObjectFactory).to receive(:new).and_return(factory)
-        end
-
-        it 'increments processed children' do
-          expect(importer.current_run).to receive(:increment!).with(:processed_children)
+        it "logs a StandardError to the entry's status" do
+          expect(child_entry).to receive(:status_info).with(instance_of(::StandardError))
 
           create_relationships_job.perform(
             entry_identifier: child_entry.identifier,
             parent_identifier: parent_entry.identifier,
             importer_run: importer.current_run
           )
+        end
+
+        it 'increments failed children' do
+          expect(importer.current_run).to receive(:increment!).with(:failed_children)
+
+          create_relationships_job.perform(
+            entry_identifier: child_entry.identifier,
+            parent_identifier: parent_entry.identifier,
+            importer_run: importer.current_run
+          )
+        end
+      end
+
+      describe 'rescheduling' do
+        context 'when the child record cannot be found' do
+          let(:child_record) { nil }
+
+          it 'calls #reschedule' do
+            expect(create_relationships_job).to receive(:reschedule)
+
+            create_relationships_job.perform(
+              entry_identifier: child_entry.identifier,
+              parent_identifier: parent_entry.identifier,
+              importer_run: importer.current_run
+            )
+          end
+        end
+
+        context 'when the parent record cannot be found' do
+          let(:parent_record) { nil }
+
+          it 'calls #reschedule' do
+            expect(create_relationships_job).to receive(:reschedule)
+
+            create_relationships_job.perform(
+              entry_identifier: child_entry.identifier,
+              parent_identifier: parent_entry.identifier,
+              importer_run: importer.current_run
+            )
+          end
+        end
+
+        context 'when the child record and parent record can be found' do
+          it 'does not call #reschedule' do
+            expect(create_relationships_job).not_to receive(:reschedule)
+
+            create_relationships_job.perform(
+              entry_identifier: child_entry.identifier,
+              parent_identifier: parent_entry.identifier,
+              importer_run: importer.current_run
+            )
+          end
         end
       end
     end
