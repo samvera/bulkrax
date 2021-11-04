@@ -51,6 +51,7 @@ module Bulkrax
           child_identifier: child_identifier,
           importer_run: importer_run
         )
+        return false # stop current job from continuing to run after rescheduling
       end
 
       create_relationship
