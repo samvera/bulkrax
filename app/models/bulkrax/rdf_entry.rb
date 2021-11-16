@@ -76,7 +76,7 @@ module Bulkrax
       self.raw_metadata['collection'].length == self.collection_ids.length
     end
 
-    def find_or_create_collection_ids
+    def find_collection_ids
       return self.collection_ids if collections_created?
       if self.raw_metadata['collection'].present?
         self.raw_metadata['collection'].each do |collection|
