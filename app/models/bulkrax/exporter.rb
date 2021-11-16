@@ -25,6 +25,8 @@ module Bulkrax
         create_from_importer
       when 'worktype'
         create_from_worktype
+      when 'all'
+        create_from_all
       end
     rescue StandardError => e
       status_info(e)
