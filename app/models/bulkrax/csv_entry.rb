@@ -230,7 +230,6 @@ module Bulkrax
 
     def find_collection_ids
       return self.collection_ids if collections_created?
-      valid_system_id(Collection)
       if possible_collection_ids.present?
         possible_collection_ids.each do |collection_id|
           c = find_collection(collection_id)
