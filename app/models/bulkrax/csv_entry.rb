@@ -234,7 +234,8 @@ module Bulkrax
       if possible_collection_ids.present?
         possible_collection_ids.each do |collection_id|
           c = find_collection(collection_id)
-          self.collection_ids << c.id unless(c.blank? || self.collection_ids.include?(c.id))
+          skip = c.blank? || self.collection_ids.include?(c.id)
+          self.collection_ids << c.id unless skip
         end
       end
       self.collection_ids
