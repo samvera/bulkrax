@@ -14,7 +14,7 @@ module Bulkrax
     validates :name, presence: true
     validates :parser_klass, presence: true
 
-    delegate :write, :create_from_collection, :create_from_importer, :create_from_worktype, to: :parser
+    delegate :write, :create_from_collection, :create_from_importer, :create_from_worktype, :create_from_all, to: :parser
 
     def export
       current_run && setup_export_path
@@ -79,7 +79,8 @@ module Bulkrax
       [
         [I18n.t('bulkrax.exporter.labels.importer'), 'importer'],
         [I18n.t('bulkrax.exporter.labels.collection'), 'collection'],
-        [I18n.t('bulkrax.exporter.labels.worktype'), 'worktype']
+        [I18n.t('bulkrax.exporter.labels.worktype'), 'worktype'],
+        [I18n.t('bulkrax.exporter.labels.all'), 'all']
       ]
     end
 

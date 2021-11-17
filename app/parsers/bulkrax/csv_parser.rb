@@ -131,7 +131,7 @@ module Bulkrax
     def current_work_ids
       case importerexporter.export_from
       when 'all'
-        ActiveFedora::SolrService.query("has_model_ssim:(#{Hyrax.config.curation_concerns.join(' OR ')}) #{extra_filter}", rows: 2_147_483_647).map(&:id)
+        ActiveFedora::SolrService.query("has_model_ssim:(#{Hyrax.config.curation_concerns.join(' OR ')}) #{extra_filters}", rows: 2_147_483_647).map(&:id)
       when 'collection'
         ActiveFedora::SolrService.query("member_of_collection_ids_ssim:#{importerexporter.export_source + extra_filters}", rows: 2_000_000_000).map(&:id)
       when 'worktype'
