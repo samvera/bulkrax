@@ -33,7 +33,7 @@ module Bulkrax
     end
 
     def self.collection_field
-      Bulkrax.collection_field_mapping[self.class.to_s] || 'collection'
+      Bulkrax.collection_field_mapping[self.to_s] || 'collection'
     end
 
     def self.children_field
@@ -218,10 +218,10 @@ module Bulkrax
     end
 
     def possible_collection_ids
-      @possible_collection_ids ||= record.each do |key, value|
-        next unless self.class.collection_field.to_s == key_without_numbers(key)
-        c_ids << value.split(/\s*[:;|]\s*/)
-      end
+      @possible_collection_ids ||= record.inject([]) do |memo, (key, value)|
+        memo += value.split(/\s*[:;|]\s*/) if self.class.collection_field.to_s == key_without_numbers(key) && value.present?
+        memo
+      end || []
     end
 
     def collections_created?
