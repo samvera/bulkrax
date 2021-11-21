@@ -5,6 +5,13 @@ require 'rails_helper'
 
 module Bulkrax
   RSpec.describe CsvEntry, type: :model do
+    let(:collection) { FactoryBot.build(:collection) }
+
+    before do
+      allow_any_instance_of(described_class).to receive(:collections_created?).and_return(true)
+      allow_any_instance_of(described_class).to receive(:find_collection).and_return(collection)
+    end
+
     describe 'builds entry' do
       subject { described_class.new(importerexporter: importer) }
       let(:importer) { FactoryBot.create(:bulkrax_importer_csv) }
