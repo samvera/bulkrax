@@ -6,6 +6,7 @@ en:
         importers: Importers
     exporter:
       labels:
+        all: All
         collection: Collection
         export_format: Export Format
         export_from: Export From
