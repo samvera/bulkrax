@@ -51,9 +51,12 @@ module Bulkrax
       if @exporter.save
         if params[:commit] == 'Create and Export'
           # Use perform now for export
-          Bulkrax::ExporterJob.perform_now(@exporter.id)
+          Bulkrax::ExporterJob.perform_later(@exporter.id)
+          message = 'Exporter was successfully created. A download link will appear once it completes.'
+        else
+          message = 'Exporter was successfully created.'
         end
-        redirect_to exporters_path, notice: 'Exporter was successfully created.'
+        redirect_to exporters_path, notice: message
       else
         render :new
       end
@@ -63,8 +66,13 @@ module Bulkrax
     def update
       field_mapping_params
       if @exporter.update(exporter_params)
-        Bulkrax::ExporterJob.perform_now(@exporter.id) if params[:commit] == 'Update and Re-Export All Items'
-        redirect_to exporters_path, notice: 'Exporter was successfully updated.'
+        if params[:commit] == 'Update and Re-Export All Items'
+          Bulkrax::ExporterJob.perform_later(@exporter.id)
+          message = 'Exporter was successfully updated. A download link will appear once it completes.'
+        else
+          'Exporter was successfully updated.'
+        end
+        redirect_to exporters_path, notice: message
       else
         render :edit
       end

@@ -50,8 +50,9 @@
       <strong><%= t('bulkrax.exporter.labels.limit') %>:</strong>
       <%= @exporter.limit %>
     </p>
+    <%= render partial: 'bulkrax/shared/bulkrax_errors', locals: {item: @exporter} %>
 
-  <%= render partial: 'bulkrax/shared/bulkrax_field_mapping', locals: {item: @exporter} %>
+    <%= render partial: 'bulkrax/shared/bulkrax_field_mapping', locals: {item: @exporter} %>
 
     <%# Currently, no parser-specific fields exist on Exporter,
         thus there's no real reason to always show this field %>
