@@ -102,6 +102,7 @@ module Bulkrax
     end
 
     def find_collection(collection_identifier)
+      return unless Collection.properties.keys.include?(work_identifier)
       Collection.where(
         work_identifier => collection_identifier
       ).detect { |m| m.send(work_identifier).include?(collection_identifier) }
