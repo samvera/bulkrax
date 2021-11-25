@@ -126,6 +126,8 @@ module Bulkrax
 
     def current_work_ids
       case importerexporter.export_from
+      when 'all'
+        ActiveFedora::SolrService.query("has_model_ssim:(#{Hyrax.config.curation_concerns.join(' OR ')}) #{extra_filters}", rows: 2_147_483_647).map(&:id)
       when 'collection'
         ActiveFedora::SolrService.query("member_of_collection_ids_ssim:#{importerexporter.export_source + extra_filters}", rows: 2_000_000_000).map(&:id)
       when 'worktype'
@@ -152,14 +154,18 @@ module Bulkrax
       current_work_ids.each_with_index do |wid, index|
         break if limit_reached?(limit, index)
         new_entry = find_or_create_entry(entry_class, wid, 'Bulkrax::Exporter')
-        entry = Bulkrax::ExportWorkJob.perform_now(new_entry.id, current_run.id)
-
+        begin
+          entry = Bulkrax::ExportWorkJob.perform_now(new_entry.id, current_run.id)
+        rescue => e
+          Rails.logger.info("#{e.message} was detected during export")
+        end
         self.headers |= entry.parsed_metadata.keys if entry
       end
     end
     alias create_from_collection create_new_entries
     alias create_from_importer create_new_entries
     alias create_from_worktype create_new_entries
+    alias create_from_all create_new_entries
 
     def entry_class
       CsvEntry

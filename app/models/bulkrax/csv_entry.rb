@@ -24,7 +24,7 @@ module Bulkrax
       data = data.first if data.is_a?(CSV::Table)
       # model has to be separated so that it doesn't get mistranslated by to_h
       raw_data = data.to_h
-      raw_data[:model] = data[:model]
+      raw_data[:model] = data[:model] if data[:model].present?
       # If the collection field mapping is not 'collection', add 'collection' - the parser needs it
       # TODO: rename to 'collections'
       # TODO: necessary to standardize key in raw metadata? should that logic be moved to parsed_metadata?
@@ -33,7 +33,7 @@ module Bulkrax
     end
 
     def self.collection_field
-      Bulkrax.collection_field_mapping[self.class.to_s] || 'collection'
+      Bulkrax.collection_field_mapping[self.to_s] || 'collection'
     end
 
     def self.parents_field
@@ -221,18 +221,24 @@ module Bulkrax
       Bulkrax::CsvMatcher
     end
 
-    def collections_created?
-      return true if record[self.class.collection_field].blank?
-      record[self.class.collection_field].split(/\s*[:;|]\s*/).length == self.collection_ids.length
+    def possible_collection_ids
+      @possible_collection_ids ||= record.inject([]) do |memo, (key, value)|
+        memo += value.split(/\s*[:;|]\s*/) if self.class.collection_field.to_s == key_without_numbers(key) && value.present?
+        memo
+      end || []
     end
 
-    def find_or_create_collection_ids
+    def collections_created?
+      possible_collection_ids.length == self.collection_ids.length
+    end
+
+    def find_collection_ids
       return self.collection_ids if collections_created?
-      valid_system_id(Collection)
-      if record[self.class.collection_field].present?
-        record[self.class.collection_field].split(/\s*[:;|]\s*/).each do |collection|
-          c = find_collection(collection)
-          self.collection_ids << c.id unless c.blank? || self.collection_ids.include?(c.id)
+      if possible_collection_ids.present?
+        possible_collection_ids.each do |collection_id|
+          c = find_collection(collection_id)
+          skip = c.blank? || self.collection_ids.include?(c.id)
+          self.collection_ids << c.id unless skip
         end
       end
       self.collection_ids

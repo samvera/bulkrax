@@ -54,7 +54,7 @@ module Bulkrax
       end
     end
 
-    describe "find_or_create_collection_ids" do
+    describe "find_collection_ids" do
       before do
         importer.parser_fields['set'] = 'MyCollection'
         allow(entry).to receive_message_chain(:sets, :blank?).and_return(false)
@@ -62,12 +62,12 @@ module Bulkrax
 
       it 'expects only one collection' do
         allow(Collection).to receive(:where).and_return([collection])
-        entry.find_or_create_collection_ids
+        entry.find_collection_ids
         expect(entry.collection_ids.length).to eq(1)
       end
       it 'fails if there is no collection' do
         allow(Collection).to receive(:where).and_return([])
-        entry.find_or_create_collection_ids
+        entry.find_collection_ids
         expect(entry.collection_ids.length).to eq(0)
       end
     end

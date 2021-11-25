@@ -37,7 +37,7 @@ module Bulkrax
       end
     end
 
-    def find_or_create_collection_ids
+    def find_collection_ids
       self.collection_ids
     end
 
@@ -101,9 +101,9 @@ module Bulkrax
 
     # TODO: deprecate
     def add_collections
-      return if find_or_create_collection_ids.blank?
+      return if find_collection_ids.blank?
       self.parsed_metadata['member_of_collections_attributes'] = {}
-      find_or_create_collection_ids.each_with_index do |c, i|
+      find_collection_ids.each_with_index do |c, i|
         self.parsed_metadata['member_of_collections_attributes'][i.to_s] = { id: c }
       end
     end
