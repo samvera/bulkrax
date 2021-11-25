@@ -10,8 +10,8 @@ module Bulkrax
     let(:child_entry)   { create(:bulkrax_csv_entry_work, importerexporter: importer) }
     let(:parent_record) { build(:collection) }
     let(:child_record)  { build(:work) }
-    let(:parent_factory) { instance_double(ObjectFactory, find: parent_record) }
-    let(:child_factory) { instance_double(ObjectFactory, find: child_record) }
+    let(:parent_factory) { instance_double(ObjectFactory, find: parent_record, run: parent_record) }
+    let(:child_factory) { instance_double(ObjectFactory, find: child_record, run: child_record) }
     let(:base_factory_attrs) do
       {
         source_identifier_value: nil,
@@ -24,16 +24,13 @@ module Bulkrax
 
     before do
       allow(::Hyrax.config).to receive(:curation_concerns).and_return([Work])
+      allow(Entry).to receive(:find_by).with(identifier: child_entry.identifier).and_return(child_entry)
+      allow(Entry).to receive(:find_by).with(identifier: parent_entry.identifier).and_return(parent_entry)
       allow(parent_entry).to receive(:factory).and_return(parent_factory)
       allow(child_entry).to receive(:factory).and_return(child_factory)
     end
 
     describe '#perform' do
-      before do
-        allow(Entry).to receive(:find_by).with(identifier: child_entry.identifier).and_return(child_entry)
-        allow(Entry).to receive(:find_by).with(identifier: parent_entry.identifier).and_return(parent_entry)
-      end
-
       context 'when adding a child work to a parent collection' do
         let(:factory_attrs) do
           base_factory_attrs.merge(
@@ -45,41 +42,87 @@ module Bulkrax
           )
         end
 
-        it 'calls #collection_parent_work_child' do
-          expect(create_relationships_job).to receive(:collection_parent_work_child)
-
-          create_relationships_job.perform(
-            entry_identifier: child_entry.identifier,
-            parent_identifier: parent_entry.identifier,
-            importer_run: importer.current_run
-          )
-        end
-
-        it 'creates the object factory' do
-          expect(ObjectFactory).to receive(:new).with(factory_attrs)
-
-          create_relationships_job.perform(
-            entry_identifier: child_entry.identifier,
-            parent_identifier: parent_entry.identifier,
-            importer_run: importer.current_run
-          )
-        end
-
-        context 'importer run' do
-          let(:factory) { instance_double(ObjectFactory, run: child_record) }
-
-          before do
-            allow(ObjectFactory).to receive(:new).and_return(factory)
-          end
-
-          it 'increments processed children' do
-            expect(importer.current_run).to receive(:increment!).with(:processed_children)
+        context 'with a Bulkrax::Entry source_identifier' do
+          it 'calls #collection_parent_work_child' do
+            expect(create_relationships_job).to receive(:collection_parent_work_child)
 
             create_relationships_job.perform(
               entry_identifier: child_entry.identifier,
               parent_identifier: parent_entry.identifier,
               importer_run: importer.current_run
             )
+          end
+
+          it 'creates the object factory' do
+            expect(ObjectFactory).to receive(:new).with(factory_attrs)
+
+            create_relationships_job.perform(
+              entry_identifier: child_entry.identifier,
+              parent_identifier: parent_entry.identifier,
+              importer_run: importer.current_run
+            )
+          end
+
+          context 'importer run' do
+            let(:factory) { instance_double(ObjectFactory, run: child_record) }
+
+            before do
+              allow(ObjectFactory).to receive(:new).and_return(factory)
+            end
+
+            it 'increments processed children' do
+              expect(importer.current_run).to receive(:increment!).with(:processed_children)
+
+              create_relationships_job.perform(
+                entry_identifier: child_entry.identifier,
+                parent_identifier: parent_entry.identifier,
+                importer_run: importer.current_run
+              )
+            end
+          end
+        end
+
+        context 'with an ID' do
+          before do
+            allow(Entry).to receive(:find_by).with(identifier: parent_record.id).and_return(nil)
+            allow(::Collection).to receive(:where).with(id: parent_record.id).and_return([parent_record])
+            allow(::Work).to receive(:where).with(id: child_record.id).and_return([child_record])
+          end
+
+          it 'calls #collection_parent_work_child' do
+            expect(create_relationships_job).to receive(:collection_parent_work_child)
+
+            create_relationships_job.perform(
+              entry_identifier: child_entry.identifier,
+              parent_identifier: parent_record.id,
+              importer_run: importer.current_run
+            )
+          end
+
+          it 'creates the object factory' do
+            expect(ObjectFactory).to receive(:new).with(factory_attrs)
+
+            create_relationships_job.perform(
+              entry_identifier: child_entry.identifier,
+              parent_identifier: parent_record.id,
+              importer_run: importer.current_run
+            )
+          end
+
+          context 'importer run' do
+            before do
+              allow(ObjectFactory).to receive(:new).and_return(child_factory)
+            end
+
+            it 'increments processed children' do
+              expect(importer.current_run).to receive(:increment!).with(:processed_children)
+
+              create_relationships_job.perform(
+                entry_identifier: child_entry.identifier,
+                parent_identifier: parent_record.id,
+                importer_run: importer.current_run
+              )
+            end
           end
         end
       end
@@ -99,41 +142,87 @@ module Bulkrax
           )
         end
 
-        it 'calls #collection_parent_collection_child' do
-          expect(create_relationships_job).to receive(:collection_parent_collection_child)
-
-          create_relationships_job.perform(
-            entry_identifier: child_entry.identifier,
-            parent_identifier: parent_entry.identifier,
-            importer_run: importer.current_run
-          )
-        end
-
-        it 'creates the object factory' do
-          expect(ObjectFactory).to receive(:new).with(factory_attrs)
-
-          create_relationships_job.perform(
-            entry_identifier: child_entry.identifier,
-            parent_identifier: parent_entry.identifier,
-            importer_run: importer.current_run
-          )
-        end
-
-        context 'importer run' do
-          let(:factory) { instance_double(ObjectFactory, run: child_record) }
-
-          before do
-            allow(ObjectFactory).to receive(:new).and_return(factory)
-          end
-
-          it 'increments processed children' do
-            expect(importer.current_run).to receive(:increment!).with(:processed_children)
+        context 'with a Bulkrax::Entry source_identifier' do
+          it 'calls #collection_parent_collection_child' do
+            expect(create_relationships_job).to receive(:collection_parent_collection_child)
 
             create_relationships_job.perform(
               entry_identifier: child_entry.identifier,
               parent_identifier: parent_entry.identifier,
               importer_run: importer.current_run
             )
+          end
+
+          it 'creates the object factory' do
+            expect(ObjectFactory).to receive(:new).with(factory_attrs)
+
+            create_relationships_job.perform(
+              entry_identifier: child_entry.identifier,
+              parent_identifier: parent_entry.identifier,
+              importer_run: importer.current_run
+            )
+          end
+
+          context 'importer run' do
+            let(:factory) { instance_double(ObjectFactory, run: child_record) }
+
+            before do
+              allow(ObjectFactory).to receive(:new).and_return(factory)
+            end
+
+            it 'increments processed children' do
+              expect(importer.current_run).to receive(:increment!).with(:processed_children)
+
+              create_relationships_job.perform(
+                entry_identifier: child_entry.identifier,
+                parent_identifier: parent_entry.identifier,
+                importer_run: importer.current_run
+              )
+            end
+          end
+        end
+
+        context 'with an ID' do
+          before do
+            allow(Entry).to receive(:find_by).with(identifier: parent_record.id).and_return(nil)
+            allow(::Collection).to receive(:where).with(id: parent_record.id).and_return([parent_record])
+            allow(::Work).to receive(:where).with(id: child_record.id).and_return([child_record])
+          end
+
+          it 'calls #collection_parent_collection_child' do
+            expect(create_relationships_job).to receive(:collection_parent_collection_child)
+
+            create_relationships_job.perform(
+              entry_identifier: child_entry.identifier,
+              parent_identifier: parent_record.id,
+              importer_run: importer.current_run
+            )
+          end
+
+          it 'creates the object factory' do
+            expect(ObjectFactory).to receive(:new).with(factory_attrs)
+
+            create_relationships_job.perform(
+              entry_identifier: child_entry.identifier,
+              parent_identifier: parent_record.id,
+              importer_run: importer.current_run
+            )
+          end
+
+          context 'importer run' do
+            before do
+              allow(ObjectFactory).to receive(:new).and_return(child_factory)
+            end
+
+            it 'increments processed children' do
+              expect(importer.current_run).to receive(:increment!).with(:processed_children)
+
+              create_relationships_job.perform(
+                entry_identifier: child_entry.identifier,
+                parent_identifier: parent_record.id,
+                importer_run: importer.current_run
+              )
+            end
           end
         end
       end
@@ -153,41 +242,87 @@ module Bulkrax
           )
         end
 
-        it 'calls #work_parent_work_child' do
-          expect(create_relationships_job).to receive(:work_parent_work_child)
-
-          create_relationships_job.perform(
-            entry_identifier: child_entry.identifier,
-            parent_identifier: parent_entry.identifier,
-            importer_run: importer.current_run
-          )
-        end
-
-        it 'creates the object factory' do
-          expect(ObjectFactory).to receive(:new).with(factory_attrs)
-
-          create_relationships_job.perform(
-            entry_identifier: child_entry.identifier,
-            parent_identifier: parent_entry.identifier,
-            importer_run: importer.current_run
-          )
-        end
-
-        context 'importer run' do
-          let(:factory) { instance_double(ObjectFactory, run: child_record) }
-
-          before do
-            allow(ObjectFactory).to receive(:new).and_return(factory)
-          end
-
-          it 'increments processed children' do
-            expect(importer.current_run).to receive(:increment!).with(:processed_children)
+        context 'with a Bulkrax::Entry source_identifier' do
+          it 'calls #work_parent_work_child' do
+            expect(create_relationships_job).to receive(:work_parent_work_child)
 
             create_relationships_job.perform(
               entry_identifier: child_entry.identifier,
               parent_identifier: parent_entry.identifier,
               importer_run: importer.current_run
             )
+          end
+
+          it 'creates the object factory' do
+            expect(ObjectFactory).to receive(:new).with(factory_attrs)
+
+            create_relationships_job.perform(
+              entry_identifier: child_entry.identifier,
+              parent_identifier: parent_entry.identifier,
+              importer_run: importer.current_run
+            )
+          end
+
+          context 'importer run' do
+            let(:factory) { instance_double(ObjectFactory, run: child_record) }
+
+            before do
+              allow(ObjectFactory).to receive(:new).and_return(factory)
+            end
+
+            it 'increments processed children' do
+              expect(importer.current_run).to receive(:increment!).with(:processed_children)
+
+              create_relationships_job.perform(
+                entry_identifier: child_entry.identifier,
+                parent_identifier: parent_entry.identifier,
+                importer_run: importer.current_run
+              )
+            end
+          end
+        end
+
+        context 'with an ID' do
+          before do
+            allow(Entry).to receive(:find_by).with(identifier: parent_record.id).and_return(nil)
+            allow(::Collection).to receive(:where).with(id: parent_record.id).and_return([parent_record])
+            allow(::Work).to receive(:where).with(id: child_record.id).and_return([child_record])
+          end
+
+          it 'calls #work_parent_work_child' do
+            expect(create_relationships_job).to receive(:work_parent_work_child)
+
+            create_relationships_job.perform(
+              entry_identifier: child_entry.identifier,
+              parent_identifier: parent_record.id,
+              importer_run: importer.current_run
+            )
+          end
+
+          it 'creates the object factory' do
+            expect(ObjectFactory).to receive(:new).with(factory_attrs)
+
+            create_relationships_job.perform(
+              entry_identifier: child_entry.identifier,
+              parent_identifier: parent_record.id,
+              importer_run: importer.current_run
+            )
+          end
+
+          context 'importer run' do
+            before do
+              allow(ObjectFactory).to receive(:new).and_return(child_factory)
+            end
+
+            it 'increments processed children' do
+              expect(importer.current_run).to receive(:increment!).with(:processed_children)
+
+              create_relationships_job.perform(
+                entry_identifier: child_entry.identifier,
+                parent_identifier: parent_record.id,
+                importer_run: importer.current_run
+              )
+            end
           end
         end
       end
