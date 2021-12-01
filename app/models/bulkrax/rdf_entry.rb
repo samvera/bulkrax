@@ -14,6 +14,10 @@ module Bulkrax
     end
 
     def self.data_for_entry(data, source_id)
+      ActiveSupport::Deprecation.warn(
+        'Creating Collections using the collection_field_mapping will no longer supported as of version Bulkrax v2.' \
+        ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
+      )
       reader = data
       format = reader.class.format.to_sym
       collections = []
@@ -38,6 +42,10 @@ module Bulkrax
     end
 
     def self.collection_field
+      ActiveSupport::Deprecation.warn(
+        'Creating Collections using the collection_field_mapping will no longer supported as of version Bulkrax v2.' \
+        ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
+      )
       Bulkrax.collection_field_mapping[self.to_s]
     end
 

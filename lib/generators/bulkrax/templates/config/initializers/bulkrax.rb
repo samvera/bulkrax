@@ -32,8 +32,11 @@ Bulkrax.setup do |config|
   # config.related_children_field_mapping = { }
 
   # TODO: documentation
-  # self.related_parents_field_mapping = {}
+  # config.related_parents_field_mapping = {}
 
+  # NOTE: Creating Collections using the collection_field_mapping will no longer supported as of version Bulkrax v2.
+  #       Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.
+  # TODO: remove collection_field_mapping when releasing v2
   # Field_mapping for establishing a collection relationship (FROM work TO collection)
   # This value IS NOT used for OAI, so setting the OAI parser here will have no effect
   # The mapping is supplied per Entry, provide the full class name as a string, eg. 'Bulkrax::CsvEntry'

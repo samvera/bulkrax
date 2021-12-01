@@ -114,6 +114,10 @@ module Bulkrax
     # Work-Collection membership is added to the child as member_of_collection_ids
     # This is adding the reverse relationship, from the child to the parent
     def collection_parent_work_child
+      ActiveSupport::Deprecation.warn(
+        'Creating Collections using the collection_field_mapping will no longer supported as of version Bulkrax v2.' \
+        ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
+      )
       attrs = { id: child_record.id, member_of_collections_attributes: { 0 => { id: parent_record.id } } }
       # TODO: add resulting record's id to base_entry's parsed_metadata?
       ObjectFactory.new(
@@ -131,6 +135,10 @@ module Bulkrax
 
     # Collection-Collection membership is added to the as member_ids
     def collection_parent_collection_child
+      ActiveSupport::Deprecation.warn(
+        'Creating Collections using the collection_field_mapping will no longer supported as of version Bulkrax v2.' \
+        ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
+      )
       attrs = { id: parent_record.id, child_collection_id: child_record.id }
       # TODO: add resulting record's id to base_entry's parsed_metadata?
       ObjectFactory.new(
@@ -148,6 +156,10 @@ module Bulkrax
 
     # Work-Work membership is added to the parent as member_ids
     def work_parent_work_child
+      ActiveSupport::Deprecation.warn(
+        'Creating Collections using the collection_field_mapping will no longer supported as of version Bulkrax v2.' \
+        ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
+      )
       attrs = {
         id: parent_record.id,
         work_members_attributes: { 0 => { id: child_record.id } }

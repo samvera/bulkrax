@@ -20,6 +20,10 @@ module Bulkrax
     end
 
     def self.data_for_entry(data, _source_id)
+      ActiveSupport::Deprecation.warn(
+        'Creating Collections using the collection_field_mapping will no longer supported as of version Bulkrax v2.' \
+        ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
+      )
       # If a multi-line CSV data is passed, grab the first row
       data = data.first if data.is_a?(CSV::Table)
       # model has to be separated so that it doesn't get mistranslated by to_h
@@ -33,6 +37,10 @@ module Bulkrax
     end
 
     def self.collection_field
+      ActiveSupport::Deprecation.warn(
+        'Creating Collections using the collection_field_mapping will no longer supported as of version Bulkrax v2.' \
+        ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
+      )
       Bulkrax.collection_field_mapping[self.to_s] || 'collection'
     end
 
@@ -74,6 +82,10 @@ module Bulkrax
     end
 
     def add_ingested_metadata
+      ActiveSupport::Deprecation.warn(
+        'Creating Collections using the collection_field_mapping will no longer supported as of version Bulkrax v2.' \
+        ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
+      )
       record.each do |key, value|
         next if self.parser.collection_field_mapping.to_s == key_without_numbers(key)
 
@@ -222,6 +234,10 @@ module Bulkrax
     end
 
     def possible_collection_ids
+      ActiveSupport::Deprecation.warn(
+        'Creating Collections using the collection_field_mapping will no longer supported as of version Bulkrax v2.' \
+        ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
+      )
       @possible_collection_ids ||= record.inject([]) do |memo, (key, value)|
         memo += value.split(/\s*[:;|]\s*/) if self.class.collection_field.to_s == key_without_numbers(key) && value.present?
         memo

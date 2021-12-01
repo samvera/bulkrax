@@ -5,6 +5,7 @@ require 'active_support/all'
 
 module Bulkrax
   class << self
+    # TODO: remove collection_field_mapping when releasing v2
     mattr_accessor :parsers,
                    :default_work_type,
                    :default_field_mapping,
@@ -34,7 +35,7 @@ module Bulkrax
     self.removed_image_path = Bulkrax::Engine.root.join('spec', 'fixtures', 'removed.png').to_s
     self.server_name = 'bulkrax@example.com'
 
-    # @todo, merge related_children_field_mapping and collection_field_mapping into field_mappings,
+    # @todo, merge related_children_field_mapping and related_parents_field_mapping into field_mappings,
     # or make them settable per import some other way.
 
     # Field_mapping for establishing a parent-child relationship (FROM parent TO child)
@@ -50,8 +51,12 @@ module Bulkrax
     self.related_children_field_mapping = {}
 
     # TODO: documentation
+    # TODO: add collection_ids as default? could be overwritten
     self.related_parents_field_mapping = {}
 
+    # NOTE: Creating Collections using the collection_field_mapping will no longer supported as of version Bulkrax v2.
+    #       Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.
+    # TODO: remove collection_field_mapping when releasing v2
     # Field_mapping for establishing a collection relationship (FROM work TO collection)
     # This value IS NOT used for OAI, so setting the OAI Entries here will have no effect
     # The mapping is supplied per Entry, provide the full class name as a string, eg. 'Bulkrax::CsvEntry'
