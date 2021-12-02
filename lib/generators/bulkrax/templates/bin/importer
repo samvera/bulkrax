@@ -17,7 +17,8 @@ def main(opts = {})
   end
 
   update = opts[:importer_id].present?
-  url = build_url(opts.delete(:importer_id), opts.delete(:url))
+  port = opts[:port].presence
+  url = build_url(opts.delete(:importer_id), opts.delete(:url), port)
 
   headers = { 'Content-Type' => 'application/json' }
   headers['Authorization'] = "Token: #{opts.delete(:auth_token)}"
@@ -74,11 +75,12 @@ def build_params(opts = {})
   return params.compact
 end
 
-def build_url(importer_id, url)
+def build_url(importer_id, url, port = nil)
   if url.nil?
     protocol = Rails.application.config.force_ssl ? 'https://' : 'http://'
     host = Rails.application.config.action_mailer.default_url_options[:host]
     url = "#{protocol}#{host}"
+    url = "#{url}:#{port}" if port
   end
   path = Bulkrax::Engine.routes.url_helpers.polymorphic_path(Bulkrax::Importer)
   url = File.join(url, path)
