@@ -6,15 +6,7 @@ require_relative '../config/environment'
 require 'slop'
 
 def main(opts = {})
-  if opts[:importer_id].blank? && invalid?(opts)
-    puts 'Missing required parameters'
-    help
-  end
-
-  if opts[:auth_token].blank?
-    puts 'Missing Authentication Token --auth_token'
-    exit
-  end
+  check_required_params
 
   update = opts[:importer_id].present?
   port = opts[:port].presence
@@ -42,6 +34,18 @@ def main(opts = {})
              end
 
   puts "#{response.status} - #{response.body.truncate(200)}"
+end
+
+def check_required_params
+  if opts[:importer_id].blank? && invalid?(opts)
+    puts 'Missing required parameters'
+    help
+  end
+
+  if opts[:auth_token].blank? # rubocop:disable Style/GuardClause
+    puts 'Missing Authentication Token --auth_token'
+    exit
+  end
 end
 
 def invalid?(opts)
