@@ -119,7 +119,6 @@ module Bulkrax
         ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
       )
       attrs = { id: child_record.id, member_of_collections_attributes: { 0 => { id: parent_record.id } } }
-      # TODO: add resulting record's id to base_entry's parsed_metadata?
       ObjectFactory.new(
         attributes: attrs,
         source_identifier_value: nil, # sending the :id in the attrs means the factory doesn't need a :source_identifier_value
@@ -140,7 +139,6 @@ module Bulkrax
         ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
       )
       attrs = { id: parent_record.id, child_collection_id: child_record.id }
-      # TODO: add resulting record's id to base_entry's parsed_metadata?
       ObjectFactory.new(
         attributes: attrs,
         source_identifier_value: nil, # sending the :id in the attrs means the factory doesn't need a :source_identifier_value
@@ -164,7 +162,6 @@ module Bulkrax
         id: parent_record.id,
         work_members_attributes: { 0 => { id: child_record.id } }
       }
-      # TODO: add resulting record's id to base_entry's parsed_metadata?
       ObjectFactory.new(
         attributes: attrs,
         source_identifier_value: nil, # sending the :id in the attrs means the factory doesn't need a :source_identifier_value

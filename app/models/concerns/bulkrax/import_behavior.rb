@@ -12,7 +12,6 @@ module Bulkrax
           raise CollectionsCreatedError unless collections_created?
           @item = factory.run!
         end
-        # TODO: use parsed_metadata instead? -- or set post-relationship ids in parsed_metadata after jobs run?
         parent_jobs if self.parsed_metadata['parents'].present?
         child_jobs if self.parsed_metadata['children'].present?
       rescue RSolr::Error::Http, CollectionsCreatedError => e

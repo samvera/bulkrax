@@ -75,7 +75,7 @@ module Bulkrax
     end
 
     def self.parents_field
-      Bulkrax.related_parents_field_mapping[self.to_s] # TODO
+      Bulkrax.related_parents_field_mapping[self.to_s]
     end
 
     def self.children_field

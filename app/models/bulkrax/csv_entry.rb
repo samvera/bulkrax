@@ -30,26 +30,8 @@ module Bulkrax
       raw_data = data.to_h
       raw_data[:model] = data[:model] if data[:model].present?
       # If the collection field mapping is not 'collection', add 'collection' - the parser needs it
-      # TODO: rename to 'collections'
-      # TODO: necessary to standardize key in raw metadata? should that logic be moved to parsed_metadata?
       raw_data[:collection] = raw_data[collection_field.to_sym] if raw_data.keys.include?(collection_field.to_sym) && collection_field != 'collection'
       return raw_data
-    end
-
-    def self.collection_field
-      ActiveSupport::Deprecation.warn(
-        'Creating Collections using the collection_field_mapping will no longer supported as of version Bulkrax v2.' \
-        ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
-      )
-      Bulkrax.collection_field_mapping[self.to_s] || 'collection'
-    end
-
-    def self.parents_field
-      Bulkrax.related_parents_field_mapping[self.to_s] || 'parents'
-    end
-
-    def self.children_field
-      Bulkrax.related_children_field_mapping[self.to_s] || 'children'
     end
 
     def build_metadata

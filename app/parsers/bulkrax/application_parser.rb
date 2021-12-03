@@ -68,10 +68,6 @@ module Bulkrax
       Bulkrax.collection_field_mapping[self.entry_class.to_s]&.to_sym || :collection
     end
 
-    def related_parent_field_mapping
-      Bulkrax.related_parents_field_mapping[self.entry_class.to_s]&.to_sym
-    end
-
     def model_field_mappings
       model_mappings = Bulkrax.field_mappings[self.class.to_s]&.dig('model', :from) || []
       model_mappings |= ['model']
@@ -99,22 +95,6 @@ module Bulkrax
       raise StandardError, 'must be defined' if importer?
     end
 
-    def create_parent_relationships
-      records.each do |r|
-        next if r[related_parent_field_mapping].blank?
-
-        parent_identifiers = r[related_parent_field_mapping].split(/\s*[;|]\s*/)
-        child_id = entry_class.find_by(
-          identifier: r[source_identifier],
-          importerexporter_id: importerexporter.id,
-          importerexporter_type: 'Bulkrax::Importer'
-        ).id
-        ParentRelationshipsJob.perform_later(child_id, parent_identifiers, current_run.id)
-      end
-    rescue StandardError => e
-      status_info(e)
-    end
-
     # Optional, define if using browse everything for file upload
     def retrieve_cloud_files(files); end
 
@@ -138,69 +118,6 @@ module Bulkrax
       @path_for_import = File.join(base_path, importerexporter.path_string)
       FileUtils.mkdir_p(@path_for_import) unless File.exist?(@path_for_import)
       @path_for_import
-    end
-
-    # TODO: remove method in favor of #parent_jobs and #child_jobs
-    # Optional, only used by certain parsers
-    # Other parsers should override with a custom or empty method
-    # Will be skipped unless the #record is a Hash
-    def create_parent_child_relationships
-      parents.each do |key, value|
-        parent = entry_class.where(
-          identifier: key,
-          importerexporter_id: importerexporter.id,
-          importerexporter_type: 'Bulkrax::Importer'
-        ).first
-
-        # not finding the entries here indicates that the given identifiers are incorrect
-        # in that case we should log that
-        children = value.map do |child|
-          entry_class.where(
-            identifier: child,
-            importerexporter_id: importerexporter.id,
-            importerexporter_type: 'Bulkrax::Importer'
-          ).first
-        end.compact.uniq
-
-        if parent.present? && (children.length != value.length)
-          # Increment the failures for the number we couldn't find
-          # Because all of our entries have been created by now, if we can't find them, the data is wrong
-          Rails.logger.error("Expected #{value.length} children for parent entry #{parent.id}, found #{children.length}")
-          break if children.empty?
-          Rails.logger.warn("Adding #{children.length} children to parent entry #{parent.id} (expected #{value.length})")
-        end
-        parent_id = parent.id
-        child_entry_ids = children.map(&:id)
-        CreateRelationshipsJob.perform_later(parent_id, child_entry_ids, current_run.id)
-      end
-    rescue StandardError => e
-      status_info(e)
-    end
-
-    def parents
-      @parents ||= setup_parents
-    end
-
-    def setup_parents
-      pts = []
-      records.each do |record|
-        r = if record.respond_to?(:to_h)
-              record.to_h
-            else
-              record
-            end
-        next unless r.is_a?(Hash)
-        children = if r[:children].is_a?(String)
-                     r[:children].split(/\s*[:;|]\s*/)
-                   else
-                     r[:children]
-                   end
-        next if children.blank?
-        pts << {
-          r[source_identifier] => children
-        }
-      end
-      pts.blank? ? pts : pts.inject(:merge)
     end
 
     def setup_export_file
