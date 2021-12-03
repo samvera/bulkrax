@@ -36,7 +36,7 @@ RSpec.describe Bulkrax do
         expect(described_class).to respond_to(:collection_field_mapping=)
       end
       it 'has no default value' do
-        expect(described_class.collection_field_mapping).to eq({ 'Bulkrax::CsvEntry' => 'collection' })
+        expect(described_class.collection_field_mapping).to eq({})
       end
     end
 
