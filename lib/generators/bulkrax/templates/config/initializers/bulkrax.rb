@@ -20,7 +20,7 @@ Bulkrax.setup do |config|
   # config.server_name = 'my_server@name.com'
 
   # Field_mapping for establishing a parent-child relationship (FROM parent TO child)
-  # This can be a Collection to Work, or Work to Work relationship
+  # This can be a Collection to Work, Collection to Collection, or Work to Work relationship
   # This value IS NOT used for OAI, so setting the OAI Entries here will have no effect
   # The mapping is supplied per Entry, provide the full class name as a string, eg. 'Bulkrax::CsvEntry'
   # Example:
@@ -29,14 +29,22 @@ Bulkrax.setup do |config|
   #     'Bulkrax::CsvEntry'  => 'children'
   #   }
   # By default no parent-child relationships are added
-  # config.related_children_field_mapping = { }
+  # config.related_children_field_mapping = {}
 
-  # TODO: documentation
+  # Field_mapping for establishing a parent-child relationship (FROM child TO parent)
+  # This can be a Work to Collection, Collection to Collection, or Work to Work relationship
+  # This value IS NOT used for OAI, so setting the OAI Entries here will have no effect
+  # The mapping is supplied per Entry, provide the full class name as a string, eg. 'Bulkrax::CsvEntry'
+  # Example:
+  #   {
+  #     'Bulkrax::CsvEntry' => 'collection_ids',
+  #     'Bulkrax::CsvCollectionEntry' => 'collection_ids'
+  #   }
+  # The default value for CSV is collection_ids
   # config.related_parents_field_mapping = {}
 
   # NOTE: Creating Collections using the collection_field_mapping will no longer supported as of version Bulkrax v2.
   #       Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.
-  # TODO: remove collection_field_mapping when releasing v2
   # Field_mapping for establishing a collection relationship (FROM work TO collection)
   # This value IS NOT used for OAI, so setting the OAI parser here will have no effect
   # The mapping is supplied per Entry, provide the full class name as a string, eg. 'Bulkrax::CsvEntry'
