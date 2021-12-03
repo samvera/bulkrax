@@ -82,3 +82,5 @@ bulkrax:
     auth_token:
       definition: 'Authentication token. Required for JSON requests only.'
       required: true
+    port:
+      definition: 'Port to use in http request. Defaults to 80. May need to set to 3000 when running in the development environment'
