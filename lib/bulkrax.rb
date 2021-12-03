@@ -66,7 +66,7 @@ module Bulkrax
       'Bulkrax::CsvEntry' => 'collection_ids'
     }
 
-    # NOTE: Creating Collections using the collection_field_mapping will no longer supported as of version Bulkrax v2.
+    # NOTE: Creating Collections using the collection_field_mapping will no longer be supported as of version Bulkrax v2.
     #       Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.
     # TODO: remove collection_field_mapping when releasing v2
     # Field_mapping for establishing a collection relationship (FROM work TO collection)

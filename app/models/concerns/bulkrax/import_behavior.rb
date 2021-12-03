@@ -102,7 +102,7 @@ module Bulkrax
       return if find_collection_ids.blank?
 
       ActiveSupport::Deprecation.warn(
-        'Creating Collections using the collection_field_mapping will no longer supported as of version Bulkrax v2.' \
+        'Creating Collections using the collection_field_mapping will no longer be supported as of version Bulkrax v2.' \
         ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
       )
       self.parsed_metadata['member_of_collections_attributes'] = {}
@@ -113,7 +113,7 @@ module Bulkrax
 
     def factory
       ActiveSupport::Deprecation.warn(
-        'Creating Collections using the collection_field_mapping will no longer supported as of version Bulkrax v2.' \
+        'Creating Collections using the collection_field_mapping will no longer be supported as of version Bulkrax v2.' \
         ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
       )
       @factory ||= Bulkrax::ObjectFactory.new(attributes: self.parsed_metadata,
