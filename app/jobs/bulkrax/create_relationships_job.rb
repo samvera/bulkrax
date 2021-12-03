@@ -57,7 +57,7 @@ module Bulkrax
       create_relationship
     rescue ::StandardError => e
       base_entry.status_info(e)
-      importer_run.increment!(:failed_children) # rubocop:disable Rails/SkipsModelValidations
+      importer_run.increment!(:failed_relationships) # rubocop:disable Rails/SkipsModelValidations
     end
 
     private
@@ -129,7 +129,7 @@ module Bulkrax
         klass: child_record.class
       ).run
       # TODO: add counters for :processed_parents and :failed_parents
-      importer_run.increment!(:processed_children) # rubocop:disable Rails/SkipsModelValidations
+      importer_run.increment!(:processed_relationships) # rubocop:disable Rails/SkipsModelValidations
     end
 
     # Collection-Collection membership is added to the as member_ids
@@ -149,7 +149,7 @@ module Bulkrax
         klass: parent_record.class
       ).run
       # TODO: add counters for :processed_parents and :failed_parents
-      importer_run.increment!(:processed_children) # rubocop:disable Rails/SkipsModelValidations
+      importer_run.increment!(:processed_relationships) # rubocop:disable Rails/SkipsModelValidations
     end
 
     # Work-Work membership is added to the parent as member_ids
@@ -172,7 +172,7 @@ module Bulkrax
         klass: parent_record.class
       ).run
       # TODO: add counters for :processed_parents and :failed_parents
-      importer_run.increment!(:processed_children) # rubocop:disable Rails/SkipsModelValidations
+      importer_run.increment!(:processed_relationships) # rubocop:disable Rails/SkipsModelValidations
     end
 
     def reschedule(entry_identifier:, parent_identifier:, child_identifier:, importer_run:)

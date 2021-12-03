@@ -71,7 +71,7 @@ module Bulkrax
             end
 
             it 'increments processed children' do
-              expect(importer.current_run).to receive(:increment!).with(:processed_children)
+              expect(importer.current_run).to receive(:increment!).with(:processed_relationships)
 
               create_relationships_job.perform(
                 entry_identifier: child_entry.identifier,
@@ -115,7 +115,7 @@ module Bulkrax
             end
 
             it 'increments processed children' do
-              expect(importer.current_run).to receive(:increment!).with(:processed_children)
+              expect(importer.current_run).to receive(:increment!).with(:processed_relationships)
 
               create_relationships_job.perform(
                 entry_identifier: child_entry.identifier,
@@ -171,7 +171,7 @@ module Bulkrax
             end
 
             it 'increments processed children' do
-              expect(importer.current_run).to receive(:increment!).with(:processed_children)
+              expect(importer.current_run).to receive(:increment!).with(:processed_relationships)
 
               create_relationships_job.perform(
                 entry_identifier: child_entry.identifier,
@@ -215,7 +215,7 @@ module Bulkrax
             end
 
             it 'increments processed children' do
-              expect(importer.current_run).to receive(:increment!).with(:processed_children)
+              expect(importer.current_run).to receive(:increment!).with(:processed_relationships)
 
               create_relationships_job.perform(
                 entry_identifier: child_entry.identifier,
@@ -271,7 +271,7 @@ module Bulkrax
             end
 
             it 'increments processed children' do
-              expect(importer.current_run).to receive(:increment!).with(:processed_children)
+              expect(importer.current_run).to receive(:increment!).with(:processed_relationships)
 
               create_relationships_job.perform(
                 entry_identifier: child_entry.identifier,
@@ -315,7 +315,7 @@ module Bulkrax
             end
 
             it 'increments processed children' do
-              expect(importer.current_run).to receive(:increment!).with(:processed_children)
+              expect(importer.current_run).to receive(:increment!).with(:processed_relationships)
 
               create_relationships_job.perform(
                 entry_identifier: child_entry.identifier,
@@ -344,7 +344,7 @@ module Bulkrax
         end
 
         it 'increments failed children' do
-          expect(importer.current_run).to receive(:increment!).with(:failed_children)
+          expect(importer.current_run).to receive(:increment!).with(:failed_relationships)
 
           create_relationships_job.perform(
             entry_identifier: child_entry.identifier,
