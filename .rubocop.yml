@@ -37,3 +37,6 @@ Style/RedundantReturn:
 
 Style/RedundantSelf:
   Enabled: false
+
+RSpec/ExampleLength:
+  Max: 8

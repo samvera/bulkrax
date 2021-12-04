@@ -18,7 +18,7 @@ module Bulkrax
 
       context 'without required metadata' do
         before do
-          allow(subject).to receive(:record).and_return(source_identifier: '1', some_field: 'some data')
+          allow(subject).to receive(:raw_metadata).and_return(source_identifier: '1', some_field: 'some data')
         end
 
         it 'fails and stores an error' do
@@ -29,7 +29,7 @@ module Bulkrax
       context 'with required metadata' do
         before do
           allow_any_instance_of(ObjectFactory).to receive(:run!)
-          allow(subject).to receive(:record).and_return('source_identifier' => '2', 'title' => 'some title')
+          allow(subject).to receive(:raw_metadata).and_return('source_identifier' => '2', 'title' => 'some title')
         end
 
         it 'succeeds' do
@@ -56,7 +56,7 @@ module Bulkrax
       context 'with enumerated columns appended' do
         before do
           allow_any_instance_of(ObjectFactory).to receive(:run!)
-          allow(subject).to receive(:record).and_return('source_identifier' => '2', 'title_1' => 'some title', 'title_2' => 'another title')
+          allow(subject).to receive(:raw_metadata).and_return('source_identifier' => '2', 'title_1' => 'some title', 'title_2' => 'another title')
         end
 
         it 'succeeds' do
@@ -69,7 +69,7 @@ module Bulkrax
       context 'with enumerated columns prepended' do
         before do
           allow_any_instance_of(ObjectFactory).to receive(:run!)
-          allow(subject).to receive(:record).and_return('source_identifier' => '2', '1_title' => 'some title', '2_title' => 'another title')
+          allow(subject).to receive(:raw_metadata).and_return('source_identifier' => '2', '1_title' => 'some title', '2_title' => 'another title')
         end
 
         it 'succeeds' do
@@ -83,7 +83,7 @@ module Bulkrax
         before do
           allow_any_instance_of(ObjectFactory).to receive(:run!)
 
-          allow(subject).to receive(:record).and_return('source_identifier' => '3', 'title' => 'some title')
+          allow(subject).to receive(:raw_metadata).and_return('source_identifier' => '3', 'title' => 'some title')
           allow(File).to receive(:exist?).with('./spec/fixtures/csv/test_file.csv').and_return(true)
         end
 
@@ -105,7 +105,7 @@ module Bulkrax
 
         before do
           allow_any_instance_of(ObjectFactory).to receive(:run!)
-          allow(subject).to receive(:record).and_return(
+          allow(subject).to receive(:raw_metadata).and_return(
             'source_identifier' => '2',
             'title' => 'some title',
             'single_object_first_name' => 'Fake',
@@ -136,7 +136,7 @@ module Bulkrax
 
         before do
           allow_any_instance_of(ObjectFactory).to receive(:run!)
-          allow(subject).to receive(:record).and_return(
+          allow(subject).to receive(:raw_metadata).and_return(
             'source_identifier' => '2',
             'title' => 'some title',
             'single_object_first_name' => 'Fake',
@@ -167,7 +167,7 @@ module Bulkrax
 
         before do
           allow_any_instance_of(ObjectFactory).to receive(:run!)
-          allow(subject).to receive(:record).and_return(
+          allow(subject).to receive(:raw_metadata).and_return(
             'source_identifier' => '2',
             'title' => 'some title',
             'multiple_objects_first_name_1' => 'Fake',
@@ -180,7 +180,6 @@ module Bulkrax
           )
         end
 
-        # rubocop:disable RSpec/ExampleLength
         it 'succeeds' do
           metadata = subject.build_metadata
           expect(metadata['multiple_objects'][0]['multiple_objects_first_name']).to eq('Fake')
@@ -205,7 +204,7 @@ module Bulkrax
 
         before do
           allow_any_instance_of(ObjectFactory).to receive(:run!)
-          allow(subject).to receive(:record).and_return(
+          allow(subject).to receive(:raw_metadata).and_return(
             'source_identifier' => '2',
             'title' => 'some title',
             'multiple_objects_first_name_1' => 'Fake',
@@ -241,7 +240,7 @@ module Bulkrax
 
         before do
           allow_any_instance_of(ObjectFactory).to receive(:run!)
-          allow(subject).to receive(:record).and_return(
+          allow(subject).to receive(:raw_metadata).and_return(
             'source_identifier' => '2',
             'title' => 'some title',
             'multiple_objects_first_name_1' => 'Fake',
@@ -275,7 +274,7 @@ module Bulkrax
 
         before do
           allow_any_instance_of(ObjectFactory).to receive(:run!)
-          allow(subject).to receive(:record).and_return(
+          allow(subject).to receive(:raw_metadata).and_return(
             'source_identifier' => '2',
             'title' => 'some title',
             'multiple_objects_first_name_1' => 'Fake',
@@ -571,7 +570,6 @@ module Bulkrax
           expect(metadata['multiple_objects_position_2_3']).to eq('Duke')
         end
       end
-      # rubocop:enable RSpec/ExampleLength
     end
   end
 end

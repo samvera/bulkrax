@@ -20,7 +20,6 @@ module Bulkrax
 
       importer.import_collections
       importer.import_works
-      importer.create_parent_child_relationships unless importer.validate_only
     end
 
     def unzip_imported_file(parser)

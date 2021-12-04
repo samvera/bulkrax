@@ -9,6 +9,10 @@ module Bulkrax
 
     # rubocop:disable Metrics/ParameterLists
     def initialize(attributes:, source_identifier_value:, work_identifier:, collection_field_mapping:, replace_files: false, user: nil, klass: nil, update_files: false)
+      ActiveSupport::Deprecation.warn(
+        'Creating Collections using the collection_field_mapping will no longer be supported as of version Bulkrax v2.' \
+        ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
+      )
       @attributes = ActiveSupport::HashWithIndifferentAccess.new(attributes)
       @replace_files = replace_files
       @update_files = update_files
@@ -123,51 +127,33 @@ module Bulkrax
     end
 
     def create_collection(attrs)
+      ActiveSupport::Deprecation.warn(
+        'Creating Collections using the collection_field_mapping will no longer be supported as of version Bulkrax v2.' \
+        ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
+      )
       attrs = collection_type(attrs)
-      object.members = members
-      object.member_of_collections = member_of_collections
+      persist_collection_memberships(parent: object, child: find_collection(attributes[:child_collection_id])) if attributes[:child_collection_id].present?
+      persist_collection_memberships(parent: find_collection(attributes[collection_field_mapping]), child: object) if attributes[collection_field_mapping].present?
       object.attributes = attrs
       object.apply_depositor_metadata(@user)
       object.save!
     end
 
     def update_collection(attrs)
-      object.members = members
-      object.member_of_collections = member_of_collections
+      ActiveSupport::Deprecation.warn(
+        'Creating Collections using the collection_field_mapping will no longer be supported as of version Bulkrax v2.' \
+        ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
+      )
+      persist_collection_memberships(parent: object, child: find_collection(attributes[:child_collection_id])) if attributes[:child_collection_id].present?
+      persist_collection_memberships(parent: find_collection(attributes[collection_field_mapping]), child: object) if attributes[collection_field_mapping].present?
       object.attributes = attrs
       object.save!
     end
 
-    # Collections don't respond to member_of_collections_attributes or member_of_collection_ids=
-    #   or member_ids=
-    # Add them directly with members / member_of_collections
-    # collection should be in the form  { id: collection_id }
-    # and collections [{ id: collection_id }]
-    # member_ids comes from
-    # @todo - consider performance implications although we wouldn't expect a Collection to be a member of many Collections
-    def members
-      ms = object.members.to_a
-      [:children].each do |atat|
-        next if attributes[atat].blank?
-        ms.concat(
-          Array.wrap(
-            find_collection(attributes[atat])
-          )
-        )
-      end
-      ms.flatten.compact.uniq
-    end
-
-    def member_of_collections
-      ms = object.member_of_collection_ids.to_a.map { |id| find_collection(id) }
-      if attributes[collection_field_mapping].present?
-        ms.concat(
-          Array.wrap(
-            find_collection(attributes[collection_field_mapping])
-          )
-        )
-      end
-      ms.flatten.compact.uniq
+    # Add child to parent's #member_collections
+    # Add parent to child's #member_of_collections
+    def persist_collection_memberships(parent:, child:)
+      ::Hyrax::Collections::NestedCollectionPersistenceService.persist_nested_collection_for(parent: parent, child: child)
     end
 
     def find_collection(id)
@@ -193,7 +179,10 @@ module Bulkrax
     # which is used by Hyrax::Actors::AddAsMemberOfCollectionsActor
     def create_attributes
       return transform_attributes if klass == Collection
-      ActiveSupport::Deprecation.warn("Passing collection or collections directly to the ObjectFactory is no longer supported. Please update your Entry class to call add_collections instead.") if attributes[:collection].present? || attributes[:collections].present?
+      ActiveSupport::Deprecation.warn(
+        'Creating Collections using the collection_field_mapping will no longer be supported as of version Bulkrax v2.' \
+        ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
+      )
       transform_attributes.except(:collections, :collection, collection_field_mapping)
     end
 
@@ -201,7 +190,10 @@ module Bulkrax
     # which is used by Hyrax::Actors::AddAsMemberOfCollectionsActor
     def attribute_update
       return transform_attributes.except(:id) if klass == Collection
-      ActiveSupport::Deprecation.warn("Passing collection or collections directly to the ObjectFactory is no longer supported. Please update your Entry class to call add_collections instead.") if attributes[:collection].present? || attributes[:collections].present?
+      ActiveSupport::Deprecation.warn(
+        'Creating Collections using the collection_field_mapping will no longer be supported as of version Bulkrax v2.' \
+        ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
+      )
       transform_attributes.except(:id, :collections, :collection, collection_field_mapping)
     end
 

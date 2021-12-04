@@ -313,30 +313,6 @@ module Bulkrax
       end
     end
 
-    describe '#create_parent_child_relationships' do
-      let(:importer) { FactoryBot.create(:bulkrax_importer_csv_complex) }
-      let(:entry_1) { FactoryBot.build(:bulkrax_entry, importerexporter: importer, identifier: '123456789') }
-      let(:entry_2) { FactoryBot.build(:bulkrax_entry, importerexporter: importer, identifier: '234567891') }
-      let(:entry_3) { FactoryBot.build(:bulkrax_entry, importerexporter: importer, identifier: '345678912') }
-      let(:entry_4) { FactoryBot.build(:bulkrax_entry, importerexporter: importer, identifier: '456789123') }
-
-      before do
-        allow(Bulkrax::CsvEntry).to receive(:where).with(identifier: '123456789', importerexporter_id: importer.id, importerexporter_type: 'Bulkrax::Importer').and_return([entry_1])
-        allow(Bulkrax::CsvEntry).to receive(:where).with(identifier: '234567891', importerexporter_id: importer.id, importerexporter_type: 'Bulkrax::Importer').and_return([entry_2])
-        allow(Bulkrax::CsvEntry).to receive(:where).with(identifier: '345678912', importerexporter_id: importer.id, importerexporter_type: 'Bulkrax::Importer').and_return([entry_3])
-        allow(Bulkrax::CsvEntry).to receive(:where).with(identifier: '456789123', importerexporter_id: importer.id, importerexporter_type: 'Bulkrax::Importer').and_return([entry_4])
-      end
-
-      it 'sets up the list of parents and children' do
-        expect(subject.parents).to eq("123456789" => ["234567891"], "234567891" => ["345678912"], "345678912" => ["456789123"], "456789123" => ["234567891"])
-      end
-
-      it 'invokes Bulkrax::ChildRelationshipsJob' do
-        expect(Bulkrax::ChildRelationshipsJob).to receive(:perform_later).exactly(4).times
-        subject.create_parent_child_relationships
-      end
-    end
-
     describe '#create_new_entries' do
       subject(:parser) { described_class.new(exporter) }
       let(:exporter)   { FactoryBot.create(:bulkrax_exporter_worktype) }
@@ -467,16 +443,6 @@ module Bulkrax
 
         it 'returns the mapping' do
           expect(subject.collection_field_mapping).to eq(:parent)
-        end
-      end
-
-      context 'when the mapping is not set' do
-        before do
-          allow(Bulkrax).to receive(:collection_field_mapping).and_return({})
-        end
-
-        it 'returns :collection' do
-          expect(subject.collection_field_mapping).to eq(:collection)
         end
       end
     end

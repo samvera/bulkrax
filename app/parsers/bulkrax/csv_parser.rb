@@ -18,6 +18,10 @@ module Bulkrax
     end
 
     def collections
+      ActiveSupport::Deprecation.warn(
+        'Creating Collections using the collection_field_mapping will no longer be supported as of version Bulkrax v2.' \
+        ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
+      )
       # retrieve a list of unique collections
       records.map do |r|
         collections = []
@@ -110,10 +114,6 @@ module Bulkrax
         path
       )
       path
-    end
-
-    def create_parent_child_relationships
-      super
     end
 
     def extra_filters

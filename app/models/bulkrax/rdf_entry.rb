@@ -14,6 +14,10 @@ module Bulkrax
     end
 
     def self.data_for_entry(data, source_id)
+      ActiveSupport::Deprecation.warn(
+        'Creating Collections using the collection_field_mapping will no longer be supported as of version Bulkrax v2.' \
+        ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
+      )
       reader = data
       format = reader.class.format.to_sym
       collections = []
@@ -37,14 +41,6 @@ module Bulkrax
       }
     end
 
-    def self.collection_field
-      Bulkrax.collection_field_mapping[self.to_s]
-    end
-
-    def self.children_field
-      Bulkrax.parent_child_field_mapping[self.to_s]
-    end
-
     def record
       @record ||= RDF::Reader.for(self.raw_metadata['format'].to_sym).new(self.raw_metadata['data'])
     end
@@ -64,7 +60,7 @@ module Bulkrax
       add_visibility
       add_rights_statement
       add_admin_set_id
-      add_collections
+      add_relationships
       add_local
       self.parsed_metadata['file'] = self.raw_metadata['file']
 

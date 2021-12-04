@@ -5,12 +5,14 @@ require 'active_support/all'
 
 module Bulkrax
   class << self
+    # TODO: remove collection_field_mapping when releasing v2
     mattr_accessor :parsers,
                    :default_work_type,
                    :default_field_mapping,
                    :collection_field_mapping,
                    :fill_in_blank_source_identifiers,
-                   :parent_child_field_mapping,
+                   :related_children_field_mapping,
+                   :related_parents_field_mapping,
                    :reserved_properties,
                    :field_mappings,
                    :import_path,
@@ -33,11 +35,11 @@ module Bulkrax
     self.removed_image_path = Bulkrax::Engine.root.join('spec', 'fixtures', 'removed.png').to_s
     self.server_name = 'bulkrax@example.com'
 
-    # @todo, merge parent_child_field_mapping and collection_field_mapping into field_mappings,
+    # @todo, merge related_children_field_mapping and related_parents_field_mapping into field_mappings,
     # or make them settable per import some other way.
 
     # Field_mapping for establishing a parent-child relationship (FROM parent TO child)
-    # This can be a Collection to Work, or Work to Work relationship
+    # This can be a Collection to Work, Collection to Collection, or Work to Work relationship
     # This value IS NOT used for OAI, so setting the OAI Entries here will have no effect
     # The mapping is supplied per Entry, provide the full class name as a string, eg. 'Bulkrax::CsvEntry'
     # Example:
@@ -45,14 +47,35 @@ module Bulkrax
     #     'Bulkrax::RdfEntry'  => 'http://opaquenamespace.org/ns/contents',
     #     'Bulkrax::CsvEntry'  => 'children'
     #   }
-    # By default no parent-child relationships are added
-    self.parent_child_field_mapping = {}
+    # By default, no related_children_field_mappings are added
+    self.related_children_field_mapping = {
+      'Bulkrax::CsvEntry' => 'children'
+    }
 
+    # Field_mapping for establishing a parent-child relationship (FROM child TO parent)
+    # This can be a Work to Collection, Collection to Collection, or Work to Work relationship
+    # This value IS NOT used for OAI, so setting the OAI Entries here will have no effect
+    # The mapping is supplied per Entry, provide the full class name as a string, eg. 'Bulkrax::CsvEntry'
+    # Example:
+    #   {
+    #     'Bulkrax::CsvEntry' => 'collection_ids',
+    #     'Bulkrax::CsvCollectionEntry' => 'collection_ids'
+    #   }
+    # The default value for CSV is collection_ids
+    self.related_parents_field_mapping = {
+      'Bulkrax::CsvEntry' => 'collection_ids'
+    }
+
+    # NOTE: Creating Collections using the collection_field_mapping will no longer be supported as of version Bulkrax v2.
+    #       Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.
+    # TODO: remove collection_field_mapping when releasing v2
     # Field_mapping for establishing a collection relationship (FROM work TO collection)
     # This value IS NOT used for OAI, so setting the OAI Entries here will have no effect
     # The mapping is supplied per Entry, provide the full class name as a string, eg. 'Bulkrax::CsvEntry'
     # The default value for CSV is collection
-    self.collection_field_mapping = {}
+    self.collection_field_mapping = {
+      'Bulkrax::CsvEntry' => 'collection'
+    }
 
     # Hash of Generic field_mappings for use in the view
     # There must be one field_mappings hash per view parial

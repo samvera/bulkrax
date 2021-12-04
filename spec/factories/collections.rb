@@ -7,4 +7,11 @@ FactoryBot.define do
     source { ['commons.ptsem.edu_MyCollection'] }
     identifier { ['commons.ptsem.edu_MyCollection'] }
   end
+
+  factory :another_collection, class: 'Collection' do
+    id { 'another_collection_id' }
+    title { ['MyOtherCollection'] }
+    source { ['commons.ptsem.edu_MyOtherCollection'] }
+    identifier { ['commons.ptsem.edu_MyOtherCollection'] }
+  end
 end

@@ -12,6 +12,8 @@ module Bulkrax
           raise CollectionsCreatedError unless collections_created?
           @item = factory.run!
         end
+        parent_jobs if self.parsed_metadata['parents'].present?
+        child_jobs if self.parsed_metadata['children'].present?
       rescue RSolr::Error::Http, CollectionsCreatedError => e
         raise e
       rescue StandardError => e
@@ -20,6 +22,18 @@ module Bulkrax
         status_info
       end
       return @item
+    end
+
+    def parent_jobs
+      self.parsed_metadata['parents'].each do |parent_identifier|
+        CreateRelationshipsJob.perform_later(entry_identifier: self.identifier, parent_identifier: parent_identifier, importer_run: self.last_run)
+      end
+    end
+
+    def child_jobs
+      self.parsed_metadata['children'].each do |child_identifier|
+        CreateRelationshipsJob.perform_later(entry_identifier: self.identifier, child_identifier: child_identifier, importer_run: self.last_run)
+      end
     end
 
     def find_collection_ids
@@ -56,8 +70,41 @@ module Bulkrax
       self.parsed_metadata['admin_set_id'] = importerexporter.admin_set_id if self.parsed_metadata['admin_set_id'].blank?
     end
 
+    def add_relationships
+      add_parents
+      add_children
+      add_collections
+    end
+
+    def add_parents
+      return if raw_metadata[self.class.parents_field].blank?
+
+      parents_matcher = self.class.matcher(self.class.parents_field, self.mapping[self.class.parents_field].symbolize_keys)
+      self.parsed_metadata['parents'] = if parents_matcher.present?
+                                          [parents_matcher.result(self, raw_metadata[self.class.parents_field])].flatten
+                                        else
+                                          raw_metadata[self.class.parents_field].split(/\s*[;|]\s*/)
+                                        end
+    end
+
+    def add_children
+      return if raw_metadata[self.class.children_field].blank?
+
+      children_matcher = self.class.matcher(self.class.children_field, self.mapping[self.class.children_field].symbolize_keys)
+      self.parsed_metadata['children'] = if children_matcher.present?
+                                           [children_matcher.result(self, raw_metadata[self.class.children_field])].flatten
+                                         else
+                                           raw_metadata[self.class.children_field].split(/\s*[;|]\s*/)
+                                         end
+    end
+
     def add_collections
       return if find_collection_ids.blank?
+
+      ActiveSupport::Deprecation.warn(
+        'Creating Collections using the collection_field_mapping will no longer be supported as of version Bulkrax v2.' \
+        ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
+      )
       self.parsed_metadata['member_of_collections_attributes'] = {}
       find_collection_ids.each_with_index do |c, i|
         self.parsed_metadata['member_of_collections_attributes'][i.to_s] = { id: c }
@@ -65,6 +112,10 @@ module Bulkrax
     end
 
     def factory
+      ActiveSupport::Deprecation.warn(
+        'Creating Collections using the collection_field_mapping will no longer be supported as of version Bulkrax v2.' \
+        ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
+      )
       @factory ||= Bulkrax::ObjectFactory.new(attributes: self.parsed_metadata,
                                               source_identifier_value: identifier,
                                               work_identifier: parser.work_identifier,

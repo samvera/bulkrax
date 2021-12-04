@@ -61,6 +61,10 @@ module Bulkrax
     end
 
     def collection_field_mapping
+      ActiveSupport::Deprecation.warn(
+        'Creating Collections using the collection_field_mapping will no longer be supported as of version Bulkrax v2.' \
+        ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
+      )
       Bulkrax.collection_field_mapping[self.entry_class.to_s]&.to_sym || :collection
     end
 
@@ -114,68 +118,6 @@ module Bulkrax
       @path_for_import = File.join(base_path, importerexporter.path_string)
       FileUtils.mkdir_p(@path_for_import) unless File.exist?(@path_for_import)
       @path_for_import
-    end
-
-    # Optional, only used by certain parsers
-    # Other parsers should override with a custom or empty method
-    # Will be skipped unless the #record is a Hash
-    def create_parent_child_relationships
-      parents.each do |key, value|
-        parent = entry_class.where(
-          identifier: key,
-          importerexporter_id: importerexporter.id,
-          importerexporter_type: 'Bulkrax::Importer'
-        ).first
-
-        # not finding the entries here indicates that the given identifiers are incorrect
-        # in that case we should log that
-        children = value.map do |child|
-          entry_class.where(
-            identifier: child,
-            importerexporter_id: importerexporter.id,
-            importerexporter_type: 'Bulkrax::Importer'
-          ).first
-        end.compact.uniq
-
-        if parent.present? && (children.length != value.length)
-          # Increment the failures for the number we couldn't find
-          # Because all of our entries have been created by now, if we can't find them, the data is wrong
-          Rails.logger.error("Expected #{value.length} children for parent entry #{parent.id}, found #{children.length}")
-          break if children.empty?
-          Rails.logger.warn("Adding #{children.length} children to parent entry #{parent.id} (expected #{value.length})")
-        end
-        parent_id = parent.id
-        child_entry_ids = children.map(&:id)
-        ChildRelationshipsJob.perform_later(parent_id, child_entry_ids, current_run.id)
-      end
-    rescue StandardError => e
-      status_info(e)
-    end
-
-    def parents
-      @parents ||= setup_parents
-    end
-
-    def setup_parents
-      pts = []
-      records.each do |record|
-        r = if record.respond_to?(:to_h)
-              record.to_h
-            else
-              record
-            end
-        next unless r.is_a?(Hash)
-        children = if r[:children].is_a?(String)
-                     r[:children].split(/\s*[:;|]\s*/)
-                   else
-                     r[:children]
-                   end
-        next if children.blank?
-        pts << {
-          r[source_identifier] => children
-        }
-      end
-      pts.blank? ? pts : pts.inject(:merge)
     end
 
     def setup_export_file
