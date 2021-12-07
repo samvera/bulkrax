@@ -12,8 +12,8 @@ module Bulkrax
           raise CollectionsCreatedError unless collections_created?
           @item = factory.run!
         end
-        parent_jobs if self.parsed_metadata['parents'].present?
-        child_jobs if self.parsed_metadata['children'].present?
+        parent_jobs if self.parsed_metadata[related_parents_parsed_mapping].present?
+        child_jobs if self.parsed_metadata[related_children_parsed_mapping].present?
       rescue RSolr::Error::Http, CollectionsCreatedError => e
         raise e
       rescue StandardError => e
@@ -25,13 +25,13 @@ module Bulkrax
     end
 
     def parent_jobs
-      self.parsed_metadata['parents'].each do |parent_identifier|
+      self.parsed_metadata[related_parents_parsed_mapping].each do |parent_identifier|
         CreateRelationshipsJob.perform_later(entry_identifier: self.identifier, parent_identifier: parent_identifier, importer_run: self.last_run)
       end
     end
 
     def child_jobs
-      self.parsed_metadata['children'].each do |child_identifier|
+      self.parsed_metadata[related_children_parsed_mapping].each do |child_identifier|
         CreateRelationshipsJob.perform_later(entry_identifier: self.identifier, child_identifier: child_identifier, importer_run: self.last_run)
       end
     end
@@ -80,22 +80,22 @@ module Bulkrax
       return if raw_metadata[related_parents_raw_mapping].blank?
 
       parents_matcher = self.class.matcher(related_parents_parsed_mapping, self.mapping[related_parents_parsed_mapping].symbolize_keys)
-      self.parsed_metadata['parents'] = if parents_matcher.present?
-                                          [parents_matcher.result(self, raw_metadata[related_parents_raw_mapping])].flatten
-                                        else
-                                          raw_metadata[related_parents_raw_mapping].split(/\s*[;|]\s*/)
-                                        end
+      self.parsed_metadata[related_parents_parsed_mapping] = if parents_matcher.present?
+                                                               [parents_matcher.result(self, raw_metadata[related_parents_raw_mapping])].flatten
+                                                             else
+                                                               raw_metadata[related_parents_raw_mapping].split(/\s*[;|]\s*/)
+                                                             end
     end
 
     def add_children
       return if raw_metadata[related_children_raw_mapping].blank?
 
       children_matcher = self.class.matcher(related_children_parsed_mapping, self.mapping[related_children_parsed_mapping].symbolize_keys)
-      self.parsed_metadata['children'] = if children_matcher.present?
-                                           [children_matcher.result(self, raw_metadata[related_children_raw_mapping])].flatten
-                                         else
-                                           raw_metadata[related_children_raw_mapping].split(/\s*[;|]\s*/)
-                                         end
+      self.parsed_metadata[related_children_parsed_mapping] = if children_matcher.present?
+                                                                [children_matcher.result(self, raw_metadata[related_children_raw_mapping])].flatten
+                                                              else
+                                                                raw_metadata[related_children_raw_mapping].split(/\s*[;|]\s*/)
+                                                              end
     end
 
     def add_collections
