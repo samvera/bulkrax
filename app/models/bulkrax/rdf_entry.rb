@@ -26,7 +26,7 @@ module Bulkrax
       data = RDF::Writer.for(format).buffer do |writer|
         reader.each_statement do |statement|
           collections << statement.object.to_s if collection_field.present? && collection_field == statement.predicate.to_s
-          children << statement.object.to_s if children_field.present? && children_field == statement.predicate.to_s
+          children << statement.object.to_s if related_children_parsed_mapping.present? && related_children_parsed_mapping == statement.predicate.to_s
           delete = statement.object.to_s if /deleted/.match?(statement.predicate.to_s)
           writer << statement
         end
@@ -39,6 +39,15 @@ module Bulkrax
         collection: collections,
         children: children
       }
+    end
+
+    def self.related_children_parsed_mapping
+      return @related_children_parsed_mapping if @related_children_parsed_mapping.present?
+
+      rdf_related_children_field_mapping = Bulkrax.field_mappings['Bulkrax::RdfParser']&.select { |_, h| h.key?('related_children_field_mapping') }
+      return if rdf_related_children_field_mapping.blank?
+
+      @related_children_parsed_mapping = rdf_related_children_field_mapping&.keys&.first
     end
 
     def record

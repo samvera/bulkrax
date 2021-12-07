@@ -16,30 +16,6 @@ RSpec.describe Bulkrax do
       end
     end
 
-    context 'related_children_field_mapping' do
-      it 'responds to related_children_field_mapping' do
-        expect(described_class).to respond_to(:related_children_field_mapping)
-      end
-      it 'related_children_field_mapping is settable' do
-        expect(described_class).to respond_to(:related_children_field_mapping=)
-      end
-      it 'has a default value for CsvEntry' do
-        expect(described_class.related_children_field_mapping).to eq({ 'Bulkrax::CsvEntry' => 'children' })
-      end
-    end
-
-    context 'related_parents_field_mapping' do
-      it 'responds to related_parents_field_mapping' do
-        expect(described_class).to respond_to(:related_parents_field_mapping)
-      end
-      it 'related_parents_field_mapping is settable' do
-        expect(described_class).to respond_to(:related_parents_field_mapping=)
-      end
-      it 'has a default value for CsvEntry' do
-        expect(described_class.related_parents_field_mapping).to eq({ 'Bulkrax::CsvEntry' => 'collection_ids' })
-      end
-    end
-
     context 'collection_field_mapping' do
       it 'responds to collection_field_mapping' do
         expect(described_class).to respond_to(:collection_field_mapping)

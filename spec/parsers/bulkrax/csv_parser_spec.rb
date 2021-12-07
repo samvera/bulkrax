@@ -470,5 +470,174 @@ module Bulkrax
         end
       end
     end
+
+    describe 'relationships field mappings' do
+      context 'when relationship field mappings are set' do
+        before do
+          importer.field_mapping = {
+            'parents' => { 'from' => ['parents_column'], related_parents_field_mapping: true },
+            'children' => { 'from' => ['children_column'], related_children_field_mapping: true },
+            'unrelated' => { 'from' => ['unrelated_column'] }
+          }
+        end
+
+        describe '#related_parents_raw_mapping' do
+          it 'returns the name of the column header containing parent relationship data' do
+            expect(subject.related_parents_raw_mapping).to eq('parents_column')
+          end
+
+          it 'looks for the related_parents_field_mapping' do
+            expect(subject).to receive(:get_field_mapping_hash_for).with('related_parents_field_mapping')
+
+            subject.related_parents_raw_mapping
+          end
+
+          it 'caches the result' do
+            expect(subject.instance_variable_get('@related_parents_raw_mapping')).to be_nil
+
+            subject.related_parents_raw_mapping
+
+            expect(subject.instance_variable_get('@related_parents_raw_mapping')).to eq('parents_column')
+          end
+
+          it 'caches the related_parents_field_mapping' do
+            expect(subject.instance_variables).not_to include(:@related_parents_field_mapping_hash)
+
+            subject.related_parents_raw_mapping
+
+            expect(subject.instance_variables).to include(:@related_parents_field_mapping_hash)
+          end
+        end
+
+        describe '#related_parents_parsed_mapping' do
+          it 'returns the name of the field that the parent relationship data should map to' do
+            expect(subject.related_parents_parsed_mapping).to eq('parents')
+          end
+
+          it 'looks for the related_parents_field_mapping' do
+            expect(subject).to receive(:get_field_mapping_hash_for).with('related_parents_field_mapping')
+
+            subject.related_parents_parsed_mapping
+          end
+
+          it 'caches the result' do
+            expect(subject.instance_variable_get('@related_parents_parsed_mapping')).to be_nil
+
+            subject.related_parents_parsed_mapping
+
+            expect(subject.instance_variable_get('@related_parents_parsed_mapping')).to eq('parents')
+          end
+
+          it 'caches the related_parents_field_mapping' do
+            expect(subject.instance_variables).not_to include(:@related_parents_field_mapping_hash)
+
+            subject.related_parents_parsed_mapping
+
+            expect(subject.instance_variables).to include(:@related_parents_field_mapping_hash)
+          end
+        end
+
+        describe '#related_children_raw_mapping' do
+          it 'returns the name of the column header containing child relationship data' do
+            expect(subject.related_children_raw_mapping).to eq('children_column')
+          end
+
+          it 'looks for the related_children_field_mapping' do
+            expect(subject).to receive(:get_field_mapping_hash_for).with('related_children_field_mapping')
+
+            subject.related_children_raw_mapping
+          end
+
+          it 'caches the result' do
+            expect(subject.instance_variable_get('@related_children_raw_mapping')).to be_nil
+
+            subject.related_children_raw_mapping
+
+            expect(subject.instance_variable_get('@related_children_raw_mapping')).to eq('children_column')
+          end
+
+          it 'caches the related_children_field_mapping' do
+            expect(subject.instance_variables).not_to include(:@related_children_field_mapping_hash)
+
+            subject.related_children_raw_mapping
+
+            expect(subject.instance_variables).to include(:@related_children_field_mapping_hash)
+          end
+        end
+
+        describe '#related_children_parsed_mapping' do
+          it 'returns the name of the field that the child relationship data should map to' do
+            expect(subject.related_children_parsed_mapping).to eq('children')
+          end
+
+          it 'looks for the related_children_field_mapping' do
+            expect(subject).to receive(:get_field_mapping_hash_for).with('related_children_field_mapping')
+
+            subject.related_children_parsed_mapping
+          end
+
+          it 'caches the result' do
+            expect(subject.instance_variable_get('@related_children_parsed_mapping')).to be_nil
+
+            subject.related_children_parsed_mapping
+
+            expect(subject.instance_variable_get('@related_children_parsed_mapping')).to eq('children')
+          end
+
+          it 'caches the related_children_field_mapping' do
+            expect(subject.instance_variables).not_to include(:@related_children_field_mapping_hash)
+
+            subject.related_children_parsed_mapping
+
+            expect(subject.instance_variables).to include(:@related_children_field_mapping_hash)
+          end
+        end
+      end
+
+      context 'when relationship field mappings are not set' do
+        describe '#related_parents_raw_mapping' do
+          it { expect(subject.related_parents_raw_mapping).to be_nil }
+        end
+
+        describe '#related_parents_parsed_mapping' do
+          it { expect(subject.related_parents_parsed_mapping).to be_nil }
+        end
+
+        describe '#related_children_raw_mapping' do
+          it { expect(subject.related_children_raw_mapping).to be_nil }
+        end
+
+        describe '#related_children_parsed_mapping' do
+          it { expect(subject.related_children_parsed_mapping).to be_nil }
+        end
+      end
+
+      context 'when duplicate relationship field mappings are present' do
+        before do
+          importer.field_mapping = {
+            'parents_1' => { 'from' => ['parents_column_1'], related_parents_field_mapping: true },
+            'parents_2' => { 'from' => ['parents_column_2'], related_parents_field_mapping: true },
+            'children_1' => { 'from' => ['children_column_1'], related_children_field_mapping: true },
+            'children_2' => { 'from' => ['children_column_2'], related_children_field_mapping: true }
+          }
+        end
+
+        describe '#related_parents_raw_mapping' do
+          it { expect { subject.related_parents_raw_mapping }.to raise_error(StandardError) }
+        end
+
+        describe '#related_parents_parsed_mapping' do
+          it { expect { subject.related_parents_parsed_mapping }.to raise_error(StandardError) }
+        end
+
+        describe '#related_children_raw_mapping' do
+          it { expect { subject.related_children_raw_mapping }.to raise_error(StandardError) }
+        end
+
+        describe '#related_children_parsed_mapping' do
+          it { expect { subject.related_children_parsed_mapping }.to raise_error(StandardError) }
+        end
+      end
+    end
   end
 end

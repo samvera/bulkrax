@@ -32,9 +32,13 @@ module Bulkrax
       to: :importerexporter
 
     delegate :client,
-             :collection_name,
-             :user,
-             to: :parser
+      :collection_name,
+      :user,
+      :related_parents_raw_mapping,
+      :related_parents_parsed_mapping,
+      :related_children_raw_mapping,
+      :related_children_parsed_mapping,
+      to: :parser
 
     # Retrieve fields from the file
     # @param data - the source data
@@ -72,14 +76,6 @@ module Bulkrax
         ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
       )
       Bulkrax.collection_field_mapping[self.to_s]
-    end
-
-    def self.parents_field
-      Bulkrax.related_parents_field_mapping[self.to_s]
-    end
-
-    def self.children_field
-      Bulkrax.related_children_field_mapping[self.to_s]
     end
 
     def build
