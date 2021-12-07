@@ -77,24 +77,24 @@ module Bulkrax
     end
 
     def add_parents
-      return if raw_metadata[self.class.parents_field].blank?
+      return if raw_metadata[related_parents_raw_mapping].blank?
 
-      parents_matcher = self.class.matcher(self.class.parents_field, self.mapping[self.class.parents_field].symbolize_keys)
+      parents_matcher = self.class.matcher(related_parents_parsed_mapping, self.mapping[related_parents_parsed_mapping].symbolize_keys)
       self.parsed_metadata['parents'] = if parents_matcher.present?
-                                          [parents_matcher.result(self, raw_metadata[self.class.parents_field])].flatten
+                                          [parents_matcher.result(self, raw_metadata[related_parents_raw_mapping])].flatten
                                         else
-                                          raw_metadata[self.class.parents_field].split(/\s*[;|]\s*/)
+                                          raw_metadata[related_parents_raw_mapping].split(/\s*[;|]\s*/)
                                         end
     end
 
     def add_children
-      return if raw_metadata[self.class.children_field].blank?
+      return if raw_metadata[related_children_raw_mapping].blank?
 
-      children_matcher = self.class.matcher(self.class.children_field, self.mapping[self.class.children_field].symbolize_keys)
+      children_matcher = self.class.matcher(related_children_parsed_mapping, self.mapping[related_children_parsed_mapping].symbolize_keys)
       self.parsed_metadata['children'] = if children_matcher.present?
-                                           [children_matcher.result(self, raw_metadata[self.class.children_field])].flatten
+                                           [children_matcher.result(self, raw_metadata[related_children_raw_mapping])].flatten
                                          else
-                                           raw_metadata[self.class.children_field].split(/\s*[;|]\s*/)
+                                           raw_metadata[related_children_raw_mapping].split(/\s*[;|]\s*/)
                                          end
     end
 

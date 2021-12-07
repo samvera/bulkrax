@@ -60,8 +60,6 @@ module Bulkrax
           subject.identifier = "http://example.org/ns/19158"
           allow_any_instance_of(ObjectFactory).to receive(:run!).and_return(instance_of(Work))
           allow(User).to receive(:batch_user)
-          allow(subject.class).to receive(:parents_field).and_return('parents')
-          allow(subject.class).to receive(:children_field).and_return('children')
         end
 
         it 'succeeds' do

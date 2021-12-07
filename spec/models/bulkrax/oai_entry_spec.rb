@@ -75,16 +75,15 @@ module Bulkrax
     context 'with specified admin set' do
       let(:mapping) do
         {
-          'parents' => { 'from' => ['parents'] },
-          'children' => { 'from' => ['children'] }
+          'parents' => { 'from' => ['parents'], related_parents_field_mapping: true },
+          'children' => { 'from' => ['children'], related_children_field_mapping: true }
         }
       end
 
       before do
         importer.parser_fields['thumbnail_url'] = ''
-        allow(entry.class).to receive(:parents_field).and_return('parents')
-        allow(entry.class).to receive(:children_field).and_return('children')
         allow(entry).to receive(:mapping).and_return(mapping)
+        allow(importer).to receive(:mapping).and_return(mapping)
       end
 
       it 'adds admin set id to parsed metadata' do

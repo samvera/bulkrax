@@ -44,20 +44,39 @@ module Bulkrax
     end
 
     def source_identifier
-      @source_identifier ||= identifier_hash.values.first&.[]("from")&.first&.to_sym || :source_identifier
+      @source_identifier ||= get_field_mapping_hash_for('source_identifier')&.values&.first&.[]('from')&.first&.to_sym || :source_identifier
     end
 
     def work_identifier
-      @work_identifier ||= identifier_hash.keys.first&.to_sym || :source
+      @work_identifier ||= get_field_mapping_hash_for('source_identifier')&.keys&.first&.to_sym || :source
     end
 
-    def identifier_hash
-      @identifier_hash ||= importerexporter.mapping.select do |_, h|
-        h.key?("source_identifier")
-      end
-      raise StandardError, "more than one source_identifier declared: #{@identifier_hash.keys.join(', ')}" if @identifier_hash.length > 1
+    def related_parents_raw_mapping
+      @related_parents_raw_mapping ||= get_field_mapping_hash_for('related_parents_field_mapping')&.values&.first&.[]('from')&.first
+    end
 
-      @identifier_hash
+    def related_parents_parsed_mapping
+      @related_parents_parsed_mapping ||= get_field_mapping_hash_for('related_parents_field_mapping')&.keys&.first
+    end
+
+    def related_children_raw_mapping
+      @related_children_raw_mapping ||= get_field_mapping_hash_for('related_children_field_mapping')&.values&.first&.[]('from')&.first
+    end
+
+    def related_children_parsed_mapping
+      @related_children_parsed_mapping ||= get_field_mapping_hash_for('related_children_field_mapping')&.keys&.first
+    end
+
+    def get_field_mapping_hash_for(key)
+      return instance_variable_get("@#{key}_hash") if instance_variable_get("@#{key}_hash").present?
+
+      instance_variable_set(
+        "@#{key}_hash",
+        importerexporter.mapping.with_indifferent_access.select { |_, h| h.key?(key) }
+      )
+      raise StandardError, "more than one #{key} declared: #{instance_variable_get("@#{key}_hash").keys.join(', ')}" if instance_variable_get("@#{key}_hash").length > 1
+
+      instance_variable_get("@#{key}_hash")
     end
 
     def collection_field_mapping
