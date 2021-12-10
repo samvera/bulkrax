@@ -77,6 +77,8 @@ module Bulkrax
         parsed_metadata[name] ||= []
         if value.is_a?(Array)
           parsed_metadata[name] += value
+        elsif index.present? # if index is present, the key has multiple values
+          parsed_metadata[name] += [value].flatten
         else
           parsed_metadata[name] = value
         end
@@ -121,15 +123,29 @@ module Bulkrax
     end
 
     def field_supported?(field)
+      field = field.gsub('_attributes', '')
+
+      return false if excluded?(field)
+      return true if supported_bulkrax_fields.include?(field)
+      return factory_class.method_defined?(field) && factory_class.properties[field].present?
+    end
+
+    def supported_bulkrax_fields
       ActiveSupport::Deprecation.warn(
         'Creating Collections using the collection_field_mapping will no longer be supported as of version Bulkrax v2.' \
         ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
       )
-      field = field.gsub('_attributes', '')
-
-      return false if excluded?(field)
-      return true if %W[id file remote_files model delete #{parser.collection_field_mapping}].include?(field)
-      return factory_class.method_defined?(field) && factory_class.properties[field].present?
+      @supported_bulkrax_fields ||=
+        %W[
+          id
+          file
+          remote_files
+          model
+          delete
+          #{parser.collection_field_mapping}
+          #{related_parents_parsed_mapping}
+          #{related_children_parsed_mapping}
+        ]
     end
 
     def multiple?(field)

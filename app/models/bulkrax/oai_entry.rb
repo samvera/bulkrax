@@ -26,6 +26,10 @@ module Bulkrax
     end
 
     def build_metadata
+      ActiveSupport::Deprecation.warn(
+        'Creating Collections using the collection_field_mapping will no longer be supported as of version Bulkrax v2.' \
+        ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
+      )
       self.parsed_metadata = {}
       self.parsed_metadata[work_identifier] = [record.header.identifier]
 
@@ -39,7 +43,7 @@ module Bulkrax
       add_visibility
       add_rights_statement
       add_admin_set_id
-      add_relationships
+      add_collections
       add_local
 
       return self.parsed_metadata

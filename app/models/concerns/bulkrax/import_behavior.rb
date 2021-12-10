@@ -70,34 +70,6 @@ module Bulkrax
       self.parsed_metadata['admin_set_id'] = importerexporter.admin_set_id if self.parsed_metadata['admin_set_id'].blank?
     end
 
-    def add_relationships
-      add_parents
-      add_children
-      add_collections
-    end
-
-    def add_parents
-      return if raw_metadata[related_parents_raw_mapping].blank?
-
-      parents_matcher = self.class.matcher(related_parents_parsed_mapping, self.mapping[related_parents_parsed_mapping].symbolize_keys)
-      self.parsed_metadata[related_parents_parsed_mapping] = if parents_matcher.present?
-                                                               [parents_matcher.result(self, raw_metadata[related_parents_raw_mapping])].flatten
-                                                             else
-                                                               raw_metadata[related_parents_raw_mapping].split(/\s*[;|]\s*/)
-                                                             end
-    end
-
-    def add_children
-      return if raw_metadata[related_children_raw_mapping].blank?
-
-      children_matcher = self.class.matcher(related_children_parsed_mapping, self.mapping[related_children_parsed_mapping].symbolize_keys)
-      self.parsed_metadata[related_children_parsed_mapping] = if children_matcher.present?
-                                                                [children_matcher.result(self, raw_metadata[related_children_raw_mapping])].flatten
-                                                              else
-                                                                raw_metadata[related_children_raw_mapping].split(/\s*[;|]\s*/)
-                                                              end
-    end
-
     def add_collections
       return if find_collection_ids.blank?
 

@@ -55,6 +55,10 @@ module Bulkrax
     end
 
     def build_metadata
+      ActiveSupport::Deprecation.warn(
+        'Creating Collections using the collection_field_mapping will no longer be supported as of version Bulkrax v2.' \
+        ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
+      )
       raise StandardError, 'Record not found' if record.nil?
       raise StandardError, "Missing source identifier (#{source_identifier})" if self.raw_metadata[source_identifier].blank?
 
@@ -69,7 +73,7 @@ module Bulkrax
       add_visibility
       add_rights_statement
       add_admin_set_id
-      add_relationships
+      add_collections
       add_local
       self.parsed_metadata['file'] = self.raw_metadata['file']
 

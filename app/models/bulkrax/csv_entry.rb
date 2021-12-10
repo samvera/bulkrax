@@ -44,7 +44,7 @@ module Bulkrax
       add_visibility
       add_ingested_metadata
       add_rights_statement
-      add_relationships
+      add_collections
       add_local
 
       self.parsed_metadata
