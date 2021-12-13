@@ -53,6 +53,76 @@ module Bulkrax
         end
       end
 
+      context 'with parent-child relationships' do
+        let(:importer) { FactoryBot.create(:bulkrax_importer_csv, :with_relationships_mappings) }
+        let(:required_data) do
+          {
+            'source_identifier' => '1',
+            'title' => 'test'
+          }
+        end
+
+        before do
+          allow_any_instance_of(ObjectFactory).to receive(:run!)
+          allow(subject).to receive(:raw_metadata).and_return(data)
+        end
+
+        context 'with multiple values split by a pipe character' do
+          let(:data) do
+            required_data.merge(
+              {
+                'parents_column' => 'parent_1 | parent_2',
+                'children_column' => 'child_1|child_2'
+              }
+            )
+          end
+
+          it 'succeeds' do
+            metadata = subject.build_metadata
+            expect(metadata['parents']).to include('parent_1', 'parent_2')
+            expect(metadata['children']).to include('child_1', 'child_2')
+          end
+        end
+
+        context 'with enumerated columns appended' do
+          let(:data) do
+            required_data.merge(
+              {
+                'parents_column_1' => 'parent_1',
+                'parents_column_2' => 'parent_2',
+                'children_column_1' => 'child_1',
+                'children_column_2' => 'child_2'
+              }
+            )
+          end
+
+          it 'succeeds' do
+            metadata = subject.build_metadata
+            expect(metadata['parents']).to include('parent_1', 'parent_2')
+            expect(metadata['children']).to include('child_1', 'child_2')
+          end
+        end
+
+        context 'with enumerated columns prepended' do
+          let(:data) do
+            required_data.merge(
+              {
+                '1_parents_column' => 'parent_1',
+                '2_parents_column' => 'parent_2',
+                '1_children_column' => 'child_1',
+                '2_children_column' => 'child_2'
+              }
+            )
+          end
+
+          it 'succeeds' do
+            metadata = subject.build_metadata
+            expect(metadata['parents']).to include('parent_1', 'parent_2')
+            expect(metadata['children']).to include('child_1', 'child_2')
+          end
+        end
+      end
+
       context 'with enumerated columns appended' do
         before do
           allow_any_instance_of(ObjectFactory).to receive(:run!)

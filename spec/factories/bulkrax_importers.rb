@@ -43,6 +43,15 @@ FactoryBot.define do
     parser_fields { { 'import_file_path' => 'spec/fixtures/csv/good.csv' } }
     field_mapping { {} }
     after :create, &:current_run
+
+    trait :with_relationships_mappings do
+      field_mapping do
+        {
+          'parents' => { 'from' => ['parents_column'], related_parents_field_mapping: true },
+          'children' => { 'from' => ['children_column'], related_children_field_mapping: true }
+        }
+      end
+    end
   end
 
   factory :bulkrax_importer_csv_complex, class: 'Bulkrax::Importer' do
