@@ -27,7 +27,7 @@ module Bulkrax
       end
     end
 
-    def add_metadata(node_name, node_content, index = nil)
+    def add_metadata(node_name, node_content, index = nil, position = nil)
       field_to(node_name).each do |name|
         matcher = self.class.matcher(name, mapping[name].symbolize_keys) if mapping[name] # the field matched to a pre parsed value in application_matcher.rb
         object_name = get_object_name(name) || false # the "key" of an object property. e.g. { object_name: { alpha: 'beta' } }
@@ -52,36 +52,40 @@ module Bulkrax
                   single_metadata(node_content)
                 end
 
-        set_parsed_data(object_multiple, object_name, name, index, value)
+        set_parsed_data(object_multiple, object_name, name, index, value, position)
       end
     end
 
-    def set_parsed_data(object_multiple, object_name, name, index, value)
+    def set_parsed_data(object_multiple, object_name, name, index, value, position)
       if object_multiple
         index ||= 0
         parsed_metadata[object_name][index] ||= {}
         parsed_metadata[object_name][index][name] ||= []
         if value.is_a?(Array)
-          parsed_metadata[object_name][index][name] += value
+          if position.present?
+            parsed_metadata[object_name][index][name][position] = value.first
+          else
+            parsed_metadata[object_name][index][name] += value
+          end
+        elsif position.present?
+          parsed_metadata[object_name][index][name][position] = value
         else
           parsed_metadata[object_name][index][name] = value
         end
       elsif object_name
         parsed_metadata[object_name][name] ||= []
-        if value.is_a?(Array)
+        if position.present?
+          parsed_metadata[object_name][index][name][position] = value
+        elsif value.is_a?(Array)
           parsed_metadata[object_name][name] += value
         else
           parsed_metadata[object_name][name] = value
         end
-      else
+      elsif multiple?(name)
         parsed_metadata[name] ||= []
-        if value.is_a?(Array)
-          parsed_metadata[name] += value
-        elsif index.present? # if index is present, the key has multiple values
-          parsed_metadata[name] += [value].flatten
-        else
-          parsed_metadata[name] = value
-        end
+        parsed_metadata[name] += Array.wrap(value).flatten
+      else
+        parsed_metadata[name] = value
       end
     end
 
@@ -153,7 +157,16 @@ module Bulkrax
         'Creating Collections using the collection_field_mapping will no longer be supported as of version Bulkrax v2.' \
         ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
       )
-      return true if %W[file remote_files #{parser.collection_field_mapping}].include?(field)
+      @multiple_bulkrax_fields ||=
+        %W[
+          file
+          remote_files
+          #{parser.collection_field_mapping}
+          #{related_parents_parsed_mapping}
+          #{related_children_parsed_mapping}
+        ]
+
+      return true if @multiple_bulkrax_fields.include?(field)
       return false if field == 'model'
 
       field_supported?(field) && factory_class&.properties&.[](field)&.[]('multiple')
