@@ -27,7 +27,7 @@ module Bulkrax
       end
     end
 
-    def add_metadata(node_name, node_content, index = nil, position = nil)
+    def add_metadata(node_name, node_content, index = nil)
       field_to(node_name).each do |name|
         matcher = self.class.matcher(name, mapping[name].symbolize_keys) if mapping[name] # the field matched to a pre parsed value in application_matcher.rb
         object_name = get_object_name(name) || false # the "key" of an object property. e.g. { object_name: { alpha: 'beta' } }
@@ -52,40 +52,34 @@ module Bulkrax
                   single_metadata(node_content)
                 end
 
-        set_parsed_data(object_multiple, object_name, name, index, value, position)
+        object_name.present? ? set_parsed_object_data(object_multiple, object_name, name, index, value) : set_parsed_data(name, value)
       end
     end
 
-    def set_parsed_data(object_multiple, object_name, name, index, value, position)
+    def set_parsed_data(name, value)
+      return parsed_metadata[name] = value unless multiple?(name)
+
+      parsed_metadata[name] ||= []
+      parsed_metadata[name] += Array.wrap(value).flatten
+    end
+
+    def set_parsed_object_data(object_multiple, object_name, name, index, value)
       if object_multiple
         index ||= 0
         parsed_metadata[object_name][index] ||= {}
         parsed_metadata[object_name][index][name] ||= []
         if value.is_a?(Array)
-          if position.present?
-            parsed_metadata[object_name][index][name][position] = value.first
-          else
-            parsed_metadata[object_name][index][name] += value
-          end
-        elsif position.present?
-          parsed_metadata[object_name][index][name][position] = value
+          parsed_metadata[object_name][index][name] += value
         else
           parsed_metadata[object_name][index][name] = value
         end
-      elsif object_name
+      else
         parsed_metadata[object_name][name] ||= []
-        if position.present?
-          parsed_metadata[object_name][index][name][position] = value
-        elsif value.is_a?(Array)
+        if value.is_a?(Array)
           parsed_metadata[object_name][name] += value
         else
           parsed_metadata[object_name][name] = value
         end
-      elsif multiple?(name)
-        parsed_metadata[name] ||= []
-        parsed_metadata[name] += Array.wrap(value).flatten
-      else
-        parsed_metadata[name] = value
       end
     end
 
