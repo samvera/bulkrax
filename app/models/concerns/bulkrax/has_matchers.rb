@@ -52,11 +52,18 @@ module Bulkrax
                   single_metadata(node_content)
                 end
 
-        set_parsed_data(object_multiple, object_name, name, index, value)
+        object_name.present? ? set_parsed_object_data(object_multiple, object_name, name, index, value) : set_parsed_data(name, value)
       end
     end
 
-    def set_parsed_data(object_multiple, object_name, name, index, value)
+    def set_parsed_data(name, value)
+      return parsed_metadata[name] = value unless multiple?(name)
+
+      parsed_metadata[name] ||= []
+      parsed_metadata[name] += Array.wrap(value).flatten
+    end
+
+    def set_parsed_object_data(object_multiple, object_name, name, index, value)
       if object_multiple
         index ||= 0
         parsed_metadata[object_name][index] ||= {}
@@ -66,21 +73,12 @@ module Bulkrax
         else
           parsed_metadata[object_name][index][name] = value
         end
-      elsif object_name
+      else
         parsed_metadata[object_name][name] ||= []
         if value.is_a?(Array)
           parsed_metadata[object_name][name] += value
         else
           parsed_metadata[object_name][name] = value
-        end
-      else
-        parsed_metadata[name] ||= []
-        if value.is_a?(Array)
-          parsed_metadata[name] += value
-        elsif index.present? # if index is present, the key has multiple values
-          parsed_metadata[name] += [value].flatten
-        else
-          parsed_metadata[name] = value
         end
       end
     end
@@ -153,7 +151,16 @@ module Bulkrax
         'Creating Collections using the collection_field_mapping will no longer be supported as of version Bulkrax v2.' \
         ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
       )
-      return true if %W[file remote_files #{parser.collection_field_mapping}].include?(field)
+      @multiple_bulkrax_fields ||=
+        %W[
+          file
+          remote_files
+          #{parser.collection_field_mapping}
+          #{related_parents_parsed_mapping}
+          #{related_children_parsed_mapping}
+        ]
+
+      return true if @multiple_bulkrax_fields.include?(field)
       return false if field == 'model'
 
       field_supported?(field) && factory_class&.properties&.[](field)&.[]('multiple')

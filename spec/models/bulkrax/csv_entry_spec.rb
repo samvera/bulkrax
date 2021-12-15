@@ -290,7 +290,7 @@ module Bulkrax
         it 'succeeds' do
           metadata = subject.build_metadata
           expect(metadata['multiple_objects'][0]['first_name']).to eq('Fake')
-          expect(metadata['multiple_objects'][0]['last_name']).to eq('')
+          expect(metadata['multiple_objects'][0]['last_name']).to eq(nil)
           expect(metadata['multiple_objects'][0]['position']).to include('Leader', 'Jester', 'Queen')
           expect(metadata['multiple_objects'][0]['language']).to eq('English')
           expect(metadata['multiple_objects'][1]['first_name']).to eq('Judge')

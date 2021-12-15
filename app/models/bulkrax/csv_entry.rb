@@ -68,8 +68,9 @@ module Bulkrax
         'Creating Collections using the collection_field_mapping will no longer be supported as of version Bulkrax v2.' \
         ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
       )
-      record.each do |key, value|
+      record.sort.each do |key, value|
         next if self.parser.collection_field_mapping.to_s == key_without_numbers(key)
+        next if value.blank?
 
         index = key[/\d+/].to_i - 1 if key[/\d+/].to_i != 0
         add_metadata(key_without_numbers(key), value, index)

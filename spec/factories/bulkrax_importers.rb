@@ -47,8 +47,8 @@ FactoryBot.define do
     trait :with_relationships_mappings do
       field_mapping do
         {
-          'parents' => { 'from' => ['parents_column'], related_parents_field_mapping: true },
-          'children' => { 'from' => ['children_column'], related_children_field_mapping: true }
+          'parents' => { 'from' => ['parents_column'], split: /\s*[|]\s*/, related_parents_field_mapping: true },
+          'children' => { 'from' => ['children_column'], split: /\s*[|]\s*/, related_children_field_mapping: true }
         }
       end
     end
