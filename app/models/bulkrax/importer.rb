@@ -134,6 +134,13 @@ module Bulkrax
       status_info(e)
     end
 
+    def import_file_sets
+      self.save if self.new_record? # Object needs to be saved for statuses
+      parser.create_file_sets
+    rescue StandardError => e
+      status_info(e)
+    end
+
     # Prepend the base_url to ensure unique set identifiers
     # @todo - move to parser, as this is OAI specific
     def unique_collection_identifier(id)

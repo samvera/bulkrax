@@ -20,6 +20,7 @@ module Bulkrax
 
       importer.import_collections
       importer.import_works
+      importer.import_file_sets
     end
 
     def unzip_imported_file(parser)

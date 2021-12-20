@@ -114,6 +114,10 @@ module Bulkrax
       raise StandardError, 'must be defined' if importer?
     end
 
+    def create_file_sets
+      raise StandardError, 'must be defined' if importer?
+    end
+
     # Optional, define if using browse everything for file upload
     def retrieve_cloud_files(files); end
 
