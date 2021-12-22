@@ -32,6 +32,7 @@ module Bulkrax
     def update_current_run_counters(importer)
       importer.current_run.total_work_entries = importer.limit || importer.parser.works_total
       importer.current_run.total_collection_entries = importer.parser.collections_total
+      importer.current_run.total_file_set_entries = importer.parser.file_sets_total
       importer.current_run.save!
     end
 

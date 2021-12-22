@@ -38,7 +38,7 @@ module Bulkrax
     end
 
     def works
-      records - collections
+      records - collections - file_sets
     end
 
     def works_total
@@ -53,6 +53,10 @@ module Bulkrax
         end
         file_sets
       end.flatten.compact.uniq
+    end
+
+    def file_sets_total
+      file_sets.size
     end
 
     # We could use CsvEntry#fields_from_data(data) but that would mean re-reading the data
@@ -88,7 +92,7 @@ module Bulkrax
         new_entry = find_or_create_entry(collection_entry_class, unique_collection_identifier(collection), 'Bulkrax::Importer', collection.to_h)
         # TODO: add support for :delete option
         ImportCollectionJob.perform_now(new_entry.id, current_run.id)
-        increment_counters(index, true)
+        increment_counters(index, collection: true)
       end
       importer.record_status
     rescue StandardError => e
@@ -121,7 +125,7 @@ module Bulkrax
 
         new_entry = find_or_create_entry(file_set_entry_class, file_set[source_identifier], 'Bulkrax::Importer', file_set.to_h)
         ImportFileSetJob.perform_now(new_entry.id, current_run.id)
-        increment_counters(index, true)
+        increment_counters(index, file_set: true)
       end
       importer.record_status
     rescue StandardError => e
