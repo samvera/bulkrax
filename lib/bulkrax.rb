@@ -35,7 +35,7 @@ module Bulkrax
     self.removed_image_path = Bulkrax::Engine.root.join('spec', 'fixtures', 'removed.png').to_s
     self.server_name = 'bulkrax@example.com'
 
-    # NOTE: Creating Collections using the collection_field_mapping will no longer be supported as of version Bulkrax v2.
+    # NOTE: Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.
     #       Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.
     # TODO: remove collection_field_mapping when releasing v2
     # Field_mapping for establishing a collection relationship (FROM work TO collection)

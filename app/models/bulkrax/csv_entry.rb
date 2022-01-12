@@ -21,7 +21,7 @@ module Bulkrax
 
     def self.data_for_entry(data, _source_id)
       ActiveSupport::Deprecation.warn(
-        'Creating Collections using the collection_field_mapping will no longer be supported as of version Bulkrax v2.' \
+        'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \
         ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
       )
       # If a multi-line CSV data is passed, grab the first row
@@ -65,7 +65,7 @@ module Bulkrax
 
     def add_ingested_metadata
       ActiveSupport::Deprecation.warn(
-        'Creating Collections using the collection_field_mapping will no longer be supported as of version Bulkrax v2.' \
+        'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \
         ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
       )
       record.sort.each do |key, value|
@@ -218,7 +218,7 @@ module Bulkrax
 
     def possible_collection_ids
       ActiveSupport::Deprecation.warn(
-        'Creating Collections using the collection_field_mapping will no longer be supported as of version Bulkrax v2.' \
+        'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \
         ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
       )
       @possible_collection_ids ||= record.inject([]) do |memo, (key, value)|
