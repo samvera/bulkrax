@@ -17,6 +17,8 @@ module Bulkrax
   # NOTE: In the context of this job, "identifier" is used to generically refer
   #       to either a record's ID or an Bulkrax::Entry's source_identifier.
   class CreateRelationshipsJob < ApplicationJob
+    include DynamicRecordLookup
+
     queue_as :import
 
     attr_accessor :base_entry, :child_record, :parent_record, :importer_run
@@ -72,39 +74,6 @@ module Bulkrax
       else
         work_parent_work_child
       end
-    end
-
-    # This method allows us to create relationships with preexisting records (by their ID) OR
-    # with records that are concurrently being imported (by their Bulkrax::Entry source_identifier).
-    #
-    # @param identifier [String] Work/Collection ID or Bulkrax::Entry source_identifier
-    # @return [Work, Collection, nil] Work or Collection if found, otherwise nil
-    def find_record(identifier)
-      record = Entry.find_by(identifier: identifier)
-      record ||= ::Collection.where(id: identifier).first
-      if record.blank?
-        available_work_types.each do |work_type|
-          record ||= work_type.where(id: identifier).first
-        end
-      end
-      record = record.factory.find if record.is_a?(Entry)
-
-      record
-    end
-
-    # Check if the record is a Work
-    def curation_concern?(record)
-      available_work_types.include?(record.class)
-    end
-
-    # @return [Array<Class>] list of work type classes
-    def available_work_types
-      # If running in a Hyku app, do not reference disabled work types
-      @available_work_types ||= if defined?(::Hyku)
-                                  ::Site.instance.available_works.map(&:constantize)
-                                else
-                                  ::Hyrax.config.curation_concerns
-                                end
     end
 
     def user

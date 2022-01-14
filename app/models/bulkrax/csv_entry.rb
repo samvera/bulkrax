@@ -57,6 +57,8 @@ module Bulkrax
     def add_metadata_for_model
       if factory_class == Collection
         add_collection_type_gid
+      elsif factory_class == FileSet
+        add_path_to_file
       else
         add_file unless importerexporter.metadata_only?
         add_admin_set_id
