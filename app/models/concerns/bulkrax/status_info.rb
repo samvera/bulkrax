@@ -33,13 +33,13 @@ module Bulkrax
       current_status&.created_at
     end
 
-    def status_info(e = nil)
+    def status_info(e = nil, current_run = nil)
       if e.nil?
-        self.statuses.create!(status_message: 'Complete', runnable: last_run)
+        self.statuses.create!(status_message: 'Complete', runnable: current_run || last_run)
       elsif e.is_a?(String)
-        self.statuses.create!(status_message: e, runnable: last_run)
+        self.statuses.create!(status_message: e, runnable: current_run || last_run)
       else
-        self.statuses.create!(status_message: 'Failed', runnable: last_run, error_class: e.class.to_s, error_message: e.message, error_backtrace: e.backtrace)
+        self.statuses.create!(status_message: 'Failed', runnable: current_run || last_run, error_class: e.class.to_s, error_message: e.message, error_backtrace: e.backtrace)
       end
     end
 
