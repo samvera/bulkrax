@@ -11,9 +11,9 @@ module Bulkrax
         unless self.importerexporter.validate_only
           raise CollectionsCreatedError unless collections_created?
           @item = factory.run!
+          parent_jobs if self.parsed_metadata[related_parents_parsed_mapping].present?
+          child_jobs if self.parsed_metadata[related_children_parsed_mapping].present?
         end
-        parent_jobs if self.parsed_metadata[related_parents_parsed_mapping].present?
-        child_jobs if self.parsed_metadata[related_children_parsed_mapping].present?
       rescue RSolr::Error::Http, CollectionsCreatedError => e
         raise e
       rescue StandardError => e
