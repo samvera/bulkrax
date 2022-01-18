@@ -8,9 +8,19 @@ module Bulkrax
 
     def add_path_to_file
       parsed_metadata['file'].each_with_index do |filename, i|
-        path_to_file = File.join(parser.path_to_files, filename)
+        path_to_file = ::File.join(parser.path_to_files, filename)
+
         parsed_metadata['file'][i] = path_to_file
       end
+      raise ::StandardError, 'one or more files are invalid' unless parsed_metadata['file'].map { |file_path| ::File.file?(file_path) }.all?
+
+      parsed_metadata['file']
+    end
+
+    def validate_presence_of_parent!
+      return if parsed_metadata[related_parents_parsed_mapping]&.map(&:present?)&.any?
+
+      raise StandardError, 'File set must be related to at least one work'
     end
   end
 end

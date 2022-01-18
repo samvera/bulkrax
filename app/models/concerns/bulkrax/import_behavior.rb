@@ -26,12 +26,16 @@ module Bulkrax
 
     def parent_jobs
       self.parsed_metadata[related_parents_parsed_mapping].each do |parent_identifier|
+        next if parent_identifier.blank?
+
         CreateRelationshipsJob.perform_later(entry_identifier: self.identifier, parent_identifier: parent_identifier, importer_run: self.last_run)
       end
     end
 
     def child_jobs
       self.parsed_metadata[related_children_parsed_mapping].each do |child_identifier|
+        next if child_identifier.blank?
+
         CreateRelationshipsJob.perform_later(entry_identifier: self.identifier, child_identifier: child_identifier, importer_run: self.last_run)
       end
     end

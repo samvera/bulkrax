@@ -124,7 +124,7 @@ module Bulkrax
         break if limit_reached?(limit, records.find_index(file_set))
 
         new_entry = find_or_create_entry(file_set_entry_class, file_set[source_identifier], 'Bulkrax::Importer', file_set.to_h)
-        ImportFileSetJob.perform_now(new_entry.id, current_run.id)
+        ImportFileSetJob.perform_later(new_entry.id, current_run.id)
         increment_counters(index, file_set: true)
       end
       importer.record_status
