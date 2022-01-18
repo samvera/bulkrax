@@ -12,7 +12,7 @@ module Bulkrax
     # rubocop:disable Metrics/ParameterLists
     def initialize(attributes:, source_identifier_value:, work_identifier:, collection_field_mapping:, related_parents_parsed_mapping: nil, replace_files: false, user: nil, klass: nil, update_files: false)
       ActiveSupport::Deprecation.warn(
-        'Creating Collections using the collection_field_mapping will no longer be supported as of version Bulkrax v2.' \
+        'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \
         ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
       )
       @attributes = ActiveSupport::HashWithIndifferentAccess.new(attributes)
@@ -143,7 +143,7 @@ module Bulkrax
 
     def create_collection(attrs)
       ActiveSupport::Deprecation.warn(
-        'Creating Collections using the collection_field_mapping will no longer be supported as of version Bulkrax v2.' \
+        'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \
         ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
       )
       attrs = collection_type(attrs)
@@ -156,7 +156,7 @@ module Bulkrax
 
     def update_collection(attrs)
       ActiveSupport::Deprecation.warn(
-        'Creating Collections using the collection_field_mapping will no longer be supported as of version Bulkrax v2.' \
+        'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \
         ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
       )
       persist_collection_memberships(parent: object, child: find_collection(attributes[:child_collection_id])) if attributes[:child_collection_id].present?
@@ -222,7 +222,7 @@ module Bulkrax
     def create_attributes
       return transform_attributes if klass == Collection
       ActiveSupport::Deprecation.warn(
-        'Creating Collections using the collection_field_mapping will no longer be supported as of version Bulkrax v2.' \
+        'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \
         ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
       )
       transform_attributes.except(:collections, :collection, collection_field_mapping)
@@ -233,7 +233,7 @@ module Bulkrax
     def attribute_update
       return transform_attributes.except(:id) if klass == Collection
       ActiveSupport::Deprecation.warn(
-        'Creating Collections using the collection_field_mapping will no longer be supported as of version Bulkrax v2.' \
+        'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \
         ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
       )
       transform_attributes.except(:id, :collections, :collection, collection_field_mapping)

@@ -72,7 +72,7 @@ module Bulkrax
 
     def self.collection_field
       ActiveSupport::Deprecation.warn(
-        'Creating Collections using the collection_field_mapping will no longer be supported as of version Bulkrax v2.' \
+        'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \
         ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
       )
       Bulkrax.collection_field_mapping[self.to_s]
