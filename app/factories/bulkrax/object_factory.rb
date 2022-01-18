@@ -57,10 +57,9 @@ module Bulkrax
       destroy_existing_files if @replace_files && ![Collection, FileSet].include?(klass)
       attrs = attribute_update
       run_callbacks :save do
-        case klass
-        when Collection
+        if klass == Collection
           update_collection(attrs)
-        when FileSet
+        elsif klass == FileSet
           update_file_set(attrs)
         else
           work_actor.update(environment(attrs))
@@ -103,10 +102,9 @@ module Bulkrax
       object.reindex_extent = Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX if object.respond_to?(:reindex_extent)
       run_callbacks :save do
         run_callbacks :create do
-          case klass
-          when Collection
+          if klass == Collection
             create_collection(attrs)
-          when FileSet
+          elsif klass == FileSet
             create_file_set(attrs)
           else
             work_actor.create(environment(attrs))
@@ -167,23 +165,27 @@ module Bulkrax
       object.save!
     end
 
+    # This method is heavily inspired by Hyrax's AttachFilesToWorkJob
     def create_file_set(attrs)
+      # TODO: raise these errors sooner? during validation step?
+      raise StandardError, 'File set must be related to at least one work' if attributes[related_parents_parsed_mapping]&.count&.zero?
+      raise StandardError, 'Only one file is allowed per file set' if with_files && attrs['uploaded_files'].count != 1
+      uploaded_file = ::Hyrax::UploadedFile.find(attrs['uploaded_files'].first)
+      return if uploaded_file.file_set_uri.present?
+
+      work = find_record(attributes[related_parents_parsed_mapping].first)
+      work_permissions = work.permissions.map(&:to_hash)
       file_set_attrs = attrs.slice(*object.attributes.keys)
       object.assign_attributes(file_set_attrs)
-      object.save # TODO: necessary?
-      attrs['uploaded_files'].each do |uploaded_file_id|
-        uploaded_file = ::Hyrax::UploadedFile.find(uploaded_file_id)
-        next if uploaded_file.file_set_uri.present? # TODO: necessary?
 
-        actor = ::Hyrax::Actors::FileSetActor.new(object, @user)
-        uploaded_file.update(file_set_uri: actor.file_set.uri)
-        # actor.file_set.permissions_attributes = work_permissions
-        actor.create_metadata
-        actor.create_content(uploaded_file)
-        work = find_record(attributes[related_parents_parsed_mapping].first)
-        actor.attach_to_work(work)
-      end
-      object.save! # TODO: necessary?
+      actor = ::Hyrax::Actors::FileSetActor.new(object, @user)
+      uploaded_file.update(file_set_uri: actor.file_set.uri)
+      actor.file_set.permissions_attributes = work_permissions
+      actor.create_metadata
+      actor.create_content(uploaded_file)
+      actor.attach_to_work(work)
+
+      object.save!
     end
 
     def update_file_set(attrs)
