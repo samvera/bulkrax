@@ -188,7 +188,10 @@ module Bulkrax
     end
 
     def update_file_set(attrs)
-      raise StandardError, 'needs to be implemented'
+      file_set_attrs = attrs.slice(*object.attributes.keys)
+      actor = ::Hyrax::Actors::FileSetActor.new(object, @user)
+
+      actor.update_metadata(file_set_attrs)
     end
 
     # Add child to parent's #member_collections
