@@ -30,7 +30,6 @@ module Bulkrax
       ImporterRun.find(args[1]).decrement!(:enqueued_records)
       # rubocop:enable Rails/SkipsModelValidations
       entry.status_info(e)
-      # raise e
     end
   end
 end
