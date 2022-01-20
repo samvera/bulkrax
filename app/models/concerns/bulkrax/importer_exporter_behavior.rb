@@ -30,7 +30,7 @@ module Bulkrax
         # TODO: differentiate between work and collection counts for exporters
         current_run.total_work_entries = index + 1 unless limit.to_i.positive? || parser.total.positive?
       end
-      current_run.enqueued_records = index + 1
+      current_run.enqueued_records += 1
       current_run.save!
     end
 
