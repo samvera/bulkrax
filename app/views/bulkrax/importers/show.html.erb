@@ -56,19 +56,19 @@
 
     <%= render partial: 'bulkrax/shared/bulkrax_field_mapping', locals: {item: @importer} %>
 
-    <p class="bulkrax-p-align">
+    <p class="bulkrax-p-align" title="<%= @importer.last_run&.processed_works %> processed, <%= @importer.last_run&.failed_works %> failed">
       <strong>Total Works:</strong>
-      <%= @importer.importer_runs.last&.total_work_entries %>
+      <%= @importer.last_run&.total_work_entries %>
     </p>
 
-    <p class="bulkrax-p-align">
+    <p class="bulkrax-p-align" title="<%= @importer.last_run&.processed_collections %> processed, <%= @importer.last_run&.failed_collections %> failed">
       <strong>Total Collections:</strong>
-      <%= @importer.importer_runs.last&.total_collection_entries %>
+      <%= @importer.last_run&.total_collection_entries %>
     </p>
 
-    <p class="bulkrax-p-align">
+    <p class="bulkrax-p-align" title="<%= @importer.last_run&.processed_file_sets %> processed, <%= @importer.last_run&.failed_file_sets %> failed">
       <strong>Total File Sets:</strong>
-      <%= @importer.importer_runs.last&.total_file_set_entries %>
+      <%= @importer.last_run&.total_file_set_entries %>
     </p>
 
     <div class="bulkrax-nav-tab-bottom-margin">
