@@ -12,8 +12,8 @@ Gem::Specification.new do |s|
   s.authors     = ["Rob Kaufman"]
   s.email       = ["rob@notch8.com"]
   s.homepage    = "https://github.com/samvera-labs/bulkrax"
-  s.summary     = "Summary of Bulkrax."
-  s.description = "Description of Bulkrax."
+  s.summary     = "Import and export tool for Hyrax and Hyku"
+  s.description = "Bulkrax is a batteries included importer for Samvera applications. It currently includes support for OAI-PMH (DC and Qualified DC) and CSV out of the box. It is also designed to be extensible, allowing you to easily add new importers in to your application or to include them with other gems. Bulkrax provides a full admin interface including creating, editing, scheduling and reviewing imports."
   s.license     = "Apache-2.0"
 
   s.files = Dir["{app,config,db,lib}/**/*", "LICENSE", "Rakefile", "README.md"]
