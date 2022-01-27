@@ -54,6 +54,7 @@ module Bulkrax
       destroy_existing_files if @replace_files && klass != Collection
       attrs = attribute_update
       run_callbacks :save do
+        # binding.pry
         klass == Collection ? update_collection(attrs) : work_actor.update(environment(attrs))
       end
       log_updated(object)
@@ -93,6 +94,7 @@ module Bulkrax
       object.reindex_extent = Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX
       run_callbacks :save do
         run_callbacks :create do
+          # binding.pry
           klass == Collection ? create_collection(attrs) : work_actor.create(environment(attrs))
         end
       end

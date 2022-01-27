@@ -52,6 +52,7 @@ module Bulkrax
                   single_metadata(node_content)
                 end
 
+        # binding.pry if name == 'format'
         object_name.present? ? set_parsed_object_data(object_multiple, object_name, name, index, value) : set_parsed_data(name, value)
       end
     end
@@ -159,6 +160,7 @@ module Bulkrax
           #{related_parents_parsed_mapping}
           #{related_children_parsed_mapping}
         ]
+        binding.pry if field == 'format'
 
       return true if @multiple_bulkrax_fields.include?(field)
       return false if field == 'model'

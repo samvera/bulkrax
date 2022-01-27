@@ -39,7 +39,6 @@ module Bulkrax
       raise StandardError, "Missing required elements, missing element(s) are: #{importerexporter.parser.missing_elements(keys_without_numbers(record.keys)).join(', ')}" unless importerexporter.parser.required_elements?(keys_without_numbers(record.keys))
 
       self.parsed_metadata = {}
-      binding.pry
       add_identifier
       add_metadata_for_model
       add_visibility
@@ -47,32 +46,6 @@ module Bulkrax
       add_rights_statement
       add_collections
       add_local
-      # {
-      #   "identifier"=>["ULUA Cardinal 19261001", "ULUA Cardinal 19261001"],
-      #   "file"=>[],
-      #   "admin_set_id"=>"admin_set/default",
-      #   "visibility"=>"open",
-      #   "collection_information"=>["https://archivescatalog.library.louisville.edu/resources/louisville-cardinal-newspaper"],
-      #   "contributor"=>[""],
-      #   "date_digital"=>"1/28/2019",
-      #   "date_created"=>["10/1/1926"],
-      #   "description"=>
-      #    ["The University of Louisville’s undergraduate newspaper. The title of this publication has varied over the years, but with the exception of the period 1928-1930, when it was known as the U. of L. News, the title has always been a variation of The Cardinal."],
-      #   "digitization_specification"=>"",
-      #   "format"=>["application/pdf"],
-      #   "language"=>["English"],
-      #   "media_type"=>["Text"],
-      #   "model"=>"Text",
-      #   "resource_type"=>["Newspapers"],
-      #   "ordering_information"=>"To inquire about reproductions, permissions, or for information about prices see: https://library.louisville.edu/archives/order. Please cite the Item Number when ordering.",
-      #   "publisher"=>["University of Louisville Archives and Special Collections"],
-      #   "searchable_text"=>"",
-      #   "source"=>["Scanned from microfilm in the Louisville Cardinal newspapers collection. Item Number ULUA Cardinal 19261001"],
-      #   "subject"=>["Newspapers", "College student newspapers and periodicals", "University of Louisville--Students--Periodicals"],
-      #   "title"=>["The Cardinal News, October 1, 1926."],
-      #   "volume"=>"I",
-      #   "rights_statement"=>[""]
-      # }
 
       self.parsed_metadata
     end
