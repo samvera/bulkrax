@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'rails_helper'
+require Rails.root.parent.parent.join('spec', 'models', 'concerns', 'bulkrax', 'dynamic_record_lookup_spec').to_s
 
 module Bulkrax
   RSpec.describe CreateRelationshipsJob, type: :job do
@@ -28,6 +29,10 @@ module Bulkrax
       allow(Entry).to receive(:find_by).with(identifier: parent_entry.identifier).and_return(parent_entry)
       allow(parent_entry).to receive(:factory).and_return(parent_factory)
       allow(child_entry).to receive(:factory).and_return(child_factory)
+    end
+
+    describe 'shared examples' do # TODO: remove or rename
+      include_examples 'dynamic record lookup'
     end
 
     describe '#perform' do
