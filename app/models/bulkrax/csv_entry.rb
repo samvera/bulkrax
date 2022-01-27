@@ -39,6 +39,7 @@ module Bulkrax
       raise StandardError, "Missing required elements, missing element(s) are: #{importerexporter.parser.missing_elements(keys_without_numbers(record.keys)).join(', ')}" unless importerexporter.parser.required_elements?(keys_without_numbers(record.keys))
 
       self.parsed_metadata = {}
+      binding.pry
       add_identifier
       add_metadata_for_model
       add_visibility
@@ -46,6 +47,32 @@ module Bulkrax
       add_rights_statement
       add_collections
       add_local
+      # {
+      #   "identifier"=>["ULUA Cardinal 19261001", "ULUA Cardinal 19261001"],
+      #   "file"=>[],
+      #   "admin_set_id"=>"admin_set/default",
+      #   "visibility"=>"open",
+      #   "collection_information"=>["https://archivescatalog.library.louisville.edu/resources/louisville-cardinal-newspaper"],
+      #   "contributor"=>[""],
+      #   "date_digital"=>"1/28/2019",
+      #   "date_created"=>["10/1/1926"],
+      #   "description"=>
+      #    ["The University of Louisville’s undergraduate newspaper. The title of this publication has varied over the years, but with the exception of the period 1928-1930, when it was known as the U. of L. News, the title has always been a variation of The Cardinal."],
+      #   "digitization_specification"=>"",
+      #   "format"=>["application/pdf"],
+      #   "language"=>["English"],
+      #   "media_type"=>["Text"],
+      #   "model"=>"Text",
+      #   "resource_type"=>["Newspapers"],
+      #   "ordering_information"=>"To inquire about reproductions, permissions, or for information about prices see: https://library.louisville.edu/archives/order. Please cite the Item Number when ordering.",
+      #   "publisher"=>["University of Louisville Archives and Special Collections"],
+      #   "searchable_text"=>"",
+      #   "source"=>["Scanned from microfilm in the Louisville Cardinal newspapers collection. Item Number ULUA Cardinal 19261001"],
+      #   "subject"=>["Newspapers", "College student newspapers and periodicals", "University of Louisville--Students--Periodicals"],
+      #   "title"=>["The Cardinal News, October 1, 1926."],
+      #   "volume"=>"I",
+      #   "rights_statement"=>[""]
+      # }
 
       self.parsed_metadata
     end
@@ -68,7 +95,9 @@ module Bulkrax
         'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \
         ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
       )
-      record.sort.each do |key, value|
+      # we do not want to sort the values in the record before adding the metadata.
+      # if we do, the factory_class will be set to the default_work_type for all values that come before "model" or "work type"
+      record.each do |key, value|
         next if self.parser.collection_field_mapping.to_s == key_without_numbers(key)
 
         index = key[/\d+/].to_i - 1 if key[/\d+/].to_i != 0
