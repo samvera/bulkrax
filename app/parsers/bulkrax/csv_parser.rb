@@ -74,8 +74,22 @@ module Bulkrax
       collections.each_with_index do |collection, index|
         next if collection.blank?
         break if records.find_index(collection).present? && limit_reached?(limit, records.find_index(collection))
+        ActiveSupport::Deprecation.warn(
+          'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \
+          ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
+        )
 
-        new_entry = find_or_create_entry(collection_entry_class, unique_collection_identifier(collection), 'Bulkrax::Importer', collection.to_h)
+        metadata = if collection.key?(:title) && collection.keys.count == 1
+          {
+            title: [collection[:title]],
+            source_identifier: [collection[:title]],
+            visibility: 'open',
+            collection_type_gid: Hyrax::CollectionType.find_or_create_default_collection_type.gid
+          }
+        end
+
+        collection_hash = metadata.present? ? metadata : collection
+        new_entry = find_or_create_entry(collection_entry_class, unique_collection_identifier(collection_hash), 'Bulkrax::Importer', collection_hash)
         # TODO: add support for :delete option
         ImportCollectionJob.perform_now(new_entry.id, current_run.id)
         increment_counters(index, true)
