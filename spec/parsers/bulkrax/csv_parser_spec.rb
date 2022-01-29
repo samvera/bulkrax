@@ -59,7 +59,7 @@ module Bulkrax
         end
 
         context 'is used to import a collection' do
-          it 'a :from_collection_field_mapping key-value pair is added to their data' do
+          it 'a :from_collection_field_mapping key-value pair is added to its data' do
             expect(subject.collections).to include({ title: 'collection mapping', from_collection_field_mapping: true })
           end
         end
