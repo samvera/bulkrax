@@ -8,17 +8,18 @@ module Bulkrax
     let(:importer) { FactoryBot.create(:bulkrax_importer_csv) }
 
     describe '#collections' do
+      let(:all_collection_titles) { subject.collections.collect { |c| c[:title] } }
+
       before do
         importer.parser_fields = { import_file_path: './spec/fixtures/csv/mixed_works_and_collections.csv' }
       end
 
       it 'includes collection titles listed in the :collection column' do
-        expect(subject.collections).to include({ title: "Second Work's Collection" })
+        expect(all_collection_titles).to include("Second Work's Collection")
       end
 
       it 'includes rows whose :model is set to Collection' do
-        expect(subject.collections.collect { |w| w[:title] })
-          .to contain_exactly('Collection 1 Title', 'Collection 2 Title', "Second Work's Collection")
+        expect(all_collection_titles).to include('Collection 1 Title', 'Collection 2 Title')
       end
 
       it 'matches :model column case-insensitively' do
@@ -45,15 +46,21 @@ module Bulkrax
           end
 
           it 'the collection field mapping is used' do
-            expect(subject.collections).to include({ title: 'parent mapping' })
-            expect(subject.collections).not_to include({ title: 'collection mapping' })
+            expect(all_collection_titles).to include('parent mapping')
+            expect(all_collection_titles).not_to include('collection mapping')
           end
         end
 
         context 'is not set' do
           it 'the mapping falls back on :collection' do
-            expect(subject.collections).not_to include({ title: 'parent mapping' })
-            expect(subject.collections).to include({ title: 'collection mapping' })
+            expect(all_collection_titles).not_to include('parent mapping')
+            expect(all_collection_titles).to include('collection mapping')
+          end
+        end
+
+        context 'is used to import a collection' do
+          it 'a :from_collection_field_mapping key-value pair is added to their data' do
+            expect(subject.collections).to include({ title: 'collection mapping', from_collection_field_mapping: true })
           end
         end
       end

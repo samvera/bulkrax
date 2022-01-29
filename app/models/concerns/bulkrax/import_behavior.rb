@@ -11,9 +11,9 @@ module Bulkrax
         unless self.importerexporter.validate_only
           raise CollectionsCreatedError unless collections_created?
           @item = factory.run!
+          parent_jobs if self.parsed_metadata[related_parents_parsed_mapping].present?
+          child_jobs if self.parsed_metadata[related_children_parsed_mapping].present?
         end
-        parent_jobs if self.parsed_metadata[related_parents_parsed_mapping].present?
-        child_jobs if self.parsed_metadata[related_children_parsed_mapping].present?
       rescue RSolr::Error::Http, CollectionsCreatedError => e
         raise e
       rescue StandardError => e
@@ -26,13 +26,17 @@ module Bulkrax
 
     def parent_jobs
       self.parsed_metadata[related_parents_parsed_mapping].each do |parent_identifier|
-        CreateRelationshipsJob.perform_later(entry_identifier: self.identifier, parent_identifier: parent_identifier, importer_run: self.last_run) if parent_identifier.present?
+        next if parent_identifier.blank?
+
+        CreateRelationshipsJob.perform_later(entry_identifier: self.identifier, parent_identifier: parent_identifier, importer_run: self.last_run)
       end
     end
 
     def child_jobs
       self.parsed_metadata[related_children_parsed_mapping].each do |child_identifier|
-        CreateRelationshipsJob.perform_later(entry_identifier: self.identifier, child_identifier: child_identifier, importer_run: self.last_run) if child_identifier.present?
+        next if child_identifier.blank?
+
+        CreateRelationshipsJob.perform_later(entry_identifier: self.identifier, child_identifier: child_identifier, importer_run: self.last_run)
       end
     end
 
