@@ -163,7 +163,7 @@ module Bulkrax
         end
 
         context 'when collection record does not have a source_identifier' do
-          let(:record_hash) { { title: 'no source id | alt title' } }
+          let(:record_hash) { { title: 'no source id | alt title', from_collection_field_mapping: true } }
 
           it "uses the record's first title as the entry's identifier" do
             subject.create_collections
