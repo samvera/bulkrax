@@ -85,7 +85,8 @@ module Bulkrax
         metadata = if collection.delete(:from_collection_field_mapping)
                      {
                        title: [collection[:title]],
-                       work_identifier => [collection[:title]],
+                       work_identifier => unique_collection_identifier(collection),
+                       source_identifier => unique_collection_identifier(collection),
                        visibility: 'open',
                        collection_type_gid: ::Hyrax::CollectionType.find_or_create_default_collection_type.gid
                      }
@@ -93,7 +94,7 @@ module Bulkrax
         collection_hash = metadata.presence || collection
         ## END
 
-        new_entry = find_or_create_entry(collection_entry_class, unique_collection_identifier(collection_hash), 'Bulkrax::Importer', collection_hash)
+        new_entry = find_or_create_entry(collection_entry_class, collection_hash[source_identifier], 'Bulkrax::Importer', collection_hash)
         # TODO: add support for :delete option
         ImportCollectionJob.perform_now(new_entry.id, current_run.id)
         increment_counters(index, true)
@@ -317,14 +318,16 @@ module Bulkrax
     private
 
     def unique_collection_identifier(collection_hash)
-      entry_uid = collection_hash[source_identifier]
-      entry_uid ||= if Bulkrax.fill_in_blank_source_identifiers.present?
-                      Bulkrax.fill_in_blank_source_identifiers.call(self, records.find_index(collection_hash))
-                    else
-                      collection_hash[:title].split(/\s*[;|]\s*/).first
-                    end
+      return @entry_uid if @entry_uid.present?
 
-      entry_uid
+      @entry_uid = collection_hash[source_identifier]
+      @entry_uid ||= if Bulkrax.fill_in_blank_source_identifiers.present?
+                       Bulkrax.fill_in_blank_source_identifiers.call(self, records.find_index(collection_hash))
+                     else
+                       collection_hash[:title].split(/\s*[;|]\s*/).first
+                     end
+
+      @entry_uid
     end
 
     # Override to return the first CSV in the path, if a zip file is supplied
