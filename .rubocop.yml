@@ -23,6 +23,8 @@ inherit_gem:
 # @see https://github.com/rubocop-hq/rubocop/blob/master/manual/configuration.md
 Metrics/BlockLength:
   Max: 495
+  Exclude:
+    - 'spec/**/*'
 
 Metrics/ModuleLength:
   Exclude:

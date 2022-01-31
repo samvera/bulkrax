@@ -25,7 +25,7 @@ module Bulkrax
       # retrieve a list of unique collections
       records.map do |r|
         collections = []
-        r[collection_field_mapping].split(/\s*[;|]\s*/).each { |title| collections << { title: title } } if r[collection_field_mapping].present?
+        r[collection_field_mapping].split(/\s*[;|]\s*/).each { |title| collections << { title: title, from_collection_field_mapping: true } } if r[collection_field_mapping].present?
         model_field_mappings.each do |model_mapping|
           collections << r if r[model_mapping.to_sym]&.downcase == 'collection'
         end
@@ -74,8 +74,28 @@ module Bulkrax
       collections.each_with_index do |collection, index|
         next if collection.blank?
         break if records.find_index(collection).present? && limit_reached?(limit, records.find_index(collection))
+        ActiveSupport::Deprecation.warn(
+          'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \
+          ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
+        )
 
-        new_entry = find_or_create_entry(collection_entry_class, unique_collection_identifier(collection), 'Bulkrax::Importer', collection.to_h)
+        ## BEGIN
+        # Add required metadata to collections being imported using the collection_field_mapping, which only have a :title
+        # TODO: Remove once collection_field_mapping is removed
+        metadata = if collection.delete(:from_collection_field_mapping)
+                     uci = unique_collection_identifier(collection)
+                     {
+                       title: [collection[:title]],
+                       work_identifier => uci,
+                       source_identifier => uci,
+                       visibility: 'open',
+                       collection_type_gid: ::Hyrax::CollectionType.find_or_create_default_collection_type.gid
+                     }
+                   end
+        collection_hash = metadata.presence || collection
+        ## END
+
+        new_entry = find_or_create_entry(collection_entry_class, collection_hash[source_identifier], 'Bulkrax::Importer', collection_hash)
         # TODO: add support for :delete option
         ImportCollectionJob.perform_now(new_entry.id, current_run.id)
         increment_counters(index, true)

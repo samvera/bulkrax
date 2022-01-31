@@ -9,7 +9,7 @@ module Bulkrax
     # Use identifier set by CsvParser#unique_collection_identifier, which falls back
     # on the Collection's first title if record[source_identifier] is not present
     def add_identifier
-      self.parsed_metadata[work_identifier] = self.identifier
+      self.parsed_metadata[work_identifier] = [self.identifier].flatten
     end
 
     def add_collection_type_gid
