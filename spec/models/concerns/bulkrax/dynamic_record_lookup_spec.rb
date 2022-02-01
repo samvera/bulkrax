@@ -97,6 +97,31 @@ module Bulkrax
         end
       end
     end
-    # TODO: add coverage for #curation_concern? and #available_work_types
+
+    describe '#curation_concern?' do
+      context 'when record is a work' do
+        let(:record) { build(:work) }
+
+        it 'returns true' do
+          expect(subject.curation_concern?(record)).to eq(true)
+        end
+      end
+
+      context 'when record is a collection' do
+        let(:record) { build(:collection) }
+
+        it 'returns false' do
+          expect(subject.curation_concern?(record)).to eq(false)
+        end
+      end
+
+      context 'when record is an Entry' do
+        let(:record) { build(:bulkrax_entry) }
+
+        it 'returns false' do
+          expect(subject.curation_concern?(record)).to eq(false)
+        end
+      end
+    end
   end
 end
