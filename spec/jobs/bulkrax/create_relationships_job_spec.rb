@@ -31,7 +31,7 @@ module Bulkrax
       allow(child_entry).to receive(:factory).and_return(child_factory)
     end
 
-    describe 'shared examples' do # TODO: remove or rename
+    describe 'is capable of looking up records dynamically' do
       include_examples 'dynamic record lookup'
     end
 

@@ -4,6 +4,8 @@ require 'rails_helper'
 
 module Bulkrax
   RSpec.shared_examples 'dynamic record lookup' do
+    let(:importer) { FactoryBot.create(:bulkrax_importer_csv_complex) }
+
     before do
       allow(::Hyrax.config).to receive(:curation_concerns).and_return([Work])
       # DRY spec setup -- by default, assume #find_record doesn't find anything

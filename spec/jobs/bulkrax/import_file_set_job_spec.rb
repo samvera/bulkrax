@@ -11,7 +11,7 @@ module Bulkrax
     let(:entry) { create(:bulkrax_csv_entry_file_set, :with_file_set_metadata, importerexporter: importer) }
     let(:factory) { instance_double(ObjectFactory) }
 
-    describe 'shared examples' do # TODO: remove or rename
+    describe 'is capable of looking up records dynamically' do
       include_examples 'dynamic record lookup'
     end
 
