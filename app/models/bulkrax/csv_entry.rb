@@ -71,7 +71,9 @@ module Bulkrax
         'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \
         ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
       )
-      record.sort.each do |key, value|
+      # we do not want to sort the values in the record before adding the metadata.
+      # if we do, the factory_class will be set to the default_work_type for all values that come before "model" or "work type"
+      record.each do |key, value|
         next if self.parser.collection_field_mapping.to_s == key_without_numbers(key)
 
         index = key[/\d+/].to_i - 1 if key[/\d+/].to_i != 0
