@@ -24,6 +24,8 @@ module Bulkrax
       available_work_types.include?(record.class)
     end
 
+    private
+
     # @return [Array<Class>] list of work type classes
     def available_work_types
       # If running in a Hyku app, do not include disabled work types
