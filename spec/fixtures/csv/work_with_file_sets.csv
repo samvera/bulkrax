@@ -1,0 +1,4 @@
+source_identifier,model,parent,title,description
+w1,Work,,Work with two files,Lorem ipsum
+fs1,FileSet,w1,FileSet 1,First
+fs2,FileSet,w1,FileSet 2,Second

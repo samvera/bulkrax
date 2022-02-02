@@ -110,6 +110,17 @@ module Bulkrax
       end
     end
 
+    describe '#file_sets' do
+      before do
+        importer.parser_fields = { import_file_path: './spec/fixtures/csv/work_with_file_sets.csv' }
+      end
+
+      it 'returns all file set records' do
+        expect(subject.file_sets.collect { |fs| fs[:source_identifier] })
+          .to contain_exactly('fs1', 'fs2')
+      end
+    end
+
     describe '#create_collections' do
       context 'when importing collections by title through works' do
         before do
@@ -268,6 +279,22 @@ module Bulkrax
           expect(subject.total).to eq(2)
           expect(subject.collections_total).to eq(2)
         end
+      end
+    end
+
+    describe '#create_file_sets' do
+      before do
+        importer.parser_fields = { import_file_path: './spec/fixtures/csv/work_with_file_sets.csv' }
+      end
+
+      it 'creates CSV file set entries for each collection' do
+        expect { subject.create_file_sets }.to change(CsvFileSetEntry, :count).by(2)
+      end
+
+      it 'runs an ImportFileSetJob for each entry' do
+        expect(ImportFileSetJob).to receive(:perform_later).twice
+
+        subject.create_file_sets
       end
     end
 
