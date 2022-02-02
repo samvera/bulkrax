@@ -49,4 +49,22 @@ FactoryBot.define do
     raw_metadata { {} }
     parsed_metadata { {} }
   end
+
+  factory :bulkrax_csv_entry_file_set, class: 'Bulkrax::CsvFileSetEntry' do
+    identifier { 'file_set_entry_1' }
+    type { 'Bulkrax::CsvFileSetEntry' }
+    importerexporter { FactoryBot.build(:bulkrax_importer) }
+    raw_metadata { {} }
+    parsed_metadata { {} }
+  end
+
+  trait :with_file_set_metadata do
+    raw_metadata do
+      {
+        'title' => 'FileSet Entry',
+        'source_identifier' => 'file_set_entry_1',
+        'file' => 'removed.png'
+      }
+    end
+  end
 end

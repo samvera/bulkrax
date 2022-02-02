@@ -40,9 +40,9 @@ module Bulkrax
 
       self.parsed_metadata = {}
       add_identifier
-      add_metadata_for_model
       add_visibility
       add_ingested_metadata
+      add_metadata_for_model
       add_rights_statement
       add_collections
       add_local
@@ -57,6 +57,9 @@ module Bulkrax
     def add_metadata_for_model
       if factory_class == Collection
         add_collection_type_gid
+      elsif factory_class == FileSet
+        add_path_to_file
+        validate_presence_of_parent!
       else
         add_file unless importerexporter.metadata_only?
         add_admin_set_id
@@ -85,7 +88,11 @@ module Bulkrax
       elsif record['file'].is_a?(Array)
         self.parsed_metadata['file'] = record['file']
       end
-      self.parsed_metadata['file'] = self.parsed_metadata['file'].map { |f| path_to_file(f.tr(' ', '_')) }
+      self.parsed_metadata['file'] = self.parsed_metadata['file'].map do |f|
+        next if f.blank?
+
+        path_to_file(f.tr(' ', '_'))
+      end.compact
     end
 
     def build_export_metadata

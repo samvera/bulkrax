@@ -4,11 +4,13 @@ module Bulkrax
   class ObjectFactory
     extend ActiveModel::Callbacks
     include Bulkrax::FileFactory
+    include DynamicRecordLookup
+
     define_model_callbacks :save, :create
-    attr_reader :attributes, :object, :source_identifier_value, :klass, :replace_files, :update_files, :work_identifier, :collection_field_mapping
+    attr_reader :attributes, :object, :source_identifier_value, :klass, :replace_files, :update_files, :work_identifier, :collection_field_mapping, :related_parents_parsed_mapping
 
     # rubocop:disable Metrics/ParameterLists
-    def initialize(attributes:, source_identifier_value:, work_identifier:, collection_field_mapping:, replace_files: false, user: nil, klass: nil, update_files: false)
+    def initialize(attributes:, source_identifier_value:, work_identifier:, collection_field_mapping:, related_parents_parsed_mapping: nil, replace_files: false, user: nil, klass: nil, update_files: false)
       ActiveSupport::Deprecation.warn(
         'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \
         ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
@@ -19,6 +21,7 @@ module Bulkrax
       @user = user || User.batch_user
       @work_identifier = work_identifier
       @collection_field_mapping = collection_field_mapping
+      @related_parents_parsed_mapping = related_parents_parsed_mapping
       @source_identifier_value = source_identifier_value
       @klass = klass || Bulkrax.default_work_type.constantize
     end
@@ -33,7 +36,7 @@ module Bulkrax
       arg_hash = { id: attributes[:id], name: 'UPDATE', klass: klass }
       @object = find
       if object
-        object.reindex_extent = Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX
+        object.reindex_extent = Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX if object.respond_to?(:reindex_extent)
         ActiveSupport::Notifications.instrument('import.importer', arg_hash) { update }
       else
         ActiveSupport::Notifications.instrument('import.importer', arg_hash.merge(name: 'CREATE')) { create }
@@ -51,10 +54,16 @@ module Bulkrax
 
     def update
       raise "Object doesn't exist" unless object
-      destroy_existing_files if @replace_files && klass != Collection
+      destroy_existing_files if @replace_files && ![Collection, FileSet].include?(klass)
       attrs = attribute_update
       run_callbacks :save do
-        klass == Collection ? update_collection(attrs) : work_actor.update(environment(attrs))
+        if klass == Collection
+          update_collection(attrs)
+        elsif klass == FileSet
+          update_file_set(attrs)
+        else
+          work_actor.update(environment(attrs))
+        end
       end
       log_updated(object)
     end
@@ -90,10 +99,16 @@ module Bulkrax
     def create
       attrs = create_attributes
       @object = klass.new
-      object.reindex_extent = Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX
+      object.reindex_extent = Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX if object.respond_to?(:reindex_extent)
       run_callbacks :save do
         run_callbacks :create do
-          klass == Collection ? create_collection(attrs) : work_actor.create(environment(attrs))
+          if klass == Collection
+            create_collection(attrs)
+          elsif klass == FileSet
+            create_file_set(attrs)
+          else
+            work_actor.create(environment(attrs))
+          end
         end
       end
       log_created(object)
@@ -148,6 +163,35 @@ module Bulkrax
       persist_collection_memberships(parent: find_collection(attributes[collection_field_mapping]), child: object) if attributes[collection_field_mapping].present?
       object.attributes = attrs
       object.save!
+    end
+
+    # This method is heavily inspired by Hyrax's AttachFilesToWorkJob
+    def create_file_set(attrs)
+      work = find_record(attributes[related_parents_parsed_mapping].first)
+      work_permissions = work.permissions.map(&:to_hash)
+      file_set_attrs = attrs.slice(*object.attributes.keys)
+      object.assign_attributes(file_set_attrs)
+
+      attrs['uploaded_files'].each do |uploaded_file_id|
+        uploaded_file = ::Hyrax::UploadedFile.find(uploaded_file_id)
+        next if uploaded_file.file_set_uri.present?
+
+        actor = ::Hyrax::Actors::FileSetActor.new(object, @user)
+        uploaded_file.update(file_set_uri: actor.file_set.uri)
+        actor.file_set.permissions_attributes = work_permissions
+        actor.create_metadata
+        actor.create_content(uploaded_file)
+        actor.attach_to_work(work)
+      end
+
+      object.save!
+    end
+
+    def update_file_set(attrs)
+      file_set_attrs = attrs.slice(*object.attributes.keys)
+      actor = ::Hyrax::Actors::FileSetActor.new(object, @user)
+
+      actor.update_metadata(file_set_attrs)
     end
 
     # Add child to parent's #member_collections

@@ -38,11 +38,25 @@ module Bulkrax
     end
 
     def works
-      records - collections
+      records - collections - file_sets
     end
 
     def works_total
       works.size
+    end
+
+    def file_sets
+      records.map do |r|
+        file_sets = []
+        model_field_mappings.each do |model_mapping|
+          file_sets << r if r[model_mapping.to_sym]&.downcase == 'fileset'
+        end
+        file_sets
+      end.flatten.compact.uniq
+    end
+
+    def file_sets_total
+      file_sets.size
     end
 
     # We could use CsvEntry#fields_from_data(data) but that would mean re-reading the data
@@ -98,7 +112,7 @@ module Bulkrax
         new_entry = find_or_create_entry(collection_entry_class, collection_hash[source_identifier], 'Bulkrax::Importer', collection_hash)
         # TODO: add support for :delete option
         ImportCollectionJob.perform_now(new_entry.id, current_run.id)
-        increment_counters(index, true)
+        increment_counters(index, collection: true)
       end
       importer.record_status
     rescue StandardError => e
@@ -118,6 +132,20 @@ module Bulkrax
           ImportWorkJob.send(perform_method, new_entry.id, current_run.id)
         end
         increment_counters(index)
+      end
+      importer.record_status
+    rescue StandardError => e
+      status_info(e)
+    end
+
+    def create_file_sets
+      file_sets.each_with_index do |file_set, index|
+        next unless record_has_source_identifier(file_set, records.find_index(file_set))
+        break if limit_reached?(limit, records.find_index(file_set))
+
+        new_entry = find_or_create_entry(file_set_entry_class, file_set[source_identifier], 'Bulkrax::Importer', file_set.to_h)
+        ImportFileSetJob.perform_later(new_entry.id, current_run.id)
+        increment_counters(index, file_set: true)
       end
       importer.record_status
     rescue StandardError => e
@@ -197,6 +225,10 @@ module Bulkrax
 
     def collection_entry_class
       CsvCollectionEntry
+    end
+
+    def file_set_entry_class
+      CsvFileSetEntry
     end
 
     # See https://stackoverflow.com/questions/2650517/count-the-number-of-lines-in-a-file-without-reading-entire-file-into-memory

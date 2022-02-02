@@ -99,7 +99,12 @@ module Bulkrax
       @current_run ||= if file? && zip?
                          self.importer_runs.create!
                        else
-                         self.importer_runs.create!(total_work_entries: self.limit || parser.works_total, total_collection_entries: parser.collections_total)
+                         entry_counts = {
+                           total_work_entries: self.limit || parser.works_total,
+                           total_collection_entries: parser.collections_total,
+                           total_file_set_entries: parser.file_sets_total
+                         }
+                         self.importer_runs.create!(entry_counts)
                        end
     end
 
@@ -130,6 +135,13 @@ module Bulkrax
     def import_collections
       self.save if self.new_record? # Object needs to be saved for statuses
       parser.create_collections
+    rescue StandardError => e
+      status_info(e)
+    end
+
+    def import_file_sets
+      self.save if self.new_record? # Object needs to be saved for statuses
+      parser.create_file_sets
     rescue StandardError => e
       status_info(e)
     end

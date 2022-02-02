@@ -59,7 +59,7 @@ module Bulkrax
         }
         new_entry = find_or_create_entry(collection_entry_class, collection, 'Bulkrax::Importer', metadata)
         ImportCollectionJob.perform_now(new_entry.id, current_run.id)
-        increment_counters(index, true)
+        increment_counters(index, collection: true)
       end
     end
 

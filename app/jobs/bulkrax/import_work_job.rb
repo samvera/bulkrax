@@ -10,11 +10,13 @@ module Bulkrax
       entry.build
       if entry.status == "Complete"
         ImporterRun.find(args[1]).increment!(:processed_records)
+        ImporterRun.find(args[1]).increment!(:processed_works)
         ImporterRun.find(args[1]).decrement!(:enqueued_records) unless ImporterRun.find(args[1]).enqueued_records <= 0 # rubocop:disable Style/IdenticalConditionalBranches
       else
         # do not retry here because whatever parse error kept you from creating a work will likely
         # keep preventing you from doing so.
         ImporterRun.find(args[1]).increment!(:failed_records)
+        ImporterRun.find(args[1]).increment!(:failed_works)
         ImporterRun.find(args[1]).decrement!(:enqueued_records) unless ImporterRun.find(args[1]).enqueued_records <= 0 # rubocop:disable Style/IdenticalConditionalBranches
       end
       entry.save!

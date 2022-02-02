@@ -22,6 +22,7 @@ module Bulkrax
       end
       it 'increments :processed_records' do
         expect(importer_run).to receive(:increment!).with(:processed_records)
+        expect(importer_run).to receive(:increment!).with(:processed_works)
         expect(importer_run).to receive(:decrement!).with(:enqueued_records)
         import_work_job.perform(1, importer_run_id)
       end
@@ -48,6 +49,7 @@ module Bulkrax
       end
       it 'increments :failed_records' do
         expect(importer_run).to receive(:increment!).with(:failed_records)
+        expect(importer_run).to receive(:increment!).with(:failed_works)
         expect(importer_run).to receive(:decrement!).with(:enqueued_records)
         import_work_job.perform(1, importer_run_id)
       end
