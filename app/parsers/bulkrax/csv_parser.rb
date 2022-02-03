@@ -99,7 +99,7 @@ module Bulkrax
         metadata = if collection.delete(:from_collection_field_mapping)
                      uci = unique_collection_identifier(collection)
                      {
-                       title: [collection[:title]],
+                       title: collection[:title],
                        work_identifier => uci,
                        source_identifier => uci,
                        visibility: 'open',
