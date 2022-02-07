@@ -176,19 +176,24 @@ module Bulkrax
       output
     end
 
-    def current_work_ids
+    def current_record_ids
+      @work_ids, @collection_ids, @file_set_ids = []
+
       case importerexporter.export_from
       when 'all'
-        ActiveFedora::SolrService.query("has_model_ssim:(#{Hyrax.config.curation_concerns.join(' OR ')}) #{extra_filters}", rows: 2_147_483_647).map(&:id)
+        @work_ids = ActiveFedora::SolrService.query("has_model_ssim:(#{Hyrax.config.curation_concerns.join(' OR ')}) #{extra_filters}", rows: 2_147_483_647).map(&:id)
+        @collection_ids = ActiveFedora::SolrService.query("has_model_ssim:(Collection) #{extra_filters}", rows: 2_147_483_647).map(&:id)
+        @file_set_ids = ActiveFedora::SolrService.query("has_model_ssim:(FileSet) #{extra_filters}", rows: 2_147_483_647).map(&:id)
       when 'collection'
-        ActiveFedora::SolrService.query("member_of_collection_ids_ssim:#{importerexporter.export_source + extra_filters}", rows: 2_000_000_000).map(&:id)
+        @work_ids = ActiveFedora::SolrService.query("member_of_collection_ids_ssim:#{importerexporter.export_source + extra_filters}", rows: 2_000_000_000).map(&:id)
       when 'worktype'
-        ActiveFedora::SolrService.query("has_model_ssim:#{importerexporter.export_source + extra_filters}", rows: 2_000_000_000).map(&:id)
+        @work_ids = ActiveFedora::SolrService.query("has_model_ssim:#{importerexporter.export_source + extra_filters}", rows: 2_000_000_000).map(&:id)
       when 'importer'
-        entry_ids = Bulkrax::Importer.find(importerexporter.export_source).entries.pluck(:id)
-        complete_statuses = Bulkrax::Status.latest_by_statusable
-                                           .includes(:statusable)
-                                           .where('bulkrax_statuses.statusable_id IN (?) AND bulkrax_statuses.statusable_type = ? AND status_message = ?', entry_ids, 'Bulkrax::Entry', 'Complete')
+        # TODO: include collections and file sets
+        entry_ids = Importer.find(importerexporter.export_source).entries.pluck(:id)
+        complete_statuses = Status.latest_by_statusable
+                                  .includes(:statusable)
+                                  .where('bulkrax_statuses.statusable_id IN (?) AND bulkrax_statuses.statusable_type = ? AND status_message = ?', entry_ids, 'Bulkrax::Entry', 'Complete')
 
         complete_entry_identifiers = complete_statuses.map { |s| s.statusable&.identifier&.gsub(':', '\:') }
         extra_filters = extra_filters.presence || '*:*'
@@ -200,17 +205,29 @@ module Bulkrax
           rows: 2_000_000_000
         )['response']['docs'].map { |obj| obj['id'] }
       end
+
+      @work_ids + @collection_ids + @file_set_ids
     end
 
     def create_new_entries
-      current_work_ids.each_with_index do |wid, index|
+      current_record_ids.each_with_index do |id, index|
         break if limit_reached?(limit, index)
-        new_entry = find_or_create_entry(entry_class, wid, 'Bulkrax::Exporter')
+
+        this_entry_class = if @collection_ids.include?(id)
+                             collection_entry_class
+                           elsif @file_set_ids.include?(id)
+                             file_set_entry_class
+                           else
+                             entry_class
+                           end
+        new_entry = find_or_create_entry(this_entry_class, id, 'Bulkrax::Exporter')
+
         begin
-          entry = Bulkrax::ExportWorkJob.perform_now(new_entry.id, current_run.id)
+          entry = ExportWorkJob.perform_now(new_entry.id, current_run.id)
         rescue => e
           Rails.logger.info("#{e.message} was detected during export")
         end
+
         self.headers |= entry.parsed_metadata.keys if entry
       end
     end
@@ -267,7 +284,7 @@ module Bulkrax
 
     def write_files
       CSV.open(setup_export_file, "w", headers: export_headers, write_headers: true) do |csv|
-        importerexporter.entries.where(identifier: current_work_ids)[0..limit || total].each do |e|
+        importerexporter.entries.where(identifier: current_record_ids)[0..limit || total].each do |e|
           csv << e.parsed_metadata
         end
       end
