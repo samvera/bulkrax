@@ -189,24 +189,34 @@ module Bulkrax
       when 'worktype'
         @work_ids = ActiveFedora::SolrService.query("has_model_ssim:#{importerexporter.export_source + extra_filters}", rows: 2_000_000_000).map(&:id)
       when 'importer'
-        # TODO: include collections and file sets
-        entry_ids = Importer.find(importerexporter.export_source).entries.pluck(:id)
-        complete_statuses = Status.latest_by_statusable
-                                  .includes(:statusable)
-                                  .where('bulkrax_statuses.statusable_id IN (?) AND bulkrax_statuses.statusable_type = ? AND status_message = ?', entry_ids, 'Bulkrax::Entry', 'Complete')
-
-        complete_entry_identifiers = complete_statuses.map { |s| s.statusable&.identifier&.gsub(':', '\:') }
-        extra_filters = extra_filters.presence || '*:*'
-
-        ActiveFedora::SolrService.get(
-          extra_filters.to_s,
-          fq: "#{work_identifier}_sim:(#{complete_entry_identifiers.join(' OR ')})",
-          fl: 'id',
-          rows: 2_000_000_000
-        )['response']['docs'].map { |obj| obj['id'] }
+        set_ids_for_exporting_from_importer
       end
 
       @work_ids + @collection_ids + @file_set_ids
+    end
+
+    # Set the following instance variables: @work_ids, @collection_ids, @file_set_ids
+    # @see #current_record_ids
+    def set_ids_for_exporting_from_importer
+      entry_ids = Importer.find(importerexporter.export_source).entries.pluck(:id)
+      complete_statuses = Status.latest_by_statusable
+                                .includes(:statusable)
+                                .where('bulkrax_statuses.statusable_id IN (?) AND bulkrax_statuses.statusable_type = ? AND status_message = ?', entry_ids, 'Bulkrax::Entry', 'Complete')
+
+      complete_entry_identifiers = complete_statuses.map { |s| s.statusable&.identifier&.gsub(':', '\:') }
+      extra_filters = extra_filters.presence || '*:*'
+
+      { '@work_ids' => ::Hyrax.config.curation_concerns, '@collection_ids' => [::Collection], '@file_set_ids' => [::FileSet] }.each do |instance_var, models_to_search|
+        instance_variable_set(instance_var.to_sym, ActiveFedora::SolrService.get(
+          extra_filters.to_s,
+          fq: [
+            "#{work_identifier}_sim:(#{complete_entry_identifiers.join(' OR ')})",
+            "has_model_ssim:(#{models_to_search.join(' OR ')})"
+          ],
+          fl: 'id',
+          rows: 2_000_000_000
+        )['response']['docs'].map { |obj| obj['id'] })
+      end
     end
 
     def create_new_entries
