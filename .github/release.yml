@@ -17,7 +17,7 @@ changelog:
         - bug-fix
     - title: Database Changes
       labels:
-        - database_changes
+        - database-changes
     - title: Other Changes
       labels:
         - "*"
