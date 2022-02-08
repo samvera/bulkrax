@@ -420,6 +420,16 @@ module Bulkrax
 
           parser.create_new_entries
         end
+
+        it 'exported entries are given the correct class' do
+          expect { parser.create_new_entries }
+            .to change(CsvFileSetEntry, :count)
+            .by(3)
+            .and change(CsvCollectionEntry, :count)
+            .by(1)
+            .and change(CsvEntry, :count)
+            .by(6) # 6 csv entries minus 3 file set entries minus 1 collection entry equals 2 work entries
+        end
       end
     end
 
