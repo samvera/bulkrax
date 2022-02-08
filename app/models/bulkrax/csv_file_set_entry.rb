@@ -12,7 +12,7 @@ module Bulkrax
 
         parsed_metadata['file'][i] = path_to_file
       end
-      raise ::StandardError, 'one or more file paths are invalid' unless parsed_metadata['file'].map { |file_path| ::File.file?(file_path) }.all?
+      raise ::StandardError, "one or more file paths are invalid: #{parsed_metadata['file'].join(', ')}" unless parsed_metadata['file'].map { |file_path| ::File.file?(file_path) }.all?
 
       parsed_metadata['file']
     end
