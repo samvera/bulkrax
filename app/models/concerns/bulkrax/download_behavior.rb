@@ -30,7 +30,7 @@ module Bulkrax
 
     # Create some headers for the datastream
     def content_options
-      { disposition: 'inline', type: download_content_type, filename: file_name }
+      { disposition: 'attachment', type: download_content_type, filename: file_name }
     end
 
     # render an HTTP HEAD response
