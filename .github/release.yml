@@ -15,6 +15,9 @@ changelog:
       labels:
         - patch-ver
         - bug-fix
+    - title: Database Changes
+      labels:
+        - database_changes
     - title: Other Changes
       labels:
         - "*"
