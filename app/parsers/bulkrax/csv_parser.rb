@@ -208,8 +208,8 @@ module Bulkrax
       complete_entry_identifiers = complete_statuses.map { |s| s.statusable&.identifier&.gsub(':', '\:') }
       extra_filters = extra_filters.presence || '*:*'
 
-      { '@work_ids' => ::Hyrax.config.curation_concerns, '@collection_ids' => [::Collection], '@file_set_ids' => [::FileSet] }.each do |instance_var, models_to_search|
-        instance_variable_set(instance_var.to_sym, ActiveFedora::SolrService.get(
+      { :@work_ids => ::Hyrax.config.curation_concerns, :@collection_ids => [::Collection], :@file_set_ids => [::FileSet] }.each do |instance_var, models_to_search|
+        instance_variable_set(instance_var, ActiveFedora::SolrService.get(
           extra_filters.to_s,
           fq: [
             "#{work_identifier}_sim:(#{complete_entry_identifiers.join(' OR ')})",
