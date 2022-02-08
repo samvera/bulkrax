@@ -350,11 +350,13 @@ module Bulkrax
     describe '#create_new_entries' do
       subject(:parser) { described_class.new(exporter) }
       let(:exporter)   { FactoryBot.create(:bulkrax_exporter_worktype) }
+      # Use OpenStructs to simulate the behavior of ActiveFedora::SolrHit instances.
+      let(:work_ids_solr) { [OpenStruct.new(id: SecureRandom.alphanumeric(9)), OpenStruct.new(id: SecureRandom.alphanumeric(9))] }
+      let(:collection_ids_solr) { [OpenStruct.new(id: SecureRandom.alphanumeric(9))] }
+      let(:file_set_ids_solr) { [OpenStruct.new(id: SecureRandom.alphanumeric(9)), OpenStruct.new(id: SecureRandom.alphanumeric(9)), OpenStruct.new(id: SecureRandom.alphanumeric(9))] }
 
       it 'invokes Bulkrax::ExportWorkJob once per Entry' do
-        # Use OpenStructs to simulate the behavior of ActiveFedora::SolrHit instances.
-        work_ids = [OpenStruct.new(id: SecureRandom.alphanumeric(9)), OpenStruct.new(id: SecureRandom.alphanumeric(9))]
-        expect(ActiveFedora::SolrService).to receive(:query).and_return(work_ids)
+        expect(ActiveFedora::SolrService).to receive(:query).and_return(work_ids_solr)
         expect(Bulkrax::ExportWorkJob).to receive(:perform_now).exactly(2).times
         parser.create_new_entries
       end
@@ -363,9 +365,7 @@ module Bulkrax
         let(:exporter) { FactoryBot.create(:bulkrax_exporter_worktype, limit: 1) }
 
         it 'invokes Bulkrax::ExportWorkJob once' do
-          # Use OpenStructs to simulate the behavior of ActiveFedora::SolrHit instances.
-          work_ids = [OpenStruct.new(id: SecureRandom.alphanumeric(9)), OpenStruct.new(id: SecureRandom.alphanumeric(9))]
-          expect(ActiveFedora::SolrService).to receive(:query).and_return(work_ids)
+          expect(ActiveFedora::SolrService).to receive(:query).and_return(work_ids_solr)
           expect(Bulkrax::ExportWorkJob).to receive(:perform_now).exactly(1).times
           parser.create_new_entries
         end
@@ -375,11 +375,60 @@ module Bulkrax
         let(:exporter) { FactoryBot.create(:bulkrax_exporter_worktype, limit: 0) }
 
         it 'invokes Bulkrax::ExportWorkJob once per Entry' do
-          # Use OpenStructs to simulate the behavior of ActiveFedora::SolrHit instances.
-          work_ids = [OpenStruct.new(id: SecureRandom.alphanumeric(9)), OpenStruct.new(id: SecureRandom.alphanumeric(9))]
-          expect(ActiveFedora::SolrService).to receive(:query).and_return(work_ids)
+          expect(ActiveFedora::SolrService).to receive(:query).and_return(work_ids_solr)
           expect(Bulkrax::ExportWorkJob).to receive(:perform_now).exactly(2).times
           parser.create_new_entries
+        end
+      end
+
+      context 'when exporting all' do
+        let(:exporter) { FactoryBot.create(:bulkrax_exporter, :all) }
+
+        before do
+          allow(ActiveFedora::SolrService).to receive(:query).and_return(work_ids_solr, collection_ids_solr, file_set_ids_solr)
+        end
+
+        it 'exports works, collections, and file sets' do
+          expect(ExportWorkJob).to receive(:perform_now).exactly(6).times
+
+          parser.create_new_entries
+        end
+
+        it 'exports all works' do
+          work_entry_ids = Entry.where(identifier: work_ids_solr.map(&:id)).map(&:id)
+          work_entry_ids.each do |id|
+            expect(ExportWorkJob).to receive(:perform_now).with(id, exporter.last_run.id).once
+          end
+
+          parser.create_new_entries
+        end
+
+        it 'exports all collections' do
+          collection_entry_ids = Entry.where(identifier: collection_ids_solr.map(&:id)).map(&:id)
+          collection_entry_ids.each do |id|
+            expect(ExportWorkJob).to receive(:perform_now).with(id, exporter.last_run.id).once
+          end
+
+          parser.create_new_entries
+        end
+
+        it 'exports all file sets' do
+          file_set_entry_ids = Entry.where(identifier: file_set_ids_solr.map(&:id)).map(&:id)
+          file_set_entry_ids.each do |id|
+            expect(ExportWorkJob).to receive(:perform_now).with(id, exporter.last_run.id).once
+          end
+
+          parser.create_new_entries
+        end
+
+        it 'exported entries are given the correct class' do
+          expect { parser.create_new_entries }
+            .to change(CsvFileSetEntry, :count)
+            .by(3)
+            .and change(CsvCollectionEntry, :count)
+            .by(1)
+            .and change(CsvEntry, :count)
+            .by(6) # 6 csv entries minus 3 file set entries minus 1 collection entry equals 2 work entries
         end
       end
     end

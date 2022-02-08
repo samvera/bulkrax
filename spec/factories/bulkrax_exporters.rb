@@ -33,4 +33,11 @@ FactoryBot.define do
     limit { 0 }
     field_mapping { nil }
   end
+
+  trait :all do
+    name { 'Export from All' }
+    export_type { 'metadata' }
+    export_from { 'all' }
+    export_source { nil }
+  end
 end
