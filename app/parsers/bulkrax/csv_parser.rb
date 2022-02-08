@@ -177,13 +177,15 @@ module Bulkrax
     end
 
     def current_record_ids
-      @work_ids, @collection_ids, @file_set_ids = []
+      @work_ids = []
+      @collection_ids = []
+      @file_set_ids = []
 
       case importerexporter.export_from
       when 'all'
         @work_ids = ActiveFedora::SolrService.query("has_model_ssim:(#{Hyrax.config.curation_concerns.join(' OR ')}) #{extra_filters}", rows: 2_147_483_647).map(&:id)
-        @collection_ids = ActiveFedora::SolrService.query("has_model_ssim:(Collection) #{extra_filters}", rows: 2_147_483_647).map(&:id)
-        @file_set_ids = ActiveFedora::SolrService.query("has_model_ssim:(FileSet) #{extra_filters}", rows: 2_147_483_647).map(&:id)
+        @collection_ids = ActiveFedora::SolrService.query("has_model_ssim:Collection #{extra_filters}", rows: 2_147_483_647).map(&:id)
+        @file_set_ids = ActiveFedora::SolrService.query("has_model_ssim:FileSet #{extra_filters}", rows: 2_147_483_647).map(&:id)
       when 'collection'
         @work_ids = ActiveFedora::SolrService.query("member_of_collection_ids_ssim:#{importerexporter.export_source + extra_filters}", rows: 2_000_000_000).map(&:id)
       when 'worktype'
