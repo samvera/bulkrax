@@ -110,8 +110,8 @@ module Bulkrax
         ## END
 
         new_entry = find_or_create_entry(collection_entry_class, collection_hash[source_identifier], 'Bulkrax::Importer', collection_hash)
-        # TODO: add support for :delete option
         increment_counters(index, collection: true)
+        # TODO: add support for :delete option
         ImportCollectionJob.perform_now(new_entry.id, current_run.id)
       end
       importer.record_status
