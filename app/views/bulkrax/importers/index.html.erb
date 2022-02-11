@@ -1,3 +1,8 @@
+
+<% content_for(:head) do %>
+  <meta name="turbolinks-cache-control" content="no-cache">
+<% end%>
+
 <% provide :page_header do %>
   <h1><span class="fa fa-cloud-upload" aria-hidden="true"></span> Importers</h1>
   <div class="pull-right">
@@ -6,10 +11,6 @@
     <% end %>
   </div>
 <% end %>
-
-<% content_for(:head) do %>
-  <meta name="turbolinks-cache-control" content="no-cache">
-<% end%>
 
 <div class="panel panel-default">
   <div class="panel-body">
