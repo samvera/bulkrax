@@ -7,6 +7,10 @@
   </div>
 <% end %>
 
+<% content_for(:head) do %>
+  <meta name="turbolinks-cache-control" content="no-cache">
+<% end%>
+
 <div class="panel panel-default">
   <div class="panel-body">
     <% if @importers.present? %>
