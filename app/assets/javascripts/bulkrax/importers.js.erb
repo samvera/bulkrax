@@ -49,7 +49,7 @@ function prepBulkrax(event) {
       for(var mutation of mutationsList) {
         if (mutation.type == 'childList') {
           browseButton = document.getElementById('browse');
-          var exp = /selected_files\[[0-9*]\]\[url\]/
+          var exp = /selected_files\[[0-9]*\]\[url\]/
           for (var node of mutation.addedNodes) {
             if (node.attributes != undefined) {
               var name = node.attributes.name.value
