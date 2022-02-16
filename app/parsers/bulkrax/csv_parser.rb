@@ -85,7 +85,7 @@ module Bulkrax
     end
 
     def create_collections
-      collections.each_with_index do |collection, index|
+      collections.each_with_index do |collection|
         next if collection.blank?
         break if records.find_index(collection).present? && limit_reached?(limit, records.find_index(collection))
         ActiveSupport::Deprecation.warn(
