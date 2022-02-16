@@ -85,7 +85,7 @@ module Bulkrax
     end
 
     def create_collections
-      collections.each_with_index do |collection|
+      collections.each_with_index do |collection, index|
         next if collection.blank?
         break if records.find_index(collection).present? && limit_reached?(limit, records.find_index(collection))
         ActiveSupport::Deprecation.warn(
@@ -110,6 +110,7 @@ module Bulkrax
         ## END
 
         new_entry = find_or_create_entry(collection_entry_class, collection_hash[source_identifier], 'Bulkrax::Importer', collection_hash)
+        increment_counters(index, collection: true)
         # TODO: add support for :delete option
         ImportCollectionJob.perform_now(new_entry.id, current_run.id)
       end
