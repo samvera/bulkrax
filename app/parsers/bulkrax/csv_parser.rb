@@ -96,7 +96,7 @@ module Bulkrax
         ## BEGIN
         # Add required metadata to collections being imported using the collection_field_mapping, which only have a :title
         # TODO: Remove once collection_field_mapping is removed
-        metadata = if collection.delete(:from_collection_field_mapping)
+        metadata = if collection.key?(:from_collection_field_mapping)
                      uci = unique_collection_identifier(collection)
                      {
                        title: collection[:title],
@@ -112,7 +112,15 @@ module Bulkrax
         new_entry = find_or_create_entry(collection_entry_class, collection_hash[source_identifier], 'Bulkrax::Importer', collection_hash)
         increment_counters(index, collection: true)
         # TODO: add support for :delete option
-        ImportCollectionJob.perform_now(new_entry.id, current_run.id)
+        if collection.key?(:from_collection_field_mapping)
+          # When importing collections using the deprecated collection_field_mapping, the collection MUST be created
+          # before the work, so we use #perform_now to make sure that happens. The downside is, if a collection fails
+          # to import, it will stop the rest of the collections from importing successfully.
+          # TODO: Remove once collection_field_mapping is removed
+          ImportCollectionJob.perform_now(new_entry.id, current_run.id)
+        else
+          ImportCollectionJob.perform_later(new_entry.id, current_run.id)
+        end
       end
       importer.record_status
     rescue StandardError => e
