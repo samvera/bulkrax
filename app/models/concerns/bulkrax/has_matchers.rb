@@ -139,6 +139,7 @@ module Bulkrax
           file
           remote_files
           model
+          visibility
           delete
           #{parser.collection_field_mapping}
           #{related_parents_parsed_mapping}
