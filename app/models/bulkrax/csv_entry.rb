@@ -229,10 +229,19 @@ module Bulkrax
         'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \
         ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
       )
-      @possible_collection_ids ||= record.inject([]) do |memo, (key, value)|
-        memo += value.split(/\s*[:;|]\s*/) if self.class.collection_field.to_s == key_without_numbers(key) && value.present?
-        memo
-      end || []
+      return @possible_collection_ids if @possible_collection_ids.present?
+
+      collection_field_mapping = self.class.collection_field
+      return [] unless collection_field_mapping.present? && record[collection_field_mapping].present?
+
+      identifiers = []
+      split_titles = record[collection_field_mapping].split(/\s*[:;|]\s*/)
+      split_titles.each do |c_title|
+        matching_collection_entries = importerexporter.entries.select { |e| e.raw_metadata['title'] == c_title }
+        raise ::StandardError, 'Only expected to find one matching entry' if matching_collection_entries.count > 1
+        identifiers << matching_collection_entries.first&.identifier
+      end
+      @possible_collection_ids = identifiers.presence || []
     end
 
     def collections_created?
