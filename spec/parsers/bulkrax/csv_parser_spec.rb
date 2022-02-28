@@ -150,7 +150,7 @@ module Bulkrax
         end
 
         it 'runs an ImportCollectionJob for each entry' do
-          expect(ImportCollectionJob).to receive(:perform_now).twice
+          expect(ImportCollectionJob).to receive(:perform_later).twice
 
           subject.create_collections
         end

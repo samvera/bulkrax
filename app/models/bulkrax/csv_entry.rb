@@ -3,7 +3,10 @@
 require 'csv'
 
 module Bulkrax
-  class CsvEntry < Entry
+  # TODO: We need to rework this class some to address the Metrics/ClassLength rubocop offense.
+  # We do too much in these entry classes. We need to extract the common logic from the various
+  # entry models into a module that can be shared between them.
+  class CsvEntry < Entry # rubocop:disable Metrics/ClassLength
     serialize :raw_metadata, JSON
 
     def self.fields_from_data(data)
