@@ -1,0 +1,3 @@
+source_identifier,model,title,description
+fc1,Collection,,Failed collection's description
+fc2,Collection,Valid Collection,Processed after failed collection
