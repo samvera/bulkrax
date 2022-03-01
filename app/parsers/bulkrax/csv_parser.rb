@@ -188,13 +188,13 @@ module Bulkrax
 
       case importerexporter.export_from
       when 'all'
-        @work_ids = ActiveFedora::SolrService.query("has_model_ssim:(#{Hyrax.config.curation_concerns.join(' OR ')}) #{extra_filters}", rows: 2_147_483_647).map(&:id)
-        @collection_ids = ActiveFedora::SolrService.query("has_model_ssim:Collection #{extra_filters}", rows: 2_147_483_647).map(&:id)
-        @file_set_ids = ActiveFedora::SolrService.query("has_model_ssim:FileSet #{extra_filters}", rows: 2_147_483_647).map(&:id)
+        @work_ids = ActiveFedora::SolrService.query("has_model_ssim:(#{Hyrax.config.curation_concerns.join(' OR ')}) #{extra_filters}", method: :post, rows: 2_147_483_647).map(&:id)
+        @collection_ids = ActiveFedora::SolrService.query("has_model_ssim:Collection #{extra_filters}", method: :post, rows: 2_147_483_647).map(&:id)
+        @file_set_ids = ActiveFedora::SolrService.query("has_model_ssim:FileSet #{extra_filters}", method: :post, rows: 2_147_483_647).map(&:id)
       when 'collection'
-        @work_ids = ActiveFedora::SolrService.query("member_of_collection_ids_ssim:#{importerexporter.export_source + extra_filters}", rows: 2_000_000_000).map(&:id)
+        @work_ids = ActiveFedora::SolrService.query("member_of_collection_ids_ssim:#{importerexporter.export_source + extra_filters}", method: :post, rows: 2_000_000_000).map(&:id)
       when 'worktype'
-        @work_ids = ActiveFedora::SolrService.query("has_model_ssim:#{importerexporter.export_source + extra_filters}", rows: 2_000_000_000).map(&:id)
+        @work_ids = ActiveFedora::SolrService.query("has_model_ssim:#{importerexporter.export_source + extra_filters}", method: :post, rows: 2_000_000_000).map(&:id)
       when 'importer'
         set_ids_for_exporting_from_importer
       end
@@ -214,7 +214,7 @@ module Bulkrax
       extra_filters = extra_filters.presence || '*:*'
 
       { :@work_ids => ::Hyrax.config.curation_concerns, :@collection_ids => [::Collection], :@file_set_ids => [::FileSet] }.each do |instance_var, models_to_search|
-        instance_variable_set(instance_var, ActiveFedora::SolrService.get(
+        instance_variable_set(instance_var, ActiveFedora::SolrService.post(
           extra_filters.to_s,
           fq: [
             "#{work_identifier}_sim:(#{complete_entry_identifiers.join(' OR ')})",
