@@ -132,7 +132,7 @@ module Bulkrax
           expect { subject.create_collections }.to change(CsvCollectionEntry, :count).by(2)
         end
 
-        it 'runs an ImportCollectionJob for each entry' do
+        it 'runs an ImportCollectionJob in memory for each entry' do
           expect(ImportCollectionJob).to receive(:perform_now).twice
 
           subject.create_collections
@@ -142,17 +142,26 @@ module Bulkrax
       context 'when importing collections with metadata' do
         before do
           importer.parser_fields = { import_file_path: './spec/fixtures/csv/collections.csv' }
-          allow(ImportCollectionJob).to receive(:perform_now)
         end
 
         it 'creates CSV collection entries for each collection' do
           expect { subject.create_collections }.to change(CsvCollectionEntry, :count).by(2)
         end
 
-        it 'runs an ImportCollectionJob for each entry' do
+        it 'runs an ImportCollectionJob in the background for each entry' do
           expect(ImportCollectionJob).to receive(:perform_later).twice
 
           subject.create_collections
+        end
+      end
+
+      context 'when a collection entry fails during creation' do
+        before do
+          importer.parser_fields = { import_file_path: './spec/fixtures/csv/failed_collection.csv' }
+        end
+
+        it 'does not stop the remaining collection entries from being processed' do
+          expect { subject.create_collections }.to change(CsvCollectionEntry, :count).by(2)
         end
       end
 
@@ -719,6 +728,44 @@ module Bulkrax
 
         describe '#related_children_parsed_mapping' do
           it { expect { subject.related_children_parsed_mapping }.to raise_error(StandardError) }
+        end
+      end
+    end
+
+    describe '#add_required_collection_metadata' do
+      context 'when importing collections using the collection_field_mapping' do
+        let(:collection_data) do
+          {
+            title: 'Collection from collection_field_mapping',
+            from_collection_field_mapping: true
+          }
+        end
+
+        it 'adds metadata required for collections' do
+          expect(subject.add_required_collection_metadata(collection_data)).to eq(
+            {
+              title: collection_data[:title],
+              source: collection_data[:title],
+              source_identifier: collection_data[:title],
+              visibility: 'open',
+              collection_type_gid: ::Hyrax::CollectionType.find_or_create_default_collection_type.gid
+            }
+          )
+        end
+      end
+
+      context 'when importing collections without using the collection_field_mapping' do
+        let(:collection_data) do
+          {
+            source_identifier: 'cwm1',
+            title: 'Collection with Metadata',
+            model: 'Collection',
+            description: 'Lorem ipsum'
+          }
+        end
+
+        it 'does not alter the data' do
+          expect(subject.add_required_collection_metadata(collection_data)).to be_nil
         end
       end
     end
