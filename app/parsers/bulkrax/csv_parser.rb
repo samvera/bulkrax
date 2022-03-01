@@ -131,11 +131,11 @@ module Bulkrax
     def current_work_ids
       case importerexporter.export_from
       when 'all'
-        ActiveFedora::SolrService.query("has_model_ssim:(#{Hyrax.config.curation_concerns.join(' OR ')}) #{extra_filters}", rows: 2_147_483_647).map(&:id)
+        ActiveFedora::SolrService.query("has_model_ssim:(#{Hyrax.config.curation_concerns.join(' OR ')}) #{extra_filters}", method: :post, rows: 2_147_483_647).map(&:id)
       when 'collection'
-        ActiveFedora::SolrService.query("member_of_collection_ids_ssim:#{importerexporter.export_source + extra_filters}", rows: 2_000_000_000).map(&:id)
+        ActiveFedora::SolrService.query("member_of_collection_ids_ssim:#{importerexporter.export_source + extra_filters}", method: :post, rows: 2_000_000_000).map(&:id)
       when 'worktype'
-        ActiveFedora::SolrService.query("has_model_ssim:#{importerexporter.export_source + extra_filters}", rows: 2_000_000_000).map(&:id)
+        ActiveFedora::SolrService.query("has_model_ssim:#{importerexporter.export_source + extra_filters}", method: :post, rows: 2_000_000_000).map(&:id)
       when 'importer'
         entry_ids = Bulkrax::Importer.find(importerexporter.export_source).entries.pluck(:id)
         complete_statuses = Bulkrax::Status.latest_by_statusable
@@ -145,7 +145,7 @@ module Bulkrax
         complete_entry_identifiers = complete_statuses.map { |s| s.statusable&.identifier&.gsub(':', '\:') }
         extra_filters = extra_filters.presence || '*:*'
 
-        ActiveFedora::SolrService.get(
+        ActiveFedora::SolrService.post(
           extra_filters.to_s,
           fq: "#{work_identifier}_sim:(#{complete_entry_identifiers.join(' OR ')})",
           fl: 'id',
