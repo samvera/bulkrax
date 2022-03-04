@@ -88,31 +88,30 @@ module Bulkrax
       collections.each_with_index do |collection, index|
         next if collection.blank?
         break if records.find_index(collection).present? && limit_reached?(limit, records.find_index(collection))
-        ActiveSupport::Deprecation.warn(
-          'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \
-          ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
-        )
 
         ## BEGIN
         # Add required metadata to collections being imported using the collection_field_mapping, which only have a :title
         # TODO: Remove once collection_field_mapping is removed
-        metadata = if collection.delete(:from_collection_field_mapping)
-                     uci = unique_collection_identifier(collection)
-                     {
-                       title: collection[:title],
-                       work_identifier => uci,
-                       source_identifier => uci,
-                       visibility: 'open',
-                       collection_type_gid: ::Hyrax::CollectionType.find_or_create_default_collection_type.gid
-                     }
-                   end
+        metadata = add_required_collection_metadata(collection)
         collection_hash = metadata.presence || collection
         ## END
 
         new_entry = find_or_create_entry(collection_entry_class, collection_hash[source_identifier], 'Bulkrax::Importer', collection_hash)
         increment_counters(index, collection: true)
         # TODO: add support for :delete option
-        ImportCollectionJob.perform_now(new_entry.id, current_run.id)
+        if collection.key?(:from_collection_field_mapping)
+          ActiveSupport::Deprecation.warn(
+            'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \
+            ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
+          )
+          # When importing collections using the deprecated collection_field_mapping, the collection MUST be created
+          # before the work, so we use #perform_now to make sure that happens. The downside is, if a collection fails
+          # to import, it will stop the rest of the collections from importing successfully.
+          # TODO: Remove once collection_field_mapping is removed
+          ImportCollectionJob.perform_now(new_entry.id, current_run.id)
+        else
+          ImportCollectionJob.perform_later(new_entry.id, current_run.id)
+        end
       end
       importer.record_status
     rescue StandardError => e
@@ -155,6 +154,25 @@ module Bulkrax
     def create_relationships
       ScheduleRelationshipsJob.set(wait: 1.minutes).perform_later(importer_id: importerexporter.id)
     end
+    
+    # Add required metadata to collections being imported using the collection_field_mapping, which only have a :title
+    # TODO: Remove once collection_field_mapping is removed
+    def add_required_collection_metadata(raw_collection_data)
+      return unless raw_collection_data.key?(:from_collection_field_mapping)
+      ActiveSupport::Deprecation.warn(
+        'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \
+        ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
+      )
+
+      uci = unique_collection_identifier(raw_collection_data)
+      {
+        title: raw_collection_data[:title],
+        work_identifier => uci,
+        source_identifier => uci,
+        visibility: 'open',
+        collection_type_gid: ::Hyrax::CollectionType.find_or_create_default_collection_type.gid
+      }
+    end
 
     def write_partial_import_file(file)
       import_filename = import_file_path.split('/').last
@@ -192,13 +210,13 @@ module Bulkrax
 
       case importerexporter.export_from
       when 'all'
-        @work_ids = ActiveFedora::SolrService.query("has_model_ssim:(#{Hyrax.config.curation_concerns.join(' OR ')}) #{extra_filters}", rows: 2_147_483_647).map(&:id)
-        @collection_ids = ActiveFedora::SolrService.query("has_model_ssim:Collection #{extra_filters}", rows: 2_147_483_647).map(&:id)
-        @file_set_ids = ActiveFedora::SolrService.query("has_model_ssim:FileSet #{extra_filters}", rows: 2_147_483_647).map(&:id)
+        @work_ids = ActiveFedora::SolrService.query("has_model_ssim:(#{Hyrax.config.curation_concerns.join(' OR ')}) #{extra_filters}", method: :post, rows: 2_147_483_647).map(&:id)
+        @collection_ids = ActiveFedora::SolrService.query("has_model_ssim:Collection #{extra_filters}", method: :post, rows: 2_147_483_647).map(&:id)
+        @file_set_ids = ActiveFedora::SolrService.query("has_model_ssim:FileSet #{extra_filters}", method: :post, rows: 2_147_483_647).map(&:id)
       when 'collection'
-        @work_ids = ActiveFedora::SolrService.query("member_of_collection_ids_ssim:#{importerexporter.export_source + extra_filters}", rows: 2_000_000_000).map(&:id)
+        @work_ids = ActiveFedora::SolrService.query("member_of_collection_ids_ssim:#{importerexporter.export_source + extra_filters}", method: :post, rows: 2_000_000_000).map(&:id)
       when 'worktype'
-        @work_ids = ActiveFedora::SolrService.query("has_model_ssim:#{importerexporter.export_source + extra_filters}", rows: 2_000_000_000).map(&:id)
+        @work_ids = ActiveFedora::SolrService.query("has_model_ssim:#{importerexporter.export_source + extra_filters}", method: :post, rows: 2_000_000_000).map(&:id)
       when 'importer'
         set_ids_for_exporting_from_importer
       end
@@ -218,7 +236,7 @@ module Bulkrax
       extra_filters = extra_filters.presence || '*:*'
 
       { :@work_ids => ::Hyrax.config.curation_concerns, :@collection_ids => [::Collection], :@file_set_ids => [::FileSet] }.each do |instance_var, models_to_search|
-        instance_variable_set(instance_var, ActiveFedora::SolrService.get(
+        instance_variable_set(instance_var, ActiveFedora::SolrService.post(
           extra_filters.to_s,
           fq: [
             "#{work_identifier}_sim:(#{complete_entry_identifiers.join(' OR ')})",
