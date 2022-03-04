@@ -51,7 +51,6 @@ module Bulkrax
         return false # stop current job from continuing to run after rescheduling
       end
 
-
       @parent_entry = Bulkrax::Entry.where(identifier: parent_identifier,
                                            importerexporter_id: ImporterRun.find(importer_run_id).importer_id,
                                            importerexporter_type: "Bulkrax::Importer").first

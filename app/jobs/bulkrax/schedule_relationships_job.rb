@@ -2,7 +2,6 @@
 
 module Bulkrax
   class ScheduleRelationshipsJob < ApplicationJob
-
     def perform(importer_id:)
       importer = Importer.find(importer_id)
       pending_num = Bulkrax::Status.where(statusable_type: "Bulkrax::Entry",
@@ -18,6 +17,5 @@ module Bulkrax
       ScheduleRelationshipsJob.set(wait: 5.minutes).perform_later(importer_id: importer_id)
       false
     end
-
   end
 end
