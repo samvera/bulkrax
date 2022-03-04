@@ -20,6 +20,7 @@ module Bulkrax
 
       importer.import_collections
       importer.import_works
+      importer.import_relationships
       importer.import_file_sets
     end
 

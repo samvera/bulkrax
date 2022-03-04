@@ -125,23 +125,25 @@ module Bulkrax
     end
 
     def import_works
-      self.save if self.new_record? # Object needs to be saved for statuses
       self.only_updates ||= false
-      parser.create_works
-    rescue StandardError => e
-      status_info(e)
+      import_objects('works')
     end
 
     def import_collections
-      self.save if self.new_record? # Object needs to be saved for statuses
-      parser.create_collections
-    rescue StandardError => e
-      status_info(e)
+      import_objects('collections')
     end
 
     def import_file_sets
+      import_objects('file_sets')
+    end
+
+    def import_relationships
+      import_objects('relationships')
+    end
+
+    def import_objects(object_type)
       self.save if self.new_record? # Object needs to be saved for statuses
-      parser.create_file_sets
+      parser.send("create_#{object_type}")
     rescue StandardError => e
       status_info(e)
     end

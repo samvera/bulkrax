@@ -152,6 +152,10 @@ module Bulkrax
       status_info(e)
     end
 
+    def create_relationships
+      ScheduleRelationshipsJob.set(wait: 1.minutes).perform_later(importer_id: importerexporter.id)
+    end
+
     def write_partial_import_file(file)
       import_filename = import_file_path.split('/').last
       partial_import_filename = "#{File.basename(import_filename, '.csv')}_corrected_entries.csv"
