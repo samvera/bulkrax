@@ -55,6 +55,7 @@ module Bulkrax
                                            importerexporter_id: ImporterRun.find(importer_run_id).importer_id,
                                            importerexporter_type: "Bulkrax::Importer").first
       create_relationships
+      pending_relationships.each(&:destroy)
     rescue ::StandardError => e
       parent_record.status_info(e)
       Bulkrax::ImporterRun.find(importer_run_id).increment!(:failed_relationships) # rubocop:disable Rails/SkipsModelValidations
