@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Bulkrax
   class ScheduleRelationshipsJob < ApplicationJob
 
@@ -13,7 +15,7 @@ module Bulkrax
     end
 
     def reschedule(importer_id)
-      ScheduleRelationshipsJob.set(wait: 1.minutes).perform_later(importer_id: importer_id)
+      ScheduleRelationshipsJob.set(wait: 5.minutes).perform_later(importer_id: importer_id)
       false
     end
 

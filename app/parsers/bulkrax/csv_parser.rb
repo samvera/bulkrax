@@ -152,7 +152,7 @@ module Bulkrax
     end
 
     def create_relationships
-      ScheduleRelationshipsJob.set(wait: 1.minutes).perform_later(importer_id: importerexporter.id)
+      ScheduleRelationshipsJob.set(wait: 5.minutes).perform_later(importer_id: importerexporter.id)
     end
     
     # Add required metadata to collections being imported using the collection_field_mapping, which only have a :title
