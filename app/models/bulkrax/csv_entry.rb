@@ -50,6 +50,8 @@ module Bulkrax
       add_metadata_for_model
       add_visibility
       add_ingested_metadata
+      add_file unless importerexporter.metadata_only?
+      add_admin_set_id
       add_rights_statement
       add_collections
       add_local
@@ -64,9 +66,9 @@ module Bulkrax
     def add_metadata_for_model
       if factory_class == Collection
         add_collection_type_gid
-      else
-        add_file unless importerexporter.metadata_only?
-        add_admin_set_id
+      elsif factory_class == FileSet
+        add_path_to_file
+        validate_presence_of_parent!
       end
     end
 
