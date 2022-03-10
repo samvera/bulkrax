@@ -46,9 +46,9 @@ module Bulkrax
 
       self.parsed_metadata = {}
       add_identifier
-      add_metadata_for_model
-      add_visibility
       add_ingested_metadata
+      add_visibility
+      add_metadata_for_model
       add_rights_statement
       add_collections
       add_local
