@@ -87,13 +87,13 @@ module Bulkrax
       child_records[:works].each do |child_record|
         attrs = { id: child_record.id, member_of_collections_attributes: { 0 => { id: parent_record.id } } }
         ObjectFactory.new(
-            attributes: attrs,
-            source_identifier_value: nil, # sending the :id in the attrs means the factory doesn't need a :source_identifier_value
-            work_identifier: parent_entry.parser.work_identifier,
-            collection_field_mapping: parent_entry.parser.collection_field_mapping,
-            replace_files: false,
-            user: user,
-            klass: child_record.class
+          attributes: attrs,
+          source_identifier_value: nil, # sending the :id in the attrs means the factory doesn't need a :source_identifier_value
+          work_identifier: parent_entry.parser.work_identifier,
+          collection_field_mapping: parent_entry.parser.collection_field_mapping,
+          replace_files: false,
+          user: user,
+          klass: child_record.class
         ).run
         # TODO: add counters for :processed_parents and :failed_parents
         Bulkrax::ImporterRun.find(importer_run_id).increment!(:processed_relationships) # rubocop:disable Rails/SkipsModelValidations
