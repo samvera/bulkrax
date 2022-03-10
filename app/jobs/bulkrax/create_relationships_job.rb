@@ -37,7 +37,7 @@ module Bulkrax
       @importer_run_id = importer_run_id
       @parent_record = find_record(parent_identifier)
       @child_records = { works: [], collections: [] }
-      pending_relationships.each do |rel|
+      pending_relationships.find_each do |rel|
         raise ::StandardError, %("#{rel}" needs either a child or a parent to create a relationship) if rel.child_id.nil? || rel.parent_id.nil?
         child_record = find_record(rel.child_id)
         child_record.is_a?(::Collection) ? @child_records[:collections] << child_record : @child_records[:works] << child_record
@@ -84,7 +84,7 @@ module Bulkrax
         'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \
         ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
       )
-      child_records[:works].each do |child_record|
+      child_records[:works].find_each do |child_record|
         attrs = { id: child_record.id, member_of_collections_attributes: { 0 => { id: parent_record.id } } }
         ObjectFactory.new(
           attributes: attrs,

@@ -4,9 +4,8 @@ module Bulkrax
   class ScheduleRelationshipsJob < ApplicationJob
     def perform(importer_id:)
       importer = Importer.find(importer_id)
-      pending_num = Bulkrax::Status.where(statusable_type: "Bulkrax::Entry",
-                                          statusable_id: importer.entry_ids)
-                                   .where.not(status_message: %w[Complete Failed]).count
+      pending_num = importer.entries.left_outer_joins(:latest_status)
+                            .where('bulkrax_statuses.status_message <> ?', %w[Complete Failed]).count
       return reschedule(importer_id) unless pending_num.zero?
 
       importer.last_run.parents.each do |parent_id|
