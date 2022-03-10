@@ -46,12 +46,9 @@ module Bulkrax
 
       self.parsed_metadata = {}
       add_identifier
-      add_ingested_metadata
-      add_collection_type_gid if factory_class == Collection
+      add_metadata_for_model
       add_visibility
       add_ingested_metadata
-      add_file unless importerexporter.metadata_only?
-      add_admin_set_id
       add_rights_statement
       add_collections
       add_local
@@ -61,6 +58,15 @@ module Bulkrax
 
     def add_identifier
       self.parsed_metadata[work_identifier] = [record[source_identifier]]
+    end
+
+    def add_metadata_for_model
+      if factory_class == Collection
+        add_collection_type_gid
+      else
+        add_file unless importerexporter.metadata_only?
+        add_admin_set_id
+      end
     end
 
     def add_ingested_metadata
