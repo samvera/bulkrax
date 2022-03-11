@@ -15,3 +15,4 @@ jobs:
         uses: agilepathway/label-checker@v1.0.105
         with:
           one_of: patch-ver,minor-ver,major-ver,bug-fix,enhancement,breaking-change,database-changes,ignore-for-release
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
