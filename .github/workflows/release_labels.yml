@@ -13,7 +13,7 @@ on:
 jobs:
   check_pr_labels:
     runs-on: ubuntu-latest
-    name: PR has a Release Note label
+    name: PR has required labels
     steps:
       - uses: actions/checkout@v2
 
@@ -23,7 +23,7 @@ jobs:
           one_of: patch-ver,minor-ver,major-ver,bug-fix,enhancement,breaking-change,database-changes,ignore-for-release
           repo_token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Check PR for cla-signed labels
+      - name: Check PR for cla-signed label
         uses: docker://agilepathway/pull-request-label-checker:latest
         with:
           one_of: cla-signed
