@@ -3,7 +3,12 @@ on:
   pull_request:
     branches:
       - '**'
-    types: [labeled, unlabeled]
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - labeled
+      - unlabeled
 
 jobs:
   check_pr_labels:
