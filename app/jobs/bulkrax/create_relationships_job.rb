@@ -32,12 +32,14 @@ module Bulkrax
     # parent_identifier or child_identifier param. For example, if a parent_identifier is passed, we know @base_entry
     # is the child in the relationship, and vice versa if a child_identifier is passed.
     def perform(parent_identifier:, importer_run_id:)
-      pending_relationships = Bulkrax::PendingRelationship.where(bulkrax_importer_run_id: importer_run_id,
-                                                                 parent_id: parent_identifier).sort_by(&:order)
+      pending_relationships = Bulkrax::PendingRelationship.find_each.select do |rel|
+        rel.bulkrax_importer_run_id == importer_run_id && rel.parent_id == parent_identifier
+      end.sort_by(&:order)
+
       @importer_run_id = importer_run_id
       @parent_record = find_record(parent_identifier)
       @child_records = { works: [], collections: [] }
-      pending_relationships.find_each do |rel|
+      pending_relationships.each do |rel|
         raise ::StandardError, %("#{rel}" needs either a child or a parent to create a relationship) if rel.child_id.nil? || rel.parent_id.nil?
         child_record = find_record(rel.child_id)
         child_record.is_a?(::Collection) ? @child_records[:collections] << child_record : @child_records[:works] << child_record
@@ -84,7 +86,7 @@ module Bulkrax
         'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \
         ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
       )
-      child_records[:works].find_each do |child_record|
+      child_records[:works].each do |child_record|
         attrs = { id: child_record.id, member_of_collections_attributes: { 0 => { id: parent_record.id } } }
         ObjectFactory.new(
           attributes: attrs,
