@@ -1,0 +1,17 @@
+name: Labels
+on:
+  pull_request:
+    branches:
+      - '**'
+
+jobs:
+  check_pr_labels:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Check PR for Release Notes labels
+        uses: agilepathway/label-checker@v1.0.105
+        with:
+          one_of: patch-ver,minor-ver,major-ver,bug-fix,enhancement,breaking-change,database-changes,ignore-for-release
