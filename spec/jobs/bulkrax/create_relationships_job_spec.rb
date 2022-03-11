@@ -13,6 +13,8 @@ module Bulkrax
     let(:child_record)  { build(:work) }
     let(:parent_factory) { instance_double(ObjectFactory, find: parent_record, run: parent_record) }
     let(:child_factory) { instance_double(ObjectFactory, find: child_record, run: child_record) }
+    let(:pending_rel)   { build(:pending_relationship_collection_parent) }
+    let(:pending_rel_work)   { build(:pending_relationship_work_parent) }
     let(:base_factory_attrs) do
       {
         source_identifier_value: nil,
@@ -50,21 +52,21 @@ module Bulkrax
         context 'with a Bulkrax::Entry source_identifier' do
           it 'calls #collection_parent_work_child' do
             expect(create_relationships_job).to receive(:collection_parent_work_child)
-
+            allow(Bulkrax::PendingRelationship).to receive(:find_each).and_return([pending_rel])
             create_relationships_job.perform(
-              entry_identifier: child_entry.identifier,
-              parent_identifier: parent_entry.identifier,
-              importer_run: importer.current_run
+              parent_identifier: parent_entry.identifier, # source_identifier
+              importer_run_id: importer.current_run.id
             )
           end
 
-          it 'creates the object factory' do
-            expect(ObjectFactory).to receive(:new).with(factory_attrs)
+          it 'creates and runs the object factory' do
+            expect(ObjectFactory).to receive(:new).with(factory_attrs).and_return(parent_factory)
+            expect(parent_factory).to receive(:run)
+            allow(Bulkrax::PendingRelationship).to receive(:find_each).and_return([pending_rel])
 
             create_relationships_job.perform(
-              entry_identifier: child_entry.identifier,
               parent_identifier: parent_entry.identifier,
-              importer_run: importer.current_run
+              importer_run_id: importer.current_run.id
             )
           end
 
@@ -73,16 +75,21 @@ module Bulkrax
 
             before do
               allow(ObjectFactory).to receive(:new).and_return(factory)
+              allow(Bulkrax::PendingRelationship).to receive(:find_each).and_return([pending_rel])
             end
 
-            it 'increments processed children' do
-              expect(importer.current_run).to receive(:increment!).with(:processed_relationships)
-
+            it 'increments processed relationships' do
               create_relationships_job.perform(
-                entry_identifier: child_entry.identifier,
                 parent_identifier: parent_entry.identifier,
-                importer_run: importer.current_run
+                importer_run_id: importer.current_run.id
               )
+
+              expect(importer.last_run.processed_relationships).to equal(1)
+              # create_relationships_job.perform(
+              #   entry_identifier: child_entry.identifier,
+              #   parent_identifier: parent_entry.identifier,
+              #   importer_run: importer.current_run
+              # )
             end
           end
         end
@@ -92,41 +99,40 @@ module Bulkrax
             allow(Entry).to receive(:find_by).with(identifier: parent_record.id).and_return(nil)
             allow(::Collection).to receive(:where).with(id: parent_record.id).and_return([parent_record])
             allow(::Work).to receive(:where).with(id: child_record.id).and_return([child_record])
+            allow(Bulkrax::PendingRelationship).to receive(:find_each).and_return([pending_rel])
           end
 
           it 'calls #collection_parent_work_child' do
             expect(create_relationships_job).to receive(:collection_parent_work_child)
 
             create_relationships_job.perform(
-              entry_identifier: child_entry.identifier,
-              parent_identifier: parent_record.id,
-              importer_run: importer.current_run
+              parent_identifier: parent_entry.identifier,
+              importer_run_id: importer.current_run.id
             )
           end
 
           it 'creates the object factory' do
-            expect(ObjectFactory).to receive(:new).with(factory_attrs)
+            expect(ObjectFactory).to receive(:new).with(factory_attrs).and_return(child_factory)
 
             create_relationships_job.perform(
-              entry_identifier: child_entry.identifier,
-              parent_identifier: parent_record.id,
-              importer_run: importer.current_run
+              parent_identifier: parent_entry.identifier,
+              importer_run_id: importer.current_run.id
             )
           end
 
           context 'importer run' do
             before do
               allow(ObjectFactory).to receive(:new).and_return(child_factory)
+              allow(Bulkrax::PendingRelationship).to receive(:find_each).and_return([pending_rel])
             end
 
-            it 'increments processed children' do
-              expect(importer.current_run).to receive(:increment!).with(:processed_relationships)
-
+            it 'increments processed relationships' do
               create_relationships_job.perform(
-                entry_identifier: child_entry.identifier,
-                parent_identifier: parent_record.id,
-                importer_run: importer.current_run
+                parent_identifier: parent_entry.identifier,
+                importer_run_id: importer.current_run.id
               )
+
+              expect(importer.last_run.processed_relationships).to equal(1)
             end
           end
         end
@@ -137,6 +143,7 @@ module Bulkrax
         let(:child_entry) { create(:bulkrax_csv_entry_collection, identifier: 'child_entry_collection', importerexporter: importer) }
         let(:parent_record) { build(:collection) }
         let(:child_record) { build(:another_collection) }
+        let(:pending_rel_col) { build(:pending_relationship_collection_child) }
         let(:factory_attrs) do
           base_factory_attrs.merge(
             attributes: {
@@ -150,21 +157,21 @@ module Bulkrax
         context 'with a Bulkrax::Entry source_identifier' do
           it 'calls #collection_parent_collection_child' do
             expect(create_relationships_job).to receive(:collection_parent_collection_child)
+            allow(Bulkrax::PendingRelationship).to receive(:find_each).and_return([pending_rel_col])
 
             create_relationships_job.perform(
-              entry_identifier: child_entry.identifier,
               parent_identifier: parent_entry.identifier,
-              importer_run: importer.current_run
+              importer_run_id: importer.current_run.id
             )
           end
 
           it 'creates the object factory' do
-            expect(ObjectFactory).to receive(:new).with(factory_attrs)
+            expect(ObjectFactory).to receive(:new).with(factory_attrs).and_return(child_factory)
+            allow(Bulkrax::PendingRelationship).to receive(:find_each).and_return([pending_rel_col])
 
             create_relationships_job.perform(
-              entry_identifier: child_entry.identifier,
               parent_identifier: parent_entry.identifier,
-              importer_run: importer.current_run
+              importer_run_id: importer.current_run.id
             )
           end
 
@@ -176,13 +183,14 @@ module Bulkrax
             end
 
             it 'increments processed children' do
-              expect(importer.current_run).to receive(:increment!).with(:processed_relationships)
+              allow(Bulkrax::PendingRelationship).to receive(:find_each).and_return([pending_rel_col])
 
               create_relationships_job.perform(
-                entry_identifier: child_entry.identifier,
                 parent_identifier: parent_entry.identifier,
-                importer_run: importer.current_run
+                importer_run_id: importer.current_run.id
               )
+
+              expect(importer.last_run.processed_relationships).to equal(1)
             end
           end
         end
@@ -192,41 +200,39 @@ module Bulkrax
             allow(Entry).to receive(:find_by).with(identifier: parent_record.id).and_return(nil)
             allow(::Collection).to receive(:where).with(id: parent_record.id).and_return([parent_record])
             allow(::Work).to receive(:where).with(id: child_record.id).and_return([child_record])
+            allow(Bulkrax::PendingRelationship).to receive(:find_each).and_return([pending_rel_col])
           end
 
           it 'calls #collection_parent_collection_child' do
             expect(create_relationships_job).to receive(:collection_parent_collection_child)
 
             create_relationships_job.perform(
-              entry_identifier: child_entry.identifier,
-              parent_identifier: parent_record.id,
-              importer_run: importer.current_run
+              parent_identifier: parent_entry.identifier,
+              importer_run_id: importer.current_run.id
             )
           end
 
           it 'creates the object factory' do
-            expect(ObjectFactory).to receive(:new).with(factory_attrs)
+            expect(ObjectFactory).to receive(:new).with(factory_attrs).and_return(child_factory)
 
             create_relationships_job.perform(
-              entry_identifier: child_entry.identifier,
-              parent_identifier: parent_record.id,
-              importer_run: importer.current_run
+              parent_identifier: parent_entry.identifier,
+              importer_run_id: importer.current_run.id
             )
           end
 
           context 'importer run' do
             before do
-              allow(ObjectFactory).to receive(:new).and_return(child_factory)
+              allow(ObjectFactory).to receive(:new).and_return(parent_factory)
             end
 
             it 'increments processed children' do
-              expect(importer.current_run).to receive(:increment!).with(:processed_relationships)
-
               create_relationships_job.perform(
-                entry_identifier: child_entry.identifier,
-                parent_identifier: parent_record.id,
-                importer_run: importer.current_run
+                parent_identifier: parent_entry.identifier,
+                importer_run_id: importer.current_run.id
               )
+
+              expect(importer.last_run.processed_relationships).to equal(1)
             end
           end
         end
@@ -250,22 +256,22 @@ module Bulkrax
         context 'with a Bulkrax::Entry source_identifier' do
           it 'calls #work_parent_work_child' do
             expect(create_relationships_job).to receive(:work_parent_work_child)
+            allow(Bulkrax::PendingRelationship).to receive(:find_each).and_return([pending_rel_work])
 
             create_relationships_job.perform(
-              entry_identifier: child_entry.identifier,
-              parent_identifier: parent_entry.identifier,
-              importer_run: importer.current_run
-            )
+                parent_identifier: parent_entry.identifier,
+                importer_run_id: importer.current_run.id
+              )
           end
 
           it 'creates the object factory' do
-            expect(ObjectFactory).to receive(:new).with(factory_attrs)
+            expect(ObjectFactory).to receive(:new).with(factory_attrs).and_return(parent_factory)
+            allow(Bulkrax::PendingRelationship).to receive(:find_each).and_return([pending_rel_work])
 
             create_relationships_job.perform(
-              entry_identifier: child_entry.identifier,
-              parent_identifier: parent_entry.identifier,
-              importer_run: importer.current_run
-            )
+                parent_identifier: parent_entry.identifier,
+                importer_run_id: importer.current_run.id
+              )
           end
 
           context 'importer run' do
@@ -273,16 +279,16 @@ module Bulkrax
 
             before do
               allow(ObjectFactory).to receive(:new).and_return(factory)
+              allow(Bulkrax::PendingRelationship).to receive(:find_each).and_return([pending_rel_work])
             end
 
             it 'increments processed children' do
-              expect(importer.current_run).to receive(:increment!).with(:processed_relationships)
-
               create_relationships_job.perform(
-                entry_identifier: child_entry.identifier,
                 parent_identifier: parent_entry.identifier,
-                importer_run: importer.current_run
+                importer_run_id: importer.current_run.id
               )
+
+              expect(importer.last_run.processed_relationships).to equal(1)
             end
           end
         end
@@ -296,37 +302,37 @@ module Bulkrax
 
           it 'calls #work_parent_work_child' do
             expect(create_relationships_job).to receive(:work_parent_work_child)
+            allow(Bulkrax::PendingRelationship).to receive(:find_each).and_return([pending_rel_work])
 
             create_relationships_job.perform(
-              entry_identifier: child_entry.identifier,
-              parent_identifier: parent_record.id,
-              importer_run: importer.current_run
-            )
+                parent_identifier: parent_entry.identifier,
+                importer_run_id: importer.current_run.id
+              )
           end
 
           it 'creates the object factory' do
-            expect(ObjectFactory).to receive(:new).with(factory_attrs)
+            expect(ObjectFactory).to receive(:new).with(factory_attrs).and_return(parent_factory)
+            allow(Bulkrax::PendingRelationship).to receive(:find_each).and_return([pending_rel_work])
 
             create_relationships_job.perform(
-              entry_identifier: child_entry.identifier,
-              parent_identifier: parent_record.id,
-              importer_run: importer.current_run
-            )
+                parent_identifier: parent_entry.identifier,
+                importer_run_id: importer.current_run.id
+              )
           end
 
           context 'importer run' do
             before do
               allow(ObjectFactory).to receive(:new).and_return(child_factory)
+              allow(Bulkrax::PendingRelationship).to receive(:find_each).and_return([pending_rel_work])
             end
 
             it 'increments processed children' do
-              expect(importer.current_run).to receive(:increment!).with(:processed_relationships)
-
               create_relationships_job.perform(
-                entry_identifier: child_entry.identifier,
-                parent_identifier: parent_record.id,
-                importer_run: importer.current_run
+                parent_identifier: parent_entry.identifier,
+                importer_run_id: importer.current_run.id
               )
+
+              expect(importer.last_run.processed_relationships).to equal(1)
             end
           end
         end
@@ -337,25 +343,30 @@ module Bulkrax
         let(:child_entry) { create(:bulkrax_csv_entry_collection, importerexporter: importer) }
         let(:parent_record) { build(:work) }
         let(:child_record) { build(:collection) }
+        let(:bad_pending_rel) { build(:bad_pending_relationship) }
 
-        it "logs a StandardError to the entry's status" do
-          expect(child_entry).to receive(:status_info).with(instance_of(::StandardError))
+        it "logs an StandardError to the entry's status" do
+          allow(Entry).to receive(:find_by).with(identifier: child_entry.identifier).and_return(child_record)
+          allow(Bulkrax::PendingRelationship).to receive(:find_each).and_return([bad_pending_rel])
 
           create_relationships_job.perform(
-            entry_identifier: child_entry.identifier,
             parent_identifier: parent_entry.identifier,
-            importer_run: importer.current_run
+            importer_run_id: importer.current_run.id
           )
+
+          expect(parent_entry.latest_status.error_class).to eq("StandardError")
         end
 
         it 'increments failed children' do
-          expect(importer.current_run).to receive(:increment!).with(:failed_relationships)
+          allow(Entry).to receive(:find_by).with(identifier: child_entry.identifier).and_return(child_record)
+          allow(Bulkrax::PendingRelationship).to receive(:find_each).and_return([bad_pending_rel])
 
           create_relationships_job.perform(
-            entry_identifier: child_entry.identifier,
             parent_identifier: parent_entry.identifier,
-            importer_run: importer.current_run
+            importer_run_id: importer.current_run.id
           )
+
+          expect(importer.last_run.failed_relationships).to eq(1)
         end
       end
 
@@ -367,9 +378,8 @@ module Bulkrax
             expect(create_relationships_job).to receive(:reschedule)
 
             create_relationships_job.perform(
-              entry_identifier: child_entry.identifier,
               parent_identifier: parent_entry.identifier,
-              importer_run: importer.current_run
+              importer_run_id: importer.current_run.id
             )
           end
         end
@@ -381,9 +391,8 @@ module Bulkrax
             expect(create_relationships_job).to receive(:reschedule)
 
             create_relationships_job.perform(
-              entry_identifier: child_entry.identifier,
               parent_identifier: parent_entry.identifier,
-              importer_run: importer.current_run
+              importer_run_id: importer.current_run.id
             )
           end
         end
@@ -391,11 +400,11 @@ module Bulkrax
         context 'when the child record and parent record can be found' do
           it 'does not call #reschedule' do
             expect(create_relationships_job).not_to receive(:reschedule)
+            allow(Bulkrax::PendingRelationship).to receive(:find_each).and_return([pending_rel])
 
             create_relationships_job.perform(
-              entry_identifier: child_entry.identifier,
               parent_identifier: parent_entry.identifier,
-              importer_run: importer.current_run
+              importer_run_id: importer.current_run.id
             )
           end
         end

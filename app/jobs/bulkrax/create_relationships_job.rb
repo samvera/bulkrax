@@ -21,11 +21,9 @@ module Bulkrax
 
     queue_as :import
 
-    attr_accessor :base_entry, :child_record, :parent_record, :importer_run
+    attr_accessor :child_records, :parent_record, :parent_entry, :importer_run_id
 
-    # @param entry_identifier [String] source_identifier of the base Bulkrax::Entry the job was triggered from (see #build_for_importer)
-    # @param parent_identifier [String] Work/Collection ID or Bulkrax::Entry source_identifier
-    # @param child_identifier [String] Work/Collection ID or Bulkrax::Entry source_identifier
+    # @param parent_identifier [String] Work/Collection ID or Bulkrax::Entry source_identifiers
     # @param importer_run [Bulkrax::ImporterRun] current importer run (needed to properly update counters)
     #
     # The entry_identifier is used to lookup the @base_entry for the job (a.k.a. the entry the job was called from).
@@ -33,51 +31,52 @@ module Bulkrax
     # Whether the @base_entry is the parent or the child in the relationship is determined by the presence of a
     # parent_identifier or child_identifier param. For example, if a parent_identifier is passed, we know @base_entry
     # is the child in the relationship, and vice versa if a child_identifier is passed.
-    def perform(entry_identifier:, parent_identifier: nil, child_identifier: nil, importer_run:)
-      @base_entry = Entry.find_by(identifier: entry_identifier)
-      @importer_run = importer_run
-      if parent_identifier.present?
-        @child_record = find_record(entry_identifier)
-        @parent_record = find_record(parent_identifier)
-      elsif child_identifier.present?
-        @parent_record = find_record(entry_identifier)
-        @child_record = find_record(child_identifier)
-      else
-        raise ::StandardError, %("#{entry_identifier}" needs either a child or a parent to create a relationship)
+    def perform(parent_identifier:, importer_run_id:)
+      pending_relationships = Bulkrax::PendingRelationship.find_each.select do |rel|
+        rel.bulkrax_importer_run_id == importer_run_id && rel.parent_id == parent_identifier
+      end.sort_by(&:order)
+
+      @importer_run_id = importer_run_id
+      @parent_record = find_record(parent_identifier)
+      @child_records = { works: [], collections: [] }
+      pending_relationships.each do |rel|
+        raise ::StandardError, %("#{rel}" needs either a child or a parent to create a relationship) if rel.child_id.nil? || rel.parent_id.nil?
+        child_record = find_record(rel.child_id)
+        child_record.is_a?(::Collection) ? @child_records[:collections] << child_record : @child_records[:works] << child_record
       end
 
-      if @child_record.blank? || @parent_record.blank?
+      if (child_records[:collections].blank? && child_records[:works].blank?) || parent_record.blank?
         reschedule(
-          entry_identifier: entry_identifier,
           parent_identifier: parent_identifier,
-          child_identifier: child_identifier,
-          importer_run: importer_run
+          importer_run_id: importer_run_id
         )
         return false # stop current job from continuing to run after rescheduling
       end
 
-      create_relationship
+      @parent_entry = Bulkrax::Entry.where(identifier: parent_identifier,
+                                           importerexporter_id: ImporterRun.find(importer_run_id).importer_id,
+                                           importerexporter_type: "Bulkrax::Importer").first
+      create_relationships
+      pending_relationships.each(&:destroy)
     rescue ::StandardError => e
-      base_entry.status_info(e)
-      importer_run.increment!(:failed_relationships) # rubocop:disable Rails/SkipsModelValidations
+      parent_entry.status_info(e)
+      Bulkrax::ImporterRun.find(importer_run_id).increment!(:failed_relationships) # rubocop:disable Rails/SkipsModelValidations
     end
 
     private
 
-    def create_relationship
-      if parent_record.is_a?(::Collection) && child_record.is_a?(::Collection)
-        collection_parent_collection_child
-      elsif parent_record.is_a?(::Collection) && curation_concern?(child_record)
-        collection_parent_work_child
-      elsif curation_concern?(parent_record) && child_record.is_a?(::Collection)
-        raise ::StandardError, 'a Collection may not be assigned as a child of a Work'
+    def create_relationships
+      if parent_record.is_a?(::Collection)
+        collection_parent_work_child unless child_records[:works].empty?
+        collection_parent_collection_child unless child_records[:collections].empty?
       else
-        work_parent_work_child
+        work_parent_work_child unless child_records[:works].empty?
+        raise ::StandardError, 'a Collection may not be assigned as a child of a Work' if child_records[:collections].present?
       end
     end
 
     def user
-      @user ||= importer_run.importer.user
+      @user ||= Bulkrax::ImporterRun.find(importer_run_id).importer.user
     end
 
     # Work-Collection membership is added to the child as member_of_collection_ids
@@ -87,18 +86,20 @@ module Bulkrax
         'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \
         ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
       )
-      attrs = { id: child_record.id, member_of_collections_attributes: { 0 => { id: parent_record.id } } }
-      ObjectFactory.new(
-        attributes: attrs,
-        source_identifier_value: nil, # sending the :id in the attrs means the factory doesn't need a :source_identifier_value
-        work_identifier: base_entry.parser.work_identifier,
-        collection_field_mapping: base_entry.parser.collection_field_mapping,
-        replace_files: false,
-        user: user,
-        klass: child_record.class
-      ).run
-      # TODO: add counters for :processed_parents and :failed_parents
-      importer_run.increment!(:processed_relationships) # rubocop:disable Rails/SkipsModelValidations
+      child_records[:works].each do |child_record|
+        attrs = { id: child_record.id, member_of_collections_attributes: { 0 => { id: parent_record.id } } }
+        ObjectFactory.new(
+          attributes: attrs,
+          source_identifier_value: nil, # sending the :id in the attrs means the factory doesn't need a :source_identifier_value
+          work_identifier: parent_entry.parser.work_identifier,
+          collection_field_mapping: parent_entry.parser.collection_field_mapping,
+          replace_files: false,
+          user: user,
+          klass: child_record.class
+        ).run
+        # TODO: add counters for :processed_parents and :failed_parents
+        Bulkrax::ImporterRun.find(importer_run_id).increment!(:processed_relationships) # rubocop:disable Rails/SkipsModelValidations
+      end
     end
 
     # Collection-Collection membership is added to the as member_ids
@@ -107,18 +108,19 @@ module Bulkrax
         'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \
         ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
       )
+      child_record = child_records[:collections].first
       attrs = { id: parent_record.id, child_collection_id: child_record.id }
       ObjectFactory.new(
         attributes: attrs,
         source_identifier_value: nil, # sending the :id in the attrs means the factory doesn't need a :source_identifier_value
-        work_identifier: base_entry.parser.work_identifier,
-        collection_field_mapping: base_entry.parser.collection_field_mapping,
+        work_identifier: parent_entry.parser.work_identifier,
+        collection_field_mapping: parent_entry.parser.collection_field_mapping,
         replace_files: false,
         user: user,
         klass: parent_record.class
       ).run
       # TODO: add counters for :processed_parents and :failed_parents
-      importer_run.increment!(:processed_relationships) # rubocop:disable Rails/SkipsModelValidations
+      Bulkrax::ImporterRun.find(importer_run_id).increment!(:processed_relationships) # rubocop:disable Rails/SkipsModelValidations
     end
 
     # Work-Work membership is added to the parent as member_ids
@@ -127,29 +129,32 @@ module Bulkrax
         'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \
         ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
       )
+
+      records_hash = {}
+      child_records[:works].each_with_index do |child_record, i|
+        records_hash[i] = { id: child_record.id }
+      end
       attrs = {
         id: parent_record.id,
-        work_members_attributes: { 0 => { id: child_record.id } }
+        work_members_attributes: records_hash
       }
       ObjectFactory.new(
         attributes: attrs,
         source_identifier_value: nil, # sending the :id in the attrs means the factory doesn't need a :source_identifier_value
-        work_identifier: base_entry.parser.work_identifier,
-        collection_field_mapping: base_entry.parser.collection_field_mapping,
+        work_identifier: parent_entry.parser.work_identifier,
+        collection_field_mapping: parent_entry.parser.collection_field_mapping,
         replace_files: false,
         user: user,
         klass: parent_record.class
       ).run
       # TODO: add counters for :processed_parents and :failed_parents
-      importer_run.increment!(:processed_relationships) # rubocop:disable Rails/SkipsModelValidations
+      Bulkrax::ImporterRun.find(importer_run_id).increment!(:processed_relationships) # rubocop:disable Rails/SkipsModelValidations
     end
 
-    def reschedule(entry_identifier:, parent_identifier:, child_identifier:, importer_run:)
+    def reschedule(parent_identifier:, importer_run_id:)
       CreateRelationshipsJob.set(wait: 10.minutes).perform_later(
-        entry_identifier: entry_identifier,
         parent_identifier: parent_identifier,
-        child_identifier: child_identifier,
-        importer_run: importer_run
+        importer_run_id: importer_run_id
       )
     end
   end

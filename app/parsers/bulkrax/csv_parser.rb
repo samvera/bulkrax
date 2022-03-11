@@ -151,6 +151,10 @@ module Bulkrax
       status_info(e)
     end
 
+    def create_relationships
+      ScheduleRelationshipsJob.set(wait: 5.minutes).perform_later(importer_id: importerexporter.id)
+    end
+
     # Add required metadata to collections being imported using the collection_field_mapping, which only have a :title
     # TODO: Remove once collection_field_mapping is removed
     def add_required_collection_metadata(raw_collection_data)
