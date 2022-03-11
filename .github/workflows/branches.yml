@@ -1,4 +1,4 @@
-name: Lint
+name: Verify
 on:
   pull_request:
     branches:
@@ -10,7 +10,7 @@ on:
 jobs:
   branches:
     runs-on: ubuntu-latest
-
+    name: Disallow "master" branch name
     steps:
       - uses: actions/checkout@v2
 

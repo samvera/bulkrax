@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        ruby: [ '2.5', '2.6', '2.7'] # TODO add 3.0 compat , '3.0']
+        ruby: ['2.5', '2.6', '2.7'] # TODO add 3.0 compat , '3.0']
     name: Run specs with ruby ${{ matrix.ruby }}
     steps:
       - uses: actions/checkout@v2

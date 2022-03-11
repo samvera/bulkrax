@@ -1,0 +1,30 @@
+name: Verify
+on:
+  pull_request:
+    branches:
+      - '**'
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - labeled
+      - unlabeled
+
+jobs:
+  check_pr_labels:
+    runs-on: ubuntu-latest
+    name: PR has required labels
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Check PR for Release Notes labels
+        uses: docker://agilepathway/pull-request-label-checker:latest
+        with:
+          one_of: patch-ver,minor-ver,major-ver,bug-fix,enhancement,breaking-change,database-changes,ignore-for-release
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check PR for cla-signed label
+        uses: docker://agilepathway/pull-request-label-checker:latest
+        with:
+          one_of: cla-signed
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
