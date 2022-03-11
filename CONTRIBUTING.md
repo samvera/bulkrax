@@ -199,6 +199,20 @@ bundle exec rspec (all specs)
 bundle exec rspec <path-to-file> (single file)
 ```
 
+### Troubleshooting the spec suite
+If you're unable to run migrations in the test environment, you may need to go into the test database itself to make the necessary changes before attempting to migrate again.
+
+- Example
+  ``` bash
+  rails db:migrate RAILS_ENV=test # => error: SQLite3::SQLException: table "bulkrax_pending_relationships" already exists
+  rails db test
+    sqlite> .tables # confirm the bulkrax_pending_relationships table exists
+    sqlite> drop table bulkrax_pending_relationships # delete the bulkrax_pending_relationships table
+    sqlite> .tables # confirm the bulkrax_pending_relationships table doesn't exist
+    sqlite> .quit # exit the sqlite db
+  rails db:migrate RAILS_ENV=test # should succeed! (barring no other migrations were failing)
+  ```
+
 ## Running rubocop
 Learn about the `-a` flag [here](https://docs.rubocop.org/rubocop/usage/basic_usage.html#auto-correcting-offenses)
 ```
