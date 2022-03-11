@@ -160,6 +160,7 @@ Common checks that may occur in our repositories:
 2. RuboCop/Bixby - where we check for style violations
 3. Approval Required - Github enforces at least one person approve a pull request. Also, all reviewers that have chimed in must approve.
 4. CodeClimate - is our code remaining healthy (at least according to static code analysis)
+5. Required Labels - the label required by [samvera-lab's cla-bot](https://github.com/samvera-labs/cla-bot) and an appropriate [semver](https://semver.org/) label (see [release.yml](https://github.com/samvera-labs/bulkrax/blob/main/.github/release.yml))
 
 If one or more of the required checks failed (or are incomplete), the code should not be merged (and the UI will not allow it). If all of the checks have passed, then anyone on the project (including the pull request submitter) may merge the code.
 
