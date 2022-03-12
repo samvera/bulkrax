@@ -28,7 +28,7 @@ module Bulkrax
         expect(subject.collections).to include({ model: 'cOlEcTiOn' })
       end
 
-      context 'when Bulkrax.collection_field_mapping' do
+      context 'when Bulkrax.related_parents_field_mapping' do
         before do
           allow(subject)
             .to receive(:records)
@@ -42,7 +42,7 @@ module Bulkrax
 
         context 'is set' do
           before do
-            allow(subject).to receive(:collection_field_mapping).and_return(:parent)
+            allow(subject).to receive(:related_parents_field_mapping).and_return(:parent)
           end
 
           it 'the collection field mapping is used' do
@@ -527,14 +527,14 @@ module Bulkrax
       end
     end
 
-    describe '#collection_field_mapping' do
+    describe '#related_parents_field_mapping' do
       context 'when the mapping is set' do
         before do
-          allow(Bulkrax).to receive(:collection_field_mapping).and_return({ 'Bulkrax::CsvEntry' => 'parent' })
+          allow(Bulkrax).to receive(:related_parents_field_mapping).and_return({ 'Bulkrax::CsvEntry' => 'parent' })
         end
 
         it 'returns the mapping' do
-          expect(subject.collection_field_mapping).to eq(:parent)
+          expect(subject.related_parents_field_mapping).to eq(:parent)
         end
       end
     end

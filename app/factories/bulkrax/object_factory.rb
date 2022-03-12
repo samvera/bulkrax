@@ -7,20 +7,15 @@ module Bulkrax
     include DynamicRecordLookup
 
     define_model_callbacks :save, :create
-    attr_reader :attributes, :object, :source_identifier_value, :klass, :replace_files, :update_files, :work_identifier, :collection_field_mapping, :related_parents_parsed_mapping
+    attr_reader :attributes, :object, :source_identifier_value, :klass, :replace_files, :update_files, :work_identifier, :related_parents_parsed_mapping
 
     # rubocop:disable Metrics/ParameterLists
-    def initialize(attributes:, source_identifier_value:, work_identifier:, collection_field_mapping:, related_parents_parsed_mapping: nil, replace_files: false, user: nil, klass: nil, update_files: false)
-      ActiveSupport::Deprecation.warn(
-        'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \
-        ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
-      )
+    def initialize(attributes:, source_identifier_value:, work_identifier:, related_parents_parsed_mapping: nil, replace_files: false, user: nil, klass: nil, update_files: false)
       @attributes = ActiveSupport::HashWithIndifferentAccess.new(attributes)
       @replace_files = replace_files
       @update_files = update_files
       @user = user || User.batch_user
       @work_identifier = work_identifier
-      @collection_field_mapping = collection_field_mapping
       @related_parents_parsed_mapping = related_parents_parsed_mapping
       @source_identifier_value = source_identifier_value
       @klass = klass || Bulkrax.default_work_type.constantize
@@ -142,25 +137,19 @@ module Bulkrax
     end
 
     def create_collection(attrs)
-      ActiveSupport::Deprecation.warn(
-        'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \
-        ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
-      )
+      # TODO swap :child_collection_id with related_children_field_mapping ? or remove?
       attrs = collection_type(attrs)
       persist_collection_memberships(parent: object, child: find_collection(attributes[:child_collection_id])) if attributes[:child_collection_id].present?
-      persist_collection_memberships(parent: find_collection(attributes[collection_field_mapping]), child: object) if attributes[collection_field_mapping].present?
+      persist_collection_memberships(parent: find_collection(attributes[related_parents_field_mapping]), child: object) if attributes[related_parents_field_mapping].present?
       object.attributes = attrs
       object.apply_depositor_metadata(@user)
       object.save!
     end
 
     def update_collection(attrs)
-      ActiveSupport::Deprecation.warn(
-        'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \
-        ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
-      )
+      # TODO swap :child_collection_id with related_children_field_mapping ? or remove?
       persist_collection_memberships(parent: object, child: find_collection(attributes[:child_collection_id])) if attributes[:child_collection_id].present?
-      persist_collection_memberships(parent: find_collection(attributes[collection_field_mapping]), child: object) if attributes[collection_field_mapping].present?
+      persist_collection_memberships(parent: find_collection(attributes[related_parents_field_mapping]), child: object) if attributes[related_parents_field_mapping].present?
       object.attributes = attrs
       object.save!
     end
@@ -223,22 +212,14 @@ module Bulkrax
     # which is used by Hyrax::Actors::AddAsMemberOfCollectionsActor
     def create_attributes
       return transform_attributes if klass == Collection
-      ActiveSupport::Deprecation.warn(
-        'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \
-        ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
-      )
-      transform_attributes.except(:collections, :collection, collection_field_mapping)
+      transform_attributes.except(:collections, :collection)
     end
 
     # Strip out the :collection key, and add the member_of_collection_ids,
     # which is used by Hyrax::Actors::AddAsMemberOfCollectionsActor
     def attribute_update
       return transform_attributes.except(:id) if klass == Collection
-      ActiveSupport::Deprecation.warn(
-        'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \
-        ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
-      )
-      transform_attributes.except(:id, :collections, :collection, collection_field_mapping)
+      transform_attributes.except(:id, :collections, :collection)
     end
 
     # Override if we need to map the attributes from the parser in

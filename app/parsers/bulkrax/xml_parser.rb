@@ -94,7 +94,7 @@ module Bulkrax
         else
           ImportWorkJob.send(perform_method, new_entry.id, current_run.id)
         end
-        increment_counters(index)
+        increment_counters(index, work: true)
       end
       importer.record_status
     rescue StandardError => e

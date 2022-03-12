@@ -26,10 +26,6 @@ module Bulkrax
     end
 
     def build_metadata
-      ActiveSupport::Deprecation.warn(
-        'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \
-        ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
-      )
       self.parsed_metadata = {}
       self.parsed_metadata[work_identifier] = [record.header.identifier]
 
@@ -61,6 +57,7 @@ module Bulkrax
     # If OAI-PMH doesn't return setSpec in the headers for GetRecord, use parser.collection_name
     #   in this case, if 'All' is selected, records will not be added to a collection.
     def find_collection_ids
+      # TODO replace unique_collection_identifier with related_parents_field_mapping ??
       return self.collection_ids if collections_created?
       if sets.blank? || parser.collection_name != 'all'
         # c = Collection.where(Bulkrax.system_identifier_field => importerexporter.unique_collection_identifier(parser.collection_name)).first

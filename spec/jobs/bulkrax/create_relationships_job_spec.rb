@@ -19,7 +19,6 @@ module Bulkrax
       {
         source_identifier_value: nil,
         work_identifier: :source,
-        collection_field_mapping: :collection,
         replace_files: false,
         user: importer.user
       }

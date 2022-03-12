@@ -18,14 +18,9 @@ module Bulkrax
     end
 
     def collections
-      ActiveSupport::Deprecation.warn(
-        'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \
-        ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
-      )
       # retrieve a list of unique collections
       records.map do |r|
         collections = []
-        r[collection_field_mapping].split(/\s*[;|]\s*/).each { |title| collections << { title: title, from_collection_field_mapping: true } } if r[collection_field_mapping].present?
         model_field_mappings.each do |model_mapping|
           collections << r if r[model_mapping.to_sym]&.downcase == 'collection'
         end
@@ -84,69 +79,34 @@ module Bulkrax
       false
     end
 
-    def create_collections
-      collections.each_with_index do |collection, index|
-        next if collection.blank?
-        break if records.find_index(collection).present? && limit_reached?(limit, records.find_index(collection))
+    def create_collections; end
 
-        ## BEGIN
-        # Add required metadata to collections being imported using the collection_field_mapping, which only have a :title
-        # TODO: Remove once collection_field_mapping is removed
-        metadata = add_required_collection_metadata(collection)
-        collection_hash = metadata.presence || collection
-        ## END
+    def create_works; end
 
-        new_entry = find_or_create_entry(collection_entry_class, collection_hash[source_identifier], 'Bulkrax::Importer', collection_hash)
-        increment_counters(index, collection: true)
-        # TODO: add support for :delete option
-        if collection.key?(:from_collection_field_mapping)
-          ActiveSupport::Deprecation.warn(
-            'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \
-            ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
+    def create_file_sets; end
+
+    def create_objects
+      types = %w[work file_set collection]
+      types.each do |type|
+        send(type.pluralize).each_with_index do |current_record, index|
+          next unless record_has_source_identifier(current_record, records.find_index(current_record))
+          break if limit_reached?(limit, records.find_index(current_record))
+
+          seen[current_record[source_identifier]] = true
+          new_entry = find_or_create_entry(send("#{type}_entry_class"),
+                                           current_record[source_identifier],
+                                           'Bulkrax::Importer',
+                                           current_record.to_h
           )
-          # When importing collections using the deprecated collection_field_mapping, the collection MUST be created
-          # before the work, so we use #perform_now to make sure that happens. The downside is, if a collection fails
-          # to import, it will stop the rest of the collections from importing successfully.
-          # TODO: Remove once collection_field_mapping is removed
-          ImportCollectionJob.perform_now(new_entry.id, current_run.id)
-        else
-          ImportCollectionJob.perform_later(new_entry.id, current_run.id)
+          if current_record[:delete].present?
+            "Delete#{type.camelize}Job".constantize.send(perform_method, new_entry, current_run)
+          else
+            "Import#{type.camelize}Job".constantize.send(perform_method, new_entry.id, current_run.id)
+          end
+          increment_counters(index, "#{type}": true)
         end
+        importer.record_status
       end
-      importer.record_status
-    rescue StandardError => e
-      status_info(e)
-    end
-
-    def create_works
-      works.each_with_index do |work, index|
-        next unless record_has_source_identifier(work, records.find_index(work))
-        break if limit_reached?(limit, records.find_index(work))
-
-        seen[work[source_identifier]] = true
-        new_entry = find_or_create_entry(entry_class, work[source_identifier], 'Bulkrax::Importer', work.to_h)
-        if work[:delete].present?
-          DeleteWorkJob.send(perform_method, new_entry, current_run)
-        else
-          ImportWorkJob.send(perform_method, new_entry.id, current_run.id)
-        end
-        increment_counters(index)
-      end
-      importer.record_status
-    rescue StandardError => e
-      status_info(e)
-    end
-
-    def create_file_sets
-      file_sets.each_with_index do |file_set, index|
-        next unless record_has_source_identifier(file_set, records.find_index(file_set))
-        break if limit_reached?(limit, records.find_index(file_set))
-
-        new_entry = find_or_create_entry(file_set_entry_class, file_set[source_identifier], 'Bulkrax::Importer', file_set.to_h)
-        ImportFileSetJob.perform_later(new_entry.id, current_run.id)
-        increment_counters(index, file_set: true)
-      end
-      importer.record_status
     rescue StandardError => e
       status_info(e)
     end
@@ -158,11 +118,7 @@ module Bulkrax
     # Add required metadata to collections being imported using the collection_field_mapping, which only have a :title
     # TODO: Remove once collection_field_mapping is removed
     def add_required_collection_metadata(raw_collection_data)
-      return unless raw_collection_data.key?(:from_collection_field_mapping)
-      ActiveSupport::Deprecation.warn(
-        'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \
-        ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
-      )
+      return unless raw_collection_data.key?(:from_related_parents_field_mapping)
 
       uci = unique_collection_identifier(raw_collection_data)
       {
@@ -278,6 +234,7 @@ module Bulkrax
     def entry_class
       CsvEntry
     end
+    alias work_entry_class entry_class
 
     def collection_entry_class
       CsvCollectionEntry

@@ -82,17 +82,12 @@ module Bulkrax
     # Work-Collection membership is added to the child as member_of_collection_ids
     # This is adding the reverse relationship, from the child to the parent
     def collection_parent_work_child
-      ActiveSupport::Deprecation.warn(
-        'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \
-        ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
-      )
       child_records[:works].each do |child_record|
         attrs = { id: child_record.id, member_of_collections_attributes: { 0 => { id: parent_record.id } } }
         ObjectFactory.new(
           attributes: attrs,
           source_identifier_value: nil, # sending the :id in the attrs means the factory doesn't need a :source_identifier_value
           work_identifier: parent_entry.parser.work_identifier,
-          collection_field_mapping: parent_entry.parser.collection_field_mapping,
           replace_files: false,
           user: user,
           klass: child_record.class
@@ -104,17 +99,12 @@ module Bulkrax
 
     # Collection-Collection membership is added to the as member_ids
     def collection_parent_collection_child
-      ActiveSupport::Deprecation.warn(
-        'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \
-        ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
-      )
       child_record = child_records[:collections].first
       attrs = { id: parent_record.id, child_collection_id: child_record.id }
       ObjectFactory.new(
         attributes: attrs,
         source_identifier_value: nil, # sending the :id in the attrs means the factory doesn't need a :source_identifier_value
         work_identifier: parent_entry.parser.work_identifier,
-        collection_field_mapping: parent_entry.parser.collection_field_mapping,
         replace_files: false,
         user: user,
         klass: parent_record.class
@@ -125,11 +115,6 @@ module Bulkrax
 
     # Work-Work membership is added to the parent as member_ids
     def work_parent_work_child
-      ActiveSupport::Deprecation.warn(
-        'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \
-        ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
-      )
-
       records_hash = {}
       child_records[:works].each_with_index do |child_record, i|
         records_hash[i] = { id: child_record.id }
@@ -142,7 +127,6 @@ module Bulkrax
         attributes: attrs,
         source_identifier_value: nil, # sending the :id in the attrs means the factory doesn't need a :source_identifier_value
         work_identifier: parent_entry.parser.work_identifier,
-        collection_field_mapping: parent_entry.parser.collection_field_mapping,
         replace_files: false,
         user: user,
         klass: parent_record.class
