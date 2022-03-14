@@ -81,7 +81,6 @@ module Bulkrax
 
       context 'when the mapping is not set' do
         it 'returns "parents" by default' do
-          byebug
           expect(xml_parser.related_parents_parsed_mapping).to eq('parents')
         end
       end
