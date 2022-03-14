@@ -16,6 +16,7 @@ module Bulkrax
       @update_files = update_files
       @user = user || User.batch_user
       @work_identifier = work_identifier
+      # byebug
       @related_parents_parsed_mapping = related_parents_parsed_mapping
       @source_identifier_value = source_identifier_value
       @klass = klass || Bulkrax.default_work_type.constantize
@@ -137,7 +138,7 @@ module Bulkrax
     end
 
     def create_collection(attrs)
-      # TODO swap :child_collection_id with related_children_field_mapping ? or remove?
+      # TODO: swap :child_collection_id with related_children_field_mapping ? or remove?
       attrs = collection_type(attrs)
       persist_collection_memberships(parent: object, child: find_collection(attributes[:child_collection_id])) if attributes[:child_collection_id].present?
       persist_collection_memberships(parent: find_collection(attributes[related_parents_field_mapping]), child: object) if attributes[related_parents_field_mapping].present?
@@ -147,7 +148,7 @@ module Bulkrax
     end
 
     def update_collection(attrs)
-      # TODO swap :child_collection_id with related_children_field_mapping ? or remove?
+      # TODO: swap :child_collection_id with related_children_field_mapping ? or remove?
       persist_collection_memberships(parent: object, child: find_collection(attributes[:child_collection_id])) if attributes[:child_collection_id].present?
       persist_collection_memberships(parent: find_collection(attributes[related_parents_field_mapping]), child: object) if attributes[related_parents_field_mapping].present?
       object.attributes = attrs

@@ -56,7 +56,7 @@ module Bulkrax
     end
 
     def related_parents_parsed_mapping
-      @related_parents_parsed_mapping ||= get_field_mapping_hash_for('related_parents_field_mapping')&.keys&.first
+      @related_parents_parsed_mapping ||= (get_field_mapping_hash_for('related_parents_field_mapping')&.keys&.first || 'parents')
     end
 
     def related_children_raw_mapping
@@ -64,7 +64,7 @@ module Bulkrax
     end
 
     def related_children_parsed_mapping
-      @related_children_parsed_mapping ||= get_field_mapping_hash_for('related_children_field_mapping')&.keys&.first
+      @related_children_parsed_mapping ||= (get_field_mapping_hash_for('related_children_field_mapping')&.keys&.first || 'children')
     end
 
     def get_field_mapping_hash_for(key)
@@ -79,6 +79,7 @@ module Bulkrax
       instance_variable_get("@#{key}_hash")
     end
 
+    # TODO: remove
     def collection_field_mapping
       ActiveSupport::Deprecation.warn(
         'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \

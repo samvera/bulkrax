@@ -71,6 +71,7 @@ module Bulkrax
     end
 
     def self.collection_field
+      # byebug
       Bulkrax.related_parents_field_mapping[self.to_s]
     end
 

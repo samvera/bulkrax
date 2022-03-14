@@ -83,7 +83,7 @@ module Bulkrax
     end
 
     def collections
-      records.map { |r| r[related_parents_field_mapping].split(/\s*[;|]\s*/) if r[related_parents_field_mapping].present? }.flatten.compact.uniq
+      records.map { |r| r[related_parents_field_mapping[entry_class.to_s]].split(/\s*[;|]\s*/) if r[related_parents_field_mapping[entry_class.to_s]].present? }.flatten.compact.uniq
     end
 
     def collections_total

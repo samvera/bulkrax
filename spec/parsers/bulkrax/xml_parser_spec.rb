@@ -62,27 +62,27 @@ module Bulkrax
       end
     end
 
-    describe '#collection_field_mapping' do
+    describe '#parent_field_mapping' do
       subject(:xml_parser) { described_class.new(importer) }
       let(:importer) { FactoryBot.create(:bulkrax_importer_xml) }
 
       context 'when the mapping is set' do
         before do
-          allow(Bulkrax).to receive(:related_parents_field_mapping).and_return({ 'Bulkrax::XmlEntry' => 'parent' })
+          importer.field_mapping = {
+              'parents_test' => { 'from' => ['parents_column'], related_parents_field_mapping: true },
+              'children_test' => { 'from' => ['children_column'], related_children_field_mapping: true },
+              'unrelated' => { 'from' => ['unrelated_column'] }
+          }
         end
-
         it 'returns the mapping' do
-          expect(xml_parser.related_parents_field_mapping).to eq(:parent)
+          expect(xml_parser.related_parents_parsed_mapping).to eq('parents_test')
         end
       end
 
       context 'when the mapping is not set' do
-        before do
-          allow(Bulkrax).to receive(:related_parents_field_mapping).and_return({})
-        end
-
-        it 'returns :collection' do
-          expect(xml_parser.related_parents_field_mapping).to eq(:collection)
+        it 'returns "parents" by default' do
+          byebug
+          expect(xml_parser.related_parents_parsed_mapping).to eq('parents')
         end
       end
     end

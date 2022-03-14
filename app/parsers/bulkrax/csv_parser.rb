@@ -79,30 +79,37 @@ module Bulkrax
       false
     end
 
-    def create_collections; end
+    def create_collections
+      # byebug
+      create_objects(['collection'])
+    end
 
-    def create_works; end
+    def create_works
+      create_objects(['work'])
+    end
 
-    def create_file_sets; end
+    def create_file_sets
+      create_objects(['file_set'])
+    end
 
-    def create_objects
-      types = %w[work file_set collection]
-      types.each do |type|
+    def create_relationships
+      create_objects(['relationship'])
+    end
+
+    def create_objects(types_array = nil)
+      # byebug
+      (types_array || %w[work collection file_set relationship]).each do |type|
+        if type.eql?('relationship')
+          ScheduleRelationshipsJob.set(wait: 5.minutes).perform_later(importer_id: importerexporter.id)
+          next
+        end
         send(type.pluralize).each_with_index do |current_record, index|
+          # byebug
           next unless record_has_source_identifier(current_record, records.find_index(current_record))
           break if limit_reached?(limit, records.find_index(current_record))
 
           seen[current_record[source_identifier]] = true
-          new_entry = find_or_create_entry(send("#{type}_entry_class"),
-                                           current_record[source_identifier],
-                                           'Bulkrax::Importer',
-                                           current_record.to_h
-          )
-          if current_record[:delete].present?
-            "Delete#{type.camelize}Job".constantize.send(perform_method, new_entry, current_run)
-          else
-            "Import#{type.camelize}Job".constantize.send(perform_method, new_entry.id, current_run.id)
-          end
+          create_entry_and_job(current_record, type)
           increment_counters(index, "#{type}": true)
         end
         importer.record_status
@@ -111,23 +118,17 @@ module Bulkrax
       status_info(e)
     end
 
-    def create_relationships
-      ScheduleRelationshipsJob.set(wait: 5.minutes).perform_later(importer_id: importerexporter.id)
-    end
-
-    # Add required metadata to collections being imported using the collection_field_mapping, which only have a :title
-    # TODO: Remove once collection_field_mapping is removed
-    def add_required_collection_metadata(raw_collection_data)
-      return unless raw_collection_data.key?(:from_related_parents_field_mapping)
-
-      uci = unique_collection_identifier(raw_collection_data)
-      {
-        title: raw_collection_data[:title],
-        work_identifier => uci,
-        source_identifier => uci,
-        visibility: 'open',
-        collection_type_gid: ::Hyrax::CollectionType.find_or_create_default_collection_type.gid
-      }
+    def create_entry_and_job(current_record, type)
+      new_entry = find_or_create_entry(send("#{type}_entry_class"),
+                                       current_record[source_identifier],
+                                       'Bulkrax::Importer',
+                                       current_record.to_h)
+      if current_record[:delete].present?
+        # TODO: create a "Delete" job for file_sets and collections
+        "Bulkrax::Delete#{type.camelize}Job".constantize.send(perform_method, new_entry, current_run)
+      else
+        "Bulkrax::Import#{type.camelize}Job".constantize.send(perform_method, new_entry.id, current_run.id)
+      end
     end
 
     def write_partial_import_file(file)

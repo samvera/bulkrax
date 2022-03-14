@@ -33,6 +33,10 @@ module Bulkrax
     self.removed_image_path = Bulkrax::Engine.root.join('spec', 'fixtures', 'removed.png').to_s
     self.server_name = 'bulkrax@example.com'
 
+    self.related_parents_field_mapping = {
+      'Bulkrax::CsvEntry' => 'collection'
+    }
+
     # Hash of Generic field_mappings for use in the view
     # There must be one field_mappings hash per view parial
     # Based on Hyrax CoreMetadata && BasicMetadata

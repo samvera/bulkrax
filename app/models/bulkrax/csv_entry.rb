@@ -69,7 +69,7 @@ module Bulkrax
       # we do not want to sort the values in the record before adding the metadata.
       # if we do, the factory_class will be set to the default_work_type for all values that come before "model" or "work type"
       record.each do |key, value|
-        next if self.parser.related_parents_field_mapping.to_s == key_without_numbers(key)
+        next if self.parser.related_parents_field_mapping[self.to_s] == key_without_numbers(key)
 
         index = key[/\d+/].to_i - 1 if key[/\d+/].to_i != 0
         add_metadata(key_without_numbers(key), value, index)
