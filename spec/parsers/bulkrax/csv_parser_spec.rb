@@ -496,9 +496,9 @@ module Bulkrax
       context 'when the mapping is set' do
         before do
           importer.field_mapping = {
-              'parents' => { 'from' => ['parents_column'], related_parents_field_mapping: true },
-              'children' => { 'from' => ['children_column'], related_children_field_mapping: true },
-              'unrelated' => { 'from' => ['unrelated_column'] }
+            'parents' => { 'from' => ['parents_column'], related_parents_field_mapping: true },
+            'children' => { 'from' => ['children_column'], related_children_field_mapping: true },
+            'unrelated' => { 'from' => ['unrelated_column'] }
           }
         end
 
