@@ -22,14 +22,15 @@ module Bulkrax
         encoding: 'utf-8')
     end
 
-    def self.data_for_entry(data, _source_id)
+    def self.data_for_entry(data, _source_id, parser)
       # If a multi-line CSV data is passed, grab the first row
       data = data.first if data.is_a?(CSV::Table)
       # model has to be separated so that it doesn't get mistranslated by to_h
       raw_data = data.to_h
       raw_data[:model] = data[:model] if data[:model].present?
       # If the collection field mapping is not 'collection', add 'collection' - the parser needs it
-      raw_data[:collection] = raw_data[collection_field.to_sym] if raw_data.keys.include?(collection_field.to_sym) && collection_field != 'collection'
+      # TODO: change to :parents
+      raw_data[:collection] = raw_data[parent_field(parser).to_sym] if raw_data.keys.include?(parent_field(parser).to_sym) && parent_field(parser) != 'parents'
       return raw_data
     end
 
@@ -69,7 +70,7 @@ module Bulkrax
       # we do not want to sort the values in the record before adding the metadata.
       # if we do, the factory_class will be set to the default_work_type for all values that come before "model" or "work type"
       record.each do |key, value|
-        next if self.parser.related_parents_field_mapping[self.to_s] == key_without_numbers(key)
+        next if self.parser.related_parents_parsed_mapping == key_without_numbers(key)
 
         index = key[/\d+/].to_i - 1 if key[/\d+/].to_i != 0
         add_metadata(key_without_numbers(key), value, index)
@@ -222,7 +223,7 @@ module Bulkrax
     def possible_collection_ids
       return @possible_collection_ids if @possible_collection_ids.present?
 
-      collection_field_mapping = self.class.collection_field
+      collection_field_mapping = self.class.parent_field(parser)
       return [] unless collection_field_mapping.present? && record[collection_field_mapping].present?
 
       identifiers = []

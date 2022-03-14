@@ -661,7 +661,7 @@ module Bulkrax
         end
 
         describe '#related_parents_parsed_mapping' do
-          it { expect(subject.related_parents_parsed_mapping).to be_nil }
+          it { expect(subject.related_parents_parsed_mapping).to eq('parents') }
         end
 
         describe '#related_children_raw_mapping' do
@@ -669,7 +669,7 @@ module Bulkrax
         end
 
         describe '#related_children_parsed_mapping' do
-          it { expect(subject.related_children_parsed_mapping).to be_nil }
+          it { expect(subject.related_children_parsed_mapping).to eq('children') }
         end
       end
 

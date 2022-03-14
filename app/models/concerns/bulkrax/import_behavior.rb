@@ -95,7 +95,7 @@ module Bulkrax
       @factory ||= Bulkrax::ObjectFactory.new(attributes: self.parsed_metadata,
                                               source_identifier_value: identifier,
                                               work_identifier: parser.work_identifier,
-                                              related_parents_parsed_mapping: related_parents_parsed_mapping,
+                                              related_parents_parsed_mapping: parser.related_parents_parsed_mapping,
                                               replace_files: replace_files,
                                               user: user,
                                               klass: factory_class,

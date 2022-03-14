@@ -141,7 +141,7 @@ module Bulkrax
       # TODO: swap :child_collection_id with related_children_field_mapping ? or remove?
       attrs = collection_type(attrs)
       persist_collection_memberships(parent: object, child: find_collection(attributes[:child_collection_id])) if attributes[:child_collection_id].present?
-      persist_collection_memberships(parent: find_collection(attributes[related_parents_field_mapping]), child: object) if attributes[related_parents_field_mapping].present?
+      persist_collection_memberships(parent: find_collection(attributes[related_parents_parsed_mapping]), child: object) if attributes[related_parents_parsed_mapping].present?
       object.attributes = attrs
       object.apply_depositor_metadata(@user)
       object.save!
@@ -150,7 +150,7 @@ module Bulkrax
     def update_collection(attrs)
       # TODO: swap :child_collection_id with related_children_field_mapping ? or remove?
       persist_collection_memberships(parent: object, child: find_collection(attributes[:child_collection_id])) if attributes[:child_collection_id].present?
-      persist_collection_memberships(parent: find_collection(attributes[related_parents_field_mapping]), child: object) if attributes[related_parents_field_mapping].present?
+      persist_collection_memberships(parent: find_collection(attributes[related_parents_parsed_mapping]), child: object) if attributes[related_parents_parsed_mapping].present?
       object.attributes = attrs
       object.save!
     end

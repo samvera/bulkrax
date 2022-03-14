@@ -58,7 +58,7 @@ module Bulkrax
     # @param data - the data from the metadata file
     # @param path - the path to the metadata file (used by some entries to get the file_paths for import)
     # @return Hash containing the data (the entry build_metadata method will know what to expect in the hash)
-    def self.data_for_entry(_data, _source_id)
+    def self.data_for_entry(_data, _source_id, _parser)
       raise StandardError, 'Not Implemented'
     end
 
@@ -70,9 +70,8 @@ module Bulkrax
       parser&.work_identifier&.to_s || 'source'
     end
 
-    def self.collection_field
-      # byebug
-      Bulkrax.related_parents_field_mapping[self.to_s]
+    def self.parent_field(parser)
+      parser.related_parents_parsed_mapping
     end
 
     def build

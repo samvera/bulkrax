@@ -14,7 +14,7 @@ module Bulkrax
       csv_data = entry_class.read_data(file_for_import)
       importer.parser_fields['total'] = csv_data.count
       importer.save
-      @records ||= csv_data.map { |record_data| entry_class.data_for_entry(record_data, nil) }
+      @records ||= csv_data.map { |record_data| entry_class.data_for_entry(record_data, nil, self) }
     end
 
     def collections

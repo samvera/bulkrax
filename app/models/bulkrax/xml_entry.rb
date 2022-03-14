@@ -14,7 +14,7 @@ module Bulkrax
       Nokogiri::XML(open(path)).remove_namespaces!
     end
 
-    def self.data_for_entry(data, source_id)
+    def self.data_for_entry(data, source_id, _parser)
       collections = []
       children = []
       xpath_for_source_id = ".//*[name()='#{source_id}']"

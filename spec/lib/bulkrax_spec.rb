@@ -16,18 +16,6 @@ RSpec.describe Bulkrax do
       end
     end
 
-    context 'related_parents_field_mapping' do
-      it 'responds to related_parents_field_mapping' do
-        expect(described_class).to respond_to(:related_parents_field_mapping)
-      end
-      it 'related_parents_field_mapping is settable' do
-        expect(described_class).to respond_to(:related_parents_field_mapping=)
-      end
-      it 'has a default value for CsvEntry' do
-        expect(described_class.related_parents_field_mapping).to eq({ 'Bulkrax::CsvEntry' => 'collection' })
-      end
-    end
-
     context 'import_path' do
       it 'responds to import_path' do
         expect(described_class).to respond_to(:import_path)

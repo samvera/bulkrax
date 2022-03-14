@@ -62,7 +62,12 @@ FactoryBot.define do
     parser_klass { 'Bulkrax::CsvParser' }
     limit { 10 }
     parser_fields { { 'import_file_path' => 'spec/fixtures/csv/complex.csv' } }
-    field_mapping { {} }
+    field_mapping do
+      {
+        'parents' => { 'from' => ['parents_column'], split: /\s*[|]\s*/, related_parents_field_mapping: true },
+        'children' => { 'from' => ['children_column'], split: /\s*[|]\s*/, related_children_field_mapping: true }
+      }
+    end
   end
 
   factory :bulkrax_importer_bagit, class: 'Bulkrax::Importer' do

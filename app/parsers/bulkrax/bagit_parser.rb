@@ -39,7 +39,7 @@ module Bulkrax
         path = metadata_path(bag)
         raise StandardError, 'No metadata files were found' if path.blank?
         data = entry_class.read_data(path)
-        data = entry_class.data_for_entry(data, source_identifier)
+        data = entry_class.data_for_entry(data, source_identifier, self)
         data[:file] = bag.bag_files.join('|') unless importerexporter.metadata_only?
         data
       end
@@ -83,7 +83,7 @@ module Bulkrax
     end
 
     def collections
-      records.map { |r| r[related_parents_field_mapping[entry_class.to_s]].split(/\s*[;|]\s*/) if r[related_parents_field_mapping[entry_class.to_s]].present? }.flatten.compact.uniq
+      records.map { |r| r[related_parents_parsed_mapping].split(/\s*[;|]\s*/) if r[related_parents_parsed_mapping].present? }.flatten.compact.uniq
     end
 
     def collections_total

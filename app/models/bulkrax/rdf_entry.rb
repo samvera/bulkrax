@@ -13,7 +13,7 @@ module Bulkrax
       data.predicates.map(&:to_s)
     end
 
-    def self.data_for_entry(data, source_id)
+    def self.data_for_entry(data, source_id, parser)
       reader = data
       format = reader.class.format.to_sym
       collections = []
@@ -21,7 +21,7 @@ module Bulkrax
       delete = nil
       data = RDF::Writer.for(format).buffer do |writer|
         reader.each_statement do |statement|
-          collections << statement.object.to_s if collection_field.present? && collection_field == statement.predicate.to_s
+          collections << statement.object.to_s if parent_field(parser).present? && parent_field(parser) == statement.predicate.to_s
           children << statement.object.to_s if related_children_parsed_mapping.present? && related_children_parsed_mapping == statement.predicate.to_s
           delete = statement.object.to_s if /deleted/.match?(statement.predicate.to_s)
           writer << statement
