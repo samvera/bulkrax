@@ -57,7 +57,6 @@ module Bulkrax
     # If OAI-PMH doesn't return setSpec in the headers for GetRecord, use parser.collection_name
     #   in this case, if 'All' is selected, records will not be added to a collection.
     def find_collection_ids
-      # TODO: replace unique_collection_identifier with related_parents_field_mapping ??
       return self.collection_ids if collections_created?
       if sets.blank? || parser.collection_name != 'all'
         # c = Collection.where(Bulkrax.system_identifier_field => importerexporter.unique_collection_identifier(parser.collection_name)).first
