@@ -55,10 +55,6 @@ module Bulkrax
       @related_parents_raw_mapping ||= get_field_mapping_hash_for('related_parents_field_mapping')&.values&.first&.[]('from')&.first
     end
 
-    def related_parents_field_mapping
-      # no op
-    end
-
     def related_parents_parsed_mapping
       @related_parents_parsed_mapping ||= (get_field_mapping_hash_for('related_parents_field_mapping')&.keys&.first || 'parents')
     end
@@ -82,15 +78,6 @@ module Bulkrax
       raise StandardError, "more than one #{key} declared: #{instance_variable_get("@#{key}_hash").keys.join(', ')}" if instance_variable_get("@#{key}_hash").length > 1
 
       instance_variable_get("@#{key}_hash")
-    end
-
-    # TODO: remove
-    def collection_field_mapping
-      ActiveSupport::Deprecation.warn(
-        'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \
-        ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
-      )
-      Bulkrax.collection_field_mapping[self.entry_class.to_s]&.to_sym || :collection
     end
 
     def model_field_mappings
