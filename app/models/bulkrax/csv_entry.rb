@@ -30,7 +30,7 @@ module Bulkrax
       raw_data[:model] = data[:model] if data[:model].present?
       # If the collection field mapping is not 'collection', add 'collection' - the parser needs it
       # TODO: change to :parents
-      raw_data[:collection] = raw_data[parent_field(parser).to_sym] if raw_data.keys.include?(parent_field(parser).to_sym) && parent_field(parser) != 'parents'
+      raw_data[:parents] = raw_data[parent_field(parser).to_sym] if raw_data.keys.include?(parent_field(parser).to_sym) && parent_field(parser) != 'parents'
       return raw_data
     end
 
@@ -44,7 +44,6 @@ module Bulkrax
       add_visibility
       add_metadata_for_model
       add_rights_statement
-      add_collections
       add_local
 
       self.parsed_metadata
@@ -70,8 +69,6 @@ module Bulkrax
       # we do not want to sort the values in the record before adding the metadata.
       # if we do, the factory_class will be set to the default_work_type for all values that come before "model" or "work type"
       record.each do |key, value|
-        next if self.parser.related_parents_parsed_mapping == key_without_numbers(key)
-
         index = key[/\d+/].to_i - 1 if key[/\d+/].to_i != 0
         add_metadata(key_without_numbers(key), value, index)
       end
