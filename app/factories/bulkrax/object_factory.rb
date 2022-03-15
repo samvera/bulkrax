@@ -16,7 +16,6 @@ module Bulkrax
       @update_files = update_files
       @user = user || User.batch_user
       @work_identifier = work_identifier
-      # byebug
       @related_parents_parsed_mapping = related_parents_parsed_mapping
       @source_identifier_value = source_identifier_value
       @klass = klass || Bulkrax.default_work_type.constantize

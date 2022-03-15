@@ -80,7 +80,6 @@ module Bulkrax
     end
 
     def create_collections
-      # byebug
       create_objects(['collection'])
     end
 
@@ -97,14 +96,12 @@ module Bulkrax
     end
 
     def create_objects(types_array = nil)
-      # byebug
       (types_array || %w[work collection file_set relationship]).each do |type|
         if type.eql?('relationship')
           ScheduleRelationshipsJob.set(wait: 5.minutes).perform_later(importer_id: importerexporter.id)
           next
         end
         send(type.pluralize).each_with_index do |current_record, index|
-          # byebug
           next unless record_has_source_identifier(current_record, records.find_index(current_record))
           break if limit_reached?(limit, records.find_index(current_record))
 
