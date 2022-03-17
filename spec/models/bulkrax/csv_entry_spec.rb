@@ -714,6 +714,73 @@ module Bulkrax
         end
       end
     end
+
+    describe '#build_relationship_metadata' do
+      subject(:entry) { described_class.new(importerexporter: exporter) }
+      let(:exporter) { create(:bulkrax_exporter) }
+      let(:hyrax_record) do
+        OpenStruct.new(
+          has_model: ['FileSet'],
+          source: 'test',
+          member_of_collections: [],
+          file_sets: []
+        )
+      end
+
+      before do
+        allow(entry).to receive(:hyrax_record).and_return(hyrax_record)
+      end
+
+      it 'gets called by #build_export_metadata' do
+        expect(entry).to receive(:build_file_set_metadata).once
+        entry.build_export_metadata
+      end
+
+      context 'when entry#hyrax_record is not a FileSet' do
+        let(:hyrax_record) { OpenStruct.new(file_set?: false) }
+
+        it 'does not raise an error' do
+          expect { entry.build_relationship_metadata }.not_to raise_error
+        end
+
+        it 'does not change the parsed_metadata' do
+          expect { entry.build_file_set_metadata }.not_to change { entry.parsed_metadata }
+        end
+      end
+
+      context 'when entry#hyrax_record is a FileSet' do
+        let(:hyrax_record) do
+          OpenStruct.new(
+            file_set?: true,
+            files: [
+              OpenStruct.new(original_name: 'hello.png'),
+              OpenStruct.new(original_name: 'world.jpg')
+            ]
+          )
+        end
+
+        before do
+          entry.parsed_metadata = {}
+        end
+
+        context 'when the parser has a file field mapping' do
+          let(:exporter) { create(:bulkrax_exporter, field_mapping: { 'file' => { from: ['filename'] } }) }
+
+          it "adds all of the file set's filenames to the file mapping in parsed_metadata" do
+            entry.build_file_set_metadata
+
+            expect(entry.parsed_metadata['filename']).to eq(%w[hello.png world.jpg])
+          end
+        end
+
+        context 'when the parser has a file field mapping' do
+          it 'throws an error' do
+            expect { entry.build_file_set_metadata }
+              .to raise_error(StandardError, %(This parser (Bulkrax::CsvParser) is missing a "file" field_mapping. Please add one in config/initializers/bulkrax.rb))
+          end
+        end
+      end
+    end
   end
 end
 # rubocop: enable Metrics/BlockLength

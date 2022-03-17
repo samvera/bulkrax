@@ -127,7 +127,12 @@ module Bulkrax
     def build_file_set_metadata
       return unless hyrax_record.file_set?
 
-      file_mapping = mapping['file']['from'].first
+      file_mapping = mapping['file']&.[]('from')&.first
+      if file_mapping.blank?
+        msg = %(This parser (#{parser.class}) is missing a "file" field_mapping. Please add one in config/initializers/bulkrax.rb).strip
+        raise ::StandardError, msg
+      end
+
       parsed_metadata[file_mapping] = hyrax_record.files&.map(&:original_name)
     end
 
