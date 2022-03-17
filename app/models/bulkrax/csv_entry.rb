@@ -104,6 +104,7 @@ module Bulkrax
       self.parsed_metadata['id'] = hyrax_record.id
       self.parsed_metadata[source_identifier] = hyrax_record.send(work_identifier)
       self.parsed_metadata['model'] = hyrax_record.has_model.first
+      build_file_set_metadata
       build_relationship_metadata
       build_mapping_metadata
 
@@ -121,6 +122,13 @@ module Bulkrax
 
       build_files unless hyrax_record.is_a?(Collection)
       self.parsed_metadata
+    end
+
+    def build_file_set_metadata
+      return unless hyrax_record.file_set?
+
+      file_mapping = mapping['file']['from'].first
+      parsed_metadata[file_mapping] = hyrax_record.files&.map(&:original_name)
     end
 
     def build_relationship_metadata
