@@ -641,6 +641,79 @@ module Bulkrax
         end
       end
     end
+
+    describe '#build_relationship_metadata' do
+      subject(:entry) { described_class.new(importerexporter: exporter) }
+      let(:exporter) { create(:bulkrax_exporter) }
+      let(:hyrax_record) do
+        OpenStruct.new(
+          has_model: ['Work'],
+          source: 'test',
+          member_of_collections: [],
+          file_sets: []
+        )
+      end
+
+      before do
+        allow(entry).to receive(:hyrax_record).and_return(hyrax_record)
+      end
+
+      it 'gets called by #build_export_metadata' do
+        expect(entry).to receive(:build_relationship_metadata).once
+        entry.build_export_metadata
+      end
+
+      context 'when parser does not have relationship field mappings' do
+        it 'does not raise an error' do
+          expect { entry.build_relationship_metadata }.not_to raise_error
+        end
+
+        it "does not change the entry's parsed_metadata" do
+          expect { entry.build_relationship_metadata }.not_to change { entry.parsed_metadata }
+        end
+      end
+
+      context 'when parser has relationship field mappings' do
+        let(:exporter) { create(:bulkrax_exporter, :with_relationships_mappings) }
+
+        before do
+          entry.parsed_metadata = {}
+          entry.build_relationship_metadata
+        end
+
+        it 'adds the relationship keys to the parsed_metadata' do
+          expect(entry.parsed_metadata.keys).to include('parents', 'children')
+        end
+
+        context "when the entry's record does not have any relationships" do
+          it 'adds empty arrays to the relationship mappings in the parsed_metadata' do
+            expect(entry.parsed_metadata['parents']).to eq([])
+            expect(entry.parsed_metadata['children']).to eq([])
+          end
+        end
+
+        context "when the entry's record has relationships" do
+          let(:hyrax_record) do
+            OpenStruct.new(
+              member_of_collection_ids: %w[pc1 pc2],
+              member_of_work_ids: %w[pw1 pw2],
+              in_work_ids: %w[pw3 pw4], # used by FileSets
+              member_collection_ids: %w[cc1 cc2],
+              member_work_ids: %w[cw1 cw2],
+              file_set_ids: %w[cfs1 cfs2]
+            )
+          end
+
+          it 'adds all the parent relationships to the parent field mapping' do
+            expect(entry.parsed_metadata['parents']).to eq(%w[pc1 pc2 pw1 pw2 pw3 pw4])
+          end
+
+          it 'adds all the child relationships to the child field mapping' do
+            expect(entry.parsed_metadata['children']).to eq(%w[cc1 cc2 cw1 cw2 cfs1 cfs2])
+          end
+        end
+      end
+    end
   end
 end
 # rubocop: enable Metrics/BlockLength

@@ -104,6 +104,7 @@ module Bulkrax
       self.parsed_metadata['id'] = hyrax_record.id
       self.parsed_metadata[source_identifier] = hyrax_record.send(work_identifier)
       self.parsed_metadata['model'] = hyrax_record.has_model.first
+      build_relationship_metadata
       build_mapping_metadata
 
       # TODO: fix the "send" parameter in the conditional below
@@ -120,6 +121,24 @@ module Bulkrax
 
       build_files unless hyrax_record.is_a?(Collection)
       self.parsed_metadata
+    end
+
+    def build_relationship_metadata
+      # Includes all relationship methods for all exportable record types (works, Collections, FileSets)
+      relationship_methods = {
+        related_parents_parsed_mapping => %i[member_of_collection_ids member_of_work_ids in_work_ids],
+        related_children_parsed_mapping => %i[member_collection_ids member_work_ids file_set_ids]
+      }
+
+      relationship_methods.each do |relationship_key, methods|
+        next if relationship_key.blank?
+
+        parsed_metadata[relationship_key] ||= []
+        methods.each do |m|
+          parsed_metadata[relationship_key] << hyrax_record.public_send(m) if hyrax_record.respond_to?(m)
+        end
+        parsed_metadata[relationship_key] = parsed_metadata[relationship_key].flatten.uniq
+      end
     end
 
     def build_mapping_metadata
