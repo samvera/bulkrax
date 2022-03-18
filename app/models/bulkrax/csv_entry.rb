@@ -104,7 +104,6 @@ module Bulkrax
       self.parsed_metadata['id'] = hyrax_record.id
       self.parsed_metadata[source_identifier] = hyrax_record.send(work_identifier)
       self.parsed_metadata['model'] = hyrax_record.has_model.first
-      build_file_set_metadata
       build_relationship_metadata
       build_mapping_metadata
 
@@ -122,18 +121,6 @@ module Bulkrax
 
       build_files unless hyrax_record.is_a?(Collection)
       self.parsed_metadata
-    end
-
-    def build_file_set_metadata
-      return unless hyrax_record.file_set?
-
-      file_mapping = mapping['file']&.[]('from')&.first
-      if file_mapping.blank?
-        msg = %(This parser (#{parser.class}) is missing a "file" field_mapping. Please add one in config/initializers/bulkrax.rb).strip
-        raise ::StandardError, msg
-      end
-
-      parsed_metadata[file_mapping] = hyrax_record.files&.map(&:original_name)
     end
 
     def build_relationship_metadata
@@ -232,11 +219,14 @@ module Bulkrax
     end
 
     def build_files
+      file_mapping = mapping['file']&.[]('from')&.first || 'file'
+      file_sets = hyrax_record.file_set? ? Array.wrap(hyrax_record) : hyrax_record.file_sets
+
       if mapping['file']&.[]('join')
-        self.parsed_metadata['file'] = hyrax_record.file_sets.map { |fs| filename(fs).to_s if filename(fs).present? }.compact.join('; ')
+        self.parsed_metadata[file_mapping] = file_sets.map { |fs| filename(fs).to_s if filename(fs).present? }.compact.join('; ') # TODO: make split character dynamic/configurable
       else
-        hyrax_record.file_sets.each_with_index do |fs, i|
-          self.parsed_metadata["file_#{i + 1}"] = filename(fs).to_s if filename(fs).present?
+        file_sets.each_with_index do |fs, i|
+          self.parsed_metadata["#{file_mapping}_#{i + 1}"] = filename(fs).to_s if filename(fs).present?
         end
       end
     end
