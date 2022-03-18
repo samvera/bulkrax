@@ -137,7 +137,7 @@ module Bulkrax
         methods.each do |m|
           parsed_metadata[relationship_key] << hyrax_record.public_send(m) if hyrax_record.respond_to?(m)
         end
-        parsed_metadata[relationship_key] = parsed_metadata[relationship_key].flatten.uniq
+        parsed_metadata[relationship_key] = parsed_metadata[relationship_key].flatten.blank? ? nil : parsed_metadata[relationship_key].flatten.uniq
       end
     end
 
@@ -145,6 +145,9 @@ module Bulkrax
       mapping.each do |key, value|
         next if Bulkrax.reserved_properties.include?(key) && !field_supported?(key)
         next if key == "model"
+        # relationships handled by #build_relationship_metadata
+        next if [related_parents_parsed_mapping, related_children_parsed_mapping].include?(key)
+        next if key == 'file' # handled by #build_files
         next if value['excluded']
 
         object_key = key if value.key?('object')
