@@ -734,6 +734,7 @@ module Bulkrax
         end
 
         before do
+          allow(hyrax_record).to receive(:is_a?).with(FileSet).and_return(false)
           allow(hyrax_record).to receive(:is_a?).with(Collection).and_return(true)
         end
 
@@ -747,13 +748,14 @@ module Bulkrax
         let(:hyrax_record) do
           OpenStruct.new(
             has_model: ['FileSet'],
-            file_set?: true,
-            member_of_collections: [] # TODO: remove
+            file_set?: true
           )
         end
 
         before do
           entry.parsed_metadata = {}
+          allow(hyrax_record).to receive(:is_a?).with(FileSet).and_return(true)
+          allow(hyrax_record).to receive(:is_a?).with(Collection).and_return(false)
           allow(entry).to receive(:filename).and_return('hello.png')
         end
 
@@ -766,7 +768,7 @@ module Bulkrax
           context 'with join set to true' do
             let(:exporter) { create(:bulkrax_exporter, field_mapping: { 'file' => { from: ['filename'], join: true } }) }
 
-            it "adds all of the file set's filenames to the file mapping in parsed_metadata" do
+            it "adds the file set's filename to the file mapping in parsed_metadata" do
               entry.build_files
 
               expect(entry.parsed_metadata['filename']).to eq('hello.png')
@@ -775,7 +777,7 @@ module Bulkrax
         end
 
         context 'when the parser does not have a file field mapping' do
-          it "adds all of the file set's filenames to the 'file' key in parsed_metadata" do
+          it "adds the file set's filename to the 'file' key in parsed_metadata" do
             entry.build_files
 
             expect(entry.parsed_metadata['file_1']).to eq('hello.png')
