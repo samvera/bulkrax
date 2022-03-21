@@ -687,8 +687,8 @@ module Bulkrax
 
         context "when the entry's record does not have any relationships" do
           it 'adds empty arrays to the relationship mappings in the parsed_metadata' do
-            expect(entry.parsed_metadata['parents']).to eq([])
-            expect(entry.parsed_metadata['children']).to eq([])
+            expect(entry.parsed_metadata['parents']).to eq(nil)
+            expect(entry.parsed_metadata['children']).to eq(nil)
           end
         end
 
@@ -715,68 +715,70 @@ module Bulkrax
       end
     end
 
-    describe '#build_relationship_metadata' do
+    describe '#build_files' do
       subject(:entry) { described_class.new(importerexporter: exporter) }
       let(:exporter) { create(:bulkrax_exporter) }
-      let(:hyrax_record) do
-        OpenStruct.new(
-          has_model: ['FileSet'],
-          source: 'test',
-          member_of_collections: [],
-          file_sets: []
-        )
-      end
 
       before do
         allow(entry).to receive(:hyrax_record).and_return(hyrax_record)
       end
 
-      it 'gets called by #build_export_metadata' do
-        expect(entry).to receive(:build_file_set_metadata).once
-        entry.build_export_metadata
-      end
-
-      context 'when entry#hyrax_record is not a FileSet' do
-        let(:hyrax_record) { OpenStruct.new(file_set?: false) }
-
-        it 'does not raise an error' do
-          expect { entry.build_relationship_metadata }.not_to raise_error
+      context 'when entry#hyrax_record is a Collection' do
+        let(:hyrax_record) do
+          OpenStruct.new(
+            has_model: ['Collection'],
+            source: 'test',
+            member_of_collections: [],
+            file_set?: false
+          )
         end
 
-        it 'does not change the parsed_metadata' do
-          expect { entry.build_file_set_metadata }.not_to change { entry.parsed_metadata }
+        before do
+          allow(hyrax_record).to receive(:is_a?).with(Collection).and_return(true)
+        end
+
+        it 'does not get called by #build_export_metadata' do
+          expect(entry).not_to receive(:build_files)
+          entry.build_export_metadata
         end
       end
 
       context 'when entry#hyrax_record is a FileSet' do
         let(:hyrax_record) do
           OpenStruct.new(
+            has_model: ['FileSet'],
             file_set?: true,
-            files: [
-              OpenStruct.new(original_name: 'hello.png'),
-              OpenStruct.new(original_name: 'world.jpg')
-            ]
+            member_of_collections: [] # TODO: remove
           )
         end
 
         before do
           entry.parsed_metadata = {}
+          allow(entry).to receive(:filename).and_return('hello.png')
+        end
+
+        it 'gets called by #build_export_metadata' do
+          expect(entry).to receive(:build_files).once
+          entry.build_export_metadata
         end
 
         context 'when the parser has a file field mapping' do
-          let(:exporter) { create(:bulkrax_exporter, field_mapping: { 'file' => { from: ['filename'] } }) }
+          context 'with join set to true' do
+            let(:exporter) { create(:bulkrax_exporter, field_mapping: { 'file' => { from: ['filename'], join: true } }) }
 
-          it "adds all of the file set's filenames to the file mapping in parsed_metadata" do
-            entry.build_file_set_metadata
+            it "adds all of the file set's filenames to the file mapping in parsed_metadata" do
+              entry.build_files
 
-            expect(entry.parsed_metadata['filename']).to eq(%w[hello.png world.jpg])
+              expect(entry.parsed_metadata['filename']).to eq('hello.png')
+            end
           end
         end
 
-        context 'when the parser has a file field mapping' do
-          it 'throws an error' do
-            expect { entry.build_file_set_metadata }
-              .to raise_error(StandardError, %(This parser (Bulkrax::CsvParser) is missing a "file" field_mapping. Please add one in config/initializers/bulkrax.rb))
+        context 'when the parser does not have a file field mapping' do
+          it "adds all of the file set's filenames to the 'file' key in parsed_metadata" do
+            entry.build_files
+
+            expect(entry.parsed_metadata['file_1']).to eq('hello.png')
           end
         end
       end
