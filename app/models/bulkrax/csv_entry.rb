@@ -121,11 +121,14 @@ module Bulkrax
       relationship_methods.each do |relationship_key, methods|
         next if relationship_key.blank?
 
-        parsed_metadata[relationship_key] ||= []
+        values = []
         methods.each do |m|
-          parsed_metadata[relationship_key] << hyrax_record.public_send(m) if hyrax_record.respond_to?(m)
+          values << hyrax_record.public_send(m) if hyrax_record.respond_to?(m)
         end
-        parsed_metadata[relationship_key] = parsed_metadata[relationship_key].flatten.blank? ? nil : parsed_metadata[relationship_key].flatten.uniq
+        values.flatten!.uniq!
+        next if values.blank?
+
+        handle_join_on_export(relationship_key, values, mapping[related_parents_parsed_mapping]['join'].present?)
       end
     end
 
@@ -227,12 +230,18 @@ module Bulkrax
       file_mapping = mapping['file']&.[]('from')&.first || 'file'
       file_sets = hyrax_record.file_set? ? Array.wrap(hyrax_record) : hyrax_record.file_sets
 
-      if mapping['file']&.[]('join')
-        self.parsed_metadata[file_mapping] = file_sets.map { |fs| filename(fs).to_s if filename(fs).present? }.compact.join('; ') # TODO: make split character dynamic/configurable
+      filenames = file_sets.map { |fs| filename(fs).to_s if filename(fs).present? }.compact
+      handle_join_on_export(file_mapping, filenames, mapping['file']&.[]('join')&.present?)
+    end
+
+    def handle_join_on_export(key, values, join)
+      if join
+        parsed_metadata[key] = values.join(' | ') # TODO: make split char dynamic
       else
-        file_sets.each_with_index do |fs, i|
-          self.parsed_metadata["#{file_mapping}_#{i + 1}"] = filename(fs).to_s if filename(fs).present?
+        values.each_with_index do |value, i|
+          parsed_metadata["#{key}_#{i + 1}"] = value
         end
+        parsed_metadata.delete(key)
       end
     end
 
