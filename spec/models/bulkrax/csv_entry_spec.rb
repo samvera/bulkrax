@@ -681,14 +681,10 @@ module Bulkrax
           entry.build_relationship_metadata
         end
 
-        it 'adds the relationship keys to the parsed_metadata' do
-          expect(entry.parsed_metadata.keys).to include('parents', 'children')
-        end
-
         context "when the entry's record does not have any relationships" do
-          it 'adds empty arrays to the relationship mappings in the parsed_metadata' do
-            expect(entry.parsed_metadata['parents']).to eq(nil)
-            expect(entry.parsed_metadata['children']).to eq(nil)
+          it 'does not add any relationships to the parsed_metadata' do
+            expect(entry.parsed_metadata.keys).not_to include('parents')
+            expect(entry.parsed_metadata.keys).not_to include('children')
           end
         end
 
@@ -705,11 +701,36 @@ module Bulkrax
           end
 
           it 'adds all the parent relationships to the parent field mapping' do
-            expect(entry.parsed_metadata['parents']).to eq(%w[pc1 pc2 pw1 pw2 pw3 pw4])
+            expect(entry.parsed_metadata['parents_1']).to eq('pc1')
+            expect(entry.parsed_metadata['parents_2']).to eq('pc2')
+            expect(entry.parsed_metadata['parents_3']).to eq('pw1')
+            expect(entry.parsed_metadata['parents_4']).to eq('pw2')
+            expect(entry.parsed_metadata['parents_5']).to eq('pw3')
+            expect(entry.parsed_metadata['parents_6']).to eq('pw4')
           end
 
           it 'adds all the child relationships to the child field mapping' do
-            expect(entry.parsed_metadata['children']).to eq(%w[cc1 cc2 cw1 cw2 cfs1 cfs2])
+            expect(entry.parsed_metadata['children_1']).to eq('cc1')
+            expect(entry.parsed_metadata['children_2']).to eq('cc2')
+            expect(entry.parsed_metadata['children_3']).to eq('cw1')
+            expect(entry.parsed_metadata['children_4']).to eq('cw2')
+            expect(entry.parsed_metadata['children_5']).to eq('cfs1')
+            expect(entry.parsed_metadata['children_6']).to eq('cfs2')
+          end
+
+          context 'with a join setting' do
+            let(:exporter) { create(:bulkrax_exporter, field_mapping: field_mapping) }
+            let(:field_mapping) do
+              {
+                'parents' => { 'from' => ['parents_column'], join: true, split: /\s*[|]\s*/, related_parents_field_mapping: true },
+                'children' => { 'from' => ['children_column'], join: true, split: /\s*[|]\s*/, related_children_field_mapping: true }
+              }
+            end
+
+            it 'joins the values into a single column' do
+              expect(entry.parsed_metadata['parents']).to eq('pc1 | pc2 | pw1 | pw2 | pw3 | pw4')
+              expect(entry.parsed_metadata['children']).to eq('cc1 | cc2 | cw1 | cw2 | cfs1 | cfs2')
+            end
           end
         end
       end
@@ -831,7 +852,7 @@ module Bulkrax
             it "adds the work's file set's filenames to the file mapping in parsed_metadata" do
               entry.build_files
 
-              expect(entry.parsed_metadata['filename']).to eq('hello.png; world.jpg')
+              expect(entry.parsed_metadata['filename']).to eq('hello.png | world.jpg')
             end
           end
         end

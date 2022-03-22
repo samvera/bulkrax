@@ -125,7 +125,7 @@ module Bulkrax
         methods.each do |m|
           values << hyrax_record.public_send(m) if hyrax_record.respond_to?(m)
         end
-        values.flatten!.uniq!
+        values = values.flatten.uniq
         next if values.blank?
 
         handle_join_on_export(relationship_key, values, mapping[related_parents_parsed_mapping]['join'].present?)
