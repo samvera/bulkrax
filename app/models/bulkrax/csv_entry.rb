@@ -106,7 +106,6 @@ module Bulkrax
       self.parsed_metadata['model'] = hyrax_record.has_model.first
       build_relationship_metadata
       build_mapping_metadata
-      build_collection_memberships unless hyrax_record.is_a?(FileSet)
       build_files unless hyrax_record.is_a?(Collection)
       self.parsed_metadata
     end
@@ -148,20 +147,6 @@ module Bulkrax
           build_object(value)
         else
           build_value(key, value)
-        end
-      end
-    end
-
-    def build_collection_memberships
-      # TODO: fix the "send" parameter in the conditional below
-      # currently it returns: "NoMethodError - undefined method 'bulkrax_identifier' for #<Collection:0x00007fbe6a3b4248>"
-      if mapping['collection']&.[]('join')
-        self.parsed_metadata['collection'] = hyrax_record.member_of_collection_ids.join('; ')
-        #   self.parsed_metadata['collection'] = hyrax_record.member_of_collections.map { |c| c.send(work_identifier)&.first }.compact.uniq.join(';')
-      else
-        hyrax_record.member_of_collections.each_with_index do |collection, i|
-          self.parsed_metadata["collection_#{i + 1}"] = collection.id
-          #     self.parsed_metadata["collection_#{i + 1}"] = collection.send(work_identifier)&.first
         end
       end
     end
