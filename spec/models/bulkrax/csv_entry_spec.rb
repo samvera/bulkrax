@@ -867,6 +867,30 @@ module Bulkrax
         end
       end
     end
+
+    describe '#handle_join_on_export' do
+      subject(:entry) { described_class.new(importerexporter: exporter, parsed_metadata: {}) }
+      let(:exporter) { create(:bulkrax_exporter) }
+
+      context 'when a field mapping is configured to join values' do
+        it 'joins the values into a single column' do
+          entry.handle_join_on_export('dummy', %w[a1 b2 c3], true)
+
+          expect(entry.parsed_metadata['dummy']).to eq('a1 | b2 | c3')
+        end
+      end
+
+      context 'when a field mapping is not configured to join values' do
+        it 'lists the values in separate, numerated columns' do
+          entry.handle_join_on_export('dummy', %w[a1 b2 c3], false)
+
+          expect(entry.parsed_metadata['dummy']).to be_nil
+          expect(entry.parsed_metadata['dummy_1']).to eq('a1')
+          expect(entry.parsed_metadata['dummy_2']).to eq('b2')
+          expect(entry.parsed_metadata['dummy_3']).to eq('c3')
+        end
+      end
+    end
   end
 end
 # rubocop: enable Metrics/BlockLength
