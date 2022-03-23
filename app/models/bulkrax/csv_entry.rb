@@ -106,19 +106,6 @@ module Bulkrax
       self.parsed_metadata['model'] = hyrax_record.has_model.first
       build_relationship_metadata
       build_mapping_metadata
-
-      # TODO: fix the "send" parameter in the conditional below
-      # currently it returns: "NoMethodError - undefined method 'bulkrax_identifier' for #<Collection:0x00007fbe6a3b4248>"
-      if mapping['collection']&.[]('join')
-        self.parsed_metadata['collection'] = hyrax_record.member_of_collection_ids.join('; ')
-        #   self.parsed_metadata['collection'] = hyrax_record.member_of_collections.map { |c| c.send(work_identifier)&.first }.compact.uniq.join(';')
-      else
-        hyrax_record.member_of_collections.each_with_index do |collection, i|
-          self.parsed_metadata["collection_#{i + 1}"] = collection.id
-          #     self.parsed_metadata["collection_#{i + 1}"] = collection.send(work_identifier)&.first
-        end
-      end
-
       build_files unless hyrax_record.is_a?(Collection)
       self.parsed_metadata
     end
@@ -133,11 +120,14 @@ module Bulkrax
       relationship_methods.each do |relationship_key, methods|
         next if relationship_key.blank?
 
-        parsed_metadata[relationship_key] ||= []
+        values = []
         methods.each do |m|
-          parsed_metadata[relationship_key] << hyrax_record.public_send(m) if hyrax_record.respond_to?(m)
+          values << hyrax_record.public_send(m) if hyrax_record.respond_to?(m)
         end
-        parsed_metadata[relationship_key] = parsed_metadata[relationship_key].flatten.uniq
+        values = values.flatten.uniq
+        next if values.blank?
+
+        handle_join_on_export(relationship_key, values, mapping[related_parents_parsed_mapping]['join'].present?)
       end
     end
 
@@ -145,6 +135,9 @@ module Bulkrax
       mapping.each do |key, value|
         next if Bulkrax.reserved_properties.include?(key) && !field_supported?(key)
         next if key == "model"
+        # relationships handled by #build_relationship_metadata
+        next if [related_parents_parsed_mapping, related_children_parsed_mapping].include?(key)
+        next if key == 'file' # handled by #build_files
         next if value['excluded']
 
         object_key = key if value.key?('object')
@@ -219,12 +212,21 @@ module Bulkrax
     end
 
     def build_files
-      if mapping['file']&.[]('join')
-        self.parsed_metadata['file'] = hyrax_record.file_sets.map { |fs| filename(fs).to_s if filename(fs).present? }.compact.join('; ')
+      file_mapping = mapping['file']&.[]('from')&.first || 'file'
+      file_sets = hyrax_record.file_set? ? Array.wrap(hyrax_record) : hyrax_record.file_sets
+
+      filenames = file_sets.map { |fs| filename(fs).to_s if filename(fs).present? }.compact
+      handle_join_on_export(file_mapping, filenames, mapping['file']&.[]('join')&.present?)
+    end
+
+    def handle_join_on_export(key, values, join)
+      if join
+        parsed_metadata[key] = values.join(' | ') # TODO: make split char dynamic
       else
-        hyrax_record.file_sets.each_with_index do |fs, i|
-          self.parsed_metadata["file_#{i + 1}"] = filename(fs).to_s if filename(fs).present?
+        values.each_with_index do |value, i|
+          parsed_metadata["#{key}_#{i + 1}"] = value
         end
+        parsed_metadata.delete(key)
       end
     end
 

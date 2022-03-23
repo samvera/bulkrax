@@ -681,14 +681,10 @@ module Bulkrax
           entry.build_relationship_metadata
         end
 
-        it 'adds the relationship keys to the parsed_metadata' do
-          expect(entry.parsed_metadata.keys).to include('parents', 'children')
-        end
-
         context "when the entry's record does not have any relationships" do
-          it 'adds empty arrays to the relationship mappings in the parsed_metadata' do
-            expect(entry.parsed_metadata['parents']).to eq([])
-            expect(entry.parsed_metadata['children']).to eq([])
+          it 'does not add any relationships to the parsed_metadata' do
+            expect(entry.parsed_metadata.keys).not_to include('parents')
+            expect(entry.parsed_metadata.keys).not_to include('children')
           end
         end
 
@@ -705,12 +701,193 @@ module Bulkrax
           end
 
           it 'adds all the parent relationships to the parent field mapping' do
-            expect(entry.parsed_metadata['parents']).to eq(%w[pc1 pc2 pw1 pw2 pw3 pw4])
+            expect(entry.parsed_metadata['parents_1']).to eq('pc1')
+            expect(entry.parsed_metadata['parents_2']).to eq('pc2')
+            expect(entry.parsed_metadata['parents_3']).to eq('pw1')
+            expect(entry.parsed_metadata['parents_4']).to eq('pw2')
+            expect(entry.parsed_metadata['parents_5']).to eq('pw3')
+            expect(entry.parsed_metadata['parents_6']).to eq('pw4')
           end
 
           it 'adds all the child relationships to the child field mapping' do
-            expect(entry.parsed_metadata['children']).to eq(%w[cc1 cc2 cw1 cw2 cfs1 cfs2])
+            expect(entry.parsed_metadata['children_1']).to eq('cc1')
+            expect(entry.parsed_metadata['children_2']).to eq('cc2')
+            expect(entry.parsed_metadata['children_3']).to eq('cw1')
+            expect(entry.parsed_metadata['children_4']).to eq('cw2')
+            expect(entry.parsed_metadata['children_5']).to eq('cfs1')
+            expect(entry.parsed_metadata['children_6']).to eq('cfs2')
           end
+
+          context 'with a join setting' do
+            let(:exporter) { create(:bulkrax_exporter, field_mapping: field_mapping) }
+            let(:field_mapping) do
+              {
+                'parents' => { 'from' => ['parents_column'], join: true, split: /\s*[|]\s*/, related_parents_field_mapping: true },
+                'children' => { 'from' => ['children_column'], join: true, split: /\s*[|]\s*/, related_children_field_mapping: true }
+              }
+            end
+
+            it 'joins the values into a single column' do
+              expect(entry.parsed_metadata['parents']).to eq('pc1 | pc2 | pw1 | pw2 | pw3 | pw4')
+              expect(entry.parsed_metadata['children']).to eq('cc1 | cc2 | cw1 | cw2 | cfs1 | cfs2')
+            end
+          end
+        end
+      end
+    end
+
+    describe '#build_files' do
+      subject(:entry) { described_class.new(importerexporter: exporter) }
+      let(:exporter) { create(:bulkrax_exporter) }
+
+      before do
+        allow(entry).to receive(:hyrax_record).and_return(hyrax_record)
+      end
+
+      context 'when entry#hyrax_record is a Collection' do
+        let(:hyrax_record) do
+          OpenStruct.new(
+            has_model: ['Collection'],
+            source: 'test',
+            member_of_collections: [],
+            file_set?: false
+          )
+        end
+
+        before do
+          allow(hyrax_record).to receive(:is_a?).with(FileSet).and_return(false)
+          allow(hyrax_record).to receive(:is_a?).with(Collection).and_return(true)
+        end
+
+        it 'does not get called by #build_export_metadata' do
+          expect(entry).not_to receive(:build_files)
+          entry.build_export_metadata
+        end
+      end
+
+      context 'when entry#hyrax_record is a FileSet' do
+        let(:hyrax_record) do
+          OpenStruct.new(
+            has_model: ['FileSet'],
+            file_set?: true
+          )
+        end
+
+        before do
+          entry.parsed_metadata = {}
+          allow(hyrax_record).to receive(:is_a?).with(FileSet).and_return(true)
+          allow(hyrax_record).to receive(:is_a?).with(Collection).and_return(false)
+          allow(entry).to receive(:filename).and_return('hello.png')
+        end
+
+        it 'gets called by #build_export_metadata' do
+          expect(entry).to receive(:build_files).once
+          entry.build_export_metadata
+        end
+
+        context 'when the parser has a file field mapping' do
+          context 'with join set to true' do
+            let(:exporter) { create(:bulkrax_exporter, field_mapping: { 'file' => { from: ['filename'], join: true } }) }
+
+            it "adds the file set's filename to the file mapping in parsed_metadata" do
+              entry.build_files
+
+              expect(entry.parsed_metadata['filename']).to eq('hello.png')
+            end
+          end
+        end
+
+        context 'when the parser does not have a file field mapping' do
+          it "adds the file set's filename to the 'file' key in parsed_metadata" do
+            entry.build_files
+
+            expect(entry.parsed_metadata['file_1']).to eq('hello.png')
+          end
+        end
+      end
+
+      context 'when entry#hyrax_record is a Work' do
+        let(:hyrax_record) do
+          OpenStruct.new(
+            has_model: ['Work'],
+            file_set?: false,
+            file_sets: [file_set_1, file_set_2],
+            member_of_collections: []
+          )
+        end
+        let(:file_set_1) do
+          OpenStruct.new(
+            id: 'file_set_1',
+            original_file: OpenStruct.new(
+              file_name: ['hello.png'],
+              mime_type: 'image/png'
+            )
+          )
+        end
+        let(:file_set_2) do
+          OpenStruct.new(
+            id: 'file_set_2',
+            original_file: OpenStruct.new(
+              file_name: ['world.jpg'],
+              mime_type: 'image/jpeg'
+            )
+          )
+        end
+
+        before do
+          entry.parsed_metadata = {}
+          allow(hyrax_record).to receive(:is_a?).with(FileSet).and_return(false)
+          allow(hyrax_record).to receive(:is_a?).with(Collection).and_return(false)
+        end
+
+        it 'gets called by #build_export_metadata' do
+          expect(entry).to receive(:build_files).once
+          entry.build_export_metadata
+        end
+
+        context 'when the parser has a file field mapping' do
+          context 'with join set to true' do
+            let(:exporter) { create(:bulkrax_exporter, field_mapping: { 'file' => { from: ['filename'], join: true } }) }
+
+            it "adds the work's file set's filenames to the file mapping in parsed_metadata" do
+              entry.build_files
+
+              expect(entry.parsed_metadata['filename']).to eq('hello.png | world.jpg')
+            end
+          end
+        end
+
+        context 'when the parser does not have a file field mapping' do
+          it "adds the work's file set's filenames to the 'file' key in parsed_metadata" do
+            entry.build_files
+
+            expect(entry.parsed_metadata['file_1']).to eq('hello.png')
+            expect(entry.parsed_metadata['file_2']).to eq('world.jpg')
+          end
+        end
+      end
+    end
+
+    describe '#handle_join_on_export' do
+      subject(:entry) { described_class.new(importerexporter: exporter, parsed_metadata: {}) }
+      let(:exporter) { create(:bulkrax_exporter) }
+
+      context 'when a field mapping is configured to join values' do
+        it 'joins the values into a single column' do
+          entry.handle_join_on_export('dummy', %w[a1 b2 c3], true)
+
+          expect(entry.parsed_metadata['dummy']).to eq('a1 | b2 | c3')
+        end
+      end
+
+      context 'when a field mapping is not configured to join values' do
+        it 'lists the values in separate, numerated columns' do
+          entry.handle_join_on_export('dummy', %w[a1 b2 c3], false)
+
+          expect(entry.parsed_metadata['dummy']).to be_nil
+          expect(entry.parsed_metadata['dummy_1']).to eq('a1')
+          expect(entry.parsed_metadata['dummy_2']).to eq('b2')
+          expect(entry.parsed_metadata['dummy_3']).to eq('c3')
         end
       end
     end
