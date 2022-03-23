@@ -56,7 +56,7 @@ module Bulkrax
     end
 
     def related_parents_parsed_mapping
-      @related_parents_parsed_mapping ||= get_field_mapping_hash_for('related_parents_field_mapping')&.keys&.first
+      @related_parents_parsed_mapping ||= (get_field_mapping_hash_for('related_parents_field_mapping')&.keys&.first || 'parents')
     end
 
     def related_children_raw_mapping
@@ -64,27 +64,20 @@ module Bulkrax
     end
 
     def related_children_parsed_mapping
-      @related_children_parsed_mapping ||= get_field_mapping_hash_for('related_children_field_mapping')&.keys&.first
+      @related_children_parsed_mapping ||= (get_field_mapping_hash_for('related_children_field_mapping')&.keys&.first || 'children')
     end
 
     def get_field_mapping_hash_for(key)
       return instance_variable_get("@#{key}_hash") if instance_variable_get("@#{key}_hash").present?
 
+      mapping = importerexporter.field_mapping == [{}] ? {} : importerexporter.field_mapping
       instance_variable_set(
         "@#{key}_hash",
-        importerexporter.mapping.with_indifferent_access.select { |_, h| h.key?(key) }
+        mapping&.with_indifferent_access&.select { |_, h| h.key?(key) }
       )
       raise StandardError, "more than one #{key} declared: #{instance_variable_get("@#{key}_hash").keys.join(', ')}" if instance_variable_get("@#{key}_hash").length > 1
 
       instance_variable_get("@#{key}_hash")
-    end
-
-    def collection_field_mapping
-      ActiveSupport::Deprecation.warn(
-        'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \
-        ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
-      )
-      Bulkrax.collection_field_mapping[self.entry_class.to_s]&.to_sym || :collection
     end
 
     def model_field_mappings

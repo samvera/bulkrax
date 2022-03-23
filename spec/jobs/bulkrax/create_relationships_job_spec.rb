@@ -19,7 +19,7 @@ module Bulkrax
       {
         source_identifier_value: nil,
         work_identifier: :source,
-        collection_field_mapping: :collection,
+        related_parents_parsed_mapping: parent_entry.parser.related_parents_parsed_mapping,
         replace_files: false,
         user: importer.user
       }

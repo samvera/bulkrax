@@ -17,7 +17,7 @@ module Bulkrax
 
       context '#data_for_entry' do
         it 'retrieves the data and constructs a hash' do
-          expect(described_class.data_for_entry(data, source_identifier)).to eq(
+          expect(described_class.data_for_entry(data, source_identifier, nil)).to eq(
             DrisUnique: '3456012',
             delete: nil,
             data: "<!-- This grammar has been deprecated - use FMPXMLRESULT instead --><FMPDSORESULT> <ROW MODID=\"3\" RECORDID=\"000003\"> <TitleLargerEntity>Single XML Entry</TitleLargerEntity> <Abstract>Lorem ipsum dolor sit amet.</Abstract> <DrisUnique>3456012</DrisUnique> </ROW></FMPDSORESULT>",
@@ -31,7 +31,7 @@ module Bulkrax
     describe 'deleted' do
       subject(:xml_entry) { described_class.new(importerexporter: importer) }
       let(:path) { './spec/fixtures/xml/deleted.xml' }
-      let(:raw_metadata) { described_class.data_for_entry(data, source_identifier) }
+      let(:raw_metadata) { described_class.data_for_entry(data, source_identifier, nil) }
       let(:importer) do
         i = FactoryBot.create(:bulkrax_importer_xml)
         i.current_run
@@ -56,7 +56,7 @@ module Bulkrax
 
     describe '#build' do
       subject(:xml_entry) { described_class.new(importerexporter: importer) }
-      let(:raw_metadata) { described_class.data_for_entry(data, source_identifier) }
+      let(:raw_metadata) { described_class.data_for_entry(data, source_identifier, nil) }
       let(:importer) do
         i = FactoryBot.create(:bulkrax_importer_xml)
         i.field_mapping['source'] = { 'from' => ['DrisUnique'], 'source_identifier' => true }

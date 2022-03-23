@@ -39,7 +39,7 @@ module Bulkrax
         path = metadata_path(bag)
         raise StandardError, 'No metadata files were found' if path.blank?
         data = entry_class.read_data(path)
-        data = entry_class.data_for_entry(data, source_identifier)
+        data = entry_class.data_for_entry(data, source_identifier, self)
         data[:file] = bag.bag_files.join('|') unless importerexporter.metadata_only?
         data
       end
@@ -75,7 +75,7 @@ module Bulkrax
         else
           ImportWorkJob.send(perform_method, new_entry.id, current_run.id)
         end
-        increment_counters(index)
+        increment_counters(index, work: true)
       end
       importer.record_status
     rescue StandardError => e
@@ -83,11 +83,7 @@ module Bulkrax
     end
 
     def collections
-      ActiveSupport::Deprecation.warn(
-        'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \
-        ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
-      )
-      records.map { |r| r[collection_field_mapping].split(/\s*[;|]\s*/) if r[collection_field_mapping].present? }.flatten.compact.uniq
+      records.map { |r| r[related_parents_parsed_mapping].split(/\s*[;|]\s*/) if r[related_parents_parsed_mapping].present? }.flatten.compact.uniq
     end
 
     def collections_total

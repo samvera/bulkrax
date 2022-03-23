@@ -7,20 +7,15 @@ module Bulkrax
     include DynamicRecordLookup
 
     define_model_callbacks :save, :create
-    attr_reader :attributes, :object, :source_identifier_value, :klass, :replace_files, :update_files, :work_identifier, :collection_field_mapping, :related_parents_parsed_mapping
+    attr_reader :attributes, :object, :source_identifier_value, :klass, :replace_files, :update_files, :work_identifier, :related_parents_parsed_mapping
 
     # rubocop:disable Metrics/ParameterLists
-    def initialize(attributes:, source_identifier_value:, work_identifier:, collection_field_mapping:, related_parents_parsed_mapping: nil, replace_files: false, user: nil, klass: nil, update_files: false)
-      ActiveSupport::Deprecation.warn(
-        'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \
-        ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
-      )
+    def initialize(attributes:, source_identifier_value:, work_identifier:, related_parents_parsed_mapping: nil, replace_files: false, user: nil, klass: nil, update_files: false)
       @attributes = ActiveSupport::HashWithIndifferentAccess.new(attributes)
       @replace_files = replace_files
       @update_files = update_files
       @user = user || User.batch_user
       @work_identifier = work_identifier
-      @collection_field_mapping = collection_field_mapping
       @related_parents_parsed_mapping = related_parents_parsed_mapping
       @source_identifier_value = source_identifier_value
       @klass = klass || Bulkrax.default_work_type.constantize
@@ -55,7 +50,7 @@ module Bulkrax
     def update
       raise "Object doesn't exist" unless object
       destroy_existing_files if @replace_files && ![Collection, FileSet].include?(klass)
-      attrs = attribute_update
+      attrs = transform_attributes(update: true)
       run_callbacks :save do
         if klass == Collection
           update_collection(attrs)
@@ -97,7 +92,7 @@ module Bulkrax
     # https://github.com/projecthydra/active_fedora/issues/874
     # 2+ years later, still open!
     def create
-      attrs = create_attributes
+      attrs = transform_attributes
       @object = klass.new
       object.reindex_extent = Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX if object.respond_to?(:reindex_extent)
       run_callbacks :save do
@@ -142,25 +137,15 @@ module Bulkrax
     end
 
     def create_collection(attrs)
-      ActiveSupport::Deprecation.warn(
-        'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \
-        ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
-      )
       attrs = collection_type(attrs)
-      persist_collection_memberships(parent: object, child: find_collection(attributes[:child_collection_id])) if attributes[:child_collection_id].present?
-      persist_collection_memberships(parent: find_collection(attributes[collection_field_mapping]), child: object) if attributes[collection_field_mapping].present?
+      persist_collection_memberships(parent: find_collection(attributes[related_parents_parsed_mapping]), child: object) if attributes[related_parents_parsed_mapping].present?
       object.attributes = attrs
       object.apply_depositor_metadata(@user)
       object.save!
     end
 
     def update_collection(attrs)
-      ActiveSupport::Deprecation.warn(
-        'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \
-        ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
-      )
-      persist_collection_memberships(parent: object, child: find_collection(attributes[:child_collection_id])) if attributes[:child_collection_id].present?
-      persist_collection_memberships(parent: find_collection(attributes[collection_field_mapping]), child: object) if attributes[collection_field_mapping].present?
+      persist_collection_memberships(parent: find_collection(attributes[related_parents_parsed_mapping]), child: object) if attributes[related_parents_parsed_mapping].present?
       object.attributes = attrs
       object.save!
     end
@@ -219,34 +204,12 @@ module Bulkrax
       attrs
     end
 
-    # Strip out the :collection key, and add the member_of_collection_ids,
-    # which is used by Hyrax::Actors::AddAsMemberOfCollectionsActor
-    def create_attributes
-      return transform_attributes if klass == Collection
-      ActiveSupport::Deprecation.warn(
-        'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \
-        ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
-      )
-      transform_attributes.except(:collections, :collection, collection_field_mapping)
-    end
-
-    # Strip out the :collection key, and add the member_of_collection_ids,
-    # which is used by Hyrax::Actors::AddAsMemberOfCollectionsActor
-    def attribute_update
-      return transform_attributes.except(:id) if klass == Collection
-      ActiveSupport::Deprecation.warn(
-        'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \
-        ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
-      )
-      transform_attributes.except(:id, :collections, :collection, collection_field_mapping)
-    end
-
     # Override if we need to map the attributes from the parser in
     # a way that is compatible with how the factory needs them.
-    def transform_attributes
+    def transform_attributes(update: false)
       @transform_attributes = attributes.slice(*permitted_attributes)
       @transform_attributes.merge!(file_attributes(update_files)) if with_files
-      @transform_attributes
+      update ? @transform_attributes.except(:id) : @transform_attributes
     end
 
     # Regardless of what the Parser gives us, these are the properties we are prepared to accept.

@@ -13,11 +13,7 @@ module Bulkrax
       data.predicates.map(&:to_s)
     end
 
-    def self.data_for_entry(data, source_id)
-      ActiveSupport::Deprecation.warn(
-        'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \
-        ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
-      )
+    def self.data_for_entry(data, source_id, parser)
       reader = data
       format = reader.class.format.to_sym
       collections = []
@@ -25,7 +21,7 @@ module Bulkrax
       delete = nil
       data = RDF::Writer.for(format).buffer do |writer|
         reader.each_statement do |statement|
-          collections << statement.object.to_s if collection_field.present? && collection_field == statement.predicate.to_s
+          collections << statement.object.to_s if parent_field(parser).present? && parent_field(parser) == statement.predicate.to_s
           children << statement.object.to_s if related_children_parsed_mapping.present? && related_children_parsed_mapping == statement.predicate.to_s
           delete = statement.object.to_s if /deleted/.match?(statement.predicate.to_s)
           writer << statement
@@ -55,10 +51,6 @@ module Bulkrax
     end
 
     def build_metadata
-      ActiveSupport::Deprecation.warn(
-        'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \
-        ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
-      )
       raise StandardError, 'Record not found' if record.nil?
       raise StandardError, "Missing source identifier (#{source_identifier})" if self.raw_metadata[source_identifier].blank?
 

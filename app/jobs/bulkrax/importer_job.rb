@@ -18,10 +18,7 @@ module Bulkrax
       importer.only_updates = only_updates_since_last_import || false
       return unless importer.valid_import?
 
-      importer.import_collections
-      importer.import_works
-      importer.import_relationships
-      importer.import_file_sets
+      importer.import_objects
     end
 
     def unzip_imported_file(parser)

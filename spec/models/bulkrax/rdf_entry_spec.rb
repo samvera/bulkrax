@@ -4,8 +4,23 @@ require 'rails_helper'
 
 module Bulkrax
   RSpec.describe RdfEntry, type: :model do
+    subject { described_class.new(importerexporter: importer) }
     let(:path) { './spec/fixtures/bags/bag/descMetadata.nt' }
     let(:data) { described_class.read_data(path) }
+    let(:importer) do
+      i = FactoryBot.create(:bulkrax_importer_bagit,
+                            parser_fields: {
+                              'import_file_path' => './spec/fixtures/bags/bag',
+                              'metadata_file_name' => 'descMetadata.nt',
+                              'metadata_format' => 'Bulkrax::RdfEntry'
+                            },
+                            field_mapping: {
+                              'identifier' => { from: ['http://purl.org/dc/terms/identifier'] },
+                              'title' => { from: ['http://purl.org/dc/terms/title'] }
+                            })
+      i.current_run
+      i
+    end
 
     describe 'class methods' do
       it 'reads the data' do
@@ -17,7 +32,7 @@ module Bulkrax
       end
 
       it 'retrieves the data and constructs a hash' do
-        expect(described_class.data_for_entry(data, :source_identifier)).to eq(
+        expect(described_class.data_for_entry(data, :source_identifier, subject.parser)).to eq(
           data: "<http://example.org/ns/19158> <http://purl.org/dc/terms/identifier> \"12345\" .\n<http://example.org/ns/19158> <http://purl.org/dc/terms/title> \"Test Bag\" .\n",
           delete: nil,
           children: [],
@@ -29,22 +44,7 @@ module Bulkrax
     end
 
     describe 'builds entry' do
-      subject { described_class.new(importerexporter: importer) }
-      let(:raw_metadata) { described_class.data_for_entry(data, :source_identifier) }
-      let(:importer) do
-        i = FactoryBot.create(:bulkrax_importer_bagit,
-                              parser_fields: {
-                                'import_file_path' => './spec/fixtures/bags/bag',
-                                'metadata_file_name' => 'descMetadata.nt',
-                                'metadata_format' => 'Bulkrax::RdfEntry'
-                              },
-                              field_mapping: {
-                                'identifier' => { from: ['http://purl.org/dc/terms/identifier'] },
-                                'title' => { from: ['http://purl.org/dc/terms/title'] }
-                              })
-        i.current_run
-        i
-      end
+      let(:raw_metadata) { described_class.data_for_entry(data, :source_identifier, subject.parser) }
 
       context 'deleted' do
         let(:path) { './spec/fixtures/bags/deleted_bag/descMetadata.nt' }
