@@ -6,10 +6,20 @@ require 'rails_helper'
 module Bulkrax
   RSpec.describe CsvEntry, type: :model do
     let(:collection) { FactoryBot.build(:collection) }
+    let(:hyrax_record) do
+      OpenStruct.new(
+        file_sets: [],
+        member_of_collections: [],
+        member_of_work_ids: [],
+        in_work_ids: [],
+        member_work_ids: []
+      )
+    end
 
     before do
       allow_any_instance_of(described_class).to receive(:collections_created?).and_return(true)
       allow_any_instance_of(described_class).to receive(:find_collection).and_return(collection)
+      allow(subject).to receive(:hyrax_record).and_return(hyrax_record)
     end
 
     describe 'builds entry' do
@@ -398,6 +408,9 @@ module Bulkrax
           allow_any_instance_of(ObjectFactory).to receive(:run!)
           allow(subject).to receive(:hyrax_record).and_return(work_obj)
           allow(work_obj).to receive(:id).and_return('test123')
+          allow(work_obj).to receive(:member_of_work_ids).and_return([])
+          allow(work_obj).to receive(:in_work_ids).and_return([])
+          allow(work_obj).to receive(:member_work_ids).and_return([])
         end
 
         it 'succeeds' do
@@ -436,6 +449,9 @@ module Bulkrax
           allow_any_instance_of(ObjectFactory).to receive(:run!)
           allow(subject).to receive(:hyrax_record).and_return(work_obj)
           allow(work_obj).to receive(:id).and_return('test123')
+          allow(work_obj).to receive(:member_of_work_ids).and_return([])
+          allow(work_obj).to receive(:in_work_ids).and_return([])
+          allow(work_obj).to receive(:member_work_ids).and_return([])
         end
 
         it 'succeeds' do
@@ -483,6 +499,9 @@ module Bulkrax
           allow_any_instance_of(ObjectFactory).to receive(:run!)
           allow(subject).to receive(:hyrax_record).and_return(work_obj)
           allow(work_obj).to receive(:id).and_return('test123')
+          allow(work_obj).to receive(:member_of_work_ids).and_return([])
+          allow(work_obj).to receive(:in_work_ids).and_return([])
+          allow(work_obj).to receive(:member_work_ids).and_return([])
         end
 
         it 'succeeds' do
@@ -533,6 +552,9 @@ module Bulkrax
           allow_any_instance_of(ObjectFactory).to receive(:run!)
           allow(subject).to receive(:hyrax_record).and_return(work_obj)
           allow(work_obj).to receive(:id).and_return('test123')
+          allow(work_obj).to receive(:member_of_work_ids).and_return([])
+          allow(work_obj).to receive(:in_work_ids).and_return([])
+          allow(work_obj).to receive(:member_work_ids).and_return([])
         end
 
         it 'succeeds' do
@@ -580,6 +602,9 @@ module Bulkrax
           allow_any_instance_of(ObjectFactory).to receive(:run!)
           allow(subject).to receive(:hyrax_record).and_return(work_obj)
           allow(work_obj).to receive(:id).and_return('test123')
+          allow(work_obj).to receive(:member_of_work_ids).and_return([])
+          allow(work_obj).to receive(:in_work_ids).and_return([])
+          allow(work_obj).to receive(:member_work_ids).and_return([])
         end
 
         it 'succeeds' do
@@ -627,6 +652,9 @@ module Bulkrax
           allow_any_instance_of(ObjectFactory).to receive(:run!)
           allow(subject).to receive(:hyrax_record).and_return(work_obj)
           allow(work_obj).to receive(:id).and_return('test123')
+          allow(work_obj).to receive(:member_of_work_ids).and_return([])
+          allow(work_obj).to receive(:in_work_ids).and_return([])
+          allow(work_obj).to receive(:member_work_ids).and_return([])
         end
 
         it 'succeeds' do
@@ -644,7 +672,7 @@ module Bulkrax
 
     describe '#build_relationship_metadata' do
       subject(:entry) { described_class.new(importerexporter: exporter) }
-      let(:exporter) { create(:bulkrax_exporter) }
+      let(:exporter) { create(:bulkrax_exporter, :with_relationships_mappings) }
       let(:hyrax_record) do
         OpenStruct.new(
           has_model: ['Work'],
@@ -656,6 +684,8 @@ module Bulkrax
 
       before do
         allow(entry).to receive(:hyrax_record).and_return(hyrax_record)
+        allow(entry).to receive(:source_identifier).and_return('source_identifier')
+        allow(entry).to receive(:work_identifier).and_return('source')
       end
 
       it 'gets called by #build_export_metadata' do
@@ -738,7 +768,7 @@ module Bulkrax
 
     describe '#build_files' do
       subject(:entry) { described_class.new(importerexporter: exporter) }
-      let(:exporter) { create(:bulkrax_exporter) }
+      let(:exporter) { create(:bulkrax_exporter, :with_relationships_mappings) }
 
       before do
         allow(entry).to receive(:hyrax_record).and_return(hyrax_record)
@@ -757,6 +787,8 @@ module Bulkrax
         before do
           allow(hyrax_record).to receive(:is_a?).with(FileSet).and_return(false)
           allow(hyrax_record).to receive(:is_a?).with(Collection).and_return(true)
+          allow(entry).to receive(:source_identifier).and_return('source_identifier')
+          allow(entry).to receive(:work_identifier).and_return('source')
         end
 
         it 'does not get called by #build_export_metadata' do
