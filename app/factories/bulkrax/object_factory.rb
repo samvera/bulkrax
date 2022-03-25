@@ -182,6 +182,10 @@ module Bulkrax
     # Add child to parent's #member_collections
     # Add parent to child's #member_of_collections
     def persist_collection_memberships(parent:, child:)
+      parent.reject!(&:blank?) if parent.respond_to?(:reject!)
+      child.reject!(&:blank?) if child.respond_to?(:reject!)
+      return if parent.blank? || child.blank?
+
       ::Hyrax::Collections::NestedCollectionPersistenceService.persist_nested_collection_for(parent: parent, child: child)
     end
 
@@ -190,7 +194,7 @@ module Bulkrax
       when Hash
         Collection.find(id[:id])
       when String
-        Collection.find(id)
+        Collection.find(id) if id.present?
       when Array
         id.map { |i| find_collection(i) }
       else
