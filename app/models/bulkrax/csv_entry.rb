@@ -153,7 +153,7 @@ module Bulkrax
       data = hyrax_record.send(key.to_s)
       if data.is_a?(ActiveTriples::Relation)
         if value['join']
-          self.parsed_metadata[key_for_export(key)] = data.map { |d| prepare_export_data(d) }.join('; ').to_s
+          self.parsed_metadata[key_for_export(key)] = data.map { |d| prepare_export_data(d) }.join(' | ').to_s # TODO: make split char dynamic
         else
           data.each_with_index do |d, i|
             self.parsed_metadata["#{key_for_export(key)}_#{i + 1}"] = prepare_export_data(d)
