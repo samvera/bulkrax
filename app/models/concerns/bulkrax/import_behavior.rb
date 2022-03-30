@@ -43,7 +43,6 @@ module Bulkrax
     end
 
     def add_parent_to_import_run(parent_id, run)
-      run.parents = [] if run.parents.nil?
       run.parents << parent_id
       run.save
     end
