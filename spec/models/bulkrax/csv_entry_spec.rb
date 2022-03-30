@@ -670,6 +670,20 @@ module Bulkrax
       end
     end
 
+    describe '#add_parent_to_import_run' do
+      subject(:entry) { described_class.new(importerexporter: importer) }
+      let(:importer) { FactoryBot.build(:bulkrax_importer_csv, importer_runs: [importer_run]) }
+      let(:importer_run) { build(:bulkrax_importer_run) }
+
+      it 'adds the parent_id to the run' do
+        expect(importer_run.parents).to eq([])
+
+        entry.add_parent_to_import_run('dummy', importer_run)
+
+        expect(importer_run.parents).to eq(['dummy'])
+      end
+    end
+
     describe '#build_relationship_metadata' do
       subject(:entry) { described_class.new(importerexporter: exporter) }
       let(:exporter) { create(:bulkrax_exporter, :with_relationships_mappings) }
