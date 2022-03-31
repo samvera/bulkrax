@@ -241,13 +241,13 @@ module Bulkrax
     def possible_collection_ids
       return @possible_collection_ids if @possible_collection_ids.present?
 
-      collection_field_mapping = self.class.parent_field(parser)
-      return [] unless collection_field_mapping.present? && record[collection_field_mapping].present?
+      parent_field_mapping = self.class.parent_field(parser)
+      return [] unless parent_field_mapping.present? && record[parent_field_mapping].present?
 
       identifiers = []
-      split_titles = record[collection_field_mapping].split(/\s*[;|]\s*/)
-      split_titles.each do |c_title|
-        matching_collection_entries = importerexporter.entries.select { |e| e.raw_metadata['title'] == c_title }
+      split_references = record[parent_field_mapping].split(/\s*[;|]\s*/)
+      split_references.each do |c_reference|
+        matching_collection_entries = importerexporter.entries.select { |e| e.raw_metadata['source_identifier'] == c_reference }
         raise ::StandardError, 'Only expected to find one matching entry' if matching_collection_entries.count > 1
         identifiers << matching_collection_entries.first&.identifier
       end
