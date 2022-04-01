@@ -41,6 +41,7 @@ module Bulkrax
       self.parsed_metadata = {}
       add_identifier
       add_ingested_metadata
+      add_collections
       add_visibility
       add_metadata_for_model
       add_rights_statement
@@ -247,10 +248,11 @@ module Bulkrax
       identifiers = []
       split_references = record[parent_field_mapping].split(/\s*[;|]\s*/)
       split_references.each do |c_reference|
-        matching_collection_entries = importerexporter.entries.select { |e| e.raw_metadata['source_identifier'] == c_reference }
+        matching_collection_entries = importerexporter.entries.select { |e| e.raw_metadata['source_identifier'] == c_reference && e.is_a?(CsvCollectionEntry) }
         raise ::StandardError, 'Only expected to find one matching entry' if matching_collection_entries.count > 1
         identifiers << matching_collection_entries.first&.identifier
       end
+
       @possible_collection_ids = identifiers.compact.presence || []
     end
 
@@ -267,6 +269,7 @@ module Bulkrax
           self.collection_ids << c.id unless skip
         end
       end
+
       self.collection_ids
     end
 
