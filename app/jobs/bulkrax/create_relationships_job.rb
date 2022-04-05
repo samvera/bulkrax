@@ -37,11 +37,11 @@ module Bulkrax
       end.sort_by(&:order)
 
       @importer_run_id = importer_run_id
-      @parent_record = find_record(parent_identifier)
+      @parent_record = find_record(parent_identifier, importer_run_id)
       @child_records = { works: [], collections: [] }
       pending_relationships.each do |rel|
         raise ::StandardError, %("#{rel}" needs either a child or a parent to create a relationship) if rel.child_id.nil? || rel.parent_id.nil?
-        child_record = find_record(rel.child_id)
+        child_record = find_record(rel.child_id, importer_run_id)
         child_record.is_a?(::Collection) ? @child_records[:collections] << child_record : @child_records[:works] << child_record
       end
 

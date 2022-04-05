@@ -7,8 +7,11 @@ module Bulkrax
     #
     # @param identifier [String] Work/Collection ID or Bulkrax::Entry source_identifier
     # @return [Work, Collection, nil] Work or Collection if found, otherwise nil
-    def find_record(identifier)
-      record = Entry.find_by(identifier: identifier)
+    def find_record(identifier, importer_run_id)
+      # account for the possibility that the same record may have successfully or unsuccessfully
+      # been imported in a different importer
+      importer_id = ImporterRun.find(importer_run_id).importer_id
+      record = Entry.find_by(identifier: identifier, importerexporter_id: importer_id)
       record ||= ::Collection.where(id: identifier).first # rubocop:disable Rails/FindBy
       if record.blank?
         available_work_types.each do |work_type|
