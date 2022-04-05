@@ -205,7 +205,7 @@ module Bulkrax
     def collection_type(attrs)
       # avoid the "ArgumentError: Identifier must be a string of size > 0 in order to be treeified" error
       # when setting object.attributes
-      attrs.delete('id') unless attrs['id'].present?
+      attrs.delete('id') if attrs['id'].blank?
       return attrs if attrs['collection_type_gid'].present?
 
       attrs['collection_type_gid'] = Hyrax::CollectionType.find_or_create_default_collection_type.gid
