@@ -5,9 +5,8 @@ require 'rails_helper'
 module Bulkrax
   RSpec.shared_examples 'dynamic record lookup' do
     let(:importer) { FactoryBot.create(:bulkrax_importer_csv_complex) }
-    let(:bulkrax_importer_run) { FactoryBot.create(:bulkrax_importer_run, importer: importer) }
     let(:importer_id) { importer.id }
-    let(:importer_run_id) { bulkrax_importer_run.id }
+    let(:importer_run_id) { importer.current_run.id }
 
     before do
       allow(::Hyrax.config).to receive(:curation_concerns).and_return([Work])
