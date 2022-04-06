@@ -41,6 +41,7 @@ module Bulkrax
       self.parsed_metadata = {}
       add_identifier
       add_ingested_metadata
+      # TODO(alishaevn): remove the collections stuff entirely and only reference collections via the new parents code
       add_collections
       add_visibility
       add_metadata_for_model
