@@ -194,7 +194,7 @@ bundle exec rake bin/rails db:migrate RAILS_ENV=test
 ```
 
 ### Run the specs
-```
+```  bash
 # update your apps gemfile to point at the local version of the gem. e.g.:
 gem 'bulkrax', path: 'vendor/bulkrax'
 
