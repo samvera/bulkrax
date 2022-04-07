@@ -194,22 +194,37 @@ bundle exec rake bin/rails db:migrate RAILS_ENV=test
 ```
 
 ### Run the specs
-```
-bundle exec rake (all specs)
-bundle exec rspec (all specs)
-bundle exec rspec <path-to-file> (single file)
+```  bash
+# update your apps gemfile to point at the local version of the gem. e.g.:
+gem 'bulkrax', path: 'vendor/bulkrax'
+
+# go into that folder (if you use Docker, this is done outside of containers)
+cd vendor/bulkrax
+
+# run your specs using one of the following
+bin/rake (all specs)
+bin/rspec (all specs)
+bin/rspec <path-to-file> (single file)
+  e.g. bin/rspec spec/models/bulkrax/csv_entry_spec.rb
 ```
 
 ### Troubleshooting the spec suite
 If you're unable to run migrations in the test environment, you may need to go into the test database itself to make the necessary changes before attempting to migrate again.
 
-- Example
+- Example error: "SQLite3::SQLException: table "bulkrax_pending_relationships" already exists"
   ``` bash
-  rails db:migrate RAILS_ENV=test # => error: SQLite3::SQLException: table "bulkrax_pending_relationships" already exists
   rails db test
     sqlite> .tables # confirm the bulkrax_pending_relationships table exists
-    sqlite> drop table bulkrax_pending_relationships # delete the bulkrax_pending_relationships table
+    sqlite> drop table bulkrax_pending_relationships; # delete the bulkrax_pending_relationships table
     sqlite> .tables # confirm the bulkrax_pending_relationships table doesn't exist
+    sqlite> .quit # exit the sqlite db
+  rails db:migrate RAILS_ENV=test # should succeed! (barring no other migrations were failing)
+  ```
+
+- Example error: SQLite3::SQLException: duplicate column name: parents: ALTER TABLE "bulkrax_importer_runs" ADD "parents" text
+  ``` bash
+  rails db test
+    sqlite> ALTER TABLE "bulkrax_importer_runs" DROP "parents"; # delete the "parents" column
     sqlite> .quit # exit the sqlite db
   rails db:migrate RAILS_ENV=test # should succeed! (barring no other migrations were failing)
   ```
