@@ -6,8 +6,9 @@ module Bulkrax
     # has the provided identifier.
     #
     # @param identifier [String] Work/Collection ID or Bulkrax::Entry source_identifier
+    # @param importer_run_id [Number] ID of the current_run of this Importer Job
     # @return [Work, Collection, nil] Work or Collection if found, otherwise nil
-    def find_record(identifier, importer_run_id)
+    def find_record(identifier, importer_run_id = nil)
       if importer_run_id
         # account for the possibility that the same record may have successfully or unsuccessfully
         # been imported in a different importer
