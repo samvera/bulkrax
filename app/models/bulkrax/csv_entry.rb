@@ -41,6 +41,8 @@ module Bulkrax
       self.parsed_metadata = {}
       add_identifier
       add_ingested_metadata
+      # TODO(alishaevn): remove the collections stuff entirely and only reference collections via the new parents code
+      add_collections
       add_visibility
       add_metadata_for_model
       add_rights_statement
@@ -241,16 +243,17 @@ module Bulkrax
     def possible_collection_ids
       return @possible_collection_ids if @possible_collection_ids.present?
 
-      collection_field_mapping = self.class.parent_field(parser)
-      return [] unless collection_field_mapping.present? && record[collection_field_mapping].present?
+      parent_field_mapping = self.class.parent_field(parser)
+      return [] unless parent_field_mapping.present? && record[parent_field_mapping].present?
 
       identifiers = []
-      split_titles = record[collection_field_mapping].split(/\s*[;|]\s*/)
-      split_titles.each do |c_title|
-        matching_collection_entries = importerexporter.entries.select { |e| e.raw_metadata['title'] == c_title }
+      split_references = record[parent_field_mapping].split(/\s*[;|]\s*/)
+      split_references.each do |c_reference|
+        matching_collection_entries = importerexporter.entries.select { |e| e.raw_metadata[work_identifier] == c_reference && e.is_a?(CsvCollectionEntry) }
         raise ::StandardError, 'Only expected to find one matching entry' if matching_collection_entries.count > 1
         identifiers << matching_collection_entries.first&.identifier
       end
+
       @possible_collection_ids = identifiers.compact.presence || []
     end
 
@@ -267,6 +270,7 @@ module Bulkrax
           self.collection_ids << c.id unless skip
         end
       end
+
       self.collection_ids
     end
 
