@@ -39,14 +39,14 @@ module Bulkrax
           end
 
           it "returns the entry's record" do
-            expect(subject.find_record(source_identifier, importer_run_id)).to eq(record)
+            expect(subject.find_record(source_identifier, importer_run_id)[1]).to eq(record)
           end
 
           it "uses the entry's factory to find its record" do
             expect(entry).to receive(:factory)
             expect(factory).to receive(:find)
 
-            found_record = subject.find_record(source_identifier, importer_run_id)
+            _, found_record = subject.find_record(source_identifier, importer_run_id)
 
             expect(found_record.title).to eq(record.title)
           end
@@ -54,7 +54,7 @@ module Bulkrax
 
         context 'when nothing is found' do
           it 'returns nil' do
-            expect(subject.find_record(source_identifier, importer_run_id)).to be_nil
+            expect(subject.find_record(source_identifier, importer_run_id)[1]).to be_nil
           end
         end
       end
@@ -78,7 +78,7 @@ module Bulkrax
           end
 
           it 'returns the collection' do
-            expect(subject.find_record(id, importer_run_id)).to eq(collection)
+            expect(subject.find_record(id, importer_run_id)[1]).to eq(collection)
           end
         end
 
@@ -90,13 +90,13 @@ module Bulkrax
           end
 
           it 'returns the work' do
-            expect(subject.find_record(id, importer_run_id)).to eq(work)
+            expect(subject.find_record(id, importer_run_id)[1]).to eq(work)
           end
         end
 
         context 'when nothing is found' do
           it 'returns nil' do
-            expect(subject.find_record(id, importer_run_id)).to be_nil
+            expect(subject.find_record(id, importer_run_id)[1]).to be_nil
           end
         end
       end
