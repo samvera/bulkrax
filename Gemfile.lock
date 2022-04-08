@@ -10,7 +10,7 @@ GIT
 PATH
   remote: .
   specs:
-    bulkrax (3.0.0.beta3)
+    bulkrax (3.0.0.beta4)
       bagit (~> 0.4)
       coderay
       iso8601 (~> 0.9.0)
@@ -928,4 +928,4 @@ DEPENDENCIES
   willow_sword!
 
 BUNDLED WITH
-   2.1.4
+   2.3.8
