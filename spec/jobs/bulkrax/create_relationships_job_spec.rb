@@ -45,7 +45,8 @@ module Bulkrax
               id: child_record.id,
               member_of_collections_attributes: { 0 => { id: parent_record.id } }
             },
-            klass: child_record.class
+            klass: child_record.class,
+            importer_run_id: importer.current_run.id
           )
         end
 
@@ -150,7 +151,8 @@ module Bulkrax
               id: parent_record.id,
               child_collection_id: child_record.id
             },
-            klass: parent_record.class
+            klass: parent_record.class,
+            importer_run_id: importer.current_run.id
           )
         end
 
@@ -249,7 +251,8 @@ module Bulkrax
               id: parent_record.id,
               work_members_attributes: { 0 => { id: child_record.id } }
             },
-            klass: parent_record.class
+            klass: parent_record.class,
+            importer_run_id: importer.current_run.id
           )
         end
 
@@ -366,7 +369,7 @@ module Bulkrax
             importer_run_id: importer.current_run.id
           )
 
-          expect(importer.last_run.failed_relationships).to eq(1)
+          expect(Bulkrax::Importer.find(importer.id).last_run.failed_relationships).to eq(1)
         end
       end
 
