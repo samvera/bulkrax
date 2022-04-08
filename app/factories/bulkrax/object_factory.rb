@@ -7,10 +7,10 @@ module Bulkrax
     include DynamicRecordLookup
 
     define_model_callbacks :save, :create
-    attr_reader :attributes, :object, :source_identifier_value, :klass, :replace_files, :update_files, :work_identifier, :related_parents_parsed_mapping
+    attr_reader :attributes, :object, :source_identifier_value, :klass, :replace_files, :update_files, :work_identifier, :related_parents_parsed_mapping, :importer_run_id
 
     # rubocop:disable Metrics/ParameterLists
-    def initialize(attributes:, source_identifier_value:, work_identifier:, related_parents_parsed_mapping: nil, replace_files: false, user: nil, klass: nil, update_files: false)
+    def initialize(attributes:, source_identifier_value:, work_identifier:, related_parents_parsed_mapping: nil, replace_files: false, user: nil, klass: nil, importer_run_id: nil, update_files: false)
       @attributes = ActiveSupport::HashWithIndifferentAccess.new(attributes)
       @replace_files = replace_files
       @update_files = update_files
@@ -19,6 +19,7 @@ module Bulkrax
       @related_parents_parsed_mapping = related_parents_parsed_mapping
       @source_identifier_value = source_identifier_value
       @klass = klass || Bulkrax.default_work_type.constantize
+      @importer_run_id = importer_run_id
     end
     # rubocop:enable Metrics/ParameterLists
 
@@ -153,7 +154,7 @@ module Bulkrax
 
     # This method is heavily inspired by Hyrax's AttachFilesToWorkJob
     def create_file_set(attrs)
-      work = find_record(attributes[related_parents_parsed_mapping].first)
+      _, work = find_record(attributes[related_parents_parsed_mapping].first, importer_run_id)
       work_permissions = work.permissions.map(&:to_hash)
       attrs = clean_attrs(attrs)
       file_set_attrs = attrs.slice(*object.attributes.keys)

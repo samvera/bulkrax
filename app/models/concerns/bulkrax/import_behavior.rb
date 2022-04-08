@@ -98,6 +98,7 @@ module Bulkrax
                                               replace_files: replace_files,
                                               user: user,
                                               klass: factory_class,
+                                              importer_run_id: importerexporter.last_run.id,
                                               update_files: update_files)
     end
 
