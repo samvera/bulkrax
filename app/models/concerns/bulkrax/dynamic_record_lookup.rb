@@ -24,7 +24,7 @@ module Bulkrax
 
       # return the found entry here instead of searching for it again in the CreateRelationshipsJob
       # also accounts for when the found entry isn't a part of this importer
-      record.is_a?(Entry) ? [ record, record.factory.find ] : [ nil, record ]
+      record.is_a?(Entry) ? [record, record.factory.find] : [nil, record]
     end
 
     # Check if the record is a Work
