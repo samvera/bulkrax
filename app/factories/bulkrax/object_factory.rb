@@ -137,6 +137,7 @@ module Bulkrax
     end
 
     def create_collection(attrs)
+      attrs = clean_attrs(attrs)
       attrs = collection_type(attrs)
       persist_collection_memberships(parent: find_collection(attributes[related_parents_parsed_mapping]), child: object) if attributes[related_parents_parsed_mapping].present?
       object.attributes = attrs
@@ -154,6 +155,7 @@ module Bulkrax
     def create_file_set(attrs)
       work = find_record(attributes[related_parents_parsed_mapping].first)
       work_permissions = work.permissions.map(&:to_hash)
+      attrs = clean_attrs(attrs)
       file_set_attrs = attrs.slice(*object.attributes.keys)
       object.assign_attributes(file_set_attrs)
 
@@ -202,10 +204,14 @@ module Bulkrax
       end
     end
 
-    def collection_type(attrs)
+    def clean_attrs(attrs)
       # avoid the "ArgumentError: Identifier must be a string of size > 0 in order to be treeified" error
       # when setting object.attributes
       attrs.delete('id') if attrs['id'].blank?
+      attrs
+    end
+
+    def collection_type(attrs)
       return attrs if attrs['collection_type_gid'].present?
 
       attrs['collection_type_gid'] = Hyrax::CollectionType.find_or_create_default_collection_type.gid
