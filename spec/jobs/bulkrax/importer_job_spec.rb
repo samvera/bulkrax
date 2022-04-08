@@ -5,6 +5,9 @@ require 'rails_helper'
 module Bulkrax
   RSpec.describe ImporterJob, type: :job do
     subject(:importer_job) { described_class.new }
+    # the bulkrax_importer_oai base_url comes from a live website
+    # until it is stubbed, the values below will fluctuate as the api changes
+    # TODO(alishaevn): delete the above comments when issue 455 is complete
     let(:importer) { FactoryBot.create(:bulkrax_importer_oai) }
 
     before do
