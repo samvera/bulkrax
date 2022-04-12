@@ -60,6 +60,9 @@
     hint: 'leave blank or 0 for all records',
     label: t('bulkrax.exporter.labels.limit') %>
 
+  <%= form.input :include_thumbnails?,
+                 as: :boolean,
+                 label: t('bulkrax.exporter.labels.include_thumbnails') %>
   <%= form.input :date_filter,
                  as: :boolean,
                  label: t('bulkrax.exporter.labels.filter_by_date') %>

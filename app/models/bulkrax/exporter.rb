@@ -51,6 +51,10 @@ module Bulkrax
       self.start_date.present? || self.finish_date.present?
     end
 
+    def include_thumbnails?
+      self.include_thumbnails
+    end
+
     def work_visibility_list
       [
         ['Any', ''],

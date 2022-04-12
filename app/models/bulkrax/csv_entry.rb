@@ -209,6 +209,17 @@ module Bulkrax
 
       filenames = file_sets.map { |fs| filename(fs).to_s if filename(fs).present? }.compact
       handle_join_on_export(file_mapping, filenames, mapping['file']&.[]('join')&.present?)
+      build_thumbnail_files
+    end
+
+    def build_thumbnail_files
+      return unless hyrax_record.work? && importerexporter.include_thumbnails
+
+      thumbnail_mapping = 'thumbnail_file' 
+      file_sets = Array.wrap(hyrax_record.thumbnail)
+ 
+      filenames = file_sets.map { |fs| filename(fs).to_s if filename(fs).present? }.compact
+      handle_join_on_export(thumbnail_mapping, filenames, false)
     end
 
     def handle_join_on_export(key, values, join)

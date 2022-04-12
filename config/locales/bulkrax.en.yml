@@ -16,6 +16,7 @@ en:
         filter_by_date: Filter By Date
         finish_date: End Date
         full: Metadata and Files
+        include_thumbnails: Include Thumbnails?
         importer: Importer
         limit: Limit
         metadata: Metadata Only

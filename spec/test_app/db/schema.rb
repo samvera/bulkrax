@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2022_03_30_165510) do
+ActiveRecord::Schema.define(version: 2022_04_12_233954) do
 
   create_table "bookmarks", force: :cascade do |t|
     t.integer "user_id", null: false
@@ -67,6 +67,7 @@ ActiveRecord::Schema.define(version: 2022_03_30_165510) do
     t.date "finish_date"
     t.string "work_visibility"
     t.string "workflow_status"
+    t.boolean "include_thumbnails", default: false
     t.index ["user_id"], name: "index_bulkrax_exporters_on_user_id"
   end
 
