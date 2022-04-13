@@ -26,7 +26,9 @@ module Bulkrax
 
     def write_files
       return if hyrax_record.is_a?(Collection)
-      hyrax_record.file_sets.each do |fs|
+
+      file_sets = hyrax_record.file_set? ? Array.wrap(hyrax_record) : hyrax_record.file_sets
+      file_sets.each do |fs|
         path = File.join(exporter_export_path, 'files')
         FileUtils.mkdir_p(path)
         file = filename(fs)

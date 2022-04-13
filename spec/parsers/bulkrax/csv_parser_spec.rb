@@ -7,15 +7,14 @@ module Bulkrax
     subject { described_class.new(importer) }
     let(:importer) { FactoryBot.create(:bulkrax_importer_csv) }
 
+    let(:relationship_importer) { FactoryBot.create(:bulkrax_importer_csv, :with_relationships_mappings) }
+    let(:relationship_subject) { described_class.new(relationship_importer) }
+
     describe '#collections' do
       let(:all_collection_titles) { subject.collections.collect { |c| c[:title] } }
 
       before do
         importer.parser_fields = { import_file_path: './spec/fixtures/csv/mixed_works_and_collections.csv' }
-      end
-
-      it 'includes collection titles listed in the :collection column' do
-        expect(all_collection_titles).to include("Second Work's Collection")
       end
 
       it 'includes rows whose :model is set to Collection' do
@@ -26,43 +25,6 @@ module Bulkrax
         allow(subject).to receive_message_chain(:records, :map).and_return([{ model: 'cOlEcTiOn' }])
 
         expect(subject.collections).to include({ model: 'cOlEcTiOn' })
-      end
-
-      context 'when Bulkrax.collection_field_mapping' do
-        before do
-          allow(subject)
-            .to receive(:records)
-            .and_return(
-              [
-                { collection: 'collection mapping', title: 'W1', model: 'work' },
-                { parent: 'parent mapping', title: 'W2', model: 'work' }
-              ]
-            )
-        end
-
-        context 'is set' do
-          before do
-            allow(subject).to receive(:collection_field_mapping).and_return(:parent)
-          end
-
-          it 'the collection field mapping is used' do
-            expect(all_collection_titles).to include('parent mapping')
-            expect(all_collection_titles).not_to include('collection mapping')
-          end
-        end
-
-        context 'is not set' do
-          it 'the mapping falls back on :collection' do
-            expect(all_collection_titles).not_to include('parent mapping')
-            expect(all_collection_titles).to include('collection mapping')
-          end
-        end
-
-        context 'is used to import a collection' do
-          it 'a :from_collection_field_mapping key-value pair is added to its data' do
-            expect(subject.collections).to include({ title: 'collection mapping', from_collection_field_mapping: true })
-          end
-        end
       end
 
       describe ':model field mappings' do
@@ -133,7 +95,7 @@ module Bulkrax
         end
 
         it 'runs an ImportCollectionJob in memory for each entry' do
-          expect(ImportCollectionJob).to receive(:perform_now).twice
+          expect(ImportCollectionJob).to receive(:perform_later).twice
 
           subject.create_collections
         end
@@ -176,6 +138,7 @@ module Bulkrax
           let(:record_hash) { { source_identifier: 'csid' } }
 
           it "uses the record's source_identifier as the entry's identifier" do
+            allow(subject.records).to receive(:find_index).and_return(0)
             subject.create_collections
 
             expect(importer.entries.last.identifier).to eq('csid')
@@ -183,12 +146,13 @@ module Bulkrax
         end
 
         context 'when collection record does not have a source_identifier' do
-          let(:record_hash) { { title: 'no source id | alt title', from_collection_field_mapping: true } }
+          let(:record_hash) { { title: 'no source id | alt title', model: 'Collection' } }
 
           it "uses the record's first title as the entry's identifier" do
+            allow(subject.records).to receive(:find_index).and_return(0)
             subject.create_collections
 
-            expect(importer.entries.last.identifier).to eq('no source id')
+            expect(ImporterRun.find(subject.current_run.id).failed_records).to eq(1)
           end
 
           context 'when Bulkrax is set to fill in blank source_identifiers' do
@@ -198,6 +162,7 @@ module Bulkrax
             end
 
             it "uses the generated identifier as the entry's identifier" do
+              allow(subject.records).to receive(:find_index).and_return(0)
               subject.create_collections
 
               expect(importer.entries.last.identifier).to eq("#{importer.id}-99")
@@ -285,7 +250,7 @@ module Bulkrax
 
         it 'counts the correct number of works and collections' do
           subject.records
-          expect(subject.total).to eq(2)
+          expect(subject.total).to eq(4)
           expect(subject.collections_total).to eq(2)
         end
       end
@@ -527,14 +492,18 @@ module Bulkrax
       end
     end
 
-    describe '#collection_field_mapping' do
+    describe '#related_parents_field_mapping' do
       context 'when the mapping is set' do
         before do
-          allow(Bulkrax).to receive(:collection_field_mapping).and_return({ 'Bulkrax::CsvEntry' => 'parent' })
+          importer.field_mapping = {
+            'parents' => { 'from' => ['parents_column'], related_parents_field_mapping: true },
+            'children' => { 'from' => ['children_column'], related_children_field_mapping: true },
+            'unrelated' => { 'from' => ['unrelated_column'] }
+          }
         end
 
         it 'returns the mapping' do
-          expect(subject.collection_field_mapping).to eq(:parent)
+          expect(subject.related_parents_parsed_mapping).to eq('parents')
         end
       end
     end
@@ -692,7 +661,7 @@ module Bulkrax
         end
 
         describe '#related_parents_parsed_mapping' do
-          it { expect(subject.related_parents_parsed_mapping).to be_nil }
+          it { expect(subject.related_parents_parsed_mapping).to eq('parents') }
         end
 
         describe '#related_children_raw_mapping' do
@@ -700,7 +669,7 @@ module Bulkrax
         end
 
         describe '#related_children_parsed_mapping' do
-          it { expect(subject.related_children_parsed_mapping).to be_nil }
+          it { expect(subject.related_children_parsed_mapping).to eq('children') }
         end
       end
 
@@ -728,44 +697,6 @@ module Bulkrax
 
         describe '#related_children_parsed_mapping' do
           it { expect { subject.related_children_parsed_mapping }.to raise_error(StandardError) }
-        end
-      end
-    end
-
-    describe '#add_required_collection_metadata' do
-      context 'when importing collections using the collection_field_mapping' do
-        let(:collection_data) do
-          {
-            title: 'Collection from collection_field_mapping',
-            from_collection_field_mapping: true
-          }
-        end
-
-        it 'adds metadata required for collections' do
-          expect(subject.add_required_collection_metadata(collection_data)).to eq(
-            {
-              title: collection_data[:title],
-              source: collection_data[:title],
-              source_identifier: collection_data[:title],
-              visibility: 'open',
-              collection_type_gid: ::Hyrax::CollectionType.find_or_create_default_collection_type.gid
-            }
-          )
-        end
-      end
-
-      context 'when importing collections without using the collection_field_mapping' do
-        let(:collection_data) do
-          {
-            source_identifier: 'cwm1',
-            title: 'Collection with Metadata',
-            model: 'Collection',
-            description: 'Lorem ipsum'
-          }
-        end
-
-        it 'does not alter the data' do
-          expect(subject.add_required_collection_metadata(collection_data)).to be_nil
         end
       end
     end

@@ -1,3 +1,5 @@
-source_identifier,title,collection
-1,Lovely Title,A Collection;Another Collection,
-2,Another Title,A Collection,
+model,source_identifier,title,parents_column
+GenericWork,1,Lovely Title,3;4,
+GenericWork,2,Another Title,3,
+Collection,3,A Collection,,
+Collection,4,Another Collection,,

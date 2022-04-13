@@ -5,6 +5,8 @@ require 'rails_helper'
 module Bulkrax
   RSpec.shared_examples 'dynamic record lookup' do
     let(:importer) { FactoryBot.create(:bulkrax_importer_csv_complex) }
+    let(:importer_id) { importer.id }
+    let(:importer_run_id) { importer.current_run.id }
 
     before do
       allow(::Hyrax.config).to receive(:curation_concerns).and_return([Work])
@@ -19,11 +21,11 @@ module Bulkrax
         let(:source_identifier) { 'bulkrax_identifier_1' }
 
         it 'looks through entries, collections, and all work types' do
-          expect(Entry).to receive(:find_by).with(identifier: source_identifier).once
+          expect(Entry).to receive(:find_by).with(identifier: source_identifier, importerexporter_id: importer_id).once
           expect(::Collection).to receive(:where).with(id: source_identifier).once.and_return([])
           expect(::Work).to receive(:where).with(id: source_identifier).once.and_return([])
 
-          subject.find_record(source_identifier)
+          subject.find_record(source_identifier, importer_run_id)
         end
 
         context 'when an entry is found' do
@@ -32,19 +34,19 @@ module Bulkrax
           let(:record) { instance_double(::Work, title: ["Found through Entry's factory"]) }
 
           before do
-            allow(Entry).to receive(:find_by).with(identifier: source_identifier).and_return(entry)
+            allow(Entry).to receive(:find_by).with(identifier: source_identifier, importerexporter_id: importer_id).and_return(entry)
             allow(entry).to receive(:factory).and_return(factory)
           end
 
           it "returns the entry's record" do
-            expect(subject.find_record(source_identifier)).to eq(record)
+            expect(subject.find_record(source_identifier, importer_run_id)[1]).to eq(record)
           end
 
           it "uses the entry's factory to find its record" do
             expect(entry).to receive(:factory)
             expect(factory).to receive(:find)
 
-            found_record = subject.find_record(source_identifier)
+            _, found_record = subject.find_record(source_identifier, importer_run_id)
 
             expect(found_record.title).to eq(record.title)
           end
@@ -52,7 +54,7 @@ module Bulkrax
 
         context 'when nothing is found' do
           it 'returns nil' do
-            expect(subject.find_record(source_identifier)).to be_nil
+            expect(subject.find_record(source_identifier, importer_run_id)[1]).to be_nil
           end
         end
       end
@@ -61,11 +63,11 @@ module Bulkrax
         let(:id) { 'xyz6789' }
 
         it 'looks through entries, collections, and all work types' do
-          expect(Entry).to receive(:find_by).with(identifier: id).once
+          expect(Entry).to receive(:find_by).with(identifier: id, importerexporter_id: importer_id).once
           expect(::Collection).to receive(:where).with(id: id).once.and_return([])
           expect(::Work).to receive(:where).with(id: id).once.and_return([])
 
-          subject.find_record(id)
+          subject.find_record(id, importer_run_id)
         end
 
         context 'when a collection is found' do
@@ -76,7 +78,7 @@ module Bulkrax
           end
 
           it 'returns the collection' do
-            expect(subject.find_record(id)).to eq(collection)
+            expect(subject.find_record(id, importer_run_id)[1]).to eq(collection)
           end
         end
 
@@ -88,13 +90,13 @@ module Bulkrax
           end
 
           it 'returns the work' do
-            expect(subject.find_record(id)).to eq(work)
+            expect(subject.find_record(id, importer_run_id)[1]).to eq(work)
           end
         end
 
         context 'when nothing is found' do
           it 'returns nil' do
-            expect(subject.find_record(id)).to be_nil
+            expect(subject.find_record(id, importer_run_id)[1]).to be_nil
           end
         end
       end

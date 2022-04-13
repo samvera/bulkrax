@@ -19,7 +19,7 @@ module Bulkrax
       {
         source_identifier_value: nil,
         work_identifier: :source,
-        collection_field_mapping: :collection,
+        related_parents_parsed_mapping: parent_entry.parser.related_parents_parsed_mapping,
         replace_files: false,
         user: importer.user
       }
@@ -27,8 +27,8 @@ module Bulkrax
 
     before do
       allow(::Hyrax.config).to receive(:curation_concerns).and_return([Work])
-      allow(Entry).to receive(:find_by).with(identifier: child_entry.identifier).and_return(child_entry)
-      allow(Entry).to receive(:find_by).with(identifier: parent_entry.identifier).and_return(parent_entry)
+      allow(Entry).to receive(:find_by).with(identifier: child_entry.identifier, importerexporter_id: importer.id).and_return(child_entry)
+      allow(Entry).to receive(:find_by).with(identifier: parent_entry.identifier, importerexporter_id: importer.id).and_return(parent_entry)
       allow(parent_entry).to receive(:factory).and_return(parent_factory)
       allow(child_entry).to receive(:factory).and_return(child_factory)
     end
@@ -45,7 +45,8 @@ module Bulkrax
               id: child_record.id,
               member_of_collections_attributes: { 0 => { id: parent_record.id } }
             },
-            klass: child_record.class
+            klass: child_record.class,
+            importer_run_id: importer.current_run.id
           )
         end
 
@@ -150,7 +151,8 @@ module Bulkrax
               id: parent_record.id,
               child_collection_id: child_record.id
             },
-            klass: parent_record.class
+            klass: parent_record.class,
+            importer_run_id: importer.current_run.id
           )
         end
 
@@ -249,7 +251,8 @@ module Bulkrax
               id: parent_record.id,
               work_members_attributes: { 0 => { id: child_record.id } }
             },
-            klass: parent_record.class
+            klass: parent_record.class,
+            importer_run_id: importer.current_run.id
           )
         end
 
@@ -366,7 +369,7 @@ module Bulkrax
             importer_run_id: importer.current_run.id
           )
 
-          expect(importer.last_run.failed_relationships).to eq(1)
+          expect(Bulkrax::Importer.find(importer.id).last_run.failed_relationships).to eq(1)
         end
       end
 

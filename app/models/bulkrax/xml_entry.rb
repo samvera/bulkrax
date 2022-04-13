@@ -14,7 +14,7 @@ module Bulkrax
       Nokogiri::XML(open(path)).remove_namespaces!
     end
 
-    def self.data_for_entry(data, source_id)
+    def self.data_for_entry(data, source_id, _parser)
       collections = []
       children = []
       xpath_for_source_id = ".//*[name()='#{source_id}']"
@@ -39,10 +39,6 @@ module Bulkrax
     end
 
     def build_metadata
-      ActiveSupport::Deprecation.warn(
-        'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \
-        ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
-      )
       raise StandardError, 'Record not found' if record.nil?
       raise StandardError, "Missing source identifier (#{source_identifier})" if self.raw_metadata[source_identifier].blank?
       self.parsed_metadata = {}

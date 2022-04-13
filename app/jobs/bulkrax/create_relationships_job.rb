@@ -37,11 +37,11 @@ module Bulkrax
       end.sort_by(&:order)
 
       @importer_run_id = importer_run_id
-      @parent_record = find_record(parent_identifier)
+      @parent_entry, @parent_record = find_record(parent_identifier, importer_run_id)
       @child_records = { works: [], collections: [] }
       pending_relationships.each do |rel|
         raise ::StandardError, %("#{rel}" needs either a child or a parent to create a relationship) if rel.child_id.nil? || rel.parent_id.nil?
-        child_record = find_record(rel.child_id)
+        _, child_record = find_record(rel.child_id, importer_run_id)
         child_record.is_a?(::Collection) ? @child_records[:collections] << child_record : @child_records[:works] << child_record
       end
 
@@ -53,9 +53,9 @@ module Bulkrax
         return false # stop current job from continuing to run after rescheduling
       end
 
-      @parent_entry = Bulkrax::Entry.where(identifier: parent_identifier,
-                                           importerexporter_id: ImporterRun.find(importer_run_id).importer_id,
-                                           importerexporter_type: "Bulkrax::Importer").first
+      @parent_entry ||= Bulkrax::Entry.where(identifier: parent_identifier,
+                                             importerexporter_id: ImporterRun.find(importer_run_id).importer_id,
+                                             importerexporter_type: "Bulkrax::Importer").first
       create_relationships
       pending_relationships.each(&:destroy)
     rescue ::StandardError => e
@@ -82,20 +82,17 @@ module Bulkrax
     # Work-Collection membership is added to the child as member_of_collection_ids
     # This is adding the reverse relationship, from the child to the parent
     def collection_parent_work_child
-      ActiveSupport::Deprecation.warn(
-        'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \
-        ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
-      )
       child_records[:works].each do |child_record|
         attrs = { id: child_record.id, member_of_collections_attributes: { 0 => { id: parent_record.id } } }
         ObjectFactory.new(
           attributes: attrs,
           source_identifier_value: nil, # sending the :id in the attrs means the factory doesn't need a :source_identifier_value
           work_identifier: parent_entry.parser.work_identifier,
-          collection_field_mapping: parent_entry.parser.collection_field_mapping,
+          related_parents_parsed_mapping: parent_entry.parser.related_parents_parsed_mapping,
           replace_files: false,
           user: user,
-          klass: child_record.class
+          klass: child_record.class,
+          importer_run_id: importer_run_id
         ).run
         # TODO: add counters for :processed_parents and :failed_parents
         Bulkrax::ImporterRun.find(importer_run_id).increment!(:processed_relationships) # rubocop:disable Rails/SkipsModelValidations
@@ -104,20 +101,17 @@ module Bulkrax
 
     # Collection-Collection membership is added to the as member_ids
     def collection_parent_collection_child
-      ActiveSupport::Deprecation.warn(
-        'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \
-        ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
-      )
       child_record = child_records[:collections].first
       attrs = { id: parent_record.id, child_collection_id: child_record.id }
       ObjectFactory.new(
         attributes: attrs,
         source_identifier_value: nil, # sending the :id in the attrs means the factory doesn't need a :source_identifier_value
         work_identifier: parent_entry.parser.work_identifier,
-        collection_field_mapping: parent_entry.parser.collection_field_mapping,
+        related_parents_parsed_mapping: parent_entry.parser.related_parents_parsed_mapping,
         replace_files: false,
         user: user,
-        klass: parent_record.class
+        klass: parent_record.class,
+        importer_run_id: importer_run_id
       ).run
       # TODO: add counters for :processed_parents and :failed_parents
       Bulkrax::ImporterRun.find(importer_run_id).increment!(:processed_relationships) # rubocop:disable Rails/SkipsModelValidations
@@ -125,11 +119,6 @@ module Bulkrax
 
     # Work-Work membership is added to the parent as member_ids
     def work_parent_work_child
-      ActiveSupport::Deprecation.warn(
-        'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \
-        ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
-      )
-
       records_hash = {}
       child_records[:works].each_with_index do |child_record, i|
         records_hash[i] = { id: child_record.id }
@@ -142,10 +131,11 @@ module Bulkrax
         attributes: attrs,
         source_identifier_value: nil, # sending the :id in the attrs means the factory doesn't need a :source_identifier_value
         work_identifier: parent_entry.parser.work_identifier,
-        collection_field_mapping: parent_entry.parser.collection_field_mapping,
+        related_parents_parsed_mapping: parent_entry.parser.related_parents_parsed_mapping,
         replace_files: false,
         user: user,
-        klass: parent_record.class
+        klass: parent_record.class,
+        importer_run_id: importer_run_id
       ).run
       # TODO: add counters for :processed_parents and :failed_parents
       Bulkrax::ImporterRun.find(importer_run_id).increment!(:processed_relationships) # rubocop:disable Rails/SkipsModelValidations

@@ -6,8 +6,7 @@ FactoryBot.define do
       new(
         attributes: {},
         source_identifier_value: :source_identifier,
-        work_identifier: :source,
-        collection_field_mapping: :collection
+        work_identifier: :source
       )
     end
   end

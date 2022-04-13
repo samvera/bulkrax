@@ -125,25 +125,32 @@ module Bulkrax
     end
 
     def import_works
-      self.only_updates ||= false
-      import_objects('works')
+      import_objects(['work'])
     end
 
     def import_collections
-      import_objects('collections')
+      import_objects(['collection'])
     end
 
     def import_file_sets
-      import_objects('file_sets')
+      import_objects(['file_set'])
     end
 
     def import_relationships
-      import_objects('relationships')
+      import_objects(['relationship'])
     end
 
-    def import_objects(object_type)
-      self.save if self.new_record? # Object needs to be saved for statuses
-      parser.send("create_#{object_type}")
+    def import_objects(types_array = nil)
+      self.only_updates ||= false
+      types = types_array || %w[work collection file_set relationship]
+      if parser.class == Bulkrax::CsvParser
+        parser.create_objects(types)
+      else
+        types.each do |object_type|
+          self.save if self.new_record? # Object needs to be saved for statuses
+          parser.send("create_#{object_type.pluralize}")
+        end
+      end
     rescue StandardError => e
       status_info(e)
     end

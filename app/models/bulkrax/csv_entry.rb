@@ -22,18 +22,15 @@ module Bulkrax
         encoding: 'utf-8')
     end
 
-    def self.data_for_entry(data, _source_id)
-      ActiveSupport::Deprecation.warn(
-        'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \
-        ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
-      )
+    def self.data_for_entry(data, _source_id, parser)
       # If a multi-line CSV data is passed, grab the first row
       data = data.first if data.is_a?(CSV::Table)
       # model has to be separated so that it doesn't get mistranslated by to_h
       raw_data = data.to_h
       raw_data[:model] = data[:model] if data[:model].present?
       # If the collection field mapping is not 'collection', add 'collection' - the parser needs it
-      raw_data[:collection] = raw_data[collection_field.to_sym] if raw_data.keys.include?(collection_field.to_sym) && collection_field != 'collection'
+      # TODO: change to :parents
+      raw_data[:parents] = raw_data[parent_field(parser).to_sym] if raw_data.keys.include?(parent_field(parser).to_sym) && parent_field(parser) != 'parents'
       return raw_data
     end
 
@@ -44,10 +41,11 @@ module Bulkrax
       self.parsed_metadata = {}
       add_identifier
       add_ingested_metadata
+      # TODO(alishaevn): remove the collections stuff entirely and only reference collections via the new parents code
+      add_collections
       add_visibility
       add_metadata_for_model
       add_rights_statement
-      add_collections
       add_local
 
       self.parsed_metadata
@@ -70,15 +68,9 @@ module Bulkrax
     end
 
     def add_ingested_metadata
-      ActiveSupport::Deprecation.warn(
-        'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \
-        ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
-      )
       # we do not want to sort the values in the record before adding the metadata.
       # if we do, the factory_class will be set to the default_work_type for all values that come before "model" or "work type"
       record.each do |key, value|
-        next if self.parser.collection_field_mapping.to_s == key_without_numbers(key)
-
         index = key[/\d+/].to_i - 1 if key[/\d+/].to_i != 0
         add_metadata(key_without_numbers(key), value, index)
       end
@@ -104,28 +96,40 @@ module Bulkrax
       self.parsed_metadata['id'] = hyrax_record.id
       self.parsed_metadata[source_identifier] = hyrax_record.send(work_identifier)
       self.parsed_metadata['model'] = hyrax_record.has_model.first
+      build_relationship_metadata
       build_mapping_metadata
-
-      # TODO: fix the "send" parameter in the conditional below
-      # currently it returns: "NoMethodError - undefined method 'bulkrax_identifier' for #<Collection:0x00007fbe6a3b4248>"
-      if mapping['collection']&.[]('join')
-        self.parsed_metadata['collection'] = hyrax_record.member_of_collection_ids.join('; ')
-        #   self.parsed_metadata['collection'] = hyrax_record.member_of_collections.map { |c| c.send(work_identifier)&.first }.compact.uniq.join(';')
-      else
-        hyrax_record.member_of_collections.each_with_index do |collection, i|
-          self.parsed_metadata["collection_#{i + 1}"] = collection.id
-          #     self.parsed_metadata["collection_#{i + 1}"] = collection.send(work_identifier)&.first
-        end
-      end
-
       build_files unless hyrax_record.is_a?(Collection)
       self.parsed_metadata
+    end
+
+    def build_relationship_metadata
+      # Includes all relationship methods for all exportable record types (works, Collections, FileSets)
+      relationship_methods = {
+        related_parents_parsed_mapping => %i[member_of_collection_ids member_of_work_ids in_work_ids],
+        related_children_parsed_mapping => %i[member_collection_ids member_work_ids file_set_ids]
+      }
+
+      relationship_methods.each do |relationship_key, methods|
+        next if relationship_key.blank?
+
+        values = []
+        methods.each do |m|
+          values << hyrax_record.public_send(m) if hyrax_record.respond_to?(m)
+        end
+        values = values.flatten.uniq
+        next if values.blank?
+
+        handle_join_on_export(relationship_key, values, mapping[related_parents_parsed_mapping]['join'].present?)
+      end
     end
 
     def build_mapping_metadata
       mapping.each do |key, value|
         next if Bulkrax.reserved_properties.include?(key) && !field_supported?(key)
         next if key == "model"
+        # relationships handled by #build_relationship_metadata
+        next if [related_parents_parsed_mapping, related_children_parsed_mapping].include?(key)
+        next if key == 'file' # handled by #build_files
         next if value['excluded']
 
         object_key = key if value.key?('object')
@@ -151,7 +155,7 @@ module Bulkrax
       data = hyrax_record.send(key.to_s)
       if data.is_a?(ActiveTriples::Relation)
         if value['join']
-          self.parsed_metadata[key_for_export(key)] = data.map { |d| prepare_export_data(d) }.join('; ').to_s
+          self.parsed_metadata[key_for_export(key)] = data.map { |d| prepare_export_data(d) }.join(' | ').to_s # TODO: make split char dynamic
         else
           data.each_with_index do |d, i|
             self.parsed_metadata["#{key_for_export(key)}_#{i + 1}"] = prepare_export_data(d)
@@ -200,12 +204,21 @@ module Bulkrax
     end
 
     def build_files
-      if mapping['file']&.[]('join')
-        self.parsed_metadata['file'] = hyrax_record.file_sets.map { |fs| filename(fs).to_s if filename(fs).present? }.compact.join('; ')
+      file_mapping = mapping['file']&.[]('from')&.first || 'file'
+      file_sets = hyrax_record.file_set? ? Array.wrap(hyrax_record) : hyrax_record.file_sets
+
+      filenames = file_sets.map { |fs| filename(fs).to_s if filename(fs).present? }.compact
+      handle_join_on_export(file_mapping, filenames, mapping['file']&.[]('join')&.present?)
+    end
+
+    def handle_join_on_export(key, values, join)
+      if join
+        parsed_metadata[key] = values.join(' | ') # TODO: make split char dynamic
       else
-        hyrax_record.file_sets.each_with_index do |fs, i|
-          self.parsed_metadata["file_#{i + 1}"] = filename(fs).to_s if filename(fs).present?
+        values.each_with_index do |value, i|
+          parsed_metadata["#{key}_#{i + 1}"] = value
         end
+        parsed_metadata.delete(key)
       end
     end
 
@@ -228,22 +241,19 @@ module Bulkrax
     end
 
     def possible_collection_ids
-      ActiveSupport::Deprecation.warn(
-        'Creating Collections using the collection_field_mapping will no longer be supported as of Bulkrax version 3.0.' \
-        ' Please configure Bulkrax to use related_parents_field_mapping and related_children_field_mapping instead.'
-      )
       return @possible_collection_ids if @possible_collection_ids.present?
 
-      collection_field_mapping = self.class.collection_field
-      return [] unless collection_field_mapping.present? && record[collection_field_mapping].present?
+      parent_field_mapping = self.class.parent_field(parser)
+      return [] unless parent_field_mapping.present? && record[parent_field_mapping].present?
 
       identifiers = []
-      split_titles = record[collection_field_mapping].split(/\s*[;|]\s*/)
-      split_titles.each do |c_title|
-        matching_collection_entries = importerexporter.entries.select { |e| e.raw_metadata['title'] == c_title }
+      split_references = record[parent_field_mapping].split(/\s*[;|]\s*/)
+      split_references.each do |c_reference|
+        matching_collection_entries = importerexporter.entries.select { |e| e.raw_metadata[work_identifier] == c_reference && e.is_a?(CsvCollectionEntry) }
         raise ::StandardError, 'Only expected to find one matching entry' if matching_collection_entries.count > 1
         identifiers << matching_collection_entries.first&.identifier
       end
+
       @possible_collection_ids = identifiers.compact.presence || []
     end
 
@@ -260,6 +270,7 @@ module Bulkrax
           self.collection_ids << c.id unless skip
         end
       end
+
       self.collection_ids
     end
 

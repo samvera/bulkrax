@@ -7,7 +7,10 @@ module Bulkrax
 
     queue_as :import
 
+    attr_reader :importer_run_id
+
     def perform(entry_id, importer_run_id)
+      @importer_run_id = importer_run_id
       entry = Entry.find(entry_id)
       parent_identifier = entry.raw_metadata[entry.related_parents_raw_mapping]&.strip
 
@@ -63,7 +66,8 @@ module Bulkrax
     end
 
     def find_parent_record(parent_identifier)
-      @parent_record ||= find_record(parent_identifier)
+      @parent_record ||= find_record(parent_identifier, importer_run_id)
+      @parent_record = parent_record.last if parent_record.is_a? Array
     end
   end
 end

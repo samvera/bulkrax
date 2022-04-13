@@ -6,10 +6,20 @@ require 'rails_helper'
 module Bulkrax
   RSpec.describe CsvEntry, type: :model do
     let(:collection) { FactoryBot.build(:collection) }
+    let(:hyrax_record) do
+      OpenStruct.new(
+        file_sets: [],
+        member_of_collections: [],
+        member_of_work_ids: [],
+        in_work_ids: [],
+        member_work_ids: []
+      )
+    end
 
     before do
       allow_any_instance_of(described_class).to receive(:collections_created?).and_return(true)
       allow_any_instance_of(described_class).to receive(:find_collection).and_return(collection)
+      allow(subject).to receive(:hyrax_record).and_return(hyrax_record)
     end
 
     describe 'builds entry' do
@@ -398,6 +408,9 @@ module Bulkrax
           allow_any_instance_of(ObjectFactory).to receive(:run!)
           allow(subject).to receive(:hyrax_record).and_return(work_obj)
           allow(work_obj).to receive(:id).and_return('test123')
+          allow(work_obj).to receive(:member_of_work_ids).and_return([])
+          allow(work_obj).to receive(:in_work_ids).and_return([])
+          allow(work_obj).to receive(:member_work_ids).and_return([])
         end
 
         it 'succeeds' do
@@ -436,6 +449,9 @@ module Bulkrax
           allow_any_instance_of(ObjectFactory).to receive(:run!)
           allow(subject).to receive(:hyrax_record).and_return(work_obj)
           allow(work_obj).to receive(:id).and_return('test123')
+          allow(work_obj).to receive(:member_of_work_ids).and_return([])
+          allow(work_obj).to receive(:in_work_ids).and_return([])
+          allow(work_obj).to receive(:member_work_ids).and_return([])
         end
 
         it 'succeeds' do
@@ -483,6 +499,9 @@ module Bulkrax
           allow_any_instance_of(ObjectFactory).to receive(:run!)
           allow(subject).to receive(:hyrax_record).and_return(work_obj)
           allow(work_obj).to receive(:id).and_return('test123')
+          allow(work_obj).to receive(:member_of_work_ids).and_return([])
+          allow(work_obj).to receive(:in_work_ids).and_return([])
+          allow(work_obj).to receive(:member_work_ids).and_return([])
         end
 
         it 'succeeds' do
@@ -533,6 +552,9 @@ module Bulkrax
           allow_any_instance_of(ObjectFactory).to receive(:run!)
           allow(subject).to receive(:hyrax_record).and_return(work_obj)
           allow(work_obj).to receive(:id).and_return('test123')
+          allow(work_obj).to receive(:member_of_work_ids).and_return([])
+          allow(work_obj).to receive(:in_work_ids).and_return([])
+          allow(work_obj).to receive(:member_work_ids).and_return([])
         end
 
         it 'succeeds' do
@@ -580,6 +602,9 @@ module Bulkrax
           allow_any_instance_of(ObjectFactory).to receive(:run!)
           allow(subject).to receive(:hyrax_record).and_return(work_obj)
           allow(work_obj).to receive(:id).and_return('test123')
+          allow(work_obj).to receive(:member_of_work_ids).and_return([])
+          allow(work_obj).to receive(:in_work_ids).and_return([])
+          allow(work_obj).to receive(:member_work_ids).and_return([])
         end
 
         it 'succeeds' do
@@ -627,6 +652,9 @@ module Bulkrax
           allow_any_instance_of(ObjectFactory).to receive(:run!)
           allow(subject).to receive(:hyrax_record).and_return(work_obj)
           allow(work_obj).to receive(:id).and_return('test123')
+          allow(work_obj).to receive(:member_of_work_ids).and_return([])
+          allow(work_obj).to receive(:in_work_ids).and_return([])
+          allow(work_obj).to receive(:member_work_ids).and_return([])
         end
 
         it 'succeeds' do
@@ -638,6 +666,274 @@ module Bulkrax
           expect(metadata['multiple_objects_position_2_1']).to eq('King')
           expect(metadata['multiple_objects_position_2_2']).to eq('Lord')
           expect(metadata['multiple_objects_position_2_3']).to eq('Duke')
+        end
+      end
+    end
+
+    describe '#add_parent_to_import_run' do
+      subject(:entry) { described_class.new(importerexporter: importer) }
+      let(:importer) { FactoryBot.build(:bulkrax_importer_csv, importer_runs: [importer_run]) }
+      let(:importer_run) { build(:bulkrax_importer_run) }
+
+      it 'adds the parent_id to the run' do
+        expect(importer_run.parents).to eq([])
+
+        entry.add_parent_to_import_run('dummy', importer_run)
+
+        expect(importer_run.parents).to eq(['dummy'])
+      end
+    end
+
+    describe '#build_relationship_metadata' do
+      subject(:entry) { described_class.new(importerexporter: exporter) }
+      let(:exporter) { create(:bulkrax_exporter, :with_relationships_mappings) }
+      let(:hyrax_record) do
+        OpenStruct.new(
+          has_model: ['Work'],
+          source: 'test',
+          member_of_collections: [],
+          file_sets: []
+        )
+      end
+
+      before do
+        allow(entry).to receive(:hyrax_record).and_return(hyrax_record)
+        allow(entry).to receive(:source_identifier).and_return('source_identifier')
+        allow(entry).to receive(:work_identifier).and_return('source')
+      end
+
+      it 'gets called by #build_export_metadata' do
+        expect(entry).to receive(:build_relationship_metadata).once
+        entry.build_export_metadata
+      end
+
+      context 'when parser does not have relationship field mappings' do
+        it 'does not raise an error' do
+          expect { entry.build_relationship_metadata }.not_to raise_error
+        end
+
+        it "does not change the entry's parsed_metadata" do
+          expect { entry.build_relationship_metadata }.not_to change { entry.parsed_metadata }
+        end
+      end
+
+      context 'when parser has relationship field mappings' do
+        let(:exporter) { create(:bulkrax_exporter, :with_relationships_mappings) }
+
+        before do
+          entry.parsed_metadata = {}
+          entry.build_relationship_metadata
+        end
+
+        context "when the entry's record does not have any relationships" do
+          it 'does not add any relationships to the parsed_metadata' do
+            expect(entry.parsed_metadata.keys).not_to include('parents')
+            expect(entry.parsed_metadata.keys).not_to include('children')
+          end
+        end
+
+        context "when the entry's record has relationships" do
+          let(:hyrax_record) do
+            OpenStruct.new(
+              member_of_collection_ids: %w[pc1 pc2],
+              member_of_work_ids: %w[pw1 pw2],
+              in_work_ids: %w[pw3 pw4], # used by FileSets
+              member_collection_ids: %w[cc1 cc2],
+              member_work_ids: %w[cw1 cw2],
+              file_set_ids: %w[cfs1 cfs2]
+            )
+          end
+
+          it 'adds all the parent relationships to the parent field mapping' do
+            expect(entry.parsed_metadata['parents_1']).to eq('pc1')
+            expect(entry.parsed_metadata['parents_2']).to eq('pc2')
+            expect(entry.parsed_metadata['parents_3']).to eq('pw1')
+            expect(entry.parsed_metadata['parents_4']).to eq('pw2')
+            expect(entry.parsed_metadata['parents_5']).to eq('pw3')
+            expect(entry.parsed_metadata['parents_6']).to eq('pw4')
+          end
+
+          it 'adds all the child relationships to the child field mapping' do
+            expect(entry.parsed_metadata['children_1']).to eq('cc1')
+            expect(entry.parsed_metadata['children_2']).to eq('cc2')
+            expect(entry.parsed_metadata['children_3']).to eq('cw1')
+            expect(entry.parsed_metadata['children_4']).to eq('cw2')
+            expect(entry.parsed_metadata['children_5']).to eq('cfs1')
+            expect(entry.parsed_metadata['children_6']).to eq('cfs2')
+          end
+
+          context 'with a join setting' do
+            let(:exporter) { create(:bulkrax_exporter, field_mapping: field_mapping) }
+            let(:field_mapping) do
+              {
+                'parents' => { 'from' => ['parents_column'], join: true, split: /\s*[|]\s*/, related_parents_field_mapping: true },
+                'children' => { 'from' => ['children_column'], join: true, split: /\s*[|]\s*/, related_children_field_mapping: true }
+              }
+            end
+
+            it 'joins the values into a single column' do
+              expect(entry.parsed_metadata['parents']).to eq('pc1 | pc2 | pw1 | pw2 | pw3 | pw4')
+              expect(entry.parsed_metadata['children']).to eq('cc1 | cc2 | cw1 | cw2 | cfs1 | cfs2')
+            end
+          end
+        end
+      end
+    end
+
+    describe '#build_files' do
+      subject(:entry) { described_class.new(importerexporter: exporter) }
+      let(:exporter) { create(:bulkrax_exporter, :with_relationships_mappings) }
+
+      before do
+        allow(entry).to receive(:hyrax_record).and_return(hyrax_record)
+      end
+
+      context 'when entry#hyrax_record is a Collection' do
+        let(:hyrax_record) do
+          OpenStruct.new(
+            has_model: ['Collection'],
+            source: 'test',
+            member_of_collections: [],
+            file_set?: false
+          )
+        end
+
+        before do
+          allow(hyrax_record).to receive(:is_a?).with(FileSet).and_return(false)
+          allow(hyrax_record).to receive(:is_a?).with(Collection).and_return(true)
+          allow(entry).to receive(:source_identifier).and_return('source_identifier')
+          allow(entry).to receive(:work_identifier).and_return('source')
+        end
+
+        it 'does not get called by #build_export_metadata' do
+          expect(entry).not_to receive(:build_files)
+          entry.build_export_metadata
+        end
+      end
+
+      context 'when entry#hyrax_record is a FileSet' do
+        let(:hyrax_record) do
+          OpenStruct.new(
+            has_model: ['FileSet'],
+            file_set?: true
+          )
+        end
+
+        before do
+          entry.parsed_metadata = {}
+          allow(hyrax_record).to receive(:is_a?).with(FileSet).and_return(true)
+          allow(hyrax_record).to receive(:is_a?).with(Collection).and_return(false)
+          allow(entry).to receive(:filename).and_return('hello.png')
+        end
+
+        it 'gets called by #build_export_metadata' do
+          expect(entry).to receive(:build_files).once
+          entry.build_export_metadata
+        end
+
+        context 'when the parser has a file field mapping' do
+          context 'with join set to true' do
+            let(:exporter) { create(:bulkrax_exporter, field_mapping: { 'file' => { from: ['filename'], join: true } }) }
+
+            it "adds the file set's filename to the file mapping in parsed_metadata" do
+              entry.build_files
+
+              expect(entry.parsed_metadata['filename']).to eq('hello.png')
+            end
+          end
+        end
+
+        context 'when the parser does not have a file field mapping' do
+          it "adds the file set's filename to the 'file' key in parsed_metadata" do
+            entry.build_files
+
+            expect(entry.parsed_metadata['file_1']).to eq('hello.png')
+          end
+        end
+      end
+
+      context 'when entry#hyrax_record is a Work' do
+        let(:hyrax_record) do
+          OpenStruct.new(
+            has_model: ['Work'],
+            file_set?: false,
+            file_sets: [file_set_1, file_set_2],
+            member_of_collections: []
+          )
+        end
+        let(:file_set_1) do
+          OpenStruct.new(
+            id: 'file_set_1',
+            original_file: OpenStruct.new(
+              file_name: ['hello.png'],
+              mime_type: 'image/png'
+            )
+          )
+        end
+        let(:file_set_2) do
+          OpenStruct.new(
+            id: 'file_set_2',
+            original_file: OpenStruct.new(
+              file_name: ['world.jpg'],
+              mime_type: 'image/jpeg'
+            )
+          )
+        end
+
+        before do
+          entry.parsed_metadata = {}
+          allow(hyrax_record).to receive(:is_a?).with(FileSet).and_return(false)
+          allow(hyrax_record).to receive(:is_a?).with(Collection).and_return(false)
+        end
+
+        it 'gets called by #build_export_metadata' do
+          expect(entry).to receive(:build_files).once
+          entry.build_export_metadata
+        end
+
+        context 'when the parser has a file field mapping' do
+          context 'with join set to true' do
+            let(:exporter) { create(:bulkrax_exporter, field_mapping: { 'file' => { from: ['filename'], join: true } }) }
+
+            it "adds the work's file set's filenames to the file mapping in parsed_metadata" do
+              entry.build_files
+
+              expect(entry.parsed_metadata['filename']).to eq('hello.png | world.jpg')
+            end
+          end
+        end
+
+        context 'when the parser does not have a file field mapping' do
+          it "adds the work's file set's filenames to the 'file' key in parsed_metadata" do
+            entry.build_files
+
+            expect(entry.parsed_metadata['file_1']).to eq('hello.png')
+            expect(entry.parsed_metadata['file_2']).to eq('world.jpg')
+          end
+        end
+      end
+    end
+
+    describe '#handle_join_on_export' do
+      subject(:entry) { described_class.new(importerexporter: exporter, parsed_metadata: {}) }
+      let(:exporter) { create(:bulkrax_exporter) }
+
+      context 'when a field mapping is configured to join values' do
+        it 'joins the values into a single column' do
+          entry.handle_join_on_export('dummy', %w[a1 b2 c3], true)
+
+          expect(entry.parsed_metadata['dummy']).to eq('a1 | b2 | c3')
+        end
+      end
+
+      context 'when a field mapping is not configured to join values' do
+        it 'lists the values in separate, numerated columns' do
+          entry.handle_join_on_export('dummy', %w[a1 b2 c3], false)
+
+          expect(entry.parsed_metadata['dummy']).to be_nil
+          expect(entry.parsed_metadata['dummy_1']).to eq('a1')
+          expect(entry.parsed_metadata['dummy_2']).to eq('b2')
+          expect(entry.parsed_metadata['dummy_3']).to eq('c3')
         end
       end
     end
