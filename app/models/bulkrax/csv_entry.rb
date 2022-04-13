@@ -99,6 +99,7 @@ module Bulkrax
       build_relationship_metadata
       build_mapping_metadata
       build_files unless hyrax_record.is_a?(Collection)
+      build_generated_metadata if importerexporter.generated_metadata
       self.parsed_metadata
     end
 
@@ -231,6 +232,16 @@ module Bulkrax
         end
         parsed_metadata.delete(key)
       end
+    end
+
+    def build_generated_metadata
+      return unless Hyrax.config.curation_concerns.include?(hyrax_record.class)
+
+      generated_metadata_keys = ["create_date", "date_modified", "date_uploaded"]
+      generated_metadata_hash = generated_metadata_keys.each do |attr|
+        self.parsed_metadata[attr] = hyrax_record.as_json[attr].strftime("%-d/%-m/%y: %H:%M %Z") if hyrax_record.as_json[attr].present?
+      end
+      self.parsed_metadata
     end
 
     # In order for the existing exported hyrax_record, to be updated by a re-import

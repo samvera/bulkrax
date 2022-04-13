@@ -17,6 +17,7 @@ en:
         finish_date: End Date
         full: Metadata and Files
         include_thumbnails: Include Thumbnails?
+        generated_metadata: Include Generated Metadata?
         importer: Importer
         limit: Limit
         metadata: Metadata Only
