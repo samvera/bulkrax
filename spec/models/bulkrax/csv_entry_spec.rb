@@ -961,7 +961,7 @@ module Bulkrax
           entry.parsed_metadata = {}
           allow(hyrax_record).to receive(:is_a?).with(FileSet).and_return(false)
         end
- 
+
         it 'gets called by #build_files' do
           expect(entry).to receive(:build_thumbnail_files).once
           entry.build_files
