@@ -856,6 +856,7 @@ module Bulkrax
         let(:hyrax_record) do
           OpenStruct.new(
             has_model: ['Work'],
+            work?: true,
             file_set?: false,
             file_sets: [file_set_1, file_set_2],
             member_of_collections: []
@@ -891,6 +892,11 @@ module Bulkrax
           entry.build_export_metadata
         end
 
+        it 'calls #build_thumbnail_files' do
+          expect(entry).to receive(:build_thumbnail_files).once
+          entry.build_files
+        end
+
         context 'when the parser has a file field mapping' do
           context 'with join set to true' do
             let(:exporter) { create(:bulkrax_exporter, field_mapping: { 'file' => { from: ['filename'], join: true } }) }
@@ -909,6 +915,73 @@ module Bulkrax
 
             expect(entry.parsed_metadata['file_1']).to eq('hello.png')
             expect(entry.parsed_metadata['file_2']).to eq('world.jpg')
+          end
+        end
+      end
+    end
+
+    describe '#build_thumbnail_files' do
+      subject(:entry) { described_class.new(importerexporter: exporter) }
+      let(:exporter) { create(:bulkrax_exporter, :with_relationships_mappings, include_thumbnails: false) }
+
+      before do
+        allow(entry).to receive(:hyrax_record).and_return(hyrax_record)
+      end
+
+      context 'when record is a work' do
+        let(:hyrax_record) do
+          OpenStruct.new(
+            has_model: ['Work'],
+            work?: true,
+            thumbnail: [file_set_1],
+            file_sets: [file_set_2],
+            member_of_collections: []
+          )
+        end
+        let(:file_set_1) do
+          OpenStruct.new(
+            id: 'file_set_1',
+            original_file: OpenStruct.new(
+              file_name: ['hello.png'],
+              mime_type: 'image/png'
+            )
+          )
+        end
+        let(:file_set_2) do
+          OpenStruct.new(
+            id: 'file_set_2',
+            original_file: OpenStruct.new(
+              file_name: ['world.jpg'],
+              mime_type: 'image/jpeg'
+            )
+          )
+        end
+
+        before do
+          entry.parsed_metadata = {}
+          allow(hyrax_record).to receive(:is_a?).with(FileSet).and_return(false)
+        end
+ 
+        it 'gets called by #build_files' do
+          expect(entry).to receive(:build_thumbnail_files).once
+          entry.build_files
+        end
+
+        context 'when exporter does not include thumbnails' do
+          it 'does not include a thumbnail_file header' do
+            entry.build_thumbnail_files
+
+            expect(entry.parsed_metadata).to eq({})
+          end
+        end
+
+        context 'when exporter includes thumbnails' do
+          it "adds the work's file set's filenames to the 'thumbnail_file' key in parsed_metadata" do
+            exporter.include_thumbnails = true
+
+            entry.build_thumbnail_files
+
+            expect(entry.parsed_metadata["thumbnail_file_1"]).to eq('hello.png')
           end
         end
       end
