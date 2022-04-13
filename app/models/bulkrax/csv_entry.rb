@@ -218,6 +218,7 @@ module Bulkrax
       thumbnail_mapping = 'thumbnail_file'
       file_sets = Array.wrap(hyrax_record.thumbnail)
 
+      filenames = map_file_sets(file_sets)
       handle_join_on_export(thumbnail_mapping, filenames, false)
     end
 
