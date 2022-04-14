@@ -28,7 +28,6 @@ module Bulkrax
       self.parsed_metadata[related_parents_parsed_mapping].each do |parent_identifier|
         next if parent_identifier.blank?
 
-        add_parent_to_import_run(parent_identifier, importerexporter.last_run)
         PendingRelationship.create!(child_id: self.identifier, parent_id: parent_identifier, bulkrax_importer_run_id: importerexporter.last_run.id, order: self.id)
       end
     end
@@ -37,14 +36,8 @@ module Bulkrax
       self.parsed_metadata[related_children_parsed_mapping].each do |child_identifier|
         next if child_identifier.blank?
 
-        add_parent_to_import_run(self.identifier, importerexporter.last_run)
         PendingRelationship.create!(parent_id: self.identifier, child_id: child_identifier, bulkrax_importer_run_id: importerexporter.last_run.id, order: self.id)
       end
-    end
-
-    def add_parent_to_import_run(parent_id, run)
-      run.parents << parent_id
-      run.save
     end
 
     def find_collection_ids
