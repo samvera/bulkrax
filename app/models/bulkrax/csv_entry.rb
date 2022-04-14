@@ -235,11 +235,11 @@ module Bulkrax
     end
 
     def build_generated_metadata
-      return unless Hyrax.config.curation_concerns.include?(hyrax_record.class)
+      return unless hyrax_record.work? || Hyrax.config.curation_concerns.include?(hyrax_record.class)
 
       generated_metadata_keys = ["create_date", "date_modified", "date_uploaded"]
       generated_metadata_hash = generated_metadata_keys.each do |attr|
-        self.parsed_metadata[attr] = hyrax_record.as_json[attr].strftime("%-d/%-m/%y: %H:%M %Z") if hyrax_record.as_json[attr].present?
+        self.parsed_metadata[attr] = hyrax_record.as_json[attr] if hyrax_record.as_json[attr].present?
       end
       self.parsed_metadata
     end
