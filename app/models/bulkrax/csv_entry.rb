@@ -235,7 +235,7 @@ module Bulkrax
     end
 
     def build_generated_metadata
-      return unless hyrax_record.work? || Hyrax.config.curation_concerns.include?(hyrax_record.class)
+      return unless !hyrax_record.is_a?(FileSet) && !hyrax_record.is_a?(Collection)
 
       generated_metadata_keys = ["create_date", "date_modified", "date_uploaded"]
       generated_metadata_hash = generated_metadata_keys.each do |attr|
