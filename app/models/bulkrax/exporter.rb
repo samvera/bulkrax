@@ -55,6 +55,10 @@ module Bulkrax
       self.include_thumbnails
     end
 
+    def generated_metadata?
+      self.generated_metadata
+    end
+
     def work_visibility_list
       [
         ['Any', ''],
