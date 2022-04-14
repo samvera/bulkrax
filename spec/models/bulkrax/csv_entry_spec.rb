@@ -1025,14 +1025,14 @@ module Bulkrax
           OpenStruct.new(
             has_model: ['Work'],
             work?: true,
-            date_uploaded: datetime,
+            date_uploaded: datetime
           )
         end
         let(:datetime) { DateTime.now }
 
         before do
           entry.parsed_metadata = {}
-          allow(hyrax_record).to receive(:as_json).and_return({"date_uploaded" => datetime})
+          allow(hyrax_record).to receive(:as_json).and_return({ "date_uploaded" => datetime })
         end
 
         context 'when exporter includes generated metadata' do
@@ -1042,7 +1042,7 @@ module Bulkrax
             expect(entry).to receive(:build_generated_metadata).once
             entry.build_export_metadata
           end
- 
+
           it "adds the work's file set's filenames to the 'date_uploaded' key in parsed_metadata" do
             exporter.generated_metadata = true
 

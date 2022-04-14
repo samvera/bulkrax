@@ -238,7 +238,7 @@ module Bulkrax
       return unless !hyrax_record.is_a?(FileSet) && !hyrax_record.is_a?(Collection)
 
       generated_metadata_keys = ["create_date", "date_modified", "date_uploaded"]
-      generated_metadata_hash = generated_metadata_keys.each do |attr|
+      generated_metadata_keys.each do |attr|
         self.parsed_metadata[attr] = hyrax_record.as_json[attr] if hyrax_record.as_json[attr].present?
       end
       self.parsed_metadata
