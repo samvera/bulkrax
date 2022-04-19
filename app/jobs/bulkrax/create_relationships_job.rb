@@ -87,8 +87,8 @@ module Bulkrax
         ObjectFactory.new(
           attributes: attrs,
           source_identifier_value: nil, # sending the :id in the attrs means the factory doesn't need a :source_identifier_value
-          work_identifier: parent_entry.parser.work_identifier,
-          related_parents_parsed_mapping: parent_entry.parser.related_parents_parsed_mapping,
+          work_identifier: parent_entry&.parser&.work_identifier,
+          related_parents_parsed_mapping: parent_entry&.parser&.related_parents_parsed_mapping,
           replace_files: false,
           user: user,
           klass: child_record.class,
@@ -106,8 +106,8 @@ module Bulkrax
       ObjectFactory.new(
         attributes: attrs,
         source_identifier_value: nil, # sending the :id in the attrs means the factory doesn't need a :source_identifier_value
-        work_identifier: parent_entry.parser.work_identifier,
-        related_parents_parsed_mapping: parent_entry.parser.related_parents_parsed_mapping,
+        work_identifier: parent_entry&.parser&.work_identifier,
+        related_parents_parsed_mapping: parent_entry&.parser&.related_parents_parsed_mapping,
         replace_files: false,
         user: user,
         klass: parent_record.class,
@@ -130,8 +130,8 @@ module Bulkrax
       ObjectFactory.new(
         attributes: attrs,
         source_identifier_value: nil, # sending the :id in the attrs means the factory doesn't need a :source_identifier_value
-        work_identifier: parent_entry.parser.work_identifier,
-        related_parents_parsed_mapping: parent_entry.parser.related_parents_parsed_mapping,
+        work_identifier: parent_entry&.parser&.work_identifier,
+        related_parents_parsed_mapping: parent_entry&.parser&.related_parents_parsed_mapping,
         replace_files: false,
         user: user,
         klass: parent_record.class,
