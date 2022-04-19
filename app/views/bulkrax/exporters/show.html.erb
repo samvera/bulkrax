@@ -25,16 +25,6 @@
     </p>
 
     <p class='bulkrax-p-align'>
-      <strong><%= t('bulkrax.exporter.labels.generated_metadata') %>:</strong>
-      <%= @exporter.generated_metadata %>
-    </p>
-
-    <p class='bulkrax-p-align'>
-      <strong><%= t('bulkrax.exporter.labels.include_thumbnails') %>:</strong>
-      <%= @exporter.include_thumbnails %>
-    </p>
-
-    <p class='bulkrax-p-align'>
       <strong><%= t('bulkrax.exporter.labels.export_type') %>:</strong>
       <%= @exporter.export_type %>
     </p>
@@ -95,6 +85,7 @@
         <thead>
           <tr>
             <th>Identifier</th>
+            <th>Collection</th>
             <th>Entry ID</th>
             <th>Status</th>
             <th>Errors</th>
@@ -106,6 +97,13 @@
           <% @work_entries.each do |e| %>
             <tr>
               <td><%= link_to e.identifier, bulkrax.exporter_entry_path(@exporter.id, e.id) %></td>
+              <% if e.parsed_metadata.present? && e.parsed_metadata.dig('collections').present? %>
+                <td><%= e.parsed_metadata.dig('collections').map {|c| c['id'] }.join('; ') %></td>
+              <% elsif e.raw_metadata.present? %>
+                <td><%= Array.wrap(e.raw_metadata.dig('collection')).join(';') %></td>
+              <% else %>
+              <td></td>
+              <% end %>
               <td><%= e.id %></td>
               <% if e.status == 'Complete' %>
                 <td><span class='glyphicon glyphicon-ok' style='color: green;'></span> <%= e.status %></td>
