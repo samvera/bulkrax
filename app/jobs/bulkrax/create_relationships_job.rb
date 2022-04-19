@@ -21,7 +21,7 @@ module Bulkrax
 
     queue_as :import
 
-    attr_accessor :child_records, :parent_record, :parent_entry, :importer_run_id
+    attr_accessor :child_records, :child_entry, :parent_record, :parent_entry, :importer_run_id
 
     # @param parent_identifier [String] Work/Collection ID or Bulkrax::Entry source_identifiers
     # @param importer_run [Bulkrax::ImporterRun] current importer run (needed to properly update counters)
@@ -41,7 +41,7 @@ module Bulkrax
       @child_records = { works: [], collections: [] }
       pending_relationships.each do |rel|
         raise ::StandardError, %("#{rel}" needs either a child or a parent to create a relationship) if rel.child_id.nil? || rel.parent_id.nil?
-        _, child_record = find_record(rel.child_id, importer_run_id)
+        @child_entry, child_record = find_record(rel.child_id, importer_run_id)
         child_record.is_a?(::Collection) ? @child_records[:collections] << child_record : @child_records[:works] << child_record
       end
 
@@ -59,7 +59,7 @@ module Bulkrax
       create_relationships
       pending_relationships.each(&:destroy)
     rescue ::StandardError => e
-      parent_entry.status_info(e)
+      parent_entry ? parent_entry.status_info(e) : child_entry.status_info(e)
       Bulkrax::ImporterRun.find(importer_run_id).increment!(:failed_relationships) # rubocop:disable Rails/SkipsModelValidations
     end
 
