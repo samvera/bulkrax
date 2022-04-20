@@ -239,8 +239,9 @@ module Bulkrax
 
       generated_metadata_keys = ["create_date", "date_modified", "date_uploaded"]
       generated_metadata_keys.each do |attr|
-        self.parsed_metadata[attr] = hyrax_record.as_json[attr] if hyrax_record.as_json[attr].present?
+        self.parsed_metadata[attr] = hyrax_record.send(attr)
       end
+
       self.parsed_metadata
     end
 
