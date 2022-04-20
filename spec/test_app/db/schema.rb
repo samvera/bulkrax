@@ -92,7 +92,6 @@ ActiveRecord::Schema.define(version: 2022_04_13_180915) do
     t.integer "total_file_set_entries", default: 0
     t.integer "processed_works", default: 0
     t.integer "failed_works", default: 0
-    t.text "parents"
     t.index ["importer_id"], name: "index_bulkrax_importer_runs_on_importer_id"
   end
 
