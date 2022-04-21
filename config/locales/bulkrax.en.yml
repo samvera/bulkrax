@@ -37,3 +37,6 @@ en:
           ingested: "Ingested"
           unapproved: "Unapproved"
           needs_repair: "Needs Repair"
+      hints:
+        include_thumbnails: "Include thumbnails in the export"
+        generated_metadata: "NOTE: CSV cannot be re-imported if this is selected"
