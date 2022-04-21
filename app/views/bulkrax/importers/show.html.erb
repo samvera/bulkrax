@@ -85,7 +85,6 @@
             <thead>
               <tr>
                 <th>Identifier</th>
-                <th>Collection</th>
                 <th>Entry ID</th>
                 <th>Status</th>
                 <th>Errors</th>
@@ -97,8 +96,6 @@
               <% @work_entries.each do |e| %>
                 <tr>
                   <td><%= link_to e.identifier, bulkrax.importer_entry_path(@importer.id, e.id) %></td>
-                  <% collection_titles = e.collection_ids.map {|id| c = Collection.find id; c.title.first } %>
-                  <td><%= collection_titles.join('; ') %></td>
                   <td><%= e.id %></td>
                   <% if e.status == "Complete" %>
                     <td><span class="glyphicon glyphicon-ok" style="color: green;"></span> <%= e.status %></td>
