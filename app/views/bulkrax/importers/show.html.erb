@@ -95,6 +95,7 @@
             <tbody>
               <% @work_entries.each do |e| %>
                 <tr>
+                  <td><%= link_to e.identifier, bulkrax.importer_entry_path(@importer.id, e.id) %></td>
                   <td><%= e.id %></td>
                   <% if e.status == "Complete" %>
                     <td><span class="glyphicon glyphicon-ok" style="color: green;"></span> <%= e.status %></td>
