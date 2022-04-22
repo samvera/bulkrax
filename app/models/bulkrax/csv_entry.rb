@@ -237,7 +237,7 @@ module Bulkrax
     def build_generated_metadata
       return unless !hyrax_record.is_a?(FileSet) && !hyrax_record.is_a?(Collection)
 
-      generated_metadata_keys = ["create_date", "date_modified", "date_uploaded"]
+      generated_metadata_keys = hyrax_record.attribute_names - exporter.field_mapping.keys - ['thumbnail_id']
       generated_metadata_keys.each do |attr|
         self.parsed_metadata[attr] = hyrax_record.send(attr)
       end
