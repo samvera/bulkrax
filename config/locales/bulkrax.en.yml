@@ -38,5 +38,5 @@ en:
           unapproved: "Unapproved"
           needs_repair: "Needs Repair"
       hints:
-        include_thumbnails: "Include thumbnails in the export"
+        include_thumbnails: "NOTE: CSV cannot be re-imported if this is selected"
         generated_metadata: "NOTE: CSV cannot be re-imported if this is selected"
