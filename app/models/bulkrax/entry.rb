@@ -71,6 +71,15 @@ module Bulkrax
       parser&.work_identifier&.to_s || 'source'
     end
 
+    # Returns field_mapping hash based on whether or not generated metadata should be included
+    def get_field_mapping
+      return self.mapping if importerexporter.generated_metadata
+
+      self.mapping.each do |key, value|
+        self.mapping.delete(key) if value[generated_metadata_mapping]
+      end
+    end
+
     def self.parent_field(parser)
       parser.related_parents_parsed_mapping
     end

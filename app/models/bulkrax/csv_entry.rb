@@ -124,14 +124,7 @@ module Bulkrax
     end
 
     def build_mapping_metadata
-      mapping = if importerexporter.generated_metadata
-                  self.mapping
-                else
-                  self.mapping.each do |key, value|
-                    self.mapping.delete(key) if value[generated_metadata_mapping] 
-                  end
-                end
-
+      mapping = get_field_mapping
       mapping.each do |key, value|
         next if Bulkrax.reserved_properties.include?(key) && !field_supported?(key)
         next if key == "model"
