@@ -84,19 +84,20 @@ module Bulkrax
 
     describe '#fetch_field_mapping' do
       subject { described_class.new(importerexporter: exporter) }
+      let(:field_mapping) {{
+                              'creator' => {
+                                from: ['author'],
+                                parsed: false,
+                                split: false,
+                                if: nil,
+                                excluded: false
+                              },
+                              'first_name' => { from: ['first_name'] },
+                              'last_name' => { from: ['last_name'] },
+                              'date_uploaded' => { from: ['date_uploaded'], split: '\|', generated: true }
+                            }}
       let(:exporter) do
-        FactoryBot.build(:bulkrax_exporter, field_mapping: {
-                                                              'creator' => {
-                                                                from: ['author'],
-                                                                parsed: false,
-                                                                split: false,
-                                                                if: nil,
-                                                                excluded: false
-                                                              },
-                                                              'first_name' => { from: ['first_name'] },
-                                                              'last_name' => { from: ['last_name'] },
-                                                              'date_uploaded' => { from: ['date_uploaded'], split: '\|', generated: true }
-                                                            })
+        FactoryBot.build(:bulkrax_exporter, field_mapping: field_mapping )
       end
 
       context 'when generated_metadata is false' do
