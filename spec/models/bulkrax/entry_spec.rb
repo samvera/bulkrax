@@ -103,26 +103,24 @@ module Bulkrax
         it 'excludes generated metadata' do
           expect(subject.fetch_field_mapping).not_to include("date_uploaded" => { "from" => ["date_uploaded"], "generated" => true, "split" => "\\|" })
           expect(subject.fetch_field_mapping).to eq({
-            "creator" => { "from" => ["author"], "parsed" => false, "split" => false, "if" => nil, "excluded" => false },
-            "first_name" => { "from" => ["first_name"] },
-            "last_name" => { "from" => ["last_name"] }
-            }
-          )
+                                                      "creator" => { "from" => ["author"], "parsed" => false, "split" => false, "if" => nil, "excluded" => false },
+                                                      "first_name" => { "from" => ["first_name"] },
+                                                      "last_name" => { "from" => ["last_name"] },
+                                                    })
         end
       end
-      
+
       context 'when generated_metadata is true' do
         it 'includes generated metadata' do
           exporter.update(generated_metadata: true)
 
           expect(subject.fetch_field_mapping).to include("date_uploaded" => { "from" => ["date_uploaded"], "generated" => true, "split" => "\\|" })
           expect(subject.fetch_field_mapping).to eq({
-            "creator" => { "from" => ["author"], "parsed" => false, "split" => false, "if" => nil, "excluded" => false },
-            "first_name" => { "from" => ["first_name"] },
-            "last_name" => { "from" => ["last_name"] },
-            "date_uploaded" => { "from" => ["date_uploaded"], "split" => "\\|", "generated" => true }
-            }
-          )
+                                                      "creator" => { "from" => ["author"], "parsed" => false, "split" => false, "if" => nil, "excluded" => false },
+                                                      "first_name" => { "from" => ["first_name"] },
+                                                      "last_name" => { "from" => ["last_name"] },
+                                                      "date_uploaded" => { "from" => ["date_uploaded"], "split" => "\\|", "generated" => true }
+                                                    })
         end
       end
     end
