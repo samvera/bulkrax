@@ -124,7 +124,7 @@ module Bulkrax
     end
 
     def build_mapping_metadata
-      mapping = get_field_mapping
+      mapping = fetch_field_mapping
       mapping.each do |key, value|
         next if Bulkrax.reserved_properties.include?(key) && !field_supported?(key)
         next if key == "model"

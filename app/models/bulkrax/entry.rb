@@ -72,7 +72,7 @@ module Bulkrax
     end
 
     # Returns field_mapping hash based on whether or not generated metadata should be included
-    def get_field_mapping
+    def fetch_field_mapping
       return self.mapping if importerexporter.generated_metadata
 
       self.mapping.each do |key, value|

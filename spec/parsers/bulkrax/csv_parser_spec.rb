@@ -563,7 +563,7 @@ module Bulkrax
           end
 
           it 'looks for the related_parents_field_mapping' do
-            expect(subject).to receive(:get_field_mapping_hash_for).with('related_parents_field_mapping')
+            expect(subject).to receive(:fetch_field_mapping_hash_for).with('related_parents_field_mapping')
 
             subject.related_parents_raw_mapping
           end
@@ -591,7 +591,7 @@ module Bulkrax
           end
 
           it 'looks for the related_parents_field_mapping' do
-            expect(subject).to receive(:get_field_mapping_hash_for).with('related_parents_field_mapping')
+            expect(subject).to receive(:fetch_field_mapping_hash_for).with('related_parents_field_mapping')
 
             subject.related_parents_parsed_mapping
           end
@@ -619,7 +619,7 @@ module Bulkrax
           end
 
           it 'looks for the related_children_field_mapping' do
-            expect(subject).to receive(:get_field_mapping_hash_for).with('related_children_field_mapping')
+            expect(subject).to receive(:fetch_field_mapping_hash_for).with('related_children_field_mapping')
 
             subject.related_children_raw_mapping
           end
@@ -647,7 +647,7 @@ module Bulkrax
           end
 
           it 'looks for the related_children_field_mapping' do
-            expect(subject).to receive(:get_field_mapping_hash_for).with('related_children_field_mapping')
+            expect(subject).to receive(:fetch_field_mapping_hash_for).with('related_children_field_mapping')
 
             subject.related_children_parsed_mapping
           end
