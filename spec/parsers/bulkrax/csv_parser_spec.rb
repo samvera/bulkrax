@@ -492,6 +492,21 @@ module Bulkrax
       end
     end
 
+    describe '#generated_metadata_mapping' do
+      context 'when the mapping is set' do
+        before do
+          importer.field_mapping = {
+            'date_uploaded' => { from: ['date_uploaded'], split: '\|', generated: true },
+            'unrelated' => { 'from' => ['unrelated_column'] }
+          }
+        end
+
+        it 'returns the mapping' do
+          expect(subject.generated_metadata_mapping).to eq('generated')
+        end
+      end
+    end
+
     describe '#related_parents_field_mapping' do
       context 'when the mapping is set' do
         before do

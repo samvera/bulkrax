@@ -34,6 +34,7 @@ module Bulkrax
     delegate :client,
       :collection_name,
       :user,
+      :generated_metadata_mapping,
       :related_parents_raw_mapping,
       :related_parents_parsed_mapping,
       :related_children_raw_mapping,
