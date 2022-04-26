@@ -140,16 +140,16 @@ module Bulkrax
     def create_collection(attrs)
       attrs = clean_attrs(attrs)
       attrs = collection_type(attrs)
-      persist_collection_memberships(parent: find_collection(attributes[related_parents_parsed_mapping]), child: object) if attributes[related_parents_parsed_mapping].present?
       object.attributes = attrs
       object.apply_depositor_metadata(@user)
       object.save!
+      pass_collection_to_be_persisted(parent: find_collection(attributes[related_parents_parsed_mapping]), child: object) if attributes[related_parents_parsed_mapping].present?
     end
 
     def update_collection(attrs)
-      persist_collection_memberships(parent: find_collection(attributes[related_parents_parsed_mapping]), child: object) if attributes[related_parents_parsed_mapping].present?
       object.attributes = attrs
       object.save!
+      pass_collection_to_be_persisted(parent: find_collection(attributes[related_parents_parsed_mapping]), child: object) if attributes[related_parents_parsed_mapping].present?
     end
 
     # This method is heavily inspired by Hyrax's AttachFilesToWorkJob
@@ -182,9 +182,17 @@ module Bulkrax
       actor.update_metadata(file_set_attrs)
     end
 
+    def pass_collection_to_be_persisted(parent:, child:)
+      if parent.is_a? Array
+        parent.each { |par| persist_collection_memberships(par, child) }
+      else
+        persist_collection_memberships(parent, child)
+      end
+    end
+
     # Add child to parent's #member_collections
     # Add parent to child's #member_of_collections
-    def persist_collection_memberships(parent:, child:)
+    def persist_collection_memberships(parent, child)
       parent.reject!(&:blank?) if parent.respond_to?(:reject!)
       child.reject!(&:blank?) if child.respond_to?(:reject!)
       return if parent.blank? || child.blank?
