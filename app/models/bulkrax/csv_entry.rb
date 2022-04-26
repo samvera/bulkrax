@@ -99,7 +99,6 @@ module Bulkrax
       build_relationship_metadata
       build_mapping_metadata
       build_files unless hyrax_record.is_a?(Collection)
-      build_generated_metadata if importerexporter.generated_metadata
       self.parsed_metadata
     end
 
@@ -232,17 +231,6 @@ module Bulkrax
         end
         parsed_metadata.delete(key)
       end
-    end
-
-    def build_generated_metadata
-      return unless !hyrax_record.is_a?(FileSet) && !hyrax_record.is_a?(Collection)
-
-      generated_metadata_keys = hyrax_record.attribute_names - exporter.field_mapping.keys - ['head', 'tail' 'thumbnail_id']
-      generated_metadata_keys.each do |attr|
-        self.parsed_metadata[attr] = hyrax_record.send(attr)
-      end
-
-      self.parsed_metadata
     end
 
     # In order for the existing exported hyrax_record, to be updated by a re-import

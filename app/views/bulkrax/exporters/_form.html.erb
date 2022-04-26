@@ -62,11 +62,13 @@
 
   <%= form.input :generated_metadata?,
                  as: :boolean,
-                 label: t('bulkrax.exporter.labels.generated_metadata') %>
+                 label: t('bulkrax.exporter.labels.generated_metadata'),
+                 hint: t('bulkrax.exporter.hints.generated_metadata') %>
 
   <%= form.input :include_thumbnails?,
                  as: :boolean,
-                 label: t('bulkrax.exporter.labels.include_thumbnails') %>
+                 label: t('bulkrax.exporter.labels.include_thumbnails'),
+                 hint: t('bulkrax.exporter.hints.include_thumbnails') %>
 
   <%= form.input :date_filter,
                  as: :boolean,

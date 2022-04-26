@@ -996,49 +996,6 @@ module Bulkrax
         end
       end
     end
-
-    describe '#build_generated_metadata' do
-      subject(:entry) { described_class.new(importerexporter: exporter) }
-      let(:exporter) { create(:bulkrax_exporter, :with_relationships_mappings, generated_metadata: false) }
-
-      before do
-        allow(entry).to receive(:hyrax_record).and_return(hyrax_record)
-        allow(entry).to receive(:build_files)
-      end
-
-      context 'when record is a curation concern model' do
-        let(:hyrax_record) do
-          OpenStruct.new(
-            has_model: ['Work'],
-            work?: true,
-            date_uploaded: datetime
-          )
-        end
-        let(:datetime) { DateTime.now }
-
-        before do
-          entry.parsed_metadata = {}
-          allow(hyrax_record).to receive(:as_json).and_return({ "date_uploaded" => datetime })
-        end
-
-        context 'when exporter includes generated metadata' do
-          it 'gets called by #build_export_metadata' do
-            exporter.generated_metadata = true
-
-            expect(entry).to receive(:build_generated_metadata).once
-            entry.build_export_metadata
-          end
-
-          it "adds the work's file set's filenames to the 'date_uploaded' key in parsed_metadata" do
-            exporter.generated_metadata = true
-
-            entry.build_generated_metadata
-
-            expect(entry.parsed_metadata["date_uploaded"]).to eq(datetime)
-          end
-        end
-      end
-    end
   end
 end
 # rubocop: enable Metrics/BlockLength
