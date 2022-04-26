@@ -44,11 +44,11 @@ module Bulkrax
     end
 
     def source_identifier
-      @source_identifier ||= fetch_field_mapping_hash_for('source_identifier')&.values&.first&.[]('from')&.first&.to_sym || :source_identifier
+      @source_identifier ||= get_field_mapping_hash_for('source_identifier')&.values&.first&.[]('from')&.first&.to_sym || :source_identifier
     end
 
     def work_identifier
-      @work_identifier ||= fetch_field_mapping_hash_for('source_identifier')&.keys&.first&.to_sym || :source
+      @work_identifier ||= get_field_mapping_hash_for('source_identifier')&.keys&.first&.to_sym || :source
     end
 
     def generated_metadata_mapping
@@ -56,22 +56,22 @@ module Bulkrax
     end
 
     def related_parents_raw_mapping
-      @related_parents_raw_mapping ||= fetch_field_mapping_hash_for('related_parents_field_mapping')&.values&.first&.[]('from')&.first
+      @related_parents_raw_mapping ||= get_field_mapping_hash_for('related_parents_field_mapping')&.values&.first&.[]('from')&.first
     end
 
     def related_parents_parsed_mapping
-      @related_parents_parsed_mapping ||= (fetch_field_mapping_hash_for('related_parents_field_mapping')&.keys&.first || 'parents')
+      @related_parents_parsed_mapping ||= (get_field_mapping_hash_for('related_parents_field_mapping')&.keys&.first || 'parents')
     end
 
     def related_children_raw_mapping
-      @related_children_raw_mapping ||= fetch_field_mapping_hash_for('related_children_field_mapping')&.values&.first&.[]('from')&.first
+      @related_children_raw_mapping ||= get_field_mapping_hash_for('related_children_field_mapping')&.values&.first&.[]('from')&.first
     end
 
     def related_children_parsed_mapping
-      @related_children_parsed_mapping ||= (fetch_field_mapping_hash_for('related_children_field_mapping')&.keys&.first || 'children')
+      @related_children_parsed_mapping ||= (get_field_mapping_hash_for('related_children_field_mapping')&.keys&.first || 'children')
     end
 
-    def fetch_field_mapping_hash_for(key)
+    def get_field_mapping_hash_for(key)
       return instance_variable_get("@#{key}_hash") if instance_variable_get("@#{key}_hash").present?
 
       mapping = importerexporter.field_mapping == [{}] ? {} : importerexporter.field_mapping
