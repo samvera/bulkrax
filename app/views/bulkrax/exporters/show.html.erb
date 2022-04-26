@@ -57,6 +57,15 @@
       <strong><%= t('bulkrax.exporter.labels.limit') %>:</strong>
       <%= @exporter.limit %>
     </p>
+
+    <p class='bulkrax-p-align'>
+      <strong><%= t('bulkrax.exporter.labels.include_thumbnails') %>:</strong>
+      <%= @exporter.include_thumbnails %>
+
+      <strong><%= t('bulkrax.exporter.labels.generated_metadata') %>:</strong>
+      <%= @exporter.generated_metadata %>
+    </p>
+
     <%= render partial: 'bulkrax/shared/bulkrax_errors', locals: {item: @exporter} %>
 
     <%= render partial: 'bulkrax/shared/bulkrax_field_mapping', locals: {item: @exporter} %>
