@@ -10,6 +10,7 @@ FactoryBot.define do
     parser_klass { "Bulkrax::CsvParser" }
     limit { 0 }
     field_mapping { nil }
+    generated_metadata { false }
 
     trait :with_relationships_mappings do
       field_mapping do
@@ -30,6 +31,7 @@ FactoryBot.define do
     parser_klass { "Bulkrax::CsvParser" }
     limit { 0 }
     field_mapping { nil }
+    generated_metadata { false }
   end
 
   factory :bulkrax_exporter_worktype, class: 'Bulkrax::Exporter' do
@@ -41,6 +43,7 @@ FactoryBot.define do
     parser_klass { 'Bulkrax::CsvParser' }
     limit { 0 }
     field_mapping { nil }
+    generated_metadata { false }
   end
 
   trait :all do
