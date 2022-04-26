@@ -21,7 +21,7 @@ module Bulkrax
         let(:source_identifier) { 'bulkrax_identifier_1' }
 
         it 'looks through entries, collections, and all work types' do
-          expect(Entry).to receive(:find_by).with(identifier: source_identifier, importerexporter_id: importer_id).once
+          expect(Entry).to receive(:find_by).with({ identifier: source_identifier, importerexporter_type: 'Bulkrax::Importer' }, { importerexporter_id: importer_id }).once
           expect(::Collection).to receive(:where).with(id: source_identifier).once.and_return([])
           expect(::Work).to receive(:where).with(id: source_identifier).once.and_return([])
 
@@ -34,7 +34,7 @@ module Bulkrax
           let(:record) { instance_double(::Work, title: ["Found through Entry's factory"]) }
 
           before do
-            allow(Entry).to receive(:find_by).with(identifier: source_identifier, importerexporter_id: importer_id).and_return(entry)
+            allow(Entry).to receive(:find_by).with({ identifier: source_identifier, importerexporter_type: 'Bulkrax::Importer' }, { importerexporter_id: importer_id }).and_return(entry)
             allow(entry).to receive(:factory).and_return(factory)
           end
 
@@ -46,9 +46,10 @@ module Bulkrax
             expect(entry).to receive(:factory)
             expect(factory).to receive(:find)
 
-            _, found_record = subject.find_record(source_identifier, importer_run_id)
+            found_entry, found_record = subject.find_record(source_identifier, importer_run_id)
 
             expect(found_record.title).to eq(record.title)
+            expect(found_entry.identifier).to eq(entry.identifier)
           end
         end
 
@@ -63,7 +64,7 @@ module Bulkrax
         let(:id) { 'xyz6789' }
 
         it 'looks through entries, collections, and all work types' do
-          expect(Entry).to receive(:find_by).with(identifier: id, importerexporter_id: importer_id).once
+          expect(Entry).to receive(:find_by).with({ identifier: id, importerexporter_type: 'Bulkrax::Importer' }, { importerexporter_id: importer_id }).once
           expect(::Collection).to receive(:where).with(id: id).once.and_return([])
           expect(::Work).to receive(:where).with(id: id).once.and_return([])
 

@@ -21,7 +21,7 @@ module Bulkrax
 
     queue_as :import
 
-    attr_accessor :child_records, :parent_record, :parent_entry, :importer_run_id
+    attr_accessor :child_records, :child_entry, :parent_record, :parent_entry, :importer_run_id
 
     # @param parent_identifier [String] Work/Collection ID or Bulkrax::Entry source_identifiers
     # @param importer_run [Bulkrax::ImporterRun] current importer run (needed to properly update counters)
@@ -31,7 +31,7 @@ module Bulkrax
     # Whether the @base_entry is the parent or the child in the relationship is determined by the presence of a
     # parent_identifier or child_identifier param. For example, if a parent_identifier is passed, we know @base_entry
     # is the child in the relationship, and vice versa if a child_identifier is passed.
-    def perform(parent_identifier:, importer_run_id:)
+    def perform(parent_identifier:, importer_run_id:) # rubocop:disable Metrics/AbcSize
       pending_relationships = Bulkrax::PendingRelationship.find_each.select do |rel|
         rel.bulkrax_importer_run_id == importer_run_id && rel.parent_id == parent_identifier
       end.sort_by(&:order)
@@ -41,7 +41,7 @@ module Bulkrax
       @child_records = { works: [], collections: [] }
       pending_relationships.each do |rel|
         raise ::StandardError, %("#{rel}" needs either a child or a parent to create a relationship) if rel.child_id.nil? || rel.parent_id.nil?
-        _, child_record = find_record(rel.child_id, importer_run_id)
+        @child_entry, child_record = find_record(rel.child_id, importer_run_id)
         child_record.is_a?(::Collection) ? @child_records[:collections] << child_record : @child_records[:works] << child_record
       end
 
@@ -59,7 +59,7 @@ module Bulkrax
       create_relationships
       pending_relationships.each(&:destroy)
     rescue ::StandardError => e
-      parent_entry.status_info(e)
+      parent_entry ? parent_entry.status_info(e) : child_entry.status_info(e)
       Bulkrax::ImporterRun.find(importer_run_id).increment!(:failed_relationships) # rubocop:disable Rails/SkipsModelValidations
     end
 
@@ -87,8 +87,8 @@ module Bulkrax
         ObjectFactory.new(
           attributes: attrs,
           source_identifier_value: nil, # sending the :id in the attrs means the factory doesn't need a :source_identifier_value
-          work_identifier: parent_entry.parser.work_identifier,
-          related_parents_parsed_mapping: parent_entry.parser.related_parents_parsed_mapping,
+          work_identifier: parent_entry&.parser&.work_identifier,
+          related_parents_parsed_mapping: parent_entry&.parser&.related_parents_parsed_mapping,
           replace_files: false,
           user: user,
           klass: child_record.class,
@@ -106,8 +106,8 @@ module Bulkrax
       ObjectFactory.new(
         attributes: attrs,
         source_identifier_value: nil, # sending the :id in the attrs means the factory doesn't need a :source_identifier_value
-        work_identifier: parent_entry.parser.work_identifier,
-        related_parents_parsed_mapping: parent_entry.parser.related_parents_parsed_mapping,
+        work_identifier: parent_entry&.parser&.work_identifier,
+        related_parents_parsed_mapping: parent_entry&.parser&.related_parents_parsed_mapping,
         replace_files: false,
         user: user,
         klass: parent_record.class,
@@ -130,8 +130,8 @@ module Bulkrax
       ObjectFactory.new(
         attributes: attrs,
         source_identifier_value: nil, # sending the :id in the attrs means the factory doesn't need a :source_identifier_value
-        work_identifier: parent_entry.parser.work_identifier,
-        related_parents_parsed_mapping: parent_entry.parser.related_parents_parsed_mapping,
+        work_identifier: parent_entry&.parser&.work_identifier,
+        related_parents_parsed_mapping: parent_entry&.parser&.related_parents_parsed_mapping,
         replace_files: false,
         user: user,
         klass: parent_record.class,
