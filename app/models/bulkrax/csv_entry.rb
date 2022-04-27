@@ -262,13 +262,12 @@ module Bulkrax
       split_references = record[parent_field_mapping].split(/\s*[;|]\s*/)
       split_references.each do |c_reference|
         matching_collection_entries = importerexporter.entries.select do |e|
-          (e.raw_metadata[source_identifier] == c_reference) &&
+          (e.raw_metadata&.[](source_identifier) == c_reference) &&
             e.is_a?(CsvCollectionEntry)
         end
         raise ::StandardError, 'Only expected to find one matching entry' if matching_collection_entries.count > 1
         identifiers << matching_collection_entries.first&.identifier
       end
-
       @collection_identifiers = identifiers.compact.presence || []
     end
 
