@@ -263,14 +263,11 @@ module Bulkrax
         matching_collection_entries = importerexporter.entries.select do |e|
           (e.raw_metadata&.[](source_identifier) == c_reference) &&
             e.is_a?(CsvCollectionEntry)
-        end 
+        end
         raise ::StandardError, 'Only expected to find one matching entry' if matching_collection_entries.count > 1
         identifiers << matching_collection_entries.first&.identifier
       end
       @collection_identifiers = identifiers.compact.presence || []
-    # rescue NoMethodError => nometh_error
-    #   byebug
-    #   test = 5
     end
 
     def collections_created?
