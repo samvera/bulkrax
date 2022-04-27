@@ -22,9 +22,3 @@ jobs:
         with:
           one_of: patch-ver,minor-ver,major-ver,bug-fix,enhancement,breaking-change,database-changes,ignore-for-release
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Check PR for cla-signed label
-        uses: docker://agilepathway/pull-request-label-checker:latest
-        with:
-          one_of: cla-signed
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
