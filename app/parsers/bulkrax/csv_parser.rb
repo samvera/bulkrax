@@ -193,7 +193,7 @@ module Bulkrax
         instance_variable_set(instance_var, ActiveFedora::SolrService.post(
           extra_filters.to_s,
           fq: [
-            "#{work_identifier}_sim:(#{complete_entry_identifiers.join(' OR ')})",
+            "#{::Solrizer.solr_name(work_identifier)}:(#{complete_entry_identifiers.join(' OR ')})",
             "has_model_ssim:(#{models_to_search.join(' OR ')})"
           ],
           fl: 'id',

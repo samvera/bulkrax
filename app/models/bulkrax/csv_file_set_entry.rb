@@ -17,6 +17,12 @@ module Bulkrax
       parsed_metadata['file']
     end
 
+    def validate_presence_of_filename!
+      return if parsed_metadata&.[]('file')&.map(&:present?)&.any?
+
+      raise StandardError, 'File set must have a filename'
+    end
+
     def validate_presence_of_parent!
       return if parsed_metadata[related_parents_parsed_mapping]&.map(&:present?)&.any?
 

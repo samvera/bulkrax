@@ -59,6 +59,7 @@ module Bulkrax
       if factory_class == Collection
         add_collection_type_gid
       elsif factory_class == FileSet
+        validate_presence_of_filename!
         add_path_to_file
         validate_presence_of_parent!
       else
