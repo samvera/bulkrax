@@ -115,8 +115,8 @@ module Bulkrax
           next
         end
         send(type.pluralize).each_with_index do |current_record, index|
-          next unless record_has_source_identifier(current_record, records.index)
-          break if limit_reached?(limit, records.index)
+          next unless record_has_source_identifier(current_record, index)
+          break if limit_reached?(limit, index)
 
           seen[current_record[source_identifier]] = true
           create_entry_and_job(current_record, type)
