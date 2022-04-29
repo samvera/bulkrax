@@ -138,7 +138,6 @@ module Bulkrax
           let(:record_hash) { { source_identifier: 'csid' } }
 
           it "uses the record's source_identifier as the entry's identifier" do
-            allow(subject.records).to receive(:find_index).and_return(0)
             subject.create_collections
 
             expect(importer.entries.last.identifier).to eq('csid')
@@ -149,7 +148,6 @@ module Bulkrax
           let(:record_hash) { { title: 'no source id | alt title', model: 'Collection' } }
 
           it "uses the record's first title as the entry's identifier" do
-            allow(subject.records).to receive(:find_index).and_return(0)
             subject.create_collections
 
             expect(ImporterRun.find(subject.current_run.id).failed_records).to eq(1)
@@ -162,7 +160,6 @@ module Bulkrax
             end
 
             it "uses the generated identifier as the entry's identifier" do
-              allow(subject.records).to receive(:find_index).and_return(0)
               subject.create_collections
 
               expect(importer.entries.last.identifier).to eq("#{importer.id}-99")
