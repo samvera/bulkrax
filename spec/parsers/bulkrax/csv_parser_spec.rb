@@ -22,9 +22,9 @@ module Bulkrax
       end
 
       it 'matches :model column case-insensitively' do
-        allow(subject).to receive_message_chain(:records, :map).and_return([{ model: 'cOlEcTiOn' }])
+        allow(subject).to receive(:records).and_return([{ model: 'cOllEcTiOn' }])
 
-        expect(subject.collections).to include({ model: 'cOlEcTiOn' })
+        expect(subject.collections).to include({ model: 'cOllEcTiOn' })
       end
 
       describe ':model field mappings' do

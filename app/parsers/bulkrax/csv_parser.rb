@@ -109,18 +109,20 @@ module Bulkrax
     end
 
     def create_objects(types_array = nil)
+      index = 0
       (types_array || %w[work collection file_set relationship]).each do |type|
         if type.eql?('relationship')
           ScheduleRelationshipsJob.set(wait: 5.minutes).perform_later(importer_id: importerexporter.id)
           next
         end
-        send(type.pluralize).each_with_index do |current_record, index|
+        send(type.pluralize).each do |current_record|
           next unless record_has_source_identifier(current_record, index)
           break if limit_reached?(limit, index)
 
           seen[current_record[source_identifier]] = true
           create_entry_and_job(current_record, type)
           increment_counters(index, "#{type}": true)
+          index += 1
         end
         importer.record_status
       end
