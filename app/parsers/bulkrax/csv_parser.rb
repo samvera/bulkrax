@@ -20,24 +20,23 @@ module Bulkrax
     end
 
     def build_records
-      collections = []
-      works = []
-      file_sets = []
+      @collections = []
+      @works = []
+      @file_sets = []
       records.map do |r|
-        collections = []
         model_field_mappings.each do |model_mapping|
           if r[model_mapping.to_sym]&.downcase == 'collection'
-            collections << r
+            @collections << r
           elsif r[model_mapping.to_sym]&.downcase == 'fileset'
-            file_sets << r
+            @file_sets << r
           else
-            works << r
+            @works << r
           end
         end
       end
-      collections.flatten.compact.uniq
-      file_sets.flatten.compact.uniq
-      works.flatten.compact.uniq
+      @collections = @collections.flatten.compact.uniq
+      @file_sets = @file_sets.flatten.compact.uniq
+      @works = @works.flatten.compact.uniq
       true
     end
 
