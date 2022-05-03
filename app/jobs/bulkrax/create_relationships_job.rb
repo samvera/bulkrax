@@ -101,19 +101,9 @@ module Bulkrax
 
     # Collection-Collection membership is added to the as member_ids
     def collection_parent_collection_child
-      child_record = child_records[:collections].first
-      attrs = { id: parent_record.id, child_collection_id: child_record.id }
-      ObjectFactory.new(
-        attributes: attrs,
-        source_identifier_value: nil, # sending the :id in the attrs means the factory doesn't need a :source_identifier_value
-        work_identifier: parent_entry&.parser&.work_identifier,
-        related_parents_parsed_mapping: parent_entry&.parser&.related_parents_parsed_mapping,
-        replace_files: false,
-        user: user,
-        klass: parent_record.class,
-        importer_run_id: importer_run_id
-      ).run
-      # TODO: add counters for :processed_parents and :failed_parents
+      child_records[:collections].each do |child_record|
+        ::Hyrax::Collections::NestedCollectionPersistenceService.persist_nested_collection_for(parent: parent_record, child: child_record)
+      end
       Bulkrax::ImporterRun.find(importer_run_id).increment!(:processed_relationships) # rubocop:disable Rails/SkipsModelValidations
     end
 
