@@ -104,19 +104,11 @@ module Bulkrax
         records_hash[i] = { id: child_record.id }
       end
       attrs = {
-        id: parent_record.id,
         work_members_attributes: records_hash
       }
-      ObjectFactory.new(
-        attributes: attrs,
-        source_identifier_value: nil, # sending the :id in the attrs means the factory doesn't need a :source_identifier_value
-        work_identifier: parent_entry&.parser&.work_identifier,
-        related_parents_parsed_mapping: parent_entry&.parser&.related_parents_parsed_mapping,
-        replace_files: false,
-        user: user,
-        klass: parent_record.class,
-        importer_run_id: importer_run_id
-      ).run
+      parent_record.reindex_extent = Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX if parent_record.respond_to?(:reindex_extent)
+      env = Hyrax::Actors::Environment.new(parent_record, Ability.new(user), attrs)
+      Hyrax::CurationConcern.actor.update(env)
       # TODO: add counters for :processed_parents and :failed_parents
       Bulkrax::ImporterRun.find(importer_run_id).increment!(:processed_relationships) # rubocop:disable Rails/SkipsModelValidations
     end
