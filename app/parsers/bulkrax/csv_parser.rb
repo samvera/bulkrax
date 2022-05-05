@@ -98,7 +98,7 @@ module Bulkrax
     def create_objects(types_array = nil)
       (types_array || %w[work collection file_set relationship]).each do |type|
         if type.eql?('relationship')
-          ScheduleRelationshipsJob.set(wait: 5.minutes).perform_later(importer_id: importerexporter.id)
+          ScheduleRelationshipsJob.set(wait: 5.minutes).perform_later(importer_id: importerexporter.id) if !importer.validate_only
           next
         end
         send(type.pluralize).each_with_index do |current_record, index|

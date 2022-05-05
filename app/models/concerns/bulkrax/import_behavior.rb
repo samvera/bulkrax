@@ -41,7 +41,7 @@ module Bulkrax
         access: 'manage'
       )
 
-      collection.reset_access_controls!
+      @item.reset_access_controls!
     end
 
     def parent_jobs
