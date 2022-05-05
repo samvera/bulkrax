@@ -11,6 +11,7 @@ module Bulkrax
         unless self.importerexporter.validate_only
           raise CollectionsCreatedError unless collections_created?
           @item = factory.run!
+          add_user_to_permission_template! if self.class.to_s.include?("Collection")
           parent_jobs if self.parsed_metadata[related_parents_parsed_mapping].present?
           child_jobs if self.parsed_metadata[related_children_parsed_mapping].present?
         end
@@ -22,6 +23,25 @@ module Bulkrax
         status_info
       end
       return @item
+    end
+
+    def add_user_to_permission_template!
+      permission_template = Hyrax::PermissionTemplate.find_or_create_by!(source_id: @item.id)
+
+      Hyrax::PermissionTemplateAccess.find_or_create_by!(
+          permission_template_id: permission_template.id,
+          agent_id: user.user_key,
+          agent_type: 'user',
+          access: 'manage'
+      )
+      Hyrax::PermissionTemplateAccess.find_or_create_by!(
+          permission_template_id: permission_template.id,
+          agent_id: 'admin',
+          agent_type: 'group',
+          access: 'manage'
+      )
+
+      collection.reset_access_controls!
     end
 
     def parent_jobs
