@@ -7,14 +7,14 @@ module Bulkrax
   RSpec.describe CreateRelationshipsJob, type: :job do
     subject(:create_relationships_job) { described_class.new }
     let(:importer) { FactoryBot.create(:bulkrax_importer_csv_complex) }
-    let(:parent_entry)  { create(:bulkrax_csv_entry_collection, importerexporter: importer) }
-    let(:child_entry)   { create(:bulkrax_csv_entry_work, importerexporter: importer) }
+    let(:parent_entry) { create(:bulkrax_csv_entry_collection, importerexporter: importer) }
+    let(:child_entry) { create(:bulkrax_csv_entry_work, importerexporter: importer) }
     let(:parent_record) { build(:collection) }
-    let(:child_record)  { build(:work) }
+    let(:child_record) { build(:work) }
     let(:parent_factory) { instance_double(ObjectFactory, find: parent_record, run: parent_record) }
     let(:child_factory) { instance_double(ObjectFactory, find: child_record, run: child_record) }
-    let(:pending_rel)   { build(:pending_relationship_collection_parent) }
-    let(:pending_rel_work)   { build(:pending_relationship_work_parent) }
+    let(:pending_rel) { build(:pending_relationship_collection_parent) }
+    let(:pending_rel_work) { build(:pending_relationship_work_parent) }
 
     before do
       allow(::Hyrax.config).to receive(:curation_concerns).and_return([Work])
