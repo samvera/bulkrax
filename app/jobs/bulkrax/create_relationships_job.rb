@@ -51,7 +51,7 @@ module Bulkrax
           importer_run_id: importer_run_id
         )
         return false # stop current job from continuing to run after rescheduling
-      end
+      end 
 
       @parent_entry ||= Bulkrax::Entry.where(identifier: parent_identifier,
                                              importerexporter_id: ImporterRun.find(importer_run_id).importer_id,
@@ -93,8 +93,8 @@ module Bulkrax
     def collection_parent_collection_child
       child_records[:collections].each do |child_record|
         ::Hyrax::Collections::NestedCollectionPersistenceService.persist_nested_collection_for(parent: parent_record, child: child_record)
+        Bulkrax::ImporterRun.find(importer_run_id).increment!(:processed_relationships) # rubocop:disable Rails/SkipsModelValidations
       end
-      Bulkrax::ImporterRun.find(importer_run_id).increment!(:processed_relationships) # rubocop:disable Rails/SkipsModelValidations
     end
 
     # Work-Work membership is added to the parent as member_ids

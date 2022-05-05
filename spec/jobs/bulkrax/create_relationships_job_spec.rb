@@ -39,15 +39,11 @@ module Bulkrax
 
     describe '#perform' do
       context 'when adding a child work to a parent collection' do
-        let(:factory_attrs) do
-          base_factory_attrs.merge(
-            attributes: {
-              id: child_record.id,
-              member_of_collections_attributes: { 0 => { id: parent_record.id } }
-            },
-            klass: child_record.class,
-            importer_run_id: importer.current_run.id
-          )
+        let(:collection_work_attrs) do
+          {
+            parent: parent_record,
+            child: child_record
+          }
         end
 
         context 'with a Bulkrax::Entry source_identifier' do
@@ -60,11 +56,9 @@ module Bulkrax
             )
           end
 
-          it 'creates and runs the object factory' do
-            expect(ObjectFactory).to receive(:new).with(factory_attrs).and_return(parent_factory)
-            expect(parent_factory).to receive(:run)
+          it 'runs NestedCollectionPersistenceService' do
+            expect(::Hyrax::Collections::NestedCollectionPersistenceService).to receive(:persist_nested_collection_for).with(collection_work_attrs)
             allow(Bulkrax::PendingRelationship).to receive(:find_each).and_return([pending_rel])
-
             create_relationships_job.perform(
               parent_identifier: parent_entry.identifier,
               importer_run_id: importer.current_run.id
@@ -72,25 +66,14 @@ module Bulkrax
           end
 
           context 'importer run' do
-            let(:factory) { instance_double(ObjectFactory, run: child_record) }
-
-            before do
-              allow(ObjectFactory).to receive(:new).and_return(factory)
-              allow(Bulkrax::PendingRelationship).to receive(:find_each).and_return([pending_rel])
-            end
-
             it 'increments processed relationships' do
+              allow(Bulkrax::PendingRelationship).to receive(:find_each).and_return([pending_rel])
+              allow(::Hyrax::Collections::NestedCollectionPersistenceService).to receive(:persist_nested_collection_for).with(collection_work_attrs).and_return(true)
               create_relationships_job.perform(
                 parent_identifier: parent_entry.identifier,
                 importer_run_id: importer.current_run.id
               )
-
-              expect(importer.last_run.processed_relationships).to equal(1)
-              # create_relationships_job.perform(
-              #   entry_identifier: child_entry.identifier,
-              #   parent_identifier: parent_entry.identifier,
-              #   importer_run: importer.current_run
-              # )
+              expect(importer.current_run.reload.processed_relationships).to eq(1)
             end
           end
         end
@@ -112,9 +95,8 @@ module Bulkrax
             )
           end
 
-          it 'creates the object factory' do
-            expect(ObjectFactory).to receive(:new).with(factory_attrs).and_return(child_factory)
-
+          it 'runs NestedCollectionPersistenceService' do
+            expect(::Hyrax::Collections::NestedCollectionPersistenceService).to receive(:persist_nested_collection_for).with(collection_work_attrs)
             create_relationships_job.perform(
               parent_identifier: parent_entry.identifier,
               importer_run_id: importer.current_run.id
@@ -122,18 +104,14 @@ module Bulkrax
           end
 
           context 'importer run' do
-            before do
-              allow(ObjectFactory).to receive(:new).and_return(child_factory)
-              allow(Bulkrax::PendingRelationship).to receive(:find_each).and_return([pending_rel])
-            end
-
             it 'increments processed relationships' do
+              allow(Bulkrax::PendingRelationship).to receive(:find_each).and_return([pending_rel])
+              allow(::Hyrax::Collections::NestedCollectionPersistenceService).to receive(:persist_nested_collection_for).with(collection_work_attrs).and_return(true)
               create_relationships_job.perform(
                 parent_identifier: parent_entry.identifier,
                 importer_run_id: importer.current_run.id
               )
-
-              expect(importer.last_run.processed_relationships).to equal(1)
+              expect(importer.current_run.reload.processed_relationships).to eq(1)
             end
           end
         end
@@ -145,15 +123,11 @@ module Bulkrax
         let(:parent_record) { build(:collection) }
         let(:child_record) { build(:another_collection) }
         let(:pending_rel_col) { build(:pending_relationship_collection_child) }
-        let(:factory_attrs) do
-          base_factory_attrs.merge(
-            attributes: {
-              id: parent_record.id,
-              child_collection_id: child_record.id
-            },
-            klass: parent_record.class,
-            importer_run_id: importer.current_run.id
-          )
+        let(:collection_collection_attrs) do
+          {
+            parent: parent_record,
+            child: child_record
+          }
         end
 
         context 'with a Bulkrax::Entry source_identifier' do
@@ -167,8 +141,8 @@ module Bulkrax
             )
           end
 
-          it 'creates the object factory' do
-            expect(ObjectFactory).to receive(:new).with(factory_attrs).and_return(child_factory)
+          it 'runs NestedCollectionPersistenceService' do
+            expect(::Hyrax::Collections::NestedCollectionPersistenceService).to receive(:persist_nested_collection_for).with(collection_collection_attrs)
             allow(Bulkrax::PendingRelationship).to receive(:find_each).and_return([pending_rel_col])
 
             create_relationships_job.perform(
@@ -178,21 +152,14 @@ module Bulkrax
           end
 
           context 'importer run' do
-            let(:factory) { instance_double(ObjectFactory, run: child_record) }
-
-            before do
-              allow(ObjectFactory).to receive(:new).and_return(factory)
-            end
-
             it 'increments processed children' do
               allow(Bulkrax::PendingRelationship).to receive(:find_each).and_return([pending_rel_col])
-
+              allow(::Hyrax::Collections::NestedCollectionPersistenceService).to receive(:persist_nested_collection_for).with(collection_collection_attrs).and_return(true)
               create_relationships_job.perform(
                 parent_identifier: parent_entry.identifier,
                 importer_run_id: importer.current_run.id
               )
-
-              expect(importer.last_run.processed_relationships).to equal(1)
+              expect(importer.current_run.reload.processed_relationships).to eq(1)
             end
           end
         end
@@ -214,8 +181,8 @@ module Bulkrax
             )
           end
 
-          it 'creates the object factory' do
-            expect(ObjectFactory).to receive(:new).with(factory_attrs).and_return(child_factory)
+          it 'runs NestedCollectionPersistenceService' do
+            expect(::Hyrax::Collections::NestedCollectionPersistenceService).to receive(:persist_nested_collection_for).with(collection_collection_attrs)
 
             create_relationships_job.perform(
               parent_identifier: parent_entry.identifier,
@@ -224,17 +191,14 @@ module Bulkrax
           end
 
           context 'importer run' do
-            before do
-              allow(ObjectFactory).to receive(:new).and_return(parent_factory)
-            end
-
             it 'increments processed children' do
+              allow(Bulkrax::PendingRelationship).to receive(:find_each).and_return([pending_rel_col])
+              allow(::Hyrax::Collections::NestedCollectionPersistenceService).to receive(:persist_nested_collection_for).with(collection_collection_attrs).and_return(true)
               create_relationships_job.perform(
                 parent_identifier: parent_entry.identifier,
                 importer_run_id: importer.current_run.id
               )
-
-              expect(importer.last_run.processed_relationships).to equal(1)
+              expect(importer.current_run.reload.processed_relationships).to eq(1)
             end
           end
         end
@@ -245,17 +209,8 @@ module Bulkrax
         let(:child_entry) { create(:bulkrax_csv_entry_work, identifier: 'child_entry_work', importerexporter: importer) }
         let(:parent_record) { build(:work) }
         let(:child_record) { build(:another_work) }
-        let(:factory_attrs) do
-          base_factory_attrs.merge(
-            attributes: {
-              id: parent_record.id,
-              work_members_attributes: { 0 => { id: child_record.id } }
-            },
-            klass: parent_record.class,
-            importer_run_id: importer.current_run.id
-          )
-        end
-
+        let(:env) { Hyrax::Actors::Environment }
+        
         context 'with a Bulkrax::Entry source_identifier' do
           it 'calls #work_parent_work_child' do
             expect(create_relationships_job).to receive(:work_parent_work_child)
@@ -267,31 +222,26 @@ module Bulkrax
               )
           end
 
-          it 'creates the object factory' do
-            expect(ObjectFactory).to receive(:new).with(factory_attrs).and_return(parent_factory)
+          it 'runs CurationConcern' do
             allow(Bulkrax::PendingRelationship).to receive(:find_each).and_return([pending_rel_work])
-
+            allow(Ability).to receive(:new).with(importer.user)
+            expect(Hyrax::CurationConcern.actor).to receive(:update).with(instance_of(env))
             create_relationships_job.perform(
-                parent_identifier: parent_entry.identifier,
-                importer_run_id: importer.current_run.id
-              )
+              parent_identifier: parent_entry.identifier,
+              importer_run_id: importer.current_run.id
+            )
           end
-
+          
           context 'importer run' do
-            let(:factory) { instance_double(ObjectFactory, run: child_record) }
-
-            before do
-              allow(ObjectFactory).to receive(:new).and_return(factory)
-              allow(Bulkrax::PendingRelationship).to receive(:find_each).and_return([pending_rel_work])
-            end
-
             it 'increments processed children' do
+              allow(Bulkrax::PendingRelationship).to receive(:find_each).and_return([pending_rel_work])
+              allow(Ability).to receive(:new).with(importer.user)
+              allow(Hyrax::CurationConcern.actor).to receive(:update).with(instance_of(env)).and_return(true)
               create_relationships_job.perform(
                 parent_identifier: parent_entry.identifier,
                 importer_run_id: importer.current_run.id
               )
-
-              expect(importer.last_run.processed_relationships).to equal(1)
+              expect(importer.current_run.reload.processed_relationships).to eq(1)
             end
           end
         end
@@ -313,10 +263,10 @@ module Bulkrax
               )
           end
 
-          it 'creates the object factory' do
-            expect(ObjectFactory).to receive(:new).with(factory_attrs).and_return(parent_factory)
+          it 'runs CurationConcern' do
             allow(Bulkrax::PendingRelationship).to receive(:find_each).and_return([pending_rel_work])
-
+            allow(Ability).to receive(:new).with(importer.user)
+            expect(Hyrax::CurationConcern.actor).to receive(:update).with(instance_of(env))
             create_relationships_job.perform(
                 parent_identifier: parent_entry.identifier,
                 importer_run_id: importer.current_run.id
@@ -324,18 +274,15 @@ module Bulkrax
           end
 
           context 'importer run' do
-            before do
-              allow(ObjectFactory).to receive(:new).and_return(child_factory)
-              allow(Bulkrax::PendingRelationship).to receive(:find_each).and_return([pending_rel_work])
-            end
-
             it 'increments processed children' do
+              allow(Bulkrax::PendingRelationship).to receive(:find_each).and_return([pending_rel_work])
+              allow(Ability).to receive(:new).with(importer.user)
+              allow(Hyrax::CurationConcern.actor).to receive(:update).with(instance_of(env)).and_return(true)
               create_relationships_job.perform(
                 parent_identifier: parent_entry.identifier,
                 importer_run_id: importer.current_run.id
               )
-
-              expect(importer.last_run.processed_relationships).to equal(1)
+              expect(importer.current_run.reload.processed_relationships).to equal(1)
             end
           end
         end
