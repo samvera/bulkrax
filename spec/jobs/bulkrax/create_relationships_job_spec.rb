@@ -15,15 +15,6 @@ module Bulkrax
     let(:child_factory) { instance_double(ObjectFactory, find: child_record, run: child_record) }
     let(:pending_rel)   { build(:pending_relationship_collection_parent) }
     let(:pending_rel_work)   { build(:pending_relationship_work_parent) }
-    let(:base_factory_attrs) do
-      {
-        source_identifier_value: nil,
-        work_identifier: :source,
-        related_parents_parsed_mapping: parent_entry.parser.related_parents_parsed_mapping,
-        replace_files: false,
-        user: importer.user
-      }
-    end
 
     before do
       allow(::Hyrax.config).to receive(:curation_concerns).and_return([Work])
