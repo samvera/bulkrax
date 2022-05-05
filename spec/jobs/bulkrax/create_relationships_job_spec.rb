@@ -201,7 +201,7 @@ module Bulkrax
         let(:parent_record) { build(:work) }
         let(:child_record) { build(:another_work) }
         let(:env) { Hyrax::Actors::Environment }
-        
+
         context 'with a Bulkrax::Entry source_identifier' do
           it 'calls #work_parent_work_child' do
             expect(create_relationships_job).to receive(:work_parent_work_child)
@@ -222,7 +222,7 @@ module Bulkrax
               importer_run_id: importer.current_run.id
             )
           end
-          
+
           context 'importer run' do
             it 'increments processed children' do
               allow(Bulkrax::PendingRelationship).to receive(:find_each).and_return([pending_rel_work])
