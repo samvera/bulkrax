@@ -10,7 +10,7 @@ module Bulkrax
       begin
         entry.build
         entry.save
-        add_user_to_permission_template!(entry)
+        add_user_to_permission_template!(entry) unless entry.importer.validate_only
         ImporterRun.find(args[1]).increment!(:processed_records)
         ImporterRun.find(args[1]).increment!(:processed_collections)
         ImporterRun.find(args[1]).decrement!(:enqueued_records)
