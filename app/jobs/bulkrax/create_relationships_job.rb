@@ -83,17 +83,7 @@ module Bulkrax
     # This is adding the reverse relationship, from the child to the parent
     def collection_parent_work_child
       child_records[:works].each do |child_record|
-        attrs = { id: child_record.id, member_of_collections_attributes: { 0 => { id: parent_record.id } } }
-        ObjectFactory.new(
-          attributes: attrs,
-          source_identifier_value: nil, # sending the :id in the attrs means the factory doesn't need a :source_identifier_value
-          work_identifier: parent_entry&.parser&.work_identifier,
-          related_parents_parsed_mapping: parent_entry&.parser&.related_parents_parsed_mapping,
-          replace_files: false,
-          user: user,
-          klass: child_record.class,
-          importer_run_id: importer_run_id
-        ).run
+        ::Hyrax::Collections::NestedCollectionPersistenceService.persist_nested_collection_for(parent: parent_record, child: child_record)
         # TODO: add counters for :processed_parents and :failed_parents
         Bulkrax::ImporterRun.find(importer_run_id).increment!(:processed_relationships) # rubocop:disable Rails/SkipsModelValidations
       end
@@ -101,20 +91,10 @@ module Bulkrax
 
     # Collection-Collection membership is added to the as member_ids
     def collection_parent_collection_child
-      child_record = child_records[:collections].first
-      attrs = { id: parent_record.id, child_collection_id: child_record.id }
-      ObjectFactory.new(
-        attributes: attrs,
-        source_identifier_value: nil, # sending the :id in the attrs means the factory doesn't need a :source_identifier_value
-        work_identifier: parent_entry&.parser&.work_identifier,
-        related_parents_parsed_mapping: parent_entry&.parser&.related_parents_parsed_mapping,
-        replace_files: false,
-        user: user,
-        klass: parent_record.class,
-        importer_run_id: importer_run_id
-      ).run
-      # TODO: add counters for :processed_parents and :failed_parents
-      Bulkrax::ImporterRun.find(importer_run_id).increment!(:processed_relationships) # rubocop:disable Rails/SkipsModelValidations
+      child_records[:collections].each do |child_record|
+        ::Hyrax::Collections::NestedCollectionPersistenceService.persist_nested_collection_for(parent: parent_record, child: child_record)
+        Bulkrax::ImporterRun.find(importer_run_id).increment!(:processed_relationships) # rubocop:disable Rails/SkipsModelValidations
+      end
     end
 
     # Work-Work membership is added to the parent as member_ids
@@ -124,19 +104,11 @@ module Bulkrax
         records_hash[i] = { id: child_record.id }
       end
       attrs = {
-        id: parent_record.id,
         work_members_attributes: records_hash
       }
-      ObjectFactory.new(
-        attributes: attrs,
-        source_identifier_value: nil, # sending the :id in the attrs means the factory doesn't need a :source_identifier_value
-        work_identifier: parent_entry&.parser&.work_identifier,
-        related_parents_parsed_mapping: parent_entry&.parser&.related_parents_parsed_mapping,
-        replace_files: false,
-        user: user,
-        klass: parent_record.class,
-        importer_run_id: importer_run_id
-      ).run
+      parent_record.reindex_extent = Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX if parent_record.respond_to?(:reindex_extent)
+      env = Hyrax::Actors::Environment.new(parent_record, Ability.new(user), attrs)
+      Hyrax::CurationConcern.actor.update(env)
       # TODO: add counters for :processed_parents and :failed_parents
       Bulkrax::ImporterRun.find(importer_run_id).increment!(:processed_relationships) # rubocop:disable Rails/SkipsModelValidations
     end
