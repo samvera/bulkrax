@@ -4,6 +4,8 @@ require 'csv'
 module Bulkrax
   class CsvParser < ApplicationParser # rubocop:disable Metrics/ClassLength
     include ErroredEntries
+    attr_writer :collections, :file_sets, :works
+
     def self.export_supported?
       true
     end
@@ -17,37 +19,48 @@ module Bulkrax
       @records ||= csv_data.map { |record_data| entry_class.data_for_entry(record_data, nil, self) }
     end
 
-    def collections
-      # retrieve a list of unique collections
+    def build_records
+      @collections = []
+      @works = []
+      @file_sets = []
       records.map do |r|
-        collections = []
         model_field_mappings.each do |model_mapping|
-          collections << r if r[model_mapping.to_sym]&.downcase == 'collection'
+          if r[model_mapping.to_sym]&.downcase == 'collection'
+            @collections << r
+          elsif r[model_mapping.to_sym]&.downcase == 'fileset'
+            @file_sets << r
+          else
+            @works << r
+          end
         end
-        collections
-      end.flatten.compact.uniq
+      end
+      @collections = @collections.flatten.compact.uniq
+      @file_sets = @file_sets.flatten.compact.uniq
+      @works = @works.flatten.compact.uniq
+      true
+    end
+
+    def collections
+      build_records if @collections.nil?
+      @collections
+    end
+
+    def works
+      build_records if @works.nil?
+      @works
+    end
+
+    def file_sets
+      build_records if @file_sets.nil?
+      @file_sets
     end
 
     def collections_total
       collections.size
     end
 
-    def works
-      records - collections - file_sets
-    end
-
     def works_total
       works.size
-    end
-
-    def file_sets
-      records.map do |r|
-        file_sets = []
-        model_field_mappings.each do |model_mapping|
-          file_sets << r if r[model_mapping.to_sym]&.downcase == 'fileset'
-        end
-        file_sets
-      end.flatten.compact.uniq
     end
 
     def file_sets_total
@@ -96,21 +109,24 @@ module Bulkrax
     end
 
     def create_objects(types_array = nil)
+      index = 0
       (types_array || %w[work collection file_set relationship]).each do |type|
         if type.eql?('relationship')
           ScheduleRelationshipsJob.set(wait: 5.minutes).perform_later(importer_id: importerexporter.id)
           next
         end
-        send(type.pluralize).each_with_index do |current_record, index|
-          next unless record_has_source_identifier(current_record, records.find_index(current_record))
-          break if limit_reached?(limit, records.find_index(current_record))
+        send(type.pluralize).each do |current_record|
+          next unless record_has_source_identifier(current_record, index)
+          break if limit_reached?(limit, index)
 
           seen[current_record[source_identifier]] = true
           create_entry_and_job(current_record, type)
           increment_counters(index, "#{type}": true)
+          index += 1
         end
         importer.record_status
       end
+      true
     rescue StandardError => e
       status_info(e)
     end

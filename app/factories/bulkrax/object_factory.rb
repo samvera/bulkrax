@@ -143,13 +143,11 @@ module Bulkrax
       object.attributes = attrs
       object.apply_depositor_metadata(@user)
       object.save!
-      pass_collection_to_be_persisted(parent: find_collection(attributes[related_parents_parsed_mapping]), child: object) if attributes[related_parents_parsed_mapping].present?
     end
 
     def update_collection(attrs)
       object.attributes = attrs
       object.save!
-      pass_collection_to_be_persisted(parent: find_collection(attributes[related_parents_parsed_mapping]), child: object) if attributes[related_parents_parsed_mapping].present?
     end
 
     # This method is heavily inspired by Hyrax's AttachFilesToWorkJob
@@ -182,37 +180,6 @@ module Bulkrax
       actor.update_metadata(file_set_attrs)
     end
 
-    def pass_collection_to_be_persisted(parent:, child:)
-      if parent.is_a? Array
-        parent.each { |par| persist_collection_memberships(par, child) }
-      else
-        persist_collection_memberships(parent, child)
-      end
-    end
-
-    # Add child to parent's #member_collections
-    # Add parent to child's #member_of_collections
-    def persist_collection_memberships(parent, child)
-      parent.reject!(&:blank?) if parent.respond_to?(:reject!)
-      child.reject!(&:blank?) if child.respond_to?(:reject!)
-      return if parent.blank? || child.blank?
-
-      ::Hyrax::Collections::NestedCollectionPersistenceService.persist_nested_collection_for(parent: parent, child: child)
-    end
-
-    def find_collection(id)
-      case id
-      when Hash
-        Collection.find(id[:id])
-      when String
-        Collection.find(id) if id.present?
-      when Array
-        id.map { |i| find_collection(i) }
-      else
-        []
-      end
-    end
-
     def clean_attrs(attrs)
       # avoid the "ArgumentError: Identifier must be a string of size > 0 in order to be treeified" error
       # when setting object.attributes
@@ -237,7 +204,7 @@ module Bulkrax
 
     # Regardless of what the Parser gives us, these are the properties we are prepared to accept.
     def permitted_attributes
-      klass.properties.keys.map(&:to_sym) + %i[id edit_users edit_groups read_groups visibility work_members_attributes admin_set_id member_of_collections_attributes]
+      klass.properties.keys.map(&:to_sym) + %i[id edit_users edit_groups read_groups visibility work_members_attributes admin_set_id]
     end
   end
 end
