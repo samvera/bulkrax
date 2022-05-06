@@ -254,7 +254,7 @@ module Bulkrax
               )
           end
 
-          it 'runs CurationConcern' do
+          it 'runs CurationConcern Actor' do
             allow(Bulkrax::PendingRelationship).to receive(:find_each).and_return([pending_rel_work])
             allow(Ability).to receive(:new).with(importer.user)
             expect(Hyrax::CurationConcern.actor).to receive(:update).with(instance_of(env))
