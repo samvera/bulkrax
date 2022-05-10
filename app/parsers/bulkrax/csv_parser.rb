@@ -25,9 +25,11 @@ module Bulkrax
       @file_sets = []
       records.map do |r|
         model_field_mappings.each do |model_mapping|
-          if r[model_mapping.to_sym]&.downcase == 'collection'
+          next unless r.key?(model_mapping.to_sym)
+
+          if r[model_mapping.to_sym].casecmp('collection').zero?
             @collections << r
-          elsif r[model_mapping.to_sym]&.downcase == 'fileset'
+          elsif r[model_mapping.to_sym].casecmp('fileset').zero?
             @file_sets << r
           else
             @works << r
@@ -110,7 +112,7 @@ module Bulkrax
 
     def create_objects(types_array = nil)
       index = 0
-      (types_array || %w[work collection file_set relationship]).each do |type|
+      (types_array || %w[collection work file_set relationship]).each do |type|
         if type.eql?('relationship')
           ScheduleRelationshipsJob.set(wait: 5.minutes).perform_later(importer_id: importerexporter.id)
           next
