@@ -10,6 +10,55 @@ module Bulkrax
     let(:relationship_importer) { FactoryBot.create(:bulkrax_importer_csv, :with_relationships_mappings) }
     let(:relationship_subject) { described_class.new(relationship_importer) }
 
+    describe '#build_records' do
+      let(:importer) { FactoryBot.create(:bulkrax_importer_csv, :with_relationships_mappings, parser_fields: { 'import_file_path' => 'spec/fixtures/csv/all_record_types.csv' }) }
+
+      it 'sets @collections' do
+        expect(subject.instance_variable_get(:@collections)).to be_nil
+
+        subject.build_records
+
+        expect(subject.instance_variable_get(:@collections)).not_to be_nil
+      end
+
+      it 'sets @works' do
+        expect(subject.instance_variable_get(:@works)).to be_nil
+
+        subject.build_records
+
+        expect(subject.instance_variable_get(:@works)).not_to be_nil
+      end
+
+      it 'sets @file_sets' do
+        expect(subject.instance_variable_get(:@file_sets)).to be_nil
+
+        subject.build_records
+
+        expect(subject.instance_variable_get(:@file_sets)).not_to be_nil
+      end
+
+      it 'adds collection records to the @collections variable' do
+        subject.build_records
+
+        expect(subject.instance_variable_get(:@collections).collect { |r| r[:source_identifier] })
+          .to contain_exactly('art_c_1', 'art_c_2')
+      end
+
+      it 'adds work records to the @works variable' do
+        subject.build_records
+
+        expect(subject.instance_variable_get(:@works).collect { |r| r[:source_identifier] })
+          .to contain_exactly('art_w_1', 'art_w_2')
+      end
+
+      it 'adds file set records to the @file_sets variable' do
+        subject.build_records
+
+        expect(subject.instance_variable_get(:@file_sets).collect { |r| r[:source_identifier] })
+          .to contain_exactly('art_fs_1', 'art_fs_2')
+      end
+    end
+
     describe '#collections' do
       let(:all_collection_titles) { subject.collections.collect { |c| c[:title] } }
 
