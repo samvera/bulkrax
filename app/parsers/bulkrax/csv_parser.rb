@@ -23,22 +23,28 @@ module Bulkrax
       @collections = []
       @works = []
       @file_sets = []
-      records.map do |r|
-        model_field_mappings.each do |model_mapping|
-          next unless r.key?(model_mapping.to_sym)
 
-          if r[model_mapping.to_sym].casecmp('collection').zero?
-            @collections << r
-          elsif r[model_mapping.to_sym].casecmp('fileset').zero?
-            @file_sets << r
-          else
-            @works << r
+      if model_field_mappings.map { |mfm| mfm.to_sym.in?(records.first.keys) }.any?
+        records.map do |r|
+          model_field_mappings.map(&:to_sym).each do |model_mapping|
+            next unless r.key?(model_mapping)
+
+            if r[model_mapping].casecmp('collection').zero?
+              @collections << r
+            elsif r[model_mapping].casecmp('fileset').zero?
+              @file_sets << r
+            else
+              @works << r
+            end
           end
         end
+        @collections = @collections.flatten.compact.uniq
+        @file_sets = @file_sets.flatten.compact.uniq
+        @works = @works.flatten.compact.uniq
+      else # if no model is specified, assume all records are works
+        @works = records.flatten.compact.uniq
       end
-      @collections = @collections.flatten.compact.uniq
-      @file_sets = @file_sets.flatten.compact.uniq
-      @works = @works.flatten.compact.uniq
+
       true
     end
 
