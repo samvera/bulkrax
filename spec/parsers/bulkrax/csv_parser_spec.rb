@@ -37,25 +37,49 @@ module Bulkrax
         expect(subject.instance_variable_get(:@file_sets)).not_to be_nil
       end
 
-      it 'adds collection records to the @collections variable' do
-        subject.build_records
+      shared_examples 'records are assigned correctly' do
+        it 'adds collection records to the @collections variable' do
+          subject.build_records
 
-        expect(subject.instance_variable_get(:@collections).collect { |r| r[:source_identifier] })
-          .to contain_exactly('art_c_1', 'art_c_2')
+          expect(subject.collections.collect { |r| r[:source_identifier] })
+            .to contain_exactly('art_c_1', 'art_c_2')
+        end
+
+        it 'adds work records to the @works variable' do
+          subject.build_records
+
+          expect(subject.works.collect { |r| r[:source_identifier] })
+            .to contain_exactly('art_w_1', 'art_w_2')
+        end
+
+        it 'adds file set records to the @file_sets variable' do
+          subject.build_records
+
+          expect(subject.file_sets.collect { |r| r[:source_identifier] })
+            .to contain_exactly('art_fs_1', 'art_fs_2')
+        end
+      end
+      include_examples 'records are assigned correctly'
+
+      context 'when there are multiple model field mappings' do
+        before do
+          allow(subject).to receive(:model_field_mappings).and_return(%w[work_type model])
+        end
+
+        include_examples 'records are assigned correctly'
       end
 
-      it 'adds work records to the @works variable' do
-        subject.build_records
+      context 'when CSV does not specify model' do
+        before do
+          importer.parser_fields['import_file_path'] = 'spec/fixtures/csv/ok.csv'
+        end
 
-        expect(subject.instance_variable_get(:@works).collect { |r| r[:source_identifier] })
-          .to contain_exactly('art_w_1', 'art_w_2')
-      end
+        # TODO: make changes to make this pass
+        it 'puts all records in the @works variable' do
+          subject.build_records
 
-      it 'adds file set records to the @file_sets variable' do
-        subject.build_records
-
-        expect(subject.instance_variable_get(:@file_sets).collect { |r| r[:source_identifier] })
-          .to contain_exactly('art_fs_1', 'art_fs_2')
+          expect(subject.works).to eq(subject.records)
+        end
       end
     end
 
