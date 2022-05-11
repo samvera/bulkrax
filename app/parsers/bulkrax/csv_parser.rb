@@ -23,20 +23,28 @@ module Bulkrax
       @collections = []
       @works = []
       @file_sets = []
-      records.map do |r|
-        model_field_mappings.each do |model_mapping|
-          if r[model_mapping.to_sym]&.downcase == 'collection'
-            @collections << r
-          elsif r[model_mapping.to_sym]&.downcase == 'fileset'
-            @file_sets << r
-          else
-            @works << r
+
+      if model_field_mappings.map { |mfm| mfm.to_sym.in?(records.first.keys) }.any?
+        records.map do |r|
+          model_field_mappings.map(&:to_sym).each do |model_mapping|
+            next unless r.key?(model_mapping)
+
+            if r[model_mapping].casecmp('collection').zero?
+              @collections << r
+            elsif r[model_mapping].casecmp('fileset').zero?
+              @file_sets << r
+            else
+              @works << r
+            end
           end
         end
+        @collections = @collections.flatten.compact.uniq
+        @file_sets = @file_sets.flatten.compact.uniq
+        @works = @works.flatten.compact.uniq
+      else # if no model is specified, assume all records are works
+        @works = records.flatten.compact.uniq
       end
-      @collections = @collections.flatten.compact.uniq
-      @file_sets = @file_sets.flatten.compact.uniq
-      @works = @works.flatten.compact.uniq
+
       true
     end
 
@@ -110,7 +118,7 @@ module Bulkrax
 
     def create_objects(types_array = nil)
       index = 0
-      (types_array || %w[work collection file_set relationship]).each do |type|
+      (types_array || %w[collection work file_set relationship]).each do |type|
         if type.eql?('relationship')
           ScheduleRelationshipsJob.set(wait: 5.minutes).perform_later(importer_id: importerexporter.id)
           next
