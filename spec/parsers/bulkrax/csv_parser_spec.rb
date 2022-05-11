@@ -5,14 +5,85 @@ require 'rails_helper'
 module Bulkrax
   RSpec.describe CsvParser do
     subject { described_class.new(importer) }
-    let(:importer) { FactoryBot.create(:bulkrax_importer_csv) }
+    let(:importer) { FactoryBot.build(:bulkrax_importer_csv) }
 
     let(:relationship_importer) { FactoryBot.create(:bulkrax_importer_csv, :with_relationships_mappings) }
     let(:relationship_subject) { described_class.new(relationship_importer) }
+    let(:all_collection_titles) { subject.collections.collect { |c| c[:title] } }
+
+    describe '#build_records' do
+      let(:importer) { FactoryBot.create(:bulkrax_importer_csv, :with_relationships_mappings, parser_fields: { 'import_file_path' => 'spec/fixtures/csv/all_record_types.csv' }) }
+
+      it 'sets @collections' do
+        expect(subject.instance_variable_get(:@collections)).to be_nil
+
+        subject.build_records
+
+        expect(subject.instance_variable_get(:@collections)).not_to be_nil
+      end
+
+      it 'sets @works' do
+        expect(subject.instance_variable_get(:@works)).to be_nil
+
+        subject.build_records
+
+        expect(subject.instance_variable_get(:@works)).not_to be_nil
+      end
+
+      it 'sets @file_sets' do
+        expect(subject.instance_variable_get(:@file_sets)).to be_nil
+
+        subject.build_records
+
+        expect(subject.instance_variable_get(:@file_sets)).not_to be_nil
+      end
+
+      shared_examples 'records are assigned correctly' do
+        it 'adds collection records to the @collections variable' do
+          subject.build_records
+
+          expect(subject.collections.collect { |r| r[:source_identifier] })
+            .to contain_exactly('art_c_1', 'art_c_2')
+        end
+
+        it 'adds work records to the @works variable' do
+          subject.build_records
+
+          expect(subject.works.collect { |r| r[:source_identifier] })
+            .to contain_exactly('art_w_1', 'art_w_2')
+        end
+
+        it 'adds file set records to the @file_sets variable' do
+          subject.build_records
+
+          expect(subject.file_sets.collect { |r| r[:source_identifier] })
+            .to contain_exactly('art_fs_1', 'art_fs_2')
+        end
+      end
+      include_examples 'records are assigned correctly'
+
+      context 'when there are multiple model field mappings' do
+        before do
+          allow(subject).to receive(:model_field_mappings).and_return(%w[work_type model])
+        end
+
+        include_examples 'records are assigned correctly'
+      end
+
+      context 'when CSV does not specify model' do
+        before do
+          importer.parser_fields['import_file_path'] = 'spec/fixtures/csv/ok.csv'
+        end
+
+        it 'puts all records in the @works variable' do
+          subject.build_records
+
+          expect(subject.works).to eq(subject.records)
+        end
+      end
+    end
 
     describe '#collections' do
-      let(:all_collection_titles) { subject.collections.collect { |c| c[:title] } }
-
       before do
         importer.parser_fields = { import_file_path: './spec/fixtures/csv/mixed_works_and_collections.csv' }
       end
@@ -33,9 +104,9 @@ module Bulkrax
             .to receive(:records)
             .and_return(
               [
-                { map_1: 'Collection', title: 'C1' },
-                { map_2: 'Collection', title: 'C2' },
-                { model: 'Collection', title: 'C3' }
+                { map_1: 'Collection', title: 'C1', map_2: '', model: '' },
+                { map_2: 'Collection', title: 'C2', map_1: '', model: '' },
+                { model: 'Collection', title: 'C3', map_1: '', map_2: '' }
               ]
             )
         end
@@ -46,16 +117,14 @@ module Bulkrax
           end
 
           it 'uses the field mappings' do
-            expect(subject.collections).to include({ map_1: 'Collection', title: 'C1' })
-            expect(subject.collections).to include({ map_2: 'Collection', title: 'C2' })
+            expect(all_collection_titles).to include('C1', 'C2')
           end
         end
 
         context 'when :model does not have field mappings' do
           it 'uses :model' do
-            expect(subject.collections).to include({ model: 'Collection', title: 'C3' })
-            expect(subject.collections).not_to include({ map_1: 'Collection', title: 'C1' })
-            expect(subject.collections).not_to include({ map_2: 'Collection', title: 'C2' })
+            expect(all_collection_titles).to include('C3')
+            expect(all_collection_titles).not_to include('C1', 'C2')
           end
         end
       end
@@ -128,6 +197,8 @@ module Bulkrax
       end
 
       describe 'setting collection entry identifiers' do
+        let(:importer) { FactoryBot.create(:bulkrax_importer_csv) }
+
         before do
           allow(subject)
             .to receive(:collections)
@@ -170,6 +241,7 @@ module Bulkrax
     end
 
     describe '#create_works' do
+      let(:importer) { FactoryBot.create(:bulkrax_importer_csv) }
       let(:entry) { FactoryBot.create(:bulkrax_entry, importerexporter: importer) }
 
       before do
