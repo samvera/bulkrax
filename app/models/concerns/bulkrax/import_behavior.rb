@@ -5,6 +5,8 @@ module Bulkrax
   module ImportBehavior
     extend ActiveSupport::Concern
 
+    LOCAL_QA_FIELDS = %w[rights_statement license].freeze
+
     def build_for_importer
       begin
         build_metadata
@@ -100,6 +102,26 @@ module Bulkrax
       self.parsed_metadata['member_of_collections_attributes'] = {}
       find_collection_ids.each_with_index do |c, i|
         self.parsed_metadata['member_of_collections_attributes'][i.to_s] = { id: c }
+      end
+    end
+
+    # TODO: documentation
+    def sanitize_qa_uri_values
+      LOCAL_QA_FIELDS.each do |field|
+        next if parsed_metadata[field].blank?
+
+        parsed_metadata[field].each_with_index do |value, i|
+          next if value.blank?
+          # TODO: raise error if invalid URI? what is raised by default?
+          next unless value.match?(::URI::DEFAULT_PARSER.make_regexp)
+
+          valid_value = value.strip.chomp.sub('https', 'http')
+          # add trailing forward slash unless one is already present
+          valid_value << '/' unless valid_value.match?(%r{/$})
+          # TODO: check is value exists in field service?
+
+          parsed_metadata[field][i] = valid_value
+        end
       end
     end
 

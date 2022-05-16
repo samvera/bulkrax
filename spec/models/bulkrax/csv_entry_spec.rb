@@ -63,6 +63,70 @@ module Bulkrax
         end
       end
 
+      describe 'importing controlled questioning authority fields' do
+        before do
+          allow(subject).to receive(:raw_metadata).and_return('source_identifier' => 'qa_1', 'title' => 'some title')
+        end
+
+        it 'calls #sanitize_qa_uri_values' do
+          expect(subject).to receive(:sanitize_qa_uri_values).once
+
+          subject.build_metadata
+        end
+
+        describe 'importing :rights_statement' do
+          context 'when the value has https' do
+            before do
+              allow(subject).to receive(:raw_metadata).and_return('rights_statement' => 'https://rightsstatements.org/vocab/InC/1.0/', 'source_identifier' => 'qa_1', 'title' => 'some title')
+            end
+
+            it 'replaces https with http' do
+              subject.build_metadata
+
+              expect(subject.parsed_metadata['rights_statement']).to eq(['http://rightsstatements.org/vocab/InC/1.0/'])
+            end
+          end
+
+          context 'when the value does not have a forward slash at the end' do
+            before do
+              allow(subject).to receive(:raw_metadata).and_return('rights_statement' => 'http://rightsstatements.org/vocab/InC/1.0', 'source_identifier' => 'qa_1', 'title' => 'some title')
+            end
+
+            it 'adds a trailing forward slash' do
+              subject.build_metadata
+
+              expect(subject.parsed_metadata['rights_statement']).to eq(['http://rightsstatements.org/vocab/InC/1.0/'])
+            end
+          end
+        end
+
+        describe 'importing :license' do
+          context 'when the value has https' do
+            before do
+              allow(subject).to receive(:raw_metadata).and_return('license' => 'https://creativecommons.org/licenses/by/3.0/us/', 'source_identifier' => 'qa_1', 'title' => 'some title')
+            end
+
+            it 'replaces https with http' do
+              subject.build_metadata
+
+              expect(subject.parsed_metadata['license']).to eq(['http://creativecommons.org/licenses/by/3.0/us/'])
+            end
+          end
+
+          context 'when the value does not have a forward slash at the end' do
+            before do
+              allow(subject).to receive(:raw_metadata).and_return('license' => 'http://creativecommons.org/licenses/by/3.0/us', 'source_identifier' => 'qa_1', 'title' => 'some title')
+            end
+
+            it 'adds a trailing forward slash' do
+              subject.build_metadata
+
+              expect(subject.parsed_metadata['license']).to eq(['http://creativecommons.org/licenses/by/3.0/us/'])
+            end
+          end
+        end
+      end
+
       context 'with parent-child relationships' do
         let(:importer) { FactoryBot.create(:bulkrax_importer_csv, :with_relationships_mappings) }
         let(:required_data) do
@@ -231,7 +295,7 @@ module Bulkrax
           expect(metadata['single_object']['first_name']).to eq('Fake')
           expect(metadata['single_object']['last_name']).to eq('Fakerson')
           expect(metadata['single_object']['position']).to include('Leader', 'Jester', 'Queen')
-          expect(metadata['single_object']['language']).to eq('English')
+          expect(metadata['single_object']['language']).to eq(['English'])
         end
       end
 

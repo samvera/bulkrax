@@ -5,4 +5,8 @@ class Work < ActiveFedora::Base
   include ::Hyrax::WorkBehavior
   property :single_object, predicate: ::RDF::Vocab::DC.creator, multiple: false
   property :multiple_objects, predicate: ::RDF::Vocab::DC.creator
+
+  # This must be included at the end, because it finalizes the metadata
+  # schema (by adding accepts_nested_attributes)
+  include ::Hyrax::BasicMetadata
 end
