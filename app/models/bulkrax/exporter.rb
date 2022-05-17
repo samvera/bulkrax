@@ -96,7 +96,7 @@ module Bulkrax
     end
 
     def current_run
-      @current_run ||= self.exporter_runs.create!(total_work_entries: self.limit || parser.total)
+      @current_run ||= self.exporter_runs.create!(total_work_entries: self.limit || parser.total, enqueued_records: self.limit || parser.total)
     end
 
     def last_run

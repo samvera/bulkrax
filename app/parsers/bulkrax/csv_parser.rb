@@ -270,7 +270,7 @@ module Bulkrax
     #   Changed to grep as wc -l counts blank lines, and ignores the final unescaped line (which may or may not contain data)
     def total
       @total = importer.parser_fields['total'] || 0 if importer?
-      @total = importerexporter.entries.count if exporter?
+      @total = limit || current_record_ids.count if exporter?
 
       return @total || 0
     rescue StandardError
