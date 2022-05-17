@@ -106,23 +106,36 @@ module Bulkrax
     end
 
     # TODO: documentation
-    def sanitize_qa_uri_values
+    def sanitize_qa_uri_values!
       LOCAL_QA_FIELDS.each do |field|
         next if parsed_metadata[field].blank?
 
         parsed_metadata[field].each_with_index do |value, i|
           next if value.blank?
-          # TODO: raise error if invalid URI? what is raised by default?
-          next unless value.match?(::URI::DEFAULT_PARSER.make_regexp)
 
-          valid_value = value.strip.chomp.sub('https', 'http')
-          # add trailing forward slash unless one is already present
-          valid_value << '/' unless valid_value.match?(%r{/$})
-          # TODO: check is value exists in field service?
+          if value.match?(::URI::DEFAULT_PARSER.make_regexp)
+            value = value.strip.chomp.sub('https', 'http')
+            # add trailing forward slash unless one is already present
+            value << '/' unless value.match?(%r{/$})
+          end
+          validate_authority_exists!(value, field)
 
-          parsed_metadata[field][i] = valid_value
+          parsed_metadata[field][i] = value
         end
       end
+    end
+
+    # TODO: rename?
+    # TODO: documentation
+    def validate_authority_exists!(value, field)
+      field_service = ('Hyrax::' + "#{field}_service".camelcase).constantize
+      active_authority_ids = field_service.new.active_elements.map { |ae| ae['id'] }
+      return true if active_authority_ids.include?(value)
+
+      debug_msg = %(Unable to locate active value "#{value}" in config/authorities/#{field.pluralize}.yml)
+      Rails.logger.debug(debug_msg)
+      error_msg = %("#{value}" is not a valid and/or active term for the :#{field} field)
+      raise ::StandardError, error_msg
     end
 
     def factory
