@@ -34,7 +34,7 @@ module Bulkrax
       else
         exporter_run.exporter.status_info('Complete')
       end
-      
+
       return entry
     end
   end
