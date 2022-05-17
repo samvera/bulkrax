@@ -23,6 +23,10 @@ module Bulkrax
       Entry
     end
 
+    def file_set_entry_class
+      CsvFileSetEntry
+    end
+
     # Take a random sample of 10 metadata_paths and work out the import fields from that
     def import_fields
       raise StandardError, 'No metadata files were found' if metadata_paths.blank?
