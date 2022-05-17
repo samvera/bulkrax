@@ -240,7 +240,7 @@ module Bulkrax
         new_entry = find_or_create_entry(this_entry_class, id, 'Bulkrax::Exporter')
 
         begin
-          entry = ExportWorkJob.perform_now(new_entry.id, current_run.id, current_record_ids.length)
+          entry = ExportWorkJob.perform_now(new_entry.id, current_run.id)
         rescue => e
           Rails.logger.info("#{e.message} was detected during export")
         end
