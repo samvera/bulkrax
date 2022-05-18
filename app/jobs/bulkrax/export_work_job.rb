@@ -27,6 +27,7 @@ module Bulkrax
       end
       exporter_run = ExporterRun.find(args[1])
       return entry if exporter_run.enqueued_records.positive?
+
       if exporter_run.failed_records.positive?
         exporter_run.exporter.status_info('Complete (with failures)')
       else
