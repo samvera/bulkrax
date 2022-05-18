@@ -82,11 +82,13 @@ module Bulkrax
     # Work-Collection membership is added to the child as member_of_collection_ids
     # This is adding the reverse relationship, from the child to the parent
     def collection_parent_work_child
-      child_records[:works].each do |child_record|
-        ::Hyrax::Collections::NestedCollectionPersistenceService.persist_nested_collection_for(parent: parent_record, child: child_record)
-        # TODO: add counters for :processed_parents and :failed_parents
-        Bulkrax::ImporterRun.find(importer_run_id).increment!(:processed_relationships) # rubocop:disable Rails/SkipsModelValidations
-      end
+      child_work_ids = child_records[:works].map(&:id)
+      parent_record.reindex_extent = Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX
+      parent_record.add_member_objects(child_work_ids)
+
+      # TODO: add counters for :processed_parents and :failed_parents
+      # FIXME: :processed_relationships should be incremented by the number of child_work_ids
+      ImporterRun.find(importer_run_id).increment!(:processed_relationships) # rubocop:disable Rails/SkipsModelValidations
     end
 
     # Collection-Collection membership is added to the as member_ids
