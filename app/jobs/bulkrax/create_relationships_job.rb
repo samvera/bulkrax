@@ -108,7 +108,7 @@ module Bulkrax
       attrs = {
         work_members_attributes: records_hash
       }
-      parent_record.reindex_extent = Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX if parent_record.respond_to?(:reindex_extent)
+      parent_record.try(:reindex_extent=, Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX)
       env = Hyrax::Actors::Environment.new(parent_record, Ability.new(user), attrs)
       Hyrax::CurationConcern.actor.update(env)
       # TODO: add counters for :processed_parents and :failed_parents
