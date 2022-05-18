@@ -84,18 +84,16 @@ module Bulkrax
     def collection_parent_work_child
       child_work_ids = child_records[:works].map(&:id)
       parent_record.reindex_extent = Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX
-      parent_record.add_member_objects(child_work_ids)
 
-      # TODO: add counters for :processed_parents and :failed_parents
-      # FIXME: :processed_relationships should be incremented by the number of child_work_ids
-      ImporterRun.find(importer_run_id).increment!(:processed_relationships) # rubocop:disable Rails/SkipsModelValidations
+      parent_record.add_member_objects(child_work_ids)
+      ImporterRun.find(importer_run_id).increment!(:processed_relationships, child_work_ids.count) # rubocop:disable Rails/SkipsModelValidations
     end
 
     # Collection-Collection membership is added to the as member_ids
     def collection_parent_collection_child
       child_records[:collections].each do |child_record|
         ::Hyrax::Collections::NestedCollectionPersistenceService.persist_nested_collection_for(parent: parent_record, child: child_record)
-        Bulkrax::ImporterRun.find(importer_run_id).increment!(:processed_relationships) # rubocop:disable Rails/SkipsModelValidations
+        ImporterRun.find(importer_run_id).increment!(:processed_relationships) # rubocop:disable Rails/SkipsModelValidations
       end
     end
 
@@ -105,14 +103,12 @@ module Bulkrax
       child_records[:works].each_with_index do |child_record, i|
         records_hash[i] = { id: child_record.id }
       end
-      attrs = {
-        work_members_attributes: records_hash
-      }
+      attrs = { work_members_attributes: records_hash }
       parent_record.try(:reindex_extent=, Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX)
       env = Hyrax::Actors::Environment.new(parent_record, Ability.new(user), attrs)
+
       Hyrax::CurationConcern.actor.update(env)
-      # TODO: add counters for :processed_parents and :failed_parents
-      Bulkrax::ImporterRun.find(importer_run_id).increment!(:processed_relationships) # rubocop:disable Rails/SkipsModelValidations
+      ImporterRun.find(importer_run_id).increment!(:processed_relationships, child_records[:works].count) # rubocop:disable Rails/SkipsModelValidations
     end
 
     def reschedule(parent_identifier:, importer_run_id:)
