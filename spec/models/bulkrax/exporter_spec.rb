@@ -64,10 +64,10 @@ module Bulkrax
       context '#current_run' do
         it 'sets @current_run' do
           expect(exporter.instance_variable_get(:@current_run)).to be_nil
-          
+
           exporter.current_run
 
-          expect(exporter.instance_variable_get(:@current_run)).to_not be_nil
+          expect(exporter.instance_variable_get(:@current_run)).not_to be_nil
           expect(exporter.current_run.enqueued_records).to eq(7)
           expect(exporter.current_run.total_work_entries).to eq(7)
           expect(exporter.current_run.exporter_id).to eq(exporter.id)
