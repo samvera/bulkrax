@@ -6,7 +6,6 @@ module Bulkrax
   RSpec.describe CsvParser do
     subject { described_class.new(importer) }
     let(:importer) { FactoryBot.build(:bulkrax_importer_csv) }
-
     let(:relationship_importer) { FactoryBot.create(:bulkrax_importer_csv, :with_relationships_mappings) }
     let(:relationship_subject) { described_class.new(relationship_importer) }
     let(:all_collection_titles) { subject.collections.collect { |c| c[:title] } }
@@ -472,6 +471,36 @@ module Bulkrax
             .by(1)
             .and change(CsvEntry, :count)
             .by(6) # 6 csv entries minus 3 file set entries minus 1 collection entry equals 2 work entries
+        end
+      end
+    end
+
+    describe '#total' do
+      context 'on import' do
+        subject { described_class.new(importer) }
+        let(:importer) { FactoryBot.build(:bulkrax_importer_csv, parser_fields: { 'total' => 3 }) }
+  
+        it 'sets @total' do
+          expect(subject.instance_variable_get(:@total)).to be_nil
+  
+          subject.total
+  
+          expect(subject.instance_variable_get(:@total)).to_not be_nil
+          expect(subject.instance_variable_get(:@total)).to eq(3)
+        end
+      end
+
+      context 'on export' do
+        subject { described_class.new(exporter) }
+        let(:exporter) { FactoryBot.build(:bulkrax_exporter, limit: 1) }
+
+        it 'sets @total' do
+          expect(subject.instance_variable_get(:@total)).to be_nil
+
+          subject.total
+
+          expect(subject.instance_variable_get(:@total)).to_not be_nil
+          expect(subject.instance_variable_get(:@total)).to eq(1)
         end
       end
     end
