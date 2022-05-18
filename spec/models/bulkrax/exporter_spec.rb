@@ -4,7 +4,7 @@ require 'rails_helper'
 
 module Bulkrax
   RSpec.describe Exporter, type: :model do
-    let(:exporter) { FactoryBot.create(:bulkrax_exporter) }
+    let(:exporter) { FactoryBot.create(:bulkrax_exporter, limit: 7) }
     let(:importer) { FactoryBot.create(:bulkrax_importer) }
 
     describe 'export_from' do
@@ -58,6 +58,19 @@ module Bulkrax
         it 'exports' do
           expect(exporter).to receive(:create_from_worktype)
           exporter.export
+        end
+      end
+
+      context '#current_run' do
+        it 'sets @current_run' do
+          expect(exporter.instance_variable_get(:@current_run)).to be_nil
+
+          exporter.current_run
+
+          expect(exporter.instance_variable_get(:@current_run)).not_to be_nil
+          expect(exporter.current_run.enqueued_records).to eq(7)
+          expect(exporter.current_run.total_work_entries).to eq(7)
+          expect(exporter.current_run.exporter_id).to eq(exporter.id)
         end
       end
     end
