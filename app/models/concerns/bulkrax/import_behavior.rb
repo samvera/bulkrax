@@ -2,7 +2,7 @@
 
 module Bulkrax
   # Import Behavior for Entry classes
-  module ImportBehavior
+  module ImportBehavior # rubocop:disable Metrics/ModuleLength
     extend ActiveSupport::Concern
 
     def build_for_importer
