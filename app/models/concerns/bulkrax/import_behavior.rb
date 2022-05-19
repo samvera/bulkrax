@@ -113,29 +113,42 @@ module Bulkrax
         parsed_metadata[field].each_with_index do |value, i|
           next if value.blank?
 
-          if value.match?(::URI::DEFAULT_PARSER.make_regexp)
-            value = value.strip.chomp.sub('https', 'http')
-            # add trailing forward slash unless one is already present
-            value << '/' unless value.match?(%r{/$})
+          if (validated_uri_value = validate_value(value, field))
+            parsed_metadata[field][i] = validated_uri_value
+          else
+            debug_msg = %(Unable to locate active value "#{value}" in config/authorities/#{field.pluralize}.yml)
+            Rails.logger.debug(debug_msg)
+            error_msg = %("#{value}" is not a valid and/or active term for the :#{field} field)
+            raise ::StandardError, error_msg
           end
-          validate_authority_exists!(value, field)
-
-          parsed_metadata[field][i] = value
         end
       end
     end
 
-    # TODO: rename?
     # TODO: documentation
-    def validate_authority_exists!(value, field)
+    def validate_value(value, field)
+      if value.match?(::URI::DEFAULT_PARSER.make_regexp)
+        value = value.strip.chomp
+        # add trailing forward slash unless one is already present
+        value << '/' unless value.match?(%r{/$})
+      end
+
+      valid = if authority_exists?(value, field)
+                true
+              else
+                value.include?('https') ? value.sub!('https', 'http') : value.sub!('http', 'https')
+                authority_exists?(value, field)
+              end
+
+      valid ? value : nil
+    end
+
+    # TODO: documentation
+    def authority_exists?(value, field)
       field_service = ('Hyrax::' + "#{field}_service".camelcase).constantize
       active_authority_ids = field_service.new.active_elements.map { |ae| ae['id'] }
-      return true if active_authority_ids.include?(value)
 
-      debug_msg = %(Unable to locate active value "#{value}" in config/authorities/#{field.pluralize}.yml)
-      Rails.logger.debug(debug_msg)
-      error_msg = %("#{value}" is not a valid and/or active term for the :#{field} field)
-      raise ::StandardError, error_msg
+      active_authority_ids.include?(value)
     end
 
     def factory
