@@ -12,6 +12,7 @@ module Bulkrax
                    :related_children_field_mapping,
                    :related_parents_field_mapping,
                    :reserved_properties,
+                   :qa_controlled_properties,
                    :field_mappings,
                    :import_path,
                    :export_path,
@@ -119,6 +120,11 @@ module Bulkrax
       original_url
       relative_path
     ]
+
+    # List of Questioning Authority properties that are controlled via YAML files in
+    # the config/authorities/ directory. For example, the :rights_statement property
+    # is controlled by the active terms in config/authorities/rights_statements.yml
+    self.qa_controlled_properties = %w[rights_statement license]
   end
 
   def self.api_definition
