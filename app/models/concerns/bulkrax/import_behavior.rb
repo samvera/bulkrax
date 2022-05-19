@@ -5,8 +5,6 @@ module Bulkrax
   module ImportBehavior
     extend ActiveSupport::Concern
 
-    LOCAL_QA_FIELDS = %w[rights_statement license].freeze
-
     def build_for_importer
       begin
         build_metadata
@@ -109,7 +107,7 @@ module Bulkrax
 
     # TODO: documentation
     def sanitize_qa_uri_values!
-      LOCAL_QA_FIELDS.each do |field|
+      Bulkrax.qa_controlled_properties.each do |field|
         next if parsed_metadata[field].blank?
 
         parsed_metadata[field].each_with_index do |value, i|
