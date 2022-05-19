@@ -21,6 +21,8 @@ module Bulkrax
         status_info(e)
       else
         status_info
+      ensure
+        self.save!
       end
       return @item
     end
