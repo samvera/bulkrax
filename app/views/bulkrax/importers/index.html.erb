@@ -38,7 +38,7 @@
             <% @importers.each do |importer| %>
               <tr>
                 <th scope="row"><%= link_to importer.name, importer_path(importer) %></th>
-                <td><%= importer.status %></td>
+                <td><%= importer.last_run&.enqueued_records&.zero? ? 'Complete' : importer.status %></td>
                 <td><%= importer.last_imported_at.strftime("%b %d, %Y") if importer.last_imported_at %></td>
                 <td><%= importer.next_import_at.strftime("%b %d, %Y") if importer.next_import_at %></td>
                 <td><%= importer.last_run&.enqueued_records %></td>
