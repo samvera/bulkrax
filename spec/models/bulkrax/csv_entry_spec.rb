@@ -68,8 +68,8 @@ module Bulkrax
           allow(subject).to receive(:raw_metadata).and_return('source_identifier' => 'qa_1', 'title' => 'some title')
         end
 
-        it 'calls #sanitize_qa_uri_values!' do
-          expect(subject).to receive(:sanitize_qa_uri_values!).once
+        it 'calls #sanitize_controlled_uri_values!' do
+          expect(subject).to receive(:sanitize_controlled_uri_values!).once
 
           subject.build_metadata
         end

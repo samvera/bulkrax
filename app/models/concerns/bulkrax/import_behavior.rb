@@ -105,8 +105,15 @@ module Bulkrax
       end
     end
 
-    # TODO: documentation
-    def sanitize_qa_uri_values!
+    # Attempt to sanitize Questioning Authority URI values for configured controlled fields of common
+    # data entry mistakes. Controlled URI values are only valid if they are an exact match.
+    # Example:
+    #   Valid value:     http://rightsstatements.org/vocab/InC/1.0/
+    #   Provided value:  https://rightsstatements.org/vocab/InC/1.0
+    #   Sanitized value: http://rightsstatements.org/vocab/InC/1.0/ ("s" from "https" removed, trailing "/" added)
+    #
+    # @return [Boolean] true if all controlled URI values are sanitized successfully
+    def sanitize_controlled_uri_values!
       Bulkrax.qa_controlled_properties.each do |field|
         next if parsed_metadata[field].blank?
 
@@ -116,16 +123,20 @@ module Bulkrax
           if (validated_uri_value = validate_value(value, field))
             parsed_metadata[field][i] = validated_uri_value
           else
-            debug_msg = %(Unable to locate active value "#{value}" in config/authorities/#{field.pluralize}.yml)
+            debug_msg = %(Unable to locate active authority ID "#{value}" in config/authorities/#{field.pluralize}.yml)
             Rails.logger.debug(debug_msg)
-            error_msg = %("#{value}" is not a valid and/or active term for the :#{field} field)
+            error_msg = %("#{value}" is not a valid and/or active authority ID for the :#{field} field)
             raise ::StandardError, error_msg
           end
         end
       end
+
+      true
     end
 
-    # TODO: documentation
+    # @param value [String] value to validate
+    # @param field [String] name of the controlled property
+    # @return [String, nil] validated URI value or nil
     def validate_value(value, field)
       if value.match?(::URI::DEFAULT_PARSER.make_regexp)
         value = value.strip.chomp
@@ -133,18 +144,20 @@ module Bulkrax
         value << '/' unless value.match?(%r{/$})
       end
 
-      valid = if authority_exists?(value, field)
+      valid = if active_id_for_authority?(value, field)
                 true
               else
                 value.include?('https') ? value.sub!('https', 'http') : value.sub!('http', 'https')
-                authority_exists?(value, field)
+                active_id_for_authority?(value, field)
               end
 
       valid ? value : nil
     end
 
-    # TODO: documentation
-    def authority_exists?(value, field)
+    # @param value [String] value to check
+    # @param field [String] name of the controlled property
+    # @return [Boolean] provided value is a present, active authority ID for the provided field
+    def active_id_for_authority?(value, field)
       field_service = ('Hyrax::' + "#{field}_service".camelcase).constantize
       active_authority_ids = field_service.new.active_elements.map { |ae| ae['id'] }
 

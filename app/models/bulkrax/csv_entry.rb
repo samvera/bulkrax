@@ -46,7 +46,7 @@ module Bulkrax
       add_visibility
       add_metadata_for_model
       add_rights_statement
-      sanitize_qa_uri_values!
+      sanitize_controlled_uri_values!
       add_local
 
       self.parsed_metadata
