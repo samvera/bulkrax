@@ -6,7 +6,6 @@ class Work < ActiveFedora::Base
   property :single_object, predicate: ::RDF::Vocab::DC.creator, multiple: false
   property :multiple_objects, predicate: ::RDF::Vocab::DC.creator
 
-  # This must be included at the end, because it finalizes the metadata
-  # schema (by adding accepts_nested_attributes)
-  include ::Hyrax::BasicMetadata
+  property :license, predicate: ::RDF::Vocab::DC.rights
+  property :rights_statement, predicate: ::RDF::Vocab::EDM.rights
 end
