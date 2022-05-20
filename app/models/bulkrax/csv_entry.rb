@@ -97,7 +97,7 @@ module Bulkrax
       self.parsed_metadata = {}
       self.parsed_metadata['id'] = hyrax_record.id
       self.parsed_metadata[source_identifier] = hyrax_record.send(work_identifier)
-      self.parsed_metadata['model'] = hyrax_record.has_model.first
+      self.parsed_metadata[key_for_export('model')] = hyrax_record.has_model.first
       build_files_metadata unless hyrax_record.is_a?(Collection)
       build_relationship_metadata
       build_mapping_metadata
@@ -106,7 +106,7 @@ module Bulkrax
     end
 
     def build_files_metadata
-      file_mapping = mapping['file']&.[]('from')&.first || 'file'
+      file_mapping = key_for_export('file')
       file_sets = hyrax_record.file_set? ? Array.wrap(hyrax_record) : hyrax_record.file_sets
 
       filenames = file_sets.map { |fs| filename(fs).to_s if filename(fs).present? }.compact
