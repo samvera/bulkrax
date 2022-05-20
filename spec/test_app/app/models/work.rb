@@ -5,4 +5,7 @@ class Work < ActiveFedora::Base
   include ::Hyrax::WorkBehavior
   property :single_object, predicate: ::RDF::Vocab::DC.creator, multiple: false
   property :multiple_objects, predicate: ::RDF::Vocab::DC.creator
+
+  property :license, predicate: ::RDF::Vocab::DC.rights
+  property :rights_statement, predicate: ::RDF::Vocab::EDM.rights
 end

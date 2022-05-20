@@ -35,3 +35,6 @@ terms:
 - id: http://rightsstatements.org/vocab/NKC/1.0/
   term: "No Known Copyright"
   active: true
+- id: https://rightsstatements.org/vocab/fake/1.0/
+  term: "Fake Term for Testing"
+  active: true
