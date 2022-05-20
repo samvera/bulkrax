@@ -98,10 +98,19 @@ module Bulkrax
       self.parsed_metadata['id'] = hyrax_record.id
       self.parsed_metadata[source_identifier] = hyrax_record.send(work_identifier)
       self.parsed_metadata['model'] = hyrax_record.has_model.first
+      build_files unless hyrax_record.is_a?(Collection)
       build_relationship_metadata
       build_mapping_metadata
-      build_files unless hyrax_record.is_a?(Collection)
+
       self.parsed_metadata
+    end
+
+    def build_files
+      file_mapping = mapping['file']&.[]('from')&.first || 'file'
+      file_sets = hyrax_record.file_set? ? Array.wrap(hyrax_record) : hyrax_record.file_sets
+
+      filenames = file_sets.map { |fs| filename(fs).to_s if filename(fs).present? }.compact
+      handle_join_on_export(file_mapping, filenames, mapping['file']&.[]('join')&.present?)
     end
 
     def build_relationship_metadata
@@ -203,14 +212,6 @@ module Bulkrax
           end
         end
       end
-    end
-
-    def build_files
-      file_mapping = mapping['file']&.[]('from')&.first || 'file'
-      file_sets = hyrax_record.file_set? ? Array.wrap(hyrax_record) : hyrax_record.file_sets
-
-      filenames = file_sets.map { |fs| filename(fs).to_s if filename(fs).present? }.compact
-      handle_join_on_export(file_mapping, filenames, mapping['file']&.[]('join')&.present?)
     end
 
     def handle_join_on_export(key, values, join)
