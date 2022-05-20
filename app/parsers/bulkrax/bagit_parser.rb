@@ -25,7 +25,7 @@ module Bulkrax
 
     def file_set_entry_class
       csv_format = Bulkrax::Importer.last.parser_fields['metadata_format'] == "Bulkrax::CsvEntry"
-      csv_format ? CsvFileSetEntry : RdfEntry
+      csv_format ? CsvFileSetEntry : RdfFileSetEntry
     end
 
     # Take a random sample of 10 metadata_paths and work out the import fields from that
