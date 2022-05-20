@@ -93,7 +93,6 @@ module Bulkrax
     end
 
     def build_export_metadata
-      # make_round_trippable
       self.parsed_metadata = {}
       self.parsed_metadata['id'] = hyrax_record.id
       self.parsed_metadata[source_identifier] = hyrax_record.send(work_identifier)
@@ -223,16 +222,6 @@ module Bulkrax
         end
         parsed_metadata.delete(key)
       end
-    end
-
-    # In order for the existing exported hyrax_record, to be updated by a re-import
-    # we need a unique value in system_identifier
-    # add the existing hyrax_record id to system_identifier
-    def make_round_trippable
-      values = hyrax_record.send(work_identifier.to_s).to_a
-      values << hyrax_record.id
-      hyrax_record.send("#{work_identifier}=", values)
-      hyrax_record.save
     end
 
     def record
