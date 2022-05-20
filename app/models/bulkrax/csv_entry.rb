@@ -98,14 +98,14 @@ module Bulkrax
       self.parsed_metadata['id'] = hyrax_record.id
       self.parsed_metadata[source_identifier] = hyrax_record.send(work_identifier)
       self.parsed_metadata['model'] = hyrax_record.has_model.first
-      build_files unless hyrax_record.is_a?(Collection)
+      build_files_metadata unless hyrax_record.is_a?(Collection)
       build_relationship_metadata
       build_mapping_metadata
 
       self.parsed_metadata
     end
 
-    def build_files
+    def build_files_metadata
       file_mapping = mapping['file']&.[]('from')&.first || 'file'
       file_sets = hyrax_record.file_set? ? Array.wrap(hyrax_record) : hyrax_record.file_sets
 
@@ -140,7 +140,7 @@ module Bulkrax
         next if key == "model"
         # relationships handled by #build_relationship_metadata
         next if [related_parents_parsed_mapping, related_children_parsed_mapping].include?(key)
-        next if key == 'file' # handled by #build_files
+        next if key == 'file' # handled by #build_files_metadata
         next if value['excluded']
 
         object_key = key if value.key?('object')
