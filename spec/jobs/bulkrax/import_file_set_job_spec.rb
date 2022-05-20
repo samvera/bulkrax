@@ -55,8 +55,8 @@ module Bulkrax
           it "updates the importer run's counters" do
             expect(importer_run).to receive(:increment!).with(:processed_records).once
             expect(importer_run).to receive(:increment!).with(:processed_file_sets).once
-            expect(importer_run).to receive(:decrement!).with(:enqueued_records).once
-
+            
+            expect(importer_run).not_to receive(:decrement!).with(:enqueued_records)
             expect(importer_run).not_to receive(:increment!).with(:failed_records)
             expect(importer_run).not_to receive(:increment!).with(:failed_file_sets)
 
@@ -169,8 +169,8 @@ module Bulkrax
         it "updates the importer run's counters" do
           expect(importer_run).to receive(:increment!).with(:failed_records).once
           expect(importer_run).to receive(:increment!).with(:failed_file_sets).once
-          expect(importer_run).to receive(:decrement!).with(:enqueued_records).once
-
+          
+          expect(importer_run).not_to receive(:decrement!).with(:enqueued_records)
           expect(importer_run).not_to receive(:increment!).with(:processed_records)
           expect(importer_run).not_to receive(:increment!).with(:processed_file_sets)
 

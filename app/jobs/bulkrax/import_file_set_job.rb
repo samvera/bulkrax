@@ -26,9 +26,9 @@ module Bulkrax
         ImporterRun.find(importer_run_id).increment!(:failed_file_sets)
         # rubocop:enable Rails/SkipsModelValidations
       end
-      ImporterRun.find(importer_run_id).decrement!(:enqueued_records) unless ImporterRun.find(args[1]).enqueued_records <= 0 # rubocop:disable Rails/SkipsModelValidations
+      ImporterRun.find(importer_run_id).decrement!(:enqueued_records) unless ImporterRun.find(importer_run_id).enqueued_records <= 0 # rubocop:disable Rails/SkipsModelValidations
       entry.save!
-      entry.importer.current_run = ImporterRun.find(args[1])
+      entry.importer.current_run = ImporterRun.find(importer_run_id)
       entry.importer.record_status
 
     rescue MissingParentError => e
