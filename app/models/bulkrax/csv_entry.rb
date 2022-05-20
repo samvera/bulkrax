@@ -94,14 +94,19 @@ module Bulkrax
 
     def build_export_metadata
       self.parsed_metadata = {}
-      self.parsed_metadata['id'] = hyrax_record.id
-      self.parsed_metadata[source_identifier] = hyrax_record.send(work_identifier)
-      self.parsed_metadata[key_for_export('model')] = hyrax_record.has_model.first
+      build_system_metadata
       build_files_metadata unless hyrax_record.is_a?(Collection)
       build_relationship_metadata
       build_mapping_metadata
 
       self.parsed_metadata
+    end
+
+    # Metadata required by Bulkrax for round-tripping
+    def build_system_metadata
+      self.parsed_metadata['id'] = hyrax_record.id
+      self.parsed_metadata[source_identifier] = hyrax_record.send(work_identifier)
+      self.parsed_metadata[key_for_export('model')] = hyrax_record.has_model.first
     end
 
     def build_files_metadata
@@ -136,7 +141,7 @@ module Bulkrax
     def build_mapping_metadata
       mapping.each do |key, value|
         next if Bulkrax.reserved_properties.include?(key) && !field_supported?(key)
-        next if key == "model"
+        next if key == 'model' # handled by #build_system_metadata
         # relationships handled by #build_relationship_metadata
         next if [related_parents_parsed_mapping, related_children_parsed_mapping].include?(key)
         next if key == 'file' # handled by #build_files_metadata
