@@ -36,9 +36,7 @@ module Bulkrax
       entry.import_attempts += 1
       entry.save!
       if entry.import_attempts < 5
-        ImportFileSetJob
-          .set(wait: (entry.import_attempts + 1).minutes)
-          .perform_later(entry_id, importer_run_id)
+        ImportFileSetJob.set(wait: (entry.import_attempts + 1).minutes).perform_later(entry_id, importer_run_id)
       else
         ImporterRun.find(importer_run_id).decrement!(:enqueued_records) # rubocop:disable Rails/SkipsModelValidations
         entry.status_info(e)
