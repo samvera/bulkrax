@@ -57,7 +57,7 @@ module Bulkrax
       end
       # Remove extention truncate and reattach
       ext=File.extname(filename)
-      filename = "#{File.basename(filename, ext)[0...(255-ext.length)]}#{ext}"
+      "#{File.basename(filename, ext)[0...(255-ext.length)]}#{ext}"
     end
   end
 end
