@@ -46,18 +46,16 @@ module Bulkrax
       end
 
       if (child_records[:collections].blank? && child_records[:works].blank?) || parent_record.blank?
-        reschedule(
-          parent_identifier: parent_identifier,
-          importer_run_id: importer_run_id
-        )
+        reschedule({ parent_identifier: parent_identifier, importer_run_id: importer_run_id })
         return false # stop current job from continuing to run after rescheduling
       end
-
+      importer_id = ImporterRun.find(importer_run_id).importer_id
       @parent_entry ||= Bulkrax::Entry.where(identifier: parent_identifier,
-                                             importerexporter_id: ImporterRun.find(importer_run_id).importer_id,
+                                             importerexporter_id: importer_id,
                                              importerexporter_type: "Bulkrax::Importer").first
       create_relationships
       pending_relationships.each(&:destroy)
+      Bulkrax::Importer.find(importer_id).record_status
     rescue ::StandardError => e
       parent_entry ? parent_entry.status_info(e) : child_entry.status_info(e)
       Bulkrax::ImporterRun.find(importer_run_id).increment!(:failed_relationships) # rubocop:disable Rails/SkipsModelValidations

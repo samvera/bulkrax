@@ -59,8 +59,8 @@ module Bulkrax
               parent_identifier: parent_entry.identifier,
               importer_run_id: importer.current_run.id
             )
-
-            expect(importer.reload.last_run.processed_relationships).to eq(1)
+            # TODO: current_run.reload doesn't make sense, need to investigate further
+            expect(importer.current_run.reload.processed_relationships).to eq(1)
           end
         end
 
@@ -98,8 +98,8 @@ module Bulkrax
               parent_identifier: parent_record.id,
               importer_run_id: importer.current_run.id
             )
-
-            expect(importer.reload.last_run.processed_relationships).to eq(1)
+            # TODO: current_run.reload doesn't make sense, need to investigate further
+            expect(importer.current_run.reload.processed_relationships).to eq(1)
           end
         end
       end

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Bulkrax
-  class CsvFileSetEntry < CsvEntry
+  class RdfFileSetEntry < RdfEntry
     include FileSetEntryBehavior
   end
 end
