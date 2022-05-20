@@ -142,7 +142,7 @@ module Bulkrax
 
     def import_objects(types_array = nil)
       self.only_updates ||= false
-      types = types_array || %w[work collection file_set relationship]
+      types = types_array || %w[collection work file_set relationship]
       if parser.class == Bulkrax::CsvParser
         parser.create_objects(types)
       else

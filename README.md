@@ -1,7 +1,6 @@
 # Bulkrax
 Bulkrax is a batteries included importer for Samvera applications. It currently includes support for OAI-PMH (DC and Qualified DC) and CSV out of the box. It is also designed to be extensible, allowing you to easily add new importers in to your application or to include them with other gems. Bulkrax provides a full admin interface including creating, editing, scheduling and reviewing imports.
 
-
 ## Installation
 
 ### Install Generator
@@ -9,9 +8,9 @@ Bulkrax is a batteries included importer for Samvera applications. It currently 
 Add this line to your application's Gemfile:
 
 ```ruby
-gem 'bulkrax', '1.0.0'
+gem 'bulkrax'
 # or if using from github
-gem 'bulkrax', git: 'https://github.com/samvera-labs/bulkrax.git'
+gem 'bulkrax', git: 'https://github.com/samvera-labs/bulkrax.git', branch: 'main'
 ```
 
 And then execute:
@@ -27,7 +26,7 @@ If using Sidekiq, set up queues for `import` and `export`.
 Add this line to your application's Gemfile:
 
 ```ruby
-gem 'bulkrax', git: 'https://github.com/samvera-labs/bulkrax.git'
+gem 'bulkrax'
 ```
 
 And then execute:

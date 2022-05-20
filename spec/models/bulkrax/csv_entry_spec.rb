@@ -63,6 +63,128 @@ module Bulkrax
         end
       end
 
+      describe 'importing controlled questioning authority fields' do
+        before do
+          allow(subject).to receive(:raw_metadata).and_return('source_identifier' => 'qa_1', 'title' => 'some title')
+        end
+
+        it 'calls #sanitize_controlled_uri_values!' do
+          expect(subject).to receive(:sanitize_controlled_uri_values!).once
+
+          subject.build_metadata
+        end
+
+        describe 'importing :rights_statement' do
+          context 'when the http/https does not match' do
+            context 'when the authority ID has https' do
+              let(:auth_id) { 'https://rightsstatements.org/vocab/fake/1.0/' }
+
+              before do
+                allow(subject).to receive(:raw_metadata).and_return('rights_statement' => 'http://rightsstatements.org/vocab/fake/1.0/', 'source_identifier' => 'qa_1', 'title' => 'some title')
+              end
+
+              it 'replaces http with https' do
+                subject.build_metadata
+
+                expect(subject.parsed_metadata['rights_statement']).to eq([auth_id])
+              end
+            end
+
+            context 'when the authority ID has http' do
+              let(:auth_id) { 'http://rightsstatements.org/vocab/InC/1.0/' }
+
+              before do
+                allow(subject).to receive(:raw_metadata).and_return('rights_statement' => 'https://rightsstatements.org/vocab/InC/1.0/', 'source_identifier' => 'qa_1', 'title' => 'some title')
+              end
+
+              it 'replaces https with http' do
+                subject.build_metadata
+
+                expect(subject.parsed_metadata['rights_statement']).to eq([auth_id])
+              end
+            end
+          end
+
+          context 'when the value does not have a forward slash at the end' do
+            before do
+              allow(subject).to receive(:raw_metadata).and_return('rights_statement' => 'http://rightsstatements.org/vocab/InC/1.0', 'source_identifier' => 'qa_1', 'title' => 'some title')
+            end
+
+            it 'adds a trailing forward slash' do
+              subject.build_metadata
+
+              expect(subject.parsed_metadata['rights_statement']).to eq(['http://rightsstatements.org/vocab/InC/1.0/'])
+            end
+          end
+
+          context 'when the value does not match an existing, active authority ID' do
+            before do
+              allow(subject).to receive(:raw_metadata).and_return('rights_statement' => 'hello world', 'source_identifier' => 'qa_1', 'title' => 'some title')
+            end
+
+            it 'raises a StandardError' do
+              expect { subject.build_metadata }
+                .to raise_error(StandardError, %("hello world" is not a valid and/or active authority ID for the :rights_statement field))
+            end
+          end
+        end
+
+        describe 'importing :license' do
+          context 'when the http/https does not match' do
+            context 'when the authority ID has https' do
+              let(:auth_id) { 'https://creativecommons.org/licenses/by/4.0/' }
+
+              before do
+                allow(subject).to receive(:raw_metadata).and_return('license' => 'http://creativecommons.org/licenses/by/4.0/', 'source_identifier' => 'qa_1', 'title' => 'some title')
+              end
+
+              it 'replaces http with https' do
+                subject.build_metadata
+
+                expect(subject.parsed_metadata['license']).to eq([auth_id])
+              end
+            end
+
+            context 'when the authority ID has http' do
+              let(:auth_id) { 'http://creativecommons.org/publicdomain/mark/1.0/' }
+
+              before do
+                allow(subject).to receive(:raw_metadata).and_return('license' => 'https://creativecommons.org/publicdomain/mark/1.0/', 'source_identifier' => 'qa_1', 'title' => 'some title')
+              end
+
+              it 'replaces https with http' do
+                subject.build_metadata
+
+                expect(subject.parsed_metadata['license']).to eq([auth_id])
+              end
+            end
+          end
+
+          context 'when the value does not have a forward slash at the end' do
+            before do
+              allow(subject).to receive(:raw_metadata).and_return('license' => 'https://creativecommons.org/licenses/by/4.0', 'source_identifier' => 'qa_1', 'title' => 'some title')
+            end
+
+            it 'adds a trailing forward slash' do
+              subject.build_metadata
+
+              expect(subject.parsed_metadata['license']).to eq(['https://creativecommons.org/licenses/by/4.0/'])
+            end
+          end
+
+          context 'when the value does not match an existing, active authority ID' do
+            before do
+              allow(subject).to receive(:raw_metadata).and_return('license' => 'hello world', 'source_identifier' => 'qa_1', 'title' => 'some title')
+            end
+
+            it 'raises a StandardError' do
+              expect { subject.build_metadata }
+                .to raise_error(StandardError, %("hello world" is not a valid and/or active authority ID for the :license field))
+            end
+          end
+        end
+      end
+
       context 'with parent-child relationships' do
         let(:importer) { FactoryBot.create(:bulkrax_importer_csv, :with_relationships_mappings) }
         let(:required_data) do

@@ -13,13 +13,13 @@ module Bulkrax
                    :related_children_field_mapping,
                    :related_parents_field_mapping,
                    :reserved_properties,
+                   :qa_controlled_properties,
                    :field_mappings,
                    :import_path,
                    :export_path,
                    :removed_image_path,
                    :server_name,
-                   :api_definition,
-                   :removed_image_path
+                   :api_definition
 
     self.parsers = [
       { name: "OAI - Dublin Core", class_name: "Bulkrax::OaiDcParser", partial: "oai_fields" },
@@ -120,6 +120,11 @@ module Bulkrax
       original_url
       relative_path
     ]
+
+    # List of Questioning Authority properties that are controlled via YAML files in
+    # the config/authorities/ directory. For example, the :rights_statement property
+    # is controlled by the active terms in config/authorities/rights_statements.yml
+    self.qa_controlled_properties = %w[rights_statement license]
   end
 
   def self.api_definition
@@ -131,8 +136,6 @@ module Bulkrax
       )
     )
   end
-
-  self.removed_image_path = 'app/assets/images/bulkrax/removed.png'
 
   # this function maps the vars from your app into your engine
   def self.setup
