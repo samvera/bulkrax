@@ -56,8 +56,8 @@ module Bulkrax
         filename = "#{file_set.id}_#{fn}" if mime.to_s == ext_mime.to_s
       end
       # Remove extention truncate and reattach
-      ext=File.extname(filename)
-      "#{File.basename(filename, ext)[0...(255-ext.length)]}#{ext}"
+      ext = File.extname(filename)
+      "#{File.basename(filename, ext)[0...(255 - ext.length)]}#{ext}"
     end
   end
 end
