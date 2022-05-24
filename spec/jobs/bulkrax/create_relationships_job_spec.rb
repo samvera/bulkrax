@@ -18,8 +18,8 @@ module Bulkrax
 
     before do
       allow(::Hyrax.config).to receive(:curation_concerns).and_return([Work])
-      allow(Entry).to receive(:find_by).with({ identifier: child_entry.identifier, importerexporter_type: 'Bulkrax::Importer' }, { importerexporter_id: importer.id }).and_return(child_entry)
-      allow(Entry).to receive(:find_by).with({ identifier: parent_entry.identifier, importerexporter_type: 'Bulkrax::Importer' }, { importerexporter_id: importer.id }).and_return(parent_entry)
+      allow(Entry).to receive(:find_by).with({ identifier: child_entry.identifier, importerexporter_type: 'Bulkrax::Importer', importerexporter_id: importer.id }).and_return(child_entry)
+      allow(Entry).to receive(:find_by).with({ identifier: parent_entry.identifier, importerexporter_type: 'Bulkrax::Importer', importerexporter_id: importer.id }).and_return(parent_entry)
       allow(parent_entry).to receive(:factory).and_return(parent_factory)
       allow(child_entry).to receive(:factory).and_return(child_factory)
     end
