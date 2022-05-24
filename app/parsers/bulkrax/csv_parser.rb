@@ -145,7 +145,6 @@ module Bulkrax
                                        'Bulkrax::Importer',
                                        current_record.to_h)
       if current_record[:delete].present?
-        # TODO: create a "Delete" job for file_sets and collections
         "Bulkrax::Delete#{type.camelize}Job".constantize.send(perform_method, new_entry, current_run)
       else
         "Bulkrax::Import#{type.camelize}Job".constantize.send(perform_method, new_entry.id, current_run.id)
