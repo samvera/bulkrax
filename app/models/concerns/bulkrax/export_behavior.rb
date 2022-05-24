@@ -42,19 +42,22 @@ module Bulkrax
       end
     end
 
-    # Prepend the file_set id to ensure a unique filename
+    # Prepend the file_set id to ensure a unique filename and also one that is not longer than 255 characters
     def filename(file_set)
       return if file_set.original_file.blank?
       fn = file_set.original_file.file_name.first
       mime = Mime::Type.lookup(file_set.original_file.mime_type)
       ext_mime = MIME::Types.of(file_set.original_file.file_name).first
       if fn.include?(file_set.id) || importerexporter.metadata_only?
-        return fn if mime.to_s == ext_mime.to_s
-        return "#{fn}.#{mime.to_sym}"
+        filename = "#{fn}.#{mime.to_sym}"
+        filename = fn if mime.to_s == ext_mime.to_s
       else
-        return "#{file_set.id}_#{fn}" if mime.to_s == ext_mime.to_s
-        return "#{file_set.id}_#{fn}.#{mime.to_sym}"
+        filename = "#{file_set.id}_#{fn}.#{mime.to_sym}"
+        filename = "#{file_set.id}_#{fn}" if mime.to_s == ext_mime.to_s
       end
+      # Remove extention truncate and reattach
+      ext = File.extname(filename)
+      "#{File.basename(filename, ext)[0...(255 - ext.length)]}#{ext}"
     end
   end
 end
