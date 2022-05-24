@@ -49,9 +49,8 @@ module Bulkrax
         reschedule({ parent_identifier: parent_identifier, importer_run_id: importer_run_id })
         return false # stop current job from continuing to run after rescheduling
       end
-      importer_id = ImporterRun.find(importer_run_id).importer_id
       @parent_entry ||= Bulkrax::Entry.where(identifier: parent_identifier,
-                                             importerexporter_id: importer_id,
+                                             importerexporter_id: ImporterRun.find(importer_run_id).importer_id,
                                              importerexporter_type: "Bulkrax::Importer").first
       create_relationships
       pending_relationships.each(&:destroy)
