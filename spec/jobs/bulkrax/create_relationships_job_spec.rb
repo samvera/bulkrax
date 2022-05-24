@@ -18,8 +18,8 @@ module Bulkrax
 
     before do
       allow(::Hyrax.config).to receive(:curation_concerns).and_return([Work])
-      allow(Entry).to receive(:find_by).with({ identifier: child_entry.identifier, importerexporter_type: 'Bulkrax::Importer' }, { importerexporter_id: importer.id }).and_return(child_entry)
-      allow(Entry).to receive(:find_by).with({ identifier: parent_entry.identifier, importerexporter_type: 'Bulkrax::Importer' }, { importerexporter_id: importer.id }).and_return(parent_entry)
+      allow(Entry).to receive(:find_by).with({ identifier: child_entry.identifier, importerexporter_type: 'Bulkrax::Importer', importerexporter_id: importer.id }).and_return(child_entry)
+      allow(Entry).to receive(:find_by).with({ identifier: parent_entry.identifier, importerexporter_type: 'Bulkrax::Importer', importerexporter_id: importer.id }).and_return(parent_entry)
       allow(parent_entry).to receive(:factory).and_return(parent_factory)
       allow(child_entry).to receive(:factory).and_return(child_factory)
     end
@@ -59,8 +59,8 @@ module Bulkrax
               parent_identifier: parent_entry.identifier,
               importer_run_id: importer.current_run.id
             )
-
-            expect(importer.reload.last_run.processed_relationships).to eq(1)
+            # TODO: current_run.reload doesn't make sense, need to investigate further
+            expect(importer.current_run.reload.processed_relationships).to eq(1)
           end
         end
 
@@ -98,8 +98,8 @@ module Bulkrax
               parent_identifier: parent_record.id,
               importer_run_id: importer.current_run.id
             )
-
-            expect(importer.reload.last_run.processed_relationships).to eq(1)
+            # TODO: current_run.reload doesn't make sense, need to investigate further
+            expect(importer.current_run.reload.processed_relationships).to eq(1)
           end
         end
       end
