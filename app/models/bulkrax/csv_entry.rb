@@ -258,7 +258,8 @@ module Bulkrax
     end
 
     def collections_created?
-      collection_identifiers.length == self.collection_ids.length
+      # TODO: look into if this method is still needed after new relationships code
+      true
     end
 
     def find_collection_ids
