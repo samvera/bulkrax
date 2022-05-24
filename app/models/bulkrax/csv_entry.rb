@@ -263,7 +263,7 @@ module Bulkrax
     end
 
     def collections_created?
-      # TODO look into if this method is still needed after new relationships code
+      # TODO: look into if this method is still needed after new relationships code
       true
     end
 
