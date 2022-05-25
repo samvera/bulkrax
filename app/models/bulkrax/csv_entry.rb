@@ -94,6 +94,7 @@ module Bulkrax
 
     def build_export_metadata
       self.parsed_metadata = {}
+
       build_system_metadata
       build_files_metadata unless hyrax_record.is_a?(Collection)
       build_relationship_metadata
@@ -112,8 +113,8 @@ module Bulkrax
     def build_files_metadata
       file_mapping = key_for_export('file')
       file_sets = hyrax_record.file_set? ? Array.wrap(hyrax_record) : hyrax_record.file_sets
-
       filenames = file_sets.map { |fs| filename(fs).to_s if filename(fs).present? }.compact
+
       handle_join_on_export(file_mapping, filenames, mapping['file']&.[]('join')&.present?)
     end
 
@@ -140,12 +141,10 @@ module Bulkrax
 
     def build_mapping_metadata
       mapping.each do |key, value|
-        next if Bulkrax.reserved_properties.include?(key) && !field_supported?(key)
-        next if key == 'model' # handled by #build_system_metadata
-        # relationships handled by #build_relationship_metadata
-        next if [related_parents_parsed_mapping, related_children_parsed_mapping].include?(key)
-        next if key == 'file' # handled by #build_files_metadata
+        # these keys are handled by other methods
+        next if ['model', 'file', related_parents_parsed_mapping, related_children_parsed_mapping].include?(key)
         next if value['excluded']
+        next if Bulkrax.reserved_properties.include?(key) && !field_supported?(key)
 
         object_key = key if value.key?('object')
         next unless hyrax_record.respond_to?(key.to_s) || object_key.present?
