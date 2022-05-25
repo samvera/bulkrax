@@ -109,9 +109,9 @@ module Bulkrax
       require 'socket'
       require 'bagit'
       require 'tempfile'
-      importerexporter.entries.where(identifier: current_work_ids)[0..limit || total].each do |e|
-        bag = BagIt::Bag.new setup_bagit_folder(e.identifier)
-        w = ActiveFedora::Base.find(e.identifier)
+      importerexporter.entries.where(source_identifier: current_work_ids)[0..limit || total].each do |e|
+        bag = BagIt::Bag.new setup_bagit_folder(e.source_identifier)
+        w = ActiveFedora::Base.find(e.source_identifier)
         w.file_sets.each do |fs|
           file_name = filename(fs)
           next if file_name.blank?
@@ -121,7 +121,7 @@ module Bulkrax
           file.close
           bag.add_file(file_name, file.path)
         end
-        CSV.open(setup_csv_metadata_export_file(e.identifier), "w", headers: export_headers, write_headers: true) do |csv|
+        CSV.open(setup_csv_metadata_export_file(e.source_identifier), "w", headers: export_headers, write_headers: true) do |csv|
           csv << e.parsed_metadata
         end
         write_triples(e)
@@ -138,12 +138,12 @@ module Bulkrax
     end
 
     def write_triples(e)
-      sd = SolrDocument.find(e.identifier)
+      sd = SolrDocument.find(e.source_identifier)
       return if sd.nil?
 
       req = ActionDispatch::Request.new({'HTTP_HOST' => Socket.gethostname})
       rdf = Hyrax::GraphExporter.new(sd, req).fetch.dump(:ntriples)
-      File.open(setup_triple_metadata_export_file(e.identifier), "w") do |triples|
+      File.open(setup_triple_metadata_export_file(e.source_identifier), "w") do |triples|
         triples.write(rdf)
       end
     end
