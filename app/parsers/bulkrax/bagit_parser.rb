@@ -104,6 +104,50 @@ module Bulkrax
       metadata_paths.count
     end
 
+    def write_files
+      require 'open-uri'
+      require 'socket'
+      require 'bagit'
+      require 'tempfile'
+      importerexporter.entries.where(identifier: current_work_ids)[0..limit || total].each do |e|
+        bag = BagIt::Bag.new setup_bagit_folder(e.identifier)
+        w = ActiveFedora::Base.find(e.identifier)
+        w.file_sets.each do |fs|
+          file_name = filename(fs)
+          next if file_name.blank?
+          io = open(fs.original_file.uri)
+          file = Tempfile.new([file_name, File.extname(file_name)], binmode: true)
+          file.write(io.read)
+          file.close
+          bag.add_file(file_name, file.path)
+        end
+        CSV.open(setup_csv_metadata_export_file(e.identifier), "w", headers: export_headers, write_headers: true) do |csv|
+          csv << e.parsed_metadata
+        end
+        write_triples(e)
+        bag.manifest!(algo: 'sha256')
+      end
+    end
+
+    def setup_bagit_folder(id)
+      File.join(importerexporter.exporter_export_path, id)
+    end
+
+    def setup_csv_metadata_export_file(id)
+      File.join(importerexporter.exporter_export_path, id, 'metadata.csv')
+    end
+
+    def write_triples(e)
+      sd = SolrDocument.find(e.identifier)
+      return if sd.nil?
+
+      req = ActionDispatch::Request.new({'HTTP_HOST' => Socket.gethostname})
+      rdf = Hyrax::GraphExporter.new(sd, req).fetch.dump(:ntriples)
+      File.open(setup_triple_metadata_export_file(e.identifier), "w") do |triples|
+        triples.write(rdf)
+      end
+    end
+
     def required_elements?(keys)
       return if keys.blank?
       !required_elements.map { |el| keys.map(&:to_s).include?(el) }.include?(false)
