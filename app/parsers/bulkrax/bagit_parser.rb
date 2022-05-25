@@ -3,7 +3,7 @@
 module Bulkrax
   class BagitParser < ApplicationParser
     def self.export_supported?
-      false # @todo will be supported
+      true
     end
 
     def valid_import?
@@ -14,18 +14,19 @@ module Bulkrax
     end
 
     def entry_class
-      parser_fields['metadata_format'].constantize
+      byebug
+      csv_format = parser_fields&.[]('metadata_format') == "Bulkrax::RdfEntry"
+      csv_format ? RdfEntry : CsvEntry
     end
 
     def collection_entry_class
-      parser_fields['metadata_format'].gsub('Entry', 'CollectionEntry').constantize
-    rescue
-      Entry
+      csv_format = parser_fields&.[]('metadata_format') == "Bulkrax::RdfEntry"
+      csv_format ? RdfCollectionEntry : CsvCollectionEntry
     end
 
     def file_set_entry_class
-      csv_format = Bulkrax::Importer.last.parser_fields['metadata_format'] == "Bulkrax::CsvEntry"
-      csv_format ? CsvFileSetEntry : RdfFileSetEntry
+      csv_format = parser_fields&.[]('metadata_format') == "Bulkrax::RdfEntry"
+      csv_format ? RdfFileSetEntry : CsvFileSetEntry
     end
 
     # Take a random sample of 10 metadata_paths and work out the import fields from that
@@ -104,11 +105,58 @@ module Bulkrax
       metadata_paths.count
     end
 
+    def extra_filters
+      output = ""
+      if importerexporter.start_date.present?
+        start_dt = importerexporter.start_date.to_datetime.strftime('%FT%TZ')
+        finish_dt = importerexporter.finish_date.present? ? importerexporter.finish_date.to_datetime.end_of_day.strftime('%FT%TZ') : "NOW"
+        output += " AND system_modified_dtsi:[#{start_dt} TO #{finish_dt}]"
+      end
+      output += importerexporter.work_visibility.present? ? " AND visibility_ssi:#{importerexporter.work_visibility}" : ""
+      output += importerexporter.workflow_status.present? ? " AND workflow_state_name_ssim:#{importerexporter.workflow_status}" : ""
+      output
+    end
+
+    def current_work_ids
+      case importerexporter.export_from
+      when 'collection'
+        ActiveFedora::SolrService.query("member_of_collection_ids_ssim:#{importerexporter.export_source + extra_filters}", rows: 2_000_000_000).map(&:id)
+      when 'worktype'
+        ActiveFedora::SolrService.query("has_model_ssim:#{importerexporter.export_source + extra_filters}", rows: 2_000_000_000).map(&:id)
+      when 'importer'
+        entry_ids = Bulkrax::Importer.find(importerexporter.export_source).entries.pluck(:id)
+        complete_statuses = Bulkrax::Status.latest_by_statusable
+                                .includes(:statusable)
+                                .where('bulkrax_statuses.statusable_id IN (?) AND bulkrax_statuses.statusable_type = ? AND status_message = ?', entry_ids, 'Bulkrax::Entry', 'Complete')
+        complete_entry_identifiers = complete_statuses.map { |s| s.statusable&.identifier&.gsub(':', '\:') }
+        extra_filters = extra_filters.presence || '*:*'
+        resp = ActiveFedora::SolrService.get(
+          extra_filters.to_s,
+          fq: "#{work_identifier}_sim:(#{complete_entry_identifiers.join(' OR ')})",
+          fl: 'id',
+          rows: 2_000_000_000
+        )['response']['docs']
+        resp.map { |obj| obj['id'] }
+      end
+    end
+
+    def create_new_entries
+      current_work_ids.each_with_index do |wid, index|
+        break if limit_reached?(limit, index)
+        new_entry = find_or_create_entry(entry_class, wid, 'Bulkrax::Exporter')
+        Bulkrax::ExportWorkJob.perform_now(new_entry.id, current_run.id)
+      end
+    end
+    alias create_from_collection create_new_entries
+    alias create_from_importer create_new_entries
+    alias create_from_worktype create_new_entries
+    alias create_from_all create_new_entries
+
     def write_files
       require 'open-uri'
       require 'socket'
-      require 'bagit'
-      require 'tempfile'
+      require 'bagit' # TODO: check if needed here?
+      require 'tempfile' # TODO: check if needed here?
       importerexporter.entries.where(source_identifier: current_work_ids)[0..limit || total].each do |e|
         bag = BagIt::Bag.new setup_bagit_folder(e.source_identifier)
         w = ActiveFedora::Base.find(e.source_identifier)
