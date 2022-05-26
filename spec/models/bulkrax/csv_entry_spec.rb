@@ -888,7 +888,7 @@ module Bulkrax
       end
     end
 
-    describe '#build_files' do
+    describe '#build_files_metadata' do
       subject(:entry) { described_class.new(importerexporter: exporter) }
       let(:exporter) { create(:bulkrax_exporter, :with_relationships_mappings) }
 
@@ -914,7 +914,7 @@ module Bulkrax
         end
 
         it 'does not get called by #build_export_metadata' do
-          expect(entry).not_to receive(:build_files)
+          expect(entry).not_to receive(:build_files_metadata)
           entry.build_export_metadata
         end
       end
@@ -935,7 +935,7 @@ module Bulkrax
         end
 
         it 'gets called by #build_export_metadata' do
-          expect(entry).to receive(:build_files).once
+          expect(entry).to receive(:build_files_metadata).once
           entry.build_export_metadata
         end
 
@@ -944,7 +944,7 @@ module Bulkrax
             let(:exporter) { create(:bulkrax_exporter, field_mapping: { 'file' => { from: ['filename'], join: true } }) }
 
             it "adds the file set's filename to the file mapping in parsed_metadata" do
-              entry.build_files
+              entry.build_files_metadata
 
               expect(entry.parsed_metadata['filename']).to eq('hello.png')
             end
@@ -953,7 +953,7 @@ module Bulkrax
 
         context 'when the parser does not have a file field mapping' do
           it "adds the file set's filename to the 'file' key in parsed_metadata" do
-            entry.build_files
+            entry.build_files_metadata
 
             expect(entry.parsed_metadata['file_1']).to eq('hello.png')
           end
@@ -995,7 +995,7 @@ module Bulkrax
         end
 
         it 'gets called by #build_export_metadata' do
-          expect(entry).to receive(:build_files).once
+          expect(entry).to receive(:build_files_metadata).once
           entry.build_export_metadata
         end
 
@@ -1004,7 +1004,7 @@ module Bulkrax
             let(:exporter) { create(:bulkrax_exporter, field_mapping: { 'file' => { from: ['filename'], join: true } }) }
 
             it "adds the work's file set's filenames to the file mapping in parsed_metadata" do
-              entry.build_files
+              entry.build_files_metadata
 
               expect(entry.parsed_metadata['filename']).to eq('hello.png | world.jpg')
             end
@@ -1013,7 +1013,7 @@ module Bulkrax
 
         context 'when the parser does not have a file field mapping' do
           it "adds the work's file set's filenames to the 'file' key in parsed_metadata" do
-            entry.build_files
+            entry.build_files_metadata
 
             expect(entry.parsed_metadata['file_1']).to eq('hello.png')
             expect(entry.parsed_metadata['file_2']).to eq('world.jpg')

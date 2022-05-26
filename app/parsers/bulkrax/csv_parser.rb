@@ -11,12 +11,15 @@ module Bulkrax
     end
 
     def records(_opts = {})
+      return @records if @records.present?
+
       file_for_import = only_updates ? parser_fields['partial_import_file_path'] : import_file_path
       # data for entry does not need source_identifier for csv, because csvs are read sequentially and mapped after raw data is read.
       csv_data = entry_class.read_data(file_for_import)
       importer.parser_fields['total'] = csv_data.count
       importer.save
-      @records ||= csv_data.map { |record_data| entry_class.data_for_entry(record_data, nil, self) }
+
+      @records = csv_data.map { |record_data| entry_class.data_for_entry(record_data, nil, self) }
     end
 
     def build_records
@@ -145,7 +148,6 @@ module Bulkrax
                                        'Bulkrax::Importer',
                                        current_record.to_h)
       if current_record[:delete].present?
-        # TODO: create a "Delete" job for file_sets and collections
         "Bulkrax::Delete#{type.camelize}Job".constantize.send(perform_method, new_entry, current_run)
       else
         "Bulkrax::Import#{type.camelize}Job".constantize.send(perform_method, new_entry.id, current_run.id)
@@ -217,7 +219,7 @@ module Bulkrax
         instance_variable_set(instance_var, ActiveFedora::SolrService.post(
           extra_filters.to_s,
           fq: [
-            "#{::Solrizer.solr_name(work_identifier)}:(#{complete_entry_identifiers.join(' OR ')})",
+            %(#{::Solrizer.solr_name(work_identifier)}:("#{complete_entry_identifiers.join('" OR "')}")),
             "has_model_ssim:(#{models_to_search.join(' OR ')})"
           ],
           fl: 'id',

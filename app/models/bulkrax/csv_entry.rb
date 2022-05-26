@@ -93,15 +93,29 @@ module Bulkrax
     end
 
     def build_export_metadata
-      # make_round_trippable
       self.parsed_metadata = {}
-      self.parsed_metadata['id'] = hyrax_record.id
-      self.parsed_metadata[source_identifier] = hyrax_record.send(work_identifier)
-      self.parsed_metadata['model'] = hyrax_record.has_model.first
+
+      build_system_metadata
+      build_files_metadata unless hyrax_record.is_a?(Collection)
       build_relationship_metadata
       build_mapping_metadata
-      build_files unless hyrax_record.is_a?(Collection)
+
       self.parsed_metadata
+    end
+
+    # Metadata required by Bulkrax for round-tripping
+    def build_system_metadata
+      self.parsed_metadata['id'] = hyrax_record.id
+      self.parsed_metadata[source_identifier] = hyrax_record.send(work_identifier)
+      self.parsed_metadata[key_for_export('model')] = hyrax_record.has_model.first
+    end
+
+    def build_files_metadata
+      file_mapping = key_for_export('file')
+      file_sets = hyrax_record.file_set? ? Array.wrap(hyrax_record) : hyrax_record.file_sets
+      filenames = file_sets.map { |fs| filename(fs).to_s if filename(fs).present? }.compact
+
+      handle_join_on_export(file_mapping, filenames, mapping['file']&.[]('join')&.present?)
     end
 
     def build_relationship_metadata
@@ -127,12 +141,10 @@ module Bulkrax
 
     def build_mapping_metadata
       mapping.each do |key, value|
-        next if Bulkrax.reserved_properties.include?(key) && !field_supported?(key)
-        next if key == "model"
-        # relationships handled by #build_relationship_metadata
-        next if [related_parents_parsed_mapping, related_children_parsed_mapping].include?(key)
-        next if key == 'file' # handled by #build_files
+        # these keys are handled by other methods
+        next if ['model', 'file', related_parents_parsed_mapping, related_children_parsed_mapping].include?(key)
         next if value['excluded']
+        next if Bulkrax.reserved_properties.include?(key) && !field_supported?(key)
 
         object_key = key if value.key?('object')
         next unless hyrax_record.respond_to?(key.to_s) || object_key.present?
@@ -205,14 +217,6 @@ module Bulkrax
       end
     end
 
-    def build_files
-      file_mapping = mapping['file']&.[]('from')&.first || 'file'
-      file_sets = hyrax_record.file_set? ? Array.wrap(hyrax_record) : hyrax_record.file_sets
-
-      filenames = file_sets.map { |fs| filename(fs).to_s if filename(fs).present? }.compact
-      handle_join_on_export(file_mapping, filenames, mapping['file']&.[]('join')&.present?)
-    end
-
     def handle_join_on_export(key, values, join)
       if join
         parsed_metadata[key] = values.join(' | ') # TODO: make split char dynamic
@@ -222,16 +226,6 @@ module Bulkrax
         end
         parsed_metadata.delete(key)
       end
-    end
-
-    # In order for the existing exported hyrax_record, to be updated by a re-import
-    # we need a unique value in system_identifier
-    # add the existing hyrax_record id to system_identifier
-    def make_round_trippable
-      values = hyrax_record.send(work_identifier.to_s).to_a
-      values << hyrax_record.id
-      hyrax_record.send("#{work_identifier}=", values)
-      hyrax_record.save
     end
 
     def record
@@ -263,7 +257,8 @@ module Bulkrax
     end
 
     def collections_created?
-      collection_identifiers.length == self.collection_ids.length
+      # TODO: look into if this method is still needed after new relationships code
+      true
     end
 
     def find_collection_ids
