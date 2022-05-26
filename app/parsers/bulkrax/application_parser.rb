@@ -272,7 +272,6 @@ module Bulkrax
 
     def real_import_file_path
       return importer_unzip_path if file? && zip?
-      byebug
       parser_fields['import_file_path']
     end
   end

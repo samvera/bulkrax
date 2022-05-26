@@ -14,7 +14,6 @@ module Bulkrax
     end
 
     def entry_class
-      byebug
       csv_format = parser_fields&.[]('metadata_format') == "Bulkrax::RdfEntry"
       csv_format ? RdfEntry : CsvEntry
     end
@@ -102,7 +101,7 @@ module Bulkrax
     end
 
     def total
-      metadata_paths.count
+      importerexporter.entries.count
     end
 
     def extra_filters
@@ -119,6 +118,7 @@ module Bulkrax
 
     def current_work_ids
       case importerexporter.export_from
+      # TODO: handle 'all' case
       when 'collection'
         ActiveFedora::SolrService.query("member_of_collection_ids_ssim:#{importerexporter.export_source + extra_filters}", rows: 2_000_000_000).map(&:id)
       when 'worktype'
@@ -183,6 +183,16 @@ module Bulkrax
 
     def setup_csv_metadata_export_file(id)
       File.join(importerexporter.exporter_export_path, id, 'metadata.csv')
+    end
+
+    def export_headers
+      headers = ['id']
+      headers << source_identifier.to_s
+      headers << 'model'
+      headers << 'collections'
+      importerexporter.mapping.each_key { |key| headers << key if key_allowed(key) }
+      headers << 'file'
+      headers.uniq
     end
 
     def write_triples(e)
