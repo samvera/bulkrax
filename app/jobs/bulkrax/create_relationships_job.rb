@@ -46,13 +46,9 @@ module Bulkrax
       end
 
       if (child_records[:collections].blank? && child_records[:works].blank?) || parent_record.blank?
-        reschedule(
-          parent_identifier: parent_identifier,
-          importer_run_id: importer_run_id
-        )
+        reschedule({ parent_identifier: parent_identifier, importer_run_id: importer_run_id })
         return false # stop current job from continuing to run after rescheduling
       end
-
       @parent_entry ||= Bulkrax::Entry.where(identifier: parent_identifier,
                                              importerexporter_id: ImporterRun.find(importer_run_id).importer_id,
                                              importerexporter_type: "Bulkrax::Importer").first

@@ -12,7 +12,7 @@ module Bulkrax
       # check for our entry in our current importer first
       importer_id = ImporterRun.find(importer_run_id).importer_id
       default_scope = { identifier: identifier, importerexporter_type: 'Bulkrax::Importer' }
-      record = Entry.find_by(default_scope, importerexporter_id: importer_id) || Entry.find_by(default_scope)
+      record = Entry.find_by(default_scope.merge({ importerexporter_id: importer_id })) || Entry.find_by(default_scope)
 
       # TODO(alishaevn): discuss whether we are only looking for Collection models here
       # use ActiveFedora::Base.find(identifier) instead?
