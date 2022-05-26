@@ -116,35 +116,76 @@ module Bulkrax
       output
     end
 
-    def current_work_ids
+    # def current_work_ids
+    #   ActiveSupport::Deprication.warn('Bulkrax::CsvParser#current_work_ids will be replaced with #current_record_ids in version 3.0')
+    #   current_record_ids
+    # end
+
+    def current_record_ids
+      @work_ids = []
+      @collection_ids = []
+      @file_set_ids = []
+
       case importerexporter.export_from
-      # TODO: handle 'all' case
+      when 'all'
+        @work_ids = ActiveFedora::SolrService.query("has_model_ssim:(#{Hyrax.config.curation_concerns.join(' OR ')}) #{extra_filters}", method: :post, rows: 2_147_483_647).map(&:id)
+        @collection_ids = ActiveFedora::SolrService.query("has_model_ssim:Collection #{extra_filters}", method: :post, rows: 2_147_483_647).map(&:id)
+        @file_set_ids = ActiveFedora::SolrService.query("has_model_ssim:FileSet #{extra_filters}", method: :post, rows: 2_147_483_647).map(&:id)
       when 'collection'
-        ActiveFedora::SolrService.query("member_of_collection_ids_ssim:#{importerexporter.export_source + extra_filters}", rows: 2_000_000_000).map(&:id)
+        @work_ids = ActiveFedora::SolrService.query("member_of_collection_ids_ssim:#{importerexporter.export_source + extra_filters}", method: :post, rows: 2_000_000_000).map(&:id)
       when 'worktype'
-        ActiveFedora::SolrService.query("has_model_ssim:#{importerexporter.export_source + extra_filters}", rows: 2_000_000_000).map(&:id)
+        @work_ids = ActiveFedora::SolrService.query("has_model_ssim:#{importerexporter.export_source + extra_filters}", method: :post, rows: 2_000_000_000).map(&:id)
       when 'importer'
-        entry_ids = Bulkrax::Importer.find(importerexporter.export_source).entries.pluck(:id)
-        complete_statuses = Bulkrax::Status.latest_by_statusable
+        set_ids_for_exporting_from_importer
+      end
+
+      @work_ids + @collection_ids + @file_set_ids
+    end
+
+    # Set the following instance variables: @work_ids, @collection_ids, @file_set_ids
+    # @see #current_record_ids
+    def set_ids_for_exporting_from_importer
+      entry_ids = Importer.find(importerexporter.export_source).entries.pluck(:id)
+      complete_statuses = Status.latest_by_statusable
                                 .includes(:statusable)
                                 .where('bulkrax_statuses.statusable_id IN (?) AND bulkrax_statuses.statusable_type = ? AND status_message = ?', entry_ids, 'Bulkrax::Entry', 'Complete')
-        complete_entry_identifiers = complete_statuses.map { |s| s.statusable&.identifier&.gsub(':', '\:') }
-        extra_filters = extra_filters.presence || '*:*'
-        resp = ActiveFedora::SolrService.get(
+
+      complete_entry_identifiers = complete_statuses.map { |s| s.statusable&.source_identifier&.gsub(':', '\:') }
+      extra_filters = extra_filters.presence || '*:*'
+
+      { :@work_ids => ::Hyrax.config.curation_concerns, :@collection_ids => [::Collection], :@file_set_ids => [::FileSet] }.each do |instance_var, models_to_search|
+        instance_variable_set(instance_var, ActiveFedora::SolrService.post(
           extra_filters.to_s,
-          fq: "#{work_identifier}_sim:(#{complete_entry_identifiers.join(' OR ')})",
+          fq: [
+            %(#{::Solrizer.solr_name(work_identifier)}:("#{complete_entry_identifiers.join('" OR "')}")),
+            "has_model_ssim:(#{models_to_search.join(' OR ')})"
+          ],
           fl: 'id',
           rows: 2_000_000_000
-        )['response']['docs']
-        resp.map { |obj| obj['id'] }
+        )['response']['docs'].map { |obj| obj['id'] })
       end
     end
 
     def create_new_entries
-      current_work_ids.each_with_index do |wid, index|
+      current_record_ids.each_with_index do |id, index|
         break if limit_reached?(limit, index)
-        new_entry = find_or_create_entry(entry_class, wid, 'Bulkrax::Exporter')
-        Bulkrax::ExportWorkJob.perform_now(new_entry.id, current_run.id)
+
+        this_entry_class = if @collection_ids.include?(id)
+                             collection_entry_class
+                           elsif @file_set_ids.include?(id)
+                             file_set_entry_class
+                           else
+                             entry_class
+                           end
+        new_entry = find_or_create_entry(this_entry_class, id, 'Bulkrax::Exporter')
+
+        begin
+          entry = ExportWorkJob.perform_now(new_entry.id, current_run.id)
+        rescue => e
+          Rails.logger.info("#{e.message} was detected during export")
+        end
+
+        self.headers |= entry.parsed_metadata.keys if entry
       end
     end
     alias create_from_collection create_new_entries
@@ -157,9 +198,9 @@ module Bulkrax
       require 'socket'
       require 'bagit' # TODO: check if needed here?
       require 'tempfile' # TODO: check if needed here?
-      importerexporter.entries.where(source_identifier: current_work_ids)[0..limit || total].each do |e|
-        bag = BagIt::Bag.new setup_bagit_folder(e.source_identifier)
-        w = ActiveFedora::Base.find(e.source_identifier)
+      importerexporter.entries.where(identifier: current_record_ids)[0..limit || total].each do |e|
+        bag = BagIt::Bag.new setup_bagit_folder(e.identifier)
+        w = ActiveFedora::Base.find(e.identifier)
         w.file_sets.each do |fs|
           file_name = filename(fs)
           next if file_name.blank?
@@ -169,7 +210,7 @@ module Bulkrax
           file.close
           bag.add_file(file_name, file.path)
         end
-        CSV.open(setup_csv_metadata_export_file(e.source_identifier), "w", headers: export_headers, write_headers: true) do |csv|
+        CSV.open(setup_csv_metadata_export_file(e.identifier), "w", headers: export_headers, write_headers: true) do |csv|
           csv << e.parsed_metadata
         end
         write_triples(e)
@@ -177,12 +218,14 @@ module Bulkrax
       end
     end
 
-    def setup_bagit_folder(id)
-      File.join(importerexporter.exporter_export_path, id)
-    end
-
     def setup_csv_metadata_export_file(id)
       File.join(importerexporter.exporter_export_path, id, 'metadata.csv')
+    end
+
+    def key_allowed(key)
+      !Bulkrax.reserved_properties.include?(key) &&
+          new_entry(entry_class, 'Bulkrax::Exporter').field_supported?(key) &&
+          key != source_identifier.to_s
     end
 
     def export_headers
@@ -195,13 +238,21 @@ module Bulkrax
       headers.uniq
     end
 
+    def setup_triple_metadata_export_file(id)
+      File.join(importerexporter.exporter_export_path, id, 'metadata.nt')
+    end
+
+    def setup_bagit_folder(id)
+      File.join(importerexporter.exporter_export_path, id)
+    end
+
     def write_triples(e)
-      sd = SolrDocument.find(e.source_identifier)
+      sd = SolrDocument.find(e.identifier)
       return if sd.nil?
 
       req = ActionDispatch::Request.new({'HTTP_HOST' => Socket.gethostname})
       rdf = Hyrax::GraphExporter.new(sd, req).fetch.dump(:ntriples)
-      File.open(setup_triple_metadata_export_file(e.source_identifier), "w") do |triples|
+      File.open(setup_triple_metadata_export_file(e.identifier), "w") do |triples|
         triples.write(rdf)
       end
     end
