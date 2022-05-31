@@ -16,19 +16,11 @@ module Bulkrax
     end
 
     def entry_class
-      csv_format = parser_fields&.[]('metadata_format') == "Bulkrax::RdfEntry"
-      csv_format ? RdfEntry : CsvEntry
+      rdf_format = parser_fields&.[]('metadata_format') == "Bulkrax::RdfEntry"
+      rdf_format ? RdfEntry : CsvEntry
     end
-
-    def collection_entry_class
-      csv_format = parser_fields&.[]('metadata_format') == "Bulkrax::RdfEntry"
-      csv_format ? RdfCollectionEntry : CsvCollectionEntry
-    end
-
-    def file_set_entry_class
-      csv_format = parser_fields&.[]('metadata_format') == "Bulkrax::RdfEntry"
-      csv_format ? RdfFileSetEntry : CsvFileSetEntry
-    end
+    alias collection_entry_class entry_class
+    alias file_set_entry_class entry_class
 
     # Take a random sample of 10 metadata_paths and work out the import fields from that
     def import_fields
@@ -210,7 +202,7 @@ module Bulkrax
           file = Tempfile.new([file_name, File.extname(file_name)], binmode: true)
           file.write(io.read)
           file.close
-          bag.add_file(file_name, file.path)
+          bag.add_file(file_name, file.path) unless bag.bag_files.select { |b| b.include?(file_name) }.present?
         end
         CSV.open(setup_csv_metadata_export_file(e.identifier), "w", headers: export_headers, write_headers: true) do |csv|
           csv << e.parsed_metadata
@@ -230,14 +222,40 @@ module Bulkrax
           key != source_identifier.to_s
     end
 
+    # All possible column names
     def export_headers
-      headers = ['id']
-      headers << source_identifier.to_s
-      headers << 'model'
-      headers << 'collections'
-      importerexporter.mapping.each_key { |key| headers << key if key_allowed(key) }
-      headers << 'file'
+      headers = sort_headers(self.headers)
+
+      # we don't want access_control_id exported and we want file at the end
+      headers.delete('access_control_id') if headers.include?('access_control_id')
+
+      # add the headers below at the beginning or end to maintain the preexisting export behavior
+      headers.prepend('model')
+      headers.prepend(source_identifier.to_s)
+      headers.prepend('id')
+
       headers.uniq
+    end
+
+    def object_names
+      return @object_names if @object_names
+
+      @object_names = mapping.values.map { |value| value['object'] }
+      @object_names.uniq!.delete(nil)
+
+      @object_names
+    end
+
+    def sort_headers(headers)
+      # converting headers like creator_name_1 to creator_1_name so they get sorted by numerical order
+      # while keeping objects grouped together
+      headers.sort_by do |item|
+        number = item.match(/\d+/)&.[](0) || 0.to_s
+        sort_number = number.rjust(4, "0")
+        object_prefix = object_names.detect { |o| item.match(/^#{o}/) } || item
+        remainder = item.gsub(/^#{object_prefix}_/, '').gsub(/_#{number}/, '')
+        "#{object_prefix}_#{sort_number}_#{remainder}"
+      end
     end
 
     def setup_triple_metadata_export_file(id)

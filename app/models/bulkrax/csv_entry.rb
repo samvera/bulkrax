@@ -101,6 +101,7 @@ module Bulkrax
       build_mapping_metadata
 
       self.parsed_metadata
+      self.save!
     end
 
     # Metadata required by Bulkrax for round-tripping
