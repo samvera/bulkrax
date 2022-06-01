@@ -51,6 +51,10 @@ module Bulkrax
       @work_identifier ||= get_field_mapping_hash_for('source_identifier')&.keys&.first&.to_sym || :source
     end
 
+    def generated_metadata_mapping
+      @generated_metadata_mapping ||= 'generated'
+    end
+
     def related_parents_raw_mapping
       @related_parents_raw_mapping ||= get_field_mapping_hash_for('related_parents_field_mapping')&.values&.first&.[]('from')&.first
     end

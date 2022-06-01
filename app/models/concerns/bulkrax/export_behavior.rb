@@ -28,6 +28,7 @@ module Bulkrax
       return if hyrax_record.is_a?(Collection)
 
       file_sets = hyrax_record.file_set? ? Array.wrap(hyrax_record) : hyrax_record.file_sets
+      file_sets << hyrax_record.thumbnail if hyrax_record.thumbnail.present? && hyrax_record.work? && exporter.include_thumbnails
       file_sets.each do |fs|
         path = File.join(exporter_export_path, 'files')
         FileUtils.mkdir_p(path)

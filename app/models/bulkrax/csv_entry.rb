@@ -140,6 +140,7 @@ module Bulkrax
     end
 
     def build_mapping_metadata
+      mapping = fetch_field_mapping
       mapping.each do |key, value|
         # these keys are handled by other methods
         next if ['model', 'file', related_parents_parsed_mapping, related_children_parsed_mapping].include?(key)
@@ -217,6 +218,25 @@ module Bulkrax
       end
     end
 
+    def build_files
+      file_mapping = mapping['file']&.[]('from')&.first || 'file'
+      file_sets = hyrax_record.file_set? ? Array.wrap(hyrax_record) : hyrax_record.file_sets
+
+      filenames = map_file_sets(file_sets)
+      handle_join_on_export(file_mapping, filenames, mapping['file']&.[]('join')&.present?)
+      build_thumbnail_files if hyrax_record.work?
+    end
+
+    def build_thumbnail_files
+      return unless importerexporter.include_thumbnails
+
+      thumbnail_mapping = 'thumbnail_file'
+      file_sets = Array.wrap(hyrax_record.thumbnail)
+
+      filenames = map_file_sets(file_sets)
+      handle_join_on_export(thumbnail_mapping, filenames, false)
+    end
+
     def handle_join_on_export(key, values, join)
       if join
         parsed_metadata[key] = values.join(' | ') # TODO: make split char dynamic
@@ -252,7 +272,6 @@ module Bulkrax
         raise ::StandardError, 'Only expected to find one matching entry' if matching_collection_entries.count > 1
         identifiers << matching_collection_entries.first&.identifier
       end
-
       @collection_identifiers = identifiers.compact.presence || []
     end
 
@@ -282,6 +301,12 @@ module Bulkrax
       f = File.join(path, file)
       return f if File.exist?(f)
       raise "File #{f} does not exist"
+    end
+
+    private
+
+    def map_file_sets(file_sets)
+      file_sets.map { |fs| filename(fs).to_s if filename(fs).present? }.compact
     end
   end
 end

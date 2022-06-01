@@ -16,6 +16,8 @@ en:
         filter_by_date: Filter By Date
         finish_date: End Date
         full: Metadata and Files
+        include_thumbnails: Include Thumbnails?
+        generated_metadata: Include Generated Metadata?
         importer: Importer
         limit: Limit
         metadata: Metadata Only
@@ -35,3 +37,6 @@ en:
           ingested: "Ingested"
           unapproved: "Unapproved"
           needs_repair: "Needs Repair"
+      hints:
+        include_thumbnails: "These exported fields currently cannot be imported."
+        generated_metadata: "These exported fields currently cannot be imported."
