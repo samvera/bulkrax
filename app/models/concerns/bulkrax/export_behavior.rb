@@ -7,7 +7,7 @@ module Bulkrax
 
     def build_for_exporter
       build_export_metadata
- 
+
       if export_type == 'full' && importerexporter.parser_klass.include?('Bagit')
         importerexporter.parser.write_files
       elsif export_type == 'full'
