@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Bulkrax
-  class BagitParser < ApplicationParser
+  class BagitParser < ApplicationParser # rubocop:disable Metrics/ClassLength
     include ExportBehavior
 
     def self.export_supported?
@@ -133,7 +133,7 @@ module Bulkrax
         set_ids_for_exporting_from_importer
       end
 
-      @work_ids + @collection_ids# + @file_set_ids
+      @work_ids + @collection_ids # + @file_set_ids
     end
 
     # Set the following instance variables: @work_ids, @collection_ids, @file_set_ids
@@ -166,8 +166,8 @@ module Bulkrax
 
         this_entry_class = if @collection_ids.include?(id)
                              collection_entry_class
-                          #  elsif @file_set_ids.include?(id)
-                          #    file_set_entry_class
+                           #  elsif @file_set_ids.include?(id)
+                           #    file_set_entry_class
                            else
                              entry_class
                            end
@@ -190,8 +190,6 @@ module Bulkrax
     def write_files
       require 'open-uri'
       require 'socket'
-      require 'bagit' # TODO: check if needed here?
-      require 'tempfile' # TODO: check if needed here?
       importerexporter.entries.where(identifier: current_record_ids)[0..limit || total].each do |e|
         bag = BagIt::Bag.new setup_bagit_folder(e.identifier)
         w = ActiveFedora::Base.find(e.identifier)
@@ -202,7 +200,7 @@ module Bulkrax
           file = Tempfile.new([file_name, File.extname(file_name)], binmode: true)
           file.write(io.read)
           file.close
-          bag.add_file(file_name, file.path) unless bag.bag_files.select { |b| b.include?(file_name) }.present?
+          bag.add_file(file_name, file.path) if bag.bag_files.select { |b| b.include?(file_name) }.blank?
         end
         CSV.open(setup_csv_metadata_export_file(e.identifier), "w", headers: export_headers, write_headers: true) do |csv|
           csv << e.parsed_metadata
@@ -218,8 +216,8 @@ module Bulkrax
 
     def key_allowed(key)
       !Bulkrax.reserved_properties.include?(key) &&
-          new_entry(entry_class, 'Bulkrax::Exporter').field_supported?(key) &&
-          key != source_identifier.to_s
+        new_entry(entry_class, 'Bulkrax::Exporter').field_supported?(key) &&
+        key != source_identifier.to_s
     end
 
     # All possible column names
@@ -270,7 +268,7 @@ module Bulkrax
       sd = SolrDocument.find(e.identifier)
       return if sd.nil?
 
-      req = ActionDispatch::Request.new({'HTTP_HOST' => Socket.gethostname})
+      req = ActionDispatch::Request.new({ 'HTTP_HOST' => Socket.gethostname })
       rdf = Hyrax::GraphExporter.new(sd, req).fetch.dump(:ntriples)
       File.open(setup_triple_metadata_export_file(e.identifier), "w") do |triples|
         triples.write(rdf)
