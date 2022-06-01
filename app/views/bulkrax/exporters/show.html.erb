@@ -40,9 +40,9 @@
       <% when 'collection' %>
         <% collection = Collection.find(@exporter.export_source) %>
         <%= link_to collection&.title&.first, hyrax.dashboard_collection_path(collection.id) %>
-      <% when 'exporter' %>
-        <% exporter = Bulkrax::exporter.find(@exporter.export_source) %>
-        <%= link_to exporter.name, bulkrax.exporter_path(exporter.id) %>
+      <% when 'importer' %>
+        <% importer = Bulkrax::Importer.find(@exporter.export_source) %>
+        <%= link_to importer.name, bulkrax.importer_path(importer.id) %>
       <% when 'worktype' %>
         <%= @exporter.export_source %>
       <% end %>
