@@ -99,9 +99,9 @@ module Bulkrax
       build_files_metadata unless hyrax_record.is_a?(Collection)
       build_relationship_metadata
       build_mapping_metadata
+      self.save!
 
       self.parsed_metadata
-      self.save!
     end
 
     # Metadata required by Bulkrax for round-tripping

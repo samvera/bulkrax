@@ -161,8 +161,8 @@ module Bulkrax
 
         this_entry_class = if @collection_ids.include?(id)
                              collection_entry_class
-                            elsif @file_set_ids.include?(id)
-                              file_set_entry_class
+                           elsif @file_set_ids.include?(id)
+                             file_set_entry_class
                            else
                              entry_class
                            end
@@ -184,6 +184,7 @@ module Bulkrax
 
     # export methods
 
+    # rubocop:disable Metrics/AbcSize
     def write_files
       require 'open-uri'
       require 'socket'
@@ -208,6 +209,7 @@ module Bulkrax
         bag.manifest!(algo: 'sha256')
       end
     end
+    # rubocop:enable Metrics/AbcSize
 
     def setup_csv_metadata_export_file(id)
       File.join(importerexporter.exporter_export_path, id, 'metadata.csv')
