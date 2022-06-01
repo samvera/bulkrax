@@ -110,21 +110,16 @@ module Bulkrax
       output
     end
 
-    # def current_work_ids
-    #   ActiveSupport::Deprication.warn('Bulkrax::CsvParser#current_work_ids will be replaced with #current_record_ids in version 3.0')
-    #   current_record_ids
-    # end
-
     def current_record_ids
       @work_ids = []
       @collection_ids = []
-      # @file_set_ids = []
+      @file_set_ids = []
 
       case importerexporter.export_from
       when 'all'
         @work_ids = ActiveFedora::SolrService.query("has_model_ssim:(#{Hyrax.config.curation_concerns.join(' OR ')}) #{extra_filters}", method: :post, rows: 2_147_483_647).map(&:id)
         @collection_ids = ActiveFedora::SolrService.query("has_model_ssim:Collection #{extra_filters}", method: :post, rows: 2_147_483_647).map(&:id)
-        # @file_set_ids = ActiveFedora::SolrService.query("has_model_ssim:FileSet #{extra_filters}", method: :post, rows: 2_147_483_647).map(&:id)
+        @file_set_ids = ActiveFedora::SolrService.query("has_model_ssim:FileSet #{extra_filters}", method: :post, rows: 2_147_483_647).map(&:id)
       when 'collection'
         @work_ids = ActiveFedora::SolrService.query("member_of_collection_ids_ssim:#{importerexporter.export_source + extra_filters}", method: :post, rows: 2_000_000_000).map(&:id)
       when 'worktype'
@@ -133,7 +128,7 @@ module Bulkrax
         set_ids_for_exporting_from_importer
       end
 
-      @work_ids + @collection_ids # + @file_set_ids
+      @work_ids + @collection_ids + @file_set_ids
     end
 
     # Set the following instance variables: @work_ids, @collection_ids, @file_set_ids
@@ -166,8 +161,8 @@ module Bulkrax
 
         this_entry_class = if @collection_ids.include?(id)
                              collection_entry_class
-                           #  elsif @file_set_ids.include?(id)
-                           #    file_set_entry_class
+                            elsif @file_set_ids.include?(id)
+                              file_set_entry_class
                            else
                              entry_class
                            end
@@ -187,12 +182,16 @@ module Bulkrax
     alias create_from_worktype create_new_entries
     alias create_from_all create_new_entries
 
+    # export methods
+
     def write_files
       require 'open-uri'
       require 'socket'
       importerexporter.entries.where(identifier: current_record_ids)[0..limit || total].each do |e|
         bag = BagIt::Bag.new setup_bagit_folder(e.identifier)
         w = ActiveFedora::Base.find(e.identifier)
+        next unless Hyrax.config.curation_concerns.include?(w.class)
+
         w.file_sets.each do |fs|
           file_name = filename(fs)
           next if file_name.blank?
