@@ -8,7 +8,7 @@ module Bulkrax
     let(:exporter) { FactoryBot.create(:bulkrax_exporter, parser_klass: 'Bulkrax::BagitParser', export_from: 'all') }
     let(:bulkrax_exporter_run) { FactoryBot.create(:bulkrax_exporter_run, exporter: exporter) }
     before do
-      importer.impxort_works
+      importer.import_works
       allow(exporter.parser).to receive(:current_record_ids).and_return(importer.entries.pluck(:identifier))
     end
 
