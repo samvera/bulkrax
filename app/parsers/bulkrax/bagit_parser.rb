@@ -168,7 +168,6 @@ module Bulkrax
                            end
         new_entry = find_or_create_entry(this_entry_class, id, 'Bulkrax::Exporter')
 
-        byebug
         begin
           entry = ExportWorkJob.perform_now(new_entry.id, current_run.id)
         rescue => e
