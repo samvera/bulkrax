@@ -12,7 +12,7 @@ module Bulkrax
       exporter.parser.instance_variable_set(:@work_ids, importer.entries.pluck(:identifier))
       exporter.parser.instance_variable_set(:@collection_ids, [])
       exporter.parser.instance_variable_set(:@file_set_ids, [])
-      allow(exporter.parser).to receive(:current_record_ids).and_return(importer.entries.pluck(:identifier))
+      allow(exporter.parser).to receive(:current_record_ids)
     end
 
     it 'exports a work' do
