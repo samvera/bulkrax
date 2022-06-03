@@ -298,11 +298,7 @@ module Bulkrax
     def bags
       return @bags if @bags.present?
       new_bag = bag(import_file_path)
-      @bags = if new_bag
-                [new_bag]
-              else
-                Dir.glob("#{import_file_path}/**/*").map { |d| bag(d) }
-              end
+      @bags = new_bag ? [new_bag] : Dir.glob("#{import_file_path}/**/*").map { |d| bag(d) }
       @bags.delete(nil)
       raise StandardError, 'No valid bags found' if @bags.blank?
       return @bags
