@@ -200,7 +200,7 @@ module Bulkrax
           file = Tempfile.new([file_name, File.extname(file_name)], binmode: true)
           file.write(io.read)
           file.close
-          bag.add_file(file_name, file.path) if bag.bag_files.select { |b| b.include?(file_name) }.blank?
+          bag.add_file(file_name, file.path)
         end
         CSV.open(setup_csv_metadata_export_file(e.identifier), "w", headers: export_headers, write_headers: true) do |csv|
           csv << e.parsed_metadata
