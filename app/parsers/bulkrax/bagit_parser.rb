@@ -139,7 +139,7 @@ module Bulkrax
                                 .includes(:statusable)
                                 .where('bulkrax_statuses.statusable_id IN (?) AND bulkrax_statuses.statusable_type = ? AND status_message = ?', entry_ids, 'Bulkrax::Entry', 'Complete')
 
-      complete_entry_identifiers = complete_statuses.map { |s| s.statusable&.source_identifier&.gsub(':', '\:') }
+      complete_entry_identifiers = complete_statuses.map { |s| s.statusable&.identifier&.gsub(':', '\:') }
       extra_filters = extra_filters.presence || '*:*'
 
       { :@work_ids => ::Hyrax.config.curation_concerns, :@collection_ids => [::Collection], :@file_set_ids => [::FileSet] }.each do |instance_var, models_to_search|
