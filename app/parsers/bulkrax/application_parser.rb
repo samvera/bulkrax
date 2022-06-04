@@ -249,8 +249,13 @@ module Bulkrax
     end
 
     def zip
+      require 'zip'
       FileUtils.rm_rf(exporter_export_zip_path)
-      WillowSword::ZipPackage.new(exporter_export_path, exporter_export_zip_path).create_zip
+      Zip::File.open(exporter_export_zip_path, create: true) do |zip_file|
+        Dir["#{exporter_export_path}/**/**"].each do |file|
+          zip_file.add(file.sub("#{exporter_export_path}/", ''), file)
+        end
+      end
     end
 
     # Is this a file?
