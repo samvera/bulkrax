@@ -242,6 +242,7 @@ module Bulkrax
     def write
       write_files
       zip
+      bagit_zip_file_size_check if importerexporter.parser_klass.include?('Bagit')
     end
 
     def unzip(file_to_unzip)
@@ -254,6 +255,27 @@ module Bulkrax
       Zip::File.open(exporter_export_zip_path, create: true) do |zip_file|
         Dir["#{exporter_export_path}/**/**"].each do |file|
           zip_file.add(file.sub("#{exporter_export_path}/", ''), file)
+        end
+      end
+    end
+
+    def bagit_zip_file_size_check
+      require 'zip'
+      Zip::File.open(exporter_export_zip_path) do |zip_file|
+        zip_file.select { |entry| entry.name.include?('data/') && entry.file? }.each do |zipped_file|
+          Dir["#{exporter_export_path}/**/data/*"].select { |file| file.include?(zipped_file.name) }.each do |file|
+            begin
+              raise BagitZipError, "File size mismatch for #{file.sub("#{exporter_export_path}/", '')}" if File.size(file) != zipped_file.size
+            rescue BagitZipError => e
+              matched_entry_ids = importerexporter.entry_ids.select do |id|
+                Bulkrax::Entry.find(id).identifier.include?(zipped_file.name.split('/').first)
+              end
+              matched_entry_ids.each do |entry_id|
+                Bulkrax::Entry.find(entry_id).status_info(e)
+                status_info('Complete (with failures)')
+              end
+            end
+          end
         end
       end
     end
