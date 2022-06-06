@@ -265,7 +265,7 @@ module Bulkrax
         zip_file.select { |entry| entry.name.include?('data/') && entry.file? }.each do |zipped_file|
           Dir["#{exporter_export_path}/**/data/*"].select { |file| file.include?(zipped_file.name) }.each do |file|
             begin
-              raise BagitZipError, "File size mismatch for #{file.sub("#{exporter_export_path}/", '')}" if File.size(file) != zipped_file.size
+              raise BagitZipError, "Invalid Bag, file size mismatch for #{file.sub("#{exporter_export_path}/", '')}" if File.size(file) != zipped_file.size
             rescue BagitZipError => e
               matched_entry_ids = importerexporter.entry_ids.select do |id|
                 Bulkrax::Entry.find(id).identifier.include?(zipped_file.name.split('/').first)
