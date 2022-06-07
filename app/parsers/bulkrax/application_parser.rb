@@ -247,11 +247,16 @@ module Bulkrax
     end
 
     def unzip(file_to_unzip)
-      WillowSword::ZipPackage.new(file_to_unzip, importer_unzip_path).unzip_file
+      Zip::File.open(file_to_unzip) do |zip_file|
+        zip_file.each do |entry|
+          entry_path = File.join(importer_unzip_path, entry.name)
+          FileUtils.mkdir_p(File.dirname(entry_path))
+          zip_file.extract(entry, entry_path) unless File.exist?(entry_path)
+        end
+      end
     end
 
     def zip
-      require 'zip'
       FileUtils.rm_rf(exporter_export_zip_path)
       Zip::File.open(exporter_export_zip_path, create: true) do |zip_file|
         Dir["#{exporter_export_path}/**/**"].each do |file|
@@ -262,7 +267,6 @@ module Bulkrax
 
     # TODO: remove Entry::BagitZipError as well as this method when we're sure it's not needed
     def bagit_zip_file_size_check
-      require 'zip'
       Zip::File.open(exporter_export_zip_path) do |zip_file|
         zip_file.select { |entry| entry.name.include?('data/') && entry.file? }.each do |zipped_file|
           Dir["#{exporter_export_path}/**/data/*"].select { |file| file.include?(zipped_file.name) }.each do |file|
