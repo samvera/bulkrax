@@ -11,12 +11,15 @@ module Bulkrax
     end
 
     def records(_opts = {})
+      return @records if @records.present?
+
       file_for_import = only_updates ? parser_fields['partial_import_file_path'] : import_file_path
       # data for entry does not need source_identifier for csv, because csvs are read sequentially and mapped after raw data is read.
       csv_data = entry_class.read_data(file_for_import)
       importer.parser_fields['total'] = csv_data.count
       importer.save
-      @records ||= csv_data.map { |record_data| entry_class.data_for_entry(record_data, nil, self) }
+
+      @records = csv_data.map { |record_data| entry_class.data_for_entry(record_data, nil, self) }
     end
 
     def build_records

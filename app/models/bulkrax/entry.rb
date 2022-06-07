@@ -36,6 +36,7 @@ module Bulkrax
     delegate :client,
       :collection_name,
       :user,
+      :generated_metadata_mapping,
       :related_parents_raw_mapping,
       :related_parents_parsed_mapping,
       :related_children_raw_mapping,
@@ -70,6 +71,15 @@ module Bulkrax
 
     def work_identifier
       parser&.work_identifier&.to_s || 'source'
+    end
+
+    # Returns field_mapping hash based on whether or not generated metadata should be included
+    def fetch_field_mapping
+      return self.mapping if importerexporter.generated_metadata
+
+      self.mapping.each do |key, value|
+        self.mapping.delete(key) if value[generated_metadata_mapping]
+      end
     end
 
     def self.parent_field(parser)
