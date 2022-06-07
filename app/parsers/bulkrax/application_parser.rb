@@ -242,6 +242,7 @@ module Bulkrax
     def write
       write_files
       zip
+      # uncomment next line to debug for faulty zipping during bagit export
       bagit_zip_file_size_check if importerexporter.parser_klass.include?('Bagit')
     end
 
@@ -259,6 +260,7 @@ module Bulkrax
       end
     end
 
+    # TODO: remove Entry::BagitZipError as well as this method when we're sure it's not needed
     def bagit_zip_file_size_check
       require 'zip'
       Zip::File.open(exporter_export_zip_path) do |zip_file|
