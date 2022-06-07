@@ -48,6 +48,7 @@ module Bulkrax
     # If the import data also contains records for these works, they will be updated
     # during create works
     def create_collections
+      byebug
       collections.each_with_index do |collection, index|
         next if collection.blank?
         metadata = {
@@ -95,6 +96,7 @@ module Bulkrax
     end
 
     def total
+      byebug
       importerexporter.entries.count
     end
 

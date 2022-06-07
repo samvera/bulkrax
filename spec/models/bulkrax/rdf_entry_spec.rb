@@ -8,7 +8,7 @@ module Bulkrax
     let(:path) { './spec/fixtures/bags/bag/descMetadata.nt' }
     let(:data) { described_class.read_data(path) }
     let(:importer) do
-      i = FactoryBot.create(:bulkrax_importer_bagit,
+      i = FactoryBot.create(:bulkrax_importer_bagit_rdf,
                             parser_fields: {
                               'import_file_path' => './spec/fixtures/bags/bag',
                               'metadata_file_name' => 'descMetadata.nt',
