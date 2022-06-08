@@ -75,7 +75,7 @@ module Bulkrax
 
         context 'Bag containing folders' do
           before do
-            rdf_importer.parser_fields['import_file_path'] = "./spec/fixtures/bags/bag_of_folders"
+            rdf_importer.parser_fields['import_file_path'] = "./spec/fixtures/bags/bag_of_folders_with_rdf"
           end
 
           it 'creates the entry and increments the counters' do
@@ -86,7 +86,7 @@ module Bulkrax
 
         context 'Folder containing bags' do
           before do
-            rdf_importer.parser_fields['import_file_path'] = "./spec/fixtures/bags/folder_of_bags"
+            rdf_importer.parser_fields['import_file_path'] = "./spec/fixtures/bags/folder_of_bags_with_rdf"
           end
 
           it 'creates the entry and increments the counters' do
@@ -160,7 +160,7 @@ module Bulkrax
 
         context 'Bag containing CSV' do
           before do
-            csv_importer.parser_fields['import_file_path'] = "./spec/fixtures/bags/bag"
+            csv_importer.parser_fields['import_file_path'] = "./spec/fixtures/bags/bag_with_csv"
           end
 
           it 'creates the entry and increments the counters' do
@@ -193,7 +193,7 @@ module Bulkrax
 
         context 'Bag containing folders' do
           before do
-            csv_importer.parser_fields['import_file_path'] = "./spec/fixtures/bags/bag_of_folders"
+            csv_importer.parser_fields['import_file_path'] = "./spec/fixtures/bags/bag_of_folders_with_csv"
           end
 
           it 'creates the entry and increments the counters' do
@@ -204,7 +204,7 @@ module Bulkrax
 
         context 'Folder containing bags' do
           before do
-            csv_importer.parser_fields['import_file_path'] = "./spec/fixtures/bags/folder_of_bags"
+            csv_importer.parser_fields['import_file_path'] = "./spec/fixtures/bags/folder_of_bags_with_csv"
           end
 
           it 'creates the entry and increments the counters' do
@@ -238,7 +238,7 @@ module Bulkrax
 
         context 'Incorrect metadata filename' do
           before do
-            csv_importer.parser_fields['metadata_file_name'] = 'metadata.csv'
+            csv_importer.parser_fields['metadata_file_name'] = 'descMetadata.nt'
           end
 
           it 'Raises an error' do

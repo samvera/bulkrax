@@ -97,7 +97,7 @@ FactoryBot.define do
     limit { 10 }
     parser_fields do
       {
-        'import_file_path' => 'spec/fixtures/bags/bag',
+        'import_file_path' => 'spec/fixtures/bags/bag_with_csv',
         'metadata_file_name' => 'metadata.csv',
         'metadata_format' => 'Bulkrax::CsvEntry'
       }
