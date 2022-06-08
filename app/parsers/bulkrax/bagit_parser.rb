@@ -48,7 +48,6 @@ module Bulkrax
     # If the import data also contains records for these works, they will be updated
     # during create works
     def create_collections
-      byebug
       collections.each_with_index do |collection, index|
         next if collection.blank?
         metadata = {
@@ -96,7 +95,6 @@ module Bulkrax
     end
 
     def total
-      byebug
       importerexporter.entries.count
     end
 
@@ -190,6 +188,7 @@ module Bulkrax
     def write_files
       require 'open-uri'
       require 'socket'
+      byebug
       importerexporter.entries.where(identifier: current_record_ids)[0..limit || total].each do |e|
         bag = BagIt::Bag.new setup_bagit_folder(e.identifier)
         w = ActiveFedora::Base.find(e.identifier)
