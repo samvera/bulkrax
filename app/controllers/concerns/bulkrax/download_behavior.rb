@@ -42,7 +42,7 @@ module Bulkrax
     def send_file_contents
       self.status = 200
       prepare_file_headers
-      stream_body file.read
+      send_file file
     end
 
     def prepare_file_headers
@@ -52,10 +52,6 @@ module Bulkrax
       # Prevent Rack::ETag from calculating a digest over body
       response.headers['Last-Modified'] = File.mtime(file_path).utc.strftime("%a, %d %b %Y %T GMT")
       self.content_type = download_content_type
-    end
-
-    def stream_body(iostream)
-      self.response_body = iostream
     end
   end
 end
