@@ -7,13 +7,13 @@ module Bulkrax
     context 'when importing a bagit file' do
       let(:rdf_importer) { FactoryBot.create(:bulkrax_importer_bagit_rdf) }
       let(:csv_importer) { FactoryBot.create(:bulkrax_importer_bagit_csv) }
-      
+
       describe '.export_supported?' do
         it 'returns true' do
           expect(described_class.export_supported?).to be true
         end
       end
-      
+
       context 'as an RDF parser' do
         subject { described_class.new(rdf_importer) }
         describe '#valid_import?' do
@@ -21,7 +21,7 @@ module Bulkrax
             expect(subject.valid_import?).to be true
           end
 
-          it  'returns false if importer_fields are not present' do
+          it 'returns false if importer_fields are not present' do
             rdf_importer.parser_fields = nil
             expect(subject.valid_import?).to be false
           end
@@ -139,7 +139,7 @@ module Bulkrax
             expect(subject.valid_import?).to be true
           end
 
-          it  'returns false if importer_fields are not present' do
+          it 'returns false if importer_fields are not present' do
             csv_importer.parser_fields = nil
             expect(subject.valid_import?).to be false
           end
@@ -261,73 +261,73 @@ module Bulkrax
         let(:work_ids_solr) { [OpenStruct.new(id: SecureRandom.alphanumeric(9)), OpenStruct.new(id: SecureRandom.alphanumeric(9))] }
         let(:collection_ids_solr) { [OpenStruct.new(id: SecureRandom.alphanumeric(9))] }
         let(:file_set_ids_solr) { [OpenStruct.new(id: SecureRandom.alphanumeric(9)), OpenStruct.new(id: SecureRandom.alphanumeric(9)), OpenStruct.new(id: SecureRandom.alphanumeric(9))] }
-  
+
         it 'invokes Bulkrax::ExportWorkJob once per Entry' do
           expect(ActiveFedora::SolrService).to receive(:query).and_return(work_ids_solr)
           expect(Bulkrax::ExportWorkJob).to receive(:perform_now).exactly(2).times
           parser.create_new_entries
         end
-  
+
         context 'with an export limit of 1' do
           let(:exporter) { FactoryBot.create(:bulkrax_exporter_worktype_bagit, limit: 1) }
-  
+
           it 'invokes Bulkrax::ExportWorkJob once' do
             expect(ActiveFedora::SolrService).to receive(:query).and_return(work_ids_solr)
             expect(Bulkrax::ExportWorkJob).to receive(:perform_now).exactly(1).times
             parser.create_new_entries
           end
         end
-  
+
         context 'with an export limit of 0' do
           let(:exporter) { FactoryBot.create(:bulkrax_exporter_worktype_bagit, limit: 0) }
-  
+
           it 'invokes Bulkrax::ExportWorkJob once per Entry' do
             expect(ActiveFedora::SolrService).to receive(:query).and_return(work_ids_solr)
             expect(Bulkrax::ExportWorkJob).to receive(:perform_now).exactly(2).times
             parser.create_new_entries
           end
         end
-  
+
         context 'when exporting all' do
           let(:exporter) { FactoryBot.create(:bulkrax_exporter, :all) }
-  
+
           before do
             allow(ActiveFedora::SolrService).to receive(:query).and_return(work_ids_solr, collection_ids_solr, file_set_ids_solr)
           end
-  
+
           it 'exports works, collections, and file sets' do
             expect(ExportWorkJob).to receive(:perform_now).exactly(6).times
-  
+
             parser.create_new_entries
           end
-  
+
           it 'exports all works' do
             work_entry_ids = Entry.where(identifier: work_ids_solr.map(&:id)).map(&:id)
             work_entry_ids.each do |id|
               expect(ExportWorkJob).to receive(:perform_now).with(id, exporter.last_run.id).once
             end
-  
+
             parser.create_new_entries
           end
-  
+
           it 'exports all collections' do
             collection_entry_ids = Entry.where(identifier: collection_ids_solr.map(&:id)).map(&:id)
             collection_entry_ids.each do |id|
               expect(ExportWorkJob).to receive(:perform_now).with(id, exporter.last_run.id).once
             end
-  
+
             parser.create_new_entries
           end
-  
+
           it 'exports all file sets' do
             file_set_entry_ids = Entry.where(identifier: file_set_ids_solr.map(&:id)).map(&:id)
             file_set_entry_ids.each do |id|
               expect(ExportWorkJob).to receive(:perform_now).with(id, exporter.last_run.id).once
             end
-  
+
             parser.create_new_entries
           end
-  
+
           it 'exported entries are given the correct class' do
             expect { parser.create_new_entries }.to change(CsvEntry, :count).by(6)
           end
@@ -346,7 +346,7 @@ module Bulkrax
                               'position' => { from: ['multiple_objects_position'], object: 'multiple_objects', nested_type: 'Array' }
                             })
         end
-  
+
         let(:entry) do
           FactoryBot.create(:bulkrax_csv_entry, importerexporter: exporter, parsed_metadata: {
                               'id' => work_id,
@@ -358,13 +358,14 @@ module Bulkrax
                               'multiple_objects_first_name_2' => 'Aaliyah'
                             })
         end
-  
+
         before do
           allow(ActiveFedora::SolrService).to receive(:query).and_return(OpenStruct.new(id: work_id))
           allow(exporter.entries).to receive(:where).and_return([entry])
           allow(parser).to receive(:headers).and_return(entry.parsed_metadata.keys)
         end
-  
+
+        # rubocop:disable RSpec/ExampleLength
         it 'returns an array of single, numerated and double numerated header values' do
           headers = parser.export_headers
           expect(headers).to include('id')
@@ -376,6 +377,7 @@ module Bulkrax
           expect(headers).to include('multiple_objects_position_1_2')
           expect(headers).to include('multiple_objects_first_name_2')
         end
+        # rubocop:enable RSpec/ExampleLength
       end
     end
   end

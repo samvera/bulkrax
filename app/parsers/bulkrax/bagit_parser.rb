@@ -188,7 +188,6 @@ module Bulkrax
     def write_files
       require 'open-uri'
       require 'socket'
-      byebug
       importerexporter.entries.where(identifier: current_record_ids)[0..limit || total].each do |e|
         bag = BagIt::Bag.new setup_bagit_folder(e.identifier)
         w = ActiveFedora::Base.find(e.identifier)
