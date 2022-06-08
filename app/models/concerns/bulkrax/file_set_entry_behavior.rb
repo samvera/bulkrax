@@ -28,5 +28,13 @@ module Bulkrax
 
       raise StandardError, 'File set must be related to at least one work'
     end
+
+    def parent_jobs
+      false # FileSet relationships are handled in ObjectFactory#create_file_set
+    end
+
+    def child_jobs
+      raise ::StandardError, 'A FileSet cannot be a parent of a Collection, Work, or other FileSet'
+    end
   end
 end
