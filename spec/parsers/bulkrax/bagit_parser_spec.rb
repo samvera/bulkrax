@@ -30,7 +30,7 @@ module Bulkrax
         let(:entry) { FactoryBot.create(:bulkrax_rdf_entry, importerexporter: rdf_importer) }
         let(:parser_fields) do
           {
-            'metadata_file_name' => 'descMetadata.nt',
+            'metadata_file_name' => 'metadata.nt',
             'metadata_format' => 'Bulkrax::RdfEntry'
           }
         end
@@ -120,7 +120,7 @@ module Bulkrax
 
         context 'Incorrect metadata filename' do
           before do
-            rdf_importer.parser_fields['metadata_file_name'] = 'descMetadata.nt'
+            rdf_importer.parser_fields['metadata_file_name'] = 'metadata.nt'
           end
 
           it 'Raises an error' do
@@ -238,7 +238,7 @@ module Bulkrax
 
         context 'Incorrect metadata filename' do
           before do
-            csv_importer.parser_fields['metadata_file_name'] = 'descMetadata.nt'
+            csv_importer.parser_fields['metadata_file_name'] = 'metadata.nt'
           end
 
           it 'Raises an error' do

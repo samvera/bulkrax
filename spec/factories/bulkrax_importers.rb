@@ -80,7 +80,7 @@ FactoryBot.define do
     parser_fields do
       {
         'import_file_path' => 'spec/fixtures/bags/bag',
-        'metadata_file_name' => 'descMetadata.nt',
+        'metadata_file_name' => 'metadata.nt',
         'metadata_format' => 'Bulkrax::RdfEntry'
       }
     end
