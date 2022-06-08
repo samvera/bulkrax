@@ -51,6 +51,10 @@ module Bulkrax
       @work_identifier ||= get_field_mapping_hash_for('source_identifier')&.keys&.first&.to_sym || :source
     end
 
+    def generated_metadata_mapping
+      @generated_metadata_mapping ||= 'generated'
+    end
+
     def related_parents_raw_mapping
       @related_parents_raw_mapping ||= get_field_mapping_hash_for('related_parents_field_mapping')&.values&.first&.[]('from')&.first
     end
@@ -242,11 +246,18 @@ module Bulkrax
     def write
       write_files
       zip
+      # uncomment next line to debug for faulty zipping during bagit export
       bagit_zip_file_size_check if importerexporter.parser_klass.include?('Bagit')
     end
 
     def unzip(file_to_unzip)
-      WillowSword::ZipPackage.new(file_to_unzip, importer_unzip_path).unzip_file
+      Zip::File.open(file_to_unzip) do |zip_file|
+        zip_file.each do |entry|
+          entry_path = File.join(importer_unzip_path, entry.name)
+          FileUtils.mkdir_p(File.dirname(entry_path))
+          zip_file.extract(entry, entry_path) unless File.exist?(entry_path)
+        end
+      end
     end
 
     def zip
@@ -259,8 +270,8 @@ module Bulkrax
       end
     end
 
+    # TODO: remove Entry::BagitZipError as well as this method when we're sure it's not needed
     def bagit_zip_file_size_check
-      require 'zip'
       Zip::File.open(exporter_export_zip_path) do |zip_file|
         zip_file.select { |entry| entry.name.include?('data/') && entry.file? }.each do |zipped_file|
           Dir["#{exporter_export_path}/**/data/*"].select { |file| file.include?(zipped_file.name) }.each do |file|
