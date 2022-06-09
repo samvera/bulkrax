@@ -1,0 +1,2 @@
+d4283aaef591559702d9321685b0097221ec7c0febc0914a7189f5dbd230fe99 data/folder1/metadata.csv
+dd221d29ca35d5b4123ca4a0c13dfe159e2b22390187fe137f2386b71d7b169a data/folder1/data/test.txt

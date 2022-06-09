@@ -5,7 +5,7 @@ require 'rails_helper'
 module Bulkrax
   RSpec.describe 'Importing from a CSV' do
     let(:importer) do
-      FactoryBot.create(:bulkrax_importer_bagit)
+      FactoryBot.create(:bulkrax_importer_bagit_rdf)
     end
 
     it 'creates a work' do
