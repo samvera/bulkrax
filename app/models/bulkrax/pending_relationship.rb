@@ -2,6 +2,6 @@
 
 module Bulkrax
   class PendingRelationship < ApplicationRecord
-    belongs_to :bulkrax_importer_run, class_name: "::Bulkrax::ImporterRun"
+    belongs_to :importer_run
   end
 end

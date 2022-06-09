@@ -33,7 +33,7 @@ module Bulkrax
     # is the child in the relationship, and vice versa if a child_identifier is passed.
     def perform(parent_identifier:, importer_run_id:) # rubocop:disable Metrics/AbcSize
       pending_relationships = Bulkrax::PendingRelationship.find_each.select do |rel|
-        rel.bulkrax_importer_run_id == importer_run_id && rel.parent_id == parent_identifier
+        rel.importer_run_id == importer_run_id && rel.parent_id == parent_identifier
       end.sort_by(&:order)
 
       @importer_run_id = importer_run_id
