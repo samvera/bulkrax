@@ -61,6 +61,7 @@ module Bulkrax
           work_actor.update(environment(attrs))
         end
       end
+      object.apply_depositor_metadata(@user) && object.save! if object.depositor.nil?
       log_updated(object)
     end
 
@@ -107,6 +108,7 @@ module Bulkrax
           end
         end
       end
+      object.apply_depositor_metadata(@user) && object.save! if object.depositor.nil?
       log_created(object)
     end
 
@@ -141,7 +143,6 @@ module Bulkrax
       attrs = clean_attrs(attrs)
       attrs = collection_type(attrs)
       object.attributes = attrs
-      object.apply_depositor_metadata(@user)
       object.save!
     end
 
