@@ -22,5 +22,5 @@ jobs:
         uses: docker://agilepathway/pull-request-label-checker:latest
         with:
           one_of: patch-ver,minor-ver,major-ver,ignore-for-release
-          any_of: bug-fix,enhancement,breaking-change,database-changes
+          any_of: bug-fix,enhancement,breaking-change,database-changes,version-bump
           repo_token: ${{ secrets.GITHUB_TOKEN }}
