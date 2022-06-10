@@ -4,7 +4,7 @@ require 'rails_helper'
 
 module Bulkrax
   RSpec.describe ImporterJob, type: :job do
-    subject(:importer_job) { described_class.new }
+    subject(:importer_job) { described_class.new(importer: importer) }
     # the bulkrax_importer_oai base_url comes from a live website
     # until it is stubbed, the values below will fluctuate as the api changes
     # TODO(alishaevn): delete the above comments when issue 455 is complete
@@ -17,17 +17,17 @@ module Bulkrax
     describe 'successful job' do
       it 'calls import_works with false' do
         expect(importer).to receive(:import_objects)
-        importer_job.perform(1)
+        importer_job.perform(importer.id)
       end
 
       it 'calls import_works with true if only_updates_since_last_import=true' do
         expect(importer).to receive(:import_objects)
-        importer_job.perform(1, true)
+        importer_job.perform(importer.id, true)
       end
 
       it 'updates the current run counters' do
         expect(importer).to receive(:import_objects)
-        importer_job.perform(1)
+        importer_job.perform(importer.id)
 
         expect(importer.current_run.total_work_entries).to eq(10)
         expect(importer.current_run.total_collection_entries).to eq(427)
@@ -40,6 +40,22 @@ module Bulkrax
       it 'returns for an invalid import' do
         expect(importer).not_to receive(:import_objects)
       end
+
+      context 'with malformed CSV' do
+        let(:importer) { FactoryBot.create(:bulkrax_importer_csv_bad, parser_fields: { 'import_file_path' => 'spec/fixtures/csv/malformed.csv' }) }
+
+        it 'logs the error on the importer' do
+          importer_job.perform(importer.id)
+
+          expect(importer.status).to eq('Failed')
+        end
+
+        it 'does not reschedule the job' do
+          expect(importer_job).not_to receive(:schedule)
+
+          importer_job.perform(importer.id)
+        end
+      end
     end
 
     describe 'schedulable' do
@@ -51,7 +67,7 @@ module Bulkrax
       it 'schedules import_works when schedulable?' do
         expect(importer).to receive(:import_objects)
         expect(described_class).to receive(:set).with(wait_until: 1).and_return(described_class)
-        importer_job.perform(1)
+        importer_job.perform(importer.id)
       end
     end
   end
