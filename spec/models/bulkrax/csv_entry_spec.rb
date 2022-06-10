@@ -1002,7 +1002,7 @@ module Bulkrax
 
         it 'calls #build_thumbnail_files' do
           expect(entry).to receive(:build_thumbnail_files).once
-          entry.build_files
+          entry.build_files_metadata
         end
 
         context 'when the parser has a file field mapping' do
@@ -1072,7 +1072,7 @@ module Bulkrax
 
         it 'gets called by #build_files' do
           expect(entry).to receive(:build_thumbnail_files).once
-          entry.build_files
+          entry.build_files_metadata
         end
 
         context 'when exporter does not include thumbnails' do
