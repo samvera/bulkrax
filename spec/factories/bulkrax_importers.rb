@@ -70,7 +70,7 @@ FactoryBot.define do
     end
   end
 
-  factory :bulkrax_importer_bagit, class: 'Bulkrax::Importer' do
+  factory :bulkrax_importer_bagit_rdf, class: 'Bulkrax::Importer' do
     name { 'Bagit Import' }
     admin_set_id { 'MyString' }
     user { FactoryBot.build(:base_user) }
@@ -80,8 +80,26 @@ FactoryBot.define do
     parser_fields do
       {
         'import_file_path' => 'spec/fixtures/bags/bag',
-        'metadata_file_name' => 'descMetadata.nt',
+        'metadata_file_name' => 'metadata.nt',
         'metadata_format' => 'Bulkrax::RdfEntry'
+      }
+    end
+    field_mapping { { 'source_identifier' => { from: ['source_identifier'], source_identifier: true } } }
+    after :create, &:current_run
+  end
+
+  factory :bulkrax_importer_bagit_csv, class: 'Bulkrax::Importer' do
+    name { 'Bagit Import' }
+    admin_set_id { 'MyString' }
+    user { FactoryBot.build(:base_user) }
+    frequency { 'PT0S' }
+    parser_klass { 'Bulkrax::BagitParser' }
+    limit { 10 }
+    parser_fields do
+      {
+        'import_file_path' => 'spec/fixtures/bags/bag_with_csv',
+        'metadata_file_name' => 'metadata.csv',
+        'metadata_format' => 'Bulkrax::CsvEntry'
       }
     end
     field_mapping { { 'source_identifier' => { from: ['source_identifier'], source_identifier: true } } }

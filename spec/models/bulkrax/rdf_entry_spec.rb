@@ -5,13 +5,13 @@ require 'rails_helper'
 module Bulkrax
   RSpec.describe RdfEntry, type: :model do
     subject { described_class.new(importerexporter: importer) }
-    let(:path) { './spec/fixtures/bags/bag/descMetadata.nt' }
+    let(:path) { './spec/fixtures/bags/bag/metadata.nt' }
     let(:data) { described_class.read_data(path) }
     let(:importer) do
-      i = FactoryBot.create(:bulkrax_importer_bagit,
+      i = FactoryBot.create(:bulkrax_importer_bagit_rdf,
                             parser_fields: {
                               'import_file_path' => './spec/fixtures/bags/bag',
-                              'metadata_file_name' => 'descMetadata.nt',
+                              'metadata_file_name' => 'metadata.nt',
                               'metadata_format' => 'Bulkrax::RdfEntry'
                             },
                             field_mapping: {
@@ -47,7 +47,7 @@ module Bulkrax
       let(:raw_metadata) { described_class.data_for_entry(data, :source_identifier, subject.parser) }
 
       context 'deleted' do
-        let(:path) { './spec/fixtures/bags/deleted_bag/descMetadata.nt' }
+        let(:path) { './spec/fixtures/bags/deleted_bag/metadata.nt' }
 
         it 'has a deleted proeprty' do
           expect(raw_metadata[:delete]).to be_truthy

@@ -261,6 +261,7 @@ module Bulkrax
     end
 
     def zip
+      require 'zip'
       FileUtils.rm_rf(exporter_export_zip_path)
       Zip::File.open(exporter_export_zip_path, create: true) do |zip_file|
         Dir["#{exporter_export_path}/**/**"].each do |file|

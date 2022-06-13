@@ -18,7 +18,7 @@ module Bulkrax
     end
 
     def failed?
-      current_status&.status_message&.match(/fail/i)
+      current_status&.status_message&.eql?('Failed')
     end
 
     def succeeded?

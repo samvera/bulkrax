@@ -17,8 +17,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      # https://github.com/marketplace/actions/label-checker-for-pull-requests
       - name: Check PR for Release Notes labels
         uses: docker://agilepathway/pull-request-label-checker:latest
         with:
-          one_of: patch-ver,minor-ver,major-ver,bug-fix,enhancement,breaking-change,database-changes,ignore-for-release
+          one_of: patch-ver,minor-ver,major-ver,ignore-for-release
+          any_of: bug-fix,enhancement,breaking-change,database-changes,version-bump
           repo_token: ${{ secrets.GITHUB_TOKEN }}
