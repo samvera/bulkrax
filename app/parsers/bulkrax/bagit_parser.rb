@@ -189,9 +189,9 @@ module Bulkrax
       require 'open-uri'
       require 'socket'
       importerexporter.entries.where(identifier: current_record_ids)[0..limit || total].each do |e|
-        bag = BagIt::Bag.new setup_bagit_folder(e.identifier)
         w = ActiveFedora::Base.find(e.identifier)
         next unless Hyrax.config.curation_concerns.include?(w.class)
+        bag = BagIt::Bag.new setup_bagit_folder(e.identifier)
 
         w.file_sets.each do |fs|
           file_name = filename(fs)
