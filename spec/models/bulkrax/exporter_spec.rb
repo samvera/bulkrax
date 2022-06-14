@@ -8,6 +8,7 @@ module Bulkrax
     let(:importer) { FactoryBot.create(:bulkrax_importer) }
 
     describe 'export_from' do
+      # rubocop:disable RSpec/ExampleLength
       it 'defines a list of export from types' do
         expect(exporter.export_from_list).to eq(
           [
@@ -19,6 +20,7 @@ module Bulkrax
           ]
         )
       end
+      # rubocop:enable RSpec/ExampleLength
     end
 
     describe 'export_type' do
