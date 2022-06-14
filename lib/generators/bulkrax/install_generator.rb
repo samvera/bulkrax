@@ -10,7 +10,7 @@ class Bulkrax::InstallGenerator < Rails::Generators::Base
   end
 
   def add_to_gemfile
-    gem 'willow_sword', github: 'notch8/willow_sword'
+    gem 'bulkrax'
 
     Bundler.with_clean_env do
       run "bundle install"
