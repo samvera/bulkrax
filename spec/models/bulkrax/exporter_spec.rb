@@ -13,6 +13,7 @@ module Bulkrax
           [
             [I18n.t('bulkrax.exporter.labels.importer'), 'importer'],
             [I18n.t('bulkrax.exporter.labels.collection'), 'collection'],
+            [I18n.t('bulkrax.exporter.labels.collections_metadata'), 'collections metadata'],
             [I18n.t('bulkrax.exporter.labels.worktype'), 'worktype'],
             [I18n.t('bulkrax.exporter.labels.all'), 'all']
           ]
@@ -53,12 +54,11 @@ module Bulkrax
       end
 
       context 'from collections metadata' do
-        # TODO(alishaevn): make this work
-        # let(:exporter) { FactoryBot.create(:bulkrax_exporter_collection) }
+        let(:exporter) { FactoryBot.create(:bulkrax_exporter_collection, export_from: 'collections metadata') }
 
-        xit 'exports' do
-        #   expect(exporter).to receive(:create_from_collection)
-        #   exporter.export
+        it 'exports' do
+          expect(exporter).to receive(:create_from_collections_metadata)
+          exporter.export
         end
       end
 
