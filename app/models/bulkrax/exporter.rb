@@ -21,7 +21,7 @@ module Bulkrax
       case self.export_from
       when 'collection'
         create_from_collection
-      when 'collection metadata'
+      when 'collections metadata'
         create_from_collections_metadata
       when 'importer'
         create_from_importer
