@@ -8,6 +8,7 @@ en:
       labels:
         all: All
         collection: Collection
+        collections_metadata: Collections Metadata
         export_format: Export Format
         export_from: Export From
         export_source: Export Source
