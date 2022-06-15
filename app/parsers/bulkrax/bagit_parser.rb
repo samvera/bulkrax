@@ -118,10 +118,7 @@ module Bulkrax
       case importerexporter.export_from
       when 'all'
         @work_ids = ActiveFedora::SolrService.query("has_model_ssim:(#{Hyrax.config.curation_concerns.join(' OR ')}) #{extra_filters}", method: :post, rows: 2_147_483_647).map(&:id)
-        @collection_ids = ActiveFedora::SolrService.query("has_model_ssim:Collection #{extra_filters}", method: :post, rows: 2_147_483_647).map(&:id)
         @file_set_ids = ActiveFedora::SolrService.query("has_model_ssim:FileSet #{extra_filters}", method: :post, rows: 2_147_483_647).map(&:id)
-      when 'collection'
-        @work_ids = ActiveFedora::SolrService.query("member_of_collection_ids_ssim:#{importerexporter.export_source + extra_filters}", method: :post, rows: 2_000_000_000).map(&:id)
       when 'worktype'
         @work_ids = ActiveFedora::SolrService.query("has_model_ssim:#{importerexporter.export_source + extra_filters}", method: :post, rows: 2_000_000_000).map(&:id)
       when 'importer'
@@ -155,6 +152,8 @@ module Bulkrax
       end
     end
 
+    # export methods
+
     def create_new_entries
       current_record_ids.each_with_index do |id, index|
         break if limit_reached?(limit, index)
@@ -182,18 +181,30 @@ module Bulkrax
     alias create_from_worktype create_new_entries
     alias create_from_all create_new_entries
 
-    # export methods
+    def collection_entry_class
+      CsvCollectionEntry
+    end
+
+    def file_set_entry_class
+      CsvFileSetEntry
+    end
 
     # rubocop:disable Metrics/AbcSize
     def write_files
       require 'open-uri'
       require 'socket'
       importerexporter.entries.where(identifier: current_record_ids)[0..limit || total].each do |e|
-        w = ActiveFedora::Base.find(e.identifier)
-        next unless Hyrax.config.curation_concerns.include?(w.class)
+        work = ActiveFedora::Base.find(e.identifier)
+        next unless Hyrax.config.curation_concerns.include?(work.class)
         bag = BagIt::Bag.new setup_bagit_folder(e.identifier)
+        bag_entries = [e]
 
-        w.file_sets.each do |fs|
+        work.file_sets.each do |fs|
+          if @file_set_ids.present?
+            file_set_entry = Bulkrax::CsvFileSetEntry.where("parsed_metadata LIKE '%#{fs.id}%'").first
+            bag_entries << file_set_entry unless file_set_entry.nil?
+          end
+
           file_name = filename(fs)
           next if file_name.blank?
           io = open(fs.original_file.uri)
@@ -202,8 +213,9 @@ module Bulkrax
           file.close
           bag.add_file(file_name, file.path)
         end
+
         CSV.open(setup_csv_metadata_export_file(e.identifier), "w", headers: export_headers, write_headers: true) do |csv|
-          csv << e.parsed_metadata
+          bag_entries.each { |entry| csv << entry.parsed_metadata }
         end
         write_triples(e)
         bag.manifest!(algo: 'sha256')
