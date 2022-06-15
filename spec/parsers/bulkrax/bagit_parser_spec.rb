@@ -293,11 +293,11 @@ module Bulkrax
           let(:exporter) { FactoryBot.create(:bulkrax_exporter, :all) }
 
           before do
-            allow(ActiveFedora::SolrService).to receive(:query).and_return(work_ids_solr, collection_ids_solr, file_set_ids_solr)
+            allow(ActiveFedora::SolrService).to receive(:query).and_return(work_ids_solr, file_set_ids_solr)
           end
 
-          it 'exports works, collections, and file sets' do
-            expect(ExportWorkJob).to receive(:perform_now).exactly(6).times
+          it 'exports works, and file sets' do
+            expect(ExportWorkJob).to receive(:perform_now).exactly(5).times
 
             parser.create_new_entries
           end
@@ -305,15 +305,6 @@ module Bulkrax
           it 'exports all works' do
             work_entry_ids = Entry.where(identifier: work_ids_solr.map(&:id)).map(&:id)
             work_entry_ids.each do |id|
-              expect(ExportWorkJob).to receive(:perform_now).with(id, exporter.last_run.id).once
-            end
-
-            parser.create_new_entries
-          end
-
-          it 'exports all collections' do
-            collection_entry_ids = Entry.where(identifier: collection_ids_solr.map(&:id)).map(&:id)
-            collection_entry_ids.each do |id|
               expect(ExportWorkJob).to receive(:perform_now).with(id, exporter.last_run.id).once
             end
 
@@ -330,7 +321,14 @@ module Bulkrax
           end
 
           it 'exported entries are given the correct class' do
-            expect { parser.create_new_entries }.to change(CsvEntry, :count).by(6)
+            # Bulkrax::CsvFileSetEntry == Bulkrax::CsvEntry (false)
+            # Bulkrax::CsvFileSetEntry.is_a? Bulkrax::CsvEntry (true)
+            # because of the above, although we only have 2 work id's, the 3 file set id's also increase the Bulkrax::CsvEntry count
+            expect { parser.create_new_entries }
+              .to change(CsvEntry, :count)
+              .by(5)
+              .and change(CsvFileSetEntry, :count)
+              .by(3)
           end
         end
       end
