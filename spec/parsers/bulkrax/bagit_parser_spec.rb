@@ -322,7 +322,7 @@ module Bulkrax
           it 'exported entries are given the correct class' do
             # Bulkrax::CsvFileSetEntry == Bulkrax::CsvEntry (false)
             # Bulkrax::CsvFileSetEntry.is_a? Bulkrax::CsvEntry (true)
-            # because of the above, although we only have 2 work id's, the 3 file set id's also create Bulkrax::CsvEntry's
+            # because of the above, although we only have 2 work id's, the 3 file set id's also increase the Bulkrax::CsvEntry count
             expect { parser.create_new_entries }
               .to change(CsvEntry, :count)
               .by(5)
