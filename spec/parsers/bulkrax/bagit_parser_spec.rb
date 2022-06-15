@@ -296,7 +296,7 @@ module Bulkrax
           end
 
           it 'exports works, and file sets' do
-            expect(ExportWorkJob).to receive(:perform_now).exactly(3).times
+            expect(ExportWorkJob).to receive(:perform_now).exactly(5).times
 
             parser.create_new_entries
           end
@@ -304,15 +304,6 @@ module Bulkrax
           it 'exports all works' do
             work_entry_ids = Entry.where(identifier: work_ids_solr.map(&:id)).map(&:id)
             work_entry_ids.each do |id|
-              expect(ExportWorkJob).to receive(:perform_now).with(id, exporter.last_run.id).once
-            end
-
-            parser.create_new_entries
-          end
-
-          it 'exports all collections' do
-            collection_entry_ids = Entry.where(identifier: collection_ids_solr.map(&:id)).map(&:id)
-            collection_entry_ids.each do |id|
               expect(ExportWorkJob).to receive(:perform_now).with(id, exporter.last_run.id).once
             end
 
@@ -329,8 +320,14 @@ module Bulkrax
           end
 
           it 'exported entries are given the correct class' do
-            expect { parser.create_new_entries }.to change(CsvEntry, :count).by(2)
-            expect { parser.create_new_entries }.to change(CsvFileSetEntry, :count).by(3)
+            # Bulkrax::CsvFileSetEntry == Bulkrax::CsvEntry (false)
+            # Bulkrax::CsvFileSetEntry.is_a? Bulkrax::CsvEntry (true)
+            # because of the above, although we only have 2 work id's, the 3 file set id's also create Bulkrax::CsvEntry's
+            expect { parser.create_new_entries }
+              .to change(CsvEntry, :count)
+              .by(5)
+              .and change(CsvFileSetEntry, :count)
+              .by(3)
           end
         end
       end
