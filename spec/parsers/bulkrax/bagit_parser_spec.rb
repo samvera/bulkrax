@@ -292,11 +292,11 @@ module Bulkrax
           let(:exporter) { FactoryBot.create(:bulkrax_exporter, :all) }
 
           before do
-            allow(ActiveFedora::SolrService).to receive(:query).and_return(work_ids_solr, collection_ids_solr, file_set_ids_solr)
+            allow(ActiveFedora::SolrService).to receive(:query).and_return(work_ids_solr, file_set_ids_solr)
           end
 
-          it 'exports works, collections, and file sets' do
-            expect(ExportWorkJob).to receive(:perform_now).exactly(6).times
+          it 'exports works, and file sets' do
+            expect(ExportWorkJob).to receive(:perform_now).exactly(3).times
 
             parser.create_new_entries
           end
@@ -329,7 +329,8 @@ module Bulkrax
           end
 
           it 'exported entries are given the correct class' do
-            expect { parser.create_new_entries }.to change(CsvEntry, :count).by(6)
+            expect { parser.create_new_entries }.to change(CsvEntry, :count).by(2)
+            expect { parser.create_new_entries }.to change(CsvFileSetEntry, :count).by(3)
           end
         end
       end
