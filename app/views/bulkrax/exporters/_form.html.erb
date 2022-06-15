@@ -15,15 +15,15 @@
 
   <%= form.hidden_field :user_id, value: current_user.id %>
 
-  <%= form.input :export_type, 
-    collection:  form.object.export_type_list, 
-    label: t('bulkrax.exporter.labels.export_type'), 
+  <%= form.input :export_type,
+    collection:  form.object.export_type_list,
+    label: t('bulkrax.exporter.labels.export_type'),
     required: true,
     prompt: 'Please select an export type' %>
 
-  <%= form.input :export_from, 
-    collection: form.object.export_from_list, 
-    label: t('bulkrax.exporter.labels.export_from'), 
+  <%= form.input :export_from,
+    collection: form.object.export_from_list,
+    label: t('bulkrax.exporter.labels.export_from'),
     required: true,
     prompt: 'Please select an export source' %>
 
@@ -55,8 +55,8 @@
     input_html: { class: 'worktype export-source-option hidden' },
     collection: Hyrax.config.curation_concerns.map {|cc| [cc.to_s, cc.to_s] } %>
 
-  <%= form.input :limit, 
-    as: :integer, 
+  <%= form.input :limit,
+    as: :integer,
     hint: 'leave blank or 0 for all records',
     label: t('bulkrax.exporter.labels.limit') %>
 
@@ -90,8 +90,8 @@
                  collection: form.object.workflow_status_list,
                  label: t('bulkrax.exporter.labels.status') %>
 
-  <%= form.input :parser_klass, 
-    collection: Bulkrax.parsers.map {|p| [p[:name], p[:class_name], {'data-partial' => p[:partial]}] if p[:class_name].constantize.export_supported? }.compact, 
+  <%= form.input :parser_klass,
+    collection: Bulkrax.parsers.map {|p| [p[:name], p[:class_name], {'data-partial' => p[:partial]}] if p[:class_name].constantize.export_supported? }.compact,
     label: t('bulkrax.exporter.labels.export_format') %>
 </div>
 

@@ -99,6 +99,7 @@ module Bulkrax
       build_files_metadata unless hyrax_record.is_a?(Collection)
       build_relationship_metadata
       build_mapping_metadata
+      self.save!
 
       self.parsed_metadata
     end
@@ -113,9 +114,10 @@ module Bulkrax
     def build_files_metadata
       file_mapping = key_for_export('file')
       file_sets = hyrax_record.file_set? ? Array.wrap(hyrax_record) : hyrax_record.file_sets
-      filenames = file_sets.map { |fs| filename(fs).to_s if filename(fs).present? }.compact
+      filenames = map_file_sets(file_sets)
 
       handle_join_on_export(file_mapping, filenames, mapping['file']&.[]('join')&.present?)
+      build_thumbnail_files if hyrax_record.work?
     end
 
     def build_relationship_metadata
@@ -216,15 +218,6 @@ module Bulkrax
           end
         end
       end
-    end
-
-    def build_files
-      file_mapping = mapping['file']&.[]('from')&.first || 'file'
-      file_sets = hyrax_record.file_set? ? Array.wrap(hyrax_record) : hyrax_record.file_sets
-
-      filenames = map_file_sets(file_sets)
-      handle_join_on_export(file_mapping, filenames, mapping['file']&.[]('join')&.present?)
-      build_thumbnail_files if hyrax_record.work?
     end
 
     def build_thumbnail_files

@@ -4,6 +4,8 @@ module Bulkrax
   # Custom error class for collections_created?
   class CollectionsCreatedError < RuntimeError; end
   class OAIError < RuntimeError; end
+  # TODO: remove when ApplicationParser#bagit_zip_file_size_check is removed
+  class BagitZipError < RuntimeError; end
   class Entry < ApplicationRecord
     include Bulkrax::HasMatchers
     include Bulkrax::ImportBehavior

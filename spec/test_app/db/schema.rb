@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2022_04_13_180915) do
+ActiveRecord::Schema.define(version: 2022_06_09_001128) do
 
   create_table "bookmarks", force: :cascade do |t|
     t.integer "user_id", null: false
@@ -115,13 +115,13 @@ ActiveRecord::Schema.define(version: 2022_04_13_180915) do
   end
 
   create_table "bulkrax_pending_relationships", force: :cascade do |t|
-    t.integer "bulkrax_importer_run_id", null: false
+    t.integer "importer_run_id", null: false
     t.string "parent_id", null: false
     t.string "child_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "order", default: 0
-    t.index ["bulkrax_importer_run_id"], name: "index_bulkrax_pending_relationships_on_bulkrax_importer_run_id"
+    t.index ["importer_run_id"], name: "index_bulkrax_pending_relationships_on_importer_run_id"
   end
 
   create_table "bulkrax_statuses", force: :cascade do |t|

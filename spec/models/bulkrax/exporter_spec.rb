@@ -8,16 +8,19 @@ module Bulkrax
     let(:importer) { FactoryBot.create(:bulkrax_importer) }
 
     describe 'export_from' do
+      # rubocop:disable RSpec/ExampleLength
       it 'defines a list of export from types' do
         expect(exporter.export_from_list).to eq(
           [
             [I18n.t('bulkrax.exporter.labels.importer'), 'importer'],
             [I18n.t('bulkrax.exporter.labels.collection'), 'collection'],
+            [I18n.t('bulkrax.exporter.labels.collections_metadata'), 'collections metadata'],
             [I18n.t('bulkrax.exporter.labels.worktype'), 'worktype'],
             [I18n.t('bulkrax.exporter.labels.all'), 'all']
           ]
         )
       end
+      # rubocop:enable RSpec/ExampleLength
     end
 
     describe 'export_type' do
@@ -48,6 +51,15 @@ module Bulkrax
 
         it 'exports' do
           expect(exporter).to receive(:create_from_collection)
+          exporter.export
+        end
+      end
+
+      context 'from collections metadata' do
+        let(:exporter) { FactoryBot.create(:bulkrax_exporter_collection, export_from: 'collections metadata') }
+
+        it 'exports' do
+          expect(exporter).to receive(:create_from_collections_metadata)
           exporter.export
         end
       end

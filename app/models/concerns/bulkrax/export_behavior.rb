@@ -7,6 +7,8 @@ module Bulkrax
 
     def build_for_exporter
       build_export_metadata
+      # TODO(alishaevn): determine if the line below is still necessary
+      # the csv and bagit parsers also have write_files methods
       write_files if export_type == 'full' && !importerexporter.parser_klass.include?('Bagit')
     rescue RSolr::Error::Http, CollectionsCreatedError => e
       raise e
@@ -49,7 +51,7 @@ module Bulkrax
       fn = file_set.original_file.file_name.first
       mime = Mime::Type.lookup(file_set.original_file.mime_type)
       ext_mime = MIME::Types.of(file_set.original_file.file_name).first
-      if fn.include?(file_set.id) || importerexporter.metadata_only?
+      if fn.include?(file_set.id) || importerexporter.metadata_only? || importerexporter.parser_klass.include?('Bagit')
         filename = "#{fn}.#{mime.to_sym}"
         filename = fn if mime.to_s == ext_mime.to_s
       else

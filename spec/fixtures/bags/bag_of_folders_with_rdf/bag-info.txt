@@ -1,3 +1,3 @@
 Bag-Software-Agent: BagIt Ruby Gem (https://github.com/tipr/bagit)
-Bagging-Date: 2019-12-02
+Bagging-Date: 2022-06-08
 Payload-Oxum: 170.2
