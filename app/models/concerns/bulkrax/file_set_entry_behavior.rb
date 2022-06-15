@@ -8,10 +8,14 @@ module Bulkrax
 
     def add_path_to_file
       parsed_metadata['file'].each_with_index do |filename, i|
+        next if filename.blank?
+
         path_to_file = ::File.join(parser.path_to_files, filename)
 
         parsed_metadata['file'][i] = path_to_file
       end
+      parsed_metadata['file'].delete('')
+
       raise ::StandardError, "one or more file paths are invalid: #{parsed_metadata['file'].join(', ')}" unless parsed_metadata['file'].map { |file_path| ::File.file?(file_path) }.all?
 
       parsed_metadata['file']
