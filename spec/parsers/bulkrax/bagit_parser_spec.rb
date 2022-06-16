@@ -5,7 +5,6 @@ require 'bagit'
 
 module Bulkrax
   RSpec.describe BagitParser do
-
     context 'when importing a bagit file' do
       let(:rdf_importer) { FactoryBot.create(:bulkrax_importer_bagit_rdf) }
       let(:csv_importer) { FactoryBot.create(:bulkrax_importer_bagit_csv) }
@@ -335,7 +334,6 @@ module Bulkrax
       end
 
       describe '#total' do
-
         before do
           allow(subject).to receive(:current_record_ids).and_return(work_ids_solr + file_set_ids_solr)
         end
