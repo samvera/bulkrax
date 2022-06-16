@@ -5,6 +5,34 @@ require 'bagit'
 
 module Bulkrax
   RSpec.describe BagitParser do
+    describe '#total' do
+      context 'while exporting' do
+        subject { described_class.new(exporter) }
+        let(:exporter) { FactoryBot.create(:bulkrax_exporter_worktype_bagit) }
+        let(:bulkrax_exporter_run) { FactoryBot.create(:bulkrax_exporter_run, exporter: exporter) }
+        let(:work_ids_solr) { [OpenStruct.new(id: SecureRandom.alphanumeric(9)), OpenStruct.new(id: SecureRandom.alphanumeric(9))] }
+        let(:collection_ids_solr) { [OpenStruct.new(id: SecureRandom.alphanumeric(9))] }
+        let(:file_set_ids_solr) { [OpenStruct.new(id: SecureRandom.alphanumeric(9)), OpenStruct.new(id: SecureRandom.alphanumeric(9)), OpenStruct.new(id: SecureRandom.alphanumeric(9))] }
+
+        before do
+          allow(subject).to receive(:current_record_ids).and_return(work_ids_solr + collection_ids_solr + file_set_ids_solr)
+        end
+
+        context 'when there is no limit' do
+          it 'counts the correct number of works, collections, and filesets' do
+            expect(subject.total).to eq(6)
+          end
+        end
+
+        context 'when there is a limit' do
+          let(:exporter) { FactoryBot.create(:bulkrax_exporter_worktype_bagit, limit: 1) }
+          it 'counts the correct number of works, collections, and filesets' do
+            expect(subject.total).to eq(1)
+          end
+        end
+      end
+    end
+
     context 'when importing a bagit file' do
       let(:rdf_importer) { FactoryBot.create(:bulkrax_importer_bagit_rdf) }
       let(:csv_importer) { FactoryBot.create(:bulkrax_importer_bagit_csv) }

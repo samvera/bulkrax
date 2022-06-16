@@ -100,8 +100,17 @@ module Bulkrax
       total
     end
 
+    # TODO @kirkkwang: look into if CsvParser#total needs this same logic
     def total
-      importerexporter.entries.count
+      @total = importer.parser_fields['total'] || 0 if importer?
+
+      @total = if exporter?
+                 limit.nil? || limit.zero? ? current_record_ids.count : limit
+               end
+
+      return @total || 0
+    rescue StandardError
+      @total = 0
     end
 
     def extra_filters
@@ -132,7 +141,6 @@ module Bulkrax
       when 'importer'
         set_ids_for_exporting_from_importer
       end
-
       @work_ids + @collection_ids + @file_set_ids
     end
 
