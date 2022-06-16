@@ -54,7 +54,6 @@ module Bulkrax
       @parent_entry ||= Bulkrax::Entry.where(identifier: parent_identifier,
                                              importerexporter_id: ImporterRun.find(importer_run_id).importer_id,
                                              importerexporter_type: "Bulkrax::Importer").first
-      # binding.pry
       create_relationships
       pending_relationships.each(&:destroy)
     rescue ::StandardError => e
