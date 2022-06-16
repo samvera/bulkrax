@@ -189,7 +189,7 @@ module Bulkrax
     alias create_from_worktype create_new_entries
     alias create_from_all create_new_entries
 
-    # rubocop:disable Metrics/AbcSize
+    # rubocop:disable Metrics/MethodLength, Metrics/AbcSize
     def write_files
       require 'open-uri'
       require 'socket'
@@ -226,7 +226,7 @@ module Bulkrax
         bag.manifest!(algo: 'sha256')
       end
     end
-    # rubocop:enable Metrics/AbcSize
+    # rubocop:enable Metrics/MethodLength, Metrics/AbcSize
 
     def setup_csv_metadata_export_file(id)
       File.join(importerexporter.exporter_export_path, id, 'metadata.csv')
