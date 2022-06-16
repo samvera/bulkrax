@@ -100,7 +100,6 @@ module Bulkrax
       total
     end
 
-    # TODO: look into if CsvParser#total needs this same logic
     def total
       @total = importer.parser_fields['total'] || 0 if importer?
 
