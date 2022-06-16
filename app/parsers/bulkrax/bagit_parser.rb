@@ -189,15 +189,15 @@ module Bulkrax
     alias create_from_worktype create_new_entries
     alias create_from_all create_new_entries
 
-    # rubocop:disable Metrics/AbcSize
+    # rubocop:disable Metrics/MethodLength, Metrics/AbcSize
     def write_files
       require 'open-uri'
       require 'socket'
-      importerexporter.entries.where(identifier: current_record_ids)[0..limit || total].each do |e|
-        work = ActiveFedora::Base.find(e.identifier)
+      importerexporter.entries.where(identifier: current_record_ids)[0..limit || total].each do |entry|
+        work = ActiveFedora::Base.find(entry.identifier)
         next unless Hyrax.config.curation_concerns.include?(work.class)
-        bag = BagIt::Bag.new setup_bagit_folder(e.identifier)
-        bag_entries = [e]
+        bag = BagIt::Bag.new setup_bagit_folder(entry.identifier)
+        bag_entries = [entry]
 
         work.file_sets.each do |fs|
           if @file_set_ids.present?
@@ -211,17 +211,22 @@ module Bulkrax
           file = Tempfile.new([file_name, File.extname(file_name)], binmode: true)
           file.write(io.read)
           file.close
-          bag.add_file(file_name, file.path)
+          begin
+            bag.add_file(file_name, file.path)
+          rescue => e
+            entry.status_info(e)
+            status_info(e)
+          end
         end
 
-        CSV.open(setup_csv_metadata_export_file(e.identifier), "w", headers: export_headers, write_headers: true) do |csv|
-          bag_entries.each { |entry| csv << entry.parsed_metadata }
+        CSV.open(setup_csv_metadata_export_file(entry.identifier), "w", headers: export_headers, write_headers: true) do |csv|
+          bag_entries.each { |csv_entry| csv << csv_entry.parsed_metadata }
         end
-        write_triples(e)
+        write_triples(entry)
         bag.manifest!(algo: 'sha256')
       end
     end
-    # rubocop:enable Metrics/AbcSize
+    # rubocop:enable Metrics/MethodLength, Metrics/AbcSize
 
     def setup_csv_metadata_export_file(id)
       File.join(importerexporter.exporter_export_path, id, 'metadata.csv')
