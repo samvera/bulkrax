@@ -36,18 +36,25 @@ module Bulkrax
       end.flatten.compact.uniq
     end
 
-    # Assume a single metadata record per path
-    # Create an Array of all metadata records, one per file
+    # Create an Array of all metadata records
     def records(_opts = {})
       raise StandardError, 'No BagIt records were found' if bags.blank?
       @records ||= bags.map do |bag|
         path = metadata_path(bag)
         raise StandardError, 'No metadata files were found' if path.blank?
         data = entry_class.read_data(path)
-        data = entry_class.data_for_entry(data, source_identifier, self)
-        data[:file] = bag.bag_files.join('|') unless importerexporter.metadata_only?
+        data = data.map do |d|
+          record_data = entry_class.data_for_entry(d, source_identifier, self)
+          next record_data if importerexporter.metadata_only?
+
+          record_data[:file] = bag.bag_files.join('|') if Hyrax.config.curation_concerns.include? record_data[:model].constantize
+          record_data
+        end
+
         data
       end
+
+      @records = @records.flatten
     end
 
     # Find or create collections referenced by works
