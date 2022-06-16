@@ -255,13 +255,13 @@ module Bulkrax
     context 'when exporting a bagit file' do
       subject { described_class.new(exporter) }
       let(:exporter) { FactoryBot.create(:bulkrax_exporter_worktype_bagit) }
+      let(:work_ids_solr) { [OpenStruct.new(id: SecureRandom.alphanumeric(9)), OpenStruct.new(id: SecureRandom.alphanumeric(9))] }
+      let(:collection_ids_solr) { [OpenStruct.new(id: SecureRandom.alphanumeric(9))] }
+      let(:file_set_ids_solr) { [OpenStruct.new(id: SecureRandom.alphanumeric(9)), OpenStruct.new(id: SecureRandom.alphanumeric(9)), OpenStruct.new(id: SecureRandom.alphanumeric(9))] }
 
       describe '#create_new_entries' do
         subject(:parser) { described_class.new(exporter) }
         # Use OpenStructs to simulate the behavior of ActiveFedora::SolrHit instances.
-        let(:work_ids_solr) { [OpenStruct.new(id: SecureRandom.alphanumeric(9)), OpenStruct.new(id: SecureRandom.alphanumeric(9))] }
-        let(:collection_ids_solr) { [OpenStruct.new(id: SecureRandom.alphanumeric(9))] }
-        let(:file_set_ids_solr) { [OpenStruct.new(id: SecureRandom.alphanumeric(9)), OpenStruct.new(id: SecureRandom.alphanumeric(9)), OpenStruct.new(id: SecureRandom.alphanumeric(9))] }
 
         it 'invokes Bulkrax::ExportWorkJob once per Entry' do
           expect(ActiveFedora::SolrService).to receive(:query).and_return(work_ids_solr)
@@ -329,6 +329,25 @@ module Bulkrax
               .by(5)
               .and change(CsvFileSetEntry, :count)
               .by(3)
+          end
+        end
+      end
+
+      describe '#total' do
+        before do
+          allow(subject).to receive(:current_record_ids).and_return(work_ids_solr + file_set_ids_solr)
+        end
+
+        context 'when there is no limit' do
+          it 'counts the correct number of works, collections, and filesets' do
+            expect(subject.total).to eq(5)
+          end
+        end
+
+        context 'when there is a limit' do
+          let(:exporter) { FactoryBot.create(:bulkrax_exporter_worktype_bagit, limit: 1) }
+          it 'counts the correct number of works, collections, and filesets' do
+            expect(subject.total).to eq(1)
           end
         end
       end
