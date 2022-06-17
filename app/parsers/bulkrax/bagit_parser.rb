@@ -19,13 +19,19 @@ module Bulkrax
       rdf_format = parser_fields&.[]('metadata_format') == "Bulkrax::RdfEntry"
       rdf_format ? RdfEntry : CsvEntry
     end
+    alias work_entry_class entry_class
 
-    def collection_entry_class
-      CsvCollectionEntry
-    end
+    def collection_entry_class; end
 
     def file_set_entry_class
+      # TODO: is a conditional needed for file sets imported through rdf?
       CsvFileSetEntry
+    end
+
+    def path_to_files(parent_id:)
+      @path_to_files ||= File.join(
+        zip? ? importer_unzip_path : File.dirname(import_file_path), parent_id, 'data'
+      )
     end
 
     # Take a random sample of 10 metadata_paths and work out the import fields from that
@@ -57,55 +63,11 @@ module Bulkrax
       @records = @records.flatten
     end
 
-    # Find or create collections referenced by works
-    # If the import data also contains records for these works, they will be updated
-    # during create works
-    def create_collections
-      collections.each_with_index do |collection, index|
-        next if collection.blank?
-        metadata = {
-          title: [collection],
-          work_identifier => [collection],
-          visibility: 'open',
-          collection_type_gid: Hyrax::CollectionType.find_or_create_default_collection_type.gid
-        }
-        new_entry = find_or_create_entry(collection_entry_class, collection, 'Bulkrax::Importer', metadata)
-        ImportCollectionJob.perform_now(new_entry.id, current_run.id)
-        increment_counters(index, collection: true)
-      end
-    end
+    # Collections are not imported or with bagit
+    def create_collections; end
 
-    def create_works
-      records.each_with_index do |record, index|
-        next unless record_has_source_identifier(record, index)
-        break if limit_reached?(limit, index)
-
-        seen[record[source_identifier]] = true
-        new_entry = find_or_create_entry(entry_class, record[source_identifier], 'Bulkrax::Importer', record)
-        if record[:delete].present?
-          DeleteWorkJob.send(perform_method, new_entry, current_run)
-        else
-          ImportWorkJob.send(perform_method, new_entry.id, current_run.id)
-        end
-        increment_counters(index, work: true)
-      end
-      importer.record_status
-    rescue StandardError => e
-      status_info(e)
-    end
-
-    def collections
-      records.map { |r| r[related_parents_parsed_mapping].split(/\s*[;|]\s*/) if r[related_parents_parsed_mapping].present? }.flatten.compact.uniq
-    end
-
-    def collections_total
-      collections.size
-    end
-
-    # TODO: change to differentiate between collection and work records when adding ability to import collection metadata
-    def works_total
-      total
-    end
+    # TODO: not yet supported
+    def create_relationships; end
 
     def total
       importerexporter.entries.count
