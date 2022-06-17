@@ -104,20 +104,111 @@ module Bulkrax
       @visibility ||= self.parser_fields['visibility'] || 'open'
     end
 
+    def build_records
+      @collections = []
+      @works = []
+      @file_sets = []
+
+      if model_field_mappings.map { |mfm| mfm.to_sym.in?(records.first.keys) }.any?
+        records.map do |r|
+          model_field_mappings.map(&:to_sym).each do |model_mapping|
+            next unless r.key?(model_mapping)
+
+            if r[model_mapping].casecmp('collection').zero?
+              @collections << r
+            elsif r[model_mapping].casecmp('fileset').zero?
+              @file_sets << r
+            else
+              @works << r
+            end
+          end
+        end
+        @collections = @collections.flatten.compact.uniq
+        @file_sets = @file_sets.flatten.compact.uniq
+        @works = @works.flatten.compact.uniq
+      else # if no model is specified, assume all records are works
+        @works = records.flatten.compact.uniq
+      end
+
+      true
+    end
+
     def create_collections
-      raise StandardError, 'must be defined' if importer?
+      create_objects(['collection'])
     end
 
     def create_works
-      raise StandardError, 'must be defined' if importer?
+      create_objects(['work'])
     end
 
     def create_file_sets
-      raise StandardError, 'must be defined' if importer?
+      create_objects(['file_set'])
     end
 
     def create_relationships
-      raise StandardError, 'must be defined' if importer?
+      create_objects(['relationship'])
+    end
+
+    def create_objects(types_array = nil)
+      index = 0
+      (types_array || %w[collection work file_set relationship]).each do |type|
+        if type.eql?('relationship')
+          ScheduleRelationshipsJob.set(wait: 5.minutes).perform_later(importer_id: importerexporter.id)
+          next
+        end
+        send(type.pluralize).each do |current_record|
+          next unless record_has_source_identifier(current_record, index)
+          break if limit_reached?(limit, index)
+
+          seen[current_record[source_identifier]] = true
+          create_entry_and_job(current_record, type)
+          increment_counters(index, "#{type}": true)
+          index += 1
+        end
+        importer.record_status
+      end
+      true
+    rescue StandardError => e
+      status_info(e)
+    end
+
+    def create_entry_and_job(current_record, type)
+      new_entry = find_or_create_entry(send("#{type}_entry_class"),
+                                       current_record[source_identifier],
+                                       'Bulkrax::Importer',
+                                       current_record.to_h)
+      if current_record[:delete].present?
+        "Bulkrax::Delete#{type.camelize}Job".constantize.send(perform_method, new_entry, current_run)
+      else
+        "Bulkrax::Import#{type.camelize}Job".constantize.send(perform_method, new_entry.id, current_run.id)
+      end
+    end
+
+    def collections
+      build_records if @collections.nil?
+      @collections
+    end
+
+    def works
+      build_records if @works.nil?
+      @works
+    end
+
+    def file_sets
+      build_records if @file_sets.nil?
+      @file_sets
+    end
+
+    def collections_total
+      collections.size
+    end
+
+    def works_total
+      works.size
+    end
+
+    def file_sets_total
+      file_sets.size
     end
 
     # Optional, define if using browse everything for file upload
