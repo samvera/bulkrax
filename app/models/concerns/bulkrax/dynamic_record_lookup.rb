@@ -17,9 +17,8 @@ module Bulkrax
         # the identifier parameter can be a :source_identifier or the id of an object
         record = Entry.find_by(default_scope.merge({ importerexporter_id: importer_id })) || Entry.find_by(default_scope)
         record ||= ActiveFedora::Base.find(identifier)
-      rescue NameError # if ActiveFedora isn't installed
-        record = nil
-      rescue ActiveFedora::ObjectNotFoundError
+      # NameError for if ActiveFedora isn't installed
+      rescue NameError, ActiveFedora::ObjectNotFoundError
         record = nil
       end
 
