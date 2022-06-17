@@ -49,6 +49,14 @@ module Bulkrax
         path = metadata_path(bag)
         raise StandardError, 'No metadata files were found' if path.blank?
         data = entry_class.read_data(path)
+        get_data(bag, data)
+      end
+
+      @records = @records.flatten
+    end
+
+    def get_data(bag, data)
+      if entry_class == CsvEntry
         data = data.map do |d|
           record_data = entry_class.data_for_entry(d, source_identifier, self)
           next record_data if importerexporter.metadata_only?
@@ -56,11 +64,12 @@ module Bulkrax
           record_data[:file] = bag.bag_files.join('|') if Hyrax.config.curation_concerns.include? record_data[:model].constantize
           record_data
         end
-
-        data
+      else
+        data = entry_class.data_for_entry(data, source_identifier, self)
+        data[:file] = bag.bag_files.join('|') unless importerexporter.metadata_only?
       end
 
-      @records = @records.flatten
+      data
     end
 
     # Collections are not imported or with bagit

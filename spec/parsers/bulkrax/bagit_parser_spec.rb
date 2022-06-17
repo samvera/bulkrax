@@ -15,7 +15,7 @@ module Bulkrax
         end
       end
 
-      context 'as an RDF parser' do
+      context 'as an RDF entry' do
         subject { described_class.new(rdf_importer) }
         describe '#valid_import?' do
           it 'returns true if importer_fields are present' do
@@ -133,7 +133,7 @@ module Bulkrax
         end
       end
 
-      context 'as a CSV parser' do
+      context 'as a CSV entry' do
         subject { described_class.new(csv_importer) }
         describe '#valid_import?' do
           it 'returns true if importer_fields are present' do
