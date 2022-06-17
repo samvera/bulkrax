@@ -11,7 +11,9 @@ module Bulkrax
 
     # @todo not yet supported
     def create_collections; end
+
     def create_file_sets; end
+
     def create_relationships; end
 
     # TODO: change to differentiate between collection and work records when adding ability to import collection metadata

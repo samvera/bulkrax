@@ -327,14 +327,6 @@ module Bulkrax
       0
     end
 
-    def collections_total
-      0
-    end
-
-    def file_sets_total
-      0
-    end
-
     def write
       write_files
       zip
