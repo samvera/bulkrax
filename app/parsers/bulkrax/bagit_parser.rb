@@ -72,6 +72,29 @@ module Bulkrax
       data
     end
 
+    def create_works
+      entry_class == CsvEntry ? super : create_rdf_works
+    end
+
+    def create_rdf_works
+      records.each_with_index do |record, index|
+        next unless record_has_source_identifier(record, index)
+        break if limit_reached?(limit, index)
+
+        seen[record[source_identifier]] = true
+        new_entry = find_or_create_entry(entry_class, record[source_identifier], 'Bulkrax::Importer', record)
+        if record[:delete].present?
+          DeleteWorkJob.send(perform_method, new_entry, current_run)
+        else
+          ImportWorkJob.send(perform_method, new_entry.id, current_run.id)
+        end
+        increment_counters(index, work: true)
+      end
+      importer.record_status
+    rescue StandardError => e
+      status_info(e)
+    end
+
     # Collections are not imported or with bagit
     def create_collections; end
 
