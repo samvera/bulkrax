@@ -116,6 +116,10 @@ module Bulkrax
       @collections ||= list_sets
     end
 
+    def works; end
+
+    def file_sets; end
+
     def collections_total
       if collection_name == 'all'
         collections.count
@@ -127,6 +131,10 @@ module Bulkrax
     # TODO: change to differentiate between collection and work records when adding ability to import collection metadata
     def works_total
       total
+    end
+
+    def file_sets_total
+      0
     end
 
     def total
