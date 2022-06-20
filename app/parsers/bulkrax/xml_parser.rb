@@ -21,6 +21,14 @@ module Bulkrax
       total
     end
 
+    def collections_total
+      0
+    end
+
+    def file_sets_total
+      0
+    end
+
     # @todo not yet supported
     def import_fields; end
 
