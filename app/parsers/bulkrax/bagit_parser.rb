@@ -21,7 +21,9 @@ module Bulkrax
     end
     alias work_entry_class entry_class
 
-    def collection_entry_class; end
+    def collection_entry_class
+      CsvCollectionEntry
+    end
 
     def file_set_entry_class
       # TODO: is a conditional needed for file sets imported through rdf?
@@ -57,8 +59,8 @@ module Bulkrax
 
     def get_data(bag, data)
       if entry_class == CsvEntry
-        data = data.map do |d|
-          record_data = entry_class.data_for_entry(d, source_identifier, self)
+        data = data.map do |data_row|
+          record_data = entry_class.data_for_entry(data_row, source_identifier, self)
           next record_data if importerexporter.metadata_only?
 
           record_data[:file] = bag.bag_files.join('|') if Hyrax.config.curation_concerns.include? record_data[:model]&.constantize
@@ -94,9 +96,6 @@ module Bulkrax
     rescue StandardError => e
       status_info(e)
     end
-
-    # Collections are not imported or with bagit
-    def create_collections; end
 
     # TODO: not yet supported
     def create_relationships; end

@@ -114,9 +114,19 @@ module Bulkrax
           end
 
           context 'Bag containing CSV' do
-            it 'creates the entry and increments the counters' do
+            it 'creates the collection entry and increments the counters' do
+              expect(subject).to receive(:increment_counters).once
+              subject.create_collections
+            end
+
+            it 'creates the work entry and increments the counters' do
               expect(subject).to receive(:increment_counters).once
               subject.create_works
+            end
+
+            it 'creates the file set entry and increments the counters' do
+              expect(subject).to receive(:increment_counters).once
+              subject.create_file_sets
             end
           end
 

@@ -1,2 +1,4 @@
 source_identifier,model,title,parents
-abcdef,Collection,Test - in collection,collection12345
+abcdef,Collection,Collection - in collection,collection12345
+ghijkl,Work,Work - in collection,abcdef
+mnopqr,FileSet,FileSet- in work,ghijkl
