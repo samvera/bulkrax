@@ -145,9 +145,19 @@ module Bulkrax
           end
 
           context 'Bag containing CSV' do
-            it 'creates the entry and increments the counters' do
+            it 'creates the work entry and increments the counters' do
               expect(subject).to receive(:increment_counters).once
               subject.create_works
+            end
+
+            it 'creates the collection entry and increments the counters' do
+              expect(subject).to receive(:increment_counters).once
+              subject.create_collections
+            end
+
+            it 'creates the file_set entry and increments the counters' do
+              expect(subject).to receive(:increment_counters).once
+              subject.create_file_sets
             end
           end
 
@@ -170,43 +180,77 @@ module Bulkrax
           end
 
           context 'Bag containing folders' do
-            it 'creates the entry and increments the counters' do
+            before do
               csv_importer.parser_fields['import_file_path'] = "./spec/fixtures/bags/bag_of_folders_with_csv"
+            end
 
+            it 'creates the collection entry and increments the counters' do
+              expect(subject).to receive(:increment_counters).once
+              subject.create_collections
+            end
+
+            it 'creates the work entry and increments the counters' do
               expect(subject).to receive(:increment_counters).once
               subject.create_works
+            end
+
+            it 'creates the file set entry and increments the counters' do
+              expect(subject).to receive(:increment_counters).once
+              subject.create_file_sets
             end
           end
 
           context 'Folder containing bags' do
-            it 'creates the entry and increments the counters' do
+            before do
               csv_importer.parser_fields['import_file_path'] = "./spec/fixtures/bags/folder_of_bags_with_csv"
+            end
 
+            it 'creates the collection entry and increments the counters' do
+              expect(subject).to receive(:increment_counters).once
+              subject.create_collections
+            end
+
+            it 'creates the work entry and increments the counters' do
               expect(subject).to receive(:increment_counters).once
               subject.create_works
+            end
+
+            it 'creates the file set entry and increments the counters' do
+              expect(subject).to receive(:increment_counters).once
+              subject.create_file_sets
             end
           end
         end
 
         describe 'Bag with CSV' do
           let(:entry) { FactoryBot.create(:bulkrax_csv_entry, importerexporter: csv_importer) }
-          let(:parser_fields) do
-            {
-              'import_file_path' => './spec/fixtures/bags/bag_with_csv',
-              'metadata_file_name' => 'metadata.csv',
-              'metadata_format' => 'Bulkrax::CsvEntry'
-            }
-          end
+          # let(:parser_fields) do
+          #   {
+          #     'import_file_path' => './spec/fixtures/bags/bag_with_csv',
+          #     'metadata_file_name' => 'metadata.csv',
+          #     'metadata_format' => 'Bulkrax::CsvEntry'
+          #   }
+          # end
 
           before do
             allow(Bulkrax::CsvEntry).to receive_message_chain(:where, :first_or_create!).and_return(entry)
-            csv_importer.parser_fields = parser_fields
+            # csv_importer.parser_fields = parser_fields
           end
 
           context 'Bag containing CSV' do
-            it 'creates the entry and increments the counters' do
+            it 'creates the collection entry and increments the counters' do
+              expect(subject).to receive(:increment_counters).once
+              subject.create_collections
+            end
+
+            it 'creates the work entry and increments the counters' do
               expect(subject).to receive(:increment_counters).once
               subject.create_works
+            end
+
+            it 'creates the file set entry and increments the counters' do
+              expect(subject).to receive(:increment_counters).once
+              subject.create_file_sets
             end
           end
 
