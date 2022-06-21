@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Bulkrax
-  class BagitParser < ApplicationParser # rubocop:disable Metrics/ClassLength
+  class BagitParser < CsvParser # rubocop:disable Metrics/ClassLength
     include ExportBehavior
 
     def self.export_supported?
@@ -18,16 +18,6 @@ module Bulkrax
     def entry_class
       rdf_format = parser_fields&.[]('metadata_format') == "Bulkrax::RdfEntry"
       rdf_format ? RdfEntry : CsvEntry
-    end
-    alias work_entry_class entry_class
-
-    def collection_entry_class
-      CsvCollectionEntry
-    end
-
-    def file_set_entry_class
-      # TODO: is a conditional needed for file sets imported through rdf?
-      CsvFileSetEntry
     end
 
     def path_to_files(parent_id:)
@@ -63,7 +53,7 @@ module Bulkrax
           record_data = entry_class.data_for_entry(data_row, source_identifier, self)
           next record_data if importerexporter.metadata_only?
 
-          record_data[:file] = bag.bag_files.join('|') if Hyrax.config.curation_concerns.include? record_data[:model]&.constantize
+          record_data[:file] = bag.bag_files.join('|') if ::Hyrax.config.curation_concerns.include? record_data[:model]&.constantize
           record_data
         end
       else
@@ -97,25 +87,6 @@ module Bulkrax
       status_info(e)
     end
 
-    # TODO: not yet supported
-    def create_relationships; end
-
-    def total
-      importerexporter.entries.count
-    end
-
-    def extra_filters
-      output = ""
-      if importerexporter.start_date.present?
-        start_dt = importerexporter.start_date.to_datetime.strftime('%FT%TZ')
-        finish_dt = importerexporter.finish_date.present? ? importerexporter.finish_date.to_datetime.end_of_day.strftime('%FT%TZ') : "NOW"
-        output += " AND system_modified_dtsi:[#{start_dt} TO #{finish_dt}]"
-      end
-      output += importerexporter.work_visibility.present? ? " AND visibility_ssi:#{importerexporter.work_visibility}" : ""
-      output += importerexporter.workflow_status.present? ? " AND workflow_state_name_ssim:#{importerexporter.workflow_status}" : ""
-      output
-    end
-
     def current_record_ids
       @work_ids = []
       @collection_ids = []
@@ -136,70 +107,19 @@ module Bulkrax
       @work_ids + @collection_ids + @file_set_ids
     end
 
-    # Set the following instance variables: @work_ids, @collection_ids, @file_set_ids
-    # @see #current_record_ids
-    def set_ids_for_exporting_from_importer
-      entry_ids = Importer.find(importerexporter.export_source).entries.pluck(:id)
-      complete_statuses = Status.latest_by_statusable
-                                .includes(:statusable)
-                                .where('bulkrax_statuses.statusable_id IN (?) AND bulkrax_statuses.statusable_type = ? AND status_message = ?', entry_ids, 'Bulkrax::Entry', 'Complete')
-
-      complete_entry_identifiers = complete_statuses.map { |s| s.statusable&.identifier&.gsub(':', '\:') }
-      extra_filters = extra_filters.presence || '*:*'
-
-      { :@work_ids => ::Hyrax.config.curation_concerns, :@collection_ids => [::Collection], :@file_set_ids => [::FileSet] }.each do |instance_var, models_to_search|
-        instance_variable_set(instance_var, ActiveFedora::SolrService.post(
-          extra_filters.to_s,
-          fq: [
-            %(#{::Solrizer.solr_name(work_identifier)}:("#{complete_entry_identifiers.join('" OR "')}")),
-            "has_model_ssim:(#{models_to_search.join(' OR ')})"
-          ],
-          fl: 'id',
-          rows: 2_000_000_000
-        )['response']['docs'].map { |obj| obj['id'] })
-      end
-    end
-
     # export methods
-
-    def create_new_entries
-      current_record_ids.each_with_index do |id, index|
-        break if limit_reached?(limit, index)
-
-        this_entry_class = if @collection_ids.include?(id)
-                             collection_entry_class
-                           elsif @file_set_ids.include?(id)
-                             file_set_entry_class
-                           else
-                             entry_class
-                           end
-        new_entry = find_or_create_entry(this_entry_class, id, 'Bulkrax::Exporter')
-
-        begin
-          entry = ExportWorkJob.perform_now(new_entry.id, current_run.id)
-        rescue => e
-          Rails.logger.info("#{e.message} was detected during export")
-        end
-
-        self.headers |= entry.parsed_metadata.keys if entry
-      end
-    end
-    alias create_from_collection create_new_entries
-    alias create_from_importer create_new_entries
-    alias create_from_worktype create_new_entries
-    alias create_from_all create_new_entries
 
     # rubocop:disable Metrics/MethodLength, Metrics/AbcSize
     def write_files
       require 'open-uri'
       require 'socket'
       importerexporter.entries.where(identifier: current_record_ids)[0..limit || total].each do |entry|
-        work = ActiveFedora::Base.find(entry.identifier)
-        next unless Hyrax.config.curation_concerns.include?(work.class)
+        record = ActiveFedora::Base.find(entry.identifier)
+        next unless Hyrax.config.curation_concerns.include?(record.class)
         bag = BagIt::Bag.new setup_bagit_folder(entry.identifier)
         bag_entries = [entry]
 
-        work.file_sets.each do |fs|
+        record.file_sets.each do |fs|
           if @file_set_ids.present?
             file_set_entry = Bulkrax::CsvFileSetEntry.where("parsed_metadata LIKE '%#{fs.id}%'").first
             bag_entries << file_set_entry unless file_set_entry.nil?
@@ -238,42 +158,6 @@ module Bulkrax
         key != source_identifier.to_s
     end
 
-    # All possible column names
-    def export_headers
-      headers = sort_headers(self.headers)
-
-      # we don't want access_control_id exported and we want file at the end
-      headers.delete('access_control_id') if headers.include?('access_control_id')
-
-      # add the headers below at the beginning or end to maintain the preexisting export behavior
-      headers.prepend('model')
-      headers.prepend(source_identifier.to_s)
-      headers.prepend('id')
-
-      headers.uniq
-    end
-
-    def object_names
-      return @object_names if @object_names
-
-      @object_names = mapping.values.map { |value| value['object'] }
-      @object_names.uniq!.delete(nil)
-
-      @object_names
-    end
-
-    def sort_headers(headers)
-      # converting headers like creator_name_1 to creator_1_name so they get sorted by numerical order
-      # while keeping objects grouped together
-      headers.sort_by do |item|
-        number = item.match(/\d+/)&.[](0) || 0.to_s
-        sort_number = number.rjust(4, "0")
-        object_prefix = object_names.detect { |o| item.match(/^#{o}/) } || item
-        remainder = item.gsub(/^#{object_prefix}_/, '').gsub(/_#{number}/, '')
-        "#{object_prefix}_#{sort_number}_#{remainder}"
-      end
-    end
-
     def setup_triple_metadata_export_file(id)
       File.join(importerexporter.exporter_export_path, id, 'metadata.nt')
     end
@@ -291,11 +175,6 @@ module Bulkrax
       File.open(setup_triple_metadata_export_file(e.identifier), "w") do |triples|
         triples.write(rdf)
       end
-    end
-
-    def required_elements?(keys)
-      return if keys.blank?
-      !required_elements.map { |el| keys.map(&:to_s).include?(el) }.include?(false)
     end
 
     # @todo - investigate getting directory structure
@@ -347,6 +226,12 @@ module Bulkrax
       bag = BagIt::Bag.new(path)
       return nil unless bag.valid?
       bag
+    end
+
+    # use the version of this method from the application parser instead
+    def real_import_file_path
+      return importer_unzip_path if file? && zip?
+      parser_fields['import_file_path']
     end
   end
 end

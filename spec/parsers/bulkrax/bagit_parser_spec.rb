@@ -126,6 +126,11 @@ module Bulkrax
 
       context 'as a CSV entry' do
         subject { described_class.new(csv_importer) }
+
+        before do
+          allow(::Hyrax.config).to receive(:curation_concerns).and_return([Work])
+        end
+
         describe '#valid_import?' do
           it 'returns true if importer_fields are present' do
             expect(subject.valid_import?).to be true

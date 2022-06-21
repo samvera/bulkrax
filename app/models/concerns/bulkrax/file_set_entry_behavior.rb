@@ -10,7 +10,7 @@ module Bulkrax
       parsed_metadata['file'].each_with_index do |filename, i|
         next if filename.blank?
 
-        path_to_file = ::File.join(parser.path_to_files(parent_id: parsed_metadata['parents']), filename)
+        path_to_file = ::File.join(parser.path_to_files(parent_id: parsed_metadata[related_parents_parsed_mapping]), filename)
 
         parsed_metadata['file'][i] = path_to_file
       end

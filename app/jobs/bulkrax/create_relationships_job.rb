@@ -43,7 +43,7 @@ module Bulkrax
         raise ::StandardError, %("#{rel}" needs either a child or a parent to create a relationship) if rel.child_id.nil? || rel.parent_id.nil?
         @child_entry, child_record = find_record(rel.child_id, importer_run_id)
         if child_record
-          child_record&.is_a?(::Collection) ? @child_records[:collections] << child_record : @child_records[:works] << child_record
+          child_record.is_a?(::Collection) ? @child_records[:collections] << child_record : @child_records[:works] << child_record
         end
       end
 
