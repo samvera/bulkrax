@@ -20,10 +20,8 @@ module Bulkrax
       rdf_format ? RdfEntry : CsvEntry
     end
 
-    def path_to_files(parent_id:)
-      @path_to_files ||= File.join(
-        zip? ? importer_unzip_path : File.dirname(import_file_path), parent_id, 'data'
-      )
+    def path_to_files(filename:)
+      @path_to_files ||= Dir.glob(File.join(import_file_path, '**/data', filename)).first
     end
 
     # Take a random sample of 10 metadata_paths and work out the import fields from that
