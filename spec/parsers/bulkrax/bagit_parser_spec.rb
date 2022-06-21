@@ -224,17 +224,9 @@ module Bulkrax
 
         describe 'Bag with CSV' do
           let(:entry) { FactoryBot.create(:bulkrax_csv_entry, importerexporter: csv_importer) }
-          # let(:parser_fields) do
-          #   {
-          #     'import_file_path' => './spec/fixtures/bags/bag_with_csv',
-          #     'metadata_file_name' => 'metadata.csv',
-          #     'metadata_format' => 'Bulkrax::CsvEntry'
-          #   }
-          # end
 
           before do
             allow(Bulkrax::CsvEntry).to receive_message_chain(:where, :first_or_create!).and_return(entry)
-            # csv_importer.parser_fields = parser_fields
           end
 
           context 'Bag containing CSV' do
