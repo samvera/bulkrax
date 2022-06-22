@@ -20,7 +20,7 @@ module Bulkrax
       allow(ImporterRun).to receive(:find).with(importer_run.id).and_return(importer_run)
       allow(::Hyrax.config).to receive(:curation_concerns).and_return([Work])
       allow(::Work).to receive(:where).and_return([])
-      allow(importer.parser).to receive(:path_to_files).with(filename: 'removed.png').and_return('spec/fixtures/csv/files/sun.jpg')
+      allow(importer.parser).to receive(:path_to_files).with(filename: 'removed.png').and_return('spec/fixtures/removed.png')
     end
 
     describe '#perform' do
