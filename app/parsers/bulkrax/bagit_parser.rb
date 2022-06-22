@@ -101,7 +101,6 @@ module Bulkrax
       when 'importer'
         set_ids_for_exporting_from_importer
       end
-
       @work_ids + @collection_ids + @file_set_ids
     end
 
