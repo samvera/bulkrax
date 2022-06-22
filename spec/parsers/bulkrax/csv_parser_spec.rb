@@ -506,7 +506,17 @@ module Bulkrax
     end
 
     describe '#path_to_files' do
-      pending
+      context 'when an argument is passed' do
+        it 'returns the correct path' do
+          expect(subject.path_to_files(filename: 'sun.jpg')).to eq('spec/fixtures/csv/files/sun.jpg')
+        end
+      end
+
+      context 'when an argument is not passed' do
+        it 'returns the correct path' do
+          expect(subject.path_to_files).to eq('spec/fixtures/csv/files/')
+        end
+      end
     end
 
     describe '#write_errored_entries_file', clean_downloads: true do

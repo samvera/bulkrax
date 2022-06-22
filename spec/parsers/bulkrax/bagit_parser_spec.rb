@@ -262,6 +262,14 @@ module Bulkrax
             end
           end
         end
+
+        describe '#path_to_files' do
+          context 'when an argument is passed' do
+            it 'returns the correct path' do
+              expect(subject.path_to_files(filename: 'moon.jpg')).to eq('spec/fixtures/bags/bag_with_csv/data/moon.jpg')
+            end
+          end
+        end
       end
     end
 
