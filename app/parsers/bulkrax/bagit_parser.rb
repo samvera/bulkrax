@@ -88,9 +88,9 @@ module Bulkrax
     def total
       @total = importer.parser_fields['total'] || 0 if importer?
 
-      @total =  if exporter?
-                  limit.nil? || limit.zero? ? current_record_ids.count : limit
-                end
+      @total = if exporter?
+                 limit.nil? || limit.zero? ? current_record_ids.count : limit
+               end
 
       return @total || 0
     rescue StandardError
