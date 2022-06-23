@@ -15,9 +15,20 @@ module Bulkrax
       false
     end
 
+    def rdf_format
+      parser_fields&.[]('metadata_format') == "Bulkrax::RdfEntry"
+    end
+
     def entry_class
-      rdf_format = parser_fields&.[]('metadata_format') == "Bulkrax::RdfEntry"
-      rdf_format ? RdfEntry : CsvEntry
+      rdf_format ? RdfEntry : super
+    end
+
+    def collection_entry_class
+      rdf_format ? RdfCollectionEntry : super
+    end
+
+    def file_set_entry_class
+      rdf_format ? RdfFileSetEntry : super
     end
 
     def path_to_files(filename:)
