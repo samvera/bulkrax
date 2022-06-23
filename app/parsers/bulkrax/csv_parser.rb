@@ -272,8 +272,8 @@ module Bulkrax
       CsvFileSetEntry
     end
 
-    # See https://stackoverflow.com/questions/2650517/count-the-number-of-lines-in-a-file-without-reading-entire-file-into-memory
-    #   Changed to grep as wc -l counts blank lines, and ignores the final unescaped line (which may or may not contain data)
+    # TODO: figure out why using the version of this method that's in the bagit parser
+    # breaks specs for the "if importer?" line
     def total
       @total = importer.parser_fields['total'] || 0 if importer?
       @total = limit || current_record_ids.count if exporter?
@@ -382,10 +382,11 @@ module Bulkrax
     end
 
     # Retrieve the path where we expect to find the files
-    def path_to_files
+    def path_to_files(**args)
+      filename = args.fetch(:filename, '')
+
       @path_to_files ||= File.join(
-        zip? ? importer_unzip_path : File.dirname(import_file_path),
-        'files'
+        zip? ? importer_unzip_path : File.dirname(import_file_path), 'files', filename
       )
     end
 
