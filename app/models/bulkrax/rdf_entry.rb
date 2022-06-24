@@ -28,6 +28,7 @@ module Bulkrax
         end
       end
       return {
+        # TODO: set this to be the actual source_identifier, not the first statement
         source_id => reader.subjects.first.to_s,
         delete: delete,
         format: format,
@@ -60,6 +61,7 @@ module Bulkrax
       record.each_statement do |statement|
         # Only process the subject for our record (in case other data is in the file)
         next unless statement.subject.to_s == self.raw_metadata[source_identifier]
+        # TODO: pass along valid model properties, not the entire predicate
         add_metadata(statement.predicate.to_s, statement.object.to_s)
       end
       add_visibility
