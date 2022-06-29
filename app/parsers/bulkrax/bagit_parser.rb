@@ -113,6 +113,7 @@ module Bulkrax
       when 'importer'
         set_ids_for_exporting_from_importer
       end
+
       @work_ids + @collection_ids + @file_set_ids
     end
 
@@ -122,20 +123,27 @@ module Bulkrax
     def write_files
       require 'open-uri'
       require 'socket'
+
+      folder_count = 1
+      records_in_folder = 0
+
       importerexporter.entries.where(identifier: current_record_ids)[0..limit || total].each do |entry|
         record = ActiveFedora::Base.find(entry.identifier)
         next unless Hyrax.config.curation_concerns.include?(record.class)
-        folder_count = 1
-        records_in_folder = 0
-        bag = BagIt::Bag.new setup_bagit_folder(folder_count, entry.identifier)
+
         bag_entries = [entry]
+        file_set_entry = Bulkrax::CsvFileSetEntry.where("parsed_metadata LIKE '%#{record.id}%'").first
+        bag_entries << file_set_entry unless file_set_entry.nil?
+
+        records_in_folder += bag_entries.count
+        if records_in_folder > 1000
+          folder_count += 1
+          records_in_folder = bag_entries.count
+        end
+
+        bag ||= BagIt::Bag.new setup_bagit_folder(folder_count, entry.identifier)
 
         record.file_sets.each do |fs|
-          if @file_set_ids.present?
-            file_set_entry = Bulkrax::CsvFileSetEntry.where("parsed_metadata LIKE '%#{fs.id}%'").first
-            bag_entries << file_set_entry unless file_set_entry.nil?
-          end
-
           file_name = filename(fs)
           next if file_name.blank?
           io = open(fs.original_file.uri)
@@ -148,12 +156,6 @@ module Bulkrax
             entry.status_info(e)
             status_info(e)
           end
-        end
-
-        records_in_folder += bag_entries.count
-        if records_in_folder > 1000
-          folder_count += 1 unless folder_count == 1
-          records_in_folder = bag_entries.count
         end
 
         CSV.open(setup_csv_metadata_export_file(folder_count, entry.identifier), "w", headers: export_headers, write_headers: true) do |csv|
