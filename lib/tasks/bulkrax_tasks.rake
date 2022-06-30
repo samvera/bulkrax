@@ -10,6 +10,8 @@ namespace :bulkrax do
         switch!(account)
 
         rerun_exporters_and_delete_zips
+
+        puts "=============== finished updating #{account.name} ============"
       end
     else
       rerun_exporters_and_delete_zips
@@ -19,7 +21,6 @@ namespace :bulkrax do
   def rerun_exporters_and_delete_zips
     begin
       Bulkrax::Exporter.all.each { |e| Bulkrax::ExporterJob.perform_later(e.id) }
-      puts "=============== finished updating #{account.name} ============"
     rescue => e
       puts "(#{e.message})"
     end
