@@ -262,10 +262,20 @@ module Bulkrax
     end
 
     def zip
-      FileUtils.rm_rf(exporter_export_zip_path)
-      Zip::File.open(exporter_export_zip_path, create: true) do |zip_file|
-        Dir["#{exporter_export_path}/**/**"].each do |file|
-          zip_file.add(file.sub("#{exporter_export_path}/", ''), file)
+      if exporter_export_zip_path.exclude?('zip')
+        Dir["#{exporter_export_path}/**"].each do |folder|
+          zip_path = "#{exporter_export_zip_path.split('/').last}_#{folder.split('/').last}.zip"
+          Zip::File.open(File.join("#{exporter_export_zip_path}/#{zip_path}"), create: true) do |zip_file|
+            Dir["#{folder}/**/**"].each do |file|
+              zip_file.add(file.sub("#{folder}/", ''), file)
+            end
+          end
+        end
+      else
+        FileUtils.rm_rf(exporter_export_zip_path)
+        Zip::File.open(exporter_export_zip_path, create: true) do |zip_file|
+          Dir["#{exporter_export_path}/**/**"].each do |file|
+            zip_file.add(file.sub("#{exporter_export_path}/", ''), file)
         end
       end
     end
