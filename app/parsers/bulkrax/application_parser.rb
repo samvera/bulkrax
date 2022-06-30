@@ -276,6 +276,7 @@ module Bulkrax
         Zip::File.open(exporter_export_zip_path, create: true) do |zip_file|
           Dir["#{exporter_export_path}/**/**"].each do |file|
             zip_file.add(file.sub("#{exporter_export_path}/", ''), file)
+          end
         end
       end
     end
