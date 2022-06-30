@@ -124,9 +124,9 @@ module Bulkrax
     end
 
     def exporter_export_zip_path
-      @exporter_export_zip_path ||= FileUtils.mkdir_p(File.join(parser.base_path('export'), "export_#{self.id}_#{self.exporter_runs.last.id}")).first
+      @exporter_export_zip_path ||= File.join(parser.base_path('export'), "export_#{self.id}_#{self.exporter_runs.last.id}")
     rescue
-      @exporter_export_zip_path ||= File.join(parser.base_path('export'), "export_#{self.id}_#{self.exporter_runs.last.id}.zip") || File.join(parser.base_path('export'), "export_#{self.id}_0.zip")
+      @exporter_export_zip_path ||= File.join(parser.base_path('export'), "export_#{self.id}_0")
     end
 
     def export_properties
