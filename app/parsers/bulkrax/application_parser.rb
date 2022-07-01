@@ -247,8 +247,6 @@ module Bulkrax
     def write
       write_files
       zip
-      # uncomment next line to debug for faulty zipping during bagit export
-      bagit_zip_file_size_check if importerexporter.parser_klass.include?('Bagit')
     end
 
     def unzip(file_to_unzip)
@@ -266,27 +264,6 @@ module Bulkrax
       Zip::File.open(exporter_export_zip_path, create: true) do |zip_file|
         Dir["#{exporter_export_path}/**/**"].each do |file|
           zip_file.add(file.sub("#{exporter_export_path}/", ''), file)
-        end
-      end
-    end
-
-    # TODO: remove Entry::BagitZipError as well as this method when we're sure it's not needed
-    def bagit_zip_file_size_check
-      Zip::File.open(exporter_export_zip_path) do |zip_file|
-        zip_file.select { |entry| entry.name.include?('data/') && entry.file? }.each do |zipped_file|
-          Dir["#{exporter_export_path}/**/data/*"].select { |file| file.include?(zipped_file.name) }.each do |file|
-            begin
-              raise BagitZipError, "Invalid Bag, file size mismatch for #{file.sub("#{exporter_export_path}/", '')}" if File.size(file) != zipped_file.size
-            rescue BagitZipError => e
-              matched_entry_ids = importerexporter.entry_ids.select do |id|
-                Bulkrax::Entry.find(id).identifier.include?(zipped_file.name.split('/').first)
-              end
-              matched_entry_ids.each do |entry_id|
-                Bulkrax::Entry.find(entry_id).status_info(e)
-                status_info('Complete (with failures)')
-              end
-            end
-          end
         end
       end
     end
