@@ -39,8 +39,6 @@
                       <%= render 'downloads', exporter: exporter, form: form %>
                     <% end %>
                   <% end%>
-                    <%= link_to raw('<span class="glyphicon glyphicon-download"></span>'), exporter_download_path(exporter) %>
-                  <% end%>
                 </td>
                 <td><%= link_to raw('<span class="glyphicon glyphicon-info-sign"></span>'), exporter_path(exporter) %></td>
                 <td><%= link_to raw('<span class="glyphicon glyphicon-pencil"></span>'), edit_exporter_path(exporter) %></td>

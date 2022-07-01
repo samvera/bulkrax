@@ -3,4 +3,5 @@
   label_html: { class: 'hidden' },
   collection: form.object.exporter_export_zip_files
 %>
-
+<%# link_to raw('<span class="glyphicon glyphicon-download"></span>'), exporter_download_path(exporter), :html => {:onclick => raise 'your hands'} %>
+<%= form.button :submit, 'Download' %>
