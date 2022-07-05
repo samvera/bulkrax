@@ -70,7 +70,7 @@ Bulkrax.setup do |config|
 end
 ```
 
-The [configuration guide](https://github.com/samvera-labs/bulkrax/wiki/Configuration) provides detailed instructions on the various available configurations.
+The [configuration guide](https://github.com/samvera-labs/bulkrax/wiki/Configuring-Bulkrax) provides detailed instructions on the various available configurations.
 
 Example:
 
@@ -120,7 +120,7 @@ It's unlikely that the incoming import data has fields that exactly match those 
 
 By default, a mapping for the OAI parser has been added to map standard oai_dc fields to Hyrax basic_metadata. The other parsers have no default mapping, and will map any incoming fields to Hyrax properties with the same name. Configurations can be added in `config/intializers/bulkrax.rb`
 
-Configuring field mappings is documented in the [Bulkrax Configuration Guide](https://github.com/samvera-labs/bulkrax/wiki/Configuration).
+Configuring field mappings is documented in the [Bulkrax Configuration Guide](https://github.com/samvera-labs/bulkrax/wiki/Configuring-Bulkrax).
 
 ## Importing Files
 
@@ -151,7 +151,7 @@ end
 
 ## Customizing Bulkrax
 
-For further information on how to extend and customize Bulkrax, please see the [Bulkrax Customization Guide](https://github.com/samvera-labs/bulkrax/wiki/Customizing).
+For further information on how to extend and customize Bulkrax, please see the [Bulkrax Customization Guide](https://github.com/samvera-labs/bulkrax/wiki/Customizing-Bulkrax).
 
 ## How it Works
 Once you have Bulkrax installed, you will have access to an easy to use interface with which you are able to create, edit, delete, run, and re-run imports and exports.
@@ -190,8 +190,6 @@ for contributing guidelines.
 We encourage everyone to help improve this project.  Bug reports and pull requests are welcome on GitHub at https://github.com/samvera-labs/bulkrax.
 
 This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant](https://contributor-covenant.org) code of conduct.
-
-All Contributors should have signed the Samvera Contributor License Agreement (CLA)
 
 ## Questions
 Questions can be sent to support@notch8.com. Please make sure to include "Bulkrax" in the subject line of your email.
