@@ -35,8 +35,9 @@
                 <td><%= exporter.created_at %></td>
                 <td>
                   <% if File.exist?(exporter.exporter_export_zip_path) %>
-                    <%= simple_form_for exporter do |form| %>
+                    <%= simple_form_for(exporter, method: :get, url: exporter_download_path(exporter)) do |form| %>
                       <%= render 'downloads', exporter: exporter, form: form %>
+                      <%= form.button :submit, value: 'Download', data: { disable_with: false } %>
                     <% end %>
                   <% end%>
                 </td>
