@@ -4,6 +4,7 @@ require 'csv'
 module Bulkrax
   class CsvParser < ApplicationParser # rubocop:disable Metrics/ClassLength
     include ErroredEntries
+    include ExportBehavior
     attr_writer :collections, :file_sets, :works
 
     def self.export_supported?
@@ -307,9 +308,33 @@ module Bulkrax
     # export methods
 
     def write_files
-      CSV.open(setup_export_file, "w", headers: export_headers, write_headers: true) do |csv|
-        importerexporter.entries.where(identifier: current_record_ids)[0..limit || total].each do |e|
-          csv << e.parsed_metadata
+      require 'open-uri'
+      folder_count = 0
+
+      importerexporter.entries.where(identifier: current_record_ids)[0..limit || total].in_groups_of(1000, false) do |group|
+        folder_count += 1
+
+        CSV.open(setup_export_file(folder_count), "w", headers: export_headers, write_headers: true) do |csv|
+          group.each do |entry|
+            csv << entry.parsed_metadata
+            next if importerexporter.metadata_only? || entry.type == 'Bulkrax::CsvCollectionEntry'
+
+            record = ActiveFedora::Base.find(entry.identifier)
+            file_sets = record.file_set? ? Array.wrap(record) : record.file_sets
+            file_sets << record.thumbnail if exporter.include_thumbnails && record.thumbnail.present? && record.work?
+            file_sets.each do |fs|
+              path = File.join(exporter_export_path, folder_count.to_s, 'files')
+              FileUtils.mkdir_p(path) unless File.exist? path
+              file = filename(fs)
+              io = open(fs.original_file.uri)
+              next if file.blank?
+
+              File.open(File.join(path, file), 'wb') do |f|
+                f.write(io.read)
+                f.close
+              end
+            end
+          end
         end
       end
     end
@@ -356,8 +381,11 @@ module Bulkrax
     end
 
     # in the parser as it is specific to the format
-    def setup_export_file
-      File.join(importerexporter.exporter_export_path, "export_#{importerexporter.export_source}_from_#{importerexporter.export_from}.csv")
+    def setup_export_file(folder_count)
+      path = File.join(importerexporter.exporter_export_path, folder_count.to_s)
+      FileUtils.mkdir_p(path) unless File.exist?(path)
+
+      File.join(path, "export_#{importerexporter.export_source}_from_#{importerexporter.export_from}_#{folder_count.to_s}.csv")
     end
 
     # Retrieve file paths for [:file] mapping in records
