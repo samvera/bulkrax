@@ -1,6 +1,8 @@
-<%= form.input :exporter_export_zip_files, label: false do %>
-  <%= form.select :exporter_export_zip_files,
-    form.object.exporter_export_zip_files,
-    action: :download
-  %>
-<% end%>
+<%= form.select :exporter_export_zip_files,
+  form.object.exporter_export_zip_files,
+  {},
+  {
+    class: 'btn btn-default form-control',
+    style: 'width: 200px'
+  }
+%>
