@@ -389,7 +389,7 @@ module Bulkrax
       path = File.join(importerexporter.exporter_export_path, folder_count.to_s)
       FileUtils.mkdir_p(path) unless File.exist?(path)
 
-      File.join(path, "export_#{importerexporter.export_source}_from_#{importerexporter.export_from}_#{folder_count.to_s}.csv")
+      File.join(path, "export_#{importerexporter.export_source}_from_#{importerexporter.export_from}_#{folder_count}.csv")
     end
 
     # Retrieve file paths for [:file] mapping in records
