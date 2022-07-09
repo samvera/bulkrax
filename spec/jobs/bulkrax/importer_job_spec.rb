@@ -7,6 +7,10 @@ module Bulkrax
   RSpec.describe ImporterJob, type: :job do
     subject(:importer_job) { described_class.new(importer: importer) }
     let(:importer) { FactoryBot.create(:bulkrax_importer_oai) }
+    let(:parser) { importer.parser }
+    let(:doc) { LibXML::XML::Document.file('./spec/fixtures/oai/oai-pmh-ListSets.xml') }
+    let(:response) { OAI::ListSetsResponse.new(doc) }
+    let(:collections_count) { doc.to_s.scan(/<set>(.*?)<\/set>/m).count }
 
     before do
       allow(Bulkrax::Importer).to receive(:find).with(1).and_return(importer)
@@ -23,13 +27,9 @@ module Bulkrax
         importer_job.perform(importer.id, true)
       end
 
-      let(:doc) { LibXML::XML::Document.file('./spec/fixtures/oai/oai-pmh.xml') }
-      let(:response) { OAI::ListSetsResponse.new(doc) }
-      let(:parser) { importer.parser }
-
       before do
         allow(parser).to receive(:collections).and_return(response)
-        allow(parser.collections).to receive(:count).and_return(doc.to_s.scan(/<set>(.*?)<\/set>/m).count)
+        allow(parser.collections).to receive(:count).and_return(collections_count)
       end
 
       it 'updates the current run counters' do
@@ -53,7 +53,6 @@ module Bulkrax
 
         it 'logs the error on the importer' do
           importer_job.perform(importer.id)
-
           expect(importer.status).to eq('Failed')
         end
 
@@ -69,6 +68,8 @@ module Bulkrax
       before do
         allow(importer).to receive(:schedulable?).and_return(true)
         allow(importer).to receive(:next_import_at).and_return(1)
+        allow(parser).to receive(:collections).and_return(response)
+        allow(parser.collections).to receive(:count).and_return(collections_count)
       end
 
       it 'schedules import_works when schedulable?' do
