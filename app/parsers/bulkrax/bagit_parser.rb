@@ -134,11 +134,12 @@ module Bulkrax
         bag_entries = [entry]
         file_set_entry = Bulkrax::CsvFileSetEntry.where("parsed_metadata LIKE '%#{record.id}%'").first
         bag_entries << file_set_entry unless file_set_entry.nil?
+        work_count = bag_entries.select { |entry| entry.class == CsvEntry }.count
 
-        records_in_folder += bag_entries.count
+        records_in_folder += work_count
         if records_in_folder > 1000
           folder_count += 1
-          records_in_folder = bag_entries.count
+          records_in_folder = work_count
         end
 
         bag ||= BagIt::Bag.new setup_bagit_folder(folder_count, entry.identifier)
