@@ -211,7 +211,11 @@ module Bulkrax
     # find the related file set ids so entries can be made for export
     def find_child_file_sets(work_ids)
       work_ids.each do |id|
-        ActiveFedora::Base.find(id).file_set_ids.each { |fs_id| @file_set_ids << fs_id }
+        begin
+          ActiveFedora::Base.find(id).file_set_ids.each { |fs_id| @file_set_ids << fs_id }
+        rescue NameError, ActiveFedora::ObjectNotFoundError
+          return
+        end
       end
     end
 

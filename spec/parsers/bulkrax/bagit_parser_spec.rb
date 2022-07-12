@@ -279,6 +279,15 @@ module Bulkrax
       let(:work_ids_solr) { [OpenStruct.new(id: SecureRandom.alphanumeric(9)), OpenStruct.new(id: SecureRandom.alphanumeric(9))] }
       let(:collection_ids_solr) { [OpenStruct.new(id: SecureRandom.alphanumeric(9))] }
       let(:file_set_ids_solr) { [OpenStruct.new(id: SecureRandom.alphanumeric(9)), OpenStruct.new(id: SecureRandom.alphanumeric(9)), OpenStruct.new(id: SecureRandom.alphanumeric(9))] }
+      let(:parent_record_1) { build(:work) }
+      let(:parent_record_2) { build(:another_work) }
+
+      before do
+        allow(parent_record_1).to receive(:file_set_ids).and_return([file_set_ids_solr.pluck(:id).first])
+        allow(parent_record_2).to receive(:file_set_ids).and_return([])
+        allow(ActiveFedora::Base).to receive(:find).with(work_ids_solr.first.id).and_return(parent_record_1)
+        allow(ActiveFedora::Base).to receive(:find).with(work_ids_solr.last.id).and_return(parent_record_2)
+      end
 
       describe '#create_new_entries' do
         subject(:parser) { described_class.new(exporter) }
@@ -286,7 +295,7 @@ module Bulkrax
 
         it 'invokes Bulkrax::ExportWorkJob once per Entry' do
           expect(ActiveFedora::SolrService).to receive(:query).and_return(work_ids_solr)
-          expect(Bulkrax::ExportWorkJob).to receive(:perform_now).exactly(2).times
+          expect(Bulkrax::ExportWorkJob).to receive(:perform_now).exactly(3).times
           parser.create_new_entries
         end
 
@@ -305,7 +314,7 @@ module Bulkrax
 
           it 'invokes Bulkrax::ExportWorkJob once per Entry' do
             expect(ActiveFedora::SolrService).to receive(:query).and_return(work_ids_solr)
-            expect(Bulkrax::ExportWorkJob).to receive(:perform_now).exactly(2).times
+            expect(Bulkrax::ExportWorkJob).to receive(:perform_now).exactly(3).times
             parser.create_new_entries
           end
         end
@@ -315,6 +324,7 @@ module Bulkrax
 
           before do
             allow(ActiveFedora::SolrService).to receive(:query).and_return(work_ids_solr, file_set_ids_solr)
+            allow(ActiveFedora::Base).to receive(:find).and_return(parent_record_1)
           end
 
           it 'exports works, and file sets' do
