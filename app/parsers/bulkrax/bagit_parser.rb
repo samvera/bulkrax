@@ -114,6 +114,8 @@ module Bulkrax
         set_ids_for_exporting_from_importer
       end
 
+      find_child_file_sets(@work_ids) if importerexporter.export_from == 'collection' || importerexporter.export_from == 'worktype'
+
       @work_ids + @collection_ids + @file_set_ids
     end
 
@@ -132,22 +134,13 @@ module Bulkrax
         next unless Hyrax.config.curation_concerns.include?(record.class)
 
         bag_entries = [entry]
-        file_set_entries = Bulkrax::CsvFileSetEntry.where("parsed_metadata LIKE '%#{record.id}%'")
-        items = []
-        file_set_entries.each do |fse|
-          item = fse.attributes['parsed_metadata']['item_1']
-          unless items.include?(item) || file_set_entries.nil?
-            items << item
-            bag_entries << fse
-          end
-        end
+        file_set_entries = Bulkrax::CsvFileSetEntry.where(importerexporter_id: importerexporter.id).where("parsed_metadata LIKE '%#{record.id}%'")
+        file_set_entries.each { |fse| bag_entries << fse }
 
-        work_count = bag_entries.select { |entry| entry.class == CsvEntry }.count
-
-        records_in_folder += work_count
-        if records_in_folder > works_split_count
+        records_in_folder += bag_entries.count
+        if records_in_folder > records_split_count
           folder_count += 1
-          records_in_folder = work_count
+          records_in_folder = bag_entries.count
         end
 
         bag ||= BagIt::Bag.new setup_bagit_folder(folder_count, entry.identifier)

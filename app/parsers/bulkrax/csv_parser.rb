@@ -208,6 +208,13 @@ module Bulkrax
       @work_ids + @collection_ids + @file_set_ids
     end
 
+    # find the related file set ids so entries can be made for export
+    def find_child_file_sets(work_ids)
+      work_ids.each do |id|
+        ActiveFedora::Base.find(id).file_set_ids.each { |fs_id| @file_set_ids << fs_id }
+      end
+    end
+
     # Set the following instance variables: @work_ids, @collection_ids, @file_set_ids
     # @see #current_record_ids
     def set_ids_for_exporting_from_importer
@@ -284,7 +291,7 @@ module Bulkrax
       @total = 0
     end
 
-    def works_split_count
+    def records_split_count
       1000
     end
 
@@ -315,7 +322,7 @@ module Bulkrax
       require 'open-uri'
       folder_count = 0
 
-      importerexporter.entries.where(identifier: current_record_ids)[0..limit || total].in_groups_of(works_split_count, false) do |group|
+      importerexporter.entries.where(identifier: current_record_ids)[0..limit || total].in_groups_of(records_split_count, false) do |group|
         folder_count += 1
 
         CSV.open(setup_export_file(folder_count), "w", headers: export_headers, write_headers: true) do |csv|
