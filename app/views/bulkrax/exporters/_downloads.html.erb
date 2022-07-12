@@ -1,5 +1,5 @@
 <%= form.select :exporter_export_zip_files,
-  form.object.exporter_export_zip_files.sort,
+  exporter.sort_zip_files(form.object.exporter_export_zip_files.flatten),
   {},
   {
     class: 'btn btn-default form-control',

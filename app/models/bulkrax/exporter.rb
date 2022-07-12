@@ -141,5 +141,14 @@ module Bulkrax
     def metadata_only?
       export_type == 'metadata'
     end
+
+    def sort_zip_files(zip_files)
+      zip_files.sort_by do |item|
+        number = item.split('_').last.match(/\d+/)&.[](0) || 0.to_s
+        sort_number = number.rjust(4, "0")
+
+        sort_number
+      end
+    end
   end
 end
