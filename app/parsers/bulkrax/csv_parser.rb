@@ -284,6 +284,10 @@ module Bulkrax
       @total = 0
     end
 
+    def works_split_count
+      1000
+    end
+
     # @todo - investigate getting directory structure
     # @todo - investigate using perform_later, and having the importer check for
     #   DownloadCloudFileJob before it starts
@@ -311,7 +315,7 @@ module Bulkrax
       require 'open-uri'
       folder_count = 0
 
-      importerexporter.entries.where(identifier: current_record_ids)[0..limit || total].in_groups_of(1000, false) do |group|
+      importerexporter.entries.where(identifier: current_record_ids)[0..limit || total].in_groups_of(works_split_count, false) do |group|
         folder_count += 1
 
         CSV.open(setup_export_file(folder_count), "w", headers: export_headers, write_headers: true) do |csv|

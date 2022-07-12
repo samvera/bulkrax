@@ -132,12 +132,20 @@ module Bulkrax
         next unless Hyrax.config.curation_concerns.include?(record.class)
 
         bag_entries = [entry]
-        file_set_entry = Bulkrax::CsvFileSetEntry.where("parsed_metadata LIKE '%#{record.id}%'").first
-        bag_entries << file_set_entry unless file_set_entry.nil?
+        file_set_entries = Bulkrax::CsvFileSetEntry.where("parsed_metadata LIKE '%#{record.id}%'")
+        items = []
+        file_set_entries.each do |fse|
+          item = fse.attributes['parsed_metadata']['item_1']
+          unless items.include?(item) || file_set_entries.nil?
+            items << item
+            bag_entries << fse
+          end
+        end
+
         work_count = bag_entries.select { |entry| entry.class == CsvEntry }.count
 
         records_in_folder += work_count
-        if records_in_folder > 1000
+        if records_in_folder > works_split_count
           folder_count += 1
           records_in_folder = work_count
         end
