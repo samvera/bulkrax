@@ -303,7 +303,6 @@ module Bulkrax
         end
 
         it 'returns nothing when no child file sets are present' do
-          # byebug
           parser.find_child_file_sets(['123'])
           expect(parser.instance_variable_get(:@file_set_ids)).to eq([])
         end
