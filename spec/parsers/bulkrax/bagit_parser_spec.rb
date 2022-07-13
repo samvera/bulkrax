@@ -289,6 +289,18 @@ module Bulkrax
         allow(ActiveFedora::Base).to receive(:find).with(work_ids_solr.last.id).and_return(parent_record_2)
       end
 
+      describe '#find_child_file_sets' do
+        subject(:parser) { described_class.new(exporter) }
+
+        it 'returns the file sets attached to the parent works' do
+          parser.instance_variable_set(:@file_set_ids, [])
+
+          parser.find_child_file_sets(work_ids_solr.pluck(:id))
+
+          expect(parser.instance_variable_get(:@file_set_ids)).to eq([file_set_ids_solr.pluck(:id).first])
+        end
+      end
+
       describe '#create_new_entries' do
         subject(:parser) { described_class.new(exporter) }
         # Use OpenStructs to simulate the behavior of ActiveFedora::SolrHit instances.
