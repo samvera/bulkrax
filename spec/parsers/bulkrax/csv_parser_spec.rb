@@ -505,6 +505,12 @@ module Bulkrax
       end
     end
 
+    describe '#records_split_count' do
+      it 'defaults to 1000' do
+        expect(subject.records_split_count).to eq(1000)
+      end
+    end
+
     describe '#path_to_files' do
       context 'when an argument is passed' do
         it 'returns the correct path' do
