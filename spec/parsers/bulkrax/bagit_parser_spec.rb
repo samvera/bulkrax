@@ -292,12 +292,20 @@ module Bulkrax
       describe '#find_child_file_sets' do
         subject(:parser) { described_class.new(exporter) }
 
-        it 'returns the file sets attached to the parent works' do
+        before do
           parser.instance_variable_set(:@file_set_ids, [])
+          allow(ActiveFedora::Base).to receive(:find).with('123').and_return(ActiveFedora::ObjectNotFoundError)
+        end
 
+        it 'returns the ids when child file sets are present' do
           parser.find_child_file_sets(work_ids_solr.pluck(:id))
-
           expect(parser.instance_variable_get(:@file_set_ids)).to eq([file_set_ids_solr.pluck(:id).first])
+        end
+
+        it 'returns nothing when no child file sets are present' do
+          # byebug
+          parser.find_child_file_sets(['123'])
+          expect(parser.instance_variable_get(:@file_set_ids)).to eq([])
         end
       end
 
