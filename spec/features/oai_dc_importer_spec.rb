@@ -5,7 +5,6 @@ require 'rails_helper'
 module Bulkrax
   RSpec.describe 'Importing an oai feed' do
     let(:importer) { FactoryBot.build(:bulkrax_importer_oai) }
-    let(:collection) { FactoryBot.build(:collection) }
 
     it 'creates a work' do
       expect(importer).to receive(:import_objects)
