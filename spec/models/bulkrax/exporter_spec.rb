@@ -6,6 +6,11 @@ module Bulkrax
   RSpec.describe Exporter, type: :model do
     let(:exporter) { FactoryBot.create(:bulkrax_exporter, limit: 7) }
     let(:importer) { FactoryBot.create(:bulkrax_importer) }
+    let(:bulkrax_exporter_run) { FactoryBot.create(:bulkrax_exporter_run, exporter: exporter) }
+
+    before do
+      allow(exporter).to receive(:exporter_runs).and_return([bulkrax_exporter_run])
+    end
 
     describe 'export_from' do
       # rubocop:disable RSpec/ExampleLength
@@ -123,6 +128,22 @@ module Bulkrax
           expect(exporter.export_source_importer).to be_nil
           expect(exporter.export_source_collection).to be_nil
         end
+      end
+    end
+
+    describe '#setup_export_path' do
+      it 'returns a path to the exported zip files' do
+        expect(exporter.exporter_export_zip_path).to eq('tmp/exports/export_1_1')
+      end
+    end
+
+    describe '#sort_zip_files' do
+      it 'orders the zip files numerically' do
+        zip_files = ['export_1_10.zip', 'export_1_2.zip']
+        sorted = exporter.sort_zip_files(zip_files)
+
+        expect(sorted[0]).to eq('export_1_2.zip')
+        expect(sorted[1]).to eq('export_1_10.zip')
       end
     end
   end
