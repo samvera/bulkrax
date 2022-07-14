@@ -290,8 +290,6 @@ module Bulkrax
       end
 
       describe '#find_child_file_sets' do
-        subject(:parser) { described_class.new(exporter) }
-
         before do
           parser.instance_variable_set(:@file_set_ids, [])
           allow(ActiveFedora::Base).to receive(:find).with('123').and_return(ActiveFedora::ObjectNotFoundError)
@@ -309,7 +307,6 @@ module Bulkrax
       end
 
       describe '#create_new_entries' do
-        subject(:parser) { described_class.new(exporter) }
         # Use OpenStructs to simulate the behavior of ActiveFedora::SolrHit instances.
 
         it 'invokes Bulkrax::ExportWorkJob once per Entry' do
@@ -383,6 +380,32 @@ module Bulkrax
         end
       end
 
+      context 'folders and files for export' do
+        let(:bulkrax_exporter_run) { FactoryBot.create(:bulkrax_exporter_run, exporter: exporter) }
+
+        before do
+          allow(exporter).to receive(:exporter_runs).and_return([bulkrax_exporter_run])
+        end
+
+        describe '#setup_csv_metadata_export_file' do
+          it 'creates the csv metadata file' do
+            expect(subject.setup_csv_metadata_export_file(2, '3')).to eq('tmp/exports/1/1/2/3/metadata.csv')
+          end
+        end
+
+        describe '#setup_triple_metadata_export_file' do
+          it 'creates the csv metadata file' do
+            expect(subject.setup_triple_metadata_export_file(2, '3')).to eq('tmp/exports/1/1/2/3/metadata.nt')
+          end
+        end
+
+        describe '#setup_bagit_folder' do
+          it 'creates the csv metadata file' do
+            expect(subject.setup_bagit_folder(2, '3')).to eq('tmp/exports/1/1/2/3')
+          end
+        end
+      end
+
       describe '#total' do
         before do
           allow(subject).to receive(:current_record_ids).and_return(work_ids_solr + file_set_ids_solr)
@@ -403,7 +426,6 @@ module Bulkrax
       end
 
       describe '#export_headers' do
-        subject(:parser) { described_class.new(exporter) }
         let(:work_id) { SecureRandom.alphanumeric(9) }
         let(:exporter) do
           FactoryBot.create(:bulkrax_exporter_worktype_bagit, field_mapping: {
