@@ -6,11 +6,6 @@ module Bulkrax
   RSpec.describe Exporter, type: :model do
     let(:exporter) { FactoryBot.create(:bulkrax_exporter, limit: 7) }
     let(:importer) { FactoryBot.create(:bulkrax_importer) }
-    let(:bulkrax_exporter_run) { FactoryBot.create(:bulkrax_exporter_run, exporter: exporter) }
-
-    before do
-      allow(exporter).to receive(:exporter_runs).and_return([bulkrax_exporter_run])
-    end
 
     describe 'export_from' do
       # rubocop:disable RSpec/ExampleLength
@@ -131,9 +126,23 @@ module Bulkrax
       end
     end
 
-    describe '#setup_export_path' do
-      it 'returns a path to the exported zip files' do
-        expect(exporter.exporter_export_zip_path).to eq('tmp/exports/export_1_1')
+    context '#exporter_export_zip_path' do
+      describe 'without an exporter run' do
+        it 'returns a path to the exported zip files' do
+          expect(exporter.exporter_export_zip_path).to eq('tmp/exports/export_1_0')
+        end
+      end
+
+      describe 'with an exporter run' do
+        let(:bulkrax_exporter_run) { FactoryBot.create(:bulkrax_exporter_run, exporter: exporter) }
+
+        before do
+          allow(exporter).to receive(:exporter_runs).and_return([bulkrax_exporter_run])
+        end
+
+        it 'returns a path to the exported zip files' do
+          expect(exporter.exporter_export_zip_path).to eq('tmp/exports/export_1_1')
+        end
       end
     end
 
