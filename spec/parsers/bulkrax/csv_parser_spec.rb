@@ -475,6 +475,20 @@ module Bulkrax
       end
     end
 
+    describe '#setup_export_file' do
+      subject(:parser) { described_class.new(exporter) }
+      let(:bulkrax_exporter_run) { FactoryBot.create(:bulkrax_exporter_run, exporter: exporter) }
+      let(:exporter)   { FactoryBot.create(:bulkrax_exporter_worktype) }
+
+      before do
+        allow(exporter).to receive(:exporter_runs).and_return([bulkrax_exporter_run])
+      end
+
+      it 'creates the csv metadata file' do
+        expect(subject.setup_export_file(2)).to eq('tmp/exports/1/1/2/export_Generic_from_worktype_2.csv')
+      end
+    end
+
     describe '#total' do
       context 'on import' do
         subject { described_class.new(importer) }
