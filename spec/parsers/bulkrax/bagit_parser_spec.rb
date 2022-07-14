@@ -292,17 +292,11 @@ module Bulkrax
       describe '#find_child_file_sets' do
         before do
           subject.instance_variable_set(:@file_set_ids, [])
-          allow(ActiveFedora::Base).to receive(:find).with('123').and_return(ActiveFedora::ObjectNotFoundError)
         end
 
         it 'returns the ids when child file sets are present' do
           subject.find_child_file_sets(work_ids_solr.pluck(:id))
           expect(subject.instance_variable_get(:@file_set_ids)).to eq([file_set_ids_solr.pluck(:id).first])
-        end
-
-        it 'returns nothing when no child file sets are present' do
-          subject.find_child_file_sets(['123'])
-          expect(subject.instance_variable_get(:@file_set_ids)).to eq([])
         end
       end
 
