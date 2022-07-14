@@ -291,18 +291,18 @@ module Bulkrax
 
       describe '#find_child_file_sets' do
         before do
-          parser.instance_variable_set(:@file_set_ids, [])
+          subject.instance_variable_set(:@file_set_ids, [])
           allow(ActiveFedora::Base).to receive(:find).with('123').and_return(ActiveFedora::ObjectNotFoundError)
         end
 
         it 'returns the ids when child file sets are present' do
-          parser.find_child_file_sets(work_ids_solr.pluck(:id))
-          expect(parser.instance_variable_get(:@file_set_ids)).to eq([file_set_ids_solr.pluck(:id).first])
+          subject.find_child_file_sets(work_ids_solr.pluck(:id))
+          expect(subject.instance_variable_get(:@file_set_ids)).to eq([file_set_ids_solr.pluck(:id).first])
         end
 
         it 'returns nothing when no child file sets are present' do
-          parser.find_child_file_sets(['123'])
-          expect(parser.instance_variable_get(:@file_set_ids)).to eq([])
+          subject.find_child_file_sets(['123'])
+          expect(subject.instance_variable_get(:@file_set_ids)).to eq([])
         end
       end
 
@@ -312,7 +312,7 @@ module Bulkrax
         it 'invokes Bulkrax::ExportWorkJob once per Entry' do
           expect(ActiveFedora::SolrService).to receive(:query).and_return(work_ids_solr)
           expect(Bulkrax::ExportWorkJob).to receive(:perform_now).exactly(3).times
-          parser.create_new_entries
+          subject.create_new_entries
         end
 
         context 'with an export limit of 1' do
@@ -321,7 +321,7 @@ module Bulkrax
           it 'invokes Bulkrax::ExportWorkJob once' do
             expect(ActiveFedora::SolrService).to receive(:query).and_return(work_ids_solr)
             expect(Bulkrax::ExportWorkJob).to receive(:perform_now).exactly(1).times
-            parser.create_new_entries
+            subject.create_new_entries
           end
         end
 
@@ -331,7 +331,7 @@ module Bulkrax
           it 'invokes Bulkrax::ExportWorkJob once per Entry' do
             expect(ActiveFedora::SolrService).to receive(:query).and_return(work_ids_solr)
             expect(Bulkrax::ExportWorkJob).to receive(:perform_now).exactly(3).times
-            parser.create_new_entries
+            subject.create_new_entries
           end
         end
 
@@ -346,7 +346,7 @@ module Bulkrax
           it 'exports works, and file sets' do
             expect(ExportWorkJob).to receive(:perform_now).exactly(5).times
 
-            parser.create_new_entries
+            subject.create_new_entries
           end
 
           it 'exports all works' do
@@ -355,7 +355,7 @@ module Bulkrax
               expect(ExportWorkJob).to receive(:perform_now).with(id, exporter.last_run.id).once
             end
 
-            parser.create_new_entries
+            subject.create_new_entries
           end
 
           it 'exports all file sets' do
@@ -364,14 +364,14 @@ module Bulkrax
               expect(ExportWorkJob).to receive(:perform_now).with(id, exporter.last_run.id).once
             end
 
-            parser.create_new_entries
+            subject.create_new_entries
           end
 
           it 'exported entries are given the correct class' do
             # Bulkrax::CsvFileSetEntry == Bulkrax::CsvEntry (false)
             # Bulkrax::CsvFileSetEntry.is_a? Bulkrax::CsvEntry (true)
             # because of the above, although we only have 2 work id's, the 3 file set id's also increase the Bulkrax::CsvEntry count
-            expect { parser.create_new_entries }
+            expect { subject.create_new_entries }
               .to change(CsvEntry, :count)
               .by(5)
               .and change(CsvFileSetEntry, :count)
@@ -452,12 +452,12 @@ module Bulkrax
         before do
           allow(ActiveFedora::SolrService).to receive(:query).and_return(OpenStruct.new(id: work_id))
           allow(exporter.entries).to receive(:where).and_return([entry])
-          allow(parser).to receive(:headers).and_return(entry.parsed_metadata.keys)
+          allow(subject).to receive(:headers).and_return(entry.parsed_metadata.keys)
         end
 
         # rubocop:disable RSpec/ExampleLength
         it 'returns an array of single, numerated and double numerated header values' do
-          headers = parser.export_headers
+          headers = subject.export_headers
           expect(headers).to include('id')
           expect(headers).to include('model')
           expect(headers).to include('display_title')
