@@ -127,7 +127,7 @@ module Bulkrax
     # Download methods
 
     def file_path
-      @exporter.exporter_export_zip_path
+      "#{@exporter.exporter_export_zip_path}/#{params['exporter']['exporter_export_zip_files']}"
     end
   end
 end

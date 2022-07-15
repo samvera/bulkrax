@@ -30,7 +30,7 @@ module Bulkrax
         importer_job.perform(importer.id)
 
         expect(importer.current_run.total_work_entries).to eq(10)
-        expect(importer.current_run.total_collection_entries).to eq(427)
+        expect(importer.current_run.total_collection_entries).to eq(428)
       end
     end
 
