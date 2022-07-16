@@ -480,9 +480,8 @@ module Bulkrax
         before do
           allow(ActiveFedora::SolrService).to receive(:query).and_return(work_ids_solr.first, collection_ids_solr, file_set_ids_solr.first)
           parser.instance_variable_set(:@work_ids, [work_ids_solr.first.id])
-          parser.instance_variable_set(:@collection_ids, collection_ids_solr.map { |solr| solr.id })
+          parser.instance_variable_set(:@collection_ids, collection_ids_solr.map(&:id))
           parser.instance_variable_set(:@file_set_ids, [file_set_ids_solr.first.id])
-
         end
 
         xit 'exports the collection, child works, child collections, and file sets related to the child works' do
