@@ -184,6 +184,7 @@ module Bulkrax
       current_record_ids
     end
 
+    # rubocop:disable Metrics/AbcSize
     def current_record_ids
       @work_ids = []
       @collection_ids = []
@@ -196,8 +197,9 @@ module Bulkrax
         @file_set_ids = ActiveFedora::SolrService.query("has_model_ssim:FileSet #{extra_filters}", method: :post, rows: 2_147_483_647).map(&:id)
       when 'collection'
         @work_ids = ActiveFedora::SolrService.query("member_of_collection_ids_ssim:#{importerexporter.export_source + extra_filters} AND has_model_ssim:(#{Hyrax.config.curation_concerns.join(' OR ')})", method: :post, rows: 2_000_000_000).map(&:id)
-        # TODO: get this working properly
-        @collection_ids = ActiveFedora::SolrService.query("id:#{importerexporter.export_source} #{extra_filters} OR member_of_collection_ids_ssim:#{importerexporter.export_source}", method: :post, rows: 2_147_483_647).map(&:id)
+        # get the parent collection and child collections
+        @collection_ids = ActiveFedora::SolrService.query("id:#{importerexporter.export_source} #{extra_filters}", method: :post, rows: 2_147_483_647).map(&:id)
+        @collection_ids += ActiveFedora::SolrService.query("has_model_ssim:Collection AND member_of_collection_ids_ssim:#{importerexporter.export_source}", method: :post, rows: 2_147_483_647).map(&:id)
       when 'collections metadata'
         @collection_ids = ActiveFedora::SolrService.query("has_model_ssim:Collection #{extra_filters}", method: :post, rows: 2_147_483_647).map(&:id)
       when 'worktype'
@@ -206,8 +208,11 @@ module Bulkrax
         set_ids_for_exporting_from_importer
       end
 
+      find_child_file_sets(@work_ids) if importerexporter.export_from == 'collection'
+
       @work_ids + @collection_ids + @file_set_ids
     end
+    # rubocop:enable Metrics/AbcSize
 
     # find the related file set ids so entries can be made for export
     def find_child_file_sets(work_ids)
