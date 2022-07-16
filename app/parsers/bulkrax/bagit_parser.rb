@@ -106,20 +106,25 @@ module Bulkrax
 
       folder_count = 1
       records_in_folder = 0
+      work_entries = importerexporter.entries.where(type: 'Bulkrax::CsvEntry')
       collection_entries = importerexporter.entries.where(type: 'Bulkrax::CsvCollectionEntry')
+      file_set_entries = importerexporter.entries.where(type: 'Bulkrax::CsvFileSetEntry')
 
-      importerexporter.entries.where(identifier: current_record_ids)[0..limit || total].each do |entry|
+      work_entries[0..limit || total].each do |entry|
         record = ActiveFedora::Base.find(entry.identifier)
-        next unless Hyrax.config.curation_concerns.include?(record.class)
+        next unless record
 
-        bag_entries = [entry]
+        bag_entries = []
 
         if record.member_of_collection_ids.present?
           collection_entries.each { |ce| bag_entries << ce if ce.parsed_metadata.value?(record.id) }
         end
 
-        file_set_entries = Bulkrax::CsvFileSetEntry.where(importerexporter_id: importerexporter.id).where("parsed_metadata LIKE '%#{record.id}%'")
-        file_set_entries.each { |fse| bag_entries << fse }
+        bag_entries << entry
+
+        if record.file_sets.present?
+          file_set_entries.each { |fse| bag_entries << fse if fse.parsed_metadata.value?(record.id) }
+        end
 
         records_in_folder += bag_entries.count
         if records_in_folder > records_split_count
