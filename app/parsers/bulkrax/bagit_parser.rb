@@ -97,28 +97,6 @@ module Bulkrax
       @total = 0
     end
 
-    def current_record_ids
-      @work_ids = []
-      @collection_ids = []
-      @file_set_ids = []
-
-      case importerexporter.export_from
-      when 'all'
-        @work_ids = ActiveFedora::SolrService.query("has_model_ssim:(#{Hyrax.config.curation_concerns.join(' OR ')}) #{extra_filters}", method: :post, rows: 2_147_483_647).map(&:id)
-        @file_set_ids = ActiveFedora::SolrService.query("has_model_ssim:FileSet #{extra_filters}", method: :post, rows: 2_147_483_647).map(&:id)
-      when 'collection'
-        @work_ids = ActiveFedora::SolrService.query("member_of_collection_ids_ssim:#{importerexporter.export_source + extra_filters}", method: :post, rows: 2_000_000_000).map(&:id)
-      when 'worktype'
-        @work_ids = ActiveFedora::SolrService.query("has_model_ssim:#{importerexporter.export_source + extra_filters}", method: :post, rows: 2_000_000_000).map(&:id)
-      when 'importer'
-        set_ids_for_exporting_from_importer
-      end
-
-      find_child_file_sets(@work_ids) if importerexporter.export_from == 'collection' || importerexporter.export_from == 'worktype'
-
-      @work_ids + @collection_ids + @file_set_ids
-    end
-
     # export methods
 
     # rubocop:disable Metrics/MethodLength, Metrics/AbcSize
@@ -128,12 +106,18 @@ module Bulkrax
 
       folder_count = 1
       records_in_folder = 0
+      collection_entries = importerexporter.entries.where(type: 'Bulkrax::CsvCollectionEntry')
 
       importerexporter.entries.where(identifier: current_record_ids)[0..limit || total].each do |entry|
         record = ActiveFedora::Base.find(entry.identifier)
         next unless Hyrax.config.curation_concerns.include?(record.class)
 
         bag_entries = [entry]
+
+        if record.member_of_collection_ids.present?
+          collection_entries.each { |ce| bag_entries << ce if ce.parsed_metadata.value?(record.id) }
+        end
+
         file_set_entries = Bulkrax::CsvFileSetEntry.where(importerexporter_id: importerexporter.id).where("parsed_metadata LIKE '%#{record.id}%'")
         file_set_entries.each { |fse| bag_entries << fse }
 

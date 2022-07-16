@@ -205,6 +205,8 @@ module Bulkrax
         set_ids_for_exporting_from_importer
       end
 
+      find_child_file_sets(@work_ids) if importerexporter.export_from == 'collection'
+
       @work_ids + @collection_ids + @file_set_ids
     end
 
