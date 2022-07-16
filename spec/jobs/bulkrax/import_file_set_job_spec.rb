@@ -128,7 +128,7 @@ module Bulkrax
 
         context 'when the parent identifier does not reference a work' do
           before do
-            allow(import_file_set_job).to receive(:find_record).and_return(non_work)
+            allow(import_file_set_job).to receive(:find_record).and_return([nil, non_work])
           end
 
           context 'when it references a collection' do
