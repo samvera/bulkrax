@@ -321,8 +321,9 @@ module Bulkrax
     def write_files
       require 'open-uri'
       folder_count = 0
+      sorted_entries = sort_entries(importerexporter.entries)
 
-      importerexporter.entries.where(identifier: current_record_ids)[0..limit || total].in_groups_of(records_split_count, false) do |group|
+      sorted_entries[0..limit || total].in_groups_of(records_split_count, false) do |group|
         folder_count += 1
 
         CSV.open(setup_export_file(folder_count), "w", headers: export_headers, write_headers: true) do |csv|
@@ -381,6 +382,20 @@ module Bulkrax
       @object_names.uniq!.delete(nil)
 
       @object_names
+    end
+
+    def sort_entries(entries)
+      # always export models in the same order: work, collection, file set
+      entries.sort_by do |entry|
+        case entry.type
+        when 'Bulkrax::CsvEntry'
+          '0'
+        when 'Bulkrax::CsvCollectionEntry'
+          '1'
+        when 'Bulkrax::CsvFileSetEntry'
+          '2'
+        end
+      end
     end
 
     def sort_headers(headers)
