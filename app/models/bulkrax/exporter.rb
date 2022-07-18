@@ -14,15 +14,13 @@ module Bulkrax
     validates :name, presence: true
     validates :parser_klass, presence: true
 
-    delegate :write, :create_from_collection, :create_from_collections_metadata, :create_from_importer, :create_from_worktype, :create_from_all, to: :parser
+    delegate :write, :create_from_collection, :create_from_importer, :create_from_worktype, :create_from_all, to: :parser
 
     def export
       current_run && setup_export_path
       case self.export_from
       when 'collection'
         create_from_collection
-      when 'collections metadata'
-        create_from_collections_metadata
       when 'importer'
         create_from_importer
       when 'worktype'

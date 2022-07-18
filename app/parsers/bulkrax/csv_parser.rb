@@ -200,8 +200,6 @@ module Bulkrax
         # get the parent collection and child collections
         @collection_ids = ActiveFedora::SolrService.query("id:#{importerexporter.export_source} #{extra_filters}", method: :post, rows: 2_147_483_647).map(&:id)
         @collection_ids += ActiveFedora::SolrService.query("has_model_ssim:Collection AND member_of_collection_ids_ssim:#{importerexporter.export_source}", method: :post, rows: 2_147_483_647).map(&:id)
-      when 'collections metadata'
-        @collection_ids = ActiveFedora::SolrService.query("has_model_ssim:Collection #{extra_filters}", method: :post, rows: 2_147_483_647).map(&:id)
       when 'worktype'
         @work_ids = ActiveFedora::SolrService.query("has_model_ssim:#{importerexporter.export_source + extra_filters}", method: :post, rows: 2_000_000_000).map(&:id)
       when 'importer'
@@ -268,7 +266,6 @@ module Bulkrax
       end
     end
     alias create_from_collection create_new_entries
-    alias create_from_collections_metadata create_new_entries
     alias create_from_importer create_new_entries
     alias create_from_worktype create_new_entries
     alias create_from_all create_new_entries

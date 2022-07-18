@@ -54,15 +54,6 @@ module Bulkrax
         end
       end
 
-      context 'from collections metadata' do
-        let(:exporter) { FactoryBot.create(:bulkrax_exporter_collection, export_from: 'collections metadata') }
-
-        it 'exports' do
-          expect(exporter).to receive(:create_from_collections_metadata)
-          exporter.export
-        end
-      end
-
       context 'from worktype' do
         let(:exporter) { FactoryBot.create(:bulkrax_exporter_worktype) }
 
