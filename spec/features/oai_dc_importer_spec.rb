@@ -4,17 +4,10 @@ require 'rails_helper'
 
 module Bulkrax
   RSpec.describe 'Importing an oai feed' do
-    let(:importer) do
-      f = FactoryBot.build(:bulkrax_importer_oai)
-      f.user = User.new(email: 'test@example.com')
-      f.field_mapping['identifier'] = { 'from' => ['identifier'], 'source_identifier' => true }
-      f.save
-      f
-    end
-    let(:collection) { FactoryBot.build(:collection) }
+    let(:importer) { FactoryBot.build(:bulkrax_importer_oai) }
 
     it 'creates a work' do
-      allow(Collection).to receive(:where).and_return([collection])
+      expect(importer).to receive(:import_objects)
       importer.import_works
     end
   end

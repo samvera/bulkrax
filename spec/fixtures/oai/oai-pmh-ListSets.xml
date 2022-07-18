@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OAI-PMH xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/ http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns="http://www.openarchives.org/OAI/2.0/">
+  <responseDate>2022-07-08T16:32:10Z</responseDate>
+  <request verb="ListSets">https://commons.ptsem.edu/api/oai-pmh</request>
+  <ListSets>
+    <set>
+      <setSpec>collection:Benson</setSpec>
+      <setName>Benson Collection of Hymnals and Hymnology</setName>
+      <setDescription>
+        <oai_dc:dc xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/oai_dc/ http://www.openarchives.org/OAI/2.0/oai_dc.xsd"
+          xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/"
+          xmlns:dc="http://purl.org/dc/elements/1.1/">
+          <dc:description>6602 occurrences</dc:description>
+        </oai_dc:dc>
+      </setDescription>
+    </set>
+    <set>
+      <setSpec>collection:bethmardutho</setSpec>
+      <setName>Beth Mardutho: The Syriac Institute</setName>
+      <setDescription>
+        <oai_dc:dc xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/oai_dc/ http://www.openarchives.org/OAI/2.0/oai_dc.xsd"
+          xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/"
+          xmlns:dc="http://purl.org/dc/elements/1.1/">
+          <dc:description>2068 occurrences</dc:description>
+        </oai_dc:dc>
+      </setDescription>
+    </set>
+    <set>
+      <setSpec>collection:dpla</setSpec>
+      <setName>Digital Public Library of America</setName>
+      <setDescription>
+        <oai_dc:dc xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/oai_dc/ http://www.openarchives.org/OAI/2.0/oai_dc.xsd"
+          xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/"
+          xmlns:dc="http://purl.org/dc/elements/1.1/">
+          <dc:description>35639 occurrences</dc:description>
+        </oai_dc:dc>
+      </setDescription>
+    </set>
+    <set>
+      <setSpec>collection:homiletics</setSpec>
+      <setName>Academy of Homiletics</setName>
+      <setDescription>
+        <oai_dc:dc xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/oai_dc/ http://www.openarchives.org/OAI/2.0/oai_dc.xsd"
+          xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/"
+          xmlns:dc="http://purl.org/dc/elements/1.1/">
+          <dc:description>33 occurrences</dc:description>
+        </oai_dc:dc>
+      </setDescription>
+    </set>
+    <set>
+      <setSpec>collection:latin-america</setSpec>
+      <setName>Latin America Collection</setName>
+      <setDescription>
+        <oai_dc:dc xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/oai_dc/ http://www.openarchives.org/OAI/2.0/oai_dc.xsd"
+          xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/"
+          xmlns:dc="http://purl.org/dc/elements/1.1/">
+          <dc:description>6436 occurrences</dc:description>
+        </oai_dc:dc>
+      </setDescription>
+    </set>
+  </ListSets>
+</OAI-PMH>
