@@ -8,10 +8,11 @@
   <div class='panel-body'>
 
     <% if File.exist?(@exporter.exporter_export_zip_path) %>
-      <p class='bulkrax-p-align'>
+      <%= simple_form_for @exporter, method: :get, url: exporter_download_path(@exporter), html: { class: 'form-inline bulkrax-p-align' } do |form| %>
         <strong>Download:</strong>
-        <%= link_to raw('<span class="glyphicon glyphicon-download"></span>'), exporter_download_path(@exporter) %>
-      </p>
+        <%= render 'downloads', exporter: @exporter, form: form %>
+        <%= form.button :submit, value: 'Download', data: { disable_with: false } %>
+      <% end %>
     <% end %>
 
     <p class='bulkrax-p-align'>
@@ -135,10 +136,6 @@
       <%= page_entries_info(@work_entries) %><br>
       <%= paginate(@work_entries, param_name: :work_entries_page) %>
       <br>
-      <% if File.exist?(@exporter.exporter_export_zip_path) %>
-        <%= link_to 'Download', exporter_download_path(@exporter) %>
-        |
-      <% end %>
       <%= link_to 'Edit', edit_exporter_path(@exporter) %>
       |
       <%= link_to 'Back', exporters_path %>

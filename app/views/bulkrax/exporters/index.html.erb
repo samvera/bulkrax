@@ -21,7 +21,7 @@
               <th scope="col">Name</th>
               <th scope="col">Status</th>
               <th scope="col">Date Exported</th>
-              <th scope="col"></th>
+              <th scope="col">Downloadable Files</th>
               <th scope="col"></th>
               <th scope="col"></th>
               <th scope="col"></th>
@@ -35,7 +35,10 @@
                 <td><%= exporter.created_at %></td>
                 <td>
                   <% if File.exist?(exporter.exporter_export_zip_path) %>
-                    <%= link_to raw('<span class="glyphicon glyphicon-download"></span>'), exporter_download_path(exporter) %>
+                    <%= simple_form_for(exporter, method: :get, url: exporter_download_path(exporter)) do |form| %>
+                      <%= render 'downloads', exporter: exporter, form: form %>
+                      <%= form.button :submit, value: 'Download', data: { disable_with: false } %>
+                    <% end %>
                   <% end%>
                 </td>
                 <td><%= link_to raw('<span class="glyphicon glyphicon-info-sign"></span>'), exporter_path(exporter) %></td>

@@ -4,6 +4,7 @@ require 'csv'
 module Bulkrax
   class CsvParser < ApplicationParser # rubocop:disable Metrics/ClassLength
     include ErroredEntries
+    include ExportBehavior
     attr_writer :collections, :file_sets, :works
 
     def self.export_supported?
@@ -196,15 +197,22 @@ module Bulkrax
       when 'collection'
         @work_ids = ActiveFedora::SolrService.query("member_of_collection_ids_ssim:#{importerexporter.export_source + extra_filters}", method: :post, rows: 2_000_000_000).map(&:id)
         @collection_ids = ActiveFedora::SolrService.query("id:#{importerexporter.export_source} #{extra_filters}", method: :post, rows: 2_147_483_647).map(&:id)
-      when 'collections metadata'
-        @collection_ids = ActiveFedora::SolrService.query("has_model_ssim:Collection #{extra_filters}", method: :post, rows: 2_147_483_647).map(&:id)
       when 'worktype'
         @work_ids = ActiveFedora::SolrService.query("has_model_ssim:#{importerexporter.export_source + extra_filters}", method: :post, rows: 2_000_000_000).map(&:id)
       when 'importer'
         set_ids_for_exporting_from_importer
       end
 
+      find_child_file_sets(@work_ids) if importerexporter.export_from == 'collection'
+
       @work_ids + @collection_ids + @file_set_ids
+    end
+
+    # find the related file set ids so entries can be made for export
+    def find_child_file_sets(work_ids)
+      work_ids.each do |id|
+        ActiveFedora::Base.find(id).file_set_ids.each { |fs_id| @file_set_ids << fs_id }
+      end
     end
 
     # Set the following instance variables: @work_ids, @collection_ids, @file_set_ids
@@ -283,6 +291,10 @@ module Bulkrax
       @total = 0
     end
 
+    def records_split_count
+      1000
+    end
+
     # @todo - investigate getting directory structure
     # @todo - investigate using perform_later, and having the importer check for
     #   DownloadCloudFileJob before it starts
@@ -307,9 +319,38 @@ module Bulkrax
     # export methods
 
     def write_files
-      CSV.open(setup_export_file, "w", headers: export_headers, write_headers: true) do |csv|
-        importerexporter.entries.where(identifier: current_record_ids)[0..limit || total].each do |e|
-          csv << e.parsed_metadata
+      require 'open-uri'
+      folder_count = 0
+      sorted_entries = sort_entries(importerexporter.entries)
+
+      sorted_entries[0..limit || total].in_groups_of(records_split_count, false) do |group|
+        folder_count += 1
+
+        CSV.open(setup_export_file(folder_count), "w", headers: export_headers, write_headers: true) do |csv|
+          group.each do |entry|
+            csv << entry.parsed_metadata
+            next if importerexporter.metadata_only? || entry.type == 'Bulkrax::CsvCollectionEntry'
+
+            store_files(entry.identifier, folder_count.to_s)
+          end
+        end
+      end
+    end
+
+    def store_files(identifier, folder_count)
+      record = ActiveFedora::Base.find(identifier)
+      file_sets = record.file_set? ? Array.wrap(record) : record.file_sets
+      file_sets << record.thumbnail if exporter.include_thumbnails && record.thumbnail.present? && record.work?
+      file_sets.each do |fs|
+        path = File.join(exporter_export_path, folder_count, 'files')
+        FileUtils.mkdir_p(path) unless File.exist? path
+        file = filename(fs)
+        io = open(fs.original_file.uri)
+        next if file.blank?
+
+        File.open(File.join(path, file), 'wb') do |f|
+          f.write(io.read)
+          f.close
         end
       end
     end
@@ -343,6 +384,20 @@ module Bulkrax
       @object_names
     end
 
+    def sort_entries(entries)
+      # always export models in the same order: work, collection, file set
+      entries.sort_by do |entry|
+        case entry.type
+        when 'Bulkrax::CsvEntry'
+          '0'
+        when 'Bulkrax::CsvCollectionEntry'
+          '1'
+        when 'Bulkrax::CsvFileSetEntry'
+          '2'
+        end
+      end
+    end
+
     def sort_headers(headers)
       # converting headers like creator_name_1 to creator_1_name so they get sorted by numerical order
       # while keeping objects grouped together
@@ -356,8 +411,11 @@ module Bulkrax
     end
 
     # in the parser as it is specific to the format
-    def setup_export_file
-      File.join(importerexporter.exporter_export_path, "export_#{importerexporter.export_source}_from_#{importerexporter.export_from}.csv")
+    def setup_export_file(folder_count)
+      path = File.join(importerexporter.exporter_export_path, folder_count.to_s)
+      FileUtils.mkdir_p(path) unless File.exist?(path)
+
+      File.join(path, "export_#{importerexporter.export_source}_from_#{importerexporter.export_from}_#{folder_count}.csv")
     end
 
     # Retrieve file paths for [:file] mapping in records

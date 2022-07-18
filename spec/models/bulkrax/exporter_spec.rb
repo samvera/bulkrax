@@ -14,7 +14,6 @@ module Bulkrax
           [
             [I18n.t('bulkrax.exporter.labels.importer'), 'importer'],
             [I18n.t('bulkrax.exporter.labels.collection'), 'collection'],
-            [I18n.t('bulkrax.exporter.labels.collections_metadata'), 'collections metadata'],
             [I18n.t('bulkrax.exporter.labels.worktype'), 'worktype'],
             [I18n.t('bulkrax.exporter.labels.all'), 'all']
           ]
@@ -123,6 +122,36 @@ module Bulkrax
           expect(exporter.export_source_importer).to be_nil
           expect(exporter.export_source_collection).to be_nil
         end
+      end
+    end
+
+    context '#exporter_export_zip_path' do
+      describe 'without an exporter run' do
+        it 'returns a path to the exported zip files' do
+          expect(exporter.exporter_export_zip_path).to eq('tmp/exports/export_1_0')
+        end
+      end
+
+      describe 'with an exporter run' do
+        let(:bulkrax_exporter_run) { FactoryBot.create(:bulkrax_exporter_run, exporter: exporter) }
+
+        before do
+          allow(exporter).to receive(:exporter_runs).and_return([bulkrax_exporter_run])
+        end
+
+        it 'returns a path to the exported zip files' do
+          expect(exporter.exporter_export_zip_path).to eq('tmp/exports/export_1_1')
+        end
+      end
+    end
+
+    describe '#sort_zip_files' do
+      it 'orders the zip files numerically' do
+        zip_files = ['export_1_10.zip', 'export_1_2.zip']
+        sorted = exporter.sort_zip_files(zip_files)
+
+        expect(sorted[0]).to eq('export_1_2.zip')
+        expect(sorted[1]).to eq('export_1_10.zip')
       end
     end
   end
