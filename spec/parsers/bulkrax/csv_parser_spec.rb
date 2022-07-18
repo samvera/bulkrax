@@ -394,7 +394,7 @@ module Bulkrax
       let(:exporter)   { FactoryBot.create(:bulkrax_exporter_worktype) }
       # Use OpenStructs to simulate the behavior of ActiveFedora::SolrHit instances.
       let(:work_ids_solr) { [OpenStruct.new(id: SecureRandom.alphanumeric(9)), OpenStruct.new(id: SecureRandom.alphanumeric(9))] }
-      let(:collection_ids_solr) { [OpenStruct.new(id: SecureRandom.alphanumeric(9))] }
+      let(:collection_ids_solr) { [OpenStruct.new(id: SecureRandom.alphanumeric(9)), OpenStruct.new(id: SecureRandom.alphanumeric(9))] }
       let(:file_set_ids_solr) { [OpenStruct.new(id: SecureRandom.alphanumeric(9)), OpenStruct.new(id: SecureRandom.alphanumeric(9)), OpenStruct.new(id: SecureRandom.alphanumeric(9))] }
 
       it 'invokes Bulkrax::ExportWorkJob once per Entry' do
@@ -431,7 +431,7 @@ module Bulkrax
         end
 
         it 'exports works, collections, and file sets' do
-          expect(ExportWorkJob).to receive(:perform_now).exactly(6).times
+          expect(ExportWorkJob).to receive(:perform_now).exactly(7).times
 
           parser.create_new_entries
         end
@@ -468,9 +468,26 @@ module Bulkrax
             .to change(CsvFileSetEntry, :count)
             .by(3)
             .and change(CsvCollectionEntry, :count)
-            .by(1)
+            .by(2)
             .and change(CsvEntry, :count)
-            .by(6) # 6 csv entries minus 3 file set entries minus 1 collection entry equals 2 work entries
+            .by(7) # 6 csv entries minus 3 file set entries minus 2 collection entries equals 2 work entries
+        end
+      end
+
+      context 'when exporting by collection' do
+        let(:exporter) { FactoryBot.create(:bulkrax_exporter_collection) }
+        let(:parent_record_1) { build(:work, id: work_ids_solr.first.id) }
+
+        before do
+          allow(parent_record_1).to receive(:file_set_ids).and_return([file_set_ids_solr.pluck(:id).first])
+          allow(ActiveFedora::SolrService).to receive(:query).and_return([work_ids_solr.first], [collection_ids_solr.first], [collection_ids_solr.last])
+          allow(ActiveFedora::Base).to receive(:find).with(work_ids_solr.first.id).and_return(parent_record_1)
+        end
+
+        it 'exports the collection, child works, child collections, and file sets related to the child works' do
+          expect(ExportWorkJob).to receive(:perform_now).exactly(4).times
+
+          parser.create_new_entries
         end
       end
     end
