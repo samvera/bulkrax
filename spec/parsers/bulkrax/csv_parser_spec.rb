@@ -476,15 +476,15 @@ module Bulkrax
 
       context 'when exporting by collection' do
         let(:exporter) { FactoryBot.create(:bulkrax_exporter_collection) }
+        let(:parent_record_1) { build(:work, id: work_ids_solr.first.id) }
 
         before do
-          allow(ActiveFedora::SolrService).to receive(:query).and_return(work_ids_solr.first, collection_ids_solr, file_set_ids_solr.first)
-          parser.instance_variable_set(:@work_ids, [work_ids_solr.first.id])
-          parser.instance_variable_set(:@collection_ids, collection_ids_solr.map(&:id))
-          parser.instance_variable_set(:@file_set_ids, [file_set_ids_solr.first.id])
+          allow(parent_record_1).to receive(:file_set_ids).and_return([file_set_ids_solr.pluck(:id).first])
+          allow(ActiveFedora::SolrService).to receive(:query).and_return([work_ids_solr.first], [collection_ids_solr.first], [collection_ids_solr.last])
+          allow(ActiveFedora::Base).to receive(:find).with(work_ids_solr.first.id).and_return(parent_record_1)
         end
 
-        xit 'exports the collection, child works, child collections, and file sets related to the child works' do
+        it 'exports the collection, child works, child collections, and file sets related to the child works' do
           expect(ExportWorkJob).to receive(:perform_now).exactly(4).times
 
           parser.create_new_entries
