@@ -75,10 +75,9 @@ module Bulkrax
     def get_field_mapping_hash_for(key)
       return instance_variable_get("@#{key}_hash") if instance_variable_get("@#{key}_hash").present?
 
-      mapping = importerexporter.field_mapping == [{}] ? {} : importerexporter.field_mapping
       instance_variable_set(
         "@#{key}_hash",
-        mapping&.with_indifferent_access&.select { |_, h| h.key?(key) }
+        mapping&.with_indifferent_access&.select { |_, h| h.key?(key) } || {}
       )
       raise StandardError, "more than one #{key} declared: #{instance_variable_get("@#{key}_hash").keys.join(', ')}" if instance_variable_get("@#{key}_hash").length > 1
 
