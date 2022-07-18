@@ -77,7 +77,7 @@ module Bulkrax
 
       instance_variable_set(
         "@#{key}_hash",
-        mapping&.with_indifferent_access&.select { |_, h| h.key?(key) } || {}
+        importerexporter.field_mapping&.with_indifferent_access&.select { |_, h| h.key?(key) } || {}
       )
       raise StandardError, "more than one #{key} declared: #{instance_variable_get("@#{key}_hash").keys.join(', ')}" if instance_variable_get("@#{key}_hash").length > 1
 
