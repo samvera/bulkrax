@@ -106,21 +106,19 @@ module Bulkrax
 
       folder_count = 1
       records_in_folder = 0
-      work_entries = importerexporter.entries.where(type: 'Bulkrax::CsvEntry')
-      collection_entries = importerexporter.entries.where(type: 'Bulkrax::CsvCollectionEntry')
-      file_set_entries = importerexporter.entries.where(type: 'Bulkrax::CsvFileSetEntry')
+      work_entries = importerexporter.entries.where(identifier: @work_ids)
+      collection_entries = importerexporter.entries.where(identifier: @collection_ids)
+      file_set_entries = importerexporter.entries.where(identifier: @file_set_ids)
 
       work_entries[0..limit || total].each do |entry|
         record = ActiveFedora::Base.find(entry.identifier)
         next unless record
 
-        bag_entries = []
+        bag_entries = [entry]
 
         if record.member_of_collection_ids.present?
           collection_entries.each { |ce| bag_entries << ce if ce.parsed_metadata.value?(record.id) }
         end
-
-        bag_entries << entry
 
         if record.file_sets.present?
           file_set_entries.each { |fse| bag_entries << fse if fse.parsed_metadata.value?(record.id) }
