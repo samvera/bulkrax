@@ -14,7 +14,6 @@ module Bulkrax
           [
             [I18n.t('bulkrax.exporter.labels.importer'), 'importer'],
             [I18n.t('bulkrax.exporter.labels.collection'), 'collection'],
-            [I18n.t('bulkrax.exporter.labels.collections_metadata'), 'collections metadata'],
             [I18n.t('bulkrax.exporter.labels.worktype'), 'worktype'],
             [I18n.t('bulkrax.exporter.labels.all'), 'all']
           ]

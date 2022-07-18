@@ -197,13 +197,13 @@ module Bulkrax
       when 'collection'
         @work_ids = ActiveFedora::SolrService.query("member_of_collection_ids_ssim:#{importerexporter.export_source + extra_filters}", method: :post, rows: 2_000_000_000).map(&:id)
         @collection_ids = ActiveFedora::SolrService.query("id:#{importerexporter.export_source} #{extra_filters}", method: :post, rows: 2_147_483_647).map(&:id)
-      when 'collections metadata'
-        @collection_ids = ActiveFedora::SolrService.query("has_model_ssim:Collection #{extra_filters}", method: :post, rows: 2_147_483_647).map(&:id)
       when 'worktype'
         @work_ids = ActiveFedora::SolrService.query("has_model_ssim:#{importerexporter.export_source + extra_filters}", method: :post, rows: 2_000_000_000).map(&:id)
       when 'importer'
         set_ids_for_exporting_from_importer
       end
+
+      find_child_file_sets(@work_ids) if importerexporter.export_from == 'collection'
 
       @work_ids + @collection_ids + @file_set_ids
     end
@@ -321,8 +321,9 @@ module Bulkrax
     def write_files
       require 'open-uri'
       folder_count = 0
+      sorted_entries = sort_entries(importerexporter.entries)
 
-      importerexporter.entries.where(identifier: current_record_ids)[0..limit || total].in_groups_of(records_split_count, false) do |group|
+      sorted_entries[0..limit || total].in_groups_of(records_split_count, false) do |group|
         folder_count += 1
 
         CSV.open(setup_export_file(folder_count), "w", headers: export_headers, write_headers: true) do |csv|
@@ -381,6 +382,20 @@ module Bulkrax
       @object_names.uniq!.delete(nil)
 
       @object_names
+    end
+
+    def sort_entries(entries)
+      # always export models in the same order: work, collection, file set
+      entries.sort_by do |entry|
+        case entry.type
+        when 'Bulkrax::CsvEntry'
+          '0'
+        when 'Bulkrax::CsvCollectionEntry'
+          '1'
+        when 'Bulkrax::CsvFileSetEntry'
+          '2'
+        end
+      end
     end
 
     def sort_headers(headers)
