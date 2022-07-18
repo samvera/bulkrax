@@ -7,9 +7,6 @@ module Bulkrax
 
     def build_for_exporter
       build_export_metadata
-      # TODO(alishaevn): determine if the line below is still necessary
-      # the csv and bagit parsers also have write_files methods
-      write_files if export_type == 'full' && !importerexporter.parser_klass.include?('Bagit')
     rescue RSolr::Error::Http, CollectionsCreatedError => e
       raise e
     rescue StandardError => e
@@ -24,25 +21,6 @@ module Bulkrax
 
     def hyrax_record
       @hyrax_record ||= ActiveFedora::Base.find(self.identifier)
-    end
-
-    def write_files
-      return if hyrax_record.is_a?(Collection)
-
-      file_sets = hyrax_record.file_set? ? Array.wrap(hyrax_record) : hyrax_record.file_sets
-      file_sets << hyrax_record.thumbnail if hyrax_record.thumbnail.present? && hyrax_record.work? && exporter.include_thumbnails
-      file_sets.each do |fs|
-        path = File.join(exporter_export_path, 'files')
-        FileUtils.mkdir_p(path)
-        file = filename(fs)
-        require 'open-uri'
-        io = open(fs.original_file.uri)
-        next if file.blank?
-        File.open(File.join(path, file), 'wb') do |f|
-          f.write(io.read)
-          f.close
-        end
-      end
     end
 
     # Prepend the file_set id to ensure a unique filename and also one that is not longer than 255 characters

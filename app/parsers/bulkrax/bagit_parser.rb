@@ -113,6 +113,9 @@ module Bulkrax
       when 'importer'
         set_ids_for_exporting_from_importer
       end
+
+      find_child_file_sets(@work_ids) if importerexporter.export_from == 'collection' || importerexporter.export_from == 'worktype'
+
       @work_ids + @collection_ids + @file_set_ids
     end
 
@@ -122,18 +125,27 @@ module Bulkrax
     def write_files
       require 'open-uri'
       require 'socket'
+
+      folder_count = 1
+      records_in_folder = 0
+
       importerexporter.entries.where(identifier: current_record_ids)[0..limit || total].each do |entry|
         record = ActiveFedora::Base.find(entry.identifier)
         next unless Hyrax.config.curation_concerns.include?(record.class)
-        bag = BagIt::Bag.new setup_bagit_folder(entry.identifier)
+
         bag_entries = [entry]
+        file_set_entries = Bulkrax::CsvFileSetEntry.where(importerexporter_id: importerexporter.id).where("parsed_metadata LIKE '%#{record.id}%'")
+        file_set_entries.each { |fse| bag_entries << fse }
+
+        records_in_folder += bag_entries.count
+        if records_in_folder > records_split_count
+          folder_count += 1
+          records_in_folder = bag_entries.count
+        end
+
+        bag ||= BagIt::Bag.new setup_bagit_folder(folder_count, entry.identifier)
 
         record.file_sets.each do |fs|
-          if @file_set_ids.present?
-            file_set_entry = Bulkrax::CsvFileSetEntry.where("parsed_metadata LIKE '%#{fs.id}%'").first
-            bag_entries << file_set_entry unless file_set_entry.nil?
-          end
-
           file_name = filename(fs)
           next if file_name.blank?
           io = open(fs.original_file.uri)
@@ -148,17 +160,21 @@ module Bulkrax
           end
         end
 
-        CSV.open(setup_csv_metadata_export_file(entry.identifier), "w", headers: export_headers, write_headers: true) do |csv|
+        CSV.open(setup_csv_metadata_export_file(folder_count, entry.identifier), "w", headers: export_headers, write_headers: true) do |csv|
           bag_entries.each { |csv_entry| csv << csv_entry.parsed_metadata }
         end
-        write_triples(entry)
+
+        write_triples(folder_count, entry)
         bag.manifest!(algo: 'sha256')
       end
     end
     # rubocop:enable Metrics/MethodLength, Metrics/AbcSize
 
-    def setup_csv_metadata_export_file(id)
-      File.join(importerexporter.exporter_export_path, id, 'metadata.csv')
+    def setup_csv_metadata_export_file(folder_count, id)
+      path = File.join(importerexporter.exporter_export_path, folder_count.to_s)
+      FileUtils.mkdir_p(path) unless File.exist?(path)
+
+      File.join(path, id, 'metadata.csv')
     end
 
     def key_allowed(key)
@@ -167,21 +183,27 @@ module Bulkrax
         key != source_identifier.to_s
     end
 
-    def setup_triple_metadata_export_file(id)
-      File.join(importerexporter.exporter_export_path, id, 'metadata.nt')
+    def setup_triple_metadata_export_file(folder_count, id)
+      path = File.join(importerexporter.exporter_export_path, folder_count.to_s)
+      FileUtils.mkdir_p(path) unless File.exist?(path)
+
+      File.join(path, id, 'metadata.nt')
     end
 
-    def setup_bagit_folder(id)
-      File.join(importerexporter.exporter_export_path, id)
+    def setup_bagit_folder(folder_count, id)
+      path = File.join(importerexporter.exporter_export_path, folder_count.to_s)
+      FileUtils.mkdir_p(path) unless File.exist?(path)
+
+      File.join(path, id)
     end
 
-    def write_triples(e)
+    def write_triples(folder_count, e)
       sd = SolrDocument.find(e.identifier)
       return if sd.nil?
 
       req = ActionDispatch::Request.new({ 'HTTP_HOST' => Socket.gethostname })
       rdf = Hyrax::GraphExporter.new(sd, req).fetch.dump(:ntriples)
-      File.open(setup_triple_metadata_export_file(e.identifier), "w") do |triples|
+      File.open(setup_triple_metadata_export_file(folder_count, e.identifier), "w") do |triples|
         triples.write(rdf)
       end
     end
