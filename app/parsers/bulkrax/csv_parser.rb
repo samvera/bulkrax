@@ -391,12 +391,12 @@ module Bulkrax
       # always export models in the same order: work, collection, file set
       entries.sort_by do |entry|
         case entry.type
-        when 'Bulkrax::CsvEntry'
-          '0'
         when 'Bulkrax::CsvCollectionEntry'
           '1'
         when 'Bulkrax::CsvFileSetEntry'
           '2'
+        else
+          '0'
         end
       end
     end
