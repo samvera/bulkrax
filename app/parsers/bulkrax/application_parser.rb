@@ -75,7 +75,7 @@ module Bulkrax
     def get_field_mapping_hash_for(key)
       return instance_variable_get("@#{key}_hash") if instance_variable_get("@#{key}_hash").present?
 
-      mapping = importerexporter.field_mapping == [{}] ? {} : importerexporter.field_mapping
+      mapping = importerexporter.field_mapping.is_a?(Hash) ? importerexporter.field_mapping : {}
       instance_variable_set(
         "@#{key}_hash",
         mapping&.with_indifferent_access&.select { |_, h| h.key?(key) }
