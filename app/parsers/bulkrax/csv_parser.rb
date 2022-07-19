@@ -324,7 +324,7 @@ module Bulkrax
     def write_files
       require 'open-uri'
       folder_count = 0
-      sorted_entries = sort_entries(importerexporter.entries)
+      sorted_entries = sort_entries(importerexporter.entries.uniq(&:identifier))
 
       sorted_entries[0..limit || total].in_groups_of(records_split_count, false) do |group|
         folder_count += 1
