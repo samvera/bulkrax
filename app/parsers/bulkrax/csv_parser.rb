@@ -347,6 +347,8 @@ module Bulkrax
 
     def store_files(identifier, folder_count)
       record = ActiveFedora::Base.find(identifier)
+      return unless record
+
       file_sets = record.file_set? ? Array.wrap(record) : record.file_sets
       file_sets << record.thumbnail if exporter.include_thumbnails && record.thumbnail.present? && record.work?
       file_sets.each do |fs|
