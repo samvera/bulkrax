@@ -264,6 +264,8 @@ module Bulkrax
 
       Dir["#{exporter_export_path}/**"].each do |folder|
         zip_path = "#{exporter_export_zip_path.split('/').last}_#{folder.split('/').last}.zip"
+        FileUtils.rm_rf("#{exporter_export_zip_path}/#{zip_path}")
+
         Zip::File.open(File.join("#{exporter_export_zip_path}/#{zip_path}"), create: true) do |zip_file|
           Dir["#{folder}/**/**"].each do |file|
             zip_file.add(file.sub("#{folder}/", ''), file)
