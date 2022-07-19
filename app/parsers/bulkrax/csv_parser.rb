@@ -283,6 +283,10 @@ module Bulkrax
       CsvFileSetEntry
     end
 
+    def valid_entry_types
+      ['Bulkrax::CsvCollectionEntry', 'Bulkrax::CsvFileSetEntry', 'Bulkrax::CsvEntry']
+    end
+
     # TODO: figure out why using the version of this method that's in the bagit parser
     # breaks specs for the "if importer?" line
     def total
@@ -325,6 +329,7 @@ module Bulkrax
       require 'open-uri'
       folder_count = 0
       sorted_entries = sort_entries(importerexporter.entries.uniq(&:identifier))
+                       .select { |e| valid_entry_types.include?(e.type) }
 
       sorted_entries[0..limit || total].in_groups_of(records_split_count, false) do |group|
         folder_count += 1
