@@ -346,22 +346,26 @@ module Bulkrax
     end
 
     def store_files(identifier, folder_count)
-      record = ActiveFedora::Base.find(identifier)
-      return unless record
+      begin
+        record = ActiveFedora::Base.find(identifier)
+        return unless record
 
-      file_sets = record.file_set? ? Array.wrap(record) : record.file_sets
-      file_sets << record.thumbnail if exporter.include_thumbnails && record.thumbnail.present? && record.work?
-      file_sets.each do |fs|
-        path = File.join(exporter_export_path, folder_count, 'files')
-        FileUtils.mkdir_p(path) unless File.exist? path
-        file = filename(fs)
-        io = open(fs.original_file.uri)
-        next if file.blank?
+        file_sets = record.file_set? ? Array.wrap(record) : record.file_sets
+        file_sets << record.thumbnail if exporter.include_thumbnails && record.thumbnail.present? && record.work?
+        file_sets.each do |fs|
+          path = File.join(exporter_export_path, folder_count, 'files')
+          FileUtils.mkdir_p(path) unless File.exist? path
+          file = filename(fs)
+          io = open(fs.original_file.uri)
+          next if file.blank?
 
-        File.open(File.join(path, file), 'wb') do |f|
-          f.write(io.read)
-          f.close
+          File.open(File.join(path, file), 'wb') do |f|
+            f.write(io.read)
+            f.close
+          end
         end
+      rescue Ldp::Gone
+        return
       end
     end
 
