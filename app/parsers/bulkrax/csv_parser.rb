@@ -363,6 +363,8 @@ module Bulkrax
           f.close
         end
       end
+    rescue Ldp::Gone
+      return
     end
 
     def export_key_allowed(key)
