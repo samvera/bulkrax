@@ -134,7 +134,9 @@ module Bulkrax
 
     # Base path for imported and exported files
     def base_path(type = 'import')
-      ENV['HYKU_MULTITENANT'] ? File.join(Bulkrax.send("#{type}_path"), Site.instance.account.name) : Bulkrax.send("#{type}_path")
+      # account for multiple versions of hyku
+      is_multitenant = ENV['HYKU_MULTITENANT'] || ENV['SETTINGS__MULTITENANCY__ENABLED'] == 'true'
+      is_multitenant ? File.join(Bulkrax.send("#{type}_path"), Site.instance.account.name) : Bulkrax.send("#{type}_path")
     end
 
     # Path where we'll store the import metadata and files
