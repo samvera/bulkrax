@@ -132,7 +132,11 @@ module Bulkrax
       current_work_ids.each_with_index do |wid, index|
         break if limit_reached?(limit, index)
         new_entry = find_or_create_entry(entry_class, wid, 'Bulkrax::Exporter')
-        Bulkrax::ExportWorkJob.perform_now(new_entry.id, current_run.id)
+        begin
+          entry = Bulkrax::ExportWorkJob.perform_now(new_entry.id, current_run.id)
+        rescue => e
+          Rails.logger.info("#{e.message} was detected during export")
+        end
       end
     end
     alias create_from_collection create_new_entries
