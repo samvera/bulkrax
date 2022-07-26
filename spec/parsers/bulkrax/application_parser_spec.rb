@@ -37,42 +37,5 @@ module Bulkrax
         end
       end
     end
-
-    describe '#base_path' do
-      # TODO(alishaevn): determine if it's a way to get around the "uninitialized constant Bulkrax::Site" error.
-      # or is that against best practices to test for a model that exists in a different app?
-      let(:Site) { instance_double('Site') }
-
-      before do
-        ENV['SETTINGS__MULTITENANCY__ENABLED'] = 'true'
-        # Site.instance.account.name = 'bulkrax'
-
-        # allow(Site.instance.account).to receive(name).and_return('bulkrax')
-
-        # allow(Site).to receive(instance).and_return({})
-        # allow(Site.instance).to receive(account).and_return({})
-        # allow(Site.instance.account).to receive(name).and_return('hyku')
-      end
-
-      context 'in a hyku enabled app' do
-        xit 'sets the import path correctly' do
-          expect(importer.parser.base_path).to eq('tmp/imports/bulkrax')
-        end
-
-        xit 'sets the export path correctly' do
-          expect(importer.parser.base_path).to eq('tmp/exports/bulkrax')
-        end
-      end
-
-      context 'in a hyrax app' do
-        xit 'sets the import path correctly' do
-          expect(importer.parser.base_path).to eq('tmp/imports')
-        end
-
-        xit 'sets the export path correctly' do
-          expect(importer.parser.base_path).to eq('tmp/exports')
-        end
-      end
-    end
   end
 end
