@@ -5,26 +5,27 @@ namespace :bulkrax do
   task rerun_all_exporters: :environment do
     if defined?(::Hyku)
       Account.find_each do |account|
-        puts "=============== updating #{account.name} ============"
         next if account.name == "search"
         switch!(account)
+        puts "=============== updating #{account.name} ============"
 
-        rerun_exporters_and_delete_zips
+        make_new_exports
 
         puts "=============== finished updating #{account.name} ============"
       end
     else
-      rerun_exporters_and_delete_zips
+      make_new_exports
     end
   end
 
-  def rerun_exporters_and_delete_zips
+  def make_new_exports
+    # delete the existing folders and zip files
+    Dir["tmp/exports/**"].each { |file| FileUtils.rm_rf(file) }
+
     begin
       Bulkrax::Exporter.all.each { |e| Bulkrax::ExporterJob.perform_later(e.id) }
     rescue => e
       puts "(#{e.message})"
     end
-
-    Dir["tmp/exports/**.zip"].each { |zip_path| FileUtils.rm_rf(zip_path) }
   end
 end
