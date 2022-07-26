@@ -52,7 +52,6 @@ module Bulkrax
 
         # allow_any_instance_of(Site).to receive(instance).and_return({})
 
-        byebug
         allow(Site).to receive(:instance).and_return(site)
 
         # allow(Site).to receive(:instance).and_return({})
