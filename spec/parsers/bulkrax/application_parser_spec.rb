@@ -11,6 +11,8 @@ module Bulkrax
                           "bulkrax_identifier" => { "from" => ["source_identifier"], "source_identifier" => true }
                         })
     end
+    let(:site) { instance_double(Site, id: 1, account_id: 1) }
+    let(:account) { instance_double(Account, id: 1, name: 'bulkrax') }
 
     describe '#get_field_mapping_hash_for' do
       context 'with `[{}]` as the field mapping' do
@@ -39,47 +41,36 @@ module Bulkrax
     end
 
     describe '#base_path' do
-      # TODO(alishaevn): determine if it's a way to get around the "uninitialized constant Bulkrax::Site" error.
-      # or is that against best practices to test for a model that exists in a different app?
-      let(:site) { instance_double(Site, id: 1, account_id: 1) }
-      let(:account) { instance_double(Account, id: 1, name: 'bulkrax') }
-
       before do
-        ENV['SETTINGS__MULTITENANCY__ENABLED'] = 'true'
-        # Site.instance.account.name = 'bulkrax'
-
-        # allow(Site.instance.account).to receive(name).and_return('bulkrax')
-
-        # allow_any_instance_of(Site).to receive(instance).and_return({})
-
         allow(Site).to receive(:instance).and_return(site)
-
-        # allow(Site).to receive(:instance).and_return({})
         allow(Site.instance).to receive(:account).and_return(account)
-        # allow(Site.instance.account).to receive(:name).and_return('bulkrax')
-
-        # allow(Site).to receive(:instance).and_return({account: {name: 'bulkrax'}})
       end
 
       context 'in a hyku enabled app' do
+        before do
+          ENV['SETTINGS__MULTITENANCY__ENABLED'] = 'true'
+        end
+
         it 'sets the import path correctly' do
-          # site = instance_double(Site, account: account)
-          # byebug
           expect(importer.parser.base_path).to eq('tmp/imports/bulkrax')
         end
 
-        xit 'sets the export path correctly' do
-          expect(importer.parser.base_path).to eq('tmp/exports/bulkrax')
+        it 'sets the export path correctly' do
+          expect(importer.parser.base_path('export')).to eq('tmp/exports/bulkrax')
         end
       end
 
       context 'in a hyrax app' do
-        xit 'sets the import path correctly' do
+        before do
+          ENV['SETTINGS__MULTITENANCY__ENABLED'] = 'false'
+        end
+
+        it 'sets the import path correctly' do
           expect(importer.parser.base_path).to eq('tmp/imports')
         end
 
-        xit 'sets the export path correctly' do
-          expect(importer.parser.base_path).to eq('tmp/exports')
+        it 'sets the export path correctly' do
+          expect(importer.parser.base_path('export')).to eq('tmp/exports')
         end
       end
     end
