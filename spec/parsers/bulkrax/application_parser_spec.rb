@@ -46,7 +46,7 @@ module Bulkrax
         allow(Site.instance).to receive(:account).and_return(account)
       end
 
-      context 'in a hyku enabled app' do
+      context 'in a multi tenant app' do
         before do
           ENV['SETTINGS__MULTITENANCY__ENABLED'] = 'true'
         end
