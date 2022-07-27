@@ -41,8 +41,8 @@ module Bulkrax
     describe '#base_path' do
       # TODO(alishaevn): determine if it's a way to get around the "uninitialized constant Bulkrax::Site" error.
       # or is that against best practices to test for a model that exists in a different app?
-      # let(:site) { instance_double(Site, id: 1, account_id: 1) }
-      # let(:account) { instance_double(Account, id: 1, name: 'bulkrax') }
+      let(:site) { instance_double(Site, id: 1, account_id: 1) }
+      let(:account) { instance_double(Account, id: 1, name: 'bulkrax') }
 
       before do
         ENV['SETTINGS__MULTITENANCY__ENABLED'] = 'true'
