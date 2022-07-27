@@ -60,7 +60,9 @@ module Bulkrax
         end
       end
 
-      context 'in a hyrax app' do
+      context 'in a non multi tenant app' do
+        # this includes hyrax apps AND single tenant hyku apps
+
         before do
           ENV['SETTINGS__MULTITENANCY__ENABLED'] = 'false'
         end
