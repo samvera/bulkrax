@@ -455,9 +455,10 @@ module Bulkrax
     def path_to_files(**args)
       filename = args.fetch(:filename, '')
 
-      @path_to_files ||= File.join(
-        zip? ? importer_unzip_path : File.dirname(import_file_path), 'files', filename
-      )
+      return @path_to_files if @path_to_files.present? && filename.blank?
+      @path_to_files = File.join(
+          zip? ? importer_unzip_path : File.dirname(import_file_path), 'files', filename
+        )
     end
 
     private
