@@ -134,7 +134,8 @@ module Bulkrax
 
         record.file_sets.each do |fs|
           file_name = filename(fs)
-          next if file_name.blank?
+          next if file_name.blank? || fs.original_file.blank?
+
           io = open(fs.original_file.uri)
           file = Tempfile.new([file_name, File.extname(file_name)], binmode: true)
           file.write(io.read)
