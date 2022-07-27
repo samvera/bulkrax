@@ -14,7 +14,7 @@ module Bulkrax
     let(:site) { instance_double(Site, id: 1, account_id: 1) }
     let(:account) { instance_double(Account, id: 1, name: 'bulkrax') }
 
-    xdescribe '#get_field_mapping_hash_for' do
+    describe '#get_field_mapping_hash_for' do
       context 'with `[{}]` as the field mapping' do
         subject(:application_parser) { described_class.new(importer) }
 
@@ -40,7 +40,7 @@ module Bulkrax
       end
     end
 
-    xdescribe '#base_path' do
+    describe '#base_path' do
       before do
         allow(Site).to receive(:instance).and_return(site)
         allow(Site.instance).to receive(:account).and_return(account)
