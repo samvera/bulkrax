@@ -406,9 +406,13 @@ module Bulkrax
 
       context 'folders and files for export' do
         let(:bulkrax_exporter_run) { FactoryBot.create(:bulkrax_exporter_run, exporter: exporter) }
+        let(:site) { instance_double(Site, id: 1, account_id: 1) }
+        let(:account) { instance_double(Account, id: 1, name: 'bulkrax') }
 
         before do
           allow(exporter).to receive(:exporter_runs).and_return([bulkrax_exporter_run])
+          allow(Site).to receive(:instance).and_return(site)
+          allow(Site.instance).to receive(:account).and_return(account)
         end
 
         describe '#setup_csv_metadata_export_file' do
