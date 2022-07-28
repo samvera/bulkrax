@@ -200,13 +200,12 @@ module Bulkrax
         # get the parent collection and child collections
         @collection_ids = ActiveFedora::SolrService.query("id:#{importerexporter.export_source} #{extra_filters}", method: :post, rows: 2_147_483_647).map(&:id)
         @collection_ids += ActiveFedora::SolrService.query("has_model_ssim:Collection AND member_of_collection_ids_ssim:#{importerexporter.export_source}", method: :post, rows: 2_147_483_647).map(&:id)
+        find_child_file_sets(@work_ids)
       when 'worktype'
         @work_ids = ActiveFedora::SolrService.query("has_model_ssim:#{importerexporter.export_source + extra_filters}", method: :post, rows: 2_000_000_000).map(&:id)
       when 'importer'
         set_ids_for_exporting_from_importer
       end
-
-      find_child_file_sets(@work_ids) if importerexporter.export_from == 'collection'
 
       @work_ids + @collection_ids + @file_set_ids
     end
@@ -355,9 +354,9 @@ module Bulkrax
         path = File.join(exporter_export_path, folder_count, 'files')
         FileUtils.mkdir_p(path) unless File.exist? path
         file = filename(fs)
-        io = open(fs.original_file.uri)
-        next if file.blank?
+        next if file.blank? || fs.original_file.blank?
 
+        io = open(fs.original_file.uri)
         File.open(File.join(path, file), 'wb') do |f|
           f.write(io.read)
           f.close
