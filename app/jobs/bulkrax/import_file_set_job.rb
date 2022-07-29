@@ -12,7 +12,8 @@ module Bulkrax
     def perform(entry_id, importer_run_id)
       @importer_run_id = importer_run_id
       entry = Entry.find(entry_id)
-      parent_identifier = entry.raw_metadata[entry.related_parents_raw_mapping]&.strip
+      # e.g. "parents" or "parents_1"
+      parent_identifier = (entry.raw_metadata[entry.related_parents_raw_mapping] || entry.raw_metadata["#{entry.related_parents_raw_mapping}_1"])&.strip
 
       validate_parent!(parent_identifier)
 
@@ -57,7 +58,7 @@ module Bulkrax
     end
 
     def check_parent_exists!(parent_identifier)
-      raise MissingParentError, %(Unable to find a record with the identifier "#{parent_identifier}") if parent_record.blank?
+      raise MissingParentError, %(Unable to find a record with the identifier "#{parent_identifier}") if parent_record.nil?
     end
 
     def check_parent_is_a_work!(parent_identifier)
@@ -66,8 +67,7 @@ module Bulkrax
     end
 
     def find_parent_record(parent_identifier)
-      @parent_record ||= find_record(parent_identifier, importer_run_id)
-      @parent_record = parent_record.last if parent_record.is_a? Array
+      _, @parent_record = find_record(parent_identifier, importer_run_id)
     end
   end
 end

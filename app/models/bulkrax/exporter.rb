@@ -14,15 +14,13 @@ module Bulkrax
     validates :name, presence: true
     validates :parser_klass, presence: true
 
-    delegate :write, :create_from_collection, :create_from_collections_metadata, :create_from_importer, :create_from_worktype, :create_from_all, to: :parser
+    delegate :write, :create_from_collection, :create_from_importer, :create_from_worktype, :create_from_all, to: :parser
 
     def export
       current_run && setup_export_path
       case self.export_from
       when 'collection'
         create_from_collection
-      when 'collections metadata'
-        create_from_collections_metadata
       when 'importer'
         create_from_importer
       when 'worktype'
@@ -89,7 +87,6 @@ module Bulkrax
       [
         [I18n.t('bulkrax.exporter.labels.importer'), 'importer'],
         [I18n.t('bulkrax.exporter.labels.collection'), 'collection'],
-        [I18n.t('bulkrax.exporter.labels.collections_metadata'), 'collections metadata'],
         [I18n.t('bulkrax.exporter.labels.worktype'), 'worktype'],
         [I18n.t('bulkrax.exporter.labels.all'), 'all']
       ]
@@ -124,9 +121,13 @@ module Bulkrax
     end
 
     def exporter_export_zip_path
-      @exporter_export_zip_path ||= File.join(parser.base_path('export'), "export_#{self.id}_#{self.exporter_runs.last.id}.zip")
+      @exporter_export_zip_path ||= File.join(parser.base_path('export'), "export_#{self.id}_#{self.exporter_runs.last.id}")
     rescue
-      @exporter_export_zip_path ||= File.join(parser.base_path('export'), "export_#{self.id}_0.zip")
+      @exporter_export_zip_path ||= File.join(parser.base_path('export'), "export_#{self.id}_0")
+    end
+
+    def exporter_export_zip_files
+      @exporter_export_zip_files ||= Dir["#{exporter_export_zip_path}/**"].map { |zip| Array(zip.split('/').last) }
     end
 
     def export_properties
@@ -136,6 +137,15 @@ module Bulkrax
 
     def metadata_only?
       export_type == 'metadata'
+    end
+
+    def sort_zip_files(zip_files)
+      zip_files.sort_by do |item|
+        number = item.split('_').last.match(/\d+/)&.[](0) || 0.to_s
+        sort_number = number.rjust(4, "0")
+
+        sort_number
+      end
     end
   end
 end

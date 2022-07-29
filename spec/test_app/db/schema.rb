@@ -10,7 +10,11 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2022_06_09_001128) do
+ActiveRecord::Schema.define(version: 2022_07_26_164334) do
+
+  create_table "accounts", force: :cascade do |t|
+    t.string "name"
+  end
 
   create_table "bookmarks", force: :cascade do |t|
     t.integer "user_id", null: false
@@ -541,6 +545,10 @@ ActiveRecord::Schema.define(version: 2022_06_09_001128) do
     t.boolean "active"
     t.boolean "allows_access_grant"
     t.index ["permission_template_id", "name"], name: "index_sipity_workflows_on_permission_template_and_name", unique: true
+  end
+
+  create_table "sites", force: :cascade do |t|
+    t.integer "account_id"
   end
 
   create_table "tinymce_assets", force: :cascade do |t|

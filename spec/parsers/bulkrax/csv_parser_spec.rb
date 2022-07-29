@@ -394,7 +394,7 @@ module Bulkrax
       let(:exporter)   { FactoryBot.create(:bulkrax_exporter_worktype) }
       # Use OpenStructs to simulate the behavior of ActiveFedora::SolrHit instances.
       let(:work_ids_solr) { [OpenStruct.new(id: SecureRandom.alphanumeric(9)), OpenStruct.new(id: SecureRandom.alphanumeric(9))] }
-      let(:collection_ids_solr) { [OpenStruct.new(id: SecureRandom.alphanumeric(9))] }
+      let(:collection_ids_solr) { [OpenStruct.new(id: SecureRandom.alphanumeric(9)), OpenStruct.new(id: SecureRandom.alphanumeric(9))] }
       let(:file_set_ids_solr) { [OpenStruct.new(id: SecureRandom.alphanumeric(9)), OpenStruct.new(id: SecureRandom.alphanumeric(9)), OpenStruct.new(id: SecureRandom.alphanumeric(9))] }
 
       it 'invokes Bulkrax::ExportWorkJob once per Entry' do
@@ -431,7 +431,7 @@ module Bulkrax
         end
 
         it 'exports works, collections, and file sets' do
-          expect(ExportWorkJob).to receive(:perform_now).exactly(6).times
+          expect(ExportWorkJob).to receive(:perform_now).exactly(7).times
 
           parser.create_new_entries
         end
@@ -468,10 +468,45 @@ module Bulkrax
             .to change(CsvFileSetEntry, :count)
             .by(3)
             .and change(CsvCollectionEntry, :count)
-            .by(1)
+            .by(2)
             .and change(CsvEntry, :count)
-            .by(6) # 6 csv entries minus 3 file set entries minus 1 collection entry equals 2 work entries
+            .by(7) # 6 csv entries minus 3 file set entries minus 2 collection entries equals 2 work entries
         end
+      end
+
+      context 'when exporting by collection' do
+        let(:exporter) { FactoryBot.create(:bulkrax_exporter_collection) }
+        let(:parent_record_1) { build(:work, id: work_ids_solr.first.id) }
+
+        before do
+          allow(parent_record_1).to receive(:file_set_ids).and_return([file_set_ids_solr.pluck(:id).first])
+          allow(ActiveFedora::SolrService).to receive(:query).and_return([work_ids_solr.first], [collection_ids_solr.first], [collection_ids_solr.last])
+          allow(ActiveFedora::Base).to receive(:find).with(work_ids_solr.first.id).and_return(parent_record_1)
+        end
+
+        it 'exports the collection, child works, child collections, and file sets related to the child works' do
+          expect(ExportWorkJob).to receive(:perform_now).exactly(4).times
+
+          parser.create_new_entries
+        end
+      end
+    end
+
+    describe '#setup_export_file' do
+      subject(:parser) { described_class.new(exporter) }
+      let(:bulkrax_exporter_run) { FactoryBot.create(:bulkrax_exporter_run, exporter: exporter) }
+      let(:exporter) { FactoryBot.create(:bulkrax_exporter_worktype) }
+      let(:site) { instance_double(Site, id: 1, account_id: 1) }
+      let(:account) { instance_double(Account, id: 1, name: 'bulkrax') }
+
+      before do
+        allow(exporter).to receive(:exporter_runs).and_return([bulkrax_exporter_run])
+        allow(Site).to receive(:instance).and_return(site)
+        allow(Site.instance).to receive(:account).and_return(account)
+      end
+
+      it 'creates the csv metadata file' do
+        expect(subject.setup_export_file(2)).to eq('tmp/exports/1/1/2/export_Generic_from_worktype_2.csv')
       end
     end
 
@@ -505,8 +540,32 @@ module Bulkrax
       end
     end
 
+    describe '#records_split_count' do
+      it 'defaults to 1000' do
+        expect(subject.records_split_count).to eq(1000)
+      end
+    end
+
     describe '#path_to_files' do
-      pending
+      context 'when an argument is passed' do
+        it 'returns the correct path' do
+          expect(subject.path_to_files(filename: 'sun.jpg')).to eq('spec/fixtures/csv/files/sun.jpg')
+        end
+
+        it 'returns the correct path when multiple files are processed' do
+          expect(subject.path_to_files(filename: 'sun.jpg')).to eq('spec/fixtures/csv/files/sun.jpg')
+
+          second_path = subject.path_to_files(filename: 'moon.jpg')
+          expect(second_path).to eq('spec/fixtures/csv/files/moon.jpg')
+          expect(second_path).not_to eq('spec/fixtures/csv/files/sun.jpg')
+        end
+      end
+
+      context 'when an argument is not passed' do
+        it 'returns the correct path' do
+          expect(subject.path_to_files).to eq('spec/fixtures/csv/files/')
+        end
+      end
     end
 
     describe '#write_errored_entries_file', clean_downloads: true do

@@ -26,6 +26,7 @@ group :development, :test do
   # To use a debugger
   gem 'byebug'
   gem 'database_cleaner'
+  gem 'pry-byebug'
   gem 'solr_wrapper', '>= 0.3'
 end
 

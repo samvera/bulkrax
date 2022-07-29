@@ -42,10 +42,12 @@ module Bulkrax
       pending_relationships.each do |rel|
         raise ::StandardError, %("#{rel}" needs either a child or a parent to create a relationship) if rel.child_id.nil? || rel.parent_id.nil?
         @child_entry, child_record = find_record(rel.child_id, importer_run_id)
-        child_record.is_a?(::Collection) ? @child_records[:collections] << child_record : @child_records[:works] << child_record
+        if child_record
+          child_record.is_a?(::Collection) ? @child_records[:collections] << child_record : @child_records[:works] << child_record
+        end
       end
 
-      if (child_records[:collections].blank? && child_records[:works].blank?) || parent_record.blank?
+      if (child_records[:collections].blank? && child_records[:works].blank?) || parent_record.nil?
         reschedule({ parent_identifier: parent_identifier, importer_run_id: importer_run_id })
         return false # stop current job from continuing to run after rescheduling
       end

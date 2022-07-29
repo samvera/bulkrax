@@ -12,8 +12,8 @@ module Bulkrax
           raise CollectionsCreatedError unless collections_created?
           @item = factory.run!
           add_user_to_permission_templates! if self.class.to_s.include?("Collection")
-          parent_jobs if self.parsed_metadata[related_parents_parsed_mapping].present?
-          child_jobs if self.parsed_metadata[related_children_parsed_mapping].present?
+          parent_jobs if self.parsed_metadata[related_parents_parsed_mapping]&.join.present?
+          child_jobs if self.parsed_metadata[related_children_parsed_mapping]&.join.present?
         end
       rescue RSolr::Error::Http, CollectionsCreatedError => e
         raise e

@@ -6,26 +6,26 @@ module Bulkrax
 
     def perform(*args)
       entry = Entry.find(args[0])
+      exporter_run = ExporterRun.find(args[1])
       begin
         entry.build
         entry.save
       rescue StandardError
         # rubocop:disable Rails/SkipsModelValidations
-        ExporterRun.find(args[1]).increment!(:failed_records)
-        ExporterRun.find(args[1]).decrement!(:enqueued_records)
+        exporter_run.increment!(:failed_records)
+        exporter_run.decrement!(:enqueued_records) unless exporter_run.enqueued_records <= 0
         raise
       else
         if entry.failed?
-          ExporterRun.find(args[1]).increment!(:failed_records)
-          ExporterRun.find(args[1]).decrement!(:enqueued_records)
+          exporter_run.increment!(:failed_records)
+          exporter_run.decrement!(:enqueued_records) unless exporter_run.enqueued_records <= 0
           raise entry.reload.current_status.error_class.constantize
         else
-          ExporterRun.find(args[1]).increment!(:processed_records)
-          ExporterRun.find(args[1]).decrement!(:enqueued_records)
+          exporter_run.increment!(:processed_records)
+          exporter_run.decrement!(:enqueued_records) unless exporter_run.enqueued_records <= 0
         end
         # rubocop:enable Rails/SkipsModelValidations
       end
-      exporter_run = ExporterRun.find(args[1])
       return entry if exporter_run.enqueued_records.positive?
 
       if exporter_run.failed_records.positive?

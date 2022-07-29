@@ -20,7 +20,7 @@ module Bulkrax
       allow(ImporterRun).to receive(:find).with(importer_run.id).and_return(importer_run)
       allow(::Hyrax.config).to receive(:curation_concerns).and_return([Work])
       allow(::Work).to receive(:where).and_return([])
-      allow(importer.parser).to receive(:path_to_files).and_return('spec/fixtures/')
+      allow(importer.parser).to receive(:path_to_files).with(filename: 'removed.png').and_return('spec/fixtures/removed.png')
     end
 
     describe '#perform' do
@@ -128,7 +128,7 @@ module Bulkrax
 
         context 'when the parent identifier does not reference a work' do
           before do
-            allow(import_file_set_job).to receive(:find_record).and_return(non_work)
+            allow(import_file_set_job).to receive(:find_record).and_return([nil, non_work])
           end
 
           context 'when it references a collection' do

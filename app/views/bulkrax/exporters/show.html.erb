@@ -8,10 +8,11 @@
   <div class='panel-body'>
 
     <% if File.exist?(@exporter.exporter_export_zip_path) %>
-      <p class='bulkrax-p-align'>
+      <%= simple_form_for @exporter, method: :get, url: exporter_download_path(@exporter), html: { class: 'form-inline bulkrax-p-align' } do |form| %>
         <strong>Download:</strong>
-        <%= link_to raw('<span class="glyphicon glyphicon-download"></span>'), exporter_download_path(@exporter) %>
-      </p>
+        <%= render 'downloads', exporter: @exporter, form: form %>
+        <%= form.button :submit, value: 'Download', data: { disable_with: false } %>
+      <% end %>
     <% end %>
 
     <p class='bulkrax-p-align'>
@@ -40,11 +41,6 @@
       <% when 'collection' %>
         <% collection = Collection.find(@exporter.export_source) %>
         <%= link_to collection&.title&.first, hyrax.dashboard_collection_path(collection.id) %>
-      <% when 'collections metadata' %>
-        <% collections = Collection.all %>
-        <% collections.each_with_index do |c, i| %>
-          <%= link_to c&.title&.first, hyrax.dashboard_collection_path(c.id) %><%= ',' if i != collections.count - 1 %>
-        <% end %>
       <% when 'importer' %>
         <% importer = Bulkrax::Importer.find(@exporter.export_source) %>
         <%= link_to importer.name, bulkrax.importer_path(importer.id) %>
@@ -237,6 +233,10 @@
 =end%>
         </div>
       </div>
+      <br>
+      <%= link_to 'Edit', edit_exporter_path(@exporter) %>
+      |
+      <%= link_to 'Back', exporters_path %>
     </div>
   </div>
 </div>

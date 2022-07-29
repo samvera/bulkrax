@@ -75,7 +75,7 @@ module Bulkrax
     def get_field_mapping_hash_for(key)
       return instance_variable_get("@#{key}_hash") if instance_variable_get("@#{key}_hash").present?
 
-      mapping = importerexporter.field_mapping == [{}] ? {} : importerexporter.field_mapping
+      mapping = importerexporter.field_mapping.is_a?(Hash) ? importerexporter.field_mapping : {}
       instance_variable_set(
         "@#{key}_hash",
         mapping&.with_indifferent_access&.select { |_, h| h.key?(key) }
@@ -134,7 +134,9 @@ module Bulkrax
 
     # Base path for imported and exported files
     def base_path(type = 'import')
-      ENV['HYKU_MULTITENANT'] ? File.join(Bulkrax.send("#{type}_path"), Site.instance.account.name) : Bulkrax.send("#{type}_path")
+      # account for multiple versions of hyku
+      is_multitenant = ENV['HYKU_MULTITENANT'] == 'true' || ENV['SETTINGS__MULTITENANCY__ENABLED'] == 'true'
+      is_multitenant ? File.join(Bulkrax.send("#{type}_path"), ::Site.instance.account.name) : Bulkrax.send("#{type}_path")
     end
 
     # Path where we'll store the import metadata and files
@@ -247,8 +249,6 @@ module Bulkrax
     def write
       write_files
       zip
-      # uncomment next line to debug for faulty zipping during bagit export
-      bagit_zip_file_size_check if importerexporter.parser_klass.include?('Bagit')
     end
 
     def unzip(file_to_unzip)
@@ -262,30 +262,15 @@ module Bulkrax
     end
 
     def zip
-      FileUtils.rm_rf(exporter_export_zip_path)
-      Zip::File.open(exporter_export_zip_path, create: true) do |zip_file|
-        Dir["#{exporter_export_path}/**/**"].each do |file|
-          zip_file.add(file.sub("#{exporter_export_path}/", ''), file)
-        end
-      end
-    end
+      FileUtils.mkdir_p(exporter_export_zip_path)
 
-    # TODO: remove Entry::BagitZipError as well as this method when we're sure it's not needed
-    def bagit_zip_file_size_check
-      Zip::File.open(exporter_export_zip_path) do |zip_file|
-        zip_file.select { |entry| entry.name.include?('data/') && entry.file? }.each do |zipped_file|
-          Dir["#{exporter_export_path}/**/data/*"].select { |file| file.include?(zipped_file.name) }.each do |file|
-            begin
-              raise BagitZipError, "Invalid Bag, file size mismatch for #{file.sub("#{exporter_export_path}/", '')}" if File.size(file) != zipped_file.size
-            rescue BagitZipError => e
-              matched_entry_ids = importerexporter.entry_ids.select do |id|
-                Bulkrax::Entry.find(id).identifier.include?(zipped_file.name.split('/').first)
-              end
-              matched_entry_ids.each do |entry_id|
-                Bulkrax::Entry.find(entry_id).status_info(e)
-                status_info('Complete (with failures)')
-              end
-            end
+      Dir["#{exporter_export_path}/**"].each do |folder|
+        zip_path = "#{exporter_export_zip_path.split('/').last}_#{folder.split('/').last}.zip"
+        FileUtils.rm_rf("#{exporter_export_zip_path}/#{zip_path}")
+
+        Zip::File.open(File.join("#{exporter_export_zip_path}/#{zip_path}"), create: true) do |zip_file|
+          Dir["#{folder}/**/**"].each do |file|
+            zip_file.add(file.sub("#{folder}/", ''), file)
           end
         end
       end
