@@ -3,7 +3,7 @@
 Bulkrax::Engine.routes.draw do
   resources :exporters do
     get :download
-    resources :entries, only: %i[show]
+    resources :entries, only: %i[show update]
   end
   resources :importers do
     put :continue
@@ -11,7 +11,7 @@ Bulkrax::Engine.routes.draw do
     collection do
       post :external_sets
     end
-    resources :entries, only: %i[show]
+    resources :entries, only: %i[show update]
     get :upload_corrected_entries
     post :upload_corrected_entries_file
   end
