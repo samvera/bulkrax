@@ -140,6 +140,7 @@
           <%= page_entries_info(@work_entries) %><br />
           <%= paginate(@work_entries, theme: 'blacklight', param_name: :work_entries_page, params: { anchor: 'work-entries'}) %>
         </div>
+
         <div role="tabpanel" class="tab-pane bulkrax-nav-tab-table-left-align" id="collection-entries">
           <table class='table table-striped'>
             <thead>
@@ -152,9 +153,7 @@
                 <th>Actions</th>
               </tr>
             </thead>
-            <%
-=begin%>
- <tbody>
+            <tbody>
               <% @collection_entries.each do |e| %>
                 <tr>
                   <td><%= link_to e.identifier, bulkrax.exporter_entry_path(@exporter.id, e.id) %></td>
@@ -176,16 +175,11 @@
                 </tr>
               <% end %>
             </tbody>
-<%
-=end%>
           </table>
-          <%
-=begin%>
- <%= page_entries_info(@collection_entries) %><br />
+          <%= page_entries_info(@collection_entries) %><br />
           <%= paginate(@collection_entries, theme: 'blacklight', param_name: :collections_entries_page, params: {anchor: 'collection-entries'}) %>
-<%
-=end%>
         </div>
+
         <div role="tabpanel" class="tab-pane bulkrax-nav-tab-table-left-align" id="file-set-entries">
           <table class='table table-striped'>
             <thead>
@@ -198,9 +192,7 @@
                 <th>Actions</th>
               </tr>
             </thead>
-            <%
-=begin%>
- <tbody>
+            <tbody>
               <% @file_set_entries.each do |e| %>
                 <tr>
                   <td><%= link_to e.identifier, bulkrax.exporter_entry_path(@exporter.id, e.id) %></td>
@@ -222,15 +214,9 @@
                 </tr>
               <% end %>
             </tbody>
-<%
-=end%>
           </table>
-          <%
-=begin%>
- <%= page_entries_info(@file_set_entries) %><br />
+          <%= page_entries_info(@file_set_entries) %><br />
           <%= paginate(@file_set_entries, theme: 'blacklight', param_name: :file_set_entries_page, params: {anchor: 'file-set-entries'}) %>
-<%
-=end%>
         </div>
       </div>
       <br>
