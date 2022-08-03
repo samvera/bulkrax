@@ -127,7 +127,7 @@ function handleParserKlass() {
 
 function handleBrowseEverything(){
   var button = $("button[data-toggle='browse-everything']")
-  if(button.length == 0){return;}
+  if(button.length == 0) { return; }
   button.browseEverything({
     route: button.data('route'),
     target: button.data('target')
