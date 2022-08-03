@@ -47,6 +47,7 @@ function prepBulkrax(event) {
     var config = { childList: true, attributes: true };
     var callback = function(mutationsList) {
       for(var mutation of mutationsList) {
+
         if (mutation.type == 'childList') {
           browseButton = document.getElementById('browse');
           var exp = /selected_files\[[0-9]*\]\[url\]/
@@ -119,8 +120,33 @@ function handleParserKlass() {
     $('.parser_fields').append(window[parser_klass.data('partial')])
   }
 
+  handleBrowseEverything()
   var file_path_value = $('#importer_parser_fields_import_file_path').val()
   handleFileToggle(file_path_value)
+}
+
+function handleBrowseEverything(){
+  var button = $("button[data-toggle='browse-everything']")
+  if(button.length == 0) { return; }
+  button.browseEverything({
+    route: button.data('route'),
+    target: button.data('target')
+  }).done(function(data) {
+    var evt = { isDefaultPrevented: function() { return false; } };
+    $('.ev-browser.show').removeClass('show')
+    if($('#fileupload').length > 0) {
+      var files = $.map(data, function(d) { return { name: d.file_name, size: d.file_size, id: d.url } });
+      $.blueimp.fileupload.prototype.options.done.call($('#fileupload').fileupload(), evt, { result: { files: files }});
+    }
+    return true
+    // User has submitted files; data contains an array of URLs and their options
+  }).cancel(function() {
+    $('.ev-browser.show').removeClass('show')
+    // User cancelled the browse operation
+  }).fail(function(status, error, text) {
+    $('.ev-browser.show').removeClass('show')
+    // URL retrieval experienced a technical failure
+  });
 }
 
 function handleSourceLoad(refresh_button, base_url, external_set_select) {
