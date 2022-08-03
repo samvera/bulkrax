@@ -128,25 +128,25 @@ function handleParserKlass() {
 function handleBrowseEverything(){
   var button = $("button[data-toggle='browse-everything']")
   if(button.length == 0){return;}
-    button.browseEverything({
-      route: button.data('route'),
-      target: button.data('target')
-    }).done(function(data) {
-      var evt = { isDefaultPrevented: function() { return false; } };
-      $('.ev-browser.show').removeClass('show')
-      if($('#fileupload').length > 0){
-        var files = $.map(data, function(d) { return { name: d.file_name, size: d.file_size, id: d.url } });
-        $.blueimp.fileupload.prototype.options.done.call($('#fileupload').fileupload(), evt, { result: { files: files }});
-      }
-      return true
-      // User has submitted files; data contains an array of URLs and their options
-    }).cancel(function() {
-      $('.ev-browser.show').removeClass('show')
-      // User cancelled the browse operation
-    }).fail(function(status, error, text) {
-      $('.ev-browser.show').removeClass('show')
-      // URL retrieval experienced a technical failure
-    });
+  button.browseEverything({
+    route: button.data('route'),
+    target: button.data('target')
+  }).done(function(data) {
+    var evt = { isDefaultPrevented: function() { return false; } };
+    $('.ev-browser.show').removeClass('show')
+    if($('#fileupload').length > 0) {
+      var files = $.map(data, function(d) { return { name: d.file_name, size: d.file_size, id: d.url } });
+      $.blueimp.fileupload.prototype.options.done.call($('#fileupload').fileupload(), evt, { result: { files: files }});
+    }
+    return true
+    // User has submitted files; data contains an array of URLs and their options
+  }).cancel(function() {
+    $('.ev-browser.show').removeClass('show')
+    // User cancelled the browse operation
+  }).fail(function(status, error, text) {
+    $('.ev-browser.show').removeClass('show')
+    // URL retrieval experienced a technical failure
+  });
 }
 
 function handleSourceLoad(refresh_button, base_url, external_set_select) {
