@@ -372,19 +372,18 @@ module Bulkrax
       end
 
       context 'in a multi tenant application' do
-        # TODO(alishaevn): get this spec to work
-        before do
-          ENV['HYKU_MULTITENANT'] = 'true'
-          # allow(Site).to receive(instance).and_return({})
-          # allow(Site.instance).to receive(account).and_return({})
-          # allow(Site.instance.account).to receive(name).and_return('hyku')
+        let(:site) { instance_double(Site, id: 1, account_id: 1) }
+        let(:account) { instance_double(Account, id: 1, name: 'bulkrax') }
 
-          # allow('base_path').to receive(::Site.instance.account.name).and_return('hyku')
+        before do
+          allow(Site).to receive(:instance).and_return(site)
+          allow(Site.instance).to receive(:account).and_return(account)
+          ENV['HYKU_MULTITENANT'] = 'true'
         end
 
-        xit 'returns the path of the partial import file' do
+        it 'returns the path of the partial import file' do
           expect(subject.write_partial_import_file(file))
-            .to eq("tmp/imports/hyku/#{importer.id}_#{importer.created_at.strftime('%Y%m%d%H%M%S')}/failed_corrected_entries.csv")
+            .to eq("tmp/imports/bulkrax/#{importer.id}_#{importer.created_at.strftime('%Y%m%d%H%M%S')}/failed_corrected_entries.csv")
         end
       end
     end
