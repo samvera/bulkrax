@@ -1,0 +1,39 @@
+<div role="tabpanel" class="tab-pane bulkrax-nav-tab-table-left-align" id="collection-entries">
+  <table class='table table-striped'>
+    <thead>
+      <tr>
+        <th>Identifier</th>
+        <th>Entry ID</th>
+        <th>Status</th>
+        <th>Errors</th>
+        <th>Status Set At</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% entries.each do |e| %>
+        <% entry_path = item.class.to_s.include?('Importer') ? bulkrax.importer_entry_path(item.id, e.id) : bulkrax.exporter_entry_path(item.id, e.id) %>
+        <tr>
+          <td><%= link_to e.identifier, entry_path %></td>
+          <td><%= e.id %></td>
+          <% if e.status == "Complete" %>
+            <td><span class="glyphicon glyphicon-ok" style="color: green;"></span> <%= e.status %></td>
+          <% elsif e.status == "Pending" %>
+            <td><span class="glyphicon glyphicon-option-horizontal" style="color: blue;"></span> <%= e.status %></td>
+          <% else %>
+            <td><span class="glyphicon glyphicon-remove" style="color: <%= e.status == 'Deleted' ? 'green' : 'red' %>;"></span> <%= e.status %></td>
+          <% end %>
+          <% if e.last_error.present? %>
+            <td><%= link_to e.last_error.dig("error_class"), entry_path %></td>
+          <% else %>
+            <td></td>
+          <% end %>
+          <td><%= e.status_at %></td>
+          <td><%= link_to raw('<span class="glyphicon glyphicon-info-sign"></span>'), entry_path %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <%= page_entries_info(entries) %><br />
+  <%= paginate(entries, theme: 'blacklight', param_name: :collections_entries_page, params: { anchor: 'collection-entries' }) %>
+</div>
