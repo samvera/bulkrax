@@ -389,6 +389,26 @@ module Bulkrax
       end
     end
 
+    describe '#find_child_file_sets' do
+      subject(:parser) { described_class.new(exporter) }
+      let(:exporter) { FactoryBot.create(:bulkrax_exporter_worktype) }
+      let(:work_ids_solr) { [OpenStruct.new(id: SecureRandom.alphanumeric(9))] }
+      let(:file_set_ids_solr) { [OpenStruct.new(id: SecureRandom.alphanumeric(9))] }
+      let(:parent_record_1) { build(:work) }
+
+      before do
+        parser.instance_variable_set(:@file_set_ids, [])
+        allow(ActiveFedora::SolrService).to receive(:query).and_return(work_ids_solr)
+        allow(ActiveFedora::Base).to receive(:find).with(work_ids_solr.first.id).and_return(parent_record_1)
+        allow(parent_record_1).to receive(:file_set_ids).and_return(file_set_ids_solr.pluck(:id))
+      end
+
+      it 'returns the ids when child file sets are present' do
+        parser.find_child_file_sets(work_ids_solr.pluck(:id))
+        expect(parser.instance_variable_get(:@file_set_ids)).to eq(file_set_ids_solr.pluck(:id))
+      end
+    end
+
     describe '#create_new_entries' do
       subject(:parser) { described_class.new(exporter) }
       let(:exporter) { FactoryBot.create(:bulkrax_exporter, :all) }
