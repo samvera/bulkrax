@@ -14,7 +14,7 @@
       <% entries.each do |e| %>
         <% entry_path = item.class.to_s.include?('Importer') ? bulkrax.importer_entry_path(item.id, e.id) : bulkrax.exporter_entry_path(item.id, e.id) %>
         <tr>
-          <td><%= link_to e.identifier, bulkrax.importer_entry_path(@importer.id, e.id) %></td>
+          <td><%= link_to e.identifier, bulkrax.importer_entry_path(item.id, e.id) %></td>
           <td><%= e.id %></td>
           <% if e.status == "Complete" %>
             <td><span class="glyphicon glyphicon-ok" style="color: green;"></span> <%= e.status %></td>
@@ -24,12 +24,12 @@
             <td><span class="glyphicon glyphicon-remove" style="color: <%= e.status == 'Deleted' ? 'green' : 'red' %>;"></span> <%= e.status %></td>
           <% end %>
           <% if e.last_error.present? %>
-            <td><%= link_to e.last_error.dig("error_class"), bulkrax.importer_entry_path(@importer.id, e.id) %></td>
+            <td><%= link_to e.last_error.dig("error_class"), bulkrax.importer_entry_path(item.id, e.id) %></td>
           <% else %>
             <td></td>
           <% end %>
           <td><%= e.status_at %></td>
-          <td><%= link_to raw('<span class="glyphicon glyphicon-info-sign"></span>'), bulkrax.importer_entry_path(@importer.id, e.id) %></td>
+          <td><%= link_to raw('<span class="glyphicon glyphicon-info-sign"></span>'), bulkrax.importer_entry_path(item.id, e.id) %></td>
         </tr>
       <% end %>
     </tbody>
