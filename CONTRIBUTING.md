@@ -51,6 +51,8 @@ further details.
     * Explain the expected behavior
     * Explain the actual behavior
     * Provide steps to reproduce the actual behavior
+    * Include which version of Bulkrax is being used if a bug is being reported
+  * Attach screen shots and/or video recordings where possible
 * Add the issue to the "Bulkrax | Main Board" project using the "Projects" option on the right side of the page
 
 ### Making Changes
