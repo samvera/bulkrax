@@ -51,6 +51,7 @@ further details.
     * Explain the expected behavior
     * Explain the actual behavior
     * Provide steps to reproduce the actual behavior
+* Add the issue to the "Bulkrax | Main Board" project using the "Projects" option on the right side of the page
 
 ### Making Changes
 
