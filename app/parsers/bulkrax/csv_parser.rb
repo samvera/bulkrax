@@ -203,6 +203,7 @@ module Bulkrax
         find_child_file_sets(@work_ids)
       when 'worktype'
         @work_ids = ActiveFedora::SolrService.query("has_model_ssim:#{importerexporter.export_source + extra_filters}", method: :post, rows: 2_000_000_000).map(&:id)
+        find_child_file_sets(@work_ids)
       when 'importer'
         set_ids_for_exporting_from_importer
       end

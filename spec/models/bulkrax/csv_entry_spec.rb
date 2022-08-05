@@ -1009,10 +1009,10 @@ module Bulkrax
           context 'with join set to true' do
             let(:exporter) { create(:bulkrax_exporter, field_mapping: { 'file' => { from: ['filename'], join: true } }) }
 
-            it "adds the work's file set's filenames to the file mapping in parsed_metadata" do
+            it "does not add the work's file set's filenames to the file mapping in parsed_metadata" do
               entry.build_files_metadata
 
-              expect(entry.parsed_metadata['filename']).to eq('hello.png | world.jpg')
+              expect(entry.parsed_metadata).to eq({})
             end
           end
         end
@@ -1021,8 +1021,7 @@ module Bulkrax
           it "adds the work's file set's filenames to the 'file' key in parsed_metadata" do
             entry.build_files_metadata
 
-            expect(entry.parsed_metadata['file_1']).to eq('hello.png')
-            expect(entry.parsed_metadata['file_2']).to eq('world.jpg')
+            expect(entry.parsed_metadata).to eq({})
           end
         end
       end
