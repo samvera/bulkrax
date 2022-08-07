@@ -29,7 +29,7 @@
 
   <%= form.input :export_source_importer,
     label: t('bulkrax.exporter.labels.importer'),
-    # required: true,
+    required: true,
     prompt: 'Select from the list',
     label_html: { class: 'importer export-source-option hidden' },
     input_html: { class: 'importer export-source-option hidden' },
@@ -38,7 +38,7 @@
   <%= form.input :export_source_collection,
     prompt: 'Start typing ...',
     label: t('bulkrax.exporter.labels.collection'),
-    # required: true,
+    required: true,
     placeholder: @collection&.title&.first,
     label_html: { class: 'collection export-source-option hidden' },
     input_html: {
@@ -52,7 +52,7 @@
 
   <%= form.input :export_source_worktype,
     label: t('bulkrax.exporter.labels.worktype'),
-    # required: true,
+    required: true,
     prompt: 'Select from the list',
     label_html: { class: 'worktype export-source-option hidden' },
     input_html: { class: 'worktype export-source-option hidden' },

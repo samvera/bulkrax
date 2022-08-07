@@ -1,15 +1,27 @@
 function hideUnhide(field) {
   var allSources = $('body').find('.export-source-option')
+  removeRequired(allSources)
   hide(allSources)
 
   if (field.length > 0) {
     var selectedSource = $('.' + field)
     unhideSelected(selectedSource)
+    addRequired(selectedSource)
   }
 
   if (field === 'collection') {
     initCollectionSearchInputs();
   }
+};
+
+function addRequired(selectedSource) {  
+  selectedSource.addClass('required').attr('required', 'required');
+  selectedSource.parent().addClass('required');
+}
+
+function removeRequired(allSources) {
+  allSources.removeClass('required').removeAttr('required');
+  allSources.parent().removeClass('required').removeAttr('required')
 };
 
 // hide all export_source
