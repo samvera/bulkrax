@@ -11,17 +11,6 @@ experience for all its members, whether they are at a formal gathering, in
 a social setting, or taking part in activities online. Please see our
 [Code of Conduct](CODE_OF_CONDUCT.md) for more information.
 
-## Samvera Community Intellectual Property Licensing and Ownership
-
-All code contributors must have an Individual Contributor License Agreement
-(iCLA) on file with the Samvera Steering Group. If the contributor works for
-an institution, the institution must have a Corporate Contributor License
-Agreement (cCLA) on file.
-
-https://wiki.duraspace.org/display/samvera/Samvera+Community+Intellectual+Property+Licensing+and+Ownership
-
-You should also add yourself to the `CONTRIBUTORS.md` file in the root of the project.
-
 ## Language
 
 The language we use matters.  Today, tomorrow, and for years to come
@@ -62,6 +51,9 @@ further details.
     * Explain the expected behavior
     * Explain the actual behavior
     * Provide steps to reproduce the actual behavior
+    * Include which version of Bulkrax is being used if a bug is being reported
+  * Attach screen shots and/or video recordings where possible
+* Add the issue to the "Bulkrax | Main Board" project using the "Projects" option on the right side of the page
 
 ### Making Changes
 
@@ -99,7 +91,6 @@ be considered for inclusion in the code base and history of this repository.
 * Make commits of logical units.
 * Check for unnecessary whitespace with `git diff --check` before committing.
 * Make sure your commit messages are [well formed](http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html).
-* If you created an issue, you can close it by including "Closes #issue" in your commit message. See [Github's blog post for more details](https://github.com/blog/1386-closing-issues-via-commit-messages)
 
 ```
     Present tense short summary (50 characters or less)
@@ -109,8 +100,6 @@ be considered for inclusion in the code base and history of this repository.
     the commit content is obvious, it may not be obvious to others. You
     should add such description also if it's already present in bug tracker,
     it should not be necessary to visit a webpage to check the history.
-
-    Include Closes #<issue-number> when relevant.
 
     Description can have multiple paragraphs and you can use code examples
     inside, just indent it with 4 spaces:
@@ -150,6 +139,7 @@ be considered for inclusion in the code base and history of this repository.
   * Squashing your branch's changes into one commit is "good form" and helps the person merging your request to see everything that is going on.
 * Push your changes to a topic branch in your fork of the repository.
 * Submit a pull request from your fork to the project.
+* Link your pull request to the related issue using the "Development" option on the right side of the issue or pull request. If there is no corresponding issue, please create one. (Unless the change is something like adding a spec, updating the readme, etc. and not a feature/bug fix that needs tracking.)
 
 ### Reviewing and Merging Changes
 
