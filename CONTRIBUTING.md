@@ -139,7 +139,7 @@ be considered for inclusion in the code base and history of this repository.
   * Squashing your branch's changes into one commit is "good form" and helps the person merging your request to see everything that is going on.
 * Push your changes to a topic branch in your fork of the repository.
 * Submit a pull request from your fork to the project.
-* Link your pull request to the related issue using the "Development" label on the right side of the issue or pull request. If there is no corresponding issue, please create one. (Unless the change is something like adding a spec, updating the readme, etc. and not a feature/bug fix that needs tracking.)
+* Link your pull request to the related issue using the "Development" option on the right side of the issue or pull request. If there is no corresponding issue, please create one. (Unless the change is something like adding a spec, updating the readme, etc. and not a feature/bug fix that needs tracking.)
 
 ### Reviewing and Merging Changes
 
