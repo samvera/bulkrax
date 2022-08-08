@@ -17,20 +17,44 @@ RSpec.describe Bulkrax do
     end
 
     context 'import_path' do
+      after do
+        described_class.import_path = 'tmp/imports'
+      end
+
       it 'responds to import_path' do
         expect(described_class).to respond_to(:import_path)
       end
-      it 'import_path is settable' do
+
+      it 'has a default import_path' do
+        expect(described_class.import_path).to eq('tmp/imports')
+      end
+
+      it 'is settable' do
+        described_class.import_path = 'other/import/path'
+
         expect(described_class).to respond_to(:import_path=)
+        expect(described_class.import_path).to eq('other/import/path')
       end
     end
 
     context 'export_path' do
+      after do
+        described_class.export_path = 'tmp/exports'
+      end
+
       it 'responds to export_path' do
         expect(described_class).to respond_to(:export_path)
       end
+
+      it 'has a default export_path' do
+        expect(described_class.export_path).to eq('tmp/exports')
+      end
+
       it 'export_path is settable' do
+        described_class.export_path = 'other/export/path'
+
         expect(described_class).to respond_to(:export_path=)
+        expect(described_class.export_path).to eq('other/export/path')
       end
     end
 
