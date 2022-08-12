@@ -60,8 +60,9 @@ further details.
 * Fork the repository on GitHub
 * Create a topic branch from where you want to base your work.
   * This is usually the `main` branch.
-  * To quickly create a topic branch based on `main`; `git branch fix/main/my_contribution main`
-  * Then checkout the new branch with `git checkout fix/main/my_contribution`.
+  * To quickly create a topic branch based on `main`; `git branch i<issue_number>-<description> main`
+    * e.g.: `i123-add-more-documentation`
+  * Then checkout the new branch with `git checkout i123-add-more-documentation`.
   * Please avoid working directly on the `main` branch.
   * Please do not create a branch called `master`. (See note below.)
   * You may find the [hub suite of commands](https://github.com/defunkt/hub) helpful
