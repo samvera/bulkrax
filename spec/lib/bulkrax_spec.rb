@@ -118,7 +118,7 @@ RSpec.describe Bulkrax do
       end
 
       it 'is responds with default hash' do
-        expect(described_class.default_field_mapping.call('creator')).to eq("creator" => { excluded: false, from: ["creator"], if: nil, parsed: false, split: false })
+        expect(described_class.default_field_mapping.call('creator')).to eq("creator" => { excluded: false, from: ["creator"], if: nil, parsed: false, split: true })
       end
     end
 
