@@ -186,8 +186,8 @@ bundle exec rake bin/rails db:migrate RAILS_ENV=test
 
 ### Run the specs
 ```  bash
-# update your apps gemfile to point at the local version of the gem. e.g.:
-# if you have cloned bulkrax into a folder titled "vendor" in your project
+# let's say you have cloned bulkrax into a folder titled "vendor" in your project;
+# update the project gemfile to point at that local version of bulkrax. e.g.:
 gem 'bulkrax', path: 'vendor/bulkrax'
 
 # go into that folder (if you use Docker, this is done outside of containers)
