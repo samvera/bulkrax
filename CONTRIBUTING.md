@@ -130,13 +130,13 @@ be considered for inclusion in the code base and history of this repository.
 * Read the article ["Using Pull Requests"](https://help.github.com/articles/using-pull-requests) on GitHub.
 * Make sure your branch is up to date with its parent branch (i.e. main)
   * `git checkout main`
-  * `git pull --rebase`
+  * `git pull`
   * `git checkout <your-branch>`
-  * `git rebase main`
+  * `git merge main`
+    * fix merge conflicts if any
   * It is a good idea to run your tests again.
 * If you've made more than one commit take a moment to consider whether squashing commits together would help improve their logical grouping.
   * [Detailed Walkthrough of One Pull Request per Commit](http://ndlib.github.io/practices/one-commit-per-pull-request/)
-  * `git rebase --interactive main` ([See Github help](https://help.github.com/articles/interactive-rebase))
   * Squashing your branch's changes into one commit is "good form" and helps the person merging your request to see everything that is going on.
 * Push your changes to a topic branch in your fork of the repository.
 * Submit a pull request from your fork to the project.
@@ -187,6 +187,7 @@ bundle exec rake bin/rails db:migrate RAILS_ENV=test
 ### Run the specs
 ```  bash
 # update your apps gemfile to point at the local version of the gem. e.g.:
+# if you have cloned bulkrax into a folder titled "vendor" in your project
 gem 'bulkrax', path: 'vendor/bulkrax'
 
 # go into that folder (if you use Docker, this is done outside of containers)
