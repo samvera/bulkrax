@@ -168,7 +168,7 @@ module Bulkrax
         actor.file_set.permissions_attributes = work_permissions
         actor.create_metadata
         actor.create_content(uploaded_file)
-        actor.attach_to_work(work)
+        actor.attach_to_work(work, attrs)
       end
 
       object.save!
