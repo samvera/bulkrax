@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "bulkrax/version"
 require "bulkrax/engine"
 require 'active_support/all'
 
