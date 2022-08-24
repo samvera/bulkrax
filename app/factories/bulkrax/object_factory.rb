@@ -166,9 +166,9 @@ module Bulkrax
         actor = ::Hyrax::Actors::FileSetActor.new(object, @user)
         uploaded_file.update(file_set_uri: actor.file_set.uri)
         actor.file_set.permissions_attributes = work_permissions
-        actor.create_metadata
+        actor.create_metadata(attrs)
         actor.create_content(uploaded_file)
-        actor.attach_to_work(work)
+        actor.attach_to_work(work, attrs)
       end
 
       object.save!
