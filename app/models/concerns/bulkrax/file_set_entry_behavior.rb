@@ -9,7 +9,6 @@ module Bulkrax
     def file_reference
       return 'file' if parsed_metadata&.[]('file')&.map(&:present?)&.any?
       return 'remote_files' if parsed_metadata&.[]('remote_files')&.map(&:present?)&.any?
-      end
     end
 
     def add_path_to_file
