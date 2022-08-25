@@ -7,10 +7,8 @@ module Bulkrax
     end
 
     def file_reference
-      if parsed_metadata&.[]('file')&.map(&:present?)&.any?
-        return 'file'
-      elsif parsed_metadata&.[]('remote_files')&.map(&:present?)&.any?
-        return 'remote_files'
+      return 'file' if parsed_metadata&.[]('file')&.map(&:present?)&.any?
+      return 'remote_files' if parsed_metadata&.[]('remote_files')&.map(&:present?)&.any?
       end
     end
 
