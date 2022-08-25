@@ -159,19 +159,27 @@ module Bulkrax
       file_set_attrs = attrs.slice(*object.attributes.keys)
       object.assign_attributes(file_set_attrs)
 
-      attrs['uploaded_files'].each do |uploaded_file_id|
+      attrs['uploaded_files']&.each do |uploaded_file_id|
         uploaded_file = ::Hyrax::UploadedFile.find(uploaded_file_id)
         next if uploaded_file.file_set_uri.present?
 
-        actor = ::Hyrax::Actors::FileSetActor.new(object, @user)
-        uploaded_file.update(file_set_uri: actor.file_set.uri)
-        actor.file_set.permissions_attributes = work_permissions
-        actor.create_metadata(attrs)
-        actor.create_content(uploaded_file)
-        actor.attach_to_work(work, attrs)
+        create_file_set_actor(work, work_permissions, uploaded_file)
+      end
+
+      attrs['remote_files']&.each do |_file|
+        create_file_set_actor(work, work_permissions, nil)
       end
 
       object.save!
+    end
+
+    def create_file_set_actor(work, work_permissions, uploaded_file)
+      actor = ::Hyrax::Actors::FileSetActor.new(object, @user)
+      uploaded_file&.update(file_set_uri: actor.file_set.uri)
+      actor.file_set.permissions_attributes = work_permissions
+      actor.create_metadata
+      actor.create_content(uploaded_file) if uploaded_file
+      actor.attach_to_work(work)
     end
 
     def update_file_set(attrs)

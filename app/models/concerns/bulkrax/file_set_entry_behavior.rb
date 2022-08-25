@@ -6,7 +6,14 @@ module Bulkrax
       ::FileSet
     end
 
+    def file_reference
+      return 'file' if parsed_metadata&.[]('file')&.map(&:present?)&.any?
+      return 'remote_files' if parsed_metadata&.[]('remote_files')&.map(&:present?)&.any?
+    end
+
     def add_path_to_file
+      return unless file_reference == 'file'
+
       parsed_metadata['file'].each_with_index do |filename, i|
         next if filename.blank?
 
@@ -22,7 +29,7 @@ module Bulkrax
     end
 
     def validate_presence_of_filename!
-      return if parsed_metadata&.[]('file')&.map(&:present?)&.any?
+      return if parsed_metadata&.[](file_reference)&.map(&:present?)&.any?
 
       raise StandardError, 'File set must have a filename'
     end
