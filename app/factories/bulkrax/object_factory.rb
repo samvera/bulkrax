@@ -165,27 +165,37 @@ module Bulkrax
 
         create_file_set_actor(attrs, work, work_permissions, uploaded_file)
       end
-
-      attrs['remote_files']&.each do |_file|
-        create_file_set_actor(attrs, work, work_permissions, nil)
+      # binding.pry
+      attrs['remote_files']&.each do |remote_file|
+        create_file_set_actor(attrs, work, work_permissions, nil, remote_file)
       end
 
       object.save!
     end
-
-    def create_file_set_actor(attrs, work, work_permissions, uploaded_file)
+    def create_file_set_actor(attrs, work, work_permissions, uploaded_file, remote_file = nil)
       actor = ::Hyrax::Actors::FileSetActor.new(object, @user)
       uploaded_file&.update(file_set_uri: actor.file_set.uri)
       actor.file_set.permissions_attributes = work_permissions
       actor.create_metadata(attrs)
       actor.create_content(uploaded_file) if uploaded_file
+      if remote_file
+        tmp_file = open(remote_file['url'])
+        actor.create_content(tmp_file, from_url: true) 
+        tmp_file.close
+      end
       actor.attach_to_work(work, attrs)
     end
+
+    
 
     def update_file_set(attrs)
       file_set_attrs = attrs.slice(*object.attributes.keys)
       actor = ::Hyrax::Actors::FileSetActor.new(object, @user)
-
+      attrs['remote_files']&.each do |remote_file|
+        tmp_file = open(remote_file['url'])
+        actor.update_content(tmp_file) 
+        tmp_file.close      
+      end
       actor.update_metadata(file_set_attrs)
     end
 
