@@ -165,7 +165,6 @@ module Bulkrax
 
         create_file_set_actor(attrs, work, work_permissions, uploaded_file)
       end
-      # binding.pry
       attrs['remote_files']&.each do |remote_file|
         create_file_set_actor(attrs, work, work_permissions, nil, remote_file)
       end
@@ -179,7 +178,18 @@ module Bulkrax
       actor.create_metadata(attrs)
       actor.create_content(uploaded_file) if uploaded_file
       if remote_file
-        tmp_file = open(remote_file['url'])
+        actor.file_set.label = remote_file['file_name']
+        actor.file_set.import_url = remote_file['url']
+
+        url = remote_file['url']
+        tmp_file = Tempfile.new(remote_file['file_name'].split('.').first)
+        tmp_file.binmode
+        
+        open(url) do |url_file|
+          tmp_file.write(url_file.read)
+        end
+        
+        tmp_file.rewind
         actor.create_content(tmp_file, from_url: true) 
         tmp_file.close
       end
