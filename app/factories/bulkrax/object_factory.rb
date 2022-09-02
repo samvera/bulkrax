@@ -211,7 +211,7 @@ module Bulkrax
 
         tmp_file.rewind
         actor.update_content(tmp_file)
-        tmp_file.close 
+        tmp_file.close
       end
       actor.update_metadata(file_set_attrs)
     end
