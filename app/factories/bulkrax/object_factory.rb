@@ -201,9 +201,17 @@ module Bulkrax
       file_set_attrs = attrs.slice(*object.attributes.keys)
       actor = ::Hyrax::Actors::FileSetActor.new(object, @user)
       attrs['remote_files']&.each do |remote_file|
-        tmp_file = open(remote_file['url'])
+        url = remote_file['url']
+        tmp_file = Tempfile.new(remote_file['file_name'].split('.').first)
+        tmp_file.binmode
+
+        open(url) do |url_file|
+          tmp_file.write(url_file.read)
+        end
+
+        tmp_file.rewind
         actor.update_content(tmp_file)
-        tmp_file.close
+        tmp_file.close 
       end
       actor.update_metadata(file_set_attrs)
     end
