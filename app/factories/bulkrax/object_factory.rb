@@ -196,8 +196,6 @@ module Bulkrax
       actor.attach_to_work(work, attrs)
     end
 
-    
-
     def update_file_set(attrs)
       file_set_attrs = attrs.slice(*object.attributes.keys)
       actor = ::Hyrax::Actors::FileSetActor.new(object, @user)
