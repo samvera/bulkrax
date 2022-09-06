@@ -199,7 +199,7 @@ module Bulkrax
       tmp_file = Tempfile.new(remote_file['file_name'].split('.').first)
       tmp_file.binmode
 
-      open(url) do |url_file|
+      URI.open(url) do |url_file|
         tmp_file.write(url_file.read)
       end
 
