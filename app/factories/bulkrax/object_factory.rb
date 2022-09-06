@@ -165,28 +165,47 @@ module Bulkrax
 
         create_file_set_actor(attrs, work, work_permissions, uploaded_file)
       end
-
-      attrs['remote_files']&.each do |_file|
-        create_file_set_actor(attrs, work, work_permissions, nil)
+      attrs['remote_files']&.each do |remote_file|
+        create_file_set_actor(attrs, work, work_permissions, nil, remote_file)
       end
 
       object.save!
     end
 
-    def create_file_set_actor(attrs, work, work_permissions, uploaded_file)
+    def create_file_set_actor(attrs, work, work_permissions, uploaded_file, remote_file = nil)
       actor = ::Hyrax::Actors::FileSetActor.new(object, @user)
       uploaded_file&.update(file_set_uri: actor.file_set.uri)
       actor.file_set.permissions_attributes = work_permissions
       actor.create_metadata(attrs)
       actor.create_content(uploaded_file) if uploaded_file
+      handle_remote_file(remote_file: remote_file, actor: actor, update: false) if remote_file
       actor.attach_to_work(work, attrs)
     end
 
     def update_file_set(attrs)
       file_set_attrs = attrs.slice(*object.attributes.keys)
       actor = ::Hyrax::Actors::FileSetActor.new(object, @user)
-
+      attrs['remote_files']&.each do |remote_file|
+        handle_remote_file(remote_file: remote_file, actor: actor, update: true)
+      end
       actor.update_metadata(file_set_attrs)
+    end
+
+    def handle_remote_file(remote_file:, actor:, update: false)
+      actor.file_set.label = remote_file['file_name']
+      actor.file_set.import_url = remote_file['url']
+
+      url = remote_file['url']
+      tmp_file = Tempfile.new(remote_file['file_name'].split('.').first)
+      tmp_file.binmode
+
+      open(url) do |url_file|
+        tmp_file.write(url_file.read)
+      end
+
+      tmp_file.rewind
+      update == true ? actor.update_content(tmp_file) : actor.create_content(tmp_file, from_url: true)
+      tmp_file.close
     end
 
     def clean_attrs(attrs)
