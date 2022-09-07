@@ -174,11 +174,12 @@ module Bulkrax
 
     def create_file_set_actor(attrs, work, work_permissions, file, type:)
       actor = ::Hyrax::Actors::FileSetActor.new(object, @user)
-      file&.update(file_set_uri: actor.file_set.uri) if type = 'uploaded'
+      # TODO(alishaevn): confirm that the line below doesn't need to be applied to remote files too
+      file&.update(file_set_uri: actor.file_set.uri) if type == 'uploaded'
       actor.file_set.permissions_attributes = work_permissions
       actor.create_metadata(attrs)
       actor.create_content(file)
-      handle_remote_file(remote_file: remote_file, actor: actor, update: false) if type = 'remote'
+      handle_remote_file(remote_file: remote_file, actor: actor, update: false) if type == 'remote'
       actor.attach_to_work(work, attrs)
     end
 
