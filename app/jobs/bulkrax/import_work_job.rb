@@ -5,25 +5,27 @@ module Bulkrax
     queue_as :import
 
     # rubocop:disable Rails/SkipsModelValidations
-    def perform(*args)
-      entry = Entry.find(args[0])
+    def perform(entry_id, run_id, *)
+      entry = Entry.find(entry_id)
+      importer_run = ImporterRun.find(run_id)
       entry.build
       if entry.status == "Complete"
-        ImporterRun.find(args[1]).increment!(:processed_records)
-        ImporterRun.find(args[1]).increment!(:processed_works)
-        ImporterRun.find(args[1]).decrement!(:enqueued_records) unless ImporterRun.find(args[1]).enqueued_records <= 0 # rubocop:disable Style/IdenticalConditionalBranches
+        importer_run.increment!(:processed_records)
+        importer_run.increment!(:processed_works)
       else
         # do not retry here because whatever parse error kept you from creating a work will likely
         # keep preventing you from doing so.
-        ImporterRun.find(args[1]).increment!(:failed_records)
-        ImporterRun.find(args[1]).increment!(:failed_works)
-        ImporterRun.find(args[1]).decrement!(:enqueued_records) unless ImporterRun.find(args[1]).enqueued_records <= 0 # rubocop:disable Style/IdenticalConditionalBranches
+        importer_run.increment!(:failed_records)
+        importer_run.increment!(:failed_works)
       end
+      # Regardless of completion or not, we want to decrement the enqueued records.
+      importer_run.decrement!(:enqueued_records) unless importer_run.enqueued_records <= 0
+
       entry.save!
-      entry.importer.current_run = ImporterRun.find(args[1])
+      entry.importer.current_run = importer_run
       entry.importer.record_status
     rescue Bulkrax::CollectionsCreatedError
-      reschedule(args[0], args[1])
+      reschedule(entry_id, run_id)
     end
     # rubocop:enable Rails/SkipsModelValidations
 
