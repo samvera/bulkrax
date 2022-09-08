@@ -440,7 +440,7 @@ module Bulkrax
         file_mapping = Bulkrax.field_mappings.dig(self.class.to_s, 'file', :from)&.first&.to_sym || :file
         next if r[file_mapping].blank?
 
-        r[file_mapping].split(/\s*[:;|]\s*/).map do |f|
+        r[file_mapping].split(Bulkrax.multi_value_element_split_on).map do |f|
           file = File.join(path_to_files, f.tr(' ', '_'))
           if File.exist?(file) # rubocop:disable Style/GuardClause
             file
@@ -468,7 +468,7 @@ module Bulkrax
       entry_uid ||= if Bulkrax.fill_in_blank_source_identifiers.present?
                       Bulkrax.fill_in_blank_source_identifiers.call(self, records.find_index(collection_hash))
                     else
-                      collection_hash[:title].split(/\s*[;|]\s*/).first
+                      collection_hash[:title].split(Bulkrax.multi_value_element_split_on).first
                     end
 
       entry_uid

@@ -30,7 +30,7 @@ module Bulkrax
 
     def process_split
       if self.split.is_a?(TrueClass)
-        @result = @result.split(/\s*[:;|]\s*/) # default split by : ; |
+        @result = @result.split(Bulkrax.multi_value_element_split_on)
       elsif self.split
         result = @result.split(Regexp.new(self.split))
         @result = result.map(&:strip)
