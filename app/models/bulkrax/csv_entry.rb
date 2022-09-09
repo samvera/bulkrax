@@ -81,7 +81,7 @@ module Bulkrax
     def add_file
       self.parsed_metadata['file'] ||= []
       if record['file']&.is_a?(String)
-        self.parsed_metadata['file'] = record['file'].split(/\s*[;|]\s*/)
+        self.parsed_metadata['file'] = record['file'].split(Bulkrax.multi_value_element_split_on)
       elsif record['file'].is_a?(Array)
         self.parsed_metadata['file'] = record['file']
       end
@@ -176,7 +176,7 @@ module Bulkrax
       data = hyrax_record.send(key.to_s)
       if data.is_a?(ActiveTriples::Relation)
         if value['join']
-          self.parsed_metadata[key_for_export(key)] = data.map { |d| prepare_export_data(d) }.join(' | ').to_s # TODO: make split char dynamic
+          self.parsed_metadata[key_for_export(key)] = data.map { |d| prepare_export_data(d) }.join(Bulkrax.multi_value_element_join_on).to_s
         else
           data.each_with_index do |d, i|
             self.parsed_metadata["#{key_for_export(key)}_#{i + 1}"] = prepare_export_data(d)
@@ -236,7 +236,7 @@ module Bulkrax
 
     def handle_join_on_export(key, values, join)
       if join
-        parsed_metadata[key] = values.join(' | ') # TODO: make split char dynamic
+        parsed_metadata[key] = values.join(Bulkrax.multi_value_element_join_on)
       else
         values.each_with_index do |value, i|
           parsed_metadata["#{key}_#{i + 1}"] = value
@@ -260,7 +260,7 @@ module Bulkrax
       return [] unless parent_field_mapping.present? && record[parent_field_mapping].present?
 
       identifiers = []
-      split_references = record[parent_field_mapping].split(/\s*[;|]\s*/)
+      split_references = record[parent_field_mapping].split(Bulkrax.multi_value_element_split_on)
       split_references.each do |c_reference|
         matching_collection_entries = importerexporter.entries.select do |e|
           (e.raw_metadata&.[](source_identifier) == c_reference) &&

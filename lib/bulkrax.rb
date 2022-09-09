@@ -6,21 +6,23 @@ require 'active_support/all'
 
 module Bulkrax
   class << self
-    mattr_accessor :parsers,
-                   :default_work_type,
+    mattr_accessor :api_definition,
                    :default_field_mapping,
+                   :default_work_type,
+                   :export_path,
+                   :field_mappings,
                    :fill_in_blank_source_identifiers,
                    :generated_metadata_mapping,
+                   :import_path,
+                   :multi_value_element_join_on,
+                   :multi_value_element_split_on,
+                   :parsers,
+                   :qa_controlled_properties,
                    :related_children_field_mapping,
                    :related_parents_field_mapping,
-                   :reserved_properties,
-                   :qa_controlled_properties,
-                   :field_mappings,
-                   :import_path,
-                   :export_path,
                    :removed_image_path,
-                   :server_name,
-                   :api_definition
+                   :reserved_properties,
+                   :server_name
 
     self.parsers = [
       { name: "OAI - Dublin Core", class_name: "Bulkrax::OaiDcParser", partial: "oai_fields" },
@@ -136,6 +138,29 @@ module Bulkrax
         ).result
       )
     )
+  end
+
+  DEFAULT_MULTI_VALUE_ELEMENT_JOIN_ON = ' | '
+  # Specify the delimiter for joining an attribute's multi-value array into a string.
+  #
+  # @note the specific delimeter should likely be present in the multi_value_element_split_on
+  #       expression.
+  def self.multi_value_element_join_on
+    @multi_value_element_join_on ||= DEFAULT_MULTI_VALUE_ELEMENT_JOIN_ON
+  end
+
+  DEFAULT_MULTI_VALUE_ELEMENT_SPLIT_ON = /\s*[:;|]\s*/.freeze
+  # @return [RegexClass] the regular express to use to "split" an attribute's values.  If set to
+  # `true` use the DEFAULT_MULTI_VALUE_ELEMENT_JOIN_ON.
+  #
+  # @note The "true" value is to preserve backwards compatibility.
+  # @see DEFAULT_MULTI_VALUE_ELEMENT_JOIN_ON
+  def self.multi_value_element_split_on
+    if @multi_value_element_join_on.is_a?(TrueClass)
+      DEFAULT_MULTI_VALUE_ELEMENT_SPLIT_ON
+    else
+      @multi_value_element_split_on ||= DEFAULT_MULTI_VALUE_ELEMENT_SPLIT_ON
+    end
   end
 
   # this function maps the vars from your app into your engine

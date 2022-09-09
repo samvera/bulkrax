@@ -67,6 +67,13 @@ Bulkrax.setup do |config|
   # is controlled by the active terms in config/authorities/rights_statements.yml
   # Defaults: 'rights_statement' and 'license'
   # config.qa_controlled_properties += ['my_field']
+
+  # Specify the delimiter regular expression for splitting an attribute's values into a multi-value array.
+  # config.multi_value_element_split_on = //\s*[:;|]\s*/.freeze
+
+  # Specify the delimiter for joining an attribute's multi-value array into a string.  Note: the
+  # specific delimeter should likely be present in the multi_value_element_split_on expression.
+  # config.multi_value_element_join_on = ' | '
 end
 
 # Sidebar for hyrax 3+ support
