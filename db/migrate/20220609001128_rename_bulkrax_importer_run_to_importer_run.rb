@@ -1,4 +1,4 @@
-class RenameBulkraxImporterRunToImporterRun < ActiveRecord::Migration[5.2]
+class RenameBulkraxImporterRunToImporterRun < ActiveRecord::Migration[5.1]
   def up
     if column_exists?(:bulkrax_pending_relationships, :bulkrax_importer_run_id)
       remove_foreign_key :bulkrax_pending_relationships, :bulkrax_importer_runs

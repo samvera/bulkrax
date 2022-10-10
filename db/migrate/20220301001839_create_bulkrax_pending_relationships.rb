@@ -1,4 +1,4 @@
-class CreateBulkraxPendingRelationships < ActiveRecord::Migration[5.2]
+class CreateBulkraxPendingRelationships < ActiveRecord::Migration[5.1]
   def change
     unless table_exists?(:bulkrax_pending_relationships)
       create_table :bulkrax_pending_relationships do |t|
