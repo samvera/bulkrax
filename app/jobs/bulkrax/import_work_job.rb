@@ -5,6 +5,10 @@ module Bulkrax
     queue_as :import
 
     # rubocop:disable Rails/SkipsModelValidations
+    # @param entry_id [Object] the key for the Bulkrax::Entry to build and save.
+    # @param run_id [Object] the key for the Bulkrax::ImporterRun in which we're running this entry.
+    #
+    # @return [String]
     def perform(entry_id, run_id, *)
       entry = Entry.find(entry_id)
       importer_run = ImporterRun.find(run_id)
