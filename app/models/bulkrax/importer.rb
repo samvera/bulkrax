@@ -63,7 +63,7 @@ module Bulkrax
                       default_field_mapping
                      end
                    else
-                     self.field_mapping.merge(default_field_mapping)
+                     default_field_mapping.merge(self.field_mapping)
                    end
     end
 
