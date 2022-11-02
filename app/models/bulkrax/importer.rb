@@ -60,15 +60,19 @@ module Bulkrax
     def mapping
       @mapping ||= if self.field_mapping.blank? || self.field_mapping == [{}]
                      if parser.import_fields.present? || self.field_mapping == [{}]
-                       ActiveSupport::HashWithIndifferentAccess.new(
-                         parser.import_fields.reject(&:nil?).map do |m|
-                           Bulkrax.default_field_mapping.call(m)
-                         end.inject(:merge)
-                       )
+                      default_field_mapping
                      end
                    else
-                     self.field_mapping
+                     self.field_mapping.merge(default_field_mapping)
                    end
+    end
+
+    def default_field_mapping
+      ActiveSupport::HashWithIndifferentAccess.new(
+        parser.import_fields.reject(&:nil?).map do |m|
+          Bulkrax.default_field_mapping.call(m)
+        end.inject(:merge)
+      )
     end
 
     def parser_fields
