@@ -58,16 +58,21 @@ module Bulkrax
 
     # If field_mapping is empty, setup a default based on the export_properties
     def mapping
+      # rubocop:disable Style/IfUnlessModifier     
       @mapping ||= if self.field_mapping.blank? || self.field_mapping == [{}]
                      if parser.import_fields.present? || self.field_mapping == [{}]
-                      default_field_mapping
+                       default_field_mapping
                      end
                    else
                      default_field_mapping.merge(self.field_mapping)
                    end
+                   
+      # rubocop:enable Style/IfUnlessModifier     
     end
 
     def default_field_mapping
+      return self.field_mapping if parser.import_fields.nil?
+
       ActiveSupport::HashWithIndifferentAccess.new(
         parser.import_fields.reject(&:nil?).map do |m|
           Bulkrax.default_field_mapping.call(m)
