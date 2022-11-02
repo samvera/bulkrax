@@ -142,6 +142,21 @@ module Bulkrax
       @visibility ||= self.parser_fields['visibility'] || 'open'
     end
 
+    # @api public
+    #
+    # @param types [Array<Symbol>] the types of objects that we'll create.
+    #
+    # @see Bulkrax::Importer::DEFAULT_OBJECT_TYPES
+    # @see #create_collections
+    # @see #create_works
+    # @see #create_file_sets
+    # @see #create_relationships
+    def create_objects(types = [])
+      types.each do |object_type|
+        parser.send("create_#{object_type.pluralize}")
+      end
+    end
+
     # @abstract Subclass and override {#create_collections} to implement behavior for the parser.
     def create_collections
       raise NotImplementedError, 'must be defined' if importer?
