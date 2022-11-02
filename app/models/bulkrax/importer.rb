@@ -66,7 +66,7 @@ module Bulkrax
                    else
                      default_field_mapping.merge(self.field_mapping)
                    end
-                   
+
       # rubocop:enable Style/IfUnlessModifier
     end
 
