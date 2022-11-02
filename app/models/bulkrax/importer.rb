@@ -143,17 +143,13 @@ module Bulkrax
       import_objects(['relationship'])
     end
 
+    DEFAULT_OBJECT_TYPES = %w[collection work file_set relationship].freeze
+
     def import_objects(types_array = nil)
       self.only_updates ||= false
-      types = types_array || %w[collection work file_set relationship]
-      if parser.class == Bulkrax::CsvParser
-        parser.create_objects(types)
-      else
-        types.each do |object_type|
-          self.save if self.new_record? # Object needs to be saved for statuses
-          parser.send("create_#{object_type.pluralize}")
-        end
-      end
+      self.save if self.new_record? # Object needs to be saved for statuses
+      types = types_array || DEFAULT_OBJECT_TYPES
+      parser.create_objects(types)
     rescue StandardError => e
       status_info(e)
     end
