@@ -180,7 +180,7 @@ module Bulkrax
     end
 
     def current_work_ids
-      ActiveSupport::Deprication.warn('Bulkrax::CsvParser#current_work_ids will be replaced with #current_record_ids in version 3.0')
+      ActiveSupport::Deprecation.warn('Bulkrax::CsvParser#current_work_ids will be replaced with #current_record_ids in version 3.0')
       current_record_ids
     end
 
