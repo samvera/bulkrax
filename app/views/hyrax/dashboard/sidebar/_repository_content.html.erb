@@ -1,19 +1,27 @@
-<li class="h5"><%= t('hyrax.admin.sidebar.repository_objects') %></li>
+  <li class="h5 nav-item"><%= t('hyrax.admin.sidebar.repository_objects') %></li>
 
-<%= menu.nav_link(hyrax.my_collections_path,
-                  also_active_for: hyrax.dashboard_collections_path) do %>
-  <span class="fa fa-folder-open" aria-hidden="true"></span> <span class="sidebar-action-text"><%= t('hyrax.admin.sidebar.collections') %></span>
-<% end %>
+  <%= menu.nav_link(hyrax.my_collections_path,
+                    class: "nav-link",
+                    onclick: "dontChangeAccordion(event);",
+                    also_active_for: hyrax.dashboard_collections_path) do %>
+    <span class="fa fa-folder-open" aria-hidden="true"></span> <span class="sidebar-action-text"><%= t('hyrax.admin.sidebar.collections') %></span>
+  <% end %>
 
-<%= menu.nav_link(hyrax.my_works_path,
-                  also_active_for: hyrax.dashboard_works_path) do %>
-  <span class="fa fa-file" aria-hidden="true"></span> <span class="sidebar-action-text"><%= t('hyrax.admin.sidebar.works') %></span>
-<% end %>
+  <%= menu.nav_link(hyrax.my_works_path,
+                    class: "nav-link",
+        nn            onclick: "dontChangeAccordion(event);",
+                    also_active_for: hyrax.dashboard_works_path) do %>
+    <span class="fa fa-file" aria-hidden="true"></span> <span class="sidebar-action-text"><%= t('hyrax.admin.sidebar.works') %></span>
+  <% end %>
 
-<%= menu.nav_link(bulkrax.importers_path) do %>
-  <span class="fa fa-cloud-upload" aria-hidden="true"></span> <span class="sidebar-action-text"><%= t('bulkrax.admin.sidebar.importers') %></span>
-<% end %>
+  <% if ::Hyrax::DashboardController&.respond_to?(:sidebar_partials) %>
+  <%= render 'hyrax/dashboard/sidebar/menu_partials', menu: menu, section: :repository_content %>
+  <% else %>
+  <%= menu.nav_link(bulkrax.importers_path) do %>
+    <span class="fa fa-cloud-upload" aria-hidden="true"></span> <span class="sidebar-action-text"><%= t('bulkrax.admin.sidebar.importers') %></span>
+  <% end %>
 
-<%= menu.nav_link(bulkrax.exporters_path) do %>
-  <span class="fa fa-cloud-download" aria-hidden="true"></span> <span class="sidebar-action-text"><%= t('bulkrax.admin.sidebar.exporters') %></span>
-<% end %>
+  <%= menu.nav_link(bulkrax.exporters_path) do %>
+    <span class="fa fa-cloud-download" aria-hidden="true"></span> <span class="sidebar-action-text"><%= t('bulkrax.admin.sidebar.exporters') %></span>
+  <% end %>
+  <% end %>
