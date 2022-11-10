@@ -18,7 +18,7 @@ module Bulkrax
       raise StandardError, 'CSV path empty' if path.blank?
       CSV.read(path,
         headers: true,
-        header_converters: :symbol,
+        header_converters: ->(h) { h.to_sym },
         encoding: 'utf-8')
     end
 

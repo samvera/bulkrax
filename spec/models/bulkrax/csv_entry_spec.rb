@@ -5,25 +5,37 @@ require 'rails_helper'
 
 module Bulkrax
   RSpec.describe CsvEntry, type: :model do
-    let(:collection) { FactoryBot.build(:collection) }
-    let(:hyrax_record) do
-      OpenStruct.new(
-        file_sets: [],
-        member_of_collections: [],
-        member_of_work_ids: [],
-        in_work_ids: [],
-        member_work_ids: []
-      )
-    end
-
-    before do
-      allow_any_instance_of(described_class).to receive(:collections_created?).and_return(true)
-      allow_any_instance_of(described_class).to receive(:find_collection).and_return(collection)
-      allow(subject).to receive(:hyrax_record).and_return(hyrax_record)
+    describe '.read_data' do
+      subject(:data) { described_class.read_data(path) }
+      let(:path) { File.expand_path('../../fixtures/csv/mixed-case.csv', __dir__) }
+      it 'handles mixed case and periods for column names' do
+        expect(data.headers).to match_array([
+                                              "title".to_sym,
+                                              "title.alternate".to_sym,
+                                              "collection.isPartOf".to_sym,
+                                              "source_location".to_sym
+                                            ])
+      end
     end
 
     describe 'builds entry' do
       subject { described_class.new(importerexporter: importer) }
+      let(:collection) { FactoryBot.build(:collection) }
+      let(:hyrax_record) do
+        OpenStruct.new(
+          file_sets: [],
+          member_of_collections: [],
+          member_of_work_ids: [],
+          in_work_ids: [],
+          member_work_ids: []
+        )
+      end
+
+      before do
+        allow_any_instance_of(described_class).to receive(:collections_created?).and_return(true)
+        allow_any_instance_of(described_class).to receive(:find_collection).and_return(collection)
+        allow(subject).to receive(:hyrax_record).and_return(hyrax_record)
+      end
       let(:importer) { FactoryBot.create(:bulkrax_importer_csv) }
 
       context 'without required metadata' do
