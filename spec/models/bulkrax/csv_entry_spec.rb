@@ -6,19 +6,20 @@ require 'rails_helper'
 module Bulkrax
   RSpec.describe CsvEntry, type: :model do
     describe '.read_data' do
-      let(:path) { File.expand_path('../../fixtures/csv/mixed-case.csv', __dir__) }
       subject(:data) { described_class.read_data(path) }
+      let(:path) { File.expand_path('../../fixtures/csv/mixed-case.csv', __dir__) }
       it 'handles mixed case and periods for column names' do
         expect(data.headers).to match_array([
-          "title".to_sym,
-          "title.alternate".to_sym,
-          "collection.isPartOf".to_sym,
-          "source_location".to_sym
-        ])
+                                              "title".to_sym,
+                                              "title.alternate".to_sym,
+                                              "collection.isPartOf".to_sym,
+                                              "source_location".to_sym
+                                            ])
       end
     end
 
     describe 'builds entry' do
+      subject { described_class.new(importerexporter: importer) }
       let(:collection) { FactoryBot.build(:collection) }
       let(:hyrax_record) do
         OpenStruct.new(
@@ -35,7 +36,6 @@ module Bulkrax
         allow_any_instance_of(described_class).to receive(:find_collection).and_return(collection)
         allow(subject).to receive(:hyrax_record).and_return(hyrax_record)
       end
-      subject { described_class.new(importerexporter: importer) }
       let(:importer) { FactoryBot.create(:bulkrax_importer_csv) }
 
       context 'without required metadata' do
@@ -310,11 +310,11 @@ module Bulkrax
       context 'with object fields prefixed' do
         let(:importer) do
           FactoryBot.create(:bulkrax_importer_csv, field_mapping: {
-            'single_object_first_name' => { from: ['single_object_first_name'], object: 'single_object' },
-            'single_object_last_name' => { from: ['single_object_last_name'], object: 'single_object' },
-            'single_object_position' => { from: ['single_object_position'], object: 'single_object' },
-            'single_object_language' => { from: ['single_object_language'], object: 'single_object', parsed: true }
-          })
+                              'single_object_first_name' => { from: ['single_object_first_name'], object: 'single_object' },
+                              'single_object_last_name' => { from: ['single_object_last_name'], object: 'single_object' },
+                              'single_object_position' => { from: ['single_object_position'], object: 'single_object' },
+                              'single_object_language' => { from: ['single_object_language'], object: 'single_object', parsed: true }
+                            })
         end
 
         before do
@@ -341,11 +341,11 @@ module Bulkrax
       context 'with object fields and no prefix' do
         let(:importer) do
           FactoryBot.create(:bulkrax_importer_csv, field_mapping: {
-            'first_name' => { from: ['single_object_first_name'], object: 'single_object' },
-            'last_name' => { from: ['single_object_last_name'], object: 'single_object' },
-            'position' => { from: ['single_object_position'], object: 'single_object' },
-            'language' => { from: ['single_object_language'], object: 'single_object', parsed: true }
-          })
+                              'first_name' => { from: ['single_object_first_name'], object: 'single_object' },
+                              'last_name' => { from: ['single_object_last_name'], object: 'single_object' },
+                              'position' => { from: ['single_object_position'], object: 'single_object' },
+                              'language' => { from: ['single_object_language'], object: 'single_object', parsed: true }
+                            })
         end
 
         before do
@@ -372,11 +372,11 @@ module Bulkrax
       context 'with multiple objects and fields prefixed' do
         let(:importer) do
           FactoryBot.create(:bulkrax_importer_csv, field_mapping: {
-            'multiple_objects_first_name' => { from: ['multiple_objects_first_name'], object: 'multiple_objects' },
-            'multiple_objects_last_name' => { from: ['multiple_objects_last_name'], object: 'multiple_objects' },
-            'multiple_objects_position' => { from: ['multiple_objects_position'], object: 'multiple_objects' },
-            'multiple_objects_language' => { from: ['multiple_objects_language'], object: 'multiple_objects', parsed: true }
-          })
+                              'multiple_objects_first_name' => { from: ['multiple_objects_first_name'], object: 'multiple_objects' },
+                              'multiple_objects_last_name' => { from: ['multiple_objects_last_name'], object: 'multiple_objects' },
+                              'multiple_objects_position' => { from: ['multiple_objects_position'], object: 'multiple_objects' },
+                              'multiple_objects_language' => { from: ['multiple_objects_language'], object: 'multiple_objects', parsed: true }
+                            })
         end
 
         before do
@@ -409,11 +409,11 @@ module Bulkrax
       context 'with multiple objects and no fields prefixed' do
         let(:importer) do
           FactoryBot.create(:bulkrax_importer_csv, field_mapping: {
-            'first_name' => { from: ['multiple_objects_first_name'], object: 'multiple_objects' },
-            'last_name' => { from: ['multiple_objects_last_name'], object: 'multiple_objects' },
-            'position' => { from: ['multiple_objects_position'], object: 'multiple_objects' },
-            'language' => { from: ['multiple_objects_language'], object: 'multiple_objects', parsed: true }
-          })
+                              'first_name' => { from: ['multiple_objects_first_name'], object: 'multiple_objects' },
+                              'last_name' => { from: ['multiple_objects_last_name'], object: 'multiple_objects' },
+                              'position' => { from: ['multiple_objects_position'], object: 'multiple_objects' },
+                              'language' => { from: ['multiple_objects_language'], object: 'multiple_objects', parsed: true }
+                            })
         end
 
         before do
@@ -446,10 +446,10 @@ module Bulkrax
       context 'with object fields prefixed and properties with multiple values' do
         let(:importer) do
           FactoryBot.create(:bulkrax_importer_csv, field_mapping: {
-            'multiple_objects_first_name' => { from: ['multiple_objects_first_name'], object: 'multiple_objects' },
-            'multiple_objects_last_name' => { from: ['multiple_objects_last_name'], object: 'multiple_objects' },
-            'multiple_objects_position' => { from: ['multiple_objects_position'], object: 'multiple_objects', nested_type: 'Array' }
-          })
+                              'multiple_objects_first_name' => { from: ['multiple_objects_first_name'], object: 'multiple_objects' },
+                              'multiple_objects_last_name' => { from: ['multiple_objects_last_name'], object: 'multiple_objects' },
+                              'multiple_objects_position' => { from: ['multiple_objects_position'], object: 'multiple_objects', nested_type: 'Array' }
+                            })
         end
 
         before do
@@ -480,10 +480,10 @@ module Bulkrax
       context 'with object fields not prefixed and properties with multiple values' do
         let(:importer) do
           FactoryBot.create(:bulkrax_importer_csv, field_mapping: {
-            'first_name' => { from: ['multiple_objects_first_name'], object: 'multiple_objects' },
-            'last_name' => { from: ['multiple_objects_last_name'], object: 'multiple_objects' },
-            'position' => { from: ['multiple_objects_position'], object: 'multiple_objects', nested_type: 'Array' }
-          })
+                              'first_name' => { from: ['multiple_objects_first_name'], object: 'multiple_objects' },
+                              'last_name' => { from: ['multiple_objects_last_name'], object: 'multiple_objects' },
+                              'position' => { from: ['multiple_objects_position'], object: 'multiple_objects', nested_type: 'Array' }
+                            })
         end
 
         before do
@@ -518,12 +518,12 @@ module Bulkrax
       context 'with object fields prefixed' do
         let(:exporter) do
           FactoryBot.create(:bulkrax_exporter_worktype, field_mapping: {
-            'id' => { from: ['id'], source_identifier: true },
-            'single_object_first_name' => { from: ['single_object_first_name'], object: 'single_object' },
-            'single_object_last_name' => { from: ['single_object_last_name'], object: 'single_object' },
-            'single_object_position' => { from: ['single_object_position'], object: 'single_object' },
-            'single_object_language' => { from: ['single_object_language'], object: 'single_object', parsed: true }
-          })
+                              'id' => { from: ['id'], source_identifier: true },
+                              'single_object_first_name' => { from: ['single_object_first_name'], object: 'single_object' },
+                              'single_object_last_name' => { from: ['single_object_last_name'], object: 'single_object' },
+                              'single_object_position' => { from: ['single_object_position'], object: 'single_object' },
+                              'single_object_language' => { from: ['single_object_language'], object: 'single_object', parsed: true }
+                            })
         end
 
         let(:work_obj) do
@@ -559,12 +559,12 @@ module Bulkrax
       context 'with object fields and no prefix' do
         let(:exporter) do
           FactoryBot.create(:bulkrax_exporter_worktype, field_mapping: {
-            'id' => { from: ['id'], source_identifier: true },
-            'first_name' => { from: ['single_object_first_name'], object: 'single_object' },
-            'last_name' => { from: ['single_object_last_name'], object: 'single_object' },
-            'position' => { from: ['single_object_position'], object: 'single_object' },
-            'language' => { from: ['single_object_language'], object: 'single_object', parsed: true }
-          })
+                              'id' => { from: ['id'], source_identifier: true },
+                              'first_name' => { from: ['single_object_first_name'], object: 'single_object' },
+                              'last_name' => { from: ['single_object_last_name'], object: 'single_object' },
+                              'position' => { from: ['single_object_position'], object: 'single_object' },
+                              'language' => { from: ['single_object_language'], object: 'single_object', parsed: true }
+                            })
         end
 
         let(:work_obj) do
@@ -600,12 +600,12 @@ module Bulkrax
       context 'with multiple objects and fields prefixed' do
         let(:exporter) do
           FactoryBot.create(:bulkrax_exporter_worktype, field_mapping: {
-            'id' => { from: ['id'], source_identifier: true },
-            'multiple_objects_first_name' => { from: ['multiple_objects_first_name'], object: 'multiple_objects' },
-            'multiple_objects_last_name' => { from: ['multiple_objects_last_name'], object: 'multiple_objects' },
-            'multiple_objects_position' => { from: ['multiple_objects_position'], object: 'multiple_objects' },
-            'multiple_objects_language' => { from: ['multiple_objects_language'], object: 'multiple_objects', parsed: true }
-          })
+                              'id' => { from: ['id'], source_identifier: true },
+                              'multiple_objects_first_name' => { from: ['multiple_objects_first_name'], object: 'multiple_objects' },
+                              'multiple_objects_last_name' => { from: ['multiple_objects_last_name'], object: 'multiple_objects' },
+                              'multiple_objects_position' => { from: ['multiple_objects_position'], object: 'multiple_objects' },
+                              'multiple_objects_language' => { from: ['multiple_objects_language'], object: 'multiple_objects', parsed: true }
+                            })
         end
 
         let(:work_obj) do
@@ -653,12 +653,12 @@ module Bulkrax
       context 'with multiple objects and no fields prefixed' do
         let(:exporter) do
           FactoryBot.create(:bulkrax_exporter_worktype, field_mapping: {
-            'id' => { from: ['id'], source_identifier: true },
-            'first_name' => { from: ['multiple_objects_first_name'], object: 'multiple_objects' },
-            'last_name' => { from: ['multiple_objects_last_name'], object: 'multiple_objects' },
-            'position' => { from: ['multiple_objects_position'], object: 'multiple_objects' },
-            'language' => { from: ['multiple_objects_language'], object: 'multiple_objects', parsed: true }
-          })
+                              'id' => { from: ['id'], source_identifier: true },
+                              'first_name' => { from: ['multiple_objects_first_name'], object: 'multiple_objects' },
+                              'last_name' => { from: ['multiple_objects_last_name'], object: 'multiple_objects' },
+                              'position' => { from: ['multiple_objects_position'], object: 'multiple_objects' },
+                              'language' => { from: ['multiple_objects_language'], object: 'multiple_objects', parsed: true }
+                            })
         end
 
         let(:work_obj) do
@@ -706,11 +706,11 @@ module Bulkrax
       context 'with object fields prefixed and properties with multiple values' do
         let(:exporter) do
           FactoryBot.create(:bulkrax_exporter_worktype, field_mapping: {
-            'id' => { from: ['id'], source_identifier: true },
-            'multiple_objects_first_name' => { from: ['multiple_objects_first_name'], object: 'multiple_objects' },
-            'multiple_objects_last_name' => { from: ['multiple_objects_last_name'], object: 'multiple_objects' },
-            'multiple_objects_position' => { from: ['multiple_objects_position'], object: 'multiple_objects', nested_type: 'Array' }
-          })
+                              'id' => { from: ['id'], source_identifier: true },
+                              'multiple_objects_first_name' => { from: ['multiple_objects_first_name'], object: 'multiple_objects' },
+                              'multiple_objects_last_name' => { from: ['multiple_objects_last_name'], object: 'multiple_objects' },
+                              'multiple_objects_position' => { from: ['multiple_objects_position'], object: 'multiple_objects', nested_type: 'Array' }
+                            })
         end
 
         let(:work_obj) do
@@ -756,11 +756,11 @@ module Bulkrax
       context 'with object fields not prefixed and properties with multiple values' do
         let(:exporter) do
           FactoryBot.create(:bulkrax_exporter_worktype, field_mapping: {
-            'id' => { from: ['id'], source_identifier: true },
-            'first_name' => { from: ['multiple_objects_first_name'], object: 'multiple_objects' },
-            'last_name' => { from: ['multiple_objects_last_name'], object: 'multiple_objects' },
-            'position' => { from: ['multiple_objects_position'], object: 'multiple_objects', nested_type: 'Array' }
-          })
+                              'id' => { from: ['id'], source_identifier: true },
+                              'first_name' => { from: ['multiple_objects_first_name'], object: 'multiple_objects' },
+                              'last_name' => { from: ['multiple_objects_last_name'], object: 'multiple_objects' },
+                              'position' => { from: ['multiple_objects_position'], object: 'multiple_objects', nested_type: 'Array' }
+                            })
         end
 
         let(:work_obj) do
