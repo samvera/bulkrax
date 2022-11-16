@@ -178,8 +178,8 @@ module Bulkrax
       actor.file_set.permissions_attributes = work_permissions
       actor.create_metadata(attrs)
       actor.create_content(uploaded_file) if uploaded_file
-      handle_remote_file(remote_file: remote_file, actor: actor, update: false) if remote_file
       actor.attach_to_work(work, attrs)
+      handle_remote_file(remote_file: remote_file, actor: actor, update: false) if remote_file
     end
 
     def update_file_set(attrs)
