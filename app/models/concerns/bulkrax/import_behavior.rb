@@ -165,7 +165,7 @@ module Bulkrax
     end
 
     def factory
-      @factory ||= Bulkrax::ObjectFactory.new(attributes: self.parsed_metadata,
+      @factory ||= Bulkrax.object_factory.new(attributes: self.parsed_metadata,
                                               source_identifier_value: identifier,
                                               work_identifier: parser.work_identifier,
                                               related_parents_parsed_mapping: parser.related_parents_parsed_mapping,

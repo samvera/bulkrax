@@ -16,6 +16,7 @@ module Bulkrax
                    :import_path,
                    :multi_value_element_join_on,
                    :multi_value_element_split_on,
+                   :object_factory,
                    :parsers,
                    :qa_controlled_properties,
                    :related_children_field_mapping,

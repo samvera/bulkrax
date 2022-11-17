@@ -10,6 +10,9 @@ Bulkrax.setup do |config|
   # Default is the first returned by Hyrax.config.curation_concerns
   # config.default_work_type = MyWork
 
+  # Factory Class to use when generating and saving objects
+  config.object_factory = Bulkrax::ObjectFactory
+
   # Path to store pending imports
   # config.import_path = 'tmp/imports'
 
