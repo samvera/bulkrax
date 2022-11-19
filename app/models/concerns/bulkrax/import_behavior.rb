@@ -165,15 +165,16 @@ module Bulkrax
     end
 
     def factory
-      @factory ||= Bulkrax.object_factory.new(attributes: self.parsed_metadata,
-                                              source_identifier_value: identifier,
-                                              work_identifier: parser.work_identifier,
-                                              related_parents_parsed_mapping: parser.related_parents_parsed_mapping,
-                                              replace_files: replace_files,
-                                              user: user,
-                                              klass: factory_class,
-                                              importer_run_id: importerexporter.last_run.id,
-                                              update_files: update_files)
+      of = Bulkrax.object_factory || Bulkrax::ObjectFactory
+      @factory ||= of.new(attributes: self.parsed_metadata,
+                          source_identifier_value: identifier,
+                          work_identifier: parser.work_identifier,
+                          related_parents_parsed_mapping: parser.related_parents_parsed_mapping,
+                          replace_files: replace_files,
+                          user: user,
+                          klass: factory_class,
+                          importer_run_id: importerexporter.last_run.id,
+                          update_files: update_files)
     end
 
     def factory_class
