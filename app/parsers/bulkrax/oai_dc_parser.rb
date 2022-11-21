@@ -13,8 +13,7 @@ module Bulkrax
     def client
       @client ||= OAI::Client.new(importerexporter.parser_fields['base_url'],
                                   headers: headers,
-                                  parser: 'libxml',
-                                  metadata_prefix: importerexporter.parser_fields['metadata_prefix'])
+                                  parser: 'libxml')
     rescue StandardError
       raise OAIError
     end
@@ -32,6 +31,7 @@ module Bulkrax
     end
 
     def records(opts = {})
+      opts[:metadata_prefix] ||= importerexporter.parser_fields['metadata_prefix']
       opts[:set] = collection_name unless collection_name == 'all'
 
       opts[:from] = importerexporter&.last_imported_at&.strftime("%Y-%m-%d") if importerexporter.last_imported_at && only_updates
