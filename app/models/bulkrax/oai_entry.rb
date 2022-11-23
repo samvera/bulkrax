@@ -64,7 +64,8 @@ module Bulkrax
         self.collection_ids << collection.id if collection.present? && !self.collection_ids.include?(collection.id)
       else # All - collections should exist for all sets
         sets.each do |set|
-          c = Collection.find_by(work_identifier => importerexporter.unique_collection_identifier(set.content))
+          # c = Collection.find_by(work_identifier => importerexporter.unique_collection_identifier(set.content))
+          c = find_collection(importerexporter.unique_collection_identifier(set.content))
           self.collection_ids << c.id if c.present? && !self.collection_ids.include?(c.id)
         end
       end
