@@ -59,12 +59,11 @@ module Bulkrax
     def find_collection_ids
       return self.collection_ids if collections_created?
       if sets.blank? || parser.collection_name != 'all'
-        # c = Collection.where(Bulkrax.system_identifier_field => importerexporter.unique_collection_identifier(parser.collection_name)).first
         collection = find_collection(importerexporter.unique_collection_identifier(parser.collection_name))
         self.collection_ids << collection.id if collection.present? && !self.collection_ids.include?(collection.id)
       else # All - collections should exist for all sets
         sets.each do |set|
-          c = Collection.find_by(work_identifier => importerexporter.unique_collection_identifier(set.content))
+          c = find_collection(importerexporter.unique_collection_identifier(set.content))
           self.collection_ids << c.id if c.present? && !self.collection_ids.include?(c.id)
         end
       end
