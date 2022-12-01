@@ -81,7 +81,7 @@ module Bulkrax
     # This is adding the reverse relationship, from the child to the parent
     def collection_parent_work_child
       child_work_ids = child_records[:works].map(&:id)
-      parent_record.reindex_extent = Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX
+      parent_record.try(:reindex_extent=, Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX)
 
       parent_record.add_member_objects(child_work_ids)
       ImporterRun.find(importer_run_id).increment!(:processed_relationships, child_work_ids.count) # rubocop:disable Rails/SkipsModelValidations
