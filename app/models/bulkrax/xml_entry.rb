@@ -4,7 +4,7 @@ require 'nokogiri'
 module Bulkrax
   # Generic XML Entry
   class XmlEntry < Entry
-    serialize :raw_metadata, JSON
+    serialize :raw_metadata, Bulkrax::NormalizedJson
 
     def self.fields_from_data(data); end
 

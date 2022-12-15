@@ -3,7 +3,7 @@
 require 'rdf'
 module Bulkrax
   class RdfEntry < Entry
-    serialize :raw_metadata, JSON
+    serialize :raw_metadata, Bulkrax::NormalizedJson
 
     def self.read_data(path)
       RDF::Reader.open(path)
