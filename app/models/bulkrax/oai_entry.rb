@@ -5,7 +5,7 @@ require 'ostruct'
 
 module Bulkrax
   class OaiEntry < Entry
-    serialize :raw_metadata, JSON
+    serialize :raw_metadata, Bulkrax::NormalizedJson
 
     delegate :record, to: :raw_record
 

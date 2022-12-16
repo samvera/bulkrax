@@ -4,6 +4,7 @@ require "bulkrax/version"
 require "bulkrax/engine"
 require 'active_support/all'
 
+# rubocop:disable Metrics/ModuleLength
 module Bulkrax
   class << self
     mattr_accessor :api_definition,
@@ -168,4 +169,46 @@ module Bulkrax
   def self.setup
     yield self
   end
+
+  # Responsible for stripping hidden characters from the given string.
+  #
+  # @param value [#to_s]
+  # @return [String] with hidden characters removed
+  #
+  # @see https://github.com/samvera-labs/bulkrax/issues/688
+  def self.normalize_string(value)
+    # Removing [Byte Order Mark (BOM)](https://en.wikipedia.org/wiki/Byte_order_mark)
+    value.to_s.delete("\xEF\xBB\xBF")
+  end
+
+  # This class confirms to the Active::Support.serialze interface.  It's job is to ensure that we
+  # don't have keys with the tricksy Byte Order Mark character.
+  #
+  # @see https://api.rubyonrails.org/classes/ActiveRecord/AttributeMethods/Serialization/ClassMethods.html#method-i-serialize
+  class NormalizedJson
+    def self.normalize_keys(hash)
+      return hash unless hash.respond_to?(:each_pair)
+      returning_value = {}
+      hash.each_pair do |key, value|
+        returning_value[Bulkrax.normalize_string(key)] = value
+      end
+      returning_value
+    end
+
+    # When we write the serialized data to the database, we "dump" the value into that database
+    # column.
+    def self.dump(value)
+      JSON.dump(normalize_keys(value))
+    end
+
+    # When we load the serialized data from the database, we pass the database's value into "load"
+    # function.
+    #
+    # rubocop:disable Security/JSONLoad
+    def self.load(string)
+      normalize_keys(JSON.load(string))
+    end
+    # rubocop:enable Security/JSONLoad
+  end
 end
+# rubocop:disable Metrics/ModuleLength

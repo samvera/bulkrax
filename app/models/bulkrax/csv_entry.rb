@@ -7,7 +7,7 @@ module Bulkrax
   # We do too much in these entry classes. We need to extract the common logic from the various
   # entry models into a module that can be shared between them.
   class CsvEntry < Entry # rubocop:disable Metrics/ClassLength
-    serialize :raw_metadata, JSON
+    serialize :raw_metadata, Bulkrax::NormalizedJson
 
     def self.fields_from_data(data)
       data.headers.flatten.compact.uniq

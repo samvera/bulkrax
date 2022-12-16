@@ -140,4 +140,19 @@ RSpec.describe Bulkrax do
       expect(described_class.api_definition).to be_a(Hash)
     end
   end
+
+  context '.normalize_string' do
+    it "returns a new string object" do
+      given = "string"
+      returned_value = described_class.normalize_string(given)
+      expect(given.object_id).not_to eq(returned_value.object_id)
+      expect(given).to eq(returned_value)
+    end
+
+    it "removes tricksy nasty hidden stringsy" do
+      given = "\xEF\xBB\xBFfile"
+      returned_value = described_class.normalize_string(given)
+      expect(returned_value).to eq("file")
+    end
+  end
 end
