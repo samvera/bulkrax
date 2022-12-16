@@ -203,6 +203,8 @@ module Bulkrax
 
     # When we load the serialized data from the database, we pass the database's value into "load"
     # function.
+    #
+    # rubocop:disable Security/JSONLoad
     def self.load(string)
       normalize_keys(JSON.load(string))
     end
