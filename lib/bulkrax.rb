@@ -195,13 +195,14 @@ module Bulkrax
       returning_value
     end
 
-    # Serializes an attribute value to a string that will be stored in the database.
+    # When we write the serialized data to the database, we "dump" the value into that database
+    # column.
     def self.dump(value)
       JSON.dump(normalize_keys(value))
     end
 
-    # Deserializes a string from the database to an attribute value.
-    # rubocop:disable Security/JSONLoad
+    # When we load the serialized data from the database, we pass the database's value into "load"
+    # function.
     def self.load(string)
       normalize_keys(JSON.load(string))
     end
