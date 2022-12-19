@@ -76,6 +76,9 @@ module Bulkrax
       @importer = Importer.new(importer_params)
       field_mapping_params
       @importer.validate_only = true if params[:commit] == 'Create and Validate'
+      # the following line is needed to handle updating remote files of a FileSet
+      # on a new import otherwise it only gets updated during the update path
+      @importer.parser_fields['update_files'] = true if params[:commit] == 'Create and Import'
       if @importer.save
         files_for_import(file, cloud_files)
         if params[:commit] == 'Create and Import'

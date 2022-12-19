@@ -45,9 +45,15 @@ module Bulkrax
     end
 
     def new_remote_files
-      return if object.is_a? FileSet
-
-      @new_remote_files ||= if object.present? && object.file_sets.present?
+      @new_remote_files ||= if object.is_a? FileSet
+                              parsed_remote_files.select do |file|
+                                # is the url valid?
+                                is_valid = file[:url]&.match(URI::ABS_URI)
+                                # does the file already exist
+                                is_existing = object.import_url && object.import_url == file[:url]
+                                is_valid && !is_existing
+                              end
+                            elsif object.present? && object.file_sets.present?
                               parsed_remote_files.select do |file|
                                 # is the url valid?
                                 is_valid = file[:url]&.match(URI::ABS_URI)
