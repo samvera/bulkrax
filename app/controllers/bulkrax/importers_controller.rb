@@ -76,6 +76,7 @@ module Bulkrax
       @importer = Importer.new(importer_params)
       field_mapping_params
       @importer.validate_only = true if params[:commit] == 'Create and Validate'
+      @importer.parser_fields['update_files'] = true if params[:commit] == 'Create and Import'
       if @importer.save
         files_for_import(file, cloud_files)
         if params[:commit] == 'Create and Import'
