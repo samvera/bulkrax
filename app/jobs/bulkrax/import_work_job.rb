@@ -5,7 +5,7 @@ module Bulkrax
     queue_as :import
 
     # rubocop:disable Rails/SkipsModelValidations
-    def perform(entry_id, run_id, *)
+    def perform(entry_id, run_id, time_to_live = 3, *)
       entry = Entry.find(entry_id)
       importer_run = ImporterRun.find(run_id)
       entry.build
@@ -24,13 +24,21 @@ module Bulkrax
       entry.save!
       entry.importer.current_run = importer_run
       entry.importer.record_status
-    rescue Bulkrax::CollectionsCreatedError
-      reschedule(entry_id, run_id)
+    rescue Bulkrax::CollectionsCreatedError => e
+      Rails.logger.warn("#{self.class} entry_id: #{entry_id}, run_id: #{run_id} encountered #{e.class}: #{e.message}")
+      # You get 3 attempts at the above perform before we have the import exception cascade into
+      # the Sidekiq retry ecosystem.
+      # rubocop:disable Style/IfUnlessModifier
+      if time_to_live <= 1
+        raise "Exhauted reschedule limit for #{self.class} entry_id: #{entry_id}, run_id: #{run_id}.  Attemping retries"
+      end
+      # rubocop:enable Style/IfUnlessModifier
+      reschedule(entry_id, run_id, time_to_live)
     end
     # rubocop:enable Rails/SkipsModelValidations
 
-    def reschedule(entry_id, run_id)
-      ImportWorkJob.set(wait: 1.minute).perform_later(entry_id, run_id)
+    def reschedule(entry_id, run_id, time_to_live)
+      ImportWorkJob.set(wait: 1.minute).perform_later(entry_id, run_id, time_to_live - 1)
     end
   end
 end
