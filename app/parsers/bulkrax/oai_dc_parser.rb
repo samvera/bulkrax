@@ -97,7 +97,6 @@ module Bulkrax
         break if limit_reached?(limit, index)
         seen[identifier] = true
         new_entry = entry_class.where(importerexporter: self.importerexporter, identifier: identifier).first_or_create!
-        new_entry.update!(raw_metadata: { xml: record.metadata.to_s })
         if record.deleted?
           DeleteWorkJob.send(perform_method, new_entry, importerexporter.current_run)
         else

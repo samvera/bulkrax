@@ -28,6 +28,7 @@ module Bulkrax
     def build_metadata
       self.parsed_metadata = {}
       self.parsed_metadata[work_identifier] = [record.header.identifier]
+      self.raw_metadata = { xml: record.metadata.to_s }
 
       record.metadata.children.each do |child|
         child.children.each do |node|
