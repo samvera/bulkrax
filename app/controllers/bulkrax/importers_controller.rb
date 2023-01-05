@@ -28,6 +28,7 @@ module Bulkrax
     end
 
     # GET /importers/1
+    # rubocop:disable Metrics/AbcSize
     def show
       if api_request?
         json_response('show')
@@ -41,6 +42,7 @@ module Bulkrax
         @errored_entries = @importer.entries.where(id: @importer.entries.select { |e| e.status == "Failed" }.map(&:id)).page(params[:errored_entries_page]).per(30)
       end
     end
+    # rubocop:enable Metrics/AbcSize
 
     # GET /importers/new
     def new
