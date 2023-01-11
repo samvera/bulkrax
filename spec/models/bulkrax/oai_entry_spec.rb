@@ -72,6 +72,47 @@ module Bulkrax
       end
     end
 
+    describe '#build_metadata' do
+      before do
+        # NOTE: Not up for messing with the thumbnail url
+        importer.parser_fields['thumbnail_url'] = ''
+        class ::Avacado < Work
+          property :shape, predicate: ::RDF::Vocab::DC.format
+        end
+      end
+      after do
+        Object.send(:remove_const, :Avacado)
+      end
+
+      # rubocop:disable RSpec/VerifiedDoubles
+      let(:nodes) do
+        [double(children:
+                # Note: The order of these matter.  I need to process "shape" first to
+                # verify that we are properly setting the factory_class before delving into
+                # the other metadata.
+                [
+                  double(name: "shape", content: "Lumpy and Kind of Brown"),
+                  double(name: "model", content: "Avacado")
+                ])]
+      end
+      # rubocop:enable RSpec/VerifiedDoubles
+
+      it 'derives the factory class before proceeding with adding other metadata' do
+        # TODO: Not a big fan of this method chain antics.  Ideally we'd pass in the object at
+        # instantiation time.  However I'm cribbing past work and trying to get this fix out into
+        # the wild.
+        allow(entry).to receive_message_chain(:record, :header, :identifier).and_return("some_identifier")
+        allow(entry).to receive_message_chain(:record, :header, :set_spec).and_return([])
+        allow(entry).to receive_message_chain(:record, :metadata, :children).and_return(nodes)
+        allow(entry).to receive_message_chain(:raw_metadata, :[]).and_return({ children: [], parents: [] })
+        # Verifying that I have field mappings
+        expect(entry.parser.model_field_mappings).to eq(["model"])
+        entry.build_metadata
+        expect(entry.factory_class).to eq(Avacado)
+        expect(entry.parsed_metadata["shape"]).to eq(["Lumpy and Kind of Brown"])
+      end
+    end
+
     context 'with specified admin set' do
       let(:mapping) do
         {
