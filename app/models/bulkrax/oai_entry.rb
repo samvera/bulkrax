@@ -64,7 +64,6 @@ module Bulkrax
       each_candidate_metadata_node do |node|
         next unless model_field_names.include?(node.name)
         add_metadata(node.name, node.content)
-        break
       end
     end
 
