@@ -30,12 +30,14 @@ module Bulkrax
       self.parsed_metadata[work_identifier] = [record.header.identifier]
       self.raw_metadata = { xml: record.metadata.to_s }
 
-      record.metadata.children.each do |child|
-        child.children.each do |node|
-          add_metadata(node.name, node.content)
-        end
-      end
-      add_metadata('thumbnail_url', thumbnail_url)
+      # We need to establish the #factory_class before we proceed with the metadata.  See
+      # https://github.com/samvera-labs/bulkrax/issues/702 for further details.
+      #
+      # tl;dr - if we don't have the right factory_class we might skip properties that are
+      # specifically assigned to the factory class
+      establish_factory_class
+      add_metadata_from_record
+      add_thumbnail_url
 
       add_visibility
       add_rights_statement
@@ -52,6 +54,40 @@ module Bulkrax
       else
         self.collection_ids.size == 1
       end
+    end
+
+    # To ensure we capture the correct parse data, we first need to establish the factory_class.
+    # @see https://github.com/samvera-labs/bulkrax/issues/702
+    def establish_factory_class
+      # Why send?  Because in some implementations I've found that folks have privatized the
+      # model_field_mappings method.
+      model_field_names = parser.model_field_mappings
+
+      each_candidate_metadata_node do |node|
+        next unless model_field_names.include?(node.name)
+        add_metadata(node.name, node.content)
+        break
+      end
+    end
+
+    def add_metadata_from_record
+      each_candidate_metadata_node do |node|
+        add_metadata(node.name, node.content)
+      end
+    end
+
+    # A method that you could override to better handle the shape of the record's metadata.
+    # @yieldparam node [Object<#name, #content>]
+    def each_candidate_metadata_node
+      record.metadata.children.each do |child|
+        child.children.each do |node|
+          yield(node)
+        end
+      end
+    end
+
+    def add_thumbnail_url
+      add_metadata('thumbnail_url', thumbnail_url)
     end
 
     # Retrieve list of collections for the entry; add to collection_ids
