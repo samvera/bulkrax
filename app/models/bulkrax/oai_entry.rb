@@ -59,8 +59,6 @@ module Bulkrax
     # To ensure we capture the correct parse data, we first need to establish the factory_class.
     # @see https://github.com/samvera-labs/bulkrax/issues/702
     def establish_factory_class
-      # Why send?  Because in some implementations I've found that folks have privatized the
-      # model_field_mappings method.
       model_field_names = parser.model_field_mappings
 
       each_candidate_metadata_node do |node|
