@@ -43,15 +43,14 @@ module Bulkrax
       raise StandardError, "Missing source identifier (#{source_identifier})" if self.raw_metadata[source_identifier].blank?
       self.parsed_metadata = {}
       self.parsed_metadata[work_identifier] = [self.raw_metadata[source_identifier]]
-      xml_elements.each do |element_name|
-        elements = record.xpath("//*[name()='#{element_name}']")
-        next if elements.blank?
-        elements.each do |el|
-          el.children.map(&:content).each do |content|
-            add_metadata(element_name, content) if content.present?
-          end
-        end
-      end
+
+      # We need to establish the #factory_class before we proceed with the metadata.  See
+      # https://github.com/samvera-labs/bulkrax/issues/702 for further details.
+      #
+      # tl;dr - if we don't have the right factory_class we might skip properties that are
+      # specifically assigned to the factory class
+      establish_factory_class
+      add_metadata_from_record
       add_visibility
       add_rights_statement
       add_admin_set_id
@@ -63,11 +62,54 @@ module Bulkrax
       self.parsed_metadata
     end
 
-    # Grab the class from the real parser
-    def xml_elements
+    def establish_factory_class
+      model_field_names = parser.model_field_mappings
+
+      each_candidate_metadata_node_name_and_content(elements: parser.model_field_mappings) do |name, content|
+        next unless model_field_names.include?(name)
+        add_metadata(name, content)
+      end
+    end
+
+    def add_metadata_from_record
+      each_candidate_metadata_node_name_and_content do |name, content|
+        add_metadata(name, content)
+      end
+    end
+
+    def each_candidate_metadata_node_name_and_content(elements: field_mapping_from_values_for_xml_element_names)
+      elements.each do |name|
+        # Note: the XML element name's case matters
+        nodes = record.xpath("//*[name()='#{name}']")
+        next if nodes.empty?
+
+        nodes.each do |node|
+          node.children.each do |content|
+            next if content.to_s.blank?
+
+            yield(name, content.to_s)
+          end
+        end
+      end
+    end
+
+    # Returns the explicitly declared "from" key's value of each parser's element's value.  (Yes, I
+    # would like a proper class for the thing I just tried to describe.)
+    #
+    # @return [Array<String>]
+    #
+    # @todo Additionally, we may want to revisit the XML parser fundamental logic; namely we only
+    #       parse nodes that are explicitly declared with in the `from`.  This is a bit different
+    #       than other parsers, in that they will make assumptions about each encountered column (in
+    #       the case of CSV) or node (in the case of OAI).  tl;dr - Here there be dragons.
+    def field_mapping_from_values_for_xml_element_names
       Bulkrax.field_mappings[self.importerexporter.parser_klass].map do |_k, v|
         v[:from]
       end.flatten.compact.uniq
     end
+
+    # Included for potential downstream adopters
+    alias xml_elements field_mapping_from_values_for_xml_element_names
+    deprecation_deprecate xml_elements: "Use '#{self}#field_mapping_from_values_for_xml_element_names' instead"
   end
 end
