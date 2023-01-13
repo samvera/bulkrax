@@ -7,6 +7,7 @@ module Bulkrax
     include Hyrax::ThemedLayoutController
     include Bulkrax::DownloadBehavior
     before_action :authenticate_user!
+    before_action :check_permissions
     before_action :set_exporter, only: [:show, :edit, :update, :destroy]
     with_themed_layout 'dashboard'
 
@@ -130,6 +131,10 @@ module Bulkrax
 
     def file_path
       "#{@exporter.exporter_export_zip_path}/#{params['exporter']['exporter_export_zip_files']}"
+    end
+
+    def check_permissions
+      raise CanCan::AccessDenied unless current_ability.can_export_works?
     end
   end
 end
