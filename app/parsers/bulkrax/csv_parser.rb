@@ -234,13 +234,17 @@ module Bulkrax
         instance_variable_set(instance_var, ActiveFedora::SolrService.post(
           extra_filters.to_s,
           fq: [
-            %(#{::ActiveFedora.index_field_mapper.solr_name(work_identifier)}:("#{complete_entry_identifiers.join('" OR "')}")),
+            %(#{solr_name(work_identifier)}:("#{complete_entry_identifiers.join('" OR "')}")),
             "has_model_ssim:(#{models_to_search.join(' OR ')})"
           ],
           fl: 'id',
           rows: 2_000_000_000
         )['response']['docs'].map { |obj| obj['id'] })
       end
+    end
+
+    def solr_name(base_name)
+      Module.const_defined?(:Solrizer) ? ::Solrizer.solr_name(base_name) : ::ActiveFedora.index_field_mapper.solr_name(base_name)
     end
 
     def create_new_entries
