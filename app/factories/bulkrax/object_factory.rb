@@ -6,6 +6,8 @@ module Bulkrax
     include Bulkrax::FileFactory
     include DynamicRecordLookup
 
+    # @api private
+    #
     # These are the attributes that we assume all "work type" classes (e.g. the given :klass) will
     # have in addition to their specific attributes.
     #
