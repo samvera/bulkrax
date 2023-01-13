@@ -60,17 +60,19 @@ class Bulkrax::InstallGenerator < Rails::Generators::Base
     file_text = File.read(file)
     import_line = 'def can_import_works?'
     export_line = 'def can_export_works?'
-    if !file_text.include?(import_line)
-      insert_into_file file, before: /\s*def can_create_any_work\?/ do
-        "    def can_import_works?\n      can_create_any_work?\n    end"
+    unless file_text.include?(import_line)
+      insert_into_file file, before: /^end/ do
+        "  def can_import_works?\n    can_create_any_work?\n  end"
       end
     end
 
-    if !file_text.include?(export_line)
-      insert_into_file file, before: /\s*def can_create_any_work\?/ do
-        "    def can_export_works?\n      can_create_any_work?\n    end"
+    # rubocop:disable Style/GuardClause
+    unless file_text.include?(export_line)
+      insert_into_file file, before: /^end/ do
+        "  def can_export_works?\n    can_create_any_work?\n  end"
       end
     end
+    # rubocop:enable Style/GuardClause
   end
 
   def add_css
