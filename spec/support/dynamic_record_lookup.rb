@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'rails_helper'
-
 module Bulkrax
   RSpec.shared_examples 'dynamic record lookup' do
     let(:importer) { FactoryBot.create(:bulkrax_importer_csv_complex) }

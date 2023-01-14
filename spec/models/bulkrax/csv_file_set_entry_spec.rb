@@ -47,7 +47,7 @@ module Bulkrax
 
         it 'does not raise a StandardError' do
           expect { entry.validate_presence_of_filename! }
-            .not_to raise_error(StandardError)
+            .not_to raise_error
         end
       end
 
