@@ -6,6 +6,27 @@ module Bulkrax
     include Bulkrax::FileFactory
     include DynamicRecordLookup
 
+    # @api private
+    #
+    # These are the attributes that we assume all "work type" classes (e.g. the given :klass) will
+    # have in addition to their specific attributes.
+    #
+    # @return [Array<Symbol>]
+    # @see #permitted_attributes
+    class_attribute :base_permitted_attributes,
+      default: %i[id edit_users edit_groups read_groups visibility work_members_attributes admin_set_id]
+
+    # @return [Boolean]
+    #
+    # @example
+    #   Bulkrax::ObjectFactory.transformation_removes_blank_hash_values = true
+    #
+    # @see #transform_attributes
+    # @see https://github.com/samvera-labs/bulkrax/pull/708 For discussion concerning this feature
+    # @see https://github.com/samvera-labs/bulkrax/wiki/Interacting-with-Metadata For documentation
+    #      concerning default behavior.
+    class_attribute :transformation_removes_blank_hash_values, default: false
+
     define_model_callbacks :save, :create
     attr_reader :attributes, :object, :source_identifier_value, :klass, :replace_files, :update_files, :work_identifier, :related_parents_parsed_mapping, :importer_run_id
 
@@ -58,7 +79,7 @@ module Bulkrax
         elsif klass == FileSet
           update_file_set(attrs)
         else
-          work_actor.update(environment(attrs))
+          update_work(attrs)
         end
       end
       object.apply_depositor_metadata(@user) && object.save! if object.depositor.nil?
@@ -104,7 +125,7 @@ module Bulkrax
           elsif klass == FileSet
             create_file_set(attrs)
           else
-            work_actor.create(environment(attrs))
+            create_work(attrs)
           end
         end
       end
@@ -137,6 +158,14 @@ module Bulkrax
 
     def work_actor
       Hyrax::CurationConcern.actor
+    end
+
+    def create_work(attrs)
+      work_actor.create(environment(attrs))
+    end
+
+    def update_work(attrs)
+      work_actor.update(environment(attrs))
     end
 
     def create_collection(attrs)
@@ -227,12 +256,32 @@ module Bulkrax
     def transform_attributes(update: false)
       @transform_attributes = attributes.slice(*permitted_attributes)
       @transform_attributes.merge!(file_attributes(update_files)) if with_files
+      @transform_attributes = remove_blank_hash_values(@transform_attributes) if transformation_removes_blank_hash_values?
       update ? @transform_attributes.except(:id) : @transform_attributes
     end
 
     # Regardless of what the Parser gives us, these are the properties we are prepared to accept.
     def permitted_attributes
-      klass.properties.keys.map(&:to_sym) + %i[id edit_users edit_groups read_groups visibility work_members_attributes admin_set_id]
+      klass.properties.keys.map(&:to_sym) + base_permitted_attributes
+    end
+
+    # Return a copy of the given attributes, such that all values that are empty or an array of all
+    # empty values are fully emptied.  (See implementation details)
+    #
+    # @param attributes [Hash]
+    # @return [Hash]
+    #
+    # @see https://github.com/emory-libraries/dlp-curate/issues/1973
+    def remove_blank_hash_values(attributes)
+      dupe = attributes.dup
+      dupe.each do |key, values|
+        if values.is_a?(Array) && values.all? { |value| value.is_a?(String) && value.empty? }
+          dupe[key] = []
+        elsif values.is_a?(String) && values.empty?
+          dupe[key] = nil
+        end
+      end
+      dupe
     end
   end
 end
