@@ -16,6 +16,17 @@ module Bulkrax
     class_attribute :base_permitted_attributes,
       default: %i[id edit_users edit_groups read_groups visibility work_members_attributes admin_set_id]
 
+    # @return [Boolean]
+    #
+    # @example
+    #   Bulkrax::ObjectFactory.transformation_removes_blank_hash_values = true
+    #
+    # @see #transform_attributes
+    # @see https://github.com/samvera-labs/bulkrax/pull/708 For discussion concerning this feature
+    # @see https://github.com/samvera-labs/bulkrax/wiki/Interacting-with-Metadata For documentation
+    #      concerning default behavior.
+    class_attribute :transformation_removes_blank_hash_values, default: false
+
     define_model_callbacks :save, :create
     attr_reader :attributes, :object, :source_identifier_value, :klass, :replace_files, :update_files, :work_identifier, :related_parents_parsed_mapping, :importer_run_id
 
@@ -245,7 +256,7 @@ module Bulkrax
     def transform_attributes(update: false)
       @transform_attributes = attributes.slice(*permitted_attributes)
       @transform_attributes.merge!(file_attributes(update_files)) if with_files
-      @transform_attributes = remove_blank_hash_values(@transform_attributes)
+      @transform_attributes = remove_blank_hash_values(@transform_attributes) if transformation_removes_blank_hash_values?
       update ? @transform_attributes.except(:id) : @transform_attributes
     end
 

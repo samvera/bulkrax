@@ -7,6 +7,10 @@ require 'active_support/all'
 # rubocop:disable Metrics/ModuleLength
 module Bulkrax
   class << self
+    # @todo Move from module attribute methods to a configuration class.  With module attributes,
+    #       when we make a change we are polluting the global space.  This means that our tests that
+    #       modify these config values are modifying global state.  Which is not desirous, as it can
+    #       introduce unexpected flakey tests.
     mattr_accessor :api_definition,
                    :default_field_mapping,
                    :default_work_type,
