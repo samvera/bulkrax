@@ -52,6 +52,12 @@ module Bulkrax
     end
 
     # @api public
+    # @abstract Subclass and override {#file_set_entry_class} to implement behavior for the parser.
+    def file_set_entry_class
+      raise NotImplementedError, 'must be defined'
+    end
+
+    # @api public
     # @abstract Subclass and override {#records} to implement behavior for the parser.
     def records(_opts = {})
       raise NotImplementedError, 'must be defined'

@@ -12,6 +12,12 @@ module Bulkrax
     # @todo not yet supported
     def create_collections; end
 
+    # @todo not yet supported
+    def file_set_entry_class; end
+
+    # @todo not yet supported
+    def create_file_sets; end
+
     # TODO: change to differentiate between collection and work records when adding ability to import collection metadata
     def works_total
       total
