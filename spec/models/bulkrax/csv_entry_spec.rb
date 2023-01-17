@@ -802,6 +802,40 @@ module Bulkrax
           expect(metadata['multiple_objects_position_2_3']).to eq('Duke')
         end
       end
+
+      context 'with source_identifier field with returns a relationship' do
+        let(:exporter) do
+          FactoryBot.create(:bulkrax_exporter_worktype, field_mapping: {
+                              'id' => { from: ['id'] },
+                              'multiple_objects' => { from: ['multiple_objects'], source_identifier: true }
+                            })
+        end
+        let(:source_id_rel) { double() }
+
+        let(:work_obj) do
+          Work.new(
+            title: ['test']
+          )
+        end
+
+        before do
+          allow_any_instance_of(ObjectFactory).to receive(:run!)
+          allow(subject).to receive(:hyrax_record).and_return(work_obj)
+          allow(work_obj).to receive(:id).and_return('test123')
+          allow(work_obj).to receive(:member_of_work_ids).and_return([])
+          allow(work_obj).to receive(:in_work_ids).and_return([])
+          allow(work_obj).to receive(:member_work_ids).and_return([])
+          allow(work_obj).to receive(:multiple_objects).and_return(source_id_rel)
+          allow(source_id_rel).to receive(:is_a?).with(ActiveTriples::Relation).and_return(true)
+          allow(source_id_rel).to receive(:to_a).and_return(['test_work_source_id'])
+          allow(source_id_rel).to receive(:each_with_index).and_return(['test_work_source_id', 0])
+        end
+
+        it 'succeeds' do
+          metadata = subject.build_export_metadata
+          expect(metadata['multiple_objects']).to eq('test_work_source_id')
+        end
+      end
     end
 
     describe '#build_relationship_metadata' do
