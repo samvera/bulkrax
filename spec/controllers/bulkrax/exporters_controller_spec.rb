@@ -32,7 +32,12 @@ module Bulkrax
     before do
       module Bulkrax::Auth
         def authenticate_user!
+          @current_user = User.first
           true
+        end
+
+        def current_user
+          @current_user
         end
       end
       described_class.prepend Bulkrax::Auth

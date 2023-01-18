@@ -7,6 +7,7 @@ module Bulkrax
   class EntriesController < ApplicationController
     include Hyrax::ThemedLayoutController
     before_action :authenticate_user!
+    before_action :check_permissions
     with_themed_layout 'dashboard'
 
     def show
@@ -39,6 +40,10 @@ module Bulkrax
       add_breadcrumb 'Exporters', bulkrax.exporters_path
       add_breadcrumb @exporter.name, bulkrax.exporter_path(@exporter.id)
       add_breadcrumb @entry.id
+    end
+
+    def check_permissions
+      raise CanCan::AccessDenied unless current_ability.can_import_works? || current_ability.can_export_works?
     end
   end
 end

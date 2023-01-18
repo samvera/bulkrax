@@ -12,7 +12,7 @@ gemspec
 # Git. Remember to move these dependencies to your gemspec before releasing
 # your gem to rubygems.org.
 
-gem 'blacklight', '~> 6.20.0'
+gem 'blacklight', '~> 6.25.0'
 gem 'bootstrap-sass', '~> 3.0'
 gem 'coderay'
 gem 'factory_bot_rails'

@@ -14,6 +14,7 @@ module Bulkrax
     protect_from_forgery unless: -> { api_request? }
     before_action :token_authenticate!, if: -> { api_request? }, only: [:create, :update, :delete]
     before_action :authenticate_user!, unless: -> { api_request? }
+    before_action :check_permissions
     before_action :set_importer, only: [:show, :edit, :update, :destroy]
     with_themed_layout 'dashboard'
 
@@ -318,6 +319,10 @@ module Bulkrax
         @importer.parser_fields['metadata_only'] = true
       end
       @importer.save
+    end
+
+    def check_permissions
+      raise CanCan::AccessDenied unless current_ability.can_import_works?
     end
   end
   # rubocop:enable Metrics/ClassLength

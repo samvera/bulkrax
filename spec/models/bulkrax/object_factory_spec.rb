@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'rails_helper'
-require Rails.root.parent.parent.join('spec', 'models', 'concerns', 'bulkrax', 'dynamic_record_lookup_spec').to_s
 
 module Bulkrax
   # NOTE: Unable to put this file in spec/factories/bulkrax (where it would mirror the path in app/) because

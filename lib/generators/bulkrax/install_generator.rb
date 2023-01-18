@@ -55,6 +55,26 @@ class Bulkrax::InstallGenerator < Rails::Generators::Base
     end
   end
 
+  def add_ability
+    file = 'app/models/ability.rb'
+    file_text = File.read(file)
+    import_line = 'def can_import_works?'
+    export_line = 'def can_export_works?'
+    unless file_text.include?(import_line)
+      insert_into_file file, before: /^end/ do
+        "  def can_import_works?\n    can_create_any_work?\n  end"
+      end
+    end
+
+    # rubocop:disable Style/GuardClause
+    unless file_text.include?(export_line)
+      insert_into_file file, before: /^end/ do
+        "  def can_export_works?\n    can_create_any_work?\n  end"
+      end
+    end
+    # rubocop:enable Style/GuardClause
+  end
+
   def add_css
     ['css', 'scss', 'sass'].map do |ext|
       file = "app/assets/stylesheets/application.#{ext}"
