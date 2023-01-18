@@ -810,7 +810,7 @@ module Bulkrax
                               'multiple_objects' => { from: ['multiple_objects'], source_identifier: true }
                             })
         end
-        let(:source_id_rel) { double() }
+        let(:source_id_rel) { double }
 
         let(:work_obj) do
           Work.new(
