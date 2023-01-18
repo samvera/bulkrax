@@ -159,7 +159,7 @@ module Bulkrax
     # @see #create_relationships
     def create_objects(types = [])
       types.each do |object_type|
-        parser.send("create_#{object_type.pluralize}")
+        send("create_#{object_type.pluralize}")
       end
     end
 

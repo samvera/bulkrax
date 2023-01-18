@@ -14,6 +14,19 @@ module Bulkrax
     let(:site) { instance_double(Site, id: 1, account_id: 1) }
     let(:account) { instance_double(Account, id: 1, name: 'bulkrax') }
 
+    describe '#create_objects' do
+      subject(:application_parser) { described_class.new(importer) }
+
+      it 'sends the create_* methods based on given types' do
+        expect(application_parser).to receive(:create_works)
+        expect(application_parser).to receive(:create_collections)
+        expect(application_parser).to receive(:create_file_sets)
+        expect(application_parser).to receive(:create_relationships)
+
+        application_parser.create_objects(%w[collection work file_set relationship])
+      end
+    end
+
     describe '#get_field_mapping_hash_for' do
       context 'with `[{}]` as the field mapping' do
         subject(:application_parser) { described_class.new(importer) }
