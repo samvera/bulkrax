@@ -107,7 +107,9 @@ module Bulkrax
     # Metadata required by Bulkrax for round-tripping
     def build_system_metadata
       self.parsed_metadata['id'] = hyrax_record.id
-      self.parsed_metadata[source_identifier] = hyrax_record.send(work_identifier)
+      source_id = hyrax_record.send(work_identifier)
+      source_id = source_id.to_a.first if source_id.is_a?(ActiveTriples::Relation)
+      self.parsed_metadata[source_identifier] = source_id
       self.parsed_metadata[key_for_export('model')] = hyrax_record.has_model.first
     end
 
