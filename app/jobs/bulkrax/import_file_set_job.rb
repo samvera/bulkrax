@@ -2,6 +2,7 @@
 
 module Bulkrax
   class MissingParentError < ::StandardError; end
+
   class ImportFileSetJob < ApplicationJob
     include DynamicRecordLookup
 

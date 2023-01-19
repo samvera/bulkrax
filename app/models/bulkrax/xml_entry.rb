@@ -79,7 +79,7 @@ module Bulkrax
 
     def each_candidate_metadata_node_name_and_content(elements: field_mapping_from_values_for_xml_element_names)
       elements.each do |name|
-        # Note: the XML element name's case matters
+        # NOTE: the XML element name's case matters
         nodes = record.xpath("//*[name()='#{name}']")
         next if nodes.empty?
 

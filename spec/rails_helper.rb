@@ -53,11 +53,9 @@ RSpec.configure do |config|
   end
 
   config.after do
-    begin
-      DatabaseCleaner.clean
-    rescue
-      puts 'database clean failed'
-    end
+    DatabaseCleaner.clean
+  rescue
+    puts 'database clean failed'
   end
 
   config.after(:each, clean_downloads: true) do

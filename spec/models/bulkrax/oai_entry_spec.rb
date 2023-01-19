@@ -87,7 +87,7 @@ module Bulkrax
       # rubocop:disable RSpec/VerifiedDoubles
       let(:nodes) do
         [double(children:
-                # Note: The order of these matter.  I need to process "shape" first to
+                # NOTE: The order of these matter.  I need to process "shape" first to
                 # verify that we are properly setting the factory_class before delving into
                 # the other metadata.
                 [
