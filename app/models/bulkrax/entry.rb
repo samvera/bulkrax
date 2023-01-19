@@ -4,6 +4,7 @@ module Bulkrax
   # Custom error class for collections_created?
   class CollectionsCreatedError < RuntimeError; end
   class OAIError < RuntimeError; end
+
   class Entry < ApplicationRecord
     include Bulkrax::HasMatchers
     include Bulkrax::ImportBehavior
