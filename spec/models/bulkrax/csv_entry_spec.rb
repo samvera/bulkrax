@@ -86,6 +86,24 @@ module Bulkrax
           subject.build_metadata
         end
 
+        describe 'single valued field with controlled vocabulary' do
+          let(:original_value) { 'http://example.com/obj/' }
+          let(:corrected_value) { 'https://example.com/obj/' }
+          # Mock 'single_object' as a controlled vocab field
+          before do
+            allow(Bulkrax).to receive(:qa_controlled_properties).and_return(['rights_statement', 'license', 'single_object'])
+            allow(subject).to receive(:raw_metadata).and_return('single_object' => original_value, 'source_identifier' => 'qa_1', 'title' => 'some title')
+            allow(subject).to receive(:active_id_for_authority?).with(original_value, 'single_object').and_return(false)
+            allow(subject).to receive(:active_id_for_authority?).with(corrected_value, 'single_object').and_return(true)
+          end
+
+          it 'replaces http with https for single valued field' do
+            subject.build_metadata
+
+            expect(subject.parsed_metadata['single_object']).to eq(corrected_value)
+          end
+        end
+
         describe 'importing :rights_statement' do
           context 'when the http/https does not match' do
             context 'when the authority ID has https' do
