@@ -18,6 +18,40 @@ module Bulkrax
       end
     end
 
+    describe '#build_metadata' do
+      around do |spec|
+        # Why am I doing this instead of passing it into the parser?  Because of
+        # Bulkrax::ApplicationParser#model_field_mappings.  It uses the bulkrax configuration.
+        old = Bulkrax.field_mappings['Bulkrax::CsvParser']
+        Bulkrax.field_mappings['Bulkrax::CsvParser'] = {
+          "model" => { from: ["model", "work_type"] },
+          "title" => { from: ["title"] },
+          "shape" => { from: ["shape"] },
+          'source_identifier' => { from: ['source_identifier'], source_identifier: true }
+        }
+        class ::Avacado < Work
+          property :shape, predicate: ::RDF::Vocab::DC.format
+        end
+        spec.run
+        Object.send(:remove_const, :Avacado)
+        Bulkrax.field_mappings['Bulkrax::CsvParser'] = old
+      end
+      let(:path) { File.expand_path('../../fixtures/csv/factory_class_test.csv', __dir__) }
+      let(:importer) do
+        FactoryBot.build(
+          :bulkrax_importer_csv,
+          parser_fields: { "import_file_path" => path }
+        )
+      end
+      let(:data) { { work_type: "Avacado", title: "A Yummy Friend", shape: "Kind of Lumpy", source_identifier: "1234-5678" } }
+      subject(:entry) { described_class.new(importerexporter: importer, raw_metadata: data, identifier: data.fetch(:source_identifier)) }
+
+      it "must establish a factory class before attempting to add other metadata" do
+        entry.build_metadata
+        expect(entry.factory_class).to eq(Avacado)
+      end
+    end
+
     describe 'builds entry' do
       subject { described_class.new(importerexporter: importer) }
       let(:collection) { FactoryBot.build(:collection) }

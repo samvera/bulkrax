@@ -43,6 +43,7 @@ module Bulkrax
 
       self.parsed_metadata = {}
       add_identifier
+      establish_factory_class
       add_ingested_metadata
       # TODO(alishaevn): remove the collections stuff entirely and only reference collections via the new parents code
       add_collections
@@ -57,6 +58,12 @@ module Bulkrax
 
     def add_identifier
       self.parsed_metadata[work_identifier] = [record[source_identifier]]
+    end
+
+    def establish_factory_class
+      parser.model_field_mappings.each do |key|
+        add_metadata('model', record[key]) if record.key?(key)
+      end
     end
 
     def add_metadata_for_model
