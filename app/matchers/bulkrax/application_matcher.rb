@@ -6,6 +6,10 @@ module Bulkrax
   class ApplicationMatcher
     attr_accessor :to, :from, :parsed, :if, :split, :excluded, :nested_type
 
+    # New parse methods will need to be added here; you'll also want to define a corresponding
+    # "parse_#{field}" method.
+    class_attribute :parsed_fields, instance_writer: false, default: ['remote_files', 'language', 'subject', 'types', 'model', 'resource_type', 'format_original']
+
     def initialize(args)
       args.each do |k, v|
         send("#{k}=", v)
@@ -38,8 +42,6 @@ module Bulkrax
     end
 
     def process_parse
-      # New parse methods will need to be added here
-      parsed_fields = ['remote_files', 'language', 'subject', 'types', 'model', 'resource_type', 'format_original']
       # This accounts for prefixed matchers
       parser = parsed_fields.find { |field| to&.include? field }
 
