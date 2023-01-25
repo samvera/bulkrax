@@ -17,6 +17,25 @@ module Bulkrax
   # NOTE: In the context of this job, "identifier" is used to generically refer
   #       to either a record's ID or an Bulkrax::Entry's source_identifier.
   class CreateRelationshipsJob < ApplicationJob
+    ##
+    # @api public
+    # @since v5.0.1
+    #
+    # Once we've created the relationships, should we then index the works's file_sets to ensure
+    # that we have the proper indexed values.  This can help set things like `is_page_of_ssim` for
+    # IIIF manifest and search results of file sets.
+    #
+    # @note As of v5.0.1 the default behavior is to not perform this.  That preserves past
+    #       implementations.  However, we might determine that we want to change the default
+    #       behavior.  Which would likely mean a major version change.
+    #
+    # @example
+    #   # In config/initializers/bulkrax.rb
+    #   Bulkrax::CreateRelationshipsJob.update_child_records_works_file_sets = true
+    #
+    # @see https://github.com/scientist-softserv/louisville-hyku/commit/128a9ef
+    class_attribute :update_child_records_works_file_sets, default: false
+
     include DynamicRecordLookup
 
     queue_as :import
@@ -70,6 +89,7 @@ module Bulkrax
       else
         work_parent_work_child unless child_records[:works].empty?
         raise ::StandardError, 'a Collection may not be assigned as a child of a Work' if child_records[:collections].present?
+        perform_update_child_records_works_file_sets if update_child_records_works_file_sets?
       end
     end
 
@@ -107,6 +127,12 @@ module Bulkrax
 
       Hyrax::CurationConcern.actor.update(env)
       ImporterRun.find(importer_run_id).increment!(:processed_relationships, child_records[:works].count) # rubocop:disable Rails/SkipsModelValidations
+    end
+
+    def perform_update_child_records_works_file_sets
+      child_records[:works].each do |work|
+        work.file_sets.each(&:update_index)
+      end
     end
 
     def reschedule(parent_identifier:, importer_run_id:)

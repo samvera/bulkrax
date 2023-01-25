@@ -278,6 +278,22 @@ module Bulkrax
               expect(importer.current_run.reload.processed_relationships).to equal(1)
             end
           end
+
+          context 'when update_child_records_works_file_sets is true' do
+            it 'updates index of child works\'s file sets' do
+              allow(Bulkrax::PendingRelationship).to receive(:find_each).and_return([pending_rel_work])
+              allow(Ability).to receive(:new).with(importer.user)
+              allow(Hyrax::CurationConcern.actor).to receive(:update).with(instance_of(env)).and_return(true)
+              file_set = double(FileSet, update_index: true)
+              allow(child_record).to receive(:file_sets).and_return([file_set])
+              create_relationships_job.update_child_records_works_file_sets = true
+              create_relationships_job.perform(
+                parent_identifier: parent_record.id,
+                importer_run_id: importer.current_run.id
+              )
+              expect(file_set).to have_received(:update_index)
+            end
+          end
         end
       end
 
