@@ -123,14 +123,14 @@ module Bulkrax
 
     def collections_created?
       return true if record[self.class.collection_field].blank?
-      record[self.class.collection_field].split(/\s*[:;|]\s*/).length == self.collection_ids.length
+      record[self.class.collection_field].split(/\s*[;|]\s*/).length == self.collection_ids.length
     end
 
     def find_or_create_collection_ids
       return self.collection_ids if collections_created?
       valid_system_id(Collection)
       unless record[self.class.collection_field].blank?
-        record[self.class.collection_field].split(/\s*[:;|]\s*/).each do |collection|
+        record[self.class.collection_field].split(/\s*[;|]\s*/).each do |collection|
           c = find_collection(collection)
           self.collection_ids << c.id unless c.blank? || self.collection_ids.include?(c.id)
         end
