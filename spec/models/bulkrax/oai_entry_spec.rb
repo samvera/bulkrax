@@ -98,6 +98,11 @@ module Bulkrax
       # rubocop:enable RSpec/VerifiedDoubles
 
       it 'derives the factory class before proceeding with adding other metadata' do
+        # In changing the memoization mechanism, I was encountering a case where the application was
+        # attempting to call SOLR.  Something previous not required due to implementation details.
+        # As we're not testing collection id related things, this "hack" seems acceptable.
+        entry.instance_variable_set("@called_find_collection_ids", true)
+
         # TODO: Not a big fan of this method chain antics.  Ideally we'd pass in the object at
         # instantiation time.  However I'm cribbing past work and trying to get this fix out into
         # the wild.
@@ -128,6 +133,11 @@ module Bulkrax
       end
 
       it 'adds admin set id to parsed metadata' do
+        # In changing the memoization mechanism, I was encountering a case where the application was
+        # attempting to call SOLR.  Something previous not required due to implementation details.
+        # As we're not testing collection id related things, this "hack" seems acceptable.
+        entry.instance_variable_set("@called_find_collection_ids", true)
+
         allow(entry).to receive_message_chain(:record, :header, :identifier).and_return("some_identifier")
         allow(entry).to receive_message_chain(:record, :header, :set_spec).and_return([])
         allow(entry).to receive_message_chain(:record, :metadata, :children).and_return([])

@@ -91,7 +91,8 @@ module Bulkrax
     # If OAI-PMH doesn't return setSpec in the headers for GetRecord, use parser.collection_name
     #   in this case, if 'All' is selected, records will not be added to a collection.
     def find_collection_ids
-      return self.collection_ids if collections_created?
+      return self.collection_ids if defined?(@called_find_collection_ids)
+
       if sets.blank? || parser.collection_name != 'all'
         collection = find_collection(importerexporter.unique_collection_identifier(parser.collection_name))
         self.collection_ids << collection.id if collection.present? && !self.collection_ids.include?(collection.id)
@@ -101,6 +102,8 @@ module Bulkrax
           self.collection_ids << c.id if c.present? && !self.collection_ids.include?(c.id)
         end
       end
+
+      @called_find_collection_ids = true
       return self.collection_ids
     end
   end
