@@ -9,6 +9,15 @@ module Bulkrax
 
     delegate :record, to: :raw_record
 
+    # @api private
+    #
+    # Included to assist in testing; namely so that you can copy down an OAI entry, store it locally,
+    # and then manually construct an {OAI::GetRecordResponse}.
+    #
+    # @see Bulkrax::EntrySpecHelper.oai_entry_for
+    attr_writer :raw_record
+
+    # @return [OAI::GetRecordResponse]
     def raw_record
       @raw_record ||= client.get_record(identifier: identifier, metadata_prefix: parser.parser_fields['metadata_prefix'])
     end
