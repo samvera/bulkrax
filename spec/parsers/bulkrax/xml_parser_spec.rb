@@ -10,6 +10,7 @@ module Bulkrax
       let(:entry) { FactoryBot.create(:bulkrax_entry, importerexporter: importer) }
 
       before do
+        # NOTE: this will update the field mappings for all subsequent runs of all of the specs.
         Bulkrax.field_mappings['Bulkrax::XmlParser'] = {
           'title' => { from: ['TitleLargerEntity'] },
           'abstract' => { from: ['Abstract'] },
