@@ -32,11 +32,9 @@ module Bulkrax
     def show
       if api_request?
         json_response('show')
-      else
-        if defined?(::Hyrax)
-          add_importer_breadcrumbs
-          add_breadcrumb @importer.name
-        end
+      elsif defined?(::Hyrax)
+        add_importer_breadcrumbs
+        add_breadcrumb @importer.name
 
         @work_entries = @importer.entries.where(type: @importer.parser.entry_class.to_s).page(params[:work_entries_page]).per(30)
         @collection_entries = @importer.entries.where(type: @importer.parser.collection_entry_class.to_s).page(params[:collections_entries_page]).per(30)
@@ -49,11 +47,9 @@ module Bulkrax
       @importer = Importer.new
       if api_request?
         json_response('new')
-      else
-        if defined?(::Hyrax)
-          add_importer_breadcrumbs
-          add_breadcrumb 'New'
-        end
+      elsif defined?(::Hyrax)
+        add_importer_breadcrumbs
+        add_breadcrumb 'New'
       end
     end
 
@@ -61,12 +57,10 @@ module Bulkrax
     def edit
       if api_request?
         json_response('edit')
-      else
-        if defined?(::Hyrax)
-          add_importer_breadcrumbs
-          add_breadcrumb @importer.name, bulkrax.importer_path(@importer.id)
-          add_breadcrumb 'Edit'
-        end
+      elsif defined?(::Hyrax)
+        add_importer_breadcrumbs
+        add_breadcrumb @importer.name, bulkrax.importer_path(@importer.id)
+        add_breadcrumb 'Edit'
       end
     end
 
@@ -165,13 +159,12 @@ module Bulkrax
     # GET /importer/1/upload_corrected_entries
     def upload_corrected_entries
       @importer = Importer.find(params[:importer_id])
-      if defined?(::Hyrax)
-        add_breadcrumb t(:'hyrax.controls.home'), main_app.root_path
-        add_breadcrumb t(:'hyrax.dashboard.breadcrumbs.admin'), hyrax.dashboard_path
-        add_breadcrumb 'Importers', bulkrax.importers_path
-        add_breadcrumb @importer.name, bulkrax.importer_path(@importer.id)
-        add_breadcrumb 'Upload Corrected Entries'
-      end
+      return unless defined?(::Hyrax)
+      add_breadcrumb t(:'hyrax.controls.home'), main_app.root_path
+      add_breadcrumb t(:'hyrax.dashboard.breadcrumbs.admin'), hyrax.dashboard_path
+      add_breadcrumb 'Importers', bulkrax.importers_path
+      add_breadcrumb @importer.name, bulkrax.importer_path(@importer.id)
+      add_breadcrumb 'Upload Corrected Entries'
     end
 
     # POST /importer/1/upload_corrected_entries_file

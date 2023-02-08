@@ -33,10 +33,9 @@ module Bulkrax
     # GET /exporters/new
     def new
       @exporter = Exporter.new
-      if defined?(::Hyrax)
-        add_exporter_breadcrumbs
-        add_breadcrumb 'New' if defined?(::Hyrax)
-      end
+      return unless defined?(::Hyrax)
+      add_exporter_breadcrumbs
+      add_breadcrumb 'New'
     end
 
     # GET /exporters/1/edit
