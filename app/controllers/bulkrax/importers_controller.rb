@@ -23,8 +23,8 @@ module Bulkrax
       @importers = Importer.all
       if api_request?
         json_response('index')
-      else
-        add_importer_breadcrumbs if defined?(::Hyrax)
+      elsif defined?(::Hyrax)
+        add_importer_breadcrumbs
       end
     end
 
