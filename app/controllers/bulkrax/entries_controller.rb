@@ -5,10 +5,10 @@ require_dependency "oai"
 
 module Bulkrax
   class EntriesController < ApplicationController
-    include Hyrax::ThemedLayoutController
+    include Hyrax::ThemedLayoutController if defined?(::Hyrax)
     before_action :authenticate_user!
     before_action :check_permissions
-    with_themed_layout 'dashboard'
+    with_themed_layout 'dashboard' if defined?(::Hyrax)
 
     def show
       if params[:importer_id].present?
@@ -23,11 +23,13 @@ module Bulkrax
       @importer = Importer.find(params[:importer_id])
       @entry = Entry.find(params[:id])
 
-      add_breadcrumb t(:'hyrax.controls.home'), main_app.root_path
-      add_breadcrumb t(:'hyrax.dashboard.breadcrumbs.admin'), hyrax.dashboard_path
-      add_breadcrumb 'Importers', bulkrax.importers_path
-      add_breadcrumb @importer.name, bulkrax.importer_path(@importer.id)
-      add_breadcrumb @entry.id
+      if defined?(::Hyrax)
+        add_breadcrumb t(:'hyrax.controls.home'), main_app.root_path
+        add_breadcrumb t(:'hyrax.dashboard.breadcrumbs.admin'), hyrax.dashboard_path
+        add_breadcrumb 'Importers', bulkrax.importers_path
+        add_breadcrumb @importer.name, bulkrax.importer_path(@importer.id)
+        add_breadcrumb @entry.id
+      end
     end
 
     # GET /exporters/1/entries/1
@@ -35,11 +37,13 @@ module Bulkrax
       @exporter = Exporter.find(params[:exporter_id])
       @entry = Entry.find(params[:id])
 
-      add_breadcrumb t(:'hyrax.controls.home'), main_app.root_path
-      add_breadcrumb t(:'hyrax.dashboard.breadcrumbs.admin'), hyrax.dashboard_path
-      add_breadcrumb 'Exporters', bulkrax.exporters_path
-      add_breadcrumb @exporter.name, bulkrax.exporter_path(@exporter.id)
-      add_breadcrumb @entry.id
+      if defined?(::Hyrax)
+        add_breadcrumb t(:'hyrax.controls.home'), main_app.root_path
+        add_breadcrumb t(:'hyrax.dashboard.breadcrumbs.admin'), hyrax.dashboard_path
+        add_breadcrumb 'Exporters', bulkrax.exporters_path
+        add_breadcrumb @exporter.name, bulkrax.exporter_path(@exporter.id)
+        add_breadcrumb @entry.id
+      end
     end
 
     def check_permissions

@@ -6,7 +6,7 @@ require_dependency 'oai'
 module Bulkrax
   # rubocop:disable Metrics/ClassLength
   class ImportersController < ApplicationController
-    include Hyrax::ThemedLayoutController
+    include Hyrax::ThemedLayoutController if defined?(::Hyrax)
     include Bulkrax::DownloadBehavior
     include Bulkrax::API
     include Bulkrax::ValidationHelper
@@ -16,7 +16,7 @@ module Bulkrax
     before_action :authenticate_user!, unless: -> { api_request? }
     before_action :check_permissions
     before_action :set_importer, only: [:show, :edit, :update, :destroy]
-    with_themed_layout 'dashboard'
+    with_themed_layout 'dashboard' if defined?(::Hyrax)
 
     # GET /importers
     def index
@@ -24,7 +24,7 @@ module Bulkrax
       if api_request?
         json_response('index')
       else
-        add_importer_breadcrumbs
+        add_importer_breadcrumbs if defined?(::Hyrax)
       end
     end
 
@@ -33,8 +33,10 @@ module Bulkrax
       if api_request?
         json_response('show')
       else
-        add_importer_breadcrumbs
-        add_breadcrumb @importer.name
+        if defined?(::Hyrax)
+          add_importer_breadcrumbs
+          add_breadcrumb @importer.name
+        end
 
         @work_entries = @importer.entries.where(type: @importer.parser.entry_class.to_s).page(params[:work_entries_page]).per(30)
         @collection_entries = @importer.entries.where(type: @importer.parser.collection_entry_class.to_s).page(params[:collections_entries_page]).per(30)
@@ -48,8 +50,10 @@ module Bulkrax
       if api_request?
         json_response('new')
       else
-        add_importer_breadcrumbs
-        add_breadcrumb 'New'
+        if defined?(::Hyrax)
+          add_importer_breadcrumbs
+          add_breadcrumb 'New'
+        end
       end
     end
 
@@ -58,9 +62,11 @@ module Bulkrax
       if api_request?
         json_response('edit')
       else
-        add_importer_breadcrumbs
-        add_breadcrumb @importer.name, bulkrax.importer_path(@importer.id)
-        add_breadcrumb 'Edit'
+        if defined?(::Hyrax)
+          add_importer_breadcrumbs
+          add_breadcrumb @importer.name, bulkrax.importer_path(@importer.id)
+          add_breadcrumb 'Edit'
+        end
       end
     end
 
@@ -159,11 +165,13 @@ module Bulkrax
     # GET /importer/1/upload_corrected_entries
     def upload_corrected_entries
       @importer = Importer.find(params[:importer_id])
-      add_breadcrumb t(:'hyrax.controls.home'), main_app.root_path
-      add_breadcrumb t(:'hyrax.dashboard.breadcrumbs.admin'), hyrax.dashboard_path
-      add_breadcrumb 'Importers', bulkrax.importers_path
-      add_breadcrumb @importer.name, bulkrax.importer_path(@importer.id)
-      add_breadcrumb 'Upload Corrected Entries'
+      if defined?(::Hyrax)
+        add_breadcrumb t(:'hyrax.controls.home'), main_app.root_path
+        add_breadcrumb t(:'hyrax.dashboard.breadcrumbs.admin'), hyrax.dashboard_path
+        add_breadcrumb 'Importers', bulkrax.importers_path
+        add_breadcrumb @importer.name, bulkrax.importer_path(@importer.id)
+        add_breadcrumb 'Upload Corrected Entries'
+      end
     end
 
     # POST /importer/1/upload_corrected_entries_file

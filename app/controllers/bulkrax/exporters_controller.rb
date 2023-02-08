@@ -4,24 +4,26 @@ require_dependency "bulkrax/application_controller"
 
 module Bulkrax
   class ExportersController < ApplicationController
-    include Hyrax::ThemedLayoutController
+    include Hyrax::ThemedLayoutController if defined?(::Hyrax)
     include Bulkrax::DownloadBehavior
     before_action :authenticate_user!
     before_action :check_permissions
     before_action :set_exporter, only: [:show, :edit, :update, :destroy]
-    with_themed_layout 'dashboard'
+    with_themed_layout 'dashboard' if defined?(::Hyrax)
 
     # GET /exporters
     def index
       @exporters = Exporter.all
 
-      add_exporter_breadcrumbs
+      add_exporter_breadcrumbs if defined?(::Hyrax)
     end
 
     # GET /exporters/1
     def show
-      add_exporter_breadcrumbs
-      add_breadcrumb @exporter.name
+      if defined?(::Hyrax)
+        add_exporter_breadcrumbs
+        add_breadcrumb @exporter.name
+      end
 
       @work_entries = @exporter.entries.where(type: @exporter.parser.entry_class.to_s).page(params[:work_entries_page]).per(30)
       @collection_entries = @exporter.entries.where(type: @exporter.parser.collection_entry_class.to_s).page(params[:collections_entries_page]).per(30)
@@ -31,16 +33,19 @@ module Bulkrax
     # GET /exporters/new
     def new
       @exporter = Exporter.new
-
-      add_exporter_breadcrumbs
-      add_breadcrumb 'New'
+      if defined?(::Hyrax)
+        add_exporter_breadcrumbs
+        add_breadcrumb 'New' if defined?(::Hyrax)
+      end
     end
 
     # GET /exporters/1/edit
     def edit
-      add_exporter_breadcrumbs
-      add_breadcrumb @exporter.name, bulkrax.exporter_path(@exporter.id)
-      add_breadcrumb 'Edit'
+      if defined?(::Hyrax)
+        add_exporter_breadcrumbs
+        add_breadcrumb @exporter.name, bulkrax.exporter_path(@exporter.id)
+        add_breadcrumb 'Edit'
+      end
 
       # Correctly populate export_source_collection input
       @collection = Collection.find(@exporter.export_source) if @exporter.export_source.present? && @exporter.export_from == 'collection'
