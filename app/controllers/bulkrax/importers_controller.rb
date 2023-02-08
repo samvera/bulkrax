@@ -6,7 +6,7 @@ require_dependency 'oai'
 module Bulkrax
   # rubocop:disable Metrics/ClassLength
   class ImportersController < ApplicationController
-    include Hyrax::ThemedLayoutController
+    include Hyrax::ThemedLayoutController if defined?(::Hyrax)
     include Bulkrax::DownloadBehavior
     include Bulkrax::API
     include Bulkrax::ValidationHelper
@@ -16,14 +16,14 @@ module Bulkrax
     before_action :authenticate_user!, unless: -> { api_request? }
     before_action :check_permissions
     before_action :set_importer, only: [:show, :edit, :update, :destroy]
-    with_themed_layout 'dashboard'
+    with_themed_layout 'dashboard' if defined?(::Hyrax)
 
     # GET /importers
     def index
       @importers = Importer.all
       if api_request?
         json_response('index')
-      else
+      elsif defined?(::Hyrax)
         add_importer_breadcrumbs
       end
     end
@@ -32,7 +32,7 @@ module Bulkrax
     def show
       if api_request?
         json_response('show')
-      else
+      elsif defined?(::Hyrax)
         add_importer_breadcrumbs
         add_breadcrumb @importer.name
 
@@ -47,7 +47,7 @@ module Bulkrax
       @importer = Importer.new
       if api_request?
         json_response('new')
-      else
+      elsif defined?(::Hyrax)
         add_importer_breadcrumbs
         add_breadcrumb 'New'
       end
@@ -57,7 +57,7 @@ module Bulkrax
     def edit
       if api_request?
         json_response('edit')
-      else
+      elsif defined?(::Hyrax)
         add_importer_breadcrumbs
         add_breadcrumb @importer.name, bulkrax.importer_path(@importer.id)
         add_breadcrumb 'Edit'
@@ -159,6 +159,7 @@ module Bulkrax
     # GET /importer/1/upload_corrected_entries
     def upload_corrected_entries
       @importer = Importer.find(params[:importer_id])
+      return unless defined?(::Hyrax)
       add_breadcrumb t(:'hyrax.controls.home'), main_app.root_path
       add_breadcrumb t(:'hyrax.dashboard.breadcrumbs.admin'), hyrax.dashboard_path
       add_breadcrumb 'Importers', bulkrax.importers_path
