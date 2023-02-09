@@ -50,13 +50,15 @@
     }
   %>
 
-  <%= form.input :export_source_worktype,
-    label: t('bulkrax.exporter.labels.worktype'),
-    required: true,
-    prompt: 'Select from the list',
-    label_html: { class: 'worktype export-source-option hidden' },
-    input_html: { class: 'worktype export-source-option hidden' },
-    collection: Hyrax.config.curation_concerns.map {|cc| [cc.to_s, cc.to_s] } %>
+  <%  if defined?(::Hyrax) %>
+    <%= form.input :export_source_worktype,
+      label: t('bulkrax.exporter.labels.worktype'),
+      required: true,
+      prompt: 'Select from the list',
+      label_html: { class: 'worktype export-source-option hidden' },
+      input_html: { class: 'worktype export-source-option hidden' },
+      collection: Hyrax.config.curation_concerns.map {|cc| [cc.to_s, cc.to_s] } %>
+  <% end %>
 
   <%= form.input :limit,
     as: :integer,
@@ -85,13 +87,17 @@
                    as: :date,
                    label: t('bulkrax.exporter.labels.finish_date') %>
   </div>
-  <%= form.input :work_visibility,
-                 collection: form.object.work_visibility_list,
-                 label: t('bulkrax.exporter.labels.visibility') %>
+  <% if defined?(::Hyrax) %>
+    <%= form.input :work_visibility,
+                   collection: form.object.work_visibility_list,
+                  label: t('bulkrax.exporter.labels.visibility') %>
+  <% end %>
 
-  <%= form.input :workflow_status,
-                 collection: form.object.workflow_status_list,
-                 label: t('bulkrax.exporter.labels.status') %>
+  <% if defined?(::Hyrax) %>
+    <%= form.input :workflow_status,
+                  collection: form.object.workflow_status_list,
+                  label: t('bulkrax.exporter.labels.status') %>
+  <% end %>
 
   <%= form.input :parser_klass,
     collection: Bulkrax.parsers.map {|p| [p[:name], p[:class_name], {'data-partial' => p[:partial]}] if p[:class_name].constantize.export_supported? }.compact,
