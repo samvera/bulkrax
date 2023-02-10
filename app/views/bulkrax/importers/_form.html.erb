@@ -11,17 +11,17 @@
     </div>
   <% end %>
 
-  <%= form.input :name %>
+  <%= form.input :name, input_html: { class: 'form-control' } %>
 
   <%= form.input :admin_set_id, collection: available_admin_sets %>
 
   <%= form.hidden_field :user_id, value: current_user.id %>
 
-  <%= form.input :frequency, collection: form.object.class.frequency_enums %>
+  <%= form.input :frequency, collection: form.object.class.frequency_enums, input_html: { class: 'form-control' } %>
 
-  <%= form.input :limit, as: :integer, hint: 'leave blank or 0 for all records' %>
+  <%= form.input :limit, as: :integer, hint: 'leave blank or 0 for all records', input_html: { class: 'form-control'} %>
 
-  <%= form.input :parser_klass, collection: Bulkrax.parsers.map {|p| [p[:name], p[:class_name], {'data-partial' => p[:partial]}]}, label: "Parser" %>
+  <%= form.input :parser_klass, collection: Bulkrax.parsers.map {|p| [p[:name], p[:class_name], {'data-partial' => p[:partial]}]}, label: "Parser", input_html: { class: 'form-control' } %>
 
   <%= form.fields_for :parser_fields do |fi| %>
     <div class='parser_fields'>
