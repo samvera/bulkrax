@@ -11,7 +11,7 @@
     </div>
   <% end %>
 
-  <%= form.input :name, label: t('bulkrax.exporter.labels.name') %>
+  <%= form.input :name, label: t('bulkrax.exporter.labels.name'), input_html: { class: 'form-control' } %>
 
   <%= form.hidden_field :user_id, value: current_user.id %>
 
@@ -19,20 +19,22 @@
     collection:  form.object.export_type_list,
     label: t('bulkrax.exporter.labels.export_type'),
     required: true,
-    prompt: 'Please select an export type' %>
+    prompt: 'Please select an export type',
+    input_html: { class: 'form-control' } %>
 
   <%= form.input :export_from,
     collection: form.object.export_from_list,
     label: t('bulkrax.exporter.labels.export_from'),
     required: true,
-    prompt: 'Please select an export source' %>
+    prompt: 'Please select an export source',
+    input_html: { class: 'form-control' } %>
 
   <%= form.input :export_source_importer,
     label: t('bulkrax.exporter.labels.importer'),
     required: true,
     prompt: 'Select from the list',
     label_html: { class: 'importer export-source-option hidden' },
-    input_html: { class: 'importer export-source-option hidden' },
+    input_html: { class: 'importer export-source-option hidden form-control' },
     collection:  form.object.importers_list.sort %>
 
   <%= form.input :export_source_collection,
@@ -42,7 +44,7 @@
     placeholder: @collection&.title&.first,
     label_html: { class: 'collection export-source-option hidden' },
     input_html: {
-      class: 'collection export-source-option hidden',
+      class: 'collection export-source-option hidden form-control',
       data: {
         'autocomplete-url' => '/authorities/search/collections',
         'autocomplete' => 'collection'
@@ -52,18 +54,20 @@
 
   <%  if defined?(::Hyrax) %>
     <%= form.input :export_source_worktype,
-      label: t('bulkrax.exporter.labels.worktype'),
-      required: true,
-      prompt: 'Select from the list',
-      label_html: { class: 'worktype export-source-option hidden' },
-      input_html: { class: 'worktype export-source-option hidden' },
-      collection: Hyrax.config.curation_concerns.map {|cc| [cc.to_s, cc.to_s] } %>
+    label: t('bulkrax.exporter.labels.worktype'),
+    required: true,
+    prompt: 'Select from the list',
+    label_html: { class: 'worktype export-source-option hidden' },
+    input_html: { class: 'worktype export-source-option hidden form-control' },
+    collection: Hyrax.config.curation_concerns.map {|cc| [cc.to_s, cc.to_s] } %>
   <% end %>
+  
 
   <%= form.input :limit,
     as: :integer,
     hint: 'leave blank or 0 for all records',
-    label: t('bulkrax.exporter.labels.limit') %>
+    label: t('bulkrax.exporter.labels.limit'),
+    input_html: { class: 'form-control' } %>
 
   <%= form.input :generated_metadata?,
                  as: :boolean,
@@ -78,30 +82,36 @@
   <%= form.input :date_filter,
                  as: :boolean,
                  label: t('bulkrax.exporter.labels.filter_by_date') %>
+
   <div id="date_filter_picker" class="hidden">
     <%= form.input :start_date,
                    as: :date,
-                   label: t('bulkrax.exporter.labels.start_date') %>
+                   label: t('bulkrax.exporter.labels.start_date'),
+                   input_html: { class: 'form-control' } %>
 
     <%= form.input :finish_date,
                    as: :date,
-                   label: t('bulkrax.exporter.labels.finish_date') %>
+                   label: t('bulkrax.exporter.labels.finish_date'),
+                   input_html: { class: 'form-control' } %>
   </div>
   <% if defined?(::Hyrax) %>
     <%= form.input :work_visibility,
                    collection: form.object.work_visibility_list,
-                  label: t('bulkrax.exporter.labels.visibility') %>
+                  label: t('bulkrax.exporter.labels.visibility'),
+                  input_html: { class: 'form-control' } %>
   <% end %>
 
   <% if defined?(::Hyrax) %>
     <%= form.input :workflow_status,
                   collection: form.object.workflow_status_list,
-                  label: t('bulkrax.exporter.labels.status') %>
+                  label: t('bulkrax.exporter.labels.status'),
+                  input_html: { class: 'form-control' } %>
   <% end %>
 
   <%= form.input :parser_klass,
     collection: Bulkrax.parsers.map {|p| [p[:name], p[:class_name], {'data-partial' => p[:partial]}] if p[:class_name].constantize.export_supported? }.compact,
-    label: t('bulkrax.exporter.labels.export_format') %>
+    label: t('bulkrax.exporter.labels.export_format'),
+    input_html: { class: 'form-control' } %>
 </div>
 
 <%# Find definitions for the functions called in this script in
