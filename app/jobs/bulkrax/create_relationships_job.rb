@@ -54,35 +54,17 @@ module Bulkrax
       pending_relationships = Bulkrax::PendingRelationship.where(parent_id: parent_identifier, importer_run_id: importer_run_id).ordered
       parent_entry, parent_record = find_record(parent_identifier, importer_run_id)
 
+      number_of_successes = 0
+      number_of_failures = 0
       errors = []
+
       pending_relationships.find_each do |rel|
-        # TODO Extract this loop into a method and consider returning a status struct that we can
-        #      then increment and decrement accordingly.
         begin
-          errors << "#{rel} needs a child to create relationship" if rel.child_id.nil?
-          errors << "#{rel} needs a parent to create relationship" if rel.parent_id.nil?
-          next if rel.child_id.nil? || rel.parent_id.nil?
-
-          _child_entry, child_record = find_record(rel.child_id, importer_run_id)
-          unless child_record
-            errors << "#{rel} could not find child"
-            next
-          end
-
-          if child_record.collection? && parent_record.work?
-            raise "Cannot add child collection (ID=#{rel.child_id}) to parent work (ID=#{rel.parent_id})"
-          end
-
-          parent_record.is_a?(Collection) ? add_to_collection(child_record, parent_record) : add_to_work(child_record, parent_record)
-
-          child_record.file_sets.each(&:update_index) if update_child_records_works_file_sets? && child_record.respond_to?(:file_sets)
-
-          Bulkrax::ImporterRun.find(importer_run_id).increment!(:processed_relationships)
-
-          rel.destroy
+          process(relationship: rel, importer_run_id: importer_run_id, parent_record: parent_record)
+          number_of_successes += 1
         rescue => e
-          Bulkrax::ImporterRun.find(importer_run_id).increment!(:failed_relationships)
-          errors << "#{rel} failed because of #{e.message}\n#{e.backtrace}"
+          number_of_failures += 1
+          errors << e
         end
       end
 
@@ -90,15 +72,35 @@ module Bulkrax
       parent_record.save! if @parent_record_members_added
 
       if errors.present?
-        parent_entry.status_info(StandardError.new, Bulkrax::ImporterRun.find(importer_run_id)) if parent_entry
+        Bulkrax::ImporterRun.find(importer_run_id).increment!(:failed_relationships, number_of_failures)
+        parent_entry.status_info(errors.last, Bulkrax::ImporterRun.find(importer_run_id)) if parent_entry
 
         # TODO: This can create an infinite job cycle, consider a time to live tracker.
         reschedule({ parent_identifier: parent_identifier, importer_run_id: importer_run_id })
         return false # stop current job from continuing to run after rescheduling
+      else
+        Bulkrax::ImporterRun.find(importer_run_id).increment!(:processed_relationships, number_of_successes)
       end
-   end
+    end
 
     private
+
+    def process(relationship:, importer_run_id:, parent_record:)
+      raise "#{relationship} needs a child to create relationship" if relationship.child_id.nil?
+      raise "#{relationship} needs a parent to create relationship" if relationship.parent_id.nil?
+
+      _child_entry, child_record = find_record(relationship.child_id, importer_run_id)
+      raise "#{relationship} could not find child record" unless child_record
+
+      if child_record.collection? && parent_record.work?
+        raise "Cannot add child collection (ID=#{relationship.child_id}) to parent work (ID=#{relationship.parent_id})"
+      end
+
+      parent_record.is_a?(Collection) ? add_to_collection(child_record, parent_record) : add_to_work(child_record, parent_record)
+
+      child_record.file_sets.each(&:update_index) if update_child_records_works_file_sets? && child_record.respond_to?(:file_sets)
+      relationship.destroy
+    end
 
     def add_to_collection(child_record, parent_record)
       child_record.member_of_collections << parent_record
