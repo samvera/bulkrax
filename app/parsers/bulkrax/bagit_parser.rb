@@ -143,7 +143,7 @@ module Bulkrax
           begin
             bag.add_file(file_name, file.path) if bag.bag_files.select { |b| b.include?(file_name) }.blank?
           rescue => e
-            entry.status_info(e)
+            entry.set_status_info(e)
             status_info(e)
           end
         end
