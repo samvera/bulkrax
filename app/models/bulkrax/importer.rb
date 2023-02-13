@@ -47,12 +47,12 @@ module Bulkrax
       if importer_run.failed_records.positive?
         if importer_run.invalid_records.present?
           e = Bulkrax::ImportFailed.new('Failed with Invalid Records', importer_run.invalid_records.split("\n"))
-          importer_run.importer.status_info(e)
+          importer_run.importer.set_status_info(e)
         else
-          importer_run.importer.status_info('Complete (with failures)')
+          importer_run.importer.set_status_info('Complete (with failures)')
         end
       else
-        importer_run.importer.status_info('Complete')
+        importer_run.importer.set_status_info('Complete')
       end
     end
 

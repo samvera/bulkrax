@@ -29,9 +29,9 @@ module Bulkrax
       return entry if exporter_run.enqueued_records.positive?
 
       if exporter_run.failed_records.positive?
-        exporter_run.exporter.status_info('Complete (with failures)')
+        exporter_run.exporter.set_status_info('Complete (with failures)')
       else
-        exporter_run.exporter.status_info('Complete')
+        exporter_run.exporter.set_status_info('Complete')
       end
 
       return entry
