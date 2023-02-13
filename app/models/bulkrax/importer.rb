@@ -15,7 +15,7 @@ module Bulkrax
     has_many :entries, as: :importerexporter, dependent: :destroy
 
     validates :name, presence: true
-    validates :admin_set_id, presence: true
+    validates :admin_set_id, presence: true if defined?(::Hyrax)
     validates :parser_klass, presence: true
 
     delegate :valid_import?, :write_errored_entries_file, :visibility, to: :parser
