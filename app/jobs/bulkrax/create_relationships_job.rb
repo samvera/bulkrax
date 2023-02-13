@@ -59,21 +59,21 @@ module Bulkrax
       errors = []
 
       pending_relationships.find_each do |rel|
-        begin
-          process(relationship: rel, importer_run_id: importer_run_id, parent_record: parent_record)
-          number_of_successes += 1
-        rescue => e
-          number_of_failures += 1
-          errors << e
-        end
+        process(relationship: rel, importer_run_id: importer_run_id, parent_record: parent_record)
+        number_of_successes += 1
+      rescue => e
+        number_of_failures += 1
+        errors << e
       end
 
       # save record if members were added
       parent_record.save! if @parent_record_members_added
 
+      # rubocop:disable Rails/SkipsModelValidations
       if errors.present?
-        Bulkrax::ImporterRun.find(importer_run_id).increment!(:failed_relationships, number_of_failures)
-        parent_entry.status_info(errors.last, Bulkrax::ImporterRun.find(importer_run_id)) if parent_entry
+        importer_run = Bulkrax::ImporterRun.find(importer_run_id)
+        importer_run.increment!(:failed_relationships, number_of_failures)
+        parent_entry&.status_info(errors.last, importer_run)
 
         # TODO: This can create an infinite job cycle, consider a time to live tracker.
         reschedule({ parent_identifier: parent_identifier, importer_run_id: importer_run_id })
@@ -81,6 +81,7 @@ module Bulkrax
       else
         Bulkrax::ImporterRun.find(importer_run_id).increment!(:processed_relationships, number_of_successes)
       end
+      # rubocop:enable Rails/SkipsModelValidations
     end
 
     private
@@ -92,9 +93,7 @@ module Bulkrax
       _child_entry, child_record = find_record(relationship.child_id, importer_run_id)
       raise "#{relationship} could not find child record" unless child_record
 
-      if child_record.collection? && parent_record.work?
-        raise "Cannot add child collection (ID=#{relationship.child_id}) to parent work (ID=#{relationship.parent_id})"
-      end
+      raise "Cannot add child collection (ID=#{relationship.child_id}) to parent work (ID=#{relationship.parent_id})" if child_record.collection? && parent_record.work?
 
       parent_record.is_a?(Collection) ? add_to_collection(child_record, parent_record) : add_to_work(child_record, parent_record)
 
@@ -112,7 +111,7 @@ module Bulkrax
 
       parent_record.ordered_members << child_record
       @parent_record_members_added = true
-      # TODO Do we need to save the child record?
+      # TODO: Do we need to save the child record?
       child_record.save!
     end
 

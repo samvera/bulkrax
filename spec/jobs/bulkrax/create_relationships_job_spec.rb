@@ -54,7 +54,7 @@ module Bulkrax
         end
 
         it 'deletes the pending relationship' do
-          expect { perform }.to change(Bulkrax::PendingRelationship, :count).by(-1   )
+          expect { perform }.to change(Bulkrax::PendingRelationship, :count).by(-1)
         end
 
         it 'does not reschedule the job' do
@@ -76,7 +76,7 @@ module Bulkrax
         end
 
         it 'deletes the pending relationship' do
-          expect { perform }.to change(Bulkrax::PendingRelationship, :count).by(-1   )
+          expect { perform }.to change(Bulkrax::PendingRelationship, :count).by(-1)
         end
 
         it 'does not reschedule the job' do
@@ -101,7 +101,7 @@ module Bulkrax
         end
 
         it 'deletes the pending relationship' do
-          expect { perform }.to change(Bulkrax::PendingRelationship, :count).by(-1   )
+          expect { perform }.to change(Bulkrax::PendingRelationship, :count).by(-1)
         end
       end
 
