@@ -51,88 +51,48 @@ module Bulkrax
     # parent_identifier or child_identifier param. For example, if a parent_identifier is passed, we know @base_entry
     # is the child in the relationship, and vice versa if a child_identifier is passed.
     def perform(parent_identifier:, importer_run_id:) # rubocop:disable Metrics/AbcSize
-      pending_relationships = Bulkrax::PendingRelationship.find_each.select do |rel|
-        rel.importer_run_id == importer_run_id && rel.parent_id == parent_identifier
-      end.sort_by(&:order)
+      # TODO permission checks on child / parent write access
 
-      @importer_run_id = importer_run_id
-      @parent_entry, @parent_record = find_record(parent_identifier, importer_run_id)
-      @child_records = { works: [], collections: [] }
-      pending_relationships.each do |rel|
-        raise ::StandardError, %("#{rel}" needs either a child or a parent to create a relationship) if rel.child_id.nil? || rel.parent_id.nil?
-        @child_entry, child_record = find_record(rel.child_id, importer_run_id)
-        if child_record
-          child_record.is_a?(::Collection) ? @child_records[:collections] << child_record : @child_records[:works] << child_record
+      # TODO rename order field literally anything else. use it for sort
+      pending_relationships = Bulkrax::PendingRelationship.where(parent_id: parent_identifier, importer_run_id: importer_run_id).order('created_at')
+
+      parent_entry, parent_record = find_record(parent_identifier, importer_run_id)
+      errors = []
+      pending_relationships.find_each do |rel|
+        begin
+          errors << "#{rel} needs a child to create relationship" if rel.child_id.nil?
+          errors << "#{rel} needs a parent to create relationship" if rel.parent_id.nil?
+          next if rel.child_id.nil? || rel.parent_id.nil?
+
+          _child_entry, child_record = find_record(rel.child_id, importer_run_id)
+          errors << "#{rel} could not find child" unless child_record
+          parent_record.is_a?(Collection) ? add_to_collection(child_record, parent_record) : add_to_work(child_record, parent_record)
+          child_record.save!
+          child_record.file_sets.each(&:update_index) if update_child_records_works_file_sets?
+          # TODO update counters
+          rel.destroy
+        rescue => e
+          errors << "#{rel} failed because of #{e.message}\n#{e.backtrace}"
         end
       end
+      # save record if members were added
+      parent_record.save!
 
-      if (child_records[:collections].blank? && child_records[:works].blank?) || parent_record.nil?
+      if errors.present?
         reschedule({ parent_identifier: parent_identifier, importer_run_id: importer_run_id })
         return false # stop current job from continuing to run after rescheduling
       end
-      @parent_entry ||= Bulkrax::Entry.where(identifier: parent_identifier,
-                                             importerexporter_id: ImporterRun.find(importer_run_id).importer_id,
-                                             importerexporter_type: "Bulkrax::Importer").first
-      create_relationships
-      pending_relationships.each(&:destroy)
-    rescue ::StandardError => e
-      parent_entry ? parent_entry.status_info(e) : child_entry.status_info(e)
-      Bulkrax::ImporterRun.find(importer_run_id).increment!(:failed_relationships) # rubocop:disable Rails/SkipsModelValidations
-    end
+   end
 
     private
 
-    def create_relationships
-      if parent_record.is_a?(::Collection)
-        collection_parent_work_child unless child_records[:works].empty?
-        collection_parent_collection_child unless child_records[:collections].empty?
-      else
-        work_parent_work_child unless child_records[:works].empty?
-        raise ::StandardError, 'a Collection may not be assigned as a child of a Work' if child_records[:collections].present?
-        perform_update_child_records_works_file_sets if update_child_records_works_file_sets?
-      end
+    def add_to_collection(child_record, parent_record)
+      child_record.member_of_collections << parent_record
+      child_record.save!
     end
 
-    def user
-      @user ||= Bulkrax::ImporterRun.find(importer_run_id).importer.user
-    end
-
-    # Work-Collection membership is added to the child as member_of_collection_ids
-    # This is adding the reverse relationship, from the child to the parent
-    def collection_parent_work_child
-      child_work_ids = child_records[:works].map(&:id)
-      parent_record.try(:reindex_extent=, Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX)
-
-      parent_record.add_member_objects(child_work_ids)
-      ImporterRun.find(importer_run_id).increment!(:processed_relationships, child_work_ids.count) # rubocop:disable Rails/SkipsModelValidations
-    end
-
-    # Collection-Collection membership is added to the as member_ids
-    def collection_parent_collection_child
-      child_records[:collections].each do |child_record|
-        ::Hyrax::Collections::NestedCollectionPersistenceService.persist_nested_collection_for(parent: parent_record, child: child_record)
-        ImporterRun.find(importer_run_id).increment!(:processed_relationships) # rubocop:disable Rails/SkipsModelValidations
-      end
-    end
-
-    # Work-Work membership is added to the parent as member_ids
-    def work_parent_work_child
-      records_hash = {}
-      child_records[:works].each_with_index do |child_record, i|
-        records_hash[i] = { id: child_record.id }
-      end
-      attrs = { work_members_attributes: records_hash }
-      parent_record.try(:reindex_extent=, Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX)
-      env = Hyrax::Actors::Environment.new(parent_record, Ability.new(user), attrs)
-
-      Hyrax::CurationConcern.actor.update(env)
-      ImporterRun.find(importer_run_id).increment!(:processed_relationships, child_records[:works].count) # rubocop:disable Rails/SkipsModelValidations
-    end
-
-    def perform_update_child_records_works_file_sets
-      child_records[:works].each do |work|
-        work.file_sets.each(&:update_index)
-      end
+    def add_to_work(child_record, parent_record)
+      parent_record.ordered_members << child_record unless parent_record.includes?(child_record)
     end
 
     def reschedule(parent_identifier:, importer_run_id:)
