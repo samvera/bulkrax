@@ -105,7 +105,7 @@ module Bulkrax
             end
 
             it 'logs a MissingParentError on the entry' do
-              expect(entry).to receive(:status_info).with(instance_of(MissingParentError))
+              expect(entry).to receive(:set_status_info).with(instance_of(MissingParentError))
 
               import_file_set_job.perform(entry.id, importer_run.id)
             end

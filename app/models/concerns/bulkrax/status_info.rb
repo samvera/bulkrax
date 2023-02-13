@@ -33,15 +33,20 @@ module Bulkrax
       current_status&.created_at
     end
 
-    def status_info(e = nil, current_run = nil)
+    def set_status_info(e = nil, current_run = nil)
+      runnable = current_run || last_run
       if e.nil?
-        self.statuses.create!(status_message: 'Complete', runnable: current_run || last_run)
+        self.statuses.create!(status_message: 'Complete', runnable: runnable)
       elsif e.is_a?(String)
-        self.statuses.create!(status_message: e, runnable: current_run || last_run)
+        self.statuses.create!(status_message: e, runnable: runnable)
       else
-        self.statuses.create!(status_message: 'Failed', runnable: current_run || last_run, error_class: e.class.to_s, error_message: e.message, error_backtrace: e.backtrace)
+        self.statuses.create!(status_message: 'Failed', runnable: runnable, error_class: e.class.to_s, error_message: e.message, error_backtrace: e.backtrace)
       end
     end
+
+    alias status_info set_status_info
+
+    deprecation_deprecate status_info: "Favor Bulkrax::StatusInfo.set_status_info.  We will be removing .status_info in Bulkrax v6.0.0"
 
     # api compatible with previous error structure
     def last_error

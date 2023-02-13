@@ -73,7 +73,7 @@ module Bulkrax
       # rubocop:disable Rails/SkipsModelValidations
       if errors.present?
         importer_run.increment!(:failed_relationships, number_of_failures)
-        parent_entry&.status_info(errors.last, importer_run)
+        parent_entry&.set_status_info(errors.last, importer_run)
 
         # TODO: This can create an infinite job cycle, consider a time to live tracker.
         reschedule({ parent_identifier: parent_identifier, importer_run_id: importer_run_id })
