@@ -16,6 +16,8 @@ module Bulkrax
     let(:child_id) { child_entry.identifier }
 
     before do
+      allow_any_instance_of(Ability).to receive(:authorize!).and_return(true)
+
       allow(create_relationships_job).to receive(:reschedule)
       allow(::Hyrax.config).to receive(:curation_concerns).and_return([Work])
       allow(parent_record).to receive(:save!)

@@ -9,5 +9,7 @@ module Bulkrax
     def parents
       pending_relationships.pluck(:parent_id).uniq
     end
+
+    delegate :user, to: :importer
   end
 end

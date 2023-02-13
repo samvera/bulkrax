@@ -49,7 +49,8 @@ module Bulkrax
     # parent_identifier or child_identifier param. For example, if a parent_identifier is passed, we know @base_entry
     # is the child in the relationship, and vice versa if a child_identifier is passed.
     def perform(parent_identifier:, importer_run_id:) # rubocop:disable Metrics/AbcSize
-      # TODO permission checks on child / parent write access
+      importer_run = Bulkrax::ImporterRun.find(importer_run_id)
+      ability = Ability.new(importer_run.user)
 
       pending_relationships = Bulkrax::PendingRelationship.where(parent_id: parent_identifier, importer_run_id: importer_run_id).ordered
       parent_entry, parent_record = find_record(parent_identifier, importer_run_id)
@@ -59,7 +60,7 @@ module Bulkrax
       errors = []
 
       pending_relationships.find_each do |rel|
-        process(relationship: rel, importer_run_id: importer_run_id, parent_record: parent_record)
+        process(relationship: rel, importer_run_id: importer_run_id, parent_record: parent_record, ability: ability)
         number_of_successes += 1
       rescue => e
         number_of_failures += 1
@@ -71,7 +72,6 @@ module Bulkrax
 
       # rubocop:disable Rails/SkipsModelValidations
       if errors.present?
-        importer_run = Bulkrax::ImporterRun.find(importer_run_id)
         importer_run.increment!(:failed_relationships, number_of_failures)
         parent_entry&.status_info(errors.last, importer_run)
 
@@ -86,7 +86,7 @@ module Bulkrax
 
     private
 
-    def process(relationship:, importer_run_id:, parent_record:)
+    def process(relationship:, importer_run_id:, parent_record:, ability:)
       raise "#{relationship} needs a child to create relationship" if relationship.child_id.nil?
       raise "#{relationship} needs a parent to create relationship" if relationship.parent_id.nil?
 
@@ -94,6 +94,11 @@ module Bulkrax
       raise "#{relationship} could not find child record" unless child_record
 
       raise "Cannot add child collection (ID=#{relationship.child_id}) to parent work (ID=#{relationship.parent_id})" if child_record.collection? && parent_record.work?
+
+      ability.authorize!(:edit, child_record)
+
+      # We could do this outside of the loop, but that could lead to odd counter failures.
+      ability.authorize!(:edit, parent_record)
 
       parent_record.is_a?(Collection) ? add_to_collection(child_record, parent_record) : add_to_work(child_record, parent_record)
 
