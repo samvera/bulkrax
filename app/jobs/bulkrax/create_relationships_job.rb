@@ -112,7 +112,7 @@ module Bulkrax
     end
 
     def add_to_work(child_record, parent_record)
-      return true if parent_record.ordered_members.include?(child_record)
+      return true if parent_record.ordered_members.to_a.include?(child_record)
 
       parent_record.ordered_members << child_record
       @parent_record_members_added = true
