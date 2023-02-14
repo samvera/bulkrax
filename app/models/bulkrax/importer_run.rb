@@ -10,6 +10,10 @@ module Bulkrax
       pending_relationships.pluck(:parent_id).uniq
     end
 
-    delegate :user, to: :importer
+    def user
+      # An importer might not have a user, the CLI ingest need not assign a user.  As such, we
+      # fallback to the configured user.
+      importer.user || Bulkrax.fallback_user_for_importer_exporter_processing
+    end
   end
 end
