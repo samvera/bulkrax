@@ -13,7 +13,7 @@
 
   <%= form.input :name, input_html: { class: 'form-control' } %>
 
-  <%= form.input :admin_set_id, collection: available_admin_sets %>
+  <%= form.input :admin_set_id, collection: available_admin_sets if defined?(::Hyrax) %>
 
   <%= form.hidden_field :user_id, value: current_user.id %>
 
