@@ -62,9 +62,11 @@ module Bulkrax
       pending_relationships.find_each do |rel|
         process(relationship: rel, importer_run_id: importer_run_id, parent_record: parent_record, ability: ability)
         number_of_successes += 1
+        Rails.logger.error("Success: #{number_of_successes} - Object Count #{ObjectSpace.each_object(Object).count}")
       rescue => e
         number_of_failures += 1
         errors << e
+        Rails.logger.error("Failure: #{number_of_failures} - #{e.message} - #{errors.size} - #{ObjectSpace.each_object(Object).count}")
       end
 
       # save record if members were added
