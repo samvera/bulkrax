@@ -37,7 +37,7 @@ module Bulkrax
     def build_metadata
       self.parsed_metadata = {}
       self.parsed_metadata[work_identifier] = [record.header.identifier]
-      self.raw_metadata = { xml: record.metadata.to_s }
+      self.raw_metadata = { record: record.metadata.to_s, header: record.header.to_s }
 
       # We need to establish the #factory_class before we proceed with the metadata.  See
       # https://github.com/samvera-labs/bulkrax/issues/702 for further details.
