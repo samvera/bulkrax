@@ -55,7 +55,7 @@ module Bulkrax
         progress_bar.increment
 
         obj = entry.factory.find
-        next if obj.is_a?(FileSet) # FileSets must be attached to a Work
+        next if obj.is_a?(Bulkrax.file_model_name) # FileSets must be attached to a Work
 
         if obj.is_a?(Collection)
           remove_relationships_from_collection(obj)

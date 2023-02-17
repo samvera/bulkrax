@@ -3,6 +3,7 @@
 module Bulkrax
   class ImporterJob < ApplicationJob
     queue_as :import
+    require 'csv'
 
     def perform(importer_id, only_updates_since_last_import = false)
       importer = Importer.find(importer_id)
@@ -12,7 +13,7 @@ module Bulkrax
       import(importer, only_updates_since_last_import)
       update_current_run_counters(importer)
       schedule(importer) if importer.schedulable?
-    rescue CSV::MalformedCSVError => e
+    rescue ::CSV::MalformedCSVError => e
       importer.status_info(e)
     end
 
