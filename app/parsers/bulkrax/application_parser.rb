@@ -358,7 +358,7 @@ module Bulkrax
 
     # Is this a zip file?
     def zip?
-      parser_fields&.[]('import_file_path') && MIME::Types.type_for(parser_fields['import_file_path']).include?('application/zip')
+      parser_fields&.[]('import_file_path') && Marcel::MimeType.for(parser_fields['import_file_path']).include?('application/zip')
     end
 
     # Path for the import

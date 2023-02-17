@@ -16,6 +16,7 @@ module Bulkrax
                    :default_work_type,
                    :export_path,
                    :field_mappings,
+                   :file_model_name,
                    :fill_in_blank_source_identifiers,
                    :generated_metadata_mapping,
                    :import_path,
@@ -134,6 +135,10 @@ module Bulkrax
     # the config/authorities/ directory. For example, the :rights_statement property
     # is controlled by the active terms in config/authorities/rights_statements.yml
     self.qa_controlled_properties = %w[rights_statement license]
+  end
+
+  def self.file_model_name
+    AcdaFile
   end
 
   def self.api_definition
