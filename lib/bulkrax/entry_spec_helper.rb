@@ -55,8 +55,7 @@ module Bulkrax
            identifier: identifier,
            entry_class: entry_class,
            data: data,
-           **options
-         )
+           **options)
     end
 
     ENTRY_TYPE_TO_METHOD_NAME_MAP = {
