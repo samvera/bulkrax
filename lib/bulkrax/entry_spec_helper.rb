@@ -27,15 +27,18 @@ module Bulkrax
     # @param identifier [String, Integer] The identifier of the entry.  This might also be found in
     #        the metadata of the entry, but for instantiation purposes we need this value.
     # @param parser_class_name [String] The name of the parser class you're wanting to test.
+    # @param type [Sybmol] The type of entry (e.g. :entry, :collection, :file_set) for testing.
     # @param options [Hash<Symbol,Object>] these are to be passed along into the instantiation of
     #        the various classes.  See implementation details.
     #
     # @return [Bulkrax::Entry]
-    def self.entry_for(data:, identifier:, parser_class_name:, **options)
+    def self.entry_for(data:, identifier:, parser_class_name:, type: :entry, **options)
       importer = importer_for(parser_class_name: parser_class_name, **options)
+      entry_type_method_name = ENTRY_TYPE_TO_METHOD_NAME_MAP.fetch(type)
+      entry_class = importer.parser.public_send(entry_type_method_name)
 
       # Using an instance of the entry_class to dispatch to different
-      entry_for_dispatch = importer.parser.entry_class.new
+      entry_for_dispatch = entry_class.new
 
       # Using the {is_a?} test we get the benefit of inspecting an object's inheritance path
       # (e.g. ancestry).  The logic, as implemented, also provides a mechanism for folks in their
@@ -47,8 +50,19 @@ module Bulkrax
       # Yes, we'll raise an error if we didn't find a corresponding key.  And that's okay.
       symbol = entry_class_to_symbol_map.fetch(key)
 
-      send("build_#{symbol}_entry_for", importer: importer, identifier: identifier, data: data, **options)
+      send("build_#{symbol}_entry_for",
+           importer: importer,
+           identifier: identifier,
+           entry_class: entry_class,
+           data: data,
+           **options)
     end
+
+    ENTRY_TYPE_TO_METHOD_NAME_MAP = {
+      entry: :entry_class,
+      collection: :collection_entry_class,
+      file_set: :file_set_entry_class
+    }.freeze
 
     DEFAULT_ENTRY_CLASS_TO_SYMBOL_MAP = {
       'Bulkrax::OaiEntry' => :oai,
@@ -80,7 +94,13 @@ module Bulkrax
         parser_klass: parser_class_name,
         field_mapping: options.fetch(:importer_field_mappings) { Bulkrax.field_mappings.fetch(parser_class_name) },
         parser_fields: parser_fields
-      )
+      ).tap do |importer|
+        # Why are we saving the importer and a run?  We might want to delve deeper into the call
+        # stack.  See https://github.com/scientist-softserv/adventist-dl/pull/266
+        importer.save!
+        # Later on, we might to want a current run
+        importer.importer_runs.create!
+      end
     end
     private_class_method :importer_for
 
@@ -94,8 +114,8 @@ module Bulkrax
     #
     # @note As a foible of this implementation, you'll need to include along a CSV to establish the
     #       columns that you'll parse (e.g. the first row
-    def self.build_csv_entry_for(importer:, data:, identifier:, **_options)
-      importer.parser.entry_class.new(
+    def self.build_csv_entry_for(importer:, data:, identifier:, entry_class:, **_options)
+      entry_class.new(
         importerexporter: importer,
         identifier: identifier,
         raw_metadata: data
@@ -108,7 +128,7 @@ module Bulkrax
     # @param data [String] we're expecting a string that is well-formed XML for OAI parsing.
     #
     # @return [Bulkrax::OaiEntry]
-    def self.build_oai_entry_for(importer:, data:, identifier:, **options)
+    def self.build_oai_entry_for(importer:, data:, identifier:, entry_class:, **options)
       # The raw record assumes we take the XML data, parse it and then send that to the
       # OAI::GetRecordResponse object.
       doc = XML::Parser.string(data)
@@ -121,7 +141,7 @@ module Bulkrax
         "children" => options.fetch(:raw_metadata_children, [])
       }
 
-      importer.parser.entry_class.new(
+      entry_class.new(
         raw_record: raw_record,
         importerexporter: importer,
         identifier: identifier,
@@ -135,7 +155,7 @@ module Bulkrax
     # @param data [String] we're expecting a string that is well-formed XML.
     #
     # @return [Bulkrax::XmlEntry]
-    def self.build_xml_entry_for(importer:, data:, identifier:, **options)
+    def self.build_xml_entry_for(importer:, data:, identifier:, entry_class:, **options)
       raw_metadata = {
         importer.parser.source_identifier.to_s => identifier,
         "data" => data,
@@ -143,7 +163,7 @@ module Bulkrax
         "children" => options.fetch(:raw_metadata_children, [])
       }
 
-      importer.parser.entry_class.new(
+      entry_class.new(
         importerexporter: importer,
         identifier: identifier,
         raw_metadata: raw_metadata
