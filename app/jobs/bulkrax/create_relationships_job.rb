@@ -52,21 +52,23 @@ module Bulkrax
       importer_run = Bulkrax::ImporterRun.find(importer_run_id)
       ability = Ability.new(importer_run.user)
 
-      pending_relationships = Bulkrax::PendingRelationship.where(parent_id: parent_identifier, importer_run_id: importer_run_id).ordered
       parent_entry, parent_record = find_record(parent_identifier, importer_run_id)
 
       number_of_successes = 0
       number_of_failures = 0
       errors = []
 
-      pending_relationships.find_each do |rel|
-        process(relationship: rel, importer_run_id: importer_run_id, parent_record: parent_record, ability: ability)
-        number_of_successes += 1
-        Rails.logger.error("Success: #{number_of_successes} - Object Count #{ObjectSpace.each_object(Object).count}")
-      rescue => e
-        number_of_failures += 1
-        errors << e
-        Rails.logger.error("Failure: #{number_of_failures} - #{e.message} - #{errors.size} - #{ObjectSpace.each_object(Object).count}")
+      ActiveRecord::Base.uncached do
+        Bulkrax::PendingRelationship.where(parent_id: parent_identifier, importer_run_id: importer_run_id)
+          .ordered.find_each do |rel|
+          process(relationship: rel, importer_run_id: importer_run_id, parent_record: parent_record, ability: ability)
+          number_of_successes += 1
+          Rails.logger.error("Success: #{number_of_successes} - Object Count #{ObjectSpace.each_object(Object).count}")
+          rescue => e
+            number_of_failures += 1
+            errors << e
+            Rails.logger.error("Failure: #{number_of_failures} - #{e.message} - #{errors.size} - #{ObjectSpace.each_object(Object).count}")
+        end
       end
 
       # save record if members were added
