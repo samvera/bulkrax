@@ -167,8 +167,9 @@ module Bulkrax
 
         object_key = key if value.key?('object')
         next unless hyrax_record.respond_to?(key.to_s) || object_key.present?
+        models_to_skip = Array.wrap(value.fetch('skip_object_for_model_names', []))
 
-        if object_key.present?
+        if object_key.present? && !models_to_skip.detect{ |s| hyrax_record.model_name.name == s }
           build_object(value)
         else
           build_value(key, value)
