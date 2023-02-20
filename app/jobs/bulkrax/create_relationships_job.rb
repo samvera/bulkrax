@@ -62,12 +62,12 @@ module Bulkrax
 
       ActiveRecord::Base.uncached do
         Bulkrax::PendingRelationship.where(parent_id: parent_identifier, importer_run_id: importer_run_id)
-          .ordered.find_each do |rel|
+                                    .ordered.find_each do |rel|
           process(relationship: rel, importer_run_id: importer_run_id, parent_record: parent_record, ability: ability)
           number_of_successes += 1
-          rescue => e
-            number_of_failures += 1
-            errors << e
+        rescue => e
+          number_of_failures += 1
+          errors << e
         end
       end
 
