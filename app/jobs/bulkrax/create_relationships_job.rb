@@ -48,23 +48,27 @@ module Bulkrax
     # Whether the @base_entry is the parent or the child in the relationship is determined by the presence of a
     # parent_identifier or child_identifier param. For example, if a parent_identifier is passed, we know @base_entry
     # is the child in the relationship, and vice versa if a child_identifier is passed.
+    #
+    # rubocop:disable Metrics/MethodLength
     def perform(parent_identifier:, importer_run_id:) # rubocop:disable Metrics/AbcSize
       importer_run = Bulkrax::ImporterRun.find(importer_run_id)
       ability = Ability.new(importer_run.user)
 
-      pending_relationships = Bulkrax::PendingRelationship.where(parent_id: parent_identifier, importer_run_id: importer_run_id).ordered
       parent_entry, parent_record = find_record(parent_identifier, importer_run_id)
 
       number_of_successes = 0
       number_of_failures = 0
       errors = []
 
-      pending_relationships.find_each do |rel|
-        process(relationship: rel, importer_run_id: importer_run_id, parent_record: parent_record, ability: ability)
-        number_of_successes += 1
-      rescue => e
-        number_of_failures += 1
-        errors << e
+      ActiveRecord::Base.uncached do
+        Bulkrax::PendingRelationship.where(parent_id: parent_identifier, importer_run_id: importer_run_id)
+                                    .ordered.find_each do |rel|
+          process(relationship: rel, importer_run_id: importer_run_id, parent_record: parent_record, ability: ability)
+          number_of_successes += 1
+        rescue => e
+          number_of_failures += 1
+          errors << e
+        end
       end
 
       # save record if members were added
@@ -83,6 +87,7 @@ module Bulkrax
       end
       # rubocop:enable Rails/SkipsModelValidations
     end
+    # rubocop:enable Metrics/MethodLength
 
     private
 
