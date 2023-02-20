@@ -11,7 +11,7 @@ module Bulkrax
     def valid_import?
       return true if import_fields.present?
     rescue => e
-      status_info(e)
+      set_status_info(e)
       false
     end
 
@@ -82,7 +82,7 @@ module Bulkrax
       end
       importer.record_status
     rescue StandardError => e
-      status_info(e)
+      set_status_info(e)
     end
 
     def total
@@ -144,7 +144,7 @@ module Bulkrax
             bag.add_file(file_name, file.path) if bag.bag_files.select { |b| b.include?(file_name) }.blank?
           rescue => e
             entry.set_status_info(e)
-            status_info(e)
+            set_status_info(e)
           end
         end
 

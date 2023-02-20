@@ -29,7 +29,7 @@ module Bulkrax
         create_from_all
       end
     rescue StandardError => e
-      status_info(e)
+      set_status_info(e)
     end
 
     # #export_source accessors

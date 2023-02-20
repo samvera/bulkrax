@@ -31,7 +31,7 @@ module Bulkrax
       raise StandardError, 'No records found' if records.blank?
       true
     rescue StandardError => e
-      status_info(e)
+      set_status_info(e)
       false
     end
 
@@ -104,7 +104,7 @@ module Bulkrax
       end
       importer.record_status
     rescue StandardError => e
-      status_info(e)
+      set_status_info(e)
     end
 
     def total

@@ -160,7 +160,7 @@ module Bulkrax
       types = types_array || DEFAULT_OBJECT_TYPES
       parser.create_objects(types)
     rescue StandardError => e
-      status_info(e)
+      set_status_info(e)
     end
 
     # Prepend the base_url to ensure unique set identifiers

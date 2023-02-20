@@ -100,7 +100,7 @@ module Bulkrax
 
       file_paths.is_a?(Array)
     rescue StandardError => e
-      status_info(e)
+      set_status_info(e)
       false
     end
 
@@ -140,7 +140,7 @@ module Bulkrax
       end
       true
     rescue StandardError => e
-      status_info(e)
+      set_status_info(e)
     end
 
     def create_entry_and_job(current_record, type)
