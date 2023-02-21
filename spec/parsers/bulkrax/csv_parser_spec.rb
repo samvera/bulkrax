@@ -392,58 +392,49 @@ module Bulkrax
       end
     end
 
-    describe '#find_child_file_sets' do
-      subject(:parser) { described_class.new(exporter) }
-      let(:exporter) { FactoryBot.create(:bulkrax_exporter_worktype) }
-      let(:work_ids_solr) { [OpenStruct.new(id: SecureRandom.alphanumeric(9))] }
-      let(:file_set_ids_solr) { [OpenStruct.new(id: SecureRandom.alphanumeric(9))] }
-      let(:parent_record_1) { build(:work) }
-
-      before do
-        parser.instance_variable_set(:@file_set_ids, [])
-        allow(ActiveFedora::SolrService).to receive(:query).and_return(work_ids_solr)
-        allow(ActiveFedora::Base).to receive(:find).with(work_ids_solr.first.id).and_return(parent_record_1)
-        allow(parent_record_1).to receive(:file_set_ids).and_return(file_set_ids_solr.pluck(:id))
-      end
-
-      it 'returns the ids when child file sets are present' do
-        parser.find_child_file_sets(work_ids_solr.pluck(:id))
-        expect(parser.instance_variable_get(:@file_set_ids)).to eq(file_set_ids_solr.pluck(:id))
-      end
-    end
-
     describe '#create_new_entries' do
       subject(:parser) { described_class.new(exporter) }
       let(:exporter) { FactoryBot.create(:bulkrax_exporter, :all) }
-      # Use OpenStructs to simulate the behavior of ActiveFedora::SolrHit instances.
-      let(:work_ids_solr) { [OpenStruct.new(id: SecureRandom.alphanumeric(9)), OpenStruct.new(id: SecureRandom.alphanumeric(9))] }
-      let(:collection_ids_solr) { [OpenStruct.new(id: SecureRandom.alphanumeric(9)), OpenStruct.new(id: SecureRandom.alphanumeric(9))] }
-      let(:file_set_ids_solr) { [OpenStruct.new(id: SecureRandom.alphanumeric(9)), OpenStruct.new(id: SecureRandom.alphanumeric(9)), OpenStruct.new(id: SecureRandom.alphanumeric(9))] }
+      let(:work_ids_solr) { [SolrDocument.new(id: SecureRandom.alphanumeric(9)), SolrDocument.new(id: SecureRandom.alphanumeric(9))] }
+      let(:collection_ids_solr) { [SolrDocument.new(id: SecureRandom.alphanumeric(9)), SolrDocument.new(id: SecureRandom.alphanumeric(9))] }
+      let(:file_set_ids_solr) { [SolrDocument.new(id: SecureRandom.alphanumeric(9)), SolrDocument.new(id: SecureRandom.alphanumeric(9)), SolrDocument.new(id: SecureRandom.alphanumeric(9))] }
+      let(:limit) { 1000 }
+
+      let(:record_set) do
+        (
+          work_ids_solr.map { |doc| [doc.id, parser.entry_class] } +
+          collection_ids_solr.map { |doc| [doc.id, parser.collection_entry_class] } +
+          file_set_ids_solr.map { |doc| [doc.id, parser.file_set_entry_class] }
+        )[0...limit]
+      end
 
       before do
-        allow(ActiveFedora::SolrService).to receive(:query).and_return(work_ids_solr, collection_ids_solr, file_set_ids_solr)
+        allow(Bulkrax::ParserExportRecordSet).to(
+          receive(:for).with(parser: parser, export_from: exporter.export_from).and_return(record_set)
+        )
       end
 
       context 'with an export limit of 0' do
         it 'invokes Bulkrax::ExportWorkJob once per Entry' do
-          expect(Bulkrax::ExportWorkJob).to receive(:perform_now).exactly(7).times
+          expect(Bulkrax::ExportWorkJob).to receive(:perform_now).exactly(record_set.count).times
           parser.create_new_entries
         end
       end
 
       context 'with an export limit of 1' do
+        let(:limit) { 1 }
         it 'invokes Bulkrax::ExportWorkJob once' do
-          exporter.limit = 1
+          exporter.limit = limit
 
           # although the work has a file attached, the limit means the file set is not exported
-          expect(Bulkrax::ExportWorkJob).to receive(:perform_now).exactly(1).times
+          expect(Bulkrax::ExportWorkJob).to receive(:perform_now).exactly(limit).times
           parser.create_new_entries
         end
       end
 
       context 'when exporting all' do
         it 'exports works, collections, and file sets' do
-          expect(ExportWorkJob).to receive(:perform_now).exactly(7).times
+          expect(Bulkrax::ExportWorkJob).to receive(:perform_now).exactly(record_set.count).times
 
           parser.create_new_entries
         end
@@ -483,43 +474,6 @@ module Bulkrax
             .by(2)
             .and change(CsvEntry, :count)
             .by(7) # 7 csv entries minus 3 file set entries minus 2 collection entries equals 2 work entries
-        end
-      end
-
-      context 'when exporting by collection' do
-        let(:exporter) { FactoryBot.create(:bulkrax_exporter_collection) }
-        let(:parent_record_1) { build(:work, id: work_ids_solr.first.id) }
-
-        before do
-          allow(parent_record_1).to receive(:file_set_ids).and_return([file_set_ids_solr.pluck(:id).first])
-          allow(ActiveFedora::SolrService).to receive(:query).and_return([work_ids_solr.first], [collection_ids_solr.first], [collection_ids_solr.last])
-          allow(ActiveFedora::Base).to receive(:find).with(work_ids_solr.first.id).and_return(parent_record_1)
-        end
-
-        it 'exports the collection, child works, child collections, and file sets related to the child works' do
-          expect(ExportWorkJob).to receive(:perform_now).exactly(4).times
-
-          parser.create_new_entries
-        end
-      end
-
-      context 'when exporting by work type' do
-        let(:exporter) { FactoryBot.create(:bulkrax_exporter_worktype) }
-        let(:parent_record_1) { build(:work, id: work_ids_solr.first.id) }
-        let(:parent_record_2) { build(:work, id: work_ids_solr.last.id) }
-
-        before do
-          allow(parent_record_1).to receive(:file_set_ids).and_return([file_set_ids_solr.pluck(:id).first])
-          allow(parent_record_2).to receive(:file_set_ids).and_return(file_set_ids_solr.pluck(:id).from(1))
-          allow(ActiveFedora::SolrService).to receive(:query).and_return(work_ids_solr)
-          allow(ActiveFedora::Base).to receive(:find).with(work_ids_solr.first.id).and_return(parent_record_1)
-          allow(ActiveFedora::Base).to receive(:find).with(work_ids_solr.last.id).and_return(parent_record_2)
-        end
-
-        it 'exports the works and file sets related to the works' do
-          expect(ExportWorkJob).to receive(:perform_now).exactly(5).times
-
-          parser.create_new_entries
         end
       end
     end
@@ -663,7 +617,7 @@ module Bulkrax
       end
 
       before do
-        allow(ActiveFedora::SolrService).to receive(:query).and_return(OpenStruct.new(id: work_id))
+        allow(ActiveFedora::SolrService).to receive(:query).and_return(SolrDocument.new(id: work_id))
         allow(exporter.entries).to receive(:where).and_return([entry])
         allow(parser).to receive(:headers).and_return(entry.parsed_metadata.keys)
       end

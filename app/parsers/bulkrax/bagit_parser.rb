@@ -85,18 +85,6 @@ module Bulkrax
       status_info(e)
     end
 
-    def total
-      @total = importer.parser_fields['total'] || 0 if importer?
-
-      @total = if exporter?
-                 limit.nil? || limit.zero? ? current_record_ids.count : limit
-               end
-
-      return @total || 0
-    rescue StandardError
-      @total = 0
-    end
-
     # export methods
 
     # rubocop:disable Metrics/MethodLength, Metrics/AbcSize
