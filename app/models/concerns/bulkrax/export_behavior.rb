@@ -10,9 +10,9 @@ module Bulkrax
     rescue RSolr::Error::Http, CollectionsCreatedError => e
       raise e
     rescue StandardError => e
-      status_info(e)
+      set_status_info(e)
     else
-      status_info
+      set_status_info
     end
 
     def build_export_metadata
