@@ -9,7 +9,8 @@ module Bulkrax
     let(:bulkrax_exporter_run) { FactoryBot.create(:bulkrax_exporter_run, exporter: exporter) }
     before do
       importer.import_works
-      allow(exporter.parser).to receive(:current_record_ids).and_return(importer.entries.pluck(:identifier))
+      allow(exporter.parser).to receive(:current_records_for_export)
+        .and_return(importer.entries.map { |e| [e.identifier, e.class] })
     end
 
     it 'exports a work' do

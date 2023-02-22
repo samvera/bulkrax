@@ -58,6 +58,23 @@ module Bulkrax
            **options)
     end
 
+    # @api public
+    #
+    # @param parser_class_name [String]
+    # @param parser_fields [Hash<String,Hash>]
+    #
+    # @return [Bulkrax::Exporter]
+    def self.exporter_for(parser_class_name:, parser_fields: {}, **options)
+      Bulkrax::Exporter.new(
+        name: options.fetch(:exporter_name, "Test importer for identifier"),
+        user: options.fetch(:exporter_user, User.new(email: "hello@world.com")),
+        limit: options.fetch(:exporter_limit, 1),
+        parser_klass: parser_class_name,
+        field_mapping: options.fetch(:exporter_field_mappings) { Bulkrax.field_mappings.fetch(parser_class_name) },
+        parser_fields: parser_fields
+      )
+    end
+
     ENTRY_TYPE_TO_METHOD_NAME_MAP = {
       entry: :entry_class,
       collection: :collection_entry_class,
