@@ -168,7 +168,7 @@ module Bulkrax
     end
 
     def current_records_for_export
-      @current_records_for_export ||= Bulkrax::ParserExportRecordSet .for(
+      @current_records_for_export ||= Bulkrax::ParserExportRecordSet.for(
         parser: self,
         export_from: importerexporter.export_from
       )
