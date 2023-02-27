@@ -18,16 +18,7 @@ module Bulkrax
 
     def export
       current_run && setup_export_path
-      case self.export_from
-      when 'collection'
-        create_from_collection
-      when 'importer'
-        create_from_importer
-      when 'worktype'
-        create_from_worktype
-      when 'all'
-        create_from_all
-      end
+      send("create_from_#{self.export_from}")
     rescue StandardError => e
       set_status_info(e)
     end

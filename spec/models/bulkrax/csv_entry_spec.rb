@@ -24,6 +24,31 @@ module Bulkrax
       end
     end
 
+    context 'AttributeBuilderMethod.for' do
+      # Why is this spec here?  Because we have a LOT of before blocks that are saying stubbing and
+      # allowing different things.  When I had this method in a more logical place, it was getting
+      # the following error:
+      #
+      #   ArgumentError: Cannot proxy frozen objects. Symbols such as build_value cannot be mocked
+      #                  or stubbed.
+      context 'with valid field that is declared as an object but model skips object' do
+        let(:my_model) { FileSet }
+        let(:hyrax_record) { my_model.new }
+        let(:value) { { object: "creator", skip_object_for_model_names: [my_model.model_name.name.to_s] } }
+        let(:entry) do
+          double(described_class,
+                 hyrax_record: hyrax_record,
+                 related_parents_parsed_mapping: 'parents',
+                 related_children_parsed_mapping: 'children',
+                 factory_class: my_model,
+                 field_supported?: true)
+        end
+        subject { described_class::AttributeBuilderMethod.for(key: "creator", value: value, entry: entry) }
+
+        it { is_expected.to eq :build_value }
+      end
+    end
+
     describe '#build_metadata' do
       around do |spec|
         # Why am I doing this instead of passing it into the parser?  Because of
