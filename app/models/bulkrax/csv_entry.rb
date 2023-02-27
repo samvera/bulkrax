@@ -13,12 +13,32 @@ module Bulkrax
       data.headers.flatten.compact.uniq
     end
 
+    # Following on the {::CSV.new} documentation, this little module is responsible for determining
+    # if we should skip the line we read via {CSV.read}.
+    #
+    # @see https://ruby-doc.org/stdlib-3.0.0/libdoc/csv/rdoc/CSV.html#class-CSV-label-Option+skip_lines
+    module CsvLineSkipper
+      USE_LINE_REGEXP = %r{\w}.freeze
+
+      # @param string [String] the non-parsed row
+      # @return [TrueClass] when we should skip this line
+      # @return [FalseClass] when we should not skip this line
+      def self.match(string)
+        return false if USE_LINE_REGEXP.match(string)
+        true
+      end
+    end
+
+    class_attribute :csv_line_skipper, default: CsvLineSkipper
+
     # there's a risk that this reads the whole file into memory and could cause a memory leak
     def self.read_data(path)
       raise StandardError, 'CSV path empty' if path.blank?
       CSV.read(path,
         headers: true,
         header_converters: ->(h) { h.to_sym },
+        skip_blanks: true,
+        skip_lines: csv_line_skipper,
         encoding: 'utf-8')
     end
 

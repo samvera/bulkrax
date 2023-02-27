@@ -6,15 +6,21 @@ require 'rails_helper'
 module Bulkrax
   RSpec.describe CsvEntry, type: :model do
     describe '.read_data' do
-      subject(:data) { described_class.read_data(path) }
-      let(:path) { File.expand_path('../../fixtures/csv/mixed-case.csv', __dir__) }
       it 'handles mixed case and periods for column names' do
+        path = File.expand_path('../../fixtures/csv/mixed-case.csv', __dir__)
+        data = described_class.read_data(path)
         expect(data.headers).to match_array([
                                               "title".to_sym,
                                               "title.alternate".to_sym,
                                               "collection.isPartOf".to_sym,
                                               "source_location".to_sym
                                             ])
+      end
+
+      it 'skips lines that do not have data' do
+        path = File.expand_path('../../fixtures/csv/with_empty_rows.csv', __dir__)
+        data = described_class.read_data(path)
+        expect(data.count).to eq(2)
       end
     end
 
