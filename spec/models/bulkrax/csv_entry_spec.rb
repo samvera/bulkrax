@@ -22,6 +22,12 @@ module Bulkrax
         data = described_class.read_data(path)
         expect(data.count).to eq(2)
       end
+
+      it 'handles a CSV that if we used a skip_lines option would never finishing parsing the CSV' do
+        path = File.expand_path('../../fixtures/csv/entry-causing-problems-in-2.7.6.csv', __dir__)
+        data = described_class.read_data(path)
+        expect(data.count).to eq(1)
+      end
     end
 
     context 'AttributeBuilderMethod.for' do
