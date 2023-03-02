@@ -70,7 +70,7 @@ module Bulkrax
 
     def build_metadata
       raise StandardError, 'Record not found' if record.nil?
-      keys_with_values = record.reject { |_,v| v.blank? }.keys
+      keys_with_values = record.reject { |_, v| v.blank? }.keys
       unless importerexporter.parser.required_elements?(keys_without_numbers(keys_with_values))
         raise StandardError,
 "Missing required elements, missing element(s) are: #{importerexporter.parser.missing_elements(keys_without_numbers(keys_with_values)).join(', ')}"
