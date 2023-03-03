@@ -88,10 +88,8 @@ module Bulkrax
 
     def validate_record
       raise StandardError, 'Record not found' if record.nil?
-      unless importerexporter.parser.required_elements?(record)
-        raise StandardError,
-              "Missing required elements, missing element(s) are: #{importerexporter.parser.missing_elements(record).join(', ')}"
-      end
+      raise StandardError, "Missing required elements, missing element(s) are: "\
+"#{importerexporter.parser.missing_elements(record).join(', ')}" unless importerexporter.parser.required_elements?(record)
     end
 
     def add_identifier
