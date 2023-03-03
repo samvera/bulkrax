@@ -83,7 +83,7 @@ module Bulkrax
     def import_fields
       @import_fields ||= records.inject(:merge).keys.compact.uniq
     end
-    
+
     def required_elements?(record)
       missing_elements(record).blank?
     end

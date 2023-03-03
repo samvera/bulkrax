@@ -90,7 +90,7 @@ module Bulkrax
       raise StandardError, 'Record not found' if record.nil?
       unless importerexporter.parser.required_elements?(record)
         raise StandardError,
-              "Missing required elements, missing element(s) are: #{importerexporter.parser.missing_elements(keys_without_numbers(keys_with_values)).join(', ')}"
+              "Missing required elements, missing element(s) are: #{importerexporter.parser.missing_elements(record).join(', ')}"
       end
     end
 
