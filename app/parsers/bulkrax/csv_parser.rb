@@ -96,7 +96,7 @@ module Bulkrax
     end
 
     def valid_import?
-      compressed_record = records.inject(:merge)
+      compressed_record = records.map(&:to_a).flatten(1).partition { |_, v| !v }.flatten(1).to_h
       error_alert = "Missing at least one required element, missing element(s) are: #{missing_elements(compressed_record).join(', ')}"
       raise StandardError, error_alert unless required_elements?(compressed_record)
 
