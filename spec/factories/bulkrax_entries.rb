@@ -50,6 +50,15 @@ FactoryBot.define do
     statuses { [association(:bulkrax_status, status_message: 'Failed')] }
   end
 
+  factory :bulkrax_csv_entry_missing_title, class: 'Bulkrax::CsvEntry' do
+    identifier { "entry_failed" }
+    type { 'Bulkrax::CsvEntry' }
+    importerexporter { FactoryBot.build(:bulkrax_importer) }
+    raw_metadata { { title: '' } }
+    parsed_metadata { {} }
+    statuses { [association(:bulkrax_status, status_message: 'Failed')] }
+  end
+
   factory :bulkrax_rdf_entry, class: 'Bulkrax::RdfEntry' do
     identifier { "MyString" }
     type { 'Bulkrax::RdfEntry' }

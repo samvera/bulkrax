@@ -554,6 +554,15 @@ module Bulkrax
       end
     end
 
+    describe '#missing_elements' do
+      let(:entry_no_title)     { FactoryBot.create(:bulkrax_csv_entry_missing_title) }
+
+      it 'returns required keys that are missing from the record' do
+        byebug
+        expect(subject.missing_elements(entry_no_title.raw_metadata)).to eq(['title'])
+      end
+    end
+
     describe '#write_errored_entries_file', clean_downloads: true do
       let(:importer)         { FactoryBot.create(:bulkrax_importer_csv_failed, entries: [entry_failed, entry_succeeded, entry_collection]) }
       let(:entry_failed)     { FactoryBot.create(:bulkrax_csv_entry_failed, raw_metadata: { title: 'Failed' }) }
