@@ -233,6 +233,8 @@ module Bulkrax
     end
 
     def build_object(_key, value)
+      return unless hyrax_record.respond_to?(value['object'])
+
       data = hyrax_record.send(value['object'])
       return if data.empty?
 
@@ -241,6 +243,8 @@ module Bulkrax
     end
 
     def build_value(key, value)
+      return unless hyrax_record.respond_to?(key.to_s)
+
       data = hyrax_record.send(key.to_s)
       if data.is_a?(ActiveTriples::Relation)
         if value['join']
