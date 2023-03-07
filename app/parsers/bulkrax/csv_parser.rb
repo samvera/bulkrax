@@ -216,7 +216,7 @@ module Bulkrax
         if importer?
           importer.parser_fields['total'] || 0
         elsif exporter?
-          limit.to_i.zero? ? current_record_ids.count : limit.to_i
+          limit.to_i.zero? ? current_records_for_export.count : limit.to_i
         else
           0
         end
@@ -261,7 +261,8 @@ module Bulkrax
       sorted_entries = sort_entries(importerexporter.entries.uniq(&:identifier))
                        .select { |e| valid_entry_types.include?(e.type) }
 
-      sorted_entries[0..limit || total].in_groups_of(records_split_count, false) do |group|
+      group_size = limit.to_i.zero? ? total : limit.to_i
+      sorted_entries[0..group_size].in_groups_of(records_split_count, false) do |group|
         folder_count += 1
 
         CSV.open(setup_export_file(folder_count), "w", headers: export_headers, write_headers: true) do |csv|
