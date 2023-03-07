@@ -84,19 +84,19 @@ module Bulkrax
       @import_fields ||= records.inject(:merge).keys.compact.uniq
     end
 
-    def required_elements?(keys)
-      return if keys.blank?
-      missing_elements(keys).blank?
+    def required_elements?(record)
+      missing_elements(record).blank?
     end
 
-    def missing_elements(keys)
+    def missing_elements(record)
+      keys = keys_without_numbers(record.reject { |_, v| v.blank? }.keys.compact.uniq.map(&:to_s))
       required_elements.map(&:to_s) - keys.map(&:to_s)
     end
 
     def valid_import?
-      import_strings = keys_without_numbers(import_fields.map(&:to_s))
-      error_alert = "Missing at least one required element, missing element(s) are: #{missing_elements(import_strings).join(', ')}"
-      raise StandardError, error_alert unless required_elements?(import_strings)
+      compressed_record = records.flat_map(&:to_a).partition { |_, v| !v }.flatten(1).to_h
+      error_alert = "Missing at least one required element, missing element(s) are: #{missing_elements(compressed_record).join(', ')}"
+      raise StandardError, error_alert unless required_elements?(compressed_record)
 
       file_paths.is_a?(Array)
     rescue StandardError => e

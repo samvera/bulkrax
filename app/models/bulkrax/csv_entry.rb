@@ -69,11 +69,7 @@ module Bulkrax
     end
 
     def build_metadata
-      raise StandardError, 'Record not found' if record.nil?
-      unless importerexporter.parser.required_elements?(keys_without_numbers(record.keys))
-        raise StandardError,
-"Missing required elements, missing element(s) are: #{importerexporter.parser.missing_elements(keys_without_numbers(record.keys)).join(', ')}"
-      end
+      validate_record
 
       self.parsed_metadata = {}
       add_identifier
@@ -88,6 +84,12 @@ module Bulkrax
       add_local
 
       self.parsed_metadata
+    end
+
+    def validate_record
+      raise StandardError, 'Record not found' if record.nil?
+      raise StandardError, "Missing required elements, missing element(s) are: "\
+"#{importerexporter.parser.missing_elements(record).join(', ')}" unless importerexporter.parser.required_elements?(record)
     end
 
     def add_identifier
