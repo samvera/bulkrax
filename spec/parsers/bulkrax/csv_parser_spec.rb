@@ -555,7 +555,7 @@ module Bulkrax
     end
 
     describe '#missing_elements' do
-      let(:entry_no_title)     { FactoryBot.create(:bulkrax_csv_entry_missing_title) }
+      let(:entry_no_title)     { FactoryBot.create(:bulkrax_csv_entry_missing_title, raw_metadata: { title: '', source_identifier: "12345" }) }
 
       it 'returns required keys that are missing from the record' do
         byebug

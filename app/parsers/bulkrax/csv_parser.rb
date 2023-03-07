@@ -90,8 +90,6 @@ module Bulkrax
 
     def missing_elements(record)
       keys = keys_without_numbers(record.reject { |_, v| v.blank? }.keys.compact.uniq.map(&:to_s))
-      return if keys.blank?
-
       required_elements.map(&:to_s) - keys.map(&:to_s)
     end
 
