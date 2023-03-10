@@ -24,6 +24,7 @@
     input_html: { class: 'form-control' }
   %>
 
+  <%# @todo(bjustice) - remove hyrax reference %>
   <% rights_statements = Hyrax.config.rights_statement_service_class.new %>
   <%= fi.input :rights_statement,
         collection: rights_statements.select_active_options,
@@ -47,6 +48,7 @@
     <%= fi.input :import_file_path, as: :string, input_html: { value: importer.parser_fields['import_file_path'] } %>
   </div>
   <div id='cloud'>
+    <%# @todo(bjustice) - remove hyrax reference %>
     <% if Hyrax.config.browse_everything? %>
       <%= render 'browse_everything', form: form %>
     <% end %>

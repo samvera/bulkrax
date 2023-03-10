@@ -63,9 +63,9 @@ module Bulkrax
 
     def create_collections
       metadata = {
-        visibility: 'open',
-        collection_type_gid: Hyrax::CollectionType.find_or_create_default_collection_type.gid
+        visibility: 'open'
       }
+      metadata[:collection_type_gid] = Hyrax::CollectionType.find_or_create_default_collection_type.gid if defined?(::Hyrax)
 
       collections.each_with_index do |set, index|
         next unless collection_name == 'all' || collection_name == set.spec

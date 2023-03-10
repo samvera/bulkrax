@@ -50,6 +50,7 @@ module Bulkrax
 
     attr_reader :entries, :progress_bar
 
+    # @todo(bjustice) - remove hyrax reference
     def break_relationships!
       entries.each do |entry|
         progress_bar.increment
@@ -68,6 +69,7 @@ module Bulkrax
       end
     end
 
+    # @todo(bjustice) - remove hyrax reference
     def remove_relationships_from_collection(collection)
       # Remove child work relationships
       collection.member_works.each do |work|

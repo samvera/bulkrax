@@ -12,6 +12,7 @@ module Bulkrax
     #       modify these config values are modifying global state.  Which is not desirous, as it can
     #       introduce unexpected flakey tests.
     mattr_accessor :api_definition,
+                   :curation_concerns,
                    :default_field_mapping,
                    :default_work_type,
                    :export_path,
@@ -137,8 +138,12 @@ module Bulkrax
     self.qa_controlled_properties = %w[rights_statement license]
   end
 
+  def self.curation_concerns
+    ::Hyrax.config.curation_concerns
+  end
+
   def self.file_model_name
-    AcdaFile
+    FileSet
   end
 
   def self.api_definition

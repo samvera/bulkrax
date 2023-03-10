@@ -27,6 +27,8 @@ module Bulkrax
       return @item
     end
 
+
+    # @todo(bjustice) - remove hyrax reference
     def add_user_to_permission_templates!
       permission_template = Hyrax::PermissionTemplate.find_or_create_by!(source_id: @item.id)
 
@@ -164,6 +166,7 @@ module Bulkrax
     # @param value [String] value to check
     # @param field [String] name of the controlled property
     # @return [Boolean] provided value is a present, active authority ID for the provided field
+    # @todo(bjustice) - remove hyrax reference
     def active_id_for_authority?(value, field)
       field_service = ('Hyrax::' + "#{field}_service".camelcase).constantize
       active_authority_ids = field_service.new.active_elements.map { |ae| ae['id'] }

@@ -16,6 +16,7 @@ module Bulkrax
   #       to either an instance of a Work or an instance of a Collection.
   # NOTE: In the context of this job, "identifier" is used to generically refer
   #       to either a record's ID or an Bulkrax::Entry's source_identifier.
+  # @todo(bjustice) - remove hyrax references
   class CreateRelationshipsJob < ApplicationJob
     ##
     # @api public
