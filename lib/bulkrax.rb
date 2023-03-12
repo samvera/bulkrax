@@ -28,6 +28,7 @@ module Bulkrax
                    :qa_controlled_properties,
                    :related_children_field_mapping,
                    :related_parents_field_mapping,
+                   :relationship_job,
                    :removed_image_path,
                    :reserved_properties,
                    :server_name
@@ -143,7 +144,11 @@ module Bulkrax
   end
 
   def self.file_model_name
-    FileSet
+    ::FileSet
+  end
+
+  def self.relationship_job
+    CreateRelationshipsJob
   end
 
   def self.api_definition

@@ -12,7 +12,6 @@ module Bulkrax
       self.parsed_metadata[work_identifier] = [self.identifier].flatten
     end
 
-    # @todo(bjustice) - remove hyrax reference
     def add_collection_type_gid
       return if self.parsed_metadata['collection_type_gid'].present?
 

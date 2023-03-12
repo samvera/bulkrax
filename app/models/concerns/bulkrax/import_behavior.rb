@@ -11,7 +11,7 @@ module Bulkrax
         unless self.importerexporter.validate_only
           raise CollectionsCreatedError unless collections_created?
           @item = factory.run!
-          add_user_to_permission_templates! if self.class.to_s.include?("Collection")
+          add_user_to_permission_templates! if self.class.to_s.include?("Collection") && defined?(::Hyrax)
           parent_jobs if self.parsed_metadata[related_parents_parsed_mapping]&.join.present?
           child_jobs if self.parsed_metadata[related_children_parsed_mapping]&.join.present?
         end
@@ -27,8 +27,6 @@ module Bulkrax
       return @item
     end
 
-
-    # @todo(bjustice) - remove hyrax reference
     def add_user_to_permission_templates!
       permission_template = Hyrax::PermissionTemplate.find_or_create_by!(source_id: @item.id)
 
@@ -166,8 +164,8 @@ module Bulkrax
     # @param value [String] value to check
     # @param field [String] name of the controlled property
     # @return [Boolean] provided value is a present, active authority ID for the provided field
-    # @todo(bjustice) - remove hyrax reference
     def active_id_for_authority?(value, field)
+      return false unless defined?(::Hyrax)
       field_service = ('Hyrax::' + "#{field}_service".camelcase).constantize
       active_authority_ids = field_service.new.active_elements.map { |ae| ae['id'] }
 

@@ -101,7 +101,7 @@ module Bulkrax
     end
 
     # Only add valid resource types
-    # @todo(bjustice) - remove hyrax reference
+    # @todo(bjustice) - remove hyrax reference NOT USED?
     def parse_resource_type(src)
       Hyrax::ResourceTypesService.label(src.to_s.strip.titleize)
     rescue KeyError
