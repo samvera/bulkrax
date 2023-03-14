@@ -67,8 +67,8 @@ module Bulkrax
     end
 
     def add_metadata_for_model
-      if defined?(Hyrax) && factory_class == Collection
-        add_collection_type_gid
+      if factory_class == Collection
+        add_collection_type_gid && if defined?(Hyrax)
       elsif factory_class == Bulkrax.file_model_name
         validate_presence_of_filename!
         add_path_to_file

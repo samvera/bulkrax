@@ -140,11 +140,13 @@ module Bulkrax
   end
 
   def self.curation_concerns
-    ::Hyrax.config.curation_concerns
+    return ::Hyrax.config.curation_concerns if defined?(::Hyrax)
+    []
   end
 
   def self.file_model_name
-    ::FileSet
+    return ::FileSet if defined?(::Hyrax)
+    File
   end
 
   def self.relationship_job
