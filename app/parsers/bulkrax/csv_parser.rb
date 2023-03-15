@@ -194,7 +194,7 @@ module Bulkrax
       when 'all'
         @work_ids = ActiveFedora::SolrService.query("has_model_ssim:(#{Bulkrax.curation_concerns.join(' OR ')}) #{extra_filters}", method: :post, rows: 2_147_483_647).map(&:id)
         @collection_ids = ActiveFedora::SolrService.query("has_model_ssim:Collection #{extra_filters}", method: :post, rows: 2_147_483_647).map(&:id)
-        @file_set_ids = ActiveFedora::SolrService.query("has_model_ssim:#{Bulkrax.file_model_name.to_s} #{extra_filters}", method: :post, rows: 2_147_483_647).map(&:id)
+        @file_set_ids = ActiveFedora::SolrService.query("has_model_ssim:#{Bulkrax.file_model_name} #{extra_filters}", method: :post, rows: 2_147_483_647).map(&:id)
       when 'collection'
         @work_ids = ActiveFedora::SolrService.query(
 "member_of_collection_ids_ssim:#{importerexporter.export_source + extra_filters} AND has_model_ssim:(#{Bulkrax.curation_concerns.join(' OR ')})", method: :post, rows: 2_000_000_000
