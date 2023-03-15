@@ -18,18 +18,9 @@ module Bulkrax
 
     def export
       current_run && setup_export_path
-      case self.export_from
-      when 'collection'
-        create_from_collection
-      when 'importer'
-        create_from_importer
-      when 'worktype'
-        create_from_worktype
-      when 'all'
-        create_from_all
-      end
+      send("create_from_#{self.export_from}")
     rescue StandardError => e
-      status_info(e)
+      set_status_info(e)
     end
 
     # #export_source accessors
@@ -69,7 +60,7 @@ module Bulkrax
     end
 
     def workflow_status_list
-      Sipity::WorkflowState.all.map { |s| [s.name&.titleize, s.name] }.uniq
+      Sipity::WorkflowState.all.map { |s| [s.name&.titleize, s.name] }.uniq if defined?(::Hyrax)
     end
 
     # If field_mapping is empty, setup a default based on the export_properties
@@ -84,12 +75,20 @@ module Bulkrax
     end
 
     def export_from_list
-      [
-        [I18n.t('bulkrax.exporter.labels.importer'), 'importer'],
-        [I18n.t('bulkrax.exporter.labels.collection'), 'collection'],
-        [I18n.t('bulkrax.exporter.labels.worktype'), 'worktype'],
-        [I18n.t('bulkrax.exporter.labels.all'), 'all']
-      ]
+      if defined?(::Hyrax)
+        [
+          [I18n.t('bulkrax.exporter.labels.importer'), 'importer'],
+          [I18n.t('bulkrax.exporter.labels.collection'), 'collection'],
+          [I18n.t('bulkrax.exporter.labels.worktype'), 'worktype'],
+          [I18n.t('bulkrax.exporter.labels.all'), 'all']
+        ]
+      else
+        [
+          [I18n.t('bulkrax.exporter.labels.importer'), 'importer'],
+          [I18n.t('bulkrax.exporter.labels.collection'), 'collection'],
+          [I18n.t('bulkrax.exporter.labels.all'), 'all']
+        ]
+      end
     end
 
     def export_type_list

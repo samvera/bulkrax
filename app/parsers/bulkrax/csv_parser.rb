@@ -84,23 +84,23 @@ module Bulkrax
       @import_fields ||= records.inject(:merge).keys.compact.uniq
     end
 
-    def required_elements?(keys)
-      return if keys.blank?
-      missing_elements(keys).blank?
+    def required_elements?(record)
+      missing_elements(record).blank?
     end
 
-    def missing_elements(keys)
+    def missing_elements(record)
+      keys = keys_without_numbers(record.reject { |_, v| v.blank? }.keys.compact.uniq.map(&:to_s))
       required_elements.map(&:to_s) - keys.map(&:to_s)
     end
 
     def valid_import?
-      import_strings = keys_without_numbers(import_fields.map(&:to_s))
-      error_alert = "Missing at least one required element, missing element(s) are: #{missing_elements(import_strings).join(', ')}"
-      raise StandardError, error_alert unless required_elements?(import_strings)
+      compressed_record = records.flat_map(&:to_a).partition { |_, v| !v }.flatten(1).to_h
+      error_alert = "Missing at least one required element, missing element(s) are: #{missing_elements(compressed_record).join(', ')}"
+      raise StandardError, error_alert unless required_elements?(compressed_record)
 
       file_paths.is_a?(Array)
     rescue StandardError => e
-      status_info(e)
+      set_status_info(e)
       false
     end
 
@@ -140,7 +140,7 @@ module Bulkrax
       end
       true
     rescue StandardError => e
-      status_info(e)
+      set_status_info(e)
     end
 
     def create_entry_and_job(current_record, type)
@@ -167,102 +167,17 @@ module Bulkrax
       path
     end
 
-    def extra_filters
-      output = ""
-      if importerexporter.start_date.present?
-        start_dt = importerexporter.start_date.to_datetime.strftime('%FT%TZ')
-        finish_dt = importerexporter.finish_date.present? ? importerexporter.finish_date.to_datetime.end_of_day.strftime('%FT%TZ') : "NOW"
-        output += " AND system_modified_dtsi:[#{start_dt} TO #{finish_dt}]"
-      end
-      output += importerexporter.work_visibility.present? ? " AND visibility_ssi:#{importerexporter.work_visibility}" : ""
-      output += importerexporter.workflow_status.present? ? " AND workflow_state_name_ssim:#{importerexporter.workflow_status}" : ""
-      output
-    end
-
-    def current_work_ids
-      ActiveSupport::Deprecation.warn('Bulkrax::CsvParser#current_work_ids will be replaced with #current_record_ids in version 3.0')
-      current_record_ids
-    end
-
-    # rubocop:disable Metrics/AbcSize
-    def current_record_ids
-      @work_ids = []
-      @collection_ids = []
-      @file_set_ids = []
-
-      case importerexporter.export_from
-      when 'all'
-        @work_ids = ActiveFedora::SolrService.query("has_model_ssim:(#{Bulkrax.curation_concerns.join(' OR ')}) #{extra_filters}", method: :post, rows: 2_147_483_647).map(&:id)
-        @collection_ids = ActiveFedora::SolrService.query("has_model_ssim:Collection #{extra_filters}", method: :post, rows: 2_147_483_647).map(&:id)
-        @file_set_ids = ActiveFedora::SolrService.query("has_model_ssim:#{Bulkrax.file_model_name} #{extra_filters}", method: :post, rows: 2_147_483_647).map(&:id)
-      when 'collection'
-        @work_ids = ActiveFedora::SolrService.query(
-"member_of_collection_ids_ssim:#{importerexporter.export_source + extra_filters} AND has_model_ssim:(#{Bulkrax.curation_concerns.join(' OR ')})", method: :post, rows: 2_000_000_000
-).map(&:id)
-        # get the parent collection and child collections
-        @collection_ids = ActiveFedora::SolrService.query("id:#{importerexporter.export_source} #{extra_filters}", method: :post, rows: 2_147_483_647).map(&:id)
-        @collection_ids += ActiveFedora::SolrService.query("has_model_ssim:Collection AND member_of_collection_ids_ssim:#{importerexporter.export_source}", method: :post,
-                                                                                                                                                            rows: 2_147_483_647).map(&:id)
-        find_child_file_sets(@work_ids)
-      when 'worktype'
-        @work_ids = ActiveFedora::SolrService.query("has_model_ssim:#{importerexporter.export_source + extra_filters}", method: :post, rows: 2_000_000_000).map(&:id)
-        find_child_file_sets(@work_ids)
-      when 'importer'
-        set_ids_for_exporting_from_importer
-      end
-
-      @work_ids + @collection_ids + @file_set_ids
-    end
-    # rubocop:enable Metrics/AbcSize
-
-    # find the related file set ids so entries can be made for export
-    def find_child_file_sets(work_ids)
-      work_ids.each do |id|
-        ActiveFedora::Base.find(id).file_set_ids.each { |fs_id| @file_set_ids << fs_id }
-      end
-    end
-
-    # Set the following instance variables: @work_ids, @collection_ids, @file_set_ids
-    # @see #current_record_ids
-    def set_ids_for_exporting_from_importer
-      entry_ids = Importer.find(importerexporter.export_source).entries.pluck(:id)
-      complete_statuses = Status.latest_by_statusable
-                                .includes(:statusable)
-                                .where('bulkrax_statuses.statusable_id IN (?) AND bulkrax_statuses.statusable_type = ? AND status_message = ?', entry_ids, 'Bulkrax::Entry', 'Complete')
-
-      complete_entry_identifiers = complete_statuses.map { |s| s.statusable&.identifier&.gsub(':', '\:') }
-      extra_filters = extra_filters.presence || '*:*'
-
-      { :@work_ids => Bulkrax.curation_concerns, :@collection_ids => [::Collection], :@file_set_ids => ["::#{Bulkrax.file_model_name}".constantize] }.each do |instance_var, models_to_search|
-        instance_variable_set(instance_var, ActiveFedora::SolrService.post(
-          extra_filters.to_s,
-          fq: [
-            %(#{solr_name(work_identifier)}:("#{complete_entry_identifiers.join('" OR "')}")),
-            "has_model_ssim:(#{models_to_search.join(' OR ')})"
-          ],
-          fl: 'id',
-          rows: 2_000_000_000
-        )['response']['docs'].map { |obj| obj['id'] })
-      end
-    end
-
-    def solr_name(base_name)
-      Module.const_defined?(:Solrizer) ? ::Solrizer.solr_name(base_name) : ::ActiveFedora.index_field_mapper.solr_name(base_name)
+    def current_records_for_export
+      @current_records_for_export ||= Bulkrax::ParserExportRecordSet.for(
+        parser: self,
+        export_from: importerexporter.export_from
+      )
     end
 
     def create_new_entries
-      current_record_ids.each_with_index do |id, index|
-        break if limit_reached?(limit, index)
-
-        this_entry_class = if @collection_ids.include?(id)
-                             collection_entry_class
-                           elsif @file_set_ids.include?(id)
-                             file_set_entry_class
-                           else
-                             entry_class
-                           end
-        new_entry = find_or_create_entry(this_entry_class, id, 'Bulkrax::Exporter')
-
+      # NOTE: The each method enforces the limit, as it can best optimize the underlying queries.
+      current_records_for_export.each do |id, entry_class|
+        new_entry = find_or_create_entry(entry_class, id, 'Bulkrax::Exporter')
         begin
           entry = ExportWorkJob.perform_now(new_entry.id, current_run.id)
         rescue => e
@@ -291,16 +206,22 @@ module Bulkrax
     end
 
     def valid_entry_types
-      ['Bulkrax::CsvCollectionEntry', 'Bulkrax::CsvFileSetEntry', 'Bulkrax::CsvEntry']
+      [collection_entry_class.to_s, file_set_entry_class.to_s, entry_class.to_s]
     end
 
     # TODO: figure out why using the version of this method that's in the bagit parser
     # breaks specs for the "if importer?" line
     def total
-      @total = importer.parser_fields['total'] || 0 if importer?
-      @total = limit || current_record_ids.count if exporter?
+      @total =
+        if importer?
+          importer.parser_fields['total'] || 0
+        elsif exporter?
+          limit.to_i.zero? ? current_records_for_export.count : limit.to_i
+        else
+          0
+        end
 
-      return @total || 0
+      return @total
     rescue StandardError
       @total = 0
     end
@@ -335,10 +256,13 @@ module Bulkrax
     def write_files
       require 'open-uri'
       folder_count = 0
+      # TODO: This is not performant as well; unclear how to address, but lower priority as of
+      #       <2023-02-21 Tue>.
       sorted_entries = sort_entries(importerexporter.entries.uniq(&:identifier))
                        .select { |e| valid_entry_types.include?(e.type) }
 
-      sorted_entries[0..limit || total].in_groups_of(records_split_count, false) do |group|
+      group_size = limit.to_i.zero? ? total : limit.to_i
+      sorted_entries[0..group_size].in_groups_of(records_split_count, false) do |group|
         folder_count += 1
 
         CSV.open(setup_export_file(folder_count), "w", headers: export_headers, write_headers: true) do |csv|

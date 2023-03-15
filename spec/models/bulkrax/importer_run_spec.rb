@@ -4,12 +4,18 @@ require 'rails_helper'
 
 module Bulkrax
   RSpec.describe ImporterRun, type: :model do
-    subject(:importer_run) { build(:bulkrax_importer_run) }
+    let(:importer_run) { build(:bulkrax_importer_run) }
 
     describe '#parents' do
-      it 'is an Array' do
-        expect(importer_run.parents).to be_an(Array)
-      end
+      subject { importer_run.parents }
+
+      it { is_expected.to be_an(Array) }
+    end
+
+    describe '#user' do
+      subject { importer_run.user }
+
+      it { is_expected.to be_a(User) }
     end
 
     context 'when being destroyed' do

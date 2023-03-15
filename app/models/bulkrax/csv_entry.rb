@@ -13,14 +13,48 @@ module Bulkrax
       data.headers.flatten.compact.uniq
     end
 
+    class_attribute(:csv_read_data_options, default: {})
+
     # there's a risk that this reads the whole file into memory and could cause a memory leak
     def self.read_data(path)
       raise StandardError, 'CSV path empty' if path.blank?
-      CSV.read(path,
+      options = {
         headers: true,
         header_converters: ->(h) { h.to_sym },
-        encoding: 'utf-8')
+        encoding: 'utf-8'
+      }.merge(csv_read_data_options)
+
+      results = CSV.read(path, **options)
+      csv_wrapper_class.new(results)
     end
+
+    # The purpose of this class is to reject empty lines.  This causes lots of grief in importing.
+    # But why not use {CSV.read}'s `skip_lines` option?  Because for some CSVs, it will never finish
+    # reading the file.
+    #
+    # There is a spec that demonstrates this approach works.
+    class CsvWrapper
+      include Enumerable
+      def initialize(original)
+        @original = original
+      end
+
+      delegate :headers, to: :@original
+
+      def each
+        @original.each do |row|
+          next if all_fields_are_empty_for(row: row)
+          yield(row)
+        end
+      end
+
+      private
+
+      def all_fields_are_empty_for(row:)
+        row.to_hash.values.all?(&:blank?)
+      end
+    end
+    class_attribute :csv_wrapper_class, default: CsvWrapper
 
     def self.data_for_entry(data, _source_id, parser)
       # If a multi-line CSV data is passed, grab the first row
@@ -35,11 +69,7 @@ module Bulkrax
     end
 
     def build_metadata
-      raise StandardError, 'Record not found' if record.nil?
-      unless importerexporter.parser.required_elements?(keys_without_numbers(record.keys))
-        raise StandardError,
-"Missing required elements, missing element(s) are: #{importerexporter.parser.missing_elements(keys_without_numbers(record.keys)).join(', ')}"
-      end
+      validate_record
 
       self.parsed_metadata = {}
       add_identifier
@@ -54,6 +84,12 @@ module Bulkrax
       add_local
 
       self.parsed_metadata
+    end
+
+    def validate_record
+      raise StandardError, 'Record not found' if record.nil?
+      raise StandardError, "Missing required elements, missing element(s) are: "\
+"#{importerexporter.parser.missing_elements(record).join(', ')}" unless importerexporter.parser.required_elements?(record)
     end
 
     def add_identifier
@@ -157,26 +193,48 @@ module Bulkrax
       end
     end
 
-    def build_mapping_metadata
-      mapping = fetch_field_mapping
-      mapping.each do |key, value|
-        # these keys are handled by other methods
-        next if ['model', 'file', related_parents_parsed_mapping, related_children_parsed_mapping].include?(key)
-        next if value['excluded']
-        next if Bulkrax.reserved_properties.include?(key) && !field_supported?(key)
+    # The purpose of this helper module is to make easier the testing of the rather complex
+    # switching logic for determining the method we use for building the value.
+    module AttributeBuilderMethod
+      # @param key [Symbol]
+      # @param value [Hash<String, Object>]
+      # @param entry [Bulkrax::Entry]
+      #
+      # @return [NilClass] when we won't be processing this field
+      # @return [Symbol] (either :build_value or :build_object)
+      def self.for(key:, value:, entry:)
+        return if key == 'model'
+        return if key == 'file'
+        return if key == entry.related_parents_parsed_mapping
+        return if key == entry.related_children_parsed_mapping
+        return if value['excluded'] || value[:excluded]
+        return if Bulkrax.reserved_properties.include?(key) && !entry.field_supported?(key)
 
-        object_key = key if value.key?('object')
-        next unless hyrax_record.respond_to?(key.to_s) || object_key.present?
+        object_key = key if value.key?('object') || value.key?(:object)
+        return unless entry.hyrax_record.respond_to?(key.to_s) || object_key.present?
 
-        if object_key.present?
-          build_object(value)
-        else
-          build_value(key, value)
-        end
+        models_to_skip = Array.wrap(value['skip_object_for_model_names'] || value[:skip_object_for_model_names] || [])
+
+        return :build_value if models_to_skip.detect { |model| entry.factory_class.model_name.name == model }
+        return :build_object if object_key.present?
+
+        :build_value
       end
     end
 
-    def build_object(value)
+    def build_mapping_metadata
+      mapping = fetch_field_mapping
+      mapping.each do |key, value|
+        method_name = AttributeBuilderMethod.for(key: key, value: value, entry: self)
+        next unless method_name
+
+        send(method_name, key, value)
+      end
+    end
+
+    def build_object(_key, value)
+      return unless hyrax_record.respond_to?(value['object'])
+
       data = hyrax_record.send(value['object'])
       return if data.empty?
 
@@ -185,6 +243,8 @@ module Bulkrax
     end
 
     def build_value(key, value)
+      return unless hyrax_record.respond_to?(key.to_s)
+
       data = hyrax_record.send(key.to_s)
       if data.is_a?(ActiveTriples::Relation)
         if value['join']
@@ -217,6 +277,14 @@ module Bulkrax
     end
 
     def object_metadata(data)
+      # NOTE: What is `d` in this case:
+      #
+      #  "[{\"single_object_first_name\"=>\"Fake\", \"single_object_last_name\"=>\"Fakerson\", \"single_object_position\"=>\"Leader, Jester, Queen\", \"single_object_language\"=>\"english\"}]"
+      #
+      # The above is a stringified version of a Ruby string.  Using eval is a very bad idea as it
+      # will execute the value of `d` within the full Ruby interpreter context.
+      #
+      # TODO: Would it be possible to store this as a non-string?  Maybe the actual Ruby Array and Hash?
       data = data.map { |d| eval(d) }.flatten # rubocop:disable Security/Eval
 
       data.each_with_index do |obj, index|

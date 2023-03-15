@@ -13,7 +13,7 @@ module Bulkrax
       entry.save!
       entry.importer.current_run = ImporterRun.find(importer_run.id)
       entry.importer.record_status
-      entry.status_info("Deleted", ImporterRun.find(importer_run.id))
+      entry.set_status_info("Deleted", ImporterRun.find(importer_run.id))
     end
     # rubocop:enable Rails/SkipsModelValidations
   end

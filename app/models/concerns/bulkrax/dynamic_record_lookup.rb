@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 module Bulkrax
+  # TODO: Extract methods to class methods; there's no reason for these methods to be a mixin.
+  # TODO: Add specs to test in isolation
   module DynamicRecordLookup
     # Search entries, collections, and every available work type for a record that
     # has the provided identifier.

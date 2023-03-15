@@ -202,6 +202,12 @@ module Bulkrax
     value.to_s.delete("\xEF\xBB\xBF")
   end
 
+  def self.fallback_user_for_importer_exporter_processing
+    return User.batch_user if defined?(Hyrax) && User.respond_to?(:batch_user)
+
+    raise "We have no fallback user available for Bulkrax.fallback_user_for_importer_exporter_processing"
+  end
+
   # This class confirms to the Active::Support.serialze interface.  It's job is to ensure that we
   # don't have keys with the tricksy Byte Order Mark character.
   #

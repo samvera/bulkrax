@@ -11,7 +11,7 @@ module Bulkrax
     def valid_import?
       return true if import_fields.present?
     rescue => e
-      status_info(e)
+      set_status_info(e)
       false
     end
 
@@ -82,19 +82,7 @@ module Bulkrax
       end
       importer.record_status
     rescue StandardError => e
-      status_info(e)
-    end
-
-    def total
-      @total = importer.parser_fields['total'] || 0 if importer?
-
-      @total = if exporter?
-                 limit.nil? || limit.zero? ? current_record_ids.count : limit
-               end
-
-      return @total || 0
-    rescue StandardError
-      @total = 0
+      set_status_info(e)
     end
 
     # export methods
@@ -143,8 +131,8 @@ module Bulkrax
           begin
             bag.add_file(file_name, file.path) if bag.bag_files.select { |b| b.include?(file_name) }.blank?
           rescue => e
-            entry.status_info(e)
-            status_info(e)
+            entry.set_status_info(e)
+            set_status_info(e)
           end
         end
 

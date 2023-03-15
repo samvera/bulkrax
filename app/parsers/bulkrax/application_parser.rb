@@ -11,7 +11,7 @@ module Bulkrax
     alias exporter importerexporter
     delegate :only_updates, :limit, :current_run, :errors, :mapping,
       :seen, :increment_counters, :parser_fields, :user, :keys_without_numbers,
-      :key_without_numbers, :status, :status_info, :status_at,
+      :key_without_numbers, :status, :set_status_info, :status_info, :status_at,
       :exporter_export_path, :exporter_export_zip_path, :importer_unzip_path, :validate_only,
       to: :importerexporter
 

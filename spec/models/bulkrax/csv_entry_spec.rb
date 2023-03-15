@@ -6,15 +6,52 @@ require 'rails_helper'
 module Bulkrax
   RSpec.describe CsvEntry, type: :model do
     describe '.read_data' do
-      subject(:data) { described_class.read_data(path) }
-      let(:path) { File.expand_path('../../fixtures/csv/mixed-case.csv', __dir__) }
       it 'handles mixed case and periods for column names' do
+        path = File.expand_path('../../fixtures/csv/mixed-case.csv', __dir__)
+        data = described_class.read_data(path)
         expect(data.headers).to match_array([
                                               "title".to_sym,
                                               "title.alternate".to_sym,
                                               "collection.isPartOf".to_sym,
                                               "source_location".to_sym
                                             ])
+      end
+
+      it 'skips lines that do not have data' do
+        path = File.expand_path('../../fixtures/csv/with_empty_rows.csv', __dir__)
+        data = described_class.read_data(path)
+        expect(data.count).to eq(2)
+      end
+
+      it 'handles a CSV that if we used a skip_lines option would never finishing parsing the CSV' do
+        path = File.expand_path('../../fixtures/csv/entry-causing-problems-in-2.7.6.csv', __dir__)
+        data = described_class.read_data(path)
+        expect(data.count).to eq(1)
+      end
+    end
+
+    context 'AttributeBuilderMethod.for' do
+      # Why is this spec here?  Because we have a LOT of before blocks that are saying stubbing and
+      # allowing different things.  When I had this method in a more logical place, it was getting
+      # the following error:
+      #
+      #   ArgumentError: Cannot proxy frozen objects. Symbols such as build_value cannot be mocked
+      #                  or stubbed.
+      context 'with valid field that is declared as an object but model skips object' do
+        let(:my_model) { FileSet }
+        let(:hyrax_record) { my_model.new }
+        let(:value) { { object: "creator", skip_object_for_model_names: [my_model.model_name.name.to_s] } }
+        let(:entry) do
+          double(described_class,
+                 hyrax_record: hyrax_record,
+                 related_parents_parsed_mapping: 'parents',
+                 related_children_parsed_mapping: 'children',
+                 factory_class: my_model,
+                 field_supported?: true)
+        end
+        subject { described_class::AttributeBuilderMethod.for(key: "creator", value: value, entry: entry) }
+
+        it { is_expected.to eq :build_value }
       end
     end
 
