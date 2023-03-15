@@ -233,7 +233,7 @@ module Bulkrax
       complete_entry_identifiers = complete_statuses.map { |s| s.statusable&.identifier&.gsub(':', '\:') }
       extra_filters = extra_filters.presence || '*:*'
 
-      { :@work_ids => Bulkrax.curation_concerns, :@collection_ids => [::Collection], :@file_set_ids => ["::#{Bulkrax.file_model_name.to_s}".constantize] }.each do |instance_var, models_to_search|
+      { :@work_ids => Bulkrax.curation_concerns, :@collection_ids => [::Collection], :@file_set_ids => ["::#{Bulkrax.file_model_name}".constantize] }.each do |instance_var, models_to_search|
         instance_variable_set(instance_var, ActiveFedora::SolrService.post(
           extra_filters.to_s,
           fq: [
