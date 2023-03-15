@@ -33,7 +33,8 @@
 
     <p class='bulkrax-p-align'>
       <% if @importer.present? %>
-        <% factory_record = nil #@entry.factory.find %>
+        <% byebug %>
+        <% factory_record = @entry.factory.find %>
         <% if factory_record.present? && @entry.factory_class %>
           <strong><%= @entry.factory_class.to_s %> Link:</strong>
           <% if @entry.factory_class.to_s == 'Collection' %>
