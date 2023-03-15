@@ -38,7 +38,7 @@ module Bulkrax
 
       # @return [Integer]
       def count
-        sum = works.count + collections.count + file_sets_count
+        sum = works.count + collections.count + file_sets.count
         return sum if limit.zero?
         return limit if sum > limit
         return sum
@@ -71,19 +71,23 @@ module Bulkrax
 
         return if limit_reached?(limit, counter)
 
-        # Why this approach instead of the above?  Because the rules for file sets vary across the
-        # different subclasses of the Base class.
-        each_file_set_id do |file_set_id|
+        file_sets.each do |file_set|
           break if limit_reached?(limit, counter)
-          yield(file_set_id, file_set_entry_class)
+          yield(file_set.fetch('id'), file_set_entry_class)
           counter += 1
         end
       end
 
       private
 
-      def file_sets_count
-        works.sum { |work| work.fetch("file_set_ids_ssim", []).size }
+      # Why call these candidates and not the actual file_set_ids?  Because of implementation
+      # details of Hyrax.  What are those details?  The upstream application (as of v2.9.x) puts
+      # child works into the `file_set_ids_ssim` field.  So we have a mix of file sets and works in
+      # that property.
+      #
+      # @see #file_sets
+      def candidate_file_set_ids
+        @candidate_file_set_ids ||= works.flat_map { |work| work.fetch("file_set_ids_ssim", []) }
       end
 
       # @note Specifically not memoizing this so we can merge values without changing the object.
@@ -130,19 +134,30 @@ module Bulkrax
                          end
       end
 
+      def file_sets
+        @file_sets ||= ActiveFedora::SolrService.query(file_sets_query, **file_set_query_kwargs)
+      end
+
+      # Why can't we just use the candidate_file_set_ids?  Because Hyrax is pushing child works into the
+      # `file_set_ids_ssim` field.
+      #
+      # For v2.9.x of Hryax; perhaps this is resolved.
+      #
+      # @see https://github.com/scientist-softserv/britishlibrary/issues/289
+      # @see https://github.com/samvera/hyrax/blob/64c0bbf0dc0d3e1b49f040b50ea70d177cc9d8f6/app/indexers/hyrax/work_indexer.rb#L15-L18
+      def file_sets_query
+        "has_model_ssim:FileSet AND id:(#{candidate_file_set_ids.join(' OR ')}) #{extra_filters}"
+      end
+
+      def file_set_query_kwargs
+        { fl: "id", method: :post, rows: candidate_file_set_ids.size }
+      end
+
       def solr_name(base_name)
         if Module.const_defined?(:Solrizer)
           ::Solrizer.solr_name(base_name)
         else
           ::ActiveFedora.index_field_mapper.solr_name(base_name)
-        end
-      end
-
-      def each_file_set_id
-        works.each do |work|
-          work.fetch("file_set_ids_ssim", []).each do |file_set_id|
-            yield(file_set_id)
-          end
         end
       end
     end
@@ -239,16 +254,8 @@ module Bulkrax
         )
       end
 
-      def file_sets
-        @file_sets ||= ActiveFedora::SolrService.query(extra_filters.to_s, file_sets_query_kwargs)
-      end
-
-      def each_file_set_id
-        file_sets.each { |doc| yield doc.fetch('id') }
-      end
-
-      def file_sets_count
-        file_sets.count
+      def file_sets_query
+        extra_filters
       end
     end
   end

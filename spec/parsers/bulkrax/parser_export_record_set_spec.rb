@@ -51,6 +51,17 @@ end
       ]
     end
 
+    let(:file_sets) do
+      [
+        SolrDocument.new(id: "a"),
+        SolrDocument.new(id: "b"),
+        SolrDocument.new(id: "c"),
+        SolrDocument.new(id: "d"),
+        SolrDocument.new(id: "e"),
+        SolrDocument.new(id: "f")
+      ]
+    end
+
     let(:collections) do
       [
         SolrDocument.new(id: 100),
@@ -67,6 +78,7 @@ end
     before do
       allow(record_set).to receive(:works).and_return(works)
       allow(record_set).to receive(:collections).and_return(collections)
+      allow(record_set).to receive(:file_sets).and_return(file_sets)
     end
 
     describe '#count' do
