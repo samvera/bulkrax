@@ -27,8 +27,8 @@ module Bulkrax
     def filename(file_set)
       return if file_set.original_file.blank?
       fn = file_set.original_file.file_name.first
-      mime = Marcel::MimeType.for(file_set.original_file.mime_type)
-      ext_mime = Marcel::MimeType.for(file_set.original_file.file_name)
+      mime = ::Marcel::MimeType.for(file_set.original_file.mime_type)
+      ext_mime = ::Marcel::MimeType.for(file_set.original_file.file_name)
       if fn.include?(file_set.id) || importerexporter.metadata_only?
         filename = "#{fn}.#{mime.to_sym}"
         filename = fn if mime.to_s == ext_mime.to_s
