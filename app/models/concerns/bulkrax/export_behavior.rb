@@ -1,4 +1,6 @@
 # frozen_string_literal: true
+require 'marcel'
+
 module Bulkrax
   module ExportBehavior
     extend ActiveSupport::Concern
