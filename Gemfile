@@ -21,7 +21,6 @@ gem 'oai'
 gem 'rsolr', '>= 1.0'
 gem 'rspec-rails'
 gem 'twitter-typeahead-rails', '0.11.1.pre.corejavascript'
-gem 'mime-types'
 
 group :development, :test do
   # To use a debugger
