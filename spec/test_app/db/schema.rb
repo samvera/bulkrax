@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2022_07_26_164334) do
+ActiveRecord::Schema.define(version: 2023_03_16_001839) do
 
   create_table "accounts", force: :cascade do |t|
     t.string "name"
@@ -41,6 +41,15 @@ ActiveRecord::Schema.define(version: 2022_07_26_164334) do
     t.datetime "last_succeeded_at"
     t.string "importerexporter_type", default: "Bulkrax::Importer"
     t.integer "import_attempts", default: 0
+  end
+
+  create_table "bulkrax_entry_derivatives", force: :cascade do |t|
+    t.integer "entry_id", null: false
+    t.string "derivative_type", null: false
+    t.text "path", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entry_id"], name: "index_bulkrax_entry_derivatives_on_entry_id"
   end
 
   create_table "bulkrax_exporter_runs", force: :cascade do |t|

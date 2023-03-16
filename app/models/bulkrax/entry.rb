@@ -16,6 +16,8 @@ module Bulkrax
     alias importer importerexporter
     alias exporter importerexporter
 
+    has_many :derivatives, dependent: :destroy
+
     serialize :parsed_metadata, Bulkrax::NormalizedJson
     # Do not serialize raw_metadata as so we can support xml or other formats
     serialize :collection_ids, Array
