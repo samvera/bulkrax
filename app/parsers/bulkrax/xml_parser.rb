@@ -93,7 +93,6 @@ module Bulkrax
     end
 
     def create_works
-      byebug
       records.each_with_index do |record, index|
         next unless record_has_source_identifier(record, index)
         break if !limit.nil? && index >= limit
