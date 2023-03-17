@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'samvera/derivatives/configuration'
+
 ##
 # Why Samvera and not Hyrax?  Because there are folks creating non-Hyrax applications that will
 # almost certainly want to leverage this work.  And there might be switches for `defined?(Hyrax)`.
@@ -17,13 +19,83 @@ module Samvera
   # This module separates the finding/creation of a derivative binary (via {FileLocator}) and
   # applying that derivative to the FileSet (via {FileApplicator}).
   #
-  # @todo Consider how we might bundle/adapt the existing Hyrax::FileSetDerivativesService to serve
-  #       as both a locator and an applicator.  What would need to be true?  Conceptually it's a bit
-  #       challenging because the mapping of behavior is different.  However, it would be possible
-  #       to have the FileLocator fail to return any paths and then if the paths are nil, run the
-  #       corresponding Hyrax::FileSetDerivativesService; which because of the many different types
-  #       might result in attempting to create multiple derivatives.
+  # In working on the interface and objects there is an effort to preserve backwards functionality
+  # while also allowing for a move away from that functionality.
+  #
+  # There are three primary concepts to consider:
+  #
+  # - Locator :: responsible for knowing where the derivative is
+  # - Location :: responsible for encapsulating the location
+  # - Applicator :: responsible for applying the located derivative to the FileSet
+  #
+  # The "trick" in this is in the polymorphism of the Location.  Let's say we have the following
+  # desired functionality for the thumbnail derivative:
+  #
+  #   ```gherkin
+  #   Given a FileSet
+  #   When I provide a thumbnail derivative
+  #   Then I want to add that as the thumbnail for the FileSet
+  #
+  #   Given a FileSet
+  #   When I do not provide a thumbnail derivative
+  #   Then I want to generate a thumbnail
+  #     And add the generated as the thumbnail for the FileSet
+  #   ```
+  #
+  # In the above case we would have two Locator strategies:
+  #
+  # - Find Existing One
+  # - Will Generate One (e.g. Hyrax::FileSetDerivativeService with Hydra::Derivative behavior)
+  #
+  # And we would have two Applicator strategies:
+  #
+  # - Apply an Existing One
+  # - Generate One and Apply (e.g. Hyrax::FileSetDerivativeService with Hydra::Derivative behavior)
+  #
+  # The Location from the first successful Locator will dictate how the ApplicatorStrategies do
+  # their work.
   module Derivatives
+    ##
+    # @api public
+    #
+    # Responsible for configuration of derivatives.
+    #
+    # @yield [Configuration]
+    #
+    # @return [Configuration]
+    def self.config
+      @config ||= Configuration.new
+      yield(@config) if block_given?
+      @config
+    end
+
+    ##
+    # @api public
+    #
+    # Locate the derivative for the given :file_set and apply it to that :file_set.
+    #
+    # @param file_set [FileSet]
+    # @param derivative [Samvera::Derivatives::Configuration::RegisteredType]
+    # @param file_path [String]
+    #
+    # @note As a concession to existing implementations of creating derivatives, file_path is
+    #       included as a parameter.
+    def self.locate_and_apply_derivative_for(file_set:, derivative:, file_path:)
+      return false unless derivative.applicable_for?(file_set: file_set)
+
+      from_location = FileLocator.call(
+        file_set: file_set,
+        file_path: file_path,
+        derivative: derivative
+      )
+
+      FileApplicator.call(
+        from_location: from_location,
+        file_set: file_set,
+        derivative: derivative
+      )
+    end
+
     ##
     # The purpose of this module is to find the derivative file path for a FileSet and a given
     # derivative type (e.g. :thumbnail).
@@ -41,29 +113,27 @@ module Samvera
       # derivative type.
       #
       # @param file_set [FileSet]
-      # @param derivative_type [#to_sym]
-      # @param strategies [Array<#find>]
+      # @param file_path [String]
+      # @param derivative [Samvera::Derivatives::Configuration::RegisteredType]
       #
-      # @return [Array<String>] path to files that are the desired derivative type.
+      # @return [Samvera::Derivatives::FromLocation]
       #
       # @note Why {.call}?  This allows for a simple lambda interface, which can greatly ease testing
       #       and composition.
-      def self.call(file_set:, derivative_type:, strategies: default_strategies)
-        paths = nil
+      def self.call(file_set:, file_path:, derivative:)
+        from_location = nil
 
-        strategies.each do |strategy|
-          paths = strategy.find(file_set: file_set, derivative_type: derivative_type)
-          break if paths.present?
+        derivative.locators.each do |locator|
+          from_location = locator.locate(
+            file_set: file_set,
+            file_path: file_path,
+            derivative_type: derivative.type
+          )
+          break if from_location.present?
         end
 
-        # TODO: How do we handle the nil case?
-        paths
+        from_location
       end
-
-      def self.default_strategies
-        [Strategy]
-      end
-      private_class_method :default_strategies
 
       ##
       # @abstract
@@ -75,11 +145,12 @@ module Samvera
         ##
         # @api public
         # @param file_set [FileSet]
+        # @param file_path [String]
         # @param derivative_type [#to_sym]
         #
-        # @return [Array<String>] when this is a valid strategy
+        # @return [Samvera::Derivatives::FromLocation] when this is a valid strategy
         # @return [NilClass] when this is not a valid strategy
-        def self.find(file_set:, derivative_type:)
+        def self.locate(file_set:, file_path:, derivative_type:)
           raise NotImplementedError
         end
       end
@@ -87,23 +158,20 @@ module Samvera
 
     module FileApplicator
       ##
-      # @api
+      # @api public
       #
       # @param file_set [FileSet]
-      # @param derivative_type [#to_sym]
-      # @param from_paths [Array<String>] the paths of the files that are to be applied/written to
-      #        the :file_set
-      # @param strategies [Array<#write!>]
-      def self.call(file_set:, derivative_type:, from_paths:, strategies: default_strategies)
-        strategies.each do |strategy|
-          strategy.write!(file_set: file_set, derivative_type: derivative_type, from_paths: from_paths)
+      # @param from_location [#present?]
+      # @param derivative [Array<#apply!>]
+      def self.call(file_set:, from_location:, derivative:)
+        # rubocop:disable Rails/Blank
+        return false unless from_location.present?
+        # rubocop:enable Rails/Blank
+
+        derivative.applicators.each do |applicator|
+          applicator.apply!(file_set: file_set, derivative_type: derivative.type, from_location: from_location)
         end
       end
-
-      def self.default_strategies
-        [Strategy]
-      end
-      private_class_method :default_strategies
 
       ##
       # @abstract
@@ -112,12 +180,49 @@ module Samvera
       #
       # @see {.find}
       class Strategy
+        # In some cases the FromLocation knows how to write itself; this is the case when we wrap
+        # the Hyrax::FileSetDerivativeService.
+        class_attribute :delegate_apply_to_given_from_location, default: false
+
         ##
         # @param file_set [FileSet]
         # @param derivative_type [#to_sym]
-        # @param from_paths [Array<String>] the paths of the files that are to be applied/written to
-        #        the :file_set
-        def self.write!(file_set:, derivative_type:, from_paths:)
+        # @param from_location [Object]
+        def self.apply!(file_set:, derivative_type:, from_location:)
+          new(file_set: file_set, derivative_type: derivative_type, from_location: from_location).apply!
+        end
+
+        def initialize(file_set:, derivative_type:, from_location:)
+          @file_set = file_set
+          @derivative_type = derivative_type
+          @from_location = from_location
+        end
+        attr_reader :file_set, :derivative_type, :from_location
+
+        # @note What's going on with this logic?  To continue to leverage
+        #       Hyrax::FileSetDerivativeService, we want to let that wrapped service (as a
+        #       FromLocation) to do it's original work.  However, we might have multiple strategies
+        #       in play for application.  That case is when we want to first check for an existing
+        #       thumbnail and failing that generate the thumbnail.  The from_location could either
+        #       be the found thumbnail...or it could be the wrapped Hyrax::FileSetDerivativeService
+        #       that will create the thumbnail and write it to the location.  The two applicator
+        #       strategies in that case would be the wrapper and logic that will write the found
+        #       file to the correct derivative path.
+        def apply!
+          if delegate_apply_to_given_from_location?
+            return false unless from_location.respond_to?(:apply!)
+
+            from_location.apply!(file_set: file_set, derivative_type: derivative_type)
+          else
+            return false if from_location.respond_to?(:apply!)
+
+            perform_apply!
+          end
+        end
+
+        private
+
+        def perform_apply!
           raise NotImplementedError
         end
       end
