@@ -1,6 +1,6 @@
+
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- This grammar has been deprecated - use FMPXMLRESULT instead -->
-<FMPDSORESULT xmlns="http://www.filemaker.com/fmpdsoresult">
+<FMPXMLRESULT xmlns="http://www.filemaker.com/fmpxmlresult">
   <ROW MODID="1" RECORDID="000001">
     <TitleLargerEntity>XML Test 1</TitleLargerEntity>
     <Abstract>Lorem ipsum dolor sit amet.</Abstract>
@@ -11,4 +11,4 @@
     <Abstract>Lorem ipsum dolor sit amet.</Abstract>
     <DrisUnique>6543210</DrisUnique>
   </ROW>
-</FMPDSORESULT>
+</FMPXMLRESULT>

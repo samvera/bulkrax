@@ -79,17 +79,21 @@ module Bulkrax
     # Otherwise return all xml files in the given folder
     def metadata_paths
       @metadata_paths ||=
-        if file? && ::Marcel::MimeType.for(import_file_path).include?('application/xml')
+        if file? && good_file_type?(import_file_path)
           [import_file_path]
         else
           file_paths.select do |f|
-            ::Marcel::MimeType.for(f).include?('application/xml') &&
-              f.include?("import_#{importerexporter.id}")
+            good_file_type?(f) && f.include?("import_#{importerexporter.id}")
           end
         end
     end
 
+    def good_file_type?(path)
+      File.extname(path) || ::Marcel::MimeType.for(path).include?('application/xml')
+    end
+
     def create_works
+      byebug
       records.each_with_index do |record, index|
         next unless record_has_source_identifier(record, index)
         break if !limit.nil? && index >= limit
