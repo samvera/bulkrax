@@ -32,7 +32,7 @@ namespace :hyrax do
       Mailboxer::Notification.delete_all
       Mailboxer::Conversation::OptOut.delete_all
       Mailboxer::Conversation.delete_all
-      AccountElevator.switch!(Site.instance.current_account) if defined?(AccountElevator)
+      AccountElevator.switch!(Site.instance.account) if defined?(AccountElevator)
       # we need to wait till Fedora is done with its cleanup
       # otherwise creating the admin set will fail
       while AdminSet.exists?(AdminSet::DEFAULT_ID)
