@@ -90,7 +90,7 @@ module Bulkrax
         @candidate_file_set_ids ||= works.flat_map { |work| work.fetch("#{Bulkrax.file_model_name.to_s.underscore}_ids_ssim", []) }
       end
 
-      # @note Specifically not memorizing this so we can merge values without changing the object.
+      # @note Specifically not memoizing this so we can merge values without changing the object.
       #
       # No sense attempting to query for more than the limit.
       def query_kwargs
