@@ -45,12 +45,12 @@ module Samvera
   # In the above case we would have two Locator strategies:
   #
   # - Find Existing One
-  # - Will Generate One (e.g. Hyrax::FileSetDerivativeService with Hydra::Derivative behavior)
+  # - Will Generate One (e.g. Hyrax::FileSetDerivativesService with Hydra::Derivative behavior)
   #
   # And we would have two Applicator strategies:
   #
   # - Apply an Existing One
-  # - Generate One and Apply (e.g. Hyrax::FileSetDerivativeService with Hydra::Derivative behavior)
+  # - Generate One and Apply (e.g. Hyrax::FileSetDerivativesService with Hydra::Derivative behavior)
   #
   # The Location from the first successful Locator will dictate how the ApplicatorStrategies do
   # their work.
@@ -59,6 +59,13 @@ module Samvera
     # @api public
     #
     # Responsible for configuration of derivatives.
+    #
+    # @example
+    #   Samvera::Derivative.config do |config|
+    #     config.register(type: :thumbnail, applicators: [CustomApplicator], locators: [CustomLocator]) do |file_set|
+    #       file_set.video? || file_set.audio? || file_set.image?
+    #     end
+    #   end
     #
     # @yield [Configuration]
     #
@@ -181,7 +188,7 @@ module Samvera
       # @see {.find}
       class Strategy
         # In some cases the FromLocation knows how to write itself; this is the case when we wrap
-        # the Hyrax::FileSetDerivativeService.
+        # the Hyrax::FileSetDerivativesService.
         class_attribute :delegate_apply_to_given_from_location, default: false
 
         ##
@@ -200,11 +207,11 @@ module Samvera
         attr_reader :file_set, :derivative_type, :from_location
 
         # @note What's going on with this logic?  To continue to leverage
-        #       Hyrax::FileSetDerivativeService, we want to let that wrapped service (as a
+        #       Hyrax::FileSetDerivativesService, we want to let that wrapped service (as a
         #       FromLocation) to do it's original work.  However, we might have multiple strategies
         #       in play for application.  That case is when we want to first check for an existing
         #       thumbnail and failing that generate the thumbnail.  The from_location could either
-        #       be the found thumbnail...or it could be the wrapped Hyrax::FileSetDerivativeService
+        #       be the found thumbnail...or it could be the wrapped Hyrax::FileSetDerivativesService
         #       that will create the thumbnail and write it to the location.  The two applicator
         #       strategies in that case would be the wrapper and logic that will write the found
         #       file to the correct derivative path.

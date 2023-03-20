@@ -15,7 +15,7 @@ module Samvera
     #       - type :mp4 with sources [:video]
     #
     # @note A long-standing practice of Samvera's Hyrax has been to have assumptive and implicit
-    #       derivative generation (see Hyrax::FileSetDerivativeService).  In being implicit, a
+    #       derivative generation (see Hyrax::FileSetDerivativesService).  In being implicit, a
     #       challenge arises, namely overriding and configuring.  There exists a crease in the code
     #       to allow for a different derivative approach (see Hyrax::DerivativeService).  Yet that
     #       approach continues the tradition of implicit work.
@@ -26,6 +26,7 @@ module Samvera
         @registered_types = {}
       end
 
+      # TODO: Consider the appropriate extension
       RegisteredType = Struct.new(:type, :locators, :applicators, :applicability, keyword_init: true) do
         def applicable_for?(file_set:)
           applicability.call(file_set)

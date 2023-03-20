@@ -34,7 +34,7 @@ RSpec.describe Samvera::Derivatives::Hyrax::ServiceShim do
     context 'when other locator and applicator are not applicable' do
       it 'locates and applies the derivatives using the underlying service' do
         expect_any_instance_of(Samvera::Derivatives::Hyrax::FileApplicatorStrategy).to receive(:apply!).and_call_original
-        expect_any_instance_of(Samvera::Derivatives::Hyrax::FileSetDerivativeServiceWrapper).to receive(:apply!).and_call_original
+        expect_any_instance_of(Samvera::Derivatives::Hyrax::FileSetDerivativesServiceWrapper).to receive(:apply!).and_call_original
         expect_any_instance_of(::Hyrax::FileSetDerivativesService).to receive(:valid?).and_return(true)
         expect_any_instance_of(::Hyrax::FileSetDerivativesService).to receive(:create_derivatives).with(file_path)
         expect(other_applicator).to receive(:apply!)
@@ -50,7 +50,7 @@ RSpec.describe Samvera::Derivatives::Hyrax::ServiceShim do
         # Yes, we will attempt to apply the derivative...
         expect_any_instance_of(Samvera::Derivatives::Hyrax::FileApplicatorStrategy).to receive(:apply!).and_call_original
         # ...however, we won't be leveraging the wrapper's derivative work; meaning no default behavior.
-        expect_any_instance_of(Samvera::Derivatives::Hyrax::FileSetDerivativeServiceWrapper).not_to receive(:apply!)
+        expect_any_instance_of(Samvera::Derivatives::Hyrax::FileSetDerivativesServiceWrapper).not_to receive(:apply!)
         expect_any_instance_of(::Hyrax::FileSetDerivativesService).not_to receive(:valid?)
         expect_any_instance_of(::Hyrax::FileSetDerivativesService).not_to receive(:create_derivatives)
         expect(other_applicator).to receive(:apply!)

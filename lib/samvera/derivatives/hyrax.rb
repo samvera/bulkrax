@@ -2,7 +2,7 @@
 
 module Samvera
   module Derivatives
-    # The default behavior of {Hyrax::FileSetDerivativeService} is to create a derivative and then
+    # The default behavior of {Hyrax::FileSetDerivativesService} is to create a derivative and then
     # apply it to the FileSet.  This module wraps that behavior such that we can leverage the
     # {Samvera::Derivatives} module and interfaces to handle cases where some of the derivatives
     # already exist.
@@ -59,7 +59,7 @@ module Samvera
 
       class FileApplicatorStrategy < Samvera::Derivatives::FileApplicator::Strategy
         # With this set to true, we're telling the applicator to use the from_location
-        # (e.g. {Samvera::Derivatives::Hyrax::FileSetDerivativeServiceWrapper}) to apply the
+        # (e.g. {Samvera::Derivatives::Hyrax::FileSetDerivativesServiceWrapper}) to apply the
         # derivatives.
         self.delegate_apply_to_given_from_location = true
       end
@@ -69,13 +69,13 @@ module Samvera
         #
         # @see Samvera::Derivatives::FileLocator::Strategy
         #
-        # @return [Samvera::Derivatives::Hyrax::FileSetDerivativeServiceWrapper]
+        # @return [Samvera::Derivatives::Hyrax::FileSetDerivativesServiceWrapper]
         def self.locate(file_set:, file_path:, **)
           file_set.samvera_derivatives_default_from_location_wrapper(file_path: file_path)
         end
       end
 
-      class FileSetDerivativeServiceWrapper
+      class FileSetDerivativesServiceWrapper
         class_attribute :wrapped_derivative_service_class, default: ::Hyrax::FileSetDerivativesService
 
         # @param file_set [FileSet]
@@ -95,7 +95,7 @@ module Samvera
         # @see Samvera::Derivatives::FileApplicator::Strategy
         def apply!(*)
           # Why the short-circuit? By the nature of the underlying
-          # ::Hyrax::FileSetDerivativeService, we generate multiple derivatives in one pass.  But
+          # ::Hyrax::FileSetDerivativesService, we generate multiple derivatives in one pass.  But
           # with the implementation of Samvera::Derivatives, we declare the derivatives and then
           # iterate on locating and applying them.  With this short-circuit, we will only apply the
           # derivatives once.
@@ -114,10 +114,10 @@ module Samvera
       #
       # @see Samvera::Derivatives.locate_and_apply_derivative_for
       module FileSetDecorator
-        # @return [Samvera::Derivatives::Hyrax::FileSetDerivativeServiceWrapper]
+        # @return [Samvera::Derivatives::Hyrax::FileSetDerivativesServiceWrapper]
         def samvera_derivatives_default_from_location_wrapper(file_path:)
           @samvera_derivatives_default_from_location_wrapper ||=
-            Samvera::Derivatives::Hyrax::FileSetDerivativeServiceWrapper.new(file_set: self, file_path: file_path)
+            Samvera::Derivatives::Hyrax::FileSetDerivativesServiceWrapper.new(file_set: self, file_path: file_path)
         end
       end
     end
