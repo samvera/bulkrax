@@ -17,7 +17,7 @@ module Bulkrax
                    :default_work_type,
                    :export_path,
                    :field_mappings,
-                   :file_model_name,
+                   :file_model_class,
                    :fill_in_blank_source_identifiers,
                    :generated_metadata_mapping,
                    :import_path,
@@ -28,7 +28,7 @@ module Bulkrax
                    :qa_controlled_properties,
                    :related_children_field_mapping,
                    :related_parents_field_mapping,
-                   :relationship_job,
+                   :relationship_job_class,
                    :removed_image_path,
                    :reserved_properties,
                    :server_name
@@ -144,12 +144,12 @@ module Bulkrax
     []
   end
 
-  def self.file_model_name
+  def self.file_model_class
     return ::FileSet if defined?(::Hyrax)
     File
   end
 
-  def self.relationship_job
+  def self.relationship_job_class
     CreateRelationshipsJob
   end
 

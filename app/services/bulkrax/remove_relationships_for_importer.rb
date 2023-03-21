@@ -50,13 +50,12 @@ module Bulkrax
 
     attr_reader :entries, :progress_bar
 
-    # @todo(bjustice) - remove hyrax reference
     def break_relationships!
       entries.each do |entry|
         progress_bar.increment
 
         obj = entry.factory.find
-        next if obj.is_a?(Bulkrax.file_model_name) # FileSets must be attached to a Work
+        next if obj.is_a?(Bulkrax.file_model_class) # FileSets must be attached to a Work
 
         if obj.is_a?(Collection)
           remove_relationships_from_collection(obj)
@@ -64,12 +63,11 @@ module Bulkrax
           remove_relationships_from_work(obj)
         end
 
-        obj.try(:reindex_extent=, Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX)
+        obj.try(:reindex_extent=, Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX) if defined?(Hyrax)
         obj.save!
       end
     end
 
-    # @todo(bjustice) - remove hyrax reference
     def remove_relationships_from_collection(collection)
       # Remove child work relationships
       collection.member_works.each do |work|
@@ -77,16 +75,18 @@ module Bulkrax
         work.save! if change.present?
       end
 
-      # Remove parent collection relationships
-      collection.member_of_collections.each do |parent_col|
-        Hyrax::Collections::NestedCollectionPersistenceService
-          .remove_nested_relationship_for(parent: parent_col, child: collection)
-      end
+      if defined?(Hyrax)
+        # Remove parent collection relationships
+        collection.member_of_collections.each do |parent_col|
+          Hyrax::Collections::NestedCollectionPersistenceService
+            .remove_nested_relationship_for(parent: parent_col, child: collection)
+        end
 
-      # Remove child collection relationships
-      collection.member_collections.each do |child_col|
-        Hyrax::Collections::NestedCollectionPersistenceService
-          .remove_nested_relationship_for(parent: collection, child: child_col)
+        # Remove child collection relationships
+        collection.member_collections.each do |child_col|
+          Hyrax::Collections::NestedCollectionPersistenceService
+            .remove_nested_relationship_for(parent: collection, child: child_col)
+        end
       end
     end
 
