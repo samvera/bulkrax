@@ -13,10 +13,12 @@
       <strong>Name:</strong>
       <%= @importer.name %>
     </p>
-    <p class="bulkrax-p-align">
-      <strong>Admin set:</strong>
-      <%= @importer.admin_set_id %>
-    </p>
+    <% if defined?(::Hyrax) %>
+      <p class="bulkrax-p-align">
+        <strong>Admin set:</strong>
+        <%= @importer.admin_set_id %>
+      </p>
+    <% end %>
     <p class="bulkrax-p-align">
       <strong>User:</strong>
       <%= @importer.user %>

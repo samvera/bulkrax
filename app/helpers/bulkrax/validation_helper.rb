@@ -3,7 +3,7 @@
 module Bulkrax
   module ValidationHelper
     def valid_create_params?
-      check_admin_set
+      check_admin_set if defined?(::Hyrax)
       check_user
       return true if valid_importer? &&
                      valid_commit? &&
@@ -13,7 +13,7 @@ module Bulkrax
     end
 
     def valid_update_params?
-      check_admin_set
+      check_admin_set if defined?(::Hyrax)
       check_user
       return valid_commit?
     end
