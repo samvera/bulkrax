@@ -89,8 +89,14 @@ module Bulkrax
     end
 
     def missing_elements(record)
-      keys = keys_without_numbers(record.reject { |_, v| v.blank? }.keys.compact.uniq.map(&:to_s))
-      required_elements.map(&:to_s) - keys.map(&:to_s)
+      keys_from_record = keys_without_numbers(record.reject { |_, v| v.blank? }.keys.compact.uniq.map(&:to_s))
+      keys = []
+      importerexporter.mapping.map do |k, v|
+        v[:from].each do |vf|
+          keys << k if keys_from_record.include?(vf)
+        end
+      end
+      required_elements.map(&:to_s) - keys.uniq.map(&:to_s)
     end
 
     def valid_import?
