@@ -94,7 +94,7 @@ module Bulkrax
       #
       # No sense attempting to query for more than the limit.
       def query_kwargs
-        {fl: "id,#{Bulkrax.file_model_class.to_s.underscore}_ids_ssim", method: :post, rows: row_limit }
+        { fl: "id,#{Bulkrax.file_model_class.to_s.underscore}_ids_ssim", method: :post, rows: row_limit }
       end
 
       # If we have a limit, we need not query beyond that limit

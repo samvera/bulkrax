@@ -75,18 +75,18 @@ module Bulkrax
         work.save! if change.present?
       end
 
-      if defined?(Hyrax)
-        # Remove parent collection relationships
-        collection.member_of_collections.each do |parent_col|
-          Hyrax::Collections::NestedCollectionPersistenceService
-            .remove_nested_relationship_for(parent: parent_col, child: collection)
-        end
+      return if defined?(Hyrax)
 
-        # Remove child collection relationships
-        collection.member_collections.each do |child_col|
-          Hyrax::Collections::NestedCollectionPersistenceService
-            .remove_nested_relationship_for(parent: collection, child: child_col)
-        end
+      # Remove parent collection relationships
+      collection.member_of_collections.each do |parent_col|
+        Hyrax::Collections::NestedCollectionPersistenceService
+          .remove_nested_relationship_for(parent: parent_col, child: collection)
+      end
+
+      # Remove child collection relationships
+      collection.member_collections.each do |child_col|
+        Hyrax::Collections::NestedCollectionPersistenceService
+          .remove_nested_relationship_for(parent: collection, child: child_col)
       end
     end
 
