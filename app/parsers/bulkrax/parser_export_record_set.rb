@@ -87,14 +87,14 @@ module Bulkrax
       #
       # @see #file_sets
       def candidate_file_set_ids
-        @candidate_file_set_ids ||= works.flat_map { |work| work.fetch("#{Bulkrax.file_model_name.to_s.underscore}_ids_ssim", []) }
+        @candidate_file_set_ids ||= works.flat_map { |work| work.fetch("#{Bulkrax.file_model_class.to_s.underscore}_ids_ssim", []) }
       end
 
       # @note Specifically not memoizing this so we can merge values without changing the object.
       #
       # No sense attempting to query for more than the limit.
       def query_kwargs
-        { fl: "id,#{Bulkrax.file_model_name.to_s.underscore}_ids_ssim", method: :post, rows: row_limit }
+        { fl: "id,#{Bulkrax.file_model_class.to_s.underscore}_ids_ssim", method: :post, rows: row_limit }
       end
 
       # If we have a limit, we need not query beyond that limit
@@ -146,7 +146,7 @@ module Bulkrax
       # @see https://github.com/scientist-softserv/britishlibrary/issues/289
       # @see https://github.com/samvera/hyrax/blob/64c0bbf0dc0d3e1b49f040b50ea70d177cc9d8f6/app/indexers/hyrax/work_indexer.rb#L15-L18
       def file_sets_query
-        "has_model_ssim:#{Bulkrax.file_model_name} AND id:(#{candidate_file_set_ids.join(' OR ')}) #{extra_filters}"
+        "has_model_ssim:#{Bulkrax.file_model_class} AND id:(#{candidate_file_set_ids.join(' OR ')}) #{extra_filters}"
       end
 
       def file_set_query_kwargs
@@ -248,7 +248,7 @@ module Bulkrax
         query_kwargs.merge(
           fq: [
             %(#{solr_name(work_identifier)}:("#{complete_entry_identifiers.join('" OR "')}")),
-            "has_model_ssim:#{Bulkrax.file_model_name}"
+            "has_model_ssim:#{Bulkrax.file_model_class}"
           ],
           fl: 'id'
         )
