@@ -103,9 +103,10 @@ module Bulkrax
     end
 
     def add_metadata_for_model
-      if factory_class == Collection
-        add_collection_type_gid
-      elsif factory_class == FileSet
+      if defined?(::Collection) && factory_class == ::Collection
+        add_collection_type_gid if defined?(Hyrax)
+        # add any additional collection metadata methods here
+      elsif factory_class == Bulkrax.file_model_class
         validate_presence_of_filename!
         add_path_to_file
         validate_presence_of_parent!

@@ -55,7 +55,7 @@ module Bulkrax
         progress_bar.increment
 
         obj = entry.factory.find
-        next if obj.is_a?(FileSet) # FileSets must be attached to a Work
+        next if obj.is_a?(Bulkrax.file_model_class) # FileSets must be attached to a Work
 
         if obj.is_a?(Collection)
           remove_relationships_from_collection(obj)
@@ -63,7 +63,7 @@ module Bulkrax
           remove_relationships_from_work(obj)
         end
 
-        obj.try(:reindex_extent=, Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX)
+        obj.try(:reindex_extent=, Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX) if defined?(Hyrax)
         obj.save!
       end
     end
@@ -74,6 +74,8 @@ module Bulkrax
         change = work.member_of_collections.delete(collection)
         work.save! if change.present?
       end
+
+      return if defined?(Hyrax)
 
       # Remove parent collection relationships
       collection.member_of_collections.each do |parent_col|

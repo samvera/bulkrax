@@ -12,10 +12,12 @@ module Bulkrax
     #       modify these config values are modifying global state.  Which is not desirous, as it can
     #       introduce unexpected flakey tests.
     mattr_accessor :api_definition,
+                   :curation_concerns,
                    :default_field_mapping,
                    :default_work_type,
                    :export_path,
                    :field_mappings,
+                   :file_model_class,
                    :fill_in_blank_source_identifiers,
                    :generated_metadata_mapping,
                    :import_path,
@@ -26,6 +28,7 @@ module Bulkrax
                    :qa_controlled_properties,
                    :related_children_field_mapping,
                    :related_parents_field_mapping,
+                   :relationship_job_class,
                    :removed_image_path,
                    :reserved_properties,
                    :server_name
@@ -134,6 +137,20 @@ module Bulkrax
     # the config/authorities/ directory. For example, the :rights_statement property
     # is controlled by the active terms in config/authorities/rights_statements.yml
     self.qa_controlled_properties = %w[rights_statement license]
+  end
+
+  def self.curation_concerns
+    return ::Hyrax.config.curation_concerns if defined?(::Hyrax)
+    []
+  end
+
+  def self.file_model_class
+    return ::FileSet if defined?(::Hyrax)
+    File
+  end
+
+  def self.relationship_job_class
+    CreateRelationshipsJob
   end
 
   def self.api_definition

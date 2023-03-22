@@ -16,6 +16,8 @@ module Bulkrax
   #       to either an instance of a Work or an instance of a Collection.
   # NOTE: In the context of this job, "identifier" is used to generically refer
   #       to either a record's ID or an Bulkrax::Entry's source_identifier.
+  # Please override with your own job for custom/non-hyrax applications
+  # set Bulkrax config variable :relationship_job to your custom class
   class CreateRelationshipsJob < ApplicationJob
     ##
     # @api public

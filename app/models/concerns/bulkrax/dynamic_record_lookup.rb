@@ -42,7 +42,7 @@ module Bulkrax
       @available_work_types ||= if defined?(::Hyku)
                                   ::Site.instance.available_works.map(&:constantize)
                                 else
-                                  ::Hyrax.config.curation_concerns
+                                  Bulkrax.curation_concerns
                                 end
     end
   end

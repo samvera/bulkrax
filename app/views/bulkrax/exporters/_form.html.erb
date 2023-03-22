@@ -52,16 +52,13 @@
     }
   %>
 
-  <%  if defined?(::Hyrax) %>
-    <%= form.input :export_source_worktype,
+  <%= form.input :export_source_worktype,
     label: t('bulkrax.exporter.labels.worktype'),
     required: true,
     prompt: 'Select from the list',
     label_html: { class: 'worktype export-source-option hidden' },
     input_html: { class: 'worktype export-source-option hidden form-control' },
-    collection: Hyrax.config.curation_concerns.map {|cc| [cc.to_s, cc.to_s] } %>
-  <% end %>
-  
+    collection: Bulkrax.curation_concerns.map { |cc| [cc.to_s, cc.to_s] } %>
 
   <%= form.input :limit,
     as: :integer,

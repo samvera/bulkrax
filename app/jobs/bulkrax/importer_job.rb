@@ -12,7 +12,7 @@ module Bulkrax
       import(importer, only_updates_since_last_import)
       update_current_run_counters(importer)
       schedule(importer) if importer.schedulable?
-    rescue CSV::MalformedCSVError => e
+    rescue ::CSV::MalformedCSVError => e
       importer.set_status_info(e)
     end
 

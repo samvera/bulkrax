@@ -51,7 +51,7 @@ module Bulkrax
           record_data = entry_class.data_for_entry(data_row, source_identifier, self)
           next record_data if importerexporter.metadata_only?
 
-          record_data[:file] = bag.bag_files.join('|') if ::Hyrax.config.curation_concerns.include? record_data[:model]&.constantize
+          record_data[:file] = bag.bag_files.join('|') if Bulkrax.curation_concerns.include? record_data[:model]&.constantize
           record_data
         end
       else
@@ -173,6 +173,7 @@ module Bulkrax
       File.join(path, id)
     end
 
+    # @todo(bjustice) - remove hyrax reference
     def write_triples(folder_count, e)
       sd = SolrDocument.find(e.identifier)
       return if sd.nil?
