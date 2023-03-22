@@ -30,6 +30,7 @@ module Bulkrax
                    :related_parents_field_mapping,
                    :relationship_job_class,
                    :removed_image_path,
+                   :required_elements,
                    :reserved_properties,
                    :server_name
 
@@ -151,6 +152,10 @@ module Bulkrax
 
   def self.relationship_job_class
     CreateRelationshipsJob
+  end
+
+  def self.required_elements
+    ['title']
   end
 
   def self.api_definition
