@@ -154,6 +154,10 @@ module Bulkrax
     CreateRelationshipsJob
   end
 
+  def self.required_elements
+    ['title']
+  end
+
   def self.api_definition
     @api_definition ||= ActiveSupport::HashWithIndifferentAccess.new(
       YAML.safe_load(
