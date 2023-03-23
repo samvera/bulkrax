@@ -50,7 +50,7 @@ module Bulkrax
 
       add_visibility
       add_rights_statement
-      add_admin_set_id if defined?(::Hyrax)
+      add_admin_set_id
       add_collections
       add_local
 

@@ -112,7 +112,7 @@ module Bulkrax
         validate_presence_of_parent!
       else
         add_file unless importerexporter.metadata_only?
-        add_admin_set_id if defined?(::Hyrax)
+        add_admin_set_id
       end
     end
 
