@@ -5,10 +5,8 @@ module Bulkrax
     def valid_create_params?
       check_admin_set
       check_user
-      return true if valid_importer? &&
-                     valid_commit? &&
-                     valid_name? &&
-                     valid_parser_klass? &&
+      return true if valid_importer? && valid_commit? &&
+                     valid_name? && valid_parser_klass? &&
                      valid_parser_fields?
     end
 
