@@ -101,8 +101,8 @@ module Bulkrax
     end
 
     # Only add valid resource types
-    # @todo(bjustice) - remove hyrax reference NOT USED?
     def parse_resource_type(src)
+      ActiveSupport::Deprecation.warn("#parse_resource_type will be removed in the near future. ")
       Hyrax::ResourceTypesService.label(src.to_s.strip.titleize)
     rescue KeyError
       nil
