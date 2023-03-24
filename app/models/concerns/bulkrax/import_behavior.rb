@@ -93,6 +93,8 @@ module Bulkrax
     end
 
     def add_admin_set_id
+      return unless defined?(::Hyrax)
+
       self.parsed_metadata['admin_set_id'] = importerexporter.admin_set_id if self.parsed_metadata['admin_set_id'].blank?
     end
 

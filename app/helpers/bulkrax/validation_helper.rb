@@ -5,10 +5,8 @@ module Bulkrax
     def valid_create_params?
       check_admin_set
       check_user
-      return true if valid_importer? &&
-                     valid_commit? &&
-                     valid_name? &&
-                     valid_parser_klass? &&
+      return true if valid_importer? && valid_commit? &&
+                     valid_name? && valid_parser_klass? &&
                      valid_parser_fields?
     end
 
@@ -19,6 +17,8 @@ module Bulkrax
     end
 
     def check_admin_set
+      return unless defined?(::Hyrax)
+
       if params[:importer][:admin_set_id].blank?
         params[:importer][:admin_set_id] = AdminSet::DEFAULT_ID
       else
