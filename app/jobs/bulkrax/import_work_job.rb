@@ -5,24 +5,37 @@ module Bulkrax
     queue_as :import
 
     # rubocop:disable Rails/SkipsModelValidations
+    #
+    # @note Yes, we are calling {ImporterRun.find} each time.  these were on purpose to prevent race
+    #       conditions on the database update. If you do not re-find (or at least reload) the object
+    #       on each increment, the count can get messed up. Let's say there are two jobs A and B and
+    #       a counter set to 2.
+    #
+    #       - A grabs the importer_run (line 10)
+    #       - B grabs the importer_run (line 10)
+    #       - A Finishes the build, does the increment (now the counter is 3)
+    #       - B Finishes the build, does the increment (now the counter is 3 again) and thus a count
+    #         is lost.
+    #
+    # @see https://codingdeliberately.com/activerecord-increment/
+    # @see https://github.com/samvera-labs/bulkrax/commit/5c2c795452e13a98c9217fdac81ae2f5aea031a0#r105848236
     def perform(entry_id, run_id, time_to_live = 3, *)
       entry = Entry.find(entry_id)
-      importer_run = ImporterRun.find(run_id)
       entry.build
       if entry.status == "Complete"
-        importer_run.increment!(:processed_records)
-        importer_run.increment!(:processed_works)
+        ImporterRun.find(run_id).increment!(:processed_records)
+        ImporterRun.find(run_id).increment!(:processed_works)
       else
         # do not retry here because whatever parse error kept you from creating a work will likely
         # keep preventing you from doing so.
-        importer_run.increment!(:failed_records)
-        importer_run.increment!(:failed_works)
+        ImporterRun.find(run_id).increment!(:failed_records)
+        ImporterRun.find(run_id).increment!(:failed_works)
       end
       # Regardless of completion or not, we want to decrement the enqueued records.
-      importer_run.decrement!(:enqueued_records) unless importer_run.enqueued_records <= 0
+      ImporterRun.find(run_id).decrement!(:enqueued_records) unless ImporterRun.find(run_id).enqueued_records <= 0
 
       entry.save!
-      entry.importer.current_run = importer_run
+      entry.importer.current_run = ImporterRun.find(run_id)
       entry.importer.record_status
     rescue Bulkrax::CollectionsCreatedError => e
       Rails.logger.warn("#{self.class} entry_id: #{entry_id}, run_id: #{run_id} encountered #{e.class}: #{e.message}")
