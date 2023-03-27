@@ -102,7 +102,7 @@ module Bulkrax
 
     # Only add valid resource types
     def parse_resource_type(src)
-      ActiveSupport::Deprecation.warn("#parse_resource_type will be removed in the near future. ")
+      ActiveSupport::Deprecation.warn('#parse_resource_type will be removed in Bulkrax v6.0.0')
       Hyrax::ResourceTypesService.label(src.to_s.strip.titleize)
     rescue KeyError
       nil
