@@ -134,8 +134,15 @@ module Bulkrax
                          end
       end
 
+      # @note In most cases, when we don't have any candidate file sets, there is no need to query SOLR.
+      #
+      # @see Bulkrax::ParserExportRecordSet::Importer#file_sets
       def file_sets
-        @file_sets ||= ActiveFedora::SolrService.query(file_sets_query, **file_set_query_kwargs)
+        @file_sets ||= if candidate_file_set_ids.empty?
+                         []
+                       else
+                         ActiveFedora::SolrService.query(file_sets_query, **file_set_query_kwargs)
+                       end
       end
 
       # Why can't we just use the candidate_file_set_ids?  Because Hyrax is pushing child works into the
@@ -242,6 +249,14 @@ module Bulkrax
 
       def collections_query
         "has_model_ssim:Collection #{extra_filters}"
+      end
+
+      # This is an exception; we don't know how many candidate file sets there might be.  So we will instead
+      # make the query (assuming that there are {#complete_entry_identifiers}).
+      #
+      # @see Bulkrax::ParserExportRecordSet::Base#file_sets
+      def file_sets
+        @file_sets ||= ActiveFedora::SolrService.query(file_sets_query, **file_set_query_kwargs)
       end
 
       def file_sets_query_kwargs
