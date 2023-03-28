@@ -94,7 +94,7 @@ module Bulkrax
       # Because we're persisting the mapping in the database, these are likely string keys.
       # However, there's no guarantee.  So, we need to ensure that by running stringify.
       importerexporter.mapping.stringify_keys.map do |k, v|
-        Array.wrap(v['from'])).each do |vf|
+        Array.wrap(v['from']).each do |vf|
           keys << k if keys_from_record.include?(vf)
         end
       end
