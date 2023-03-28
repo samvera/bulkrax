@@ -330,7 +330,7 @@ module Bulkrax
       return @object_names if @object_names
 
       @object_names = mapping.values.map { |value| value['object'] }
-      @object_names.uniq!.delete(nil)
+      @object_names.uniq!&.delete(nil)
 
       @object_names
     end
