@@ -13,7 +13,8 @@ module Bulkrax
 
     # GET /exporters
     def index
-      @exporters = Exporter.all
+      # NOTE: We're paginating this in the browser.
+      @exporters = Exporter.order(created_at: :desc).all
 
       add_exporter_breadcrumbs if defined?(::Hyrax)
     end
