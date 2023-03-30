@@ -141,7 +141,7 @@ module Bulkrax
         @file_sets ||= if candidate_file_set_ids.empty?
                          []
                        else
-                         ActiveFedora::SolrService.query(file_sets_query, **file_set_query_kwargs)
+                         ActiveFedora::SolrService.query(file_sets_query, **file_sets_query_kwargs)
                        end
       end
 
@@ -153,10 +153,10 @@ module Bulkrax
       # @see https://github.com/scientist-softserv/britishlibrary/issues/289
       # @see https://github.com/samvera/hyrax/blob/64c0bbf0dc0d3e1b49f040b50ea70d177cc9d8f6/app/indexers/hyrax/work_indexer.rb#L15-L18
       def file_sets_query
-        "has_model_ssim:#{Bulkrax.file_model_class} AND id:(#{candidate_file_set_ids.join(' OR ')}) #{extra_filters}"
+        %(has_model_ssim:#{Bulkrax.file_model_class} AND id:("#{candidate_file_set_ids.join('" OR "')}") #{extra_filters})
       end
 
-      def file_set_query_kwargs
+      def file_sets_query_kwargs
         { fl: "id", method: :post, rows: candidate_file_set_ids.size }
       end
 
@@ -256,7 +256,7 @@ module Bulkrax
       #
       # @see Bulkrax::ParserExportRecordSet::Base#file_sets
       def file_sets
-        @file_sets ||= ActiveFedora::SolrService.query(file_sets_query, **file_set_query_kwargs)
+        @file_sets ||= ActiveFedora::SolrService.query(file_sets_query, **file_sets_query_kwargs)
       end
 
       def file_sets_query_kwargs
