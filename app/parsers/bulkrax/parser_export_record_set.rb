@@ -134,17 +134,12 @@ module Bulkrax
                          end
       end
 
+      SOLR_QUERY_PAGE_SIZE = 512
+
       # @note In most cases, when we don't have any candidate file sets, there is no need to query SOLR.
       #
       # @see Bulkrax::ParserExportRecordSet::Importer#file_sets
-      def file_sets
-        @file_sets ||= if candidate_file_set_ids.empty?
-                         []
-                       else
-                         ActiveFedora::SolrService.query(file_sets_query, **file_sets_query_kwargs)
-                       end
-      end
-
+      #
       # Why can't we just use the candidate_file_set_ids?  Because Hyrax is pushing child works into the
       # `file_set_ids_ssim` field.
       #
@@ -152,12 +147,21 @@ module Bulkrax
       #
       # @see https://github.com/scientist-softserv/britishlibrary/issues/289
       # @see https://github.com/samvera/hyrax/blob/64c0bbf0dc0d3e1b49f040b50ea70d177cc9d8f6/app/indexers/hyrax/work_indexer.rb#L15-L18
-      def file_sets_query
-        %(has_model_ssim:#{Bulkrax.file_model_class} AND id:("#{candidate_file_set_ids.join('" OR "')}") #{extra_filters})
-      end
-
-      def file_sets_query_kwargs
-        { fl: "id", method: :post, rows: candidate_file_set_ids.size }
+      def file_sets
+        @file_sets ||= if candidate_file_set_ids.empty?
+                         []
+                       else
+                         results = []
+                         candidate_file_set_ids.each_slice(SOLR_QUERY_PAGE_SIZE) do |ids|
+                           fsq = "has_model_ssim:#{Bulkrax.file_model_class} AND id:(\"" + ids.join('" OR "') + "\")"
+                           fsq += extra_filters if extra_filters.present?
+                           results += ActiveFedora::SolrService.query(
+                             fsq,
+                             { fl: "id", method: :post, rows: ids.size }
+                           )
+                         end
+                         results
+                       end
       end
 
       def solr_name(base_name)
