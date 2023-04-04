@@ -11,10 +11,11 @@ module Bulkrax
     alias importer importerexporter
     alias exporter importerexporter
     delegate :only_updates, :limit, :current_run, :errors, :mapping,
-      :seen, :increment_counters, :parser_fields, :user, :keys_without_numbers,
-      :key_without_numbers, :status, :set_status_info, :status_info, :status_at,
-      :exporter_export_path, :exporter_export_zip_path, :importer_unzip_path, :validate_only,
-      to: :importerexporter
+             :seen, :increment_counters, :parser_fields, :user, :keys_without_numbers,
+             :key_without_numbers, :status, :set_status_info, :status_info, :status_at,
+             :exporter_export_path, :exporter_export_zip_path, :importer_unzip_path, :validate_only,
+             :zip?, :file?,
+             to: :importerexporter
 
     # @todo Convert to `class_attribute :parser_fiels, default: {}`
     def self.parser_fields
@@ -356,16 +357,6 @@ module Bulkrax
           end
         end
       end
-    end
-
-    # Is this a file?
-    def file?
-      parser_fields&.[]('import_file_path') && File.file?(parser_fields['import_file_path'])
-    end
-
-    # Is this a zip file?
-    def zip?
-      parser_fields&.[]('import_file_path') && ::Marcel::MimeType.for(File.new(parser_fields['import_file_path'])).include?('application/zip')
     end
 
     # Path for the import

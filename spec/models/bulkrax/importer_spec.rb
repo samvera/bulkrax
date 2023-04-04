@@ -85,5 +85,26 @@ module Bulkrax
         end
       end
     end
+
+    describe '#zip?' do
+      let(:importer) { described_class.new(parser_fields: { 'import_file_path' => path }) }
+
+      subject { importer.zip? }
+
+      context 'when the parser import_file_path is empty' do
+        let(:path) { nil }
+        it { is_expected.to be_falsey }
+      end
+
+      context 'when the parser import_file_path is for a csv' do
+        let(:path) { 'spec/fixtures/csv/good.csv' }
+        it { is_expected.to be_falsey }
+      end
+
+      context 'when the parser import_file_path is for a zip file' do
+        let(:path) { 'spec/fixtures/zip/simple.zip' }
+        it { is_expected.to be_truthy }
+      end
+    end
   end
 end
