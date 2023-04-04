@@ -51,7 +51,14 @@ module Bulkrax
 
     # Is this a zip file?
     def zip?
-      parser_fields&.[]('import_file_path') && ::Marcel::MimeType.for(File.new(parser_fields['import_file_path'])).include?('application/zip')
+      filename = parser_fields&.[]('import_file_path')
+      return false unless filename
+      return false unless File.file?(filename)
+      returning_value = false
+      File.open(filename) do |file|
+        returning_value = ::Marcel::MimeType.for(file).include?('application/zip')
+      end
+      returning_value
     end
   end
 end
