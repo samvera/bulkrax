@@ -123,7 +123,7 @@ module Bulkrax
     def create
       attrs = transform_attributes
       @object = klass.new
-      object.reindex_extent = Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX if object.respond_to?(:reindex_extent)
+      object.reindex_extent = Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX if defined?(Hyrax::Adapters::NestingIndexAdapter) && object.respond_to?(:reindex_extent)
       run_callbacks :save do
         run_callbacks :create do
           if klass == Collection
