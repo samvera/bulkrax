@@ -6,7 +6,7 @@ require 'active_support/all'
 
 # rubocop:disable Metrics/ModuleLength
 module Bulkrax
-  extend self
+  extend self # rubocop:disable Style/ModuleFunction
   extend Forwardable
 
   ##
