@@ -6,35 +6,91 @@ require 'active_support/all'
 
 # rubocop:disable Metrics/ModuleLength
 module Bulkrax
-  class << self
-    # @todo Move from module attribute methods to a configuration class.  With module attributes,
-    #       when we make a change we are polluting the global space.  This means that our tests that
-    #       modify these config values are modifying global state.  Which is not desirous, as it can
-    #       introduce unexpected flakey tests.
-    mattr_accessor :api_definition,
-                   :curation_concerns,
-                   :default_field_mapping,
-                   :default_work_type,
-                   :export_path,
-                   :field_mappings,
-                   :file_model_class,
-                   :fill_in_blank_source_identifiers,
-                   :generated_metadata_mapping,
-                   :import_path,
-                   :multi_value_element_join_on,
-                   :multi_value_element_split_on,
-                   :object_factory,
-                   :parsers,
-                   :qa_controlled_properties,
-                   :related_children_field_mapping,
-                   :related_parents_field_mapping,
-                   :relationship_job_class,
-                   :removed_image_path,
-                   :required_elements,
-                   :reserved_properties,
-                   :server_name
+  extend self
+  extend Forwardable
 
-    self.parsers = [
+  ##
+  # @api public
+  class Configuration
+    attr_accessor :api_definition,
+                  :curation_concerns,
+                  :default_field_mapping,
+                  :default_work_type,
+                  :export_path,
+                  :field_mappings,
+                  :file_model_class,
+                  :fill_in_blank_source_identifiers,
+                  :generated_metadata_mapping,
+                  :import_path,
+                  :multi_value_element_join_on,
+                  :multi_value_element_split_on,
+                  :object_factory,
+                  :parsers,
+                  :qa_controlled_properties,
+                  :related_children_field_mapping,
+                  :related_parents_field_mapping,
+                  :relationship_job_class,
+                  :removed_image_path,
+                  :required_elements,
+                  :reserved_properties,
+                  :server_name
+  end
+
+  def config
+    @config ||= Configuration.new
+    yield @config if block_given?
+    @config
+  end
+  alias setup config
+
+  def_delegators :@config,
+                 :api_definition,
+                 :api_definition=,
+                 :curation_concerns,
+                 :curation_concerns=,
+                 :default_field_mapping,
+                 :default_field_mapping=,
+                 :default_work_type,
+                 :default_work_type=,
+                 :export_path,
+                 :export_path=,
+                 :field_mappings,
+                 :field_mappings=,
+                 :file_model_class,
+                 :file_model_class=,
+                 :fill_in_blank_source_identifiers,
+                 :fill_in_blank_source_identifiers=,
+                 :generated_metadata_mapping,
+                 :generated_metadata_mapping=,
+                 :import_path,
+                 :import_path=,
+                 :multi_value_element_join_on,
+                 :multi_value_element_join_on=,
+                 :multi_value_element_split_on,
+                 :multi_value_element_split_on=,
+                 :object_factory,
+                 :object_factory=,
+                 :parsers,
+                 :parsers=,
+                 :qa_controlled_properties,
+                 :qa_controlled_properties=,
+                 :related_children_field_mapping,
+                 :related_children_field_mapping=,
+                 :related_parents_field_mapping,
+                 :related_parents_field_mapping=,
+                 :relationship_job_class,
+                 :relationship_job_class=,
+                 :removed_image_path,
+                 :removed_image_path=,
+                 :required_elements,
+                 :required_elements=,
+                 :reserved_properties,
+                 :reserved_properties=,
+                 :server_name,
+                 :server_name=
+
+  config do |conf|
+    conf.parsers = [
       { name: "OAI - Dublin Core", class_name: "Bulkrax::OaiDcParser", partial: "oai_fields" },
       { name: "OAI - Qualified Dublin Core", class_name: "Bulkrax::OaiQualifiedDcParser", partial: "oai_fields" },
       { name: "CSV - Comma Separated Values", class_name: "Bulkrax::CsvParser", partial: "csv_fields" },
@@ -42,16 +98,16 @@ module Bulkrax
       { name: "XML", class_name: "Bulkrax::XmlParser", partial: "xml_fields" }
     ]
 
-    self.import_path = Bulkrax.import_path || 'tmp/imports'
-    self.export_path = Bulkrax.export_path || 'tmp/exports'
-    self.removed_image_path = Bulkrax::Engine.root.join('spec', 'fixtures', 'removed.png').to_s
-    self.server_name = 'bulkrax@example.com'
+    conf.import_path = Bulkrax.import_path || 'tmp/imports'
+    conf.export_path = Bulkrax.export_path || 'tmp/exports'
+    conf.removed_image_path = Bulkrax::Engine.root.join('spec', 'fixtures', 'removed.png').to_s
+    conf.server_name = 'bulkrax@example.com'
 
     # Hash of Generic field_mappings for use in the view
     # There must be one field_mappings hash per view parial
     # Based on Hyrax CoreMetadata && BasicMetadata
     # Override at application level to change
-    self.field_mappings = {
+    conf.field_mappings = {
       "Bulkrax::OaiDcParser" => {
         "contributor" => { from: ["contributor"] },
         # no appropriate mapping for coverage (based_near needs id)
@@ -99,7 +155,7 @@ module Bulkrax
     }
 
     # Lambda to set the default field mapping
-    self.default_field_mapping = lambda do |field|
+    conf.default_field_mapping = lambda do |field|
       return if field.blank?
       {
         field.to_s =>
@@ -114,7 +170,7 @@ module Bulkrax
     end
 
     # Properties that should not be used in imports. They are reserved for use by Hyrax.
-    self.reserved_properties = %w[
+    conf.reserved_properties = %w[
       create_date
       modified_date
       date_modified
@@ -137,28 +193,28 @@ module Bulkrax
     # List of Questioning Authority properties that are controlled via YAML files in
     # the config/authorities/ directory. For example, the :rights_statement property
     # is controlled by the active terms in config/authorities/rights_statements.yml
-    self.qa_controlled_properties = %w[rights_statement license]
+    conf.qa_controlled_properties = %w[rights_statement license]
   end
 
-  def self.curation_concerns
+  def curation_concerns
     return ::Hyrax.config.curation_concerns if defined?(::Hyrax)
     []
   end
 
-  def self.file_model_class
+  def file_model_class
     return ::FileSet if defined?(::Hyrax)
     File
   end
 
-  def self.relationship_job_class
+  def relationship_job_class
     CreateRelationshipsJob
   end
 
-  def self.required_elements
+  def required_elements
     ['title']
   end
 
-  def self.api_definition
+  def api_definition
     @api_definition ||= ActiveSupport::HashWithIndifferentAccess.new(
       YAML.safe_load(
         ERB.new(
@@ -173,7 +229,7 @@ module Bulkrax
   #
   # @note the specific delimeter should likely be present in the multi_value_element_split_on
   #       expression.
-  def self.multi_value_element_join_on
+  def multi_value_element_join_on
     @multi_value_element_join_on ||= DEFAULT_MULTI_VALUE_ELEMENT_JOIN_ON
   end
 
@@ -183,17 +239,12 @@ module Bulkrax
   #
   # @note The "true" value is to preserve backwards compatibility.
   # @see DEFAULT_MULTI_VALUE_ELEMENT_JOIN_ON
-  def self.multi_value_element_split_on
+  def multi_value_element_split_on
     if @multi_value_element_join_on.is_a?(TrueClass)
       DEFAULT_MULTI_VALUE_ELEMENT_SPLIT_ON
     else
       @multi_value_element_split_on ||= DEFAULT_MULTI_VALUE_ELEMENT_SPLIT_ON
     end
-  end
-
-  # this function maps the vars from your app into your engine
-  def self.setup
-    yield self
   end
 
   # Responsible for stripping hidden characters from the given string.
@@ -202,12 +253,12 @@ module Bulkrax
   # @return [String] with hidden characters removed
   #
   # @see https://github.com/samvera-labs/bulkrax/issues/688
-  def self.normalize_string(value)
+  def normalize_string(value)
     # Removing [Byte Order Mark (BOM)](https://en.wikipedia.org/wiki/Byte_order_mark)
     value.to_s.delete("\xEF\xBB\xBF")
   end
 
-  def self.fallback_user_for_importer_exporter_processing
+  def fallback_user_for_importer_exporter_processing
     return User.batch_user if defined?(Hyrax) && User.respond_to?(:batch_user)
 
     raise "We have no fallback user available for Bulkrax.fallback_user_for_importer_exporter_processing"
