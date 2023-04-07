@@ -102,10 +102,24 @@ module Bulkrax
     conf.export_path = Bulkrax.export_path || 'tmp/exports'
     conf.removed_image_path = Bulkrax::Engine.root.join('spec', 'fixtures', 'removed.png').to_s
     conf.server_name = 'bulkrax@example.com'
-    conf.curation_concerns = defined?(::Hyrax) ? ::Hyrax.config.curation_concerns : []
-    conf.file_model_class = defined?(::Hyrax) ? ::FileSet : File
     conf.relationship_job_class = "CreateRelationshipsJob"
     conf.required_elements = ['title']
+
+    def conf.curation_concerns
+      @curation_concerns ||= defined?(::Hyrax) ? ::Hyrax.config.curation_concerns : []
+    end
+
+    def conf.curation_concerns=(val)
+      @curation_concerns = val
+    end
+
+    def conf.file_model_class
+      @file_model_class ||= defined?(::Hyrax) ? ::FileSet : File
+    end
+
+    def conf.file_model_class=(val)
+      @file_model_class = val
+    end
 
     # Hash of Generic field_mappings for use in the view
     # There must be one field_mappings hash per view partial

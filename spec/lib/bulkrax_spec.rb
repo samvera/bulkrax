@@ -58,6 +58,48 @@ RSpec.describe Bulkrax do
       end
     end
 
+    context 'curation_concerns' do
+      after do
+        described_class.curation_concerns = [Work]
+      end
+
+      it 'responds to curation_concerns' do
+        expect(described_class).to respond_to(:curation_concerns)
+      end
+
+      it 'has a default curation_concerns' do
+        expect(described_class.curation_concerns).to eq([Work])
+      end
+
+      it 'is settable' do
+        described_class.curation_concerns = ['test']
+
+        expect(described_class).to respond_to(:curation_concerns=)
+        expect(described_class.curation_concerns).to eq(['test'])
+      end
+    end
+
+    context 'file_model_class' do
+      after do
+        described_class.file_model_class = FileSet
+      end
+
+      it 'responds to file_model_class' do
+        expect(described_class).to respond_to(:file_model_class)
+      end
+
+      it 'has a default file_model_class' do
+        expect(described_class.file_model_class).to eq(FileSet)
+      end
+
+      it 'is settable' do
+        described_class.file_model_class = File
+
+        expect(described_class).to respond_to(:file_model_class=)
+        expect(described_class.file_model_class).to eq(File)
+      end
+    end
+
     context 'parsers' do
       it 'has a default' do
         expect(described_class.parsers).to eq([
