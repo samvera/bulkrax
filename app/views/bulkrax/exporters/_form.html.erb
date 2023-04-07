@@ -114,33 +114,35 @@
 <%# Find definitions for the functions called in this script in
     app/assets/javascripts/bulkrax/exporters.js %>
 <script>
-  $(function() {
-    // show the selected export_source option
-    var selectedVal = $('.exporter_export_from option:selected').val();
-    hideUnhide(selectedVal);
+    document.addEventListener("DOMContentLoaded", function() {
+        $(function () {
+            // show the selected export_source option
+            var selectedVal = $('.exporter_export_from option:selected').val();
+            hideUnhide(selectedVal);
 
-    // Select2 dropdowns don't like taking a value param. Thus,
-    // if export_source_collection is present, we populate the input.
-    var selectedCollectionId = "<%= @collection&.id %>"
-    if (selectedCollectionId.length > 0) {
-      $('#exporter_export_source_collection').val(selectedCollectionId)
-    }
+            // Select2 dropdowns don't like taking a value param. Thus,
+            // if export_source_collection is present, we populate the input.
+            var selectedCollectionId = "<%= @collection&.id %>"
+            if (selectedCollectionId.length > 0) {
+                $('#exporter_export_source_collection').val(selectedCollectionId)
+            }
 
-    // get the selected export_from option and show the corresponding export_source
-    $('.exporter_export_from').change(function() {
-      var selectedVal = $('.exporter_export_from option:selected').val();
-      hideUnhide(selectedVal);
+            // get the selected export_from option and show the corresponding export_source
+            $('.exporter_export_from').change(function () {
+                var selectedVal = $('.exporter_export_from option:selected').val();
+                hideUnhide(selectedVal);
+            });
+
+            // get the date filter option and show the corresponding date selectors
+            $('.exporter_date_filter').change(function () {
+                if ($('.exporter_date_filter').find(".boolean").is(":checked"))
+                    $('#date_filter_picker').removeClass('hidden');
+                else
+                    $('#date_filter_picker').addClass('hidden');
+            });
+
+            if ($('.exporter_date_filter').find(".boolean").is(":checked"))
+                $('#date_filter_picker').removeClass('hidden');
+        });
     });
-
-    // get the date filter option and show the corresponding date selectors
-    $('.exporter_date_filter').change(function() {
-        if($('.exporter_date_filter').find(".boolean").is(":checked"))
-            $('#date_filter_picker').removeClass('hidden');
-        else
-            $('#date_filter_picker').addClass('hidden');
-    });
-
-    if($('.exporter_date_filter').find(".boolean").is(":checked"))
-        $('#date_filter_picker').removeClass('hidden');
-  });
 </script>
