@@ -46,9 +46,13 @@ module Bulkrax
     self.export_path = Bulkrax.export_path || 'tmp/exports'
     self.removed_image_path = Bulkrax::Engine.root.join('spec', 'fixtures', 'removed.png').to_s
     self.server_name = 'bulkrax@example.com'
+    self.curation_concerns = defined?(::Hyrax) ? ::Hyrax.config.curation_concerns : []
+    self.file_model_class = defined?(::Hyrax) ? ::FileSet : File
+    self.relationship_job_class = "CreateRelationshipsJob"
+    self.required_elements = ['title']
 
     # Hash of Generic field_mappings for use in the view
-    # There must be one field_mappings hash per view parial
+    # There must be one field_mappings hash per view partial
     # Based on Hyrax CoreMetadata && BasicMetadata
     # Override at application level to change
     self.field_mappings = {
@@ -140,24 +144,6 @@ module Bulkrax
     self.qa_controlled_properties = %w[rights_statement license]
   end
 
-  def self.curation_concerns
-    return ::Hyrax.config.curation_concerns if defined?(::Hyrax)
-    []
-  end
-
-  def self.file_model_class
-    return ::FileSet if defined?(::Hyrax)
-    File
-  end
-
-  def self.relationship_job_class
-    CreateRelationshipsJob
-  end
-
-  def self.required_elements
-    ['title']
-  end
-
   def self.api_definition
     @api_definition ||= ActiveSupport::HashWithIndifferentAccess.new(
       YAML.safe_load(
@@ -171,7 +157,7 @@ module Bulkrax
   DEFAULT_MULTI_VALUE_ELEMENT_JOIN_ON = ' | '
   # Specify the delimiter for joining an attribute's multi-value array into a string.
   #
-  # @note the specific delimeter should likely be present in the multi_value_element_split_on
+  # @note the specific delimiter should likely be present in the multi_value_element_split_on
   #       expression.
   def self.multi_value_element_join_on
     @multi_value_element_join_on ||= DEFAULT_MULTI_VALUE_ELEMENT_JOIN_ON
@@ -213,7 +199,7 @@ module Bulkrax
     raise "We have no fallback user available for Bulkrax.fallback_user_for_importer_exporter_processing"
   end
 
-  # This class confirms to the Active::Support.serialze interface.  It's job is to ensure that we
+  # This class confirms to the Active::Support.serialize interface.  It's job is to ensure that we
   # don't have keys with the tricksy Byte Order Mark character.
   #
   # @see https://api.rubyonrails.org/classes/ActiveRecord/AttributeMethods/Serialization/ClassMethods.html#method-i-serialize
