@@ -200,7 +200,7 @@ module Bulkrax
     def transform_attributes(update: false)
       @transform_attributes = attributes.slice(*permitted_attributes)
       @transform_attributes.merge!(file_attributes(update_files)) if with_files
-      @transform_attributes.transform_values! {|v| v == [""] ? [] : v}
+      @transform_attributes.transform_values! { |v| v == [""] ? [] : v }
       update ? @transform_attributes.except(:id) : @transform_attributes
     end
 
