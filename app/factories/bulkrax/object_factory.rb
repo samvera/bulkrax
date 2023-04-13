@@ -182,6 +182,7 @@ module Bulkrax
     end
 
     def clean_attrs(attrs)
+
       # avoid the "ArgumentError: Identifier must be a string of size > 0 in order to be treeified" error
       # when setting object.attributes
       attrs.delete('id') if attrs['id'].blank?
@@ -200,6 +201,7 @@ module Bulkrax
     def transform_attributes(update: false)
       @transform_attributes = attributes.slice(*permitted_attributes)
       @transform_attributes.merge!(file_attributes(update_files)) if with_files
+      @transform_attributes.transform_values! {|v| v == [""] ? [] : v}
       update ? @transform_attributes.except(:id) : @transform_attributes
     end
 
