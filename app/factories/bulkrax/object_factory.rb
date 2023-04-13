@@ -182,7 +182,6 @@ module Bulkrax
     end
 
     def clean_attrs(attrs)
-
       # avoid the "ArgumentError: Identifier must be a string of size > 0 in order to be treeified" error
       # when setting object.attributes
       attrs.delete('id') if attrs['id'].blank?
