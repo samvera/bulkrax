@@ -10,29 +10,29 @@
 <div class="panel panel-default bulkrax-align-text">
   <div class="panel-body">
     <p class="bulkrax-p-align">
-      <strong>Name:</strong>
+      <strong><%= t('bulkrax.importer.labels.name') %>:</strong>
       <%= @importer.name %>
     </p>
     <% if defined?(::Hyrax) %>
       <p class="bulkrax-p-align">
-        <strong>Admin set:</strong>
+        <strong><%= t('bulkrax.importer.labels.admin_set') %>:</strong>
         <%= @importer.admin_set_id %>
       </p>
     <% end %>
     <p class="bulkrax-p-align">
-      <strong>User:</strong>
+      <strong><%= t('bulkrax.importer.labels.user') %>:</strong>
       <%= @importer.user %>
     </p>
     <p class="bulkrax-p-align">
-      <strong>Frequency:</strong>
+      <strong><%= t('bulkrax.importer.labels.frequency') %>:</strong>
       <%= @importer.frequency %>
     </p>
     <p class="bulkrax-p-align">
-      <strong>Parser klass:</strong>
+      <strong><%= t('bulkrax.importer.labels.parser_klass') %>:</strong>
       <%= @importer.parser_klass %>
     </p>
     <p class="bulkrax-p-align">
-      <strong>Limit:</strong>
+      <strong><%= t('bulkrax.importer.labels.limit') %>:</strong>
       <%= @importer.limit %>
     </p>
 
@@ -59,26 +59,26 @@
     <%= render partial: 'bulkrax/shared/bulkrax_field_mapping', locals: {item: @importer} %>
 
     <p class="bulkrax-p-align" title="<%= @importer.last_run&.processed_works %> processed, <%= @importer.last_run&.failed_works %> failed">
-      <strong>Total Works:</strong>
+      <strong><%= t('bulkrax.importer.labels.total_work_entries') %>:</strong>
       <%= @importer.last_run&.total_work_entries %>
     </p>
 
     <p class="bulkrax-p-align" title="<%= @importer.last_run&.processed_collections %> processed, <%= @importer.last_run&.failed_collections %> failed">
-      <strong>Total Collections:</strong>
+      <strong><%= t('bulkrax.importer.labels.total_collections') %>:</strong>
       <%= @importer.last_run&.total_collection_entries %>
     </p>
 
     <p class="bulkrax-p-align" title="<%= @importer.last_run&.processed_file_sets %> processed, <%= @importer.last_run&.failed_file_sets %> failed">
-      <strong>Total File Sets:</strong>
+      <strong><%= t('bulkrax.importer.labels.total_file_sets') %>:</strong>
       <%= @importer.last_run&.total_file_set_entries %>
     </p>
 
     <div class="bulkrax-nav-tab-bottom-margin">
       <!-- Nav tabs -->
       <ul class="bulkrax-nav-tab-top-margin tab-nav nav nav-tabs" role="tablist">
-        <li role="presentation" class='active'><a href="#work-entries" aria-controls="work-entries" role="tab" data-toggle="tab">Work Entries</a></li>
-        <li role="presentation"><a href="#collection-entries" aria-controls="collection-entries" role="tab" data-toggle="tab">Collection Entries</a></li>
-        <li role="presentation"><a href="#file-set-entries" aria-controls="file-set-entries" role="tab" data-toggle="tab">File Set Entries</a></li>
+        <li role="presentation" class='active'><a href="#work-entries" aria-controls="work-entries" role="tab" data-toggle="tab"><%= t('bulkrax.importer.labels.work_entries') %></a></li>
+        <li role="presentation"><a href="#collection-entries" aria-controls="collection-entries" role="tab" data-toggle="tab"><%= t('bulkrax.importer.labels.collection_entries') %></a></li>
+        <li role="presentation"><a href="#file-set-entries" aria-controls="file-set-entries" role="tab" data-toggle="tab"><%= t('bulkrax.importer.labels.file_set_entries') %></a></li>
       </ul>
       <!-- Tab panes -->
       <div class="tab-content outline">
