@@ -212,7 +212,7 @@ module Bulkrax
       private :work_identifier
 
       def extra_filters
-        super || '*.*'
+        '*:*' + super
       end
 
       def complete_entry_identifiers

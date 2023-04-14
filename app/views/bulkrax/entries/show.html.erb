@@ -48,7 +48,7 @@
         <% record = @entry&.hyrax_record %>
         <% if record.present? && @entry.factory_class %>
           <strong><%= record.class.to_s %> Link:</strong>
-          <% if record.is_a?(Collection) %>
+          <% if defined?(Collection) && record.is_a?(Collection) %>
             <%= link_to record.class.to_s, hyrax.polymorphic_path(record) %>
           <% else %>
             <%= link_to record.class.to_s, main_app.polymorphic_path(record) %>

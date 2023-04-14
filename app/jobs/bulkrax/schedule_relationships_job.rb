@@ -9,7 +9,8 @@ module Bulkrax
       return reschedule(importer_id) unless pending_num.zero?
 
       importer.last_run.parents.each do |parent_id|
-        Bulkrax.relationship_job_class.perform_later(parent_identifier: parent_id, importer_run_id: importer.last_run.id)
+        Bulkrax.relationship_job_class.constantize.perform_later(parent_identifier: parent_id,
+                                                                 importer_run_id: importer.last_run.id)
       end
     end
 
