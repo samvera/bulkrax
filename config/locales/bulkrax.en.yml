@@ -27,8 +27,12 @@ en:
         start_date: Start Date
         status: Status
         total_work_entries: Total Works
+        total_entries: Total Entries
         user: User
         worktype: Work Type
+        work_entries: Work Entries
+        collection_entries: Collection Entries
+        file_set_entries: File Set Entries
         workflow_status:
           approved: "Approved"
           deleted: "Deleted"
@@ -40,3 +44,25 @@ en:
       hints:
         include_thumbnails: "These exported fields currently cannot be imported."
         generated_metadata: "These exported fields currently cannot be imported."
+    importer:
+      labels:
+        name: Name
+        user: User
+        admin_set: Admin set
+        frequency: Frequency
+        parser_klass: Parser klass
+        limit: Limit
+        total_work_entries: Total Works
+        total_collections: Total Collections
+        total_file_sets: Total File Sets
+        work_entries: Work Entries
+        collection_entries: Collection Entries
+        file_set_entries: File Set Entries
+    table_header:
+      labels:
+        identifier: Identifier
+        entry_id: Entry ID
+        status: Status
+        errors: Errors
+        status_set_at: Status Set At
+        actions: Actions
