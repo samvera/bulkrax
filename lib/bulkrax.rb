@@ -102,7 +102,7 @@ module Bulkrax
     conf.export_path = Bulkrax.export_path || 'tmp/exports'
     conf.removed_image_path = Bulkrax::Engine.root.join('spec', 'fixtures', 'removed.png').to_s
     conf.server_name = 'bulkrax@example.com'
-    conf.relationship_job_class = "CreateRelationshipsJob"
+    conf.relationship_job_class = "Bulkrax::CreateRelationshipsJob"
     conf.required_elements = ['title']
 
     def conf.curation_concerns
