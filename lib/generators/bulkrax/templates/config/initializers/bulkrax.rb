@@ -72,7 +72,7 @@ Bulkrax.setup do |config|
   # config.qa_controlled_properties += ['my_field']
 
   # Specify the delimiter regular expression for splitting an attribute's values into a multi-value array.
-  # config.multi_value_element_split_on = //\s*[:;|]\s*/.freeze
+  # config.multi_value_element_split_on = /\s*[:;|]\s*/.freeze
 
   # Specify the delimiter for joining an attribute's multi-value array into a string.  Note: the
   # specific delimeter should likely be present in the multi_value_element_split_on expression.
