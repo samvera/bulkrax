@@ -30,6 +30,8 @@ module Bulkrax
       OaiSetEntry
     end
 
+    def file_set_entry_class; end
+
     def records(opts = {})
       opts[:metadata_prefix] ||= importerexporter.parser_fields['metadata_prefix']
       opts[:set] = collection_name unless collection_name == 'all'
