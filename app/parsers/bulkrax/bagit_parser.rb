@@ -95,9 +95,9 @@ module Bulkrax
 
       folder_count = 1
       records_in_folder = 0
-      work_entries = importerexporter.entries.where(identifier: @work_ids)
-      collection_entries = importerexporter.entries.where(identifier: @collection_ids)
-      file_set_entries = importerexporter.entries.where(identifier: @file_set_ids)
+      work_entries = importerexporter.entries.where(type: work_entry_class.to_s)
+      collection_entries = importerexporter.entries.where(type: collection_entry_class.to_s)
+      file_set_entries = importerexporter.entries.where(type: file_set_entry_class.to_s)
 
       work_entries[0..limit || total].each do |entry|
         record = ActiveFedora::Base.find(entry.identifier)
