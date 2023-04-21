@@ -1,9 +1,9 @@
 # frozen_string_literal: true
+require 'bagit'
 
 module Bulkrax
   class BagitParser < CsvParser # rubocop:disable Metrics/ClassLength
     include ExportBehavior
-    require 'bagit'
 
     def self.export_supported?
       true
