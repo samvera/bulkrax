@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+require 'bagit'
 
 module Bulkrax
   class BagitParser < CsvParser # rubocop:disable Metrics/ClassLength
