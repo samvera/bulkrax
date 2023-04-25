@@ -110,7 +110,7 @@ module Bulkrax
     end
 
     def create_relationships
-      ScheduleRelationshipsJob.set(wait: 2.minutes).perform_later(importer_id: importerexporter.id)
+      ScheduleRelationshipsJob.set(wait: 5.minutes).perform_later(importer_id: importerexporter.id)
     end
 
     def create_file_sets; end
