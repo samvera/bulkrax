@@ -113,6 +113,10 @@ module Bulkrax
       importer.record_status
     end
 
+    def create_relationships
+      ScheduleRelationshipsJob.set(wait: 2.minutes).perform_later(importer_id: importerexporter.id)
+    end
+
     def collections
       @collections ||= list_sets
     end
