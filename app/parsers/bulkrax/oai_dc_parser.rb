@@ -32,10 +32,6 @@ module Bulkrax
 
     def file_set_entry_class; end
 
-    def create_relationships; end
-
-    def create_file_sets; end
-
     def records(opts = {})
       opts[:metadata_prefix] ||= importerexporter.parser_fields['metadata_prefix']
       opts[:set] = collection_name unless collection_name == 'all'
@@ -116,6 +112,8 @@ module Bulkrax
     def create_relationships
       ScheduleRelationshipsJob.set(wait: 2.minutes).perform_later(importer_id: importerexporter.id)
     end
+
+    def create_file_sets; end
 
     def collections
       @collections ||= list_sets
