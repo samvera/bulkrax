@@ -1,0 +1,7 @@
+source_identifier,model,title,parents
+art_c_1, Collection,Collection 1,
+art_c_2,Collection ,Collection 2,art_c_1
+art_w_1, Work,Work 1,art_c_2
+art_w_2,Work ,Work 2,art_w_1
+art_fs_1, FileSet,File Set 1,art_w_1
+art_fs_2,FileSet ,File Set 2,art_w_2

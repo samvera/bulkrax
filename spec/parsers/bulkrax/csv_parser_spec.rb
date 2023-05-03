@@ -80,6 +80,14 @@ module Bulkrax
           expect(subject.works).to eq(subject.records)
         end
       end
+
+      context 'when the model value has whitespace' do
+        before do
+          importer.parser_fields['import_file_path'] = 'spec/fixtures/csv/all_record_types_whitespace.csv'
+        end
+
+        include_examples 'records are assigned correctly'
+      end
     end
 
     describe '#collections' do

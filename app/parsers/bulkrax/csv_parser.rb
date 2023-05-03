@@ -33,9 +33,9 @@ module Bulkrax
           model_field_mappings.map(&:to_sym).each do |model_mapping|
             next unless r.key?(model_mapping)
 
-            if r[model_mapping].casecmp('collection').zero?
+            if r[model_mapping].strip.casecmp('collection').zero?
               @collections << r
-            elsif r[model_mapping].casecmp('fileset').zero?
+            elsif r[model_mapping].strip.casecmp('fileset').zero?
               @file_sets << r
             else
               @works << r
