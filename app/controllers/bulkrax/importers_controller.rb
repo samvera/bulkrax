@@ -20,7 +20,8 @@ module Bulkrax
 
     # GET /importers
     def index
-      @importers = Importer.all
+      # NOTE: We're paginating this in the browser.
+      @importers = Importer.order(created_at: :desc).all
       if api_request?
         json_response('index')
       elsif defined?(::Hyrax)
