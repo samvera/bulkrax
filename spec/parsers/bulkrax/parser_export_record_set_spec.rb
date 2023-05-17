@@ -40,6 +40,21 @@ RSpec.describe Bulkrax::ParserExportRecordSet do
       end
     end
   end
+  describe '.in_batches' do
+    it 'returns an empty array when given an empty array' do
+      expect(described_class.in_batches([])).to eq([])
+    end
+    it 'yields multiple times based on the array size and page size' do
+      expect { |block| described_class.in_batches([1, 2, 3, 4, 5], page_size: 2, &block) }.to yield_successive_args([1, 2], [3, 4], [5])
+    end
+
+    it 'returns an array based on the yielded block' do
+      results = described_class.in_batches([1, 2, 3, 4, 5], page_size: 2) do |ids|
+        ids.map { |id| "ID: #{id}" }
+      end
+      expect(results).to eq(["ID: 1", "ID: 2", "ID: 3", "ID: 4", "ID: 5"])
+    end
+  end
 end
 
 [Bulkrax::ParserExportRecordSet::All, Bulkrax::ParserExportRecordSet::Worktype, Bulkrax::ParserExportRecordSet::Collection].each do |klass|

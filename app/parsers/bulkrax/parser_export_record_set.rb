@@ -21,6 +21,30 @@ module Bulkrax
       "Bulkrax::ParserExportRecordSet::#{export_from.classify}".constantize.new(parser: parser)
     end
 
+    SOLR_QUERY_PAGE_SIZE = 512
+
+    ##
+    # A helper method for handling querying large batches of IDs.  By default SOLR has a max of 1024
+    # `OR` clauses per query.  This method helps chunk large sets of IDs into batches.
+    #
+    # @param array [Array<Object>]
+    # @param page_size [Integer]
+    # @yieldparam [Array<Object>] slice of the original arrays which are yielded.  The results of
+    #             the yield are merged into the return value.
+    #
+    # @return [Array<Object>]
+    #
+    # @see https://github.com/samvera-labs/bulkrax/issues/776
+    def self.in_batches(array, page_size: SOLR_QUERY_PAGE_SIZE)
+      array = Array.wrap(array)
+      return [] if array.empty?
+      results = []
+      array.each_slice(page_size) do |slice|
+        results += Array.wrap(yield(slice))
+      end
+      results
+    end
+
     # @abstract
     #
     # @note This has {#each} and {#count} but is not an Enumerable.  But because it has these two
@@ -36,6 +60,7 @@ module Bulkrax
       delegate :limit_reached?, :work_entry_class, :collection_entry_class, :file_set_entry_class, :importerexporter, to: :parser
       private :limit_reached?, :work_entry_class, :collection_entry_class, :file_set_entry_class, :importerexporter
 
+      ##
       # @return [Integer]
       def count
         sum = works.count + collections.count + file_sets.count
@@ -44,6 +69,7 @@ module Bulkrax
         return sum
       end
 
+      ##
       # Yield first the works, then collections, then file sets.  Once we've yielded as many times
       # as the parser's limit, we break the iteration and return.
       #
@@ -134,8 +160,6 @@ module Bulkrax
                          end
       end
 
-      SOLR_QUERY_PAGE_SIZE = 512
-
       # @note In most cases, when we don't have any candidate file sets, there is no need to query SOLR.
       #
       # @see Bulkrax::ParserExportRecordSet::Importer#file_sets
@@ -148,20 +172,14 @@ module Bulkrax
       # @see https://github.com/scientist-softserv/britishlibrary/issues/289
       # @see https://github.com/samvera/hyrax/blob/64c0bbf0dc0d3e1b49f040b50ea70d177cc9d8f6/app/indexers/hyrax/work_indexer.rb#L15-L18
       def file_sets
-        @file_sets ||= if candidate_file_set_ids.empty?
-                         []
-                       else
-                         results = []
-                         candidate_file_set_ids.each_slice(SOLR_QUERY_PAGE_SIZE) do |ids|
-                           fsq = "has_model_ssim:#{Bulkrax.file_model_class} AND id:(\"" + ids.join('" OR "') + "\")"
-                           fsq += extra_filters if extra_filters.present?
-                           results += ActiveFedora::SolrService.query(
-                             fsq,
-                             { fl: "id", method: :post, rows: ids.size }
-                           )
-                         end
-                         results
-                       end
+        @file_sets ||= ParserExportRecordSet.in_batches(candidate_file_set_ids) do |batch_of_ids|
+          fsq = "has_model_ssim:#{Bulkrax.file_model_class} AND id:(\"" + batch_of_ids.join('" OR "') + "\")"
+          fsq += extra_filters if extra_filters.present?
+          ActiveFedora::SolrService.query(
+            fsq,
+            { fl: "id", method: :post, rows: batch_of_ids.size }
+          )
+        end
       end
 
       def solr_name(base_name)
