@@ -27,6 +27,7 @@ group :development, :test do
   gem 'byebug'
   gem 'database_cleaner'
   gem 'pry-byebug'
+  gem 'solargraph'
   gem 'solr_wrapper', '>= 0.3'
 end
 
