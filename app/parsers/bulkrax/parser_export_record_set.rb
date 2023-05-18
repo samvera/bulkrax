@@ -245,32 +245,34 @@ module Bulkrax
           end
       end
 
-      def works_query_kwargs
-        query_kwargs.merge(
-          fq: [
-            %(#{solr_name(work_identifier)}:("#{complete_entry_identifiers.join('" OR "')}")),
-            "has_model_ssim:(#{Bulkrax.curation_concerns.join(' OR ')})"
-          ],
-          fl: 'id'
-        )
+      def works
+        @works ||= ParserExportRecordSet.in_batches(complete_entry_identifiers) do |ids|
+          ActiveFedora::SolrService.query(
+            extra_filters.to_s,
+            **query_kwargs.merge(
+              fq: [
+                %(#{solr_name(work_identifier)}:("#{ids.join('" OR "')}")),
+                "has_model_ssim:(#{Bulkrax.curation_concerns.join(' OR ')})"
+              ],
+              fl: 'id'
+            )
+          )
+        end
       end
 
-      def works_query
-        extra_filters.to_s
-      end
-
-      def collections_query_kwargs
-        query_kwargs.merge(
-          fq: [
-            %(#{solr_name(work_identifier)}:("#{complete_entry_identifiers.join('" OR "')}")),
-            "has_model_ssim:Collection"
-          ],
-          fl: 'id'
-        )
-      end
-
-      def collections_query
-        "has_model_ssim:Collection #{extra_filters}"
+      def collections
+        @collections ||= ParserExportRecordSet.in_batches(complete_entry_identifiers) do |ids|
+          ActiveFedora::SolrService.query(
+            "has_model_ssim:Collection #{extra_filters}",
+            **query_kwargs.merge(
+              fq: [
+                %(#{solr_name(work_identifier)}:("#{ids.join('" OR "')}")),
+                "has_model_ssim:Collection"
+              ],
+              fl: "id"
+            )
+          )
+        end
       end
 
       # This is an exception; we don't know how many candidate file sets there might be.  So we will instead
@@ -278,21 +280,18 @@ module Bulkrax
       #
       # @see Bulkrax::ParserExportRecordSet::Base#file_sets
       def file_sets
-        @file_sets ||= ActiveFedora::SolrService.query(file_sets_query, **file_sets_query_kwargs)
-      end
-
-      def file_sets_query_kwargs
-        query_kwargs.merge(
-          fq: [
-            %(#{solr_name(work_identifier)}:("#{complete_entry_identifiers.join('" OR "')}")),
-            "has_model_ssim:#{Bulkrax.file_model_class}"
-          ],
-          fl: 'id'
-        )
-      end
-
-      def file_sets_query
-        extra_filters
+        @file_sets ||= ParserExportRecordSet.in_batches(complete_entry_identifiers) do |ids|
+          ActiveFedora::SolrService.query(
+            extra_filers,
+            query_kwargs.merge(
+              fq: [
+                %(#{solr_name(work_identifier)}:("#{ids.join('" OR "')}")),
+                "has_model_ssim:#{Bulkrax.file_model_class}"
+              ],
+              fl: 'id'
+            )
+          )
+        end
       end
     end
   end
