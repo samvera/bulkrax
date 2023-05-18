@@ -61,6 +61,8 @@ module Bulkrax
       number_of_successes = 0
       number_of_failures = 0
       errors = []
+      @parent_record_members_added = false
+      @child_members_added = []
 
       ActiveRecord::Base.uncached do
         Bulkrax::PendingRelationship.where(parent_id: parent_identifier, importer_run_id: importer_run_id)
@@ -74,10 +76,14 @@ module Bulkrax
       end
 
       # save record if members were added
-      parent_record.save! if @parent_record_members_added
+      if @parent_record_members_added
+        parent_record.save!
+        # Ensure that the new relationship gets indexed onto the children
+        @child_members_added.each(&:update_index)
+      end
 
-      # rubocop:disable Rails/SkipsModelValidations
       if errors.present?
+        # rubocop:disable Rails/SkipsModelValidations
         importer_run.increment!(:failed_relationships, number_of_failures)
         parent_entry&.set_status_info(errors.last, importer_run)
 
@@ -124,8 +130,7 @@ module Bulkrax
 
       parent_record.ordered_members << child_record
       @parent_record_members_added = true
-      # TODO: Do we need to save the child record?
-      child_record.save!
+      @child_members_added << child_record
     end
 
     def reschedule(parent_identifier:, importer_run_id:)

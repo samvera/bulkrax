@@ -22,6 +22,7 @@ module Bulkrax
       allow(::Hyrax.config).to receive(:curation_concerns).and_return([Work])
       allow(parent_record).to receive(:save!)
       allow(child_record).to receive(:save!)
+      allow(child_record).to receive(:update_index)
       allow(child_record).to receive(:member_of_collections).and_return([])
       allow(parent_record).to receive(:ordered_members).and_return([])
 
@@ -96,6 +97,11 @@ module Bulkrax
 
         it 'assigns the child to the parent\'s #ordered_members' do
           expect { perform }.to change(parent_record, :ordered_members).from([]).to([child_record])
+        end
+
+        it 'reindexes the child work' do
+          perform
+          expect(child_record).to have_received(:update_index)
         end
 
         it 'increments the processed relationships counter on the importer run' do
