@@ -64,40 +64,78 @@ module Bulkrax
       @parent_record_members_added = false
       @child_members_added = []
 
-      ActiveRecord::Base.uncached do
-        Bulkrax::PendingRelationship.where(parent_id: parent_identifier, importer_run_id: importer_run_id)
-                                    .ordered.find_each do |rel|
-          process(relationship: rel, importer_run_id: importer_run_id, parent_record: parent_record, ability: ability)
-          number_of_successes += 1
-        rescue => e
-          number_of_failures += 1
-          errors << e
-        end
-      end
+      if parent_record
+        conditionally_acquire_lock_for(parent_record.id) do
+          ActiveRecord::Base.uncached do
+            Bulkrax::PendingRelationship.where(parent_id: parent_identifier, importer_run_id: importer_run_id)
+                                        .ordered.find_each do |rel|
+              process(relationship: rel, importer_run_id: importer_run_id, parent_record: parent_record, ability: ability)
+              number_of_successes += 1
+            rescue => e
+              number_of_failures += 1
+              errors << e
+            end
+          end
 
-      # save record if members were added
-      if @parent_record_members_added
-        parent_record.save!
-        # Ensure that the new relationship gets indexed onto the children
-        @child_members_added.each(&:update_index)
+          # save record if members were added
+          if @parent_record_members_added
+            parent_record.save!
+            # Ensure that the new relationship gets indexed onto the children
+            @child_members_added.each(&:update_index)
+          end
+        end
+      else
+        # In moving the check of the parent record "up" we've exposed a hidden reporting foible.
+        # Namely we were reporting one error per child record when the parent record was itself
+        # unavailable.
+        #
+        # We have chosen not to duplicate that "number of errors" as it does not seem like the
+        # correct pattern for reporting a singular error (the previous pattern being one error per
+        # child who's parent is not yet created).
+        number_of_failures = 1
+        errors = ["Parent record not yet available for creating relationships with children records."]
       end
 
       if errors.present?
         # rubocop:disable Rails/SkipsModelValidations
         importer_run.increment!(:failed_relationships, number_of_failures)
+        # rubocop:enable Rails/SkipsModelValidations
+
         parent_entry&.set_status_info(errors.last, importer_run)
 
         # TODO: This can create an infinite job cycle, consider a time to live tracker.
         reschedule({ parent_identifier: parent_identifier, importer_run_id: importer_run_id })
         return false # stop current job from continuing to run after rescheduling
       else
+        # rubocop:disable Rails/SkipsModelValidations
         Bulkrax::ImporterRun.find(importer_run_id).increment!(:processed_relationships, number_of_successes)
+        # rubocop:enable Rails/SkipsModelValidations
       end
-      # rubocop:enable Rails/SkipsModelValidations
     end
     # rubocop:enable Metrics/MethodLength
 
     private
+
+    ##
+    # We can use Hyrax's lock manager when we have one available.
+    if defined?(::Hyrax)
+      include Hyrax::Lockable
+
+      def conditionally_acquire_lock_for(*args, &block)
+        if Bulkrax.use_locking?
+          acquire_lock_for(*args, &block)
+        else
+          yield
+        end
+      end
+    else
+      # Otherwise, we're providing no meaningful lock manager at this time.
+      def acquire_lock_for(*)
+        yield
+      end
+
+      alias conditionally_acquire_lock_for acquire_lock_for
+    end
 
     def process(relationship:, importer_run_id:, parent_record:, ability:)
       raise "#{relationship} needs a child to create relationship" if relationship.child_id.nil?

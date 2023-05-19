@@ -34,6 +34,15 @@ module Bulkrax
                   :required_elements,
                   :reserved_properties,
                   :server_name
+
+    attr_writer :use_locking
+
+    def use_locking
+      return @use_locking if defined?(@use_locking)
+
+      ENV.key?("REDIS_HOST")
+    end
+    alias use_locking? use_locking
   end
 
   def config
@@ -87,7 +96,10 @@ module Bulkrax
                  :reserved_properties,
                  :reserved_properties=,
                  :server_name,
-                 :server_name=
+                 :server_name=,
+                 :use_locking,
+                 :use_locking=,
+                 :use_locking?
 
   config do |conf|
     conf.parsers = [
