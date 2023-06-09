@@ -114,7 +114,7 @@ An Import needs to know what Work Type to create. The importer looks for:
 
 If it does not find either of these, or the data they contain is not a valid Work Type in the repository, the `default_work_type` will be used.
 
-The install generator sets `default_work_type` to the first Work Type returned by `Hyrax.config.curation_concerns` but this can be overwritten by setting `default_work_type` in `config/initializer/bulkrax.rb` as shown above.
+The install generator sets `default_work_type` to the first Work Type returned by `Hyrax.config.curation_concerns` (stringified), but this can be overwritten by setting `default_work_type` in `config/initializer/bulkrax.rb` as shown above.
 
 ## Configuring Field Mapping
 
