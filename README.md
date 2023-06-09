@@ -17,6 +17,7 @@ And then execute:
 ```bash
 $ bundle install
 $ rails generate bulkrax:install
+$ rails db:migrate
 ```
 
 If using Sidekiq, set up queues for `import` and `export`.
@@ -32,6 +33,7 @@ gem 'bulkrax'
 And then execute:
 ```bash
 $ bundle install
+$ rails db:migrate
 ```
 
 Mount the engine in your routes file
@@ -61,7 +63,7 @@ If using Sidekiq, set up queues for `import` and `export`.
 *= require 'bulkrax/application'
 ```
 
-You'll want to add an intializer to configure the importer to your needs:
+You'll want to add an initializer to configure the importer to your needs:
 
 ```ruby
 # config/initializers/bulkrax.rb
@@ -112,13 +114,13 @@ An Import needs to know what Work Type to create. The importer looks for:
 
 If it does not find either of these, or the data they contain is not a valid Work Type in the repository, the `default_work_type` will be used.
 
-The install generator sets `default_work_type` to the first Work Type returned by `Hyrax.config.curation_concerns` but this can be overriden by setting `default_work_type` in `config/initializer/bulkrax.rb` as shown above.
+The install generator sets `default_work_type` to the first Work Type returned by `Hyrax.config.curation_concerns` (stringified), but this can be overwritten by setting `default_work_type` in `config/initializer/bulkrax.rb` as shown above.
 
 ## Configuring Field Mapping
 
 It's unlikely that the incoming import data has fields that exactly match those in your repository. Field mappings allow you to tell bulkrax how to map field in the incoming data to a field in your application.
 
-By default, a mapping for the OAI parser has been added to map standard oai_dc fields to Hyrax basic_metadata. The other parsers have no default mapping, and will map any incoming fields to Hyrax properties with the same name. Configurations can be added in `config/intializers/bulkrax.rb`
+By default, a mapping for the OAI parser has been added to map standard oai_dc fields to Hyrax basic_metadata. The other parsers have no default mapping, and will map any incoming fields to Hyrax properties with the same name. Configurations can be added in `config/initializers/bulkrax.rb`
 
 Configuring field mappings is documented in the [Bulkrax Configuration Guide](https://github.com/samvera-labs/bulkrax/wiki/Configuring-Bulkrax).
 
@@ -176,7 +178,7 @@ To edit an importer or exporter, select the edit icon (pencil) and complete the 
 To delete an importer or exporter, select the delete (x) icon.
 
 ### Downloading an export
-Once your the exporter has run, a download icon will apear on the exporters menu page.
+Once your the exporter has run, a download icon will appear on the exporters menu page.
 
 ## Contributing
 If you're working on a PR for this project, create a feature branch off of `main`.
