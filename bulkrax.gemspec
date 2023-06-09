@@ -36,4 +36,5 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'sqlite3', '~> 1.3.13'
   s.add_development_dependency 'simplecov'
   s.add_development_dependency 'redis', '~> 4.2'
+  s.add_development_dependency 'psych', '~> 3.3'
 end
