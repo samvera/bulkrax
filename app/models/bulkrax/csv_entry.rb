@@ -383,7 +383,6 @@ module Bulkrax
 
     private
 
-
     # @api private
     #
     # This method will remove any white spaces from the keys of the data hash
