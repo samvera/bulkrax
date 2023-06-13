@@ -68,6 +68,20 @@ module Bulkrax
       return raw_data
     end
 
+    # This method will remove any white spaces from the keys of the data hash
+    # @param [Hash] data
+    # @return [Hash] data with keys that have no white spaces
+    def self.clean_data(data)
+      modified_hash = {}
+
+      data.each do |key, value|
+        modified_key = key.to_s.strip
+        modified_hash[modified_key.to_sym] = value
+      end
+
+      modified_hash
+    end
+
     def build_metadata
       validate_record
 
@@ -383,13 +397,13 @@ module Bulkrax
 
     private
 
-
     # @api private
     #
     # This method will remove any white spaces from the keys of the data hash
     # @param [Hash] data
     # @return [Hash] data with keys that have no white spaces
-    def self.clean_data(data)
+    def clean_data(data)
+      binding.pry
       modified_hash = {}
 
       data.each do |key, value|
@@ -398,6 +412,7 @@ module Bulkrax
       end
 
       modified_hash
+      
     end
 
     def map_file_sets(file_sets)
