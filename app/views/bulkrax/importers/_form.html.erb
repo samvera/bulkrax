@@ -23,6 +23,11 @@
 
   <%= form.input :parser_klass, collection: Bulkrax.parsers.map {|p| [p[:name], p[:class_name], {'data-partial' => p[:partial]}]}, label: "Parser", input_html: { class: 'form-control' } %>
 
+  <%= form.input :import_relationships_only?,
+                 as: :boolean,
+                 label: t('bulkrax.importer.labels.import_relationships_only'),
+                 hint: t('bulkrax.importer.hints.import_relationships_only') %>
+
   <%= form.fields_for :parser_fields do |fi| %>
     <div class='parser_fields'>
       <p>Specific fields for each parser are available only when a parser is selected</p>

@@ -234,6 +234,7 @@ module Bulkrax
         :parser_klass,
         :limit,
         :validate_only,
+        :import_relationships_only,
         selected_files: {},
         field_mapping: {},
         parser_fields: [importable_parser_fields]

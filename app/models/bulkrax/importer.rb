@@ -136,6 +136,10 @@ module Bulkrax
       self.parser_fields['update_files']
     end
 
+    def import_relationships_only?
+      self.import_relationships_only
+    end
+
     def import_works
       import_objects(['work'])
     end

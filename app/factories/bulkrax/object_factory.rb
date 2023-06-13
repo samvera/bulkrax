@@ -41,6 +41,7 @@ module Bulkrax
       @source_identifier_value = source_identifier_value
       @klass = klass || Bulkrax.default_work_type.constantize
       @importer_run_id = importer_run_id
+      @importer = Bulkrax::ImporterRun.find(importer_run_id).importer
     end
     # rubocop:enable Metrics/ParameterLists
 
@@ -70,6 +71,12 @@ module Bulkrax
     end
 
     def update
+      if @importer.import_relationships_only
+        logger = Rails.logger
+        logger.info("Skipping #{klass} #{object.id} (#{Array(attributes[work_identifier]).first})")
+        return
+      end
+
       raise "Object doesn't exist" unless object
       destroy_existing_files if @replace_files && ![Collection, FileSet].include?(klass)
       attrs = transform_attributes(update: true)

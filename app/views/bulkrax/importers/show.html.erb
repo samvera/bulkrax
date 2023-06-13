@@ -35,6 +35,10 @@
       <strong><%= t('bulkrax.importer.labels.limit') %>:</strong>
       <%= @importer.limit %>
     </p>
+    <p class='bulkrax-p-align'>
+      <strong><%= t('bulkrax.importer.labels.import_relationships_only') %>:</strong>
+      <%= @importer.import_relationships_only %>
+    </p>
 
     <%= render partial: 'bulkrax/shared/bulkrax_errors', locals: {item: @importer} %>
 

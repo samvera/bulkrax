@@ -58,6 +58,9 @@ en:
         work_entries: Work Entries
         collection_entries: Collection Entries
         file_set_entries: File Set Entries
+        import_relationships_only: Import Relationships Only?
+      hints:
+        import_relationships_only: "This importer will only import relationships, not metadata or files."
     table_header:
       labels:
         identifier: Identifier
