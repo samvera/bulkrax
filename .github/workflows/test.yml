@@ -58,7 +58,7 @@ jobs:
       - name: Download coverage report
         uses: actions/download-artifact@v2
         with:
-          name: coverage-report-2.6
+          name: coverage-report-2.7
           path: coverage
 
       - name: SimpleCov Check
