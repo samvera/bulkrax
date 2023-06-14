@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        ruby: ['2.7'] # TODO add 3.0 compat , '3.0']
+        ruby: ['2.6', '2.7'] # TODO add 3.0 compat , '3.0']
     name: Run specs with ruby ${{ matrix.ruby }}
     steps:
       - uses: actions/checkout@v2
@@ -48,22 +48,21 @@ jobs:
           name: coverage-report-${{ matrix.ruby }}
           path: coverage
 
-  # TODO: this needs investigation. ref: https://github.com/samvera-labs/bulkrax/actions/runs/5224017717/jobs/9534880441?pr=813
-  # coverage:
-  #   runs-on: ubuntu-latest
+  coverage:
+    runs-on: ubuntu-latest
 
-  #   # This line will only run the coverage job if the test job passed
-  #   needs: rspec
+    # This line will only run the coverage job if the test job passed
+    needs: rspec
 
-    # steps:
-      # - name: Download coverage report
-      #   uses: actions/download-artifact@v2
-      #   with:
-      #     name: coverage-report-2.6
-      #     path: coverage
+    steps:
+      - name: Download coverage report
+        uses: actions/download-artifact@v2
+        with:
+          name: coverage-report-2.7
+          path: coverage
 
-      # - name: SimpleCov Check
-      #   uses: vigetlabs/simplecov-check@1.0
-      #   with:
-      #     minimum_coverage: 80
-      #     coverage_path: coverage/.last_run.json
+      - name: SimpleCov Check
+        uses: vigetlabs/simplecov-check@1.0
+        with:
+          minimum_coverage: 80
+          coverage_path: coverage/.last_run.json
