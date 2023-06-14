@@ -55,11 +55,12 @@ jobs:
     needs: rspec
 
     steps:
-      - name: Download coverage report
-        uses: actions/download-artifact@v2
-        with:
-          name: coverage-report-2.6
-          path: coverage
+      # TODO: this step need investigation. ref: https://github.com/samvera-labs/bulkrax/actions/runs/5224017717/jobs/9534880441?pr=813
+      # - name: Download coverage report
+      #   uses: actions/download-artifact@v2
+      #   with:
+      #     name: coverage-report-2.6
+      #     path: coverage
 
       - name: SimpleCov Check
         uses: vigetlabs/simplecov-check@1.0
