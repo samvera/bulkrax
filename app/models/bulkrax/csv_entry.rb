@@ -403,7 +403,6 @@ module Bulkrax
     # @param [Hash] data
     # @return [Hash] data with keys that have no white spaces
     def clean_data(data)
-      binding.pry
       modified_hash = {}
 
       data.each do |key, value|
