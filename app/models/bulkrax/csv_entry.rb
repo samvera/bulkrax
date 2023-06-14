@@ -397,24 +397,6 @@ module Bulkrax
 
     private
 
-    # @api private
-    #
-    # This method will remove any white spaces from the keys of the data hash
-    # @param [Hash] data
-    # @return [Hash] data with keys that have no white spaces
-    def clean_data(data)
-      binding.pry
-      modified_hash = {}
-
-      data.each do |key, value|
-        modified_key = key.to_s.strip
-        modified_hash[modified_key.to_sym] = value
-      end
-
-      modified_hash
-      
-    end
-
     def map_file_sets(file_sets)
       file_sets.map { |fs| filename(fs).to_s if filename(fs).present? }.compact
     end
