@@ -21,6 +21,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'rails', '>= 5.1.6'
   s.add_dependency 'bagit', '~> 0.4'
   s.add_dependency 'coderay'
+  s.add_dependency 'dry-monads', '~> 1.4.0'
   s.add_dependency 'iso8601', '~> 0.9.0'
   s.add_dependency 'kaminari'
   s.add_dependency 'language_list', '~> 1.2', '>= 1.2.1'
@@ -34,4 +35,6 @@ Gem::Specification.new do |s|
 
   s.add_development_dependency 'sqlite3', '~> 1.3.13'
   s.add_development_dependency 'simplecov'
+  s.add_development_dependency 'redis', '~> 4.2'
+  s.add_development_dependency 'psych', '~> 3.3'
 end

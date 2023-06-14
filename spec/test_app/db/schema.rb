@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2022_07_26_164334) do
+ActiveRecord::Schema.define(version: 2023_06_08_153601) do
 
   create_table "accounts", force: :cascade do |t|
     t.string "name"
@@ -41,6 +41,9 @@ ActiveRecord::Schema.define(version: 2022_07_26_164334) do
     t.datetime "last_succeeded_at"
     t.string "importerexporter_type", default: "Bulkrax::Importer"
     t.integer "import_attempts", default: 0
+    t.index ["identifier"], name: "index_bulkrax_entries_on_identifier"
+    t.index ["importerexporter_id", "importerexporter_type"], name: "bulkrax_entries_importerexporter_idx"
+    t.index ["type"], name: "index_bulkrax_entries_on_type"
   end
 
   create_table "bulkrax_exporter_runs", force: :cascade do |t|
@@ -125,7 +128,9 @@ ActiveRecord::Schema.define(version: 2022_07_26_164334) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "order", default: 0
+    t.index ["child_id"], name: "index_bulkrax_pending_relationships_on_child_id"
     t.index ["importer_run_id"], name: "index_bulkrax_pending_relationships_on_importer_run_id"
+    t.index ["parent_id"], name: "index_bulkrax_pending_relationships_on_parent_id"
   end
 
   create_table "bulkrax_statuses", force: :cascade do |t|
@@ -139,6 +144,9 @@ ActiveRecord::Schema.define(version: 2022_07_26_164334) do
     t.string "runnable_type"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["error_class"], name: "index_bulkrax_statuses_on_error_class"
+    t.index ["runnable_id", "runnable_type"], name: "bulkrax_statuses_runnable_idx"
+    t.index ["statusable_id", "statusable_type"], name: "bulkrax_statuses_statusable_idx"
   end
 
   create_table "checksum_audit_logs", force: :cascade do |t|
