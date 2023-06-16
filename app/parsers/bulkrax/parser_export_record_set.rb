@@ -282,7 +282,7 @@ module Bulkrax
       def file_sets
         @file_sets ||= ParserExportRecordSet.in_batches(complete_entry_identifiers) do |ids|
           ActiveFedora::SolrService.query(
-            extra_filers,
+            extra_filters,
             query_kwargs.merge(
               fq: [
                 %(#{solr_name(work_identifier)}:("#{ids.join('" OR "')}")),
