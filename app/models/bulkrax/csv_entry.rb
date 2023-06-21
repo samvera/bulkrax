@@ -20,7 +20,7 @@ module Bulkrax
       raise StandardError, 'CSV path empty' if path.blank?
       options = {
         headers: true,
-        header_converters: ->(h) { h.to_sym },
+        header_converters: ->(h) { h.to_s.strip.to_sym },
         encoding: 'utf-8'
       }.merge(csv_read_data_options)
 
@@ -60,26 +60,12 @@ module Bulkrax
       # If a multi-line CSV data is passed, grab the first row
       data = data.first if data.is_a?(CSV::Table)
       # model has to be separated so that it doesn't get mistranslated by to_h
-      raw_data = clean_data(data.to_h)
+      raw_data = data.to_h
       raw_data[:model] = data[:model] if data[:model].present?
       # If the collection field mapping is not 'collection', add 'collection' - the parser needs it
       # TODO: change to :parents
       raw_data[:parents] = raw_data[parent_field(parser).to_sym] if raw_data.keys.include?(parent_field(parser).to_sym) && parent_field(parser) != 'parents'
       return raw_data
-    end
-
-    # This method will remove any white spaces from the keys of the data hash
-    # @param [Hash] data
-    # @return [Hash] data with keys that have no white spaces
-    def self.clean_data(data)
-      modified_hash = {}
-
-      data.each do |key, value|
-        modified_key = key.to_s.strip
-        modified_hash[modified_key.to_sym] = value
-      end
-
-      modified_hash
     end
 
     def build_metadata
