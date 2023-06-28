@@ -9,7 +9,9 @@
         <%= render 'form', importer: @importer, form: form %>
         <div class="panel-footer">
           <div class='pull-right'>
-            <%= form.button :submit, value: 'Create and Validate', class: 'btn btn-primary' %>
+            <% if ENV['SHOW_CREATE_AND_VALIDATE'] == 'true' %>
+              <%= form.button :submit, value: 'Create and Validate', class: 'btn btn-primary' %>
+            <% end  %>
             |
             <%= form.button :submit, value: 'Create and Import', class: 'btn btn-primary' %>
             |
