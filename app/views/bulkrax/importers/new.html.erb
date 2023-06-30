@@ -11,8 +11,8 @@
           <div class='pull-right'>
             <% if ENV['SHOW_CREATE_AND_VALIDATE'] == 'true' %>
               <%= form.button :submit, value: 'Create and Validate', class: 'btn btn-primary' %>
+              |
             <% end  %>
-            |
             <%= form.button :submit, value: 'Create and Import', class: 'btn btn-primary' %>
             |
             <%= form.button :submit, value: 'Create', class: 'btn btn-primary' %>
