@@ -10,7 +10,9 @@
         <%= render 'form', importer: @importer, form: form %>
         <div class="panel-footer">
           <div class='pull-right'>
-            <%= link_to 'Update Importer', '#bulkraxModal', class: "btn btn-primary", data: { toggle: 'modal' } %>
+            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#bulkraxModal">
+              Update Importer
+            </button>
             <%= render 'edit_form_buttons', form: form %>
            <% cancel_path = form.object.persisted? ? importer_path(form.object) : importers_path %>
             | <%= link_to t('.cancel'), cancel_path, class: 'btn btn-default ' %>
