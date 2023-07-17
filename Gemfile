@@ -13,7 +13,7 @@ gemspec
 # your gem to rubygems.org.
 
 gem 'blacklight', '~> 6.25.0'
-gem 'bootstrap-sass', '~> 3.0'
+gem 'bootstrap-sass', '~> 3.4.1'
 gem 'coderay'
 gem 'factory_bot_rails'
 gem 'hyrax', '>= 2.3'
