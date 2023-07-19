@@ -1,10 +1,14 @@
 <% if current_ability.can_import_works? %>
-  <%= menu.nav_link(bulkrax.importers_path) do %>
+  <%= menu.nav_link(bulkrax.importers_path,
+                    alt: t('bulkrax.admin.sidebar.importers'),
+                    title: t('bulkrax.admin.sidebar.importers')) do %>
     <span class="fa fa-cloud-upload" aria-hidden="true"></span> <span class="sidebar-action-text"><%= t('bulkrax.admin.sidebar.importers') %></span>
   <% end %>
 <% end %>
 <% if current_ability.can_export_works? %>
-  <%= menu.nav_link(bulkrax.exporters_path) do %>
+  <%= menu.nav_link(bulkrax.exporters_path,
+                    alt: t('bulkrax.admin.sidebar.exporters'),
+                    title: t('bulkrax.admin.sidebar.exporters')) do %>
     <span class="fa fa-cloud-download" aria-hidden="true"></span> <span class="sidebar-action-text"><%= t('bulkrax.admin.sidebar.exporters') %></span>
   <% end %>
 <% end %>
