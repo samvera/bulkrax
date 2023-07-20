@@ -47,11 +47,21 @@ class Bulkrax::InstallGenerator < Rails::Generators::Base
   def add_javascripts
     file = 'app/assets/javascripts/application.js'
     file_text = File.read(file)
-    js = '//= require bulkrax/application'
+    js = "\n// This line needs to be above the dataTables require in Hyku applications otherwise there will be jquery errors\n//= require bulkrax/application\n"
 
     return if file_text.include?(js)
-    insert_into_file file, before: /\/\/= require_tree ./ do
-      "#{js}\n"
+
+    data_tables_rgx = /\/\/= require dataTables\/jquery.dataTables/
+    require_tree_rgx = /\/\/= require_tree/
+
+    if file_text.match?(data_tables_rgx)
+      insert_into_file file, before: data_tables_rgx do
+        "#{js}\n"
+      end
+    else
+      insert_into_file file, before: require_tree_rgx do
+        "#{js}\n"
+      end
     end
   end
 
