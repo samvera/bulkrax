@@ -37,7 +37,7 @@ module Bulkrax
         @result = @result.split(Bulkrax.multi_value_element_split_on)
       elsif self.split
         @result = @result.split(Regexp.new(self.split))
-        @result = @result.map(&:strip).select { |r| r.present? }
+        @result = @result.map(&:strip).select(&:present?)
       end
     end
 
