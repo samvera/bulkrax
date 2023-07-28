@@ -158,9 +158,11 @@ module Bulkrax
     end
 
     def add_to_collection(child_record, parent_record)
-      parent_record.try(:reindex_extent=, Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX)
-      child_record.member_of_collections << parent_record
-      child_record.save!
+      conditionally_acquire_lock_for(child_record.id) do
+        parent_record.try(:reindex_extent=, Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX)
+        child_record.member_of_collections << parent_record
+        child_record.save!
+      end
     end
 
     def add_to_work(child_record, parent_record)
