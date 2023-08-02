@@ -243,20 +243,17 @@ module Bulkrax
       object_metadata(Array.wrap(data))
     end
 
-    def build_value(key, value)
-      return unless hyrax_record.respond_to?(key.to_s)
+    def build_value(property_name, mapping_config)
+      return unless hyrax_record.respond_to?(property_name.to_s)
 
-      data = hyrax_record.send(key.to_s)
-      if data.is_a?(ActiveTriples::Relation)
-        if value['join']
-          self.parsed_metadata[key_for_export(key)] = data.map { |d| prepare_export_data(d) }.join(Bulkrax.multi_value_element_join_on).to_s
-        else
-          data.each_with_index do |d, i|
-            self.parsed_metadata["#{key_for_export(key)}_#{i + 1}"] = prepare_export_data(d)
-          end
-        end
+      data = hyrax_record.send(property_name.to_s)
+
+      if mapping_config['join'] || !data.is_a?(Enumerable)
+        self.parsed_metadata[key_for_export(property_name)] = prepare_export_data_with_join(data)
       else
-        self.parsed_metadata[key_for_export(key)] = prepare_export_data(data)
+        data.each_with_index do |d, i|
+          self.parsed_metadata["#{key_for_export(property_name)}_#{i + 1}"] = prepare_export_data(d)
+        end
       end
     end
 
@@ -267,6 +264,14 @@ module Bulkrax
       unnumbered_key = mapping[clean_key] ? mapping[clean_key]['from'].first : clean_key
       # Bring the number back if there is one
       "#{unnumbered_key}#{key.sub(clean_key, '')}"
+    end
+
+    def prepare_export_data_with_join(data)
+      # Yes...it's possible we're asking to coerce a multi-value but only have a single value.
+      return data.to_s unless data.is_a?(Enumerable)
+      return "" if data.empty?
+
+      data.map { |d| prepare_export_data(d) }.join(Bulkrax.multi_value_element_join_on).to_s
     end
 
     def prepare_export_data(datum)
