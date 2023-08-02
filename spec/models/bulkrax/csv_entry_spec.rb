@@ -916,6 +916,7 @@ module Bulkrax
           allow(work_obj).to receive(:member_work_ids).and_return([])
           allow(work_obj).to receive(:multiple_objects).and_return(source_id_rel)
           allow(source_id_rel).to receive(:is_a?).with(ActiveTriples::Relation).and_return(true)
+          allow(source_id_rel).to receive(:is_a?).with(Enumerable).and_return(true)
           allow(source_id_rel).to receive(:to_a).and_return(['test_work_source_id'])
           allow(source_id_rel).to receive(:each_with_index).and_return(['test_work_source_id', 0])
         end
