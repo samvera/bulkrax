@@ -26,7 +26,8 @@ module Bulkrax
 
       # @result will evaluate to an empty string for nil content values
       @result = content.to_s.gsub(/\s/, ' ').strip # remove any line feeds and tabs
-      process_split if @result.present?
+      # blank needs to be based to split, only skip nil
+      process_split unless @result.nil?
       @result = @result[0] if @result.is_a?(Array) && @result.size == 1
       process_parse
       return @result
@@ -36,8 +37,8 @@ module Bulkrax
       if self.split.is_a?(TrueClass)
         @result = @result.split(Bulkrax.multi_value_element_split_on)
       elsif self.split
-        result = @result.split(Regexp.new(self.split))
-        @result = result.map(&:strip)
+        @result = @result.split(Regexp.new(self.split))
+        @result = @result.map(&:strip).select(&:present?)
       end
     end
 
