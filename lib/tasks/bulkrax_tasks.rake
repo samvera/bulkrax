@@ -3,7 +3,7 @@
 namespace :bulkrax do
   # Usage example: rails bulkrax:generate_test_csvs['5','100','GenericWork']
   desc 'Generate CSVs with fake data for testing purposes'
-  task :generate_test_csvs, [:num_of_csvs, :csv_rows, :work_type] => :environment do |_t, args|
+  task :generate_test_csvs, [:num_of_csvs, :csv_rows, :record_type] => :environment do |_t, args|
     # NOTE: If this line throws an error, run `gem install faker` inside your Docker container
     require 'faker'
     require 'csv'
@@ -46,12 +46,12 @@ namespace :bulkrax do
 
     num_of_csvs = args.num_of_csvs.presence&.to_i || 5
     csv_rows = args.csv_rows.presence&.to_i || 100
-    work_type = args.work_type.presence&.constantize || GenericWork
+    record_type = args.record_type.presence&.constantize || GenericWork
 
     csv_header = if Hyrax.config.try(:use_valkyrie?)
-                   work_type.schema.map { |k| k.name.to_s }
+                   record_type.schema.map { |k| k.name.to_s }
                  else
-                   work_type.properties.keys
+                   record_type.properties.keys
                  end
 
     csv_header -= IGNORED_PROPERTIES
@@ -67,7 +67,7 @@ namespace :bulkrax do
                    when 'id', 'source_identifier'
                      Faker::Number.number(digits: 4)
                    when 'model'
-                     work_type.to_s
+                     record_type.to_s
                    when 'rights_statement'
                      'http://rightsstatements.org/vocab/CNE/1.0/'
                    when 'license'
