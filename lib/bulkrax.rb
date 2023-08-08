@@ -4,34 +4,76 @@ require "bulkrax/engine"
 require 'active_support/all'
 
 module Bulkrax
-  class << self
-    mattr_accessor :parsers,
-                   :default_work_type,
-                   :default_field_mapping,
-                   :collection_field_mapping,
-                   :fill_in_blank_source_identifiers,
-                   :parent_child_field_mapping,
-                   :reserved_properties,
-                   :field_mappings,
-                   :import_path,
-                   :export_path,
-                   :removed_image_path,
-                   :server_name,
-                   :api_definition,
-                   :removed_image_path
+  extend self
+  extend Forwardable
 
-    self.parsers = [
-      { name: "OAI - Dublin Core", class_name: "Bulkrax::OaiDcParser", partial: "oai_fields" },
-      { name: "OAI - Qualified Dublin Core", class_name: "Bulkrax::OaiQualifiedDcParser", partial: "oai_fields" },
-      { name: "CSV - Comma Separated Values", class_name: "Bulkrax::CsvParser", partial: "csv_fields" },
-      { name: "Bagit", class_name: "Bulkrax::BagitParser", partial: "bagit_fields" },
-      { name: "XML", class_name: "Bulkrax::XmlParser", partial: "xml_fields" }
+  class Configuration
+    attr_accessor :parsers,
+                  :default_work_type,
+                  :default_field_mapping,
+                  :collection_field_mapping,
+                  :fill_in_blank_source_identifiers,
+                  :parent_child_field_mapping,
+                  :reserved_properties,
+                  :field_mappings,
+                  :import_path,
+                  :export_path,
+                  :removed_image_path,
+                  :server_name,
+                  :api_definition,
+                  :removed_image_path
+  end
+
+  def config
+    @config ||= Configuration.new
+    yield @config if block_given?
+    @config
+  end
+  alias setup config
+
+  def_delegators :config,
+                 :api_definition,
+                 :api_definition=,
+                 :collection_field_mapping,
+                 :collection_field_mapping=,
+                 :default_field_mapping,
+                 :default_field_mapping=,
+                 :default_work_type,
+                 :default_work_type=,
+                 :export_path,
+                 :export_path=,
+                 :field_mappings,
+                 :field_mappings=,
+                 :fill_in_blank_source_identifiers,
+                 :fill_in_blank_source_identifiers=,
+                 :import_path,
+                 :import_path=,
+                 :parent_child_field_mapping,
+                 :parent_child_field_mapping=,
+                 :parsers,
+                 :parsers=,
+                 :removed_image_path,
+                 :removed_image_path,
+                 :removed_image_path=,
+                 :removed_image_path=,
+                 :reserved_properties,
+                 :reserved_properties=,
+                 :server_name,
+                 :server_name=
+
+  config do |conf|
+    conf.parsers = [
+    { name: "OAI - Dublin Core", class_name: "Bulkrax::OaiDcParser", partial: "oai_fields" },
+    { name: "OAI - Qualified Dublin Core", class_name: "Bulkrax::OaiQualifiedDcParser", partial: "oai_fields" },
+    { name: "CSV - Comma Separated Values", class_name: "Bulkrax::CsvParser", partial: "csv_fields" },
+    { name: "Bagit", class_name: "Bulkrax::BagitParser", partial: "bagit_fields" },
+    { name: "XML", class_name: "Bulkrax::XmlParser", partial: "xml_fields" }
     ]
 
-    self.import_path = 'tmp/imports'
-    self.export_path = 'tmp/exports'
-    self.removed_image_path = Bulkrax::Engine.root.join('spec', 'fixtures', 'removed.png').to_s
-    self.server_name = 'bulkrax@example.com'
+    conf.import_path = 'tmp/imports'
+    conf.export_path = 'tmp/exports'
+    conf.removed_image_path = Bulkrax::Engine.root.join('spec', 'fixtures', 'removed.png').to_s
+    conf.server_name = 'bulkrax@example.com'
 
     # @todo, merge parent_child_field_mapping and collection_field_mapping into field_mappings,
     # or make them settable per import some other way.
@@ -46,19 +88,19 @@ module Bulkrax
     #     'Bulkrax::CsvEntry'  => 'children'
     #   }
     # By default no parent-child relationships are added
-    self.parent_child_field_mapping = {}
+    conf.parent_child_field_mapping = {}
 
     # Field_mapping for establishing a collection relationship (FROM work TO collection)
     # This value IS NOT used for OAI, so setting the OAI Entries here will have no effect
     # The mapping is supplied per Entry, provide the full class name as a string, eg. 'Bulkrax::CsvEntry'
     # The default value for CSV is collection
-    self.collection_field_mapping = {}
+    conf.collection_field_mapping = {}
 
     # Hash of Generic field_mappings for use in the view
     # There must be one field_mappings hash per view parial
     # Based on Hyrax CoreMetadata && BasicMetadata
     # Override at application level to change
-    self.field_mappings = {
+    conf.field_mappings = {
       "Bulkrax::OaiDcParser" => {
         "contributor" => { from: ["contributor"] },
         # no appropriate mapping for coverage (based_near needs id)
@@ -106,7 +148,7 @@ module Bulkrax
     }
 
     # Lambda to set the default field mapping
-    self.default_field_mapping = lambda do |field|
+    conf.default_field_mapping = lambda do |field|
       return if field.blank?
       {
         field.to_s =>
@@ -121,7 +163,7 @@ module Bulkrax
     end
 
     # Properties that should not be used in imports. They are reserved for use by Hyrax.
-    self.reserved_properties = %w[
+    conf.reserved_properties = %w[
       create_date
       modified_date
       date_modified
@@ -140,6 +182,8 @@ module Bulkrax
       original_url
       relative_path
     ]
+
+    conf.removed_image_path = 'app/assets/images/bulkrax/removed.png'
   end
 
   def self.api_definition
@@ -150,12 +194,5 @@ module Bulkrax
         ).result
       )
     )
-  end
-
-  self.removed_image_path = 'app/assets/images/bulkrax/removed.png'
-
-  # this function maps the vars from your app into your engine
-  def self.setup
-    yield self
   end
 end
