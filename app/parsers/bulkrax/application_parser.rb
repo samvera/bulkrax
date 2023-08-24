@@ -252,10 +252,10 @@ module Bulkrax
     end
 
     # @return [TrueClass,FalseClass]
-    def record_has_source_identifier(record, index, key_count = nil)
+    def record_has_source_identifier(record, index)
       if record[source_identifier].blank?
         if Bulkrax.fill_in_blank_source_identifiers.present?
-          record[source_identifier] = Bulkrax.fill_in_blank_source_identifiers.call(self, index, key_count)
+          record[source_identifier] = Bulkrax.fill_in_blank_source_identifiers.call(self, index)
         else
           invalid_record("Missing #{source_identifier} for #{record.to_h}\n")
           false
