@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Bulkrax
-  class ObjectFactory
+  class ObjectFactory # rubocop:disable Metrics/ClassLength
     extend ActiveModel::Callbacks
     include Bulkrax::FileFactory
     include DynamicRecordLookup
