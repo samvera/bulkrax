@@ -27,7 +27,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'libxml-ruby', '~> 3.1.0'
   s.add_dependency 'language_list', '~> 1.2', '>= 1.2.1'
   s.add_dependency 'rdf', '>= 2.0.2', '< 4.0'
-  s.add_dependency 'bagit', '~> 0.4'
+  s.add_dependency 'bagit', '~> 0.4.5'
   s.add_dependency 'coderay'
   s.add_dependency 'kaminari'
 
