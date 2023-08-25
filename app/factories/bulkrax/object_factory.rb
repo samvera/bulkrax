@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Bulkrax
-  class ObjectFactory
+  class ObjectFactory # rubocop:disable Metrics/ClassLength
     extend ActiveModel::Callbacks
     include Bulkrax::FileFactory
     include DynamicRecordLookup
@@ -87,7 +87,8 @@ module Bulkrax
     end
 
     def find
-      return find_by_id if attributes[:id].present?
+      found = find_by_id if attributes[:id].present?
+      return found if found.present?
       return search_by_identifier if attributes[work_identifier].present?
     end
 
@@ -102,7 +103,8 @@ module Bulkrax
     end
 
     def search_by_identifier
-      query = { work_identifier =>
+      work_index = ::ActiveFedora.index_field_mapper.solr_name(work_identifier, :facetable)
+      query = { work_index =>
                 source_identifier_value }
       # Query can return partial matches (something6 matches both something6 and something68)
       # so we need to weed out any that are not the correct full match. But other items might be
