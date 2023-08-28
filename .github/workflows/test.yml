@@ -13,6 +13,7 @@ jobs:
     strategy:
       matrix:
         ruby: ['2.6', '2.7'] # TODO add 3.0 compat , '3.0']
+        hyrax: ['2.9.6', '3.6.0']
     name: Run specs with ruby ${{ matrix.ruby }}
     steps:
       - uses: actions/checkout@v2
@@ -30,6 +31,11 @@ jobs:
 
       - name: Setup sqlite3
         run: sudo apt-get install libsqlite3-dev
+
+      - name: Set Hyrax Version
+        run: |
+          bundle remove hyrax
+          bundle add hyrax -v ${{ matrix.hyrax }}
 
       - name: Install dependencies
         run: |
