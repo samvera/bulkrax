@@ -125,7 +125,9 @@ module Bulkrax
 
       return false if excluded?(field)
       return true if supported_bulkrax_fields.include?(field)
-      return factory_class.method_defined?(field) && factory_class.properties[field].present?
+      property_defined = factory_class.singleton_methods.include?(:properties) && factory_class.properties[field].present?
+
+      factory_class.method_defined?(field) && (Bulkrax::ValkyrieObjectFactory.schema_properties(factory_class).include?(field) || property_defined)
     end
 
     def supported_bulkrax_fields
@@ -155,7 +157,18 @@ module Bulkrax
       return true if @multiple_bulkrax_fields.include?(field)
       return false if field == 'model'
 
-      field_supported?(field) && factory_class&.properties&.[](field)&.[]('multiple')
+      # TODO: key off of something more reliable than Bulkrax.object_factory
+      if Bulkrax.object_factory.to_s == 'Bulkrax::ValkyrieObjectFactory'
+        field_supported?(field) && (multiple_field?(field) || factory_class.singleton_methods.include?(:properties) && factory_class&.properties&.[](field)&.[]("multiple"))
+      else
+        field_supported?(field) && factory_class&.properties&.[](field)&.[]('multiple')
+      end
+    end
+
+    def multiple_field?(field)
+      Hyrax::Forms::ResourceForm # TODO: this prevents `NoMethodError: undefined method `ResourceForm' for Hyrax::Forms:Module`, why?
+      form_class = "#{factory_class}Form".constantize
+      form_class.definitions[field.to_s][:multiple].present?
     end
 
     def get_object_name(field)
