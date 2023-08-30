@@ -92,7 +92,7 @@ module Bulkrax
     end
 
     def find_by_id
-      klass.find(attributes[:id]) if klass.exists?(attributes[:id])
+      klass.find(attributes[:id]) if klass.exist?(attributes[:id])
     end
 
     def find_or_create

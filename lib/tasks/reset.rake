@@ -35,7 +35,7 @@ namespace :hyrax do
       AccountElevator.switch!(Site.instance.account) if defined?(AccountElevator)
       # we need to wait till Fedora is done with its cleanup
       # otherwise creating the admin set will fail
-      while AdminSet.exists?(AdminSet::DEFAULT_ID)
+      while AdminSet.exist?(AdminSet::DEFAULT_ID)
         puts 'waiting for delete to finish before reinitializing Fedora'
         sleep 20
       end
