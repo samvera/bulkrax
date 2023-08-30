@@ -168,6 +168,8 @@ module Bulkrax
     def multiple_field?(field)
       Hyrax::Forms::ResourceForm # TODO: this prevents `NoMethodError: undefined method `ResourceForm' for Hyrax::Forms:Module`, why?
       form_class = "#{factory_class}Form".constantize
+      return false if form_class.definitions[field.to_s].nil? 
+  
       form_class.definitions[field.to_s][:multiple].present?
     end
 
