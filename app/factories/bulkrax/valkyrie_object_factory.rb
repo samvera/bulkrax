@@ -48,6 +48,10 @@ module Bulkrax
         .merge(alternate_ids: [source_identifier_value])
         .symbolize_keys
 
+      # temporary workaround just to see if we can get the import to work
+      attrs.merge!(title: ['']) if attrs[:title].blank?
+      attrs.merge!(creator: ['']) if attrs[:creator].blank?
+
       cx = Hyrax::Forms::ResourceForm.for(klass.new).prepopulate!
       cx.validate(attrs)
 
