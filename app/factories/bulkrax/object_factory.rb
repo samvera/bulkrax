@@ -89,9 +89,10 @@ module Bulkrax
     def find
       found = find_by_id if attributes[:id].present?
       return found if found.present?
-      return search_by_identifier if attributes[work_identifier].present?
     rescue Valkyrie::Persistence::ObjectNotFoundError
       false
+    ensure
+      return search_by_identifier if attributes[work_identifier].present?
     end
 
     def find_by_id

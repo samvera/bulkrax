@@ -5,13 +5,8 @@ module Bulkrax
     # borrowed from batch-importer https://github.com/samvera-labs/hyrax-batch_ingest/blob/main/app/controllers/hyrax/batch_ingest/batches_controller.rb
     def available_admin_sets
       # Restrict available_admin_sets to only those current user can deposit to.
-      # TODO: key off of something more reliable than Bulkrax.object_factory
-      if Bulkrax.object_factory.to_s == 'Bulkrax::ValkyrieObjectFactory'
-        @available_admin_sets ||= Hyrax.metadata_adapter.query_service.find_all_of_model(model: Hyrax::AdministrativeSet).to_a
-      else
-        @available_admin_sets ||= Hyrax::Collections::PermissionsService.source_ids_for_deposit(ability: current_ability, source_type: 'admin_set').map do |admin_set_id|
-          [AdminSet.find(admin_set_id).title.first, admin_set_id]
-        end
+      @available_admin_sets ||= Hyrax::Collections::PermissionsService.source_ids_for_deposit(ability: current_ability, source_type: 'admin_set').map do |admin_set_id|
+        [Hyrax.metadata_adapter.query_service.find_by(id: admin_set_id)&.title&.first || admin_set_id, admin_set_id]
       end
     end
   end

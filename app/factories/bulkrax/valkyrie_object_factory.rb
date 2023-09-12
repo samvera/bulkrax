@@ -40,9 +40,6 @@ module Bulkrax
       false
     end
 
-    # An ActiveFedora bug when there are many habtm <-> has_many associations means they won't all get saved.
-    # https://github.com/projecthydra/active_fedora/issues/874
-    # 2+ years later, still open!
     def create
       attrs = transform_attributes
         .merge(alternate_ids: [source_identifier_value])
