@@ -1,31 +1,32 @@
 <div class='xml_fields'>
 
-  <%# @todo improve on this implementation. 
-    As it stands, it's a hostage to namespaces, 
-    eg. dc:title 
+  <%# @todo improve on this implementation.
+    As it stands, it's a hostage to namespaces,
+    eg. dc:title
     if namespaces aren't in the xml, we would have to specify dc:title
     but if the namespaces ARE present, we remove them so we would need title
   %>
-  <%= fi.input :record_element, 
-    hint: 'Provide the xml element name to use to identify the record, or records, eg. ROW - each record in the attached XML is wrapped in a <ROW> tag.', 
+  <%= fi.input :record_element,
+    hint: 'Provide the xml element name to use to identify the record, or records, eg. ROW - each record in the attached XML is wrapped in a <ROW> tag.',
     input_html: { value: importer.parser_fields['record_element'] }
     %>
 
-  <%= fi.input :import_type, 
+  <%= fi.input :import_type,
 		collection: [
       ['Single Work per Metadata File', 'single'],
-			['Multiple Works per Metadata File', 'multiple'] 
-		], 
+			['Multiple Works per Metadata File', 'multiple']
+		],
     selected: importer.parser_fields['import_type'],
     input_html: { class: 'form-control' }
     %>
-  
+
   <h4>Visiblity</h4>
 
   <%= fi.input :visibility,
     collection: [
       ['Public', 'open'],
-      ['Private', 'restricted']
+      ['Private', 'restricted'],
+      ['Institution', 'authenticated']
     ],
     selected: importer.parser_fields['visibility'] || 'open',
     input_html: { class: 'form-control' }
