@@ -62,7 +62,12 @@ module Bulkrax
         )
         .call(cx)
 
-      raise StandardError, "#{result.failure[0]} - #{result.failure[1].full_messages.join(',')}", result.trace if result.failure?
+      if result.failure?
+        msg = result.failure[0]
+        msg += " - #{result.failure[1].full_messages.join(',')}" if result.failure[1].respond_to?(:full_messages)
+        raise StandardError, msg, result.trace
+      end
+
       @object = result.value!
 
       @object
