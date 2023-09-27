@@ -46,18 +46,23 @@ en:
         generated_metadata: "These exported fields currently cannot be imported."
     importer:
       labels:
-        name: Name
-        user: User
         admin_set: Admin set
+        collection_entries: Collection Entries
+        entry_id: Entry ID
+        exporter: Exporter
+        file_set_entries: File Set Entries
         frequency: Frequency
-        parser_klass: Parser klass
+        identifier: Identifier
+        importer: Importer
         limit: Limit
-        total_work_entries: Total Works
+        name: Name
+        parser_klass: Parser klass
         total_collections: Total Collections
         total_file_sets: Total File Sets
+        total_work_entries: Total Works
+        type: Type
+        user: User
         work_entries: Work Entries
-        collection_entries: Collection Entries
-        file_set_entries: File Set Entries
     table_header:
       labels:
         identifier: Identifier
