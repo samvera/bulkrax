@@ -103,7 +103,11 @@ module Bulkrax
     end
 
     def search_by_identifier
-      work_index = ::ActiveFedora.index_field_mapper.solr_name(work_identifier, :facetable)
+      # TODO(alishaevn): return the proper `work_index` value below
+      # ref: https://github.com/samvera-labs/bulkrax/issues/866
+      # ref:https://github.com/samvera-labs/bulkrax/issues/867
+      # work_index = ::ActiveFedora.index_field_mapper.solr_name(work_identifier, :facetable)
+      work_index = work_identifier
       query = { work_index =>
                 source_identifier_value }
       # Query can return partial matches (something6 matches both something6 and something68)
