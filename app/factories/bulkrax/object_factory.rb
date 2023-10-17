@@ -253,7 +253,7 @@ module Bulkrax
     def collection_type(attrs)
       return attrs if attrs['collection_type_gid'].present?
 
-      attrs['collection_type_gid'] = Hyrax::CollectionType.find_or_create_default_collection_type.gid
+      attrs['collection_type_gid'] = Hyrax::CollectionType.find_or_create_default_collection_type.to_global_id.to_s
       attrs
     end
 
