@@ -180,6 +180,11 @@ To delete an importer or exporter, select the delete (x) icon.
 ### Downloading an export
 Once your the exporter has run, a download icon will appear on the exporters menu page.
 
+## Compatibility
+
+* Ruby 2.6 or 2.7 is required
+* Hyrax 2.3 or newer is required
+
 ## Contributing
 If you're working on a PR for this project, create a feature branch off of `main`.
 
