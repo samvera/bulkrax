@@ -1,3 +1,5 @@
+![Test Suite](https://github.com/samvera/bulkrax/actions/workflows/test.yml/badge.svg)
+![Test Suite](https://github.com/samvera/bulkrax/actions/workflows/lint.yml/badge.svg)
 # Bulkrax
 Bulkrax is a batteries included importer for Samvera applications. It currently includes support for OAI-PMH (DC and Qualified DC) and CSV out of the box. It is also designed to be extensible, allowing you to easily add new importers in to your application or to include them with other gems. Bulkrax provides a full admin interface including creating, editing, scheduling and reviewing imports.
 
