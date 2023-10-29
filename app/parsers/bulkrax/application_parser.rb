@@ -270,7 +270,7 @@ module Bulkrax
       current_run.invalid_records ||= ""
       current_run.invalid_records += message
       current_run.save
-      ImporterRun.find(current_run.id).increment!(:failed_records)
+      ImporterRun.increment_counter(:failed_records, current_run.id)
       ImporterRun.find(current_run.id).decrement!(:enqueued_records) unless ImporterRun.find(current_run.id).enqueued_records <= 0 # rubocop:disable Style/IdenticalConditionalBranches
     end
     # rubocop:enable Rails/SkipsModelValidations

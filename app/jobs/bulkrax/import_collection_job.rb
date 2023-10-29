@@ -10,12 +10,12 @@ module Bulkrax
       begin
         entry.build
         entry.save!
-        ImporterRun.find(args[1]).increment!(:processed_records)
-        ImporterRun.find(args[1]).increment!(:processed_collections)
+        ImporterRun.increment_counter(:processed_records, args[1])
+        ImporterRun.increment_counter(:processed_collections, args[1])
         ImporterRun.find(args[1]).decrement!(:enqueued_records) unless ImporterRun.find(args[1]).enqueued_records <= 0 # rubocop:disable Style/IdenticalConditionalBranches
       rescue => e
-        ImporterRun.find(args[1]).increment!(:failed_records)
-        ImporterRun.find(args[1]).increment!(:failed_collections)
+        ImporterRun.increment_counter(:failed_records, args[1])
+        ImporterRun.increment_counter(:failed_collections, args[1])
         ImporterRun.find(args[1]).decrement!(:enqueued_records) unless ImporterRun.find(args[1]).enqueued_records <= 0 # rubocop:disable Style/IdenticalConditionalBranches
         raise e
       end

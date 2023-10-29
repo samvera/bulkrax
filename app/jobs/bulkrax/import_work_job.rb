@@ -23,13 +23,13 @@ module Bulkrax
       entry = Entry.find(entry_id)
       entry.build
       if entry.status == "Complete"
-        ImporterRun.find(run_id).increment!(:processed_records)
-        ImporterRun.find(run_id).increment!(:processed_works)
+        ImporterRun.increment_counter(:processed_records, run_id)
+        ImporterRun.increment_counter(:processed_works, run_id)
       else
         # do not retry here because whatever parse error kept you from creating a work will likely
         # keep preventing you from doing so.
-        ImporterRun.find(run_id).increment!(:failed_records)
-        ImporterRun.find(run_id).increment!(:failed_works)
+        ImporterRun.increment_counter(:failed_records, run_id)
+        ImporterRun.increment_counter(:failed_works, run_id)
       end
       # Regardless of completion or not, we want to decrement the enqueued records.
       ImporterRun.find(run_id).decrement!(:enqueued_records) unless ImporterRun.find(run_id).enqueued_records <= 0
