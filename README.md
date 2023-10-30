@@ -184,7 +184,7 @@ Once your the exporter has run, a download icon will appear on the exporters men
 
 ## Compatibility
 
-* Ruby 2.6 or 2.7 is required
+* Ruby 2.7 or newer is required
 * Hyrax 2.3 or newer is required
 
 ## Contributing
