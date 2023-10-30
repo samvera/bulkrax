@@ -18,12 +18,12 @@ jobs:
         uses: actions/cache@v2.1.3
         with:
           path: vendor/bundle
-          key: 2.6.5
+          key: 2.7.2
 
       - name: Setup Ruby
-        uses: ruby/setup-ruby@v1.59.1
+        uses: ruby/setup-ruby@v1.159.0
         with:
-          ruby-version: 2.6.5
+          ruby-version: 2.7.2
 
       - name: Install dependencies
         run: |
