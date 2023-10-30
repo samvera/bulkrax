@@ -32,7 +32,7 @@ module Bulkrax
         ImporterRun.increment_counter(:failed_works, run_id)
       end
       # Regardless of completion or not, we want to decrement the enqueued records.
-      ImporterRun.find(run_id).decrement!(:enqueued_records) unless ImporterRun.find(run_id).enqueued_records <= 0
+      ImporterRun.decrement_counter(:enqueued_records, run_id) unless ImporterRun.find(run_id).enqueued_records <= 0
 
       entry.save!
       entry.importer.current_run = ImporterRun.find(run_id)

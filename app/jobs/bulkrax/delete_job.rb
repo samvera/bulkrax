@@ -9,7 +9,7 @@ module Bulkrax
       obj = entry.factory.find
       obj&.delete
       ImporterRun.increment_counter(:deleted_records, importer_run.id)
-      ImporterRun.find(importer_run.id).decrement!(:enqueued_records)
+      ImporterRun.decrement_counter(:enqueued_records, importer_run.id)
       entry.save!
       entry.importer.current_run = ImporterRun.find(importer_run.id)
       entry.importer.record_status
