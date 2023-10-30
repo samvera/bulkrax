@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        ruby: ['2.6', '2.7'] # TODO add 3.0 compat , '3.0']
+        ruby: ['2.7', '3.0']
     name: Run specs with ruby ${{ matrix.ruby }}
     steps:
       - uses: actions/checkout@v2
@@ -24,7 +24,7 @@ jobs:
           key: ${{ matrix.ruby }}
 
       - name: Setup Ruby
-        uses: ruby/setup-ruby@v1.59.1
+        uses: ruby/setup-ruby@v1.159.0
         with:
           ruby-version: ${{ matrix.ruby }}
 
