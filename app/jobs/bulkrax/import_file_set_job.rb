@@ -20,11 +20,13 @@ module Bulkrax
 
       entry.build
       if entry.succeeded?
+        # rubocop:disable Rails/SkipsModelValidations
         ImporterRun.increment_counter(:processed_records, importer_run_id)
         ImporterRun.increment_counter(:processed_file_sets, importer_run_id)
       else
         ImporterRun.increment_counter(:failed_records, importer_run_id)
         ImporterRun.increment_counter(:failed_file_sets, importer_run_id)
+        # rubocop:enable Rails/SkipsModelValidations
       end
       ImporterRun.decrement_counter(:enqueued_records, importer_run_id) unless ImporterRun.find(importer_run_id).enqueued_records <= 0 # rubocop:disable Rails/SkipsModelValidations
       entry.save!
