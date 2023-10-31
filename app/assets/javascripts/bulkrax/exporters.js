@@ -14,7 +14,7 @@ function hideUnhide(field) {
   }
 };
 
-function addRequired(selectedSource) {  
+function addRequired(selectedSource) {
   selectedSource.addClass('required').attr('required', 'required');
   selectedSource.parent().addClass('required');
 }
@@ -26,14 +26,14 @@ function removeRequired(allSources) {
 
 // hide all export_source
 function hide(allSources) {
-  allSources.addClass('hidden');
-  allSources.find('#exporter_export_source').addClass('hidden').attr('type', 'hidden');
+  allSources.addClass('d-none');
+  allSources.find('#exporter_export_source').addClass('.d-none').attr('type', 'd-none');
 }
 
 // unhide selected export_source
 function unhideSelected(selectedSource) {
-  selectedSource.removeClass('hidden').removeAttr('type');
-  selectedSource.parent().removeClass('hidden').removeAttr('type');
+  selectedSource.removeClass('d-none').removeAttr('type');
+  selectedSource.parent().removeClass('d-none').removeAttr('type');
 };
 
 // add the autocomplete javascript
