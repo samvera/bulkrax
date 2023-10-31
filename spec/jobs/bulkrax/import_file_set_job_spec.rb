@@ -5,8 +5,8 @@ require 'rails_helper'
 module Bulkrax
   RSpec.describe ImportFileSetJob, type: :job do
     subject(:import_file_set_job) { described_class.new }
-    let(:importer) { FactoryBot.create(:bulkrax_importer_csv_complex) }
-    let(:importer_run) { importer.current_run }
+    let(:importer) { create(:bulkrax_importer_csv_complex) }
+    let(:importer_run) { create(:bulkrax_importer_run, importer: importer) }
     let(:entry) { create(:bulkrax_csv_entry_file_set, :with_file_set_metadata, importerexporter: importer) }
     let(:factory) { instance_double(ObjectFactory) }
 
@@ -50,23 +50,53 @@ module Bulkrax
             import_file_set_job.perform(entry.id, importer_run.id)
           end
 
-          # TODO: split into specific changes
-          # TODO: cover all counters
-          it "updates the importer run's counters" do
+          it 'increments :processed_records and :processed_file_sets' do
             expect(importer_run.processed_records).to eq(0)
             expect(importer_run.processed_file_sets).to eq(0)
-            expect(importer_run.enqueued_records).to eq(0)
-            expect(importer_run.failed_records).to eq(0)
-            expect(importer_run.failed_file_sets).to eq(0)
 
             import_file_set_job.perform(entry.id, importer_run.id)
             importer_run.reload
 
             expect(importer_run.processed_records).to eq(1)
             expect(importer_run.processed_file_sets).to eq(1)
+          end
+
+          it 'decrements :enqueued_records' do
+            expect(importer_run.enqueued_records).to eq(1)
+
+            import_file_set_job.perform(entry.id, importer_run.id)
+            importer_run.reload
+
             expect(importer_run.enqueued_records).to eq(0)
+          end
+
+          it "doesn't change unrelated counters" do
             expect(importer_run.failed_records).to eq(0)
+            expect(importer_run.deleted_records).to eq(0)
+            expect(importer_run.processed_collections).to eq(0)
+            expect(importer_run.failed_collections).to eq(0)
+            expect(importer_run.processed_relationships).to eq(0)
+            expect(importer_run.failed_relationships).to eq(0)
             expect(importer_run.failed_file_sets).to eq(0)
+            expect(importer_run.processed_works).to eq(0)
+            expect(importer_run.failed_works).to eq(0)
+            expect(importer_run.processed_children).to eq(0)
+            expect(importer_run.failed_children).to eq(0)
+
+            import_file_set_job.perform(entry.id, importer_run.id)
+            importer_run.reload
+
+            expect(importer_run.failed_records).to eq(0)
+            expect(importer_run.deleted_records).to eq(0)
+            expect(importer_run.processed_collections).to eq(0)
+            expect(importer_run.failed_collections).to eq(0)
+            expect(importer_run.processed_relationships).to eq(0)
+            expect(importer_run.failed_relationships).to eq(0)
+            expect(importer_run.failed_file_sets).to eq(0)
+            expect(importer_run.processed_works).to eq(0)
+            expect(importer_run.failed_works).to eq(0)
+            expect(importer_run.processed_children).to eq(0)
+            expect(importer_run.failed_children).to eq(0)
           end
         end
 
@@ -175,23 +205,53 @@ module Bulkrax
           import_file_set_job.perform(entry.id, importer_run.id)
         end
 
-        # TODO: split into specific changes
-        # TODO: cover all counters
-        it "updates the importer run's counters" do
+        it 'increments :failed_records and :failed_file_sets' do
           expect(importer_run.failed_records).to eq(0)
           expect(importer_run.failed_file_sets).to eq(0)
-          expect(importer_run.enqueued_records).to eq(0)
-          expect(importer_run.processed_records).to eq(0)
-          expect(importer_run.processed_file_sets).to eq(0)
 
           import_file_set_job.perform(entry.id, importer_run.id)
           importer_run.reload
 
           expect(importer_run.failed_records).to eq(1)
           expect(importer_run.failed_file_sets).to eq(1)
+        end
+
+        it 'decrements :enqueued_records' do
+          expect(importer_run.enqueued_records).to eq(1)
+
+          import_file_set_job.perform(entry.id, importer_run.id)
+          importer_run.reload
+
           expect(importer_run.enqueued_records).to eq(0)
+        end
+
+        it "doesn't change unrelated counters" do
           expect(importer_run.processed_records).to eq(0)
+          expect(importer_run.deleted_records).to eq(0)
+          expect(importer_run.processed_collections).to eq(0)
+          expect(importer_run.failed_collections).to eq(0)
+          expect(importer_run.processed_relationships).to eq(0)
+          expect(importer_run.failed_relationships).to eq(0)
           expect(importer_run.processed_file_sets).to eq(0)
+          expect(importer_run.processed_works).to eq(0)
+          expect(importer_run.failed_works).to eq(0)
+          expect(importer_run.processed_children).to eq(0)
+          expect(importer_run.failed_children).to eq(0)
+
+          import_file_set_job.perform(entry.id, importer_run.id)
+          importer_run.reload
+
+          expect(importer_run.processed_records).to eq(0)
+          expect(importer_run.deleted_records).to eq(0)
+          expect(importer_run.processed_collections).to eq(0)
+          expect(importer_run.failed_collections).to eq(0)
+          expect(importer_run.processed_relationships).to eq(0)
+          expect(importer_run.failed_relationships).to eq(0)
+          expect(importer_run.processed_file_sets).to eq(0)
+          expect(importer_run.processed_works).to eq(0)
+          expect(importer_run.failed_works).to eq(0)
+          expect(importer_run.processed_children).to eq(0)
+          expect(importer_run.failed_children).to eq(0)
         end
       end
     end
