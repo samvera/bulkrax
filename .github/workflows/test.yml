@@ -39,8 +39,8 @@ jobs:
       - name: Migrate test database
         run: RAILS_ENV=test bundle exec rake db:migrate
 
-#      - name: Setup tmate session
-#        uses: mxschmitt/action-tmate@v3
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
 
       - name: Run rspec
         run: bin/rspec
