@@ -97,11 +97,7 @@ module Bulkrax
       end
 
       if errors.present?
-        ImporterRun.connection.execute(<<-SQL)
-          UPDATE bulkrax_importer_runs
-          SET failed_relationships = COALESCE(failed_relationships, 0) + #{number_of_failures}
-          WHERE id = #{importer_run_id}
-        SQL
+        ImporterRun.update_counters(importer_run_id, failed_relationships: number_of_failures)
 
         parent_entry&.set_status_info(errors.last, importer_run)
 
@@ -109,11 +105,7 @@ module Bulkrax
         reschedule({ parent_identifier: parent_identifier, importer_run_id: importer_run_id })
         return false # stop current job from continuing to run after rescheduling
       else
-        ImporterRun.connection.execute(<<-SQL)
-          UPDATE bulkrax_importer_runs
-          SET processed_relationships = COALESCE(processed_relationships, 0) + #{number_of_successes}
-          WHERE id = #{importer_run_id}
-        SQL
+        ImporterRun.update_counters(importer_run_id, processed_relationships: number_of_successes)
       end
     end
     # rubocop:enable Metrics/MethodLength
