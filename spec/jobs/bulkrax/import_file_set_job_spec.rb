@@ -16,7 +16,6 @@ module Bulkrax
 
     before do
       allow(Entry).to receive(:find).with(entry.id).and_return(entry)
-      allow(ImporterRun).to receive(:find).with(importer_run.id).and_return(importer_run)
       allow(::Hyrax.config).to receive(:curation_concerns).and_return([Work])
       allow(::Work).to receive(:where).and_return([])
       allow(importer.parser).to receive(:path_to_files).with(filename: 'removed.png').and_return('spec/fixtures/removed.png')
@@ -51,15 +50,23 @@ module Bulkrax
             import_file_set_job.perform(entry.id, importer_run.id)
           end
 
+          # TODO: split into specific changes
+          # TODO: cover all counters
           it "updates the importer run's counters" do
-            expect(importer_run).to receive(:increment!).with(:processed_records).once
-            expect(importer_run).to receive(:increment!).with(:processed_file_sets).once
-
-            expect(importer_run).not_to receive(:decrement!).with(:enqueued_records)
-            expect(importer_run).not_to receive(:increment!).with(:failed_records)
-            expect(importer_run).not_to receive(:increment!).with(:failed_file_sets)
+            expect(importer_run.processed_records).to eq(0)
+            expect(importer_run.processed_file_sets).to eq(0)
+            expect(importer_run.enqueued_records).to eq(0)
+            expect(importer_run.failed_records).to eq(0)
+            expect(importer_run.failed_file_sets).to eq(0)
 
             import_file_set_job.perform(entry.id, importer_run.id)
+            importer_run.reload
+
+            expect(importer_run.processed_records).to eq(1)
+            expect(importer_run.processed_file_sets).to eq(1)
+            expect(importer_run.enqueued_records).to eq(0)
+            expect(importer_run.failed_records).to eq(0)
+            expect(importer_run.failed_file_sets).to eq(0)
           end
         end
 
@@ -79,8 +86,8 @@ module Bulkrax
             end
 
             it "does not update any of importer run's counters" do
-              expect(importer_run).not_to receive(:increment!)
-              expect(importer_run).not_to receive(:decrement!)
+              expect(ImporterRun).not_to receive(:increment_counter)
+              expect(ImporterRun).not_to receive(:decrement_counter)
             end
 
             it 'reschedules the job to try again after a couple minutes' do
@@ -111,8 +118,11 @@ module Bulkrax
             end
 
             it "only decrements the importer run's :enqueued_records counter" do
-              expect(importer_run).not_to receive(:increment!)
-              expect(importer_run).to receive(:decrement!).with(:enqueued_records).once
+              expect(ImporterRun).not_to receive(:increment_counter)
+              expect(ImporterRun)
+                .to receive(:decrement_counter)
+                .with(:enqueued_records, importer_run.id)
+                .once
 
               import_file_set_job.perform(entry.id, importer_run.id)
             end
@@ -165,15 +175,23 @@ module Bulkrax
           import_file_set_job.perform(entry.id, importer_run.id)
         end
 
+        # TODO: split into specific changes
+        # TODO: cover all counters
         it "updates the importer run's counters" do
-          expect(importer_run).to receive(:increment!).with(:failed_records).once
-          expect(importer_run).to receive(:increment!).with(:failed_file_sets).once
-
-          expect(importer_run).not_to receive(:decrement!).with(:enqueued_records)
-          expect(importer_run).not_to receive(:increment!).with(:processed_records)
-          expect(importer_run).not_to receive(:increment!).with(:processed_file_sets)
+          expect(importer_run.failed_records).to eq(0)
+          expect(importer_run.failed_file_sets).to eq(0)
+          expect(importer_run.enqueued_records).to eq(0)
+          expect(importer_run.processed_records).to eq(0)
+          expect(importer_run.processed_file_sets).to eq(0)
 
           import_file_set_job.perform(entry.id, importer_run.id)
+          importer_run.reload
+
+          expect(importer_run.failed_records).to eq(1)
+          expect(importer_run.failed_file_sets).to eq(1)
+          expect(importer_run.enqueued_records).to eq(0)
+          expect(importer_run.processed_records).to eq(0)
+          expect(importer_run.processed_file_sets).to eq(0)
         end
       end
     end

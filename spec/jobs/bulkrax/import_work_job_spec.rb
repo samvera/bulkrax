@@ -11,7 +11,6 @@ module Bulkrax
 
     before do
       allow(Bulkrax::Entry).to receive(:find).with(1).and_return(entry)
-      allow(Bulkrax::ImporterRun).to receive(:find).with(importer_run_id).and_return(importer_run)
     end
 
     describe 'successful job' do
@@ -20,11 +19,61 @@ module Bulkrax
         allow(entry).to receive(:build).and_return(instance_of(Work))
         allow(entry).to receive(:status).and_return('Complete')
       end
+
       it 'increments :processed_records' do
-        expect(importer_run).to receive(:increment!).with(:processed_records)
-        expect(importer_run).to receive(:increment!).with(:processed_works)
-        expect(importer_run).to receive(:decrement!).with(:enqueued_records)
+        expect(importer_run.processed_records).to eq(0)
+
         import_work_job.perform(1, importer_run_id)
+        importer_run.reload
+
+        expect(importer_run.processed_records).to eq(1)
+      end
+
+      it 'increments :processed_works' do
+        expect(importer_run.processed_works).to eq(0)
+
+        import_work_job.perform(1, importer_run_id)
+        importer_run.reload
+
+        expect(importer_run.processed_works).to eq(1)
+      end
+
+      it 'decrements :enqueued_records' do
+        expect(importer_run.enqueued_records).to eq(1)
+
+        import_work_job.perform(1, importer_run_id)
+        importer_run.reload
+
+        expect(importer_run.enqueued_records).to eq(0)
+      end
+
+      it "doesn't change unrelated counters" do
+        expect(importer_run.failed_records).to eq(0)
+        expect(importer_run.deleted_records).to eq(0)
+        expect(importer_run.processed_collections).to eq(0)
+        expect(importer_run.failed_collections).to eq(0)
+        expect(importer_run.processed_relationships).to eq(0)
+        expect(importer_run.failed_relationships).to eq(0)
+        expect(importer_run.processed_file_sets).to eq(0)
+        expect(importer_run.failed_file_sets).to eq(0)
+        expect(importer_run.failed_works).to eq(0)
+        expect(importer_run.processed_children).to eq(0)
+        expect(importer_run.failed_children).to eq(0)
+
+        import_work_job.perform(1, importer_run_id)
+        importer_run.reload
+
+        expect(importer_run.failed_records).to eq(0)
+        expect(importer_run.deleted_records).to eq(0)
+        expect(importer_run.processed_collections).to eq(0)
+        expect(importer_run.failed_collections).to eq(0)
+        expect(importer_run.processed_relationships).to eq(0)
+        expect(importer_run.failed_relationships).to eq(0)
+        expect(importer_run.processed_file_sets).to eq(0)
+        expect(importer_run.failed_file_sets).to eq(0)
+        expect(importer_run.failed_works).to eq(0)
+        expect(importer_run.processed_children).to eq(0)
+        expect(importer_run.failed_children).to eq(0)
       end
     end
 
