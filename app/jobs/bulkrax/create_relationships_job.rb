@@ -97,7 +97,9 @@ module Bulkrax
       end
 
       if errors.present?
+        # rubocop:disable Rails/SkipsModelValidations
         ImporterRun.update_counters(importer_run_id, failed_relationships: number_of_failures)
+        # rubocop:enable Rails/SkipsModelValidations
 
         parent_entry&.set_status_info(errors.last, importer_run)
 
@@ -105,7 +107,9 @@ module Bulkrax
         reschedule({ parent_identifier: parent_identifier, importer_run_id: importer_run_id })
         return false # stop current job from continuing to run after rescheduling
       else
+        # rubocop:disable Rails/SkipsModelValidations
         ImporterRun.update_counters(importer_run_id, processed_relationships: number_of_successes)
+        # rubocop:enable Rails/SkipsModelValidations
       end
     end
     # rubocop:enable Metrics/MethodLength
