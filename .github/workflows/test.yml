@@ -37,10 +37,10 @@ jobs:
           bundle install
 
       - name: Migrate test database
-        run: bin/rails db:migrate RAILS_ENV=test
+        run: bundle exec rake db:migrate db:test:prepare
 
       - name: Run rspec
-        run: bin/rspec
+        run: bundle exec rake
 
       - name: Upload coverage results
         uses: actions/upload-artifact@v2
