@@ -80,8 +80,6 @@ module Bulkrax
             expect(importer_run.failed_file_sets).to eq(0)
             expect(importer_run.processed_works).to eq(0)
             expect(importer_run.failed_works).to eq(0)
-            expect(importer_run.processed_children).to eq(0)
-            expect(importer_run.failed_children).to eq(0)
 
             import_file_set_job.perform(entry.id, importer_run.id)
             importer_run.reload
@@ -95,8 +93,6 @@ module Bulkrax
             expect(importer_run.failed_file_sets).to eq(0)
             expect(importer_run.processed_works).to eq(0)
             expect(importer_run.failed_works).to eq(0)
-            expect(importer_run.processed_children).to eq(0)
-            expect(importer_run.failed_children).to eq(0)
           end
         end
 
@@ -235,8 +231,6 @@ module Bulkrax
           expect(importer_run.processed_file_sets).to eq(0)
           expect(importer_run.processed_works).to eq(0)
           expect(importer_run.failed_works).to eq(0)
-          expect(importer_run.processed_children).to eq(0)
-          expect(importer_run.failed_children).to eq(0)
 
           import_file_set_job.perform(entry.id, importer_run.id)
           importer_run.reload
@@ -250,8 +244,6 @@ module Bulkrax
           expect(importer_run.processed_file_sets).to eq(0)
           expect(importer_run.processed_works).to eq(0)
           expect(importer_run.failed_works).to eq(0)
-          expect(importer_run.processed_children).to eq(0)
-          expect(importer_run.failed_children).to eq(0)
         end
       end
     end
