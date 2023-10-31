@@ -63,7 +63,8 @@ module Bulkrax
           remove_relationships_from_work(obj)
         end
 
-        obj.try(:reindex_extent=, Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX) if defined?(Hyrax)
+        obj.try(:reindex_extent=, Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX) if
+          defined?(Hyrax::Adapters::NestingIndexAdapter)
         obj.save!
       end
     end
