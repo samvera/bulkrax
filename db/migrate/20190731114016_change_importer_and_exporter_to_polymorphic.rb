@@ -11,7 +11,6 @@ class ChangeImporterAndExporterToPolymorphic < ActiveRecord::Migration[5.1]
     rescue ArgumentError
       # do nothing
     end
-
     remove_index :bulkrax_entries, :importer_id if index_exists?(:bulkrax_entries, :importer_id)
     rename_column :bulkrax_entries, :importer_id, :importerexporter_id if column_exists?(:bulkrax_entries, :importer_id)
     add_column :bulkrax_entries, :importerexporter_type, :string, after: :id, default: 'Bulkrax::Importer' unless column_exists?(:bulkrax_entries, :importerexporter_type)
