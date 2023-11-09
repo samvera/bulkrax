@@ -179,6 +179,7 @@ module Bulkrax
       @factory ||= of.new(attributes: self.parsed_metadata,
                           source_identifier_value: identifier,
                           work_identifier: parser.work_identifier,
+                          work_identifier_search_field: parser.work_identifier_search_field,
                           related_parents_parsed_mapping: parser.related_parents_parsed_mapping,
                           replace_files: replace_files,
                           user: user,

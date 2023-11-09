@@ -241,7 +241,7 @@ module Bulkrax
     end
 
     def list_external_sets
-      url = params[:base_url] || (@harvester ? @harvester.base_url : nil)
+      url = params[:base_url] || @harvester&.base_url
       setup_client(url) if url.present?
 
       @sets = [['All', 'all']]
