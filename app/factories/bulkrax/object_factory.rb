@@ -28,15 +28,16 @@ module Bulkrax
     class_attribute :transformation_removes_blank_hash_values, default: false
 
     define_model_callbacks :save, :create
-    attr_reader :attributes, :object, :source_identifier_value, :klass, :replace_files, :update_files, :work_identifier, :related_parents_parsed_mapping, :importer_run_id
+    attr_reader :attributes, :object, :source_identifier_value, :klass, :replace_files, :update_files, :work_identifier, :work_identifier_search_field, :related_parents_parsed_mapping, :importer_run_id
 
     # rubocop:disable Metrics/ParameterLists
-    def initialize(attributes:, source_identifier_value:, work_identifier:, related_parents_parsed_mapping: nil, replace_files: false, user: nil, klass: nil, importer_run_id: nil, update_files: false)
+    def initialize(attributes:, source_identifier_value:, work_identifier:, work_identifier_search_field:, related_parents_parsed_mapping: nil, replace_files: false, user: nil, klass: nil, importer_run_id: nil, update_files: false)
       @attributes = ActiveSupport::HashWithIndifferentAccess.new(attributes)
       @replace_files = replace_files
       @update_files = update_files
       @user = user || User.batch_user
       @work_identifier = work_identifier
+      @work_identifier_search_field = work_identifier_search_field
       @related_parents_parsed_mapping = related_parents_parsed_mapping
       @source_identifier_value = source_identifier_value
       @klass = klass || Bulkrax.default_work_type.constantize
@@ -103,12 +104,7 @@ module Bulkrax
     end
 
     def search_by_identifier
-      # TODO(alishaevn): return the proper `work_index` value below
-      # ref: https://github.com/samvera-labs/bulkrax/issues/866
-      # ref:https://github.com/samvera-labs/bulkrax/issues/867
-      # work_index = ::ActiveFedora.index_field_mapper.solr_name(work_identifier, :facetable)
-      work_index = work_identifier
-      query = { work_index =>
+      query = { work_identifier_search_field =>
                 source_identifier_value }
       # Query can return partial matches (something6 matches both something6 and something68)
       # so we need to weed out any that are not the correct full match. But other items might be

@@ -81,6 +81,13 @@ module Bulkrax
       @work_identifier ||= get_field_mapping_hash_for('source_identifier')&.keys&.first&.to_sym || :source
     end
 
+    # @return [Symbol] the solr property of the source_identifier. Used for searching.
+    #         defaults to work_identifier value + "_sim"
+    # @see #work_identifier
+    def work_identifier_search_field
+      @work_identifier_search_field ||= get_field_mapping_hash_for('source_identifier')&.values&.first&.[]('search_field')&.first&.to_s || "#{work_identifier}_sim"
+    end
+
     # @return [String]
     def generated_metadata_mapping
       @generated_metadata_mapping ||= 'generated'
