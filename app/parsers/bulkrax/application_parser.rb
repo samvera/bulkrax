@@ -85,7 +85,7 @@ module Bulkrax
     #         defaults to work_identifier value + "_sim"
     # @see #work_identifier
     def work_identifier_search_field
-      @work_identifier_search_field ||= get_field_mapping_hash_for('source_identifier')&.values&.first&.[]('search_field')&.first&.to_s || "#{work_identifier}_sim"
+      @work_identifier_search_field ||= Array.wrap(get_field_mapping_hash_for('source_identifier')&.values&.first&.[]('search_field'))&.first&.to_s || "#{work_identifier}_sim"
     end
 
     # @return [String]
@@ -102,7 +102,7 @@ module Bulkrax
     # @return [String]
     # @see #related_parents_field_mapping
     def related_parents_parsed_mapping
-      @related_parents_parsed_mapping ||= (get_field_mapping_hash_for('related_parents_field_mapping')&.keys&.first || 'parents')
+      @related_parents_parsed_mapping ||= get_field_mapping_hash_for('related_parents_field_mapping')&.keys&.first || 'parents'
     end
 
     # @return [String, NilClass]
@@ -114,7 +114,7 @@ module Bulkrax
     # @return [String]
     # @see #related_children_raw_mapping
     def related_children_parsed_mapping
-      @related_children_parsed_mapping ||= (get_field_mapping_hash_for('related_children_field_mapping')&.keys&.first || 'children')
+      @related_children_parsed_mapping ||= get_field_mapping_hash_for('related_children_field_mapping')&.keys&.first || 'children'
     end
 
     # @api private
