@@ -85,7 +85,7 @@ module Bulkrax
     #         defaults to work_identifier value + "_sim"
     # @see #work_identifier
     def work_identifier_search_field
-      @work_identifier_search_field ||= get_field_mapping_hash_for('source_identifier')&.values&.first&.[]('search_field')&.first&.to_s || "#{work_identifier}_sim"
+      @work_identifier_search_field ||= Array.wrap(get_field_mapping_hash_for('source_identifier')&.values&.first&.[]('search_field'))&.first&.to_s || "#{work_identifier}_sim"
     end
 
     # @return [String]
