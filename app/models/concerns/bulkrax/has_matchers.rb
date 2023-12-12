@@ -157,20 +157,20 @@ module Bulkrax
       return true if @multiple_bulkrax_fields.include?(field)
       return false if field == 'model'
 
-      # TODO: key off of something more reliable than Bulkrax.object_factory
-      if Bulkrax.object_factory.to_s == 'Bulkrax::ValkyrieObjectFactory'
-        field_supported?(field) && (multiple_field?(field) || factory_class.singleton_methods.include?(:properties) && factory_class&.properties&.[](field)&.[]("multiple"))
+      if factory.class.respond_to?(:schema)
+        field_supported?(field) && valkyrie_multiple?(field)
       else
-        field_supported?(field) && factory_class&.properties&.[](field)&.[]('multiple')
+        field_supported?(field) && ar_multiple?(field)
       end
     end
 
-    def multiple_field?(field)
-      Hyrax::Forms::ResourceForm # TODO: this prevents `NoMethodError: undefined method `ResourceForm' for Hyrax::Forms:Module`, why?
-      form_class = "#{factory_class}Form".constantize
-      return false if form_class.definitions[field.to_s].nil? 
-  
-      form_class.definitions[field.to_s][:multiple].present?
+    def ar_multiple?(field)
+      factory_class.singleton_methods.include?(:properties) && factory_class&.properties&.[](field)&.[]("multiple")
+    end
+
+    def valkyrie_multiple?(field)
+      # TODO there has got to be a better way. Only array types have 'of'
+      factory_class.schema.key(field.to_sym).respond_to?(:of)
     end
 
     def get_object_name(field)
