@@ -170,7 +170,8 @@ module Bulkrax
 
     def valkyrie_multiple?(field)
       # TODO there has got to be a better way. Only array types have 'of'
-      factory_class.schema.key(field.to_sym).respond_to?(:of)
+      sym_field = field.to_sym
+      factory_class.schema.key(sym_field).respond_to?(:of) if factory_class.fields.includes?(sym_field)
     end
 
     def get_object_name(field)
