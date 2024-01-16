@@ -2,10 +2,10 @@
 module Bulkrax
   module ApplicationHelper
     def item_entry_path(item, e, opts = {})
-      is_an_importer?(item) ? bulkrax.importer_entry_path(item.id, e.id, opts) : bulkrax.exporter_entry_path(item.id, e.id, opts)
+      an_importer?(item) ? bulkrax.importer_entry_path(item.id, e.id, opts) : bulkrax.exporter_entry_path(item.id, e.id, opts)
     end
 
-    def is_an_importer?(item)
+    def an_importer?(item)
       item.class.to_s.include?('Importer')
     end
 

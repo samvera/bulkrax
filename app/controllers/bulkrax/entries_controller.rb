@@ -50,6 +50,7 @@ module Bulkrax
     end
 
     protected
+
     # GET /importers/1/entries/1
     def show_importer
       @importer = Importer.find(params[:importer_id])
