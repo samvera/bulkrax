@@ -1,11 +1,8 @@
 # frozen_string_literal: true
 
-require_dependency 'bulkrax/application_controller'
-require_dependency 'oai'
-
 module Bulkrax
   # rubocop:disable Metrics/ClassLength
-  class ImportersController < ApplicationController
+  class ImportersController < ::Bulkrax::ApplicationController
     include Hyrax::ThemedLayoutController if defined?(::Hyrax)
     include Bulkrax::DownloadBehavior
     include Bulkrax::API

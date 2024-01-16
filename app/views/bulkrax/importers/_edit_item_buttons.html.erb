@@ -1,0 +1,18 @@
+<div class="modal fade" id="bulkraxItemModal" tabindex="-1" role="dialog" aria-labelledby="bulkraxItemModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-body">
+        <h5>Options for Updating an Entry</h5>
+        <hr />
+        <p>Rebuild metadata and files.</p>
+        <%= link_to 'Build', item_entry_path(item, e), method: :patch, class: 'btn btn-primary'  %>
+        <hr />
+        <p>Remove existing work and then recreate the works metadata and files.</p>
+        <%= link_to 'Remove and then Build', item_entry_path(item, e, destroy_first: true), method: :patch, class: 'btn btn-primary'  %>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal"><%= t('helpers.action.cancel') %></button>
+      </div>
+    </div>
+  </div>
+</div>

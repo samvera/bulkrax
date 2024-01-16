@@ -102,10 +102,11 @@
       </ul>
       <!-- Tab panes -->
       <div class="tab-content outline">
-        <%= render partial: 'bulkrax/shared/work_entries_tab', locals: { item: @exporter, entries: @work_entries } %>
-        <%= render partial: 'bulkrax/shared/collection_entries_tab', locals: { item: @exporter, entries: @collection_entries } %>
-        <%= render partial: 'bulkrax/shared/file_set_entries_tab', locals: { item: @exporter, entries: @file_set_entries } %>
+        <%= render partial: 'bulkrax/shared/entries_tab', locals: { item: @exporter, entries: @work_entries, pagination_param_name:  :work_entries_page, pagination_anchor: 'work-entries' } %>
+        <%= render partial: 'bulkrax/shared/entries_tab', locals: { item: @exporter, entries: @collection_entries, pagination_param_name: :collection_entries_path, pagination_anchor: 'collection-entries' } %>
+        <%= render partial: 'bulkrax/shared/entries_tab', locals: { item: @exporter, entries: @file_set_entries, pagination_param_name: :file_set_entries_path, pagination_anchor: 'file-set-entries' } %>
       </div>
+
       <br>
       <%= link_to 'Edit', edit_exporter_path(@exporter) %>
       |
