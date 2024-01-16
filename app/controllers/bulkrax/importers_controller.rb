@@ -307,10 +307,16 @@ module Bulkrax
     end
 
     def set_files_parser_fields
+      @importer.parser_fields['update_files'] =
+        @importer.parser_fields['replace_files'] =
+        @importer.parser_fields['remove_and_rerun'] =
+        @importer.parser_fields['metadata_only'] = false
       if params[:commit] == 'Update Metadata and Files'
         @importer.parser_fields['update_files'] = true
       elsif params[:commit] == ('Update and Replace Files' || 'Update and Re-Harvest All Items')
         @importer.parser_fields['replace_files'] = true
+      elsif params[:commit] == 'Remove and Rerun'
+        @importer.parser_fields['remove_and_rerun'] = true
       elsif params[:commit] == 'Update and Harvest Updated Items'
         return
       else
