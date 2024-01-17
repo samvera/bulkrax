@@ -13,6 +13,12 @@ module Bulkrax
       end
     end
 
+    initializer 'requires' do
+      require 'bulkrax/persistence_layer'
+      require 'bulkrax/persistence_layer/active_fedora_adapter' if defined?(ActiveFedora)
+      require 'bulkrax/persistence_layer/valkyrie_adapter' if defined?(Valkyrie)
+    end
+
     config.generators do |g|
       g.test_framework :rspec
       begin

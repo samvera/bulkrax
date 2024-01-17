@@ -35,6 +35,36 @@ module Bulkrax
                   :reserved_properties,
                   :server_name
 
+    attr_writer :persistence_adapter
+
+    ##
+    # Configure the persistence adapter used for persisting imported data.
+    #
+    # @return [Bulkrax::PersistenceLayer::AbstractAdapter]
+    # @see Bulkrax::PersistenceLayer
+    def persistence_adapter
+      @persistence_adapter || derived_persistence_adapter
+    end
+
+    def derived_persistence_adapter
+      if defined?(Hyrax)
+        # There's probably some configuration of Hyrax we could use to better refine this; but it's
+        # likely a reasonable guess.  The main goal is to not break existing implementations and
+        # maintain an upgrade path.
+        if Gem::Version.new(Hyrax::VERSION) >= Gem::Version.new('6.0.0')
+          Bulkrax::PersistenceLayer::ValkyrieAdapter
+        else
+          Bulkrax::PersistenceLayer::ActiveFedoraAdapter
+        end
+      elsif defined?(ActiveFedora)
+        Bulkrax::PersistenceLayer::ActiveFedoraAdapter
+      elsif defined?(Valkyrie)
+        Bulkrax::PersistenceLayer::ValkyrieAdapter
+      else
+        raise "Unable to derive a persistence adapter"
+      end
+    end
+
     attr_writer :use_locking
 
     def use_locking
@@ -81,6 +111,8 @@ module Bulkrax
                  :object_factory=,
                  :parsers,
                  :parsers=,
+                 :persistence_adapter,
+                 :persistence_adapter=,
                  :qa_controlled_properties,
                  :qa_controlled_properties=,
                  :related_children_field_mapping,
