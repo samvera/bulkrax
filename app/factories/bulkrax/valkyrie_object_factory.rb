@@ -10,9 +10,7 @@ module Bulkrax
       @schema_properties_map ||= {}
 
       klass_key = klass.name
-      unless @schema_properties_map.has_key?(klass_key)
-        @schema_properties_map[klass_key] = klass.schema.map { |k| k.name.to_s }
-      end
+      @schema_properties_map[klass_key] = klass.schema.map { |k| k.name.to_s } unless @schema_properties_map.key?(klass_key)
 
       @schema_properties_map[klass_key]
     end
@@ -42,25 +40,25 @@ module Bulkrax
 
     def create
       attrs = transform_attributes
-        .merge(alternate_ids: [source_identifier_value])
-        .symbolize_keys
+              .merge(alternate_ids: [source_identifier_value])
+              .symbolize_keys
 
       # temporary workaround just to see if we can get the import to work
-      attrs.merge!(title: ['']) if attrs[:title].blank?
-      attrs.merge!(creator: ['']) if attrs[:creator].blank?
+      attrs[:title] = [''] if attrs[:title].blank?
+      attrs[:creator] = [''] if attrs[:creator].blank?
 
       cx = Hyrax::Forms::ResourceForm.for(klass.new).prepopulate!
       cx.validate(attrs)
 
       result = transaction
-        .with_step_args(
+               .with_step_args(
           # "work_resource.add_to_parent" => {parent_id: @related_parents_parsed_mapping, user: @user},
-          "work_resource.add_bulkrax_files" => {files: get_s3_files(remote_files: attributes["remote_files"]), user: @user},
-          "change_set.set_user_as_depositor" => {user: @user},
-          "work_resource.change_depositor" => {user: @user},
+          "work_resource.add_bulkrax_files" => { files: get_s3_files(remote_files: attributes["remote_files"]), user: @user },
+          "change_set.set_user_as_depositor" => { user: @user },
+          "work_resource.change_depositor" => { user: @user },
           'work_resource.save_acl' => { permissions_params: [attrs.try('visibility') || 'open'].compact }
         )
-        .call(cx)
+               .call(cx)
 
       if result.failure?
         msg = result.failure[0].to_s
@@ -84,26 +82,26 @@ module Bulkrax
       cx.validate(attrs)
 
       result = update_transaction
-        .with_step_args(
-          "work_resource.add_bulkrax_files" => {files: get_s3_files(remote_files: attributes["remote_files"]), user: @user}
+               .with_step_args(
+          "work_resource.add_bulkrax_files" => { files: get_s3_files(remote_files: attributes["remote_files"]), user: @user }
 
           # TODO: uncomment when we upgrade Hyrax 4.x
           # 'work_resource.save_acl' => { permissions_params: [attrs.try('visibility') || 'open'].compact }
         )
-        .call(cx)
+               .call(cx)
 
       @object = result.value!
     end
 
     def get_s3_files(remote_files: {})
       if remote_files.blank?
-        Hyrax.logger.info "No remote files listed for #{attributes["source_identifier"]}"
+        Hyrax.logger.info "No remote files listed for #{attributes['source_identifier']}"
         return []
       end
 
       s3_bucket_name = ENV.fetch("STAGING_AREA_S3_BUCKET", "comet-staging-area-#{Rails.env}")
       s3_bucket = Rails.application.config.staging_area_s3_connection
-        .directories.get(s3_bucket_name)
+                       .directories.get(s3_bucket_name)
 
       remote_files.map { |r| r["url"] }.map do |key|
         s3_bucket.files.get(key)
@@ -132,18 +130,18 @@ module Bulkrax
     # @Override remove branch for FileSets replace validation with errors
     def new_remote_files
       @new_remote_files ||= if @object.is_a? FileSet
-        parsed_remote_files.select do |file|
-          # is the url valid?
-          is_valid = file[:url]&.match(URI::ABS_URI)
-          # does the file already exist
-          is_existing = @object.import_url && @object.import_url == file[:url]
-          is_valid && !is_existing
-        end
-      else
-        parsed_remote_files.select do |file|
-          file[:url]&.match(URI::ABS_URI)
-        end
-      end
+                              parsed_remote_files.select do |file|
+                                # is the url valid?
+                                is_valid = file[:url]&.match(URI::ABS_URI)
+                                # does the file already exist
+                                is_existing = @object.import_url && @object.import_url == file[:url]
+                                is_valid && !is_existing
+                              end
+                            else
+                              parsed_remote_files.select do |file|
+                                file[:url]&.match(URI::ABS_URI)
+                              end
+                            end
     end
 
     # @Override Destroy existing files with Hyrax::Transactions
@@ -152,8 +150,8 @@ module Bulkrax
 
       existing_files.each do |fs|
         Hyrax::Transactions::Container["file_set.destroy"]
-          .with_step_args("file_set.remove_from_work" => {user: @user},
-            "file_set.delete" => {user: @user})
+          .with_step_args("file_set.remove_from_work" => { user: @user },
+                          "file_set.delete" => { user: @user })
           .call(fs)
           .value!
       end
