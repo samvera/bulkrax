@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-require 'bulkrax/container'
+require 'bulkrax/transactions/container'
 
 module Bulkrax
   ##

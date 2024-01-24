@@ -28,6 +28,6 @@ RSpec.describe Hyrax::Transactions::Container do
   describe 'work_resource.add_bulkrax_files' do
     subject(:transaction_step) { described_class['work_resource.add_bulkrax_files'] }
 
-    it { is_expected.to be_a Bulkrax::Steps::AddFiles }
+    it { is_expected.to be_a Bulkrax::Transactions::Steps::AddFiles }
   end
 end
