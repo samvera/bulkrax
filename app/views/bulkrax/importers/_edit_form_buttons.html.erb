@@ -34,7 +34,14 @@
           <%= form.button :submit,
                           value: 'Update and Replace Files',
                           class: 'btn btn-primary',
-                          data: {confirm: "Are you sure? This will remove all files before adding them from the import."} %>
+                  data: {confirm: "Are you sure? This will remove all files before adding them from the import."} %>
+          <hr />
+          <p>Remove all works and then run the import again from a clean slate. This will remove all files and associations and any edits made since the last import will be lost.</p>
+          <%= form.button :submit,
+                  value: 'Remove and Rerun',
+                  class: 'btn btn-primary',
+                  data: {confirm: "Are you sure? This will delete all the works and any associated files and relationships before re running."} %>
+
         <% end %>
         <hr />
 

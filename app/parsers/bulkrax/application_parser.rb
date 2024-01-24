@@ -81,6 +81,13 @@ module Bulkrax
       @work_identifier ||= get_field_mapping_hash_for('source_identifier')&.keys&.first&.to_sym || :source
     end
 
+    # @return [Symbol] the solr property of the source_identifier. Used for searching.
+    #         defaults to work_identifier value + "_sim"
+    # @see #work_identifier
+    def work_identifier_search_field
+      @work_identifier_search_field ||= Array.wrap(get_field_mapping_hash_for('source_identifier')&.values&.first&.[]('search_field'))&.first&.to_s || "#{work_identifier}_sim"
+    end
+
     # @return [String]
     def generated_metadata_mapping
       @generated_metadata_mapping ||= 'generated'
@@ -95,7 +102,7 @@ module Bulkrax
     # @return [String]
     # @see #related_parents_field_mapping
     def related_parents_parsed_mapping
-      @related_parents_parsed_mapping ||= (get_field_mapping_hash_for('related_parents_field_mapping')&.keys&.first || 'parents')
+      @related_parents_parsed_mapping ||= get_field_mapping_hash_for('related_parents_field_mapping')&.keys&.first || 'parents'
     end
 
     # @return [String, NilClass]
@@ -107,7 +114,7 @@ module Bulkrax
     # @return [String]
     # @see #related_children_raw_mapping
     def related_children_parsed_mapping
-      @related_children_parsed_mapping ||= (get_field_mapping_hash_for('related_children_field_mapping')&.keys&.first || 'children')
+      @related_children_parsed_mapping ||= get_field_mapping_hash_for('related_children_field_mapping')&.keys&.first || 'children'
     end
 
     # @api private
@@ -270,8 +277,8 @@ module Bulkrax
       current_run.invalid_records ||= ""
       current_run.invalid_records += message
       current_run.save
-      ImporterRun.find(current_run.id).increment!(:failed_records)
-      ImporterRun.find(current_run.id).decrement!(:enqueued_records) unless ImporterRun.find(current_run.id).enqueued_records <= 0 # rubocop:disable Style/IdenticalConditionalBranches
+      ImporterRun.increment_counter(:failed_records, current_run.id)
+      ImporterRun.decrement_counter(:enqueued_records, current_run.id) unless ImporterRun.find(current_run.id).enqueued_records <= 0 # rubocop:disable Style/IdenticalConditionalBranches
     end
     # rubocop:enable Rails/SkipsModelValidations
 

@@ -197,4 +197,12 @@ RSpec.describe Bulkrax do
       expect(returned_value).to eq("file")
     end
   end
+
+  context '.persistence_adapter' do
+    subject { described_class.persistence_adapter }
+    it { is_expected.to respond_to(:find) }
+    it { is_expected.to respond_to(:query) }
+    it { is_expected.to respond_to(:solr_name) }
+    it { is_expected.to respond_to(:clean!) }
+  end
 end

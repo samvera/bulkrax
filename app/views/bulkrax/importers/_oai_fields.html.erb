@@ -1,15 +1,16 @@
 <div class='oai_fields'>
   <%= fi.input :base_url, as: :string, input_html: { value: importer.parser_fields['base_url'] } %>
-  
+
   <%= fi.input :metadata_prefix, as: :string, hint: 'Such as oai_dc, dcterms or oai_qdc', input_html: { value: importer.parser_fields['metadata_prefix'] } %>
-  
+
   <%= fi.input :set, collection: [importer.parser_fields['set']], label: 'Set (source)', selected: importer.parser_fields['set'] %>
   <button type="button" class="btn btn-default refresh-set-source">Refresh Sets</button>
 
   <%= fi.input :visibility,
     collection: [
       ['Public', 'open'],
-      ['Private', 'restricted']
+      ['Private', 'restricted'],
+      ['Institution', 'authenticated']
     ],
     selected: importer.parser_fields['visibility'] || 'open',
     input_html: { class: 'form-control' }

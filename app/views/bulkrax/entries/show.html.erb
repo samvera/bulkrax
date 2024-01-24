@@ -2,17 +2,17 @@
 <div class="panel panel-default">
   <div class="panel-body">
     <p class='bulkrax-p-align'>
-      <strong>Identifier:</strong>
+      <strong><%= t('bulkrax.importer.labels.identifier') %>:</strong>
       <%= @entry.identifier %>
     </p>
 
     <p class='bulkrax-p-align'>
-      <strong>Entry ID:</strong>
+      <strong><%= t('bulkrax.importer.labels.entry_id') %>:</strong>
       <%= @entry.id %>
     </p>
 
     <p class='bulkrax-p-align'>
-      <strong>Type:</strong>
+      <strong><%= t('bulkrax.importer.labels.type') %>:</strong>
       <%= @entry.factory_class || 'Unknown' %>
     </p>
     <%= render partial: 'raw_metadata'%>
@@ -23,10 +23,10 @@
 
     <p class="bulkrax-p-align">
       <% if @importer.present? %>
-        <strong>Importer:</strong>
+        <strong><%= t('bulkrax.importer.labels.importer') %>:</strong>
         <%= link_to @importer.name, importer_path(@importer) %>
       <% elsif @exporter.present? %>
-        <strong>Exporter:</strong>
+        <strong><%= t('bulkrax.importer.labels.exporter') %>:</strong>
         <%= link_to @exporter.name, exporter_path(@exporter) %>
       <% end %>
     </p>

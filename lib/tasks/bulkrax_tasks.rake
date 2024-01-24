@@ -124,7 +124,7 @@ namespace :bulkrax do
   end
 
   def make_new_exports
-    Bulkrax::Exporter.all.each { |e| Bulkrax::ExporterJob.perform_later(e.id) }
+    Bulkrax::Exporter.find_each { |e| Bulkrax::ExporterJob.perform_later(e.id) }
   rescue => e
     puts "(#{e.message})"
   end

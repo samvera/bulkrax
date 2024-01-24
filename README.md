@@ -1,3 +1,5 @@
+![Test Suite](https://github.com/samvera/bulkrax/actions/workflows/test.yml/badge.svg)
+![Test Suite](https://github.com/samvera/bulkrax/actions/workflows/lint.yml/badge.svg)
 # Bulkrax
 Bulkrax is a batteries included importer for Samvera applications. It currently includes support for OAI-PMH (DC and Qualified DC) and CSV out of the box. It is also designed to be extensible, allowing you to easily add new importers in to your application or to include them with other gems. Bulkrax provides a full admin interface including creating, editing, scheduling and reviewing imports.
 
@@ -10,7 +12,7 @@ Add this line to your application's Gemfile:
 ```ruby
 gem 'bulkrax'
 # or if using from github
-gem 'bulkrax', git: 'https://github.com/samvera-labs/bulkrax.git', branch: 'main'
+gem 'bulkrax', git: 'https://github.com/samvera/bulkrax.git', branch: 'main'
 ```
 
 And then execute:
@@ -72,7 +74,7 @@ Bulkrax.setup do |config|
 end
 ```
 
-The [configuration guide](https://github.com/samvera-labs/bulkrax/wiki/Configuring-Bulkrax) provides detailed instructions on the various available configurations.
+The [configuration guide](https://github.com/samvera/bulkrax/wiki/Configuring-Bulkrax) provides detailed instructions on the various available configurations.
 
 Example:
 
@@ -122,7 +124,7 @@ It's unlikely that the incoming import data has fields that exactly match those 
 
 By default, a mapping for the OAI parser has been added to map standard oai_dc fields to Hyrax basic_metadata. The other parsers have no default mapping, and will map any incoming fields to Hyrax properties with the same name. Configurations can be added in `config/initializers/bulkrax.rb`
 
-Configuring field mappings is documented in the [Bulkrax Configuration Guide](https://github.com/samvera-labs/bulkrax/wiki/Configuring-Bulkrax).
+Configuring field mappings is documented in the [Bulkrax Configuration Guide](https://github.com/samvera/bulkrax/wiki/Configuring-Bulkrax).
 
 ## Importing Files
 
@@ -153,7 +155,7 @@ end
 
 ## Customizing Bulkrax
 
-For further information on how to extend and customize Bulkrax, please see the [Bulkrax Customization Guide](https://github.com/samvera-labs/bulkrax/wiki/Customizing-Bulkrax).
+For further information on how to extend and customize Bulkrax, please see the [Bulkrax Customization Guide](https://github.com/samvera/bulkrax/wiki/Customizing-Bulkrax).
 
 ## How it Works
 Once you have Bulkrax installed, you will have access to an easy to use interface with which you are able to create, edit, delete, run, and re-run imports and exports.
@@ -180,16 +182,21 @@ To delete an importer or exporter, select the delete (x) icon.
 ### Downloading an export
 Once your the exporter has run, a download icon will appear on the exporters menu page.
 
+## Compatibility
+
+* Ruby 2.7 or newer is required
+* Hyrax 2.3 or newer is required
+
 ## Contributing
 If you're working on a PR for this project, create a feature branch off of `main`.
 
 This repository follows the [Samvera Community Code of Conduct](https://samvera.atlassian.net/wiki/spaces/samvera/pages/405212316/Code+of+Conduct) and [language recommendations](https://github.com/samvera/maintenance/blob/master/templates/CONTRIBUTING.md#language).  Please ***do not*** create a branch called `master` for this repository or as part of your pull request; the branch will either need to be removed or renamed before it can be considered for inclusion in the code base and history of this repository.
 
 See
-[CONTRIBUTING.md](https://github.com/samvera-labs/bulkrax/blob/main/CONTRIBUTING.md)
+[CONTRIBUTING.md](https://github.com/samvera/bulkrax/blob/main/CONTRIBUTING.md)
 for contributing guidelines.
 
-We encourage everyone to help improve this project.  Bug reports and pull requests are welcome on GitHub at https://github.com/samvera-labs/bulkrax.
+We encourage everyone to help improve this project.  Bug reports and pull requests are welcome on GitHub at https://github.com/samvera/bulkrax.
 
 This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant](https://contributor-covenant.org) code of conduct.
 

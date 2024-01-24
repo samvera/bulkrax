@@ -3,7 +3,7 @@
 require 'iso8601'
 
 module Bulkrax
-  class Importer < ApplicationRecord
+  class Importer < ApplicationRecord # rubocop:disable Metrics/ClassLength
     include Bulkrax::ImporterExporterBehavior
     include Bulkrax::StatusInfo
 
@@ -163,6 +163,14 @@ module Bulkrax
       self.parser_fields['update_files']
     end
 
+    def remove_and_rerun
+      self.parser_fields['remove_and_rerun']
+    end
+
+    def metadata_only?
+      parser.parser_fields['metadata_only'] == true
+    end
+
     def import_works
       import_objects(['work'])
     end
@@ -185,6 +193,12 @@ module Bulkrax
       self.only_updates ||= false
       self.save if self.new_record? # Object needs to be saved for statuses
       types = types_array || DEFAULT_OBJECT_TYPES
+      if remove_and_rerun
+        self.entries.find_each do |e|
+          e.factory.find&.destroy!
+          e.destroy!
+        end
+      end
       parser.create_objects(types)
     rescue StandardError => e
       set_status_info(e)
@@ -219,10 +233,6 @@ module Bulkrax
       "#{self.id}_#{self.created_at.strftime('%Y%m%d%H%M%S')}_#{self.importer_runs.last.id}"
     rescue
       "#{self.id}_#{self.created_at.strftime('%Y%m%d%H%M%S')}"
-    end
-
-    def metadata_only?
-      parser.parser_fields['metadata_only'] == true
     end
   end
 end

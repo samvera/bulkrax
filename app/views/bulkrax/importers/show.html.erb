@@ -76,16 +76,18 @@
     <div class="bulkrax-nav-tab-bottom-margin">
       <!-- Nav tabs -->
       <ul class="bulkrax-nav-tab-top-margin tab-nav nav nav-tabs" role="tablist">
-        <li role="presentation" class='active'><a href="#work-entries" aria-controls="work-entries" role="tab" data-toggle="tab"><%= t('bulkrax.importer.labels.work_entries') %></a></li>
-        <li role="presentation"><a href="#collection-entries" aria-controls="collection-entries" role="tab" data-toggle="tab"><%= t('bulkrax.importer.labels.collection_entries') %></a></li>
-        <li role="presentation"><a href="#file-set-entries" aria-controls="file-set-entries" role="tab" data-toggle="tab"><%= t('bulkrax.importer.labels.file_set_entries') %></a></li>
+        <li role="presentation" class="nav-link active"><a href="#work-entries" aria-controls="work-entries" role="tab" data-toggle="tab"><%= t('bulkrax.importer.labels.work_entries') %></a></li>
+        <li role="presentation" class="nav-link"><a href="#collection-entries" aria-controls="collection-entries" role="tab" data-toggle="tab"><%= t('bulkrax.importer.labels.collection_entries') %></a></li>
+        <li role="presentation" class="nav-link"><a href="#file-set-entries" aria-controls="file-set-entries" role="tab" data-toggle="tab"><%= t('bulkrax.importer.labels.file_set_entries') %></a></li>
       </ul>
       <!-- Tab panes -->
       <div class="tab-content outline">
-        <%= render partial: 'bulkrax/shared/work_entries_tab', locals: { item: @importer, entries: @work_entries } %>
-        <%= render partial: 'bulkrax/shared/collection_entries_tab', locals: { item: @importer, entries: @collection_entries } %>
-        <%= render partial: 'bulkrax/shared/file_set_entries_tab', locals: { item: @importer, entries: @file_set_entries } %>
+        <%= render partial: 'bulkrax/shared/entries_tab', locals: { item: @importer, entries: @work_entries, pagination_param_name: :work_entries_page, pagination_anchor: 'work-entries' } %>
+        <%= render partial: 'bulkrax/shared/entries_tab', locals: { item: @importer, entries: @collection_entries, pagination_param_name: :collection_entries_path, pagination_anchor: 'collection-entries' } %>
+        <%= render partial: 'bulkrax/shared/entries_tab', locals: { item: @importer, entries: @file_set_entries, pagination_param_name: :file_set_entries_path, pagination_anchor: 'file-set-entries' } %>
       </div>
+      <% all_entries = @work_entries + @collection_entries + @file_set_entries %>
+      <%= render partial: 'bulkrax/importers/edit_item_buttons', locals: { item: @importer, e: all_entries.first } if all_entries.present? %>
     </div>
 
     <p class="bulkrax-p-align">

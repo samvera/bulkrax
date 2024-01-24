@@ -1,7 +1,9 @@
 # Bixby coding conventions
+require: rubocop-factory_bot
+
 # Added AllCops config for further modification
 AllCops:
-  TargetRubyVersion: 2.6
+  TargetRubyVersion: 2.7
   DisabledByDefault: true
   DisplayCopNames: true
   Exclude:
