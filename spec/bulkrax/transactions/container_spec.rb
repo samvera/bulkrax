@@ -2,6 +2,8 @@
 
 require 'rails_helper'
 
+# Yes, we're testing Hyrax::Transactions::Container and not Bulkrax::Transactions::Container, because we want to see the
+# impact of the change on Hyrax's implementation.
 RSpec.describe Hyrax::Transactions::Container do
   describe 'work_resource.create_with_bulk_behavior' do
     subject(:transaction_step) { described_class['work_resource.create_with_bulk_behavior'] }
