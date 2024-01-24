@@ -164,6 +164,7 @@ module Bulkrax
 
     private
 
+    # TODO Rename to create_transaction
     def transaction
       Hyrax::Transactions::Container["work_resource.#{Bulkrax::Container::CREATE_WITH_BULK_BEHAVIOR}"]
     end
