@@ -97,7 +97,10 @@ module Bulkrax
     end
 
     def find_by_id
-      klass.find(attributes[:id]) if klass.exist?(attributes[:id])
+      # Rails / Ruby upgrade, we moved from :exists? to :exist?  However we want to continue (for a
+      # bit) to support older versions.
+      method_name = klass.respond_to?(:exist?) ? :exist? : :exists?
+      klass.find(attributes[:id]) if klass.send(method_name, attributes[:id])
     end
 
     def find_or_create
