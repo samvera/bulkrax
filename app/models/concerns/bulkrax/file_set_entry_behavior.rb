@@ -2,8 +2,10 @@
 
 module Bulkrax
   module FileSetEntryBehavior
-    def factory_class
-      ::FileSet
+    extend ActiveSupport::Concern
+
+    included do
+      self.default_work_type = "::FileSet"
     end
 
     def file_reference
