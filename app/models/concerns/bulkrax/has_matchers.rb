@@ -56,6 +56,10 @@ module Bulkrax
       end
     end
 
+    def get_object_name(field)
+      mapping&.[](field)&.[]('object')
+    end
+
     def set_parsed_data(name, value)
       return parsed_metadata[name] = value unless multiple?(name)
 
@@ -125,9 +129,14 @@ module Bulkrax
 
       return false if excluded?(field)
       return true if supported_bulkrax_fields.include?(field)
+
       property_defined = factory_class.singleton_methods.include?(:properties) && factory_class.properties[field].present?
 
-      factory_class.method_defined?(field) && (Bulkrax::ValkyrieObjectFactory.schema_properties(factory_class).include?(field) || property_defined)
+      if factory_class == Bulkrax::ValkyrieObjectFactory
+        factory_class.method_defined?(field) && (Bulkrax::ValkyrieObjectFactory.schema_properties(factory_class).include?(field) || property_defined)
+      else
+        factory_class.method_defined?(field) && factory_class.properties[field].present?
+      end
     end
 
     def supported_bulkrax_fields
@@ -144,6 +153,8 @@ module Bulkrax
         ]
     end
 
+    ##
+    # Determine a multiple properties field
     def multiple?(field)
       @multiple_bulkrax_fields ||=
         %W[
@@ -157,11 +168,15 @@ module Bulkrax
       return true if @multiple_bulkrax_fields.include?(field)
       return false if field == 'model'
 
-      if factory.class.respond_to?(:schema)
+      if factory_class == Bulkrax::ValkyrieObjectFactory
         field_supported?(field) && valkyrie_multiple?(field)
       else
         field_supported?(field) && ar_multiple?(field)
       end
+    end
+
+    def schema_form_definitions
+      @schema_form_definitions ||= ::SchemaLoader.new.form_definitions_for(factory_class.name.underscore.to_sym)
     end
 
     def ar_multiple?(field)
@@ -172,10 +187,6 @@ module Bulkrax
       # TODO: there has got to be a better way. Only array types have 'of'
       sym_field = field.to_sym
       factory_class.schema.key(sym_field).respond_to?(:of) if factory_class.fields.include?(sym_field)
-    end
-
-    def get_object_name(field)
-      mapping&.[](field)&.[]('object')
     end
 
     # Hyrax field to use for the given import field
