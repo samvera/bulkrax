@@ -5,6 +5,9 @@ require 'oai'
 module Bulkrax
   class Engine < ::Rails::Engine
     isolate_namespace Bulkrax
+
+    config.eager_load_paths += %W[#{config.root}/app/transactions]
+
     initializer :append_migrations do |app|
       if !app.root.to_s.match(root.to_s) && app.root.join('db/migrate').children.none? { |path| path.fnmatch?("*.bulkrax.rb") }
         config.paths["db/migrate"].expanded.each do |expanded_path|
@@ -17,6 +20,7 @@ module Bulkrax
       require 'bulkrax/persistence_layer'
       require 'bulkrax/persistence_layer/active_fedora_adapter' if defined?(ActiveFedora)
       require 'bulkrax/persistence_layer/valkyrie_adapter' if defined?(Valkyrie)
+      require 'bulkrax/transactions' if defined?(Hyrax::Transactions)
     end
 
     config.generators do |g|

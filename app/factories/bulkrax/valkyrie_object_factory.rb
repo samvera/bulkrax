@@ -53,7 +53,7 @@ module Bulkrax
       result = transaction
                .with_step_args(
           # "work_resource.add_to_parent" => {parent_id: @related_parents_parsed_mapping, user: @user},
-          "work_resource.add_bulkrax_files" => { files: get_s3_files(remote_files: attributes["remote_files"]), user: @user },
+          "work_resource.#{Bulkrax::Transactions::Container::ADD_BULKRAX_FILES}" => { files: get_s3_files(remote_files: attributes["remote_files"]), user: @user },
           "change_set.set_user_as_depositor" => { user: @user },
           "work_resource.change_depositor" => { user: @user },
           'work_resource.save_acl' => { permissions_params: [attrs.try('visibility') || 'open'].compact }
@@ -83,7 +83,7 @@ module Bulkrax
 
       result = update_transaction
                .with_step_args(
-          "work_resource.add_bulkrax_files" => { files: get_s3_files(remote_files: attributes["remote_files"]), user: @user }
+          "work_resource.#{Bulkrax::Transactions::Container::ADD_BULKRAX_FILES}" => { files: get_s3_files(remote_files: attributes["remote_files"]), user: @user }
 
           # TODO: uncomment when we upgrade Hyrax 4.x
           # 'work_resource.save_acl' => { permissions_params: [attrs.try('visibility') || 'open'].compact }
@@ -109,15 +109,11 @@ module Bulkrax
     end
 
     ##
-    # TODO: What else fields are necessary: %i[id edit_users edit_groups read_groups work_members_attributes]?
-    # Regardless of what the Parser gives us, these are the properties we are prepared to accept.
+    # We accept attributes based on the model schema
     def permitted_attributes
-      Bulkrax::ValkyrieObjectFactory.schema_properties(klass) +
-        %i[
-          admin_set_id
-          title
-          visibility
-        ]
+      return Bulkrax::ValkyrieObjectFactory.schema_properties(klass) if klass.respond_to?(:schema)
+      # fallback to support ActiveFedora model name
+      klass.properties.keys.map(&:to_sym) + base_permitted_attributes
     end
 
     def apply_depositor_metadata(object, user)
@@ -164,13 +160,14 @@ module Bulkrax
 
     private
 
+    # TODO: Rename to create_transaction
     def transaction
-      Hyrax::Transactions::Container["work_resource.create_with_bulk_behavior"]
+      Hyrax::Transactions::Container["work_resource.#{Bulkrax::Transactions::Container::CREATE_WITH_BULK_BEHAVIOR}"]
     end
 
     # Customize Hyrax::Transactions::WorkUpdate transaction with bulkrax
     def update_transaction
-      Hyrax::Transactions::Container["work_resource.update_with_bulk_behavior"]
+      Hyrax::Transactions::Container["work_resource.#{Bulkrax::Transactions::Container::UPDATE_WITH_BULK_BEHAVIOR}"]
     end
 
     # Query child FileSet in the resource/object
