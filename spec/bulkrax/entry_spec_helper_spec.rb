@@ -47,7 +47,6 @@ RSpec.describe Bulkrax::EntrySpecHelper do
 
       context 'when using ValkyrieObjectFactory' do
         ['Work', 'WorkResource'].each do |model_name|
-
           context "for #{model_name}" do
             let(:data) { { model: model_name, source_identifier: identifier, title: "If You Want to Go Far" } }
 
