@@ -29,9 +29,9 @@ module Bulkrax
           Hyrax::Transactions::WorkUpdate.new(steps: UPDATE_WITH_BULK_BEHAVIOR_STEPS)
         end
 
-        # TODO: uninitialized constant Bulkrax::Transactions::Container::InlineUploadHandler
+        # TODO: Need to register step for uploads handler?
         # ops.register "add_file_sets" do
-        #   Hyrax::Transactions::Steps::AddFileSets.new(handler: InlineUploadHandler)
+        #   Hyrax::Transactions::Steps::AddFileSets.new
         # end
 
         ops.register ADD_BULKRAX_FILES do
