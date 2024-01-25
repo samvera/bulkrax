@@ -40,8 +40,6 @@ module Bulkrax
     attr_accessor :fill_in_blank_source_identifiers
 
     ##
-    # Configure which persistence adapter you'd prefer to favor.
-    #
     # @param adapter [Class<Bulkrax::PersistenceLayer::AbstractAdapter>]
     attr_writer :persistence_adapter
 
