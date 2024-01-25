@@ -8,6 +8,8 @@ module Bulkrax
   class Entry < ApplicationRecord
     include Bulkrax::HasMatchers
     include Bulkrax::ImportBehavior
+    self.class_attribute :default_work_type, default: Bulkrax.default_work_type
+
     include Bulkrax::ExportBehavior
     include Bulkrax::StatusInfo
     include Bulkrax::HasLocalProcessing
