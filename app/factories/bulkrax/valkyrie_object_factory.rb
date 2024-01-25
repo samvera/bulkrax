@@ -109,15 +109,11 @@ module Bulkrax
     end
 
     ##
-    # TODO: What else fields are necessary: %i[id edit_users edit_groups read_groups work_members_attributes]?
-    # Regardless of what the Parser gives us, these are the properties we are prepared to accept.
+    # We accept attributes based on the model schema
     def permitted_attributes
-      Bulkrax::ValkyrieObjectFactory.schema_properties(klass) +
-        %i[
-          admin_set_id
-          title
-          visibility
-        ]
+      return Bulkrax::ValkyrieObjectFactory.schema_properties(klass) if klass.respond_to?(:schema)
+      # fallback to support ActiveFedora model name
+      klass.properties.keys.map(&:to_sym) + base_permitted_attributes
     end
 
     def apply_depositor_metadata(object, user)
