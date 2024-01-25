@@ -12,11 +12,11 @@ gemspec
 # Git. Remember to move these dependencies to your gemspec before releasing
 # your gem to rubygems.org.
 
-gem 'blacklight', '~> 6.25.0'
+gem 'blacklight'
 gem 'bootstrap-sass', '~> 3.4.1'
 gem 'coderay'
 gem 'factory_bot_rails'
-gem 'hyrax', '>= 2.3'
+gem 'hyrax', '>= 2.3', '< 4.999'
 gem 'oai'
 gem 'rsolr', '>= 1.0'
 gem 'rspec-rails'
@@ -29,8 +29,10 @@ group :development, :test do
   gem 'pry-byebug'
   gem 'solargraph'
   gem 'solr_wrapper', '>= 0.3'
+  gem 'sqlite3', '~> 1.4'
 end
 
 group :lint do
   gem 'bixby'
+  gem 'rubocop-factory_bot', require: false
 end

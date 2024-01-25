@@ -21,14 +21,14 @@ module Bulkrax
       entry.build
       if entry.succeeded?
         # rubocop:disable Rails/SkipsModelValidations
-        ImporterRun.find(importer_run_id).increment!(:processed_records)
-        ImporterRun.find(importer_run_id).increment!(:processed_file_sets)
+        ImporterRun.increment_counter(:processed_records, importer_run_id)
+        ImporterRun.increment_counter(:processed_file_sets, importer_run_id)
       else
-        ImporterRun.find(importer_run_id).increment!(:failed_records)
-        ImporterRun.find(importer_run_id).increment!(:failed_file_sets)
+        ImporterRun.increment_counter(:failed_records, importer_run_id)
+        ImporterRun.increment_counter(:failed_file_sets, importer_run_id)
         # rubocop:enable Rails/SkipsModelValidations
       end
-      ImporterRun.find(importer_run_id).decrement!(:enqueued_records) unless ImporterRun.find(importer_run_id).enqueued_records <= 0 # rubocop:disable Rails/SkipsModelValidations
+      ImporterRun.decrement_counter(:enqueued_records, importer_run_id) unless ImporterRun.find(importer_run_id).enqueued_records <= 0 # rubocop:disable Rails/SkipsModelValidations
       entry.save!
       entry.importer.current_run = ImporterRun.find(importer_run_id)
       entry.importer.record_status
@@ -40,7 +40,7 @@ module Bulkrax
       if entry.import_attempts < 5
         ImportFileSetJob.set(wait: (entry.import_attempts + 1).minutes).perform_later(entry_id, importer_run_id)
       else
-        ImporterRun.find(importer_run_id).decrement!(:enqueued_records) # rubocop:disable Rails/SkipsModelValidations
+        ImporterRun.decrement_counter(:enqueued_records, importer_run_id) # rubocop:disable Rails/SkipsModelValidations
         entry.set_status_info(e)
       end
     end

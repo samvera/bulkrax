@@ -3,7 +3,8 @@
   <%= fi.input :visibility,
     collection: [
       ['Public', 'open'],
-      ['Private', 'restricted']
+      ['Private', 'restricted'],
+      ['Institution', 'authenticated']
     ],
     selected: importer.parser_fields['visibility'] || 'open',
     input_html: { class: 'form-control' }

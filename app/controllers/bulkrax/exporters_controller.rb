@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require_dependency "bulkrax/application_controller"
-
 module Bulkrax
   class ExportersController < ApplicationController
     include Hyrax::ThemedLayoutController if defined?(::Hyrax)
