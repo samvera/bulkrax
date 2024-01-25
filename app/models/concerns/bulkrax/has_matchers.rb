@@ -187,7 +187,8 @@ module Bulkrax
       # TODO: there has got to be a better way. Only array types have 'of'
       if factory_class.respond_to?(:schema)
         sym_field = field.to_sym
-        factory_class.schema.key(sym_field).respond_to?(:of) if factory_class.fields.include?(sym_field)
+        return true if factory_class.schema.key(sym_field).primitive == Array
+        false
       else
         ar_multiple?(field)
       end
