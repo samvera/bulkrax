@@ -25,6 +25,10 @@ RSpec.describe Bulkrax::EntrySpecHelper do
       context 'when ActiveFedora object' do
         let(:data) { { model: "Work", source_identifier: identifier, title: "If You Want to Go Far" } }
 
+        before do
+          allow(Bulkrax).to receive(:object_factory).and_return(Bulkrax::ObjectFactory)
+        end
+
         it { is_expected.to be_a(Bulkrax::CsvEntry) }
 
         it "parses metadata" do
@@ -41,25 +45,33 @@ RSpec.describe Bulkrax::EntrySpecHelper do
         end
       end
 
-      # TODO: Add specs for when Bulkrax::ValkyrieObjectFactory is used
-      # context 'when Valkyrie object' do
-      #   let(:data) { { model: "Work", source_identifier: identifier, title: "If You Want to Go Far" } }
+      context 'when using ValkyrieObjectFactory' do
+        ['Work', 'WorkResource'].each do |model_name|
 
-      #   it { is_expected.to be_a(Bulkrax::CsvEntry) }
+          context "for #{model_name}" do
+            let(:data) { { model: model_name, source_identifier: identifier, title: "If You Want to Go Far" } }
 
-      #   it "parses metadata" do
-      #     entry.build_metadata
+            before do
+              allow(Bulkrax).to receive(:object_factory).and_return(Bulkrax::ValkyrieObjectFactory)
+            end
 
-      #     expect(entry.factory_class).to eq(Work)
-      #     {
-      #       "title" => ["If You Want to Go Far"],
-      #       "admin_set_id" => "admin_set/default",
-      #       "source" => [identifier]
-      #     }.each do |key, value|
-      #       expect(entry.parsed_metadata.fetch(key)).to eq(value)
-      #     end
-      #   end
-      # end
+            it { is_expected.to be_a(Bulkrax::CsvEntry) }
+
+            it "parses metadata" do
+              entry.build_metadata
+
+              expect(entry.factory_class).to eq(model_name.constantize)
+              {
+                "title" => ["If You Want to Go Far"],
+                "admin_set_id" => "admin_set/default",
+                "source" => [identifier]
+              }.each do |key, value|
+                expect(entry.parsed_metadata.fetch(key)).to eq(value)
+              end
+            end
+          end
+        end
+      end
     end
 
     context 'for parser_class_name: "Bulkrax::OaiDcParser"' do

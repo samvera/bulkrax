@@ -130,10 +130,10 @@ module Bulkrax
       return false if excluded?(field)
       return true if supported_bulkrax_fields.include?(field)
 
-      property_defined = factory_class.singleton_methods.include?(:properties) && factory_class.properties[field].present?
-
-      if factory_class == Bulkrax::ValkyrieObjectFactory
-        factory_class.method_defined?(field) && (Bulkrax::ValkyrieObjectFactory.schema_properties(factory_class).include?(field) || property_defined)
+      if Bulkrax.object_factory == Bulkrax::ValkyrieObjectFactory
+        # used in cases where we have a Fedora object class but use the Valkyrie object factory
+        property_defined = factory_class.singleton_methods.include?(:properties) && factory_class.properties[field].present?
+        factory_class.method_defined?(field) && (property_defined || Bulkrax::ValkyrieObjectFactory.schema_properties(factory_class).include?(field))
       else
         factory_class.method_defined?(field) && factory_class.properties[field].present?
       end
@@ -168,7 +168,7 @@ module Bulkrax
       return true if @multiple_bulkrax_fields.include?(field)
       return false if field == 'model'
 
-      if factory_class == Bulkrax::ValkyrieObjectFactory
+      if Bulkrax.object_factory == Bulkrax::ValkyrieObjectFactory
         field_supported?(field) && valkyrie_multiple?(field)
       else
         field_supported?(field) && ar_multiple?(field)
@@ -185,8 +185,12 @@ module Bulkrax
 
     def valkyrie_multiple?(field)
       # TODO: there has got to be a better way. Only array types have 'of'
-      sym_field = field.to_sym
-      factory_class.schema.key(sym_field).respond_to?(:of) if factory_class.fields.include?(sym_field)
+      if factory_class.respond_to?(:schema)
+        sym_field = field.to_sym
+        factory_class.schema.key(sym_field).respond_to?(:of) if factory_class.fields.include?(sym_field)
+      else
+        ar_multiple?(field)
+      end
     end
 
     # Hyrax field to use for the given import field
