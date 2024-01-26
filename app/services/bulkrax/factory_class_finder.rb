@@ -3,27 +3,61 @@
 module Bulkrax
   class FactoryClassFinder
     ##
-    # @param entry [Bulkrax::Entry]
-    # @return [Class]
-    def self.find(entry:)
-      new(entry: entry).find
+    # The v6.0.0 default coercer.  Responsible for converting a factory class name to a constant.
+    module DefaultCoercer
+      ##
+      # @param name [String]
+      # @return [Class] when the name is a coercible constant.
+      # @raise [NameError] when the name is not coercible to a constant.
+      def self.call(name)
+        name.constantize
+      end
     end
 
-    def initialize(entry:)
-      @entry = entry
+    ##
+    # A name coercer that favors classes that end with "Resource" but will attempt to fallback to
+    # those that don't.
+    module ValkyrieMigrationCoercer
+      SUFFIX = "Resource"
+
+      ##
+      # @param name [String]
+      # @param suffix [String] the suffix we use for a naming convention.
+      #
+      # @return [Class] when the name is a coercible constant.
+      # @raise [NameError] when the name is not coercible to a constant.
+      def self.call(name, suffix: SUFFIX)
+        if name.end_with?(suffix)
+          name.constantize
+        else
+          begin
+            "#{name}#{suffix}".constantize
+          rescue NameError
+            name.constantize
+          end
+        end
+      end
     end
-    attr_reader :entry
+
+    ##
+    # @param entry [Bulkrax::Entry]
+    # @return [Class]
+    def self.find(entry:, coercer: Bulkrax.factory_class_name_coercer || DefaultCoercer)
+      new(entry: entry, coercer: coercer).find
+    end
+
+    def initialize(entry:, coercer:)
+      @entry = entry
+      @coercer = coercer
+    end
+    attr_reader :entry, :coercer
 
     ##
     # @return [Class] when we are able to derive the class based on the {#name}.
     # @return [Nil] when we encounter errors with constantizing the {#name}.
     # @see #name
     def find
-      # TODO: We have a string, now we want to consider how we coerce.  Let's say we have Work and
-      # WorkResource in our upstream application.  Work extends ActiveFedora::Base and is legacy.
-      # And WorkResource extends Valkyrie::Resource and is where we want to be moving.  We may want
-      # to coerce the "Work" name into "WorkResource"
-      name.constantize
+      coercer.call(name)
     rescue NameError
       nil
     rescue
@@ -41,13 +75,13 @@ module Bulkrax
              # details.
              Array.wrap(entry.parsed_metadata['work_type']).first
            else
-             # The string might be frozen, so lets duplicate
-             entry.default_work_type.dup
+             entry.default_work_type
            end
 
-      # Let's coerce this into the right shape.
-      fc.tr!(' ', '_')
-      fc.downcase! if fc.match?(/[-_]/)
+      # Let's coerce this into the right shape; we're not mutating the string because it might well
+      # be frozen.
+      fc = fc.tr(' ', '_')
+      fc = fc.downcase if fc.match?(/[-_]/)
       fc.camelcase
     rescue
       entry.default_work_type
