@@ -205,4 +205,14 @@ RSpec.describe Bulkrax do
     it { is_expected.to respond_to(:solr_name) }
     it { is_expected.to respond_to(:clean!) }
   end
+
+  context '.factory_class_name_coercer' do
+    subject { described_class.factory_class_name_coercer }
+
+    it { is_expected.to respond_to(:call) }
+
+    it "has a method arity of 1" do
+      expect(subject.method(:call).arity).to eq 1
+    end
+  end
 end

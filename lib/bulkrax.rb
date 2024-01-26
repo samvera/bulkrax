@@ -44,6 +44,25 @@ module Bulkrax
     attr_writer :persistence_adapter
 
     ##
+    # @param coercer [#call]
+    # @see Bulkrax::FactoryClassFinder
+    attr_writer :factory_class_name_coercer
+
+    ##
+    # A function responsible for converting the name of a factory class to the corresponding
+    # constant.
+    #
+    # @return [#call, Bulkrax::FactoryClassFinder::DefaultCoercer] an object responding to call,
+    #         with one positional parameter (e.g. arity == 1)
+    #
+    # @example
+    #   Bulkrax.factory_class_name_coercer.call("Work")
+    #   => Work
+    def factory_class_name_coercer
+      @factory_class_name_coercer || Bulkrax::FactoryClassFinder::DefaultCoercer
+    end
+
+    ##
     # Configure the persistence adapter used for persisting imported data.
     #
     # @return [Class<Bulkrax::PersistenceLayer::AbstractAdapter>]
@@ -99,6 +118,8 @@ module Bulkrax
                  :default_work_type=,
                  :export_path,
                  :export_path=,
+                 :factory_class_name_coercer,
+                 :factory_class_name_coercer=,
                  :field_mappings,
                  :field_mappings=,
                  :file_model_class,
