@@ -14,7 +14,7 @@
             <%= form.button :submit, value: 'Update and Re-Export All Items', class: 'btn btn-primary' %>
             |
             <% cancel_path = form.object.persisted? ? exporter_path(form.object) : exporters_path %>
-            <%= link_to t('.cancel'), cancel_path, class: 'btn btn-default ' %>
+            <%= link_to t('bulkrax.cancel'), cancel_path, class: 'btn btn-default ' %>
           </div>
         </div>
       <% end %>
