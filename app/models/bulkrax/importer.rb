@@ -18,7 +18,7 @@ module Bulkrax
     validates :admin_set_id, presence: true if defined?(::Hyrax)
     validates :parser_klass, presence: true
 
-    delegate :valid_import?, :write_errored_entries_file, :visibility, to: :parser
+    delegate :create_parent_child_relationships, :valid_import?, :write_errored_entries_file, :visibility, to: :parser
 
     attr_accessor :only_updates, :file_style, :file
     attr_writer :current_run
@@ -121,6 +121,34 @@ module Bulkrax
 
     def last_run
       @last_run ||= self.importer_runs.last
+    end
+
+    def failed_statuses
+      @failed_statuses ||= Bulkrax::Status.latest_by_statusable
+        .includes(:statusable)
+        .where('bulkrax_statuses.statusable_id IN (?) AND bulkrax_statuses.statusable_type = ? AND status_message = ?', self.entries.pluck(:id), 'Bulkrax::Entry', 'Failed')
+    end
+
+    def failed_entries
+      @failed_entries ||= failed_statuses.map(&:statusable)
+    end
+
+    def failed_messages
+      failed_statuses.inject({}) do |i, e|
+        i[e.error_message] ||= []
+        i[e.error_message] << e.id
+        i
+      end
+    end
+
+    def completed_statuses
+      @completed_statuses ||= Bulkrax::Status.latest_by_statusable
+        .includes(:statusable)
+        .where('bulkrax_statuses.statusable_id IN (?) AND bulkrax_statuses.statusable_type = ? AND status_message = ?', self.entries.pluck(:id), 'Bulkrax::Entry', 'Complete')
+    end
+
+    def completed_entries
+      @completed_entries ||= completed_statuses.map(&:statusable)
     end
 
     def seen

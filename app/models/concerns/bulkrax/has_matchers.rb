@@ -125,7 +125,9 @@ module Bulkrax
 
       return false if excluded?(field)
       return true if supported_bulkrax_fields.include?(field)
-      return factory_class.method_defined?(field) && factory_class.properties[field].present?
+      property_defined = factory_class.singleton_methods.include?(:properties) && factory_class.properties[field].present?
+
+      factory_class.method_defined?(field) && (Bulkrax::ValkyrieObjectFactory.schema_properties(factory_class).include?(field) || property_defined)
     end
 
     def supported_bulkrax_fields
@@ -155,7 +157,21 @@ module Bulkrax
       return true if @multiple_bulkrax_fields.include?(field)
       return false if field == 'model'
 
-      field_supported?(field) && factory_class&.properties&.[](field)&.[]('multiple')
+      if factory.class.respond_to?(:schema)
+        field_supported?(field) && valkyrie_multiple?(field)
+      else
+        field_supported?(field) && ar_multiple?(field)
+      end
+    end
+
+    def ar_multiple?(field)
+      factory_class.singleton_methods.include?(:properties) && factory_class&.properties&.[](field)&.[]("multiple")
+    end
+
+    def valkyrie_multiple?(field)
+      # TODO there has got to be a better way. Only array types have 'of'
+      sym_field = field.to_sym
+      factory_class.schema.key(sym_field).respond_to?(:of) if factory_class.fields.include?(sym_field)
     end
 
     def get_object_name(field)
