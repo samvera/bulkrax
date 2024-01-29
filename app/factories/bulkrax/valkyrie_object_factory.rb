@@ -50,7 +50,7 @@ module Bulkrax
       cx = Hyrax::Forms::ResourceForm.for(klass.new).prepopulate!
       cx.validate(attrs)
 
-      result = transaction
+      result = transaction_create
                .with_step_args(
           # "work_resource.add_to_parent" => {parent_id: @related_parents_parsed_mapping, user: @user},
           "work_resource.#{Bulkrax::Transactions::Container::ADD_BULKRAX_FILES}" => { files: get_s3_files(remote_files: attributes["remote_files"]), user: @user },
@@ -81,7 +81,7 @@ module Bulkrax
       cx = Hyrax::Forms::ResourceForm.for(@object)
       cx.validate(attrs)
 
-      result = update_transaction
+      result = transaction_update
                .with_step_args(
           "work_resource.#{Bulkrax::Transactions::Container::ADD_BULKRAX_FILES}" => { files: get_s3_files(remote_files: attributes["remote_files"]), user: @user }
 
@@ -160,13 +160,13 @@ module Bulkrax
 
     private
 
-    # TODO: Rename to create_transaction
-    def transaction
+    # TODO: Rename to transaction_create
+    def transaction_create
       Hyrax::Transactions::Container["work_resource.#{Bulkrax::Transactions::Container::CREATE_WITH_BULK_BEHAVIOR}"]
     end
 
     # Customize Hyrax::Transactions::WorkUpdate transaction with bulkrax
-    def update_transaction
+    def transaction_update
       Hyrax::Transactions::Container["work_resource.#{Bulkrax::Transactions::Container::UPDATE_WITH_BULK_BEHAVIOR}"]
     end
 
