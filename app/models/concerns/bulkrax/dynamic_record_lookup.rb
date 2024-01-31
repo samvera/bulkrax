@@ -20,7 +20,7 @@ module Bulkrax
         record = Entry.find_by(default_scope.merge({ importerexporter_id: importer_id })) || Entry.find_by(default_scope)
         record ||= Bulkrax.persistence_adapter.find(identifier)
       # NameError for if ActiveFedora isn't installed
-      rescue NameError, ActiveFedora::ObjectNotFoundError
+      rescue NameError, ActiveFedora::ObjectNotFoundError, Bulkrax::PersistenceLayer::ObjectNotFoundError
         record = nil
       end
 

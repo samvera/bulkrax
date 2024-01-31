@@ -19,7 +19,7 @@ module Bulkrax
 
         it 'looks through entries and all work types' do
           expect(Entry).to receive(:find_by).with({ identifier: source_identifier, importerexporter_type: 'Bulkrax::Importer', importerexporter_id: importer_id }).once
-          expect(Bulkrax.persistence_adapter).to receive(:find).with(source_identifier).once.and_return(ActiveFedora::ObjectNotFoundError)
+          expect(Bulkrax.persistence_adapter).to receive(:find).with(source_identifier).once.and_return(Bulkrax::PersistenceLayer::ObjectNotFoundError)
 
           subject.find_record(source_identifier, importer_run_id)
         end

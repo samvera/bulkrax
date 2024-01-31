@@ -25,7 +25,7 @@ module Bulkrax
         AdminSet.find(params[:importer][:admin_set_id])
       end
       return true
-    rescue ActiveFedora::ObjectNotFoundError
+    rescue ActiveFedora::ObjectNotFoundError, Bulkrax::PersistenceLayer::ObjectNotFoundError
       logger.warn("AdminSet #{params[:importer][:admin_set_id]} not found. Using default admin set.")
       params[:importer][:admin_set_id] = AdminSet::DEFAULT_ID
       return true
