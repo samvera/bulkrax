@@ -4,8 +4,6 @@ module Wings
   module CustomQueries
     class FindBySourceIdentifier
       # Custom query override specific to Wings
-      # Use:
-      #   Hyrax.custom_queries.find_bulkrax_id(identifier: identifier, models: [ModelClass])
 
       def self.queries
         [:find_by_source_identifier]
