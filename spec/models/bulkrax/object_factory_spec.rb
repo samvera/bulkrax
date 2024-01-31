@@ -22,8 +22,7 @@ module Bulkrax
           factory = described_class.new(attributes: attributes,
                                         source_identifier_value: 123,
                                         work_identifier: "filled_string",
-                                        work_identifier_search_field: 'filled_string_sim',
-                                        entry: FactoryBot.build(:bulkrax_entry))
+                                        work_identifier_search_field: 'filled_string_sim')
           factory.base_permitted_attributes = %i[empty_array empty_string filled_array filled_string]
           expect(factory.send(:transform_attributes)).to eq(attributes.stringify_keys)
         end
@@ -35,8 +34,7 @@ module Bulkrax
           factory = described_class.new(attributes: attributes,
                                         source_identifier_value: 123,
                                         work_identifier: "filled_string",
-                                        work_identifier_search_field: 'filled_string_sim',
-                                        entry: FactoryBot.build(:bulkrax_entry))
+                                        work_identifier_search_field: 'filled_string_sim')
           factory.base_permitted_attributes = %i[empty_array empty_string filled_array filled_string]
           factory.transformation_removes_blank_hash_values = true
           expect(factory.send(:transform_attributes))

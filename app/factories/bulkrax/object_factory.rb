@@ -28,10 +28,10 @@ module Bulkrax
     class_attribute :transformation_removes_blank_hash_values, default: false
 
     define_model_callbacks :save, :create
-    attr_reader :attributes, :object, :source_identifier_value, :klass, :replace_files, :update_files, :work_identifier, :work_identifier_search_field, :related_parents_parsed_mapping, :importer_run_id, :entry
+    attr_reader :attributes, :object, :source_identifier_value, :klass, :replace_files, :update_files, :work_identifier, :work_identifier_search_field, :related_parents_parsed_mapping, :importer_run_id
 
     # rubocop:disable Metrics/ParameterLists
-    def initialize(attributes:, source_identifier_value:, work_identifier:, work_identifier_search_field:, related_parents_parsed_mapping: nil, replace_files: false, user: nil, klass: nil, importer_run_id: nil, update_files: false, entry:)
+    def initialize(attributes:, source_identifier_value:, work_identifier:, work_identifier_search_field:, related_parents_parsed_mapping: nil, replace_files: false, user: nil, klass: nil, importer_run_id: nil, update_files: false)
       @attributes = ActiveSupport::HashWithIndifferentAccess.new(attributes)
       @replace_files = replace_files
       @update_files = update_files
@@ -42,7 +42,6 @@ module Bulkrax
       @source_identifier_value = source_identifier_value
       @klass = klass || Bulkrax.default_work_type.constantize
       @importer_run_id = importer_run_id
-      @entry = entry
     end
     # rubocop:enable Metrics/ParameterLists
 

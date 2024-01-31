@@ -31,7 +31,7 @@ module Bulkrax
       # so we need to weed out any that are not the correct full match. But other items might be
       # in the multivalued field, so we have to go through them one at a time.
       match = Hyrax.query_service.custom_queries.find_by_source_identifier(
-        work_identifier: entry.work_identifier,
+        work_identifier: work_identifier,
         source_identifier_value: source_identifier_value
       )
 
