@@ -22,7 +22,7 @@ module Bulkrax
     end
 
     def hyrax_record
-      @hyrax_record ||= ActiveFedora::Base.find(self.identifier)
+      @hyrax_record ||= Bulkrax.persistence_adapter.find(self.identifier)
     end
 
     # Prepend the file_set id to ensure a unique filename and also one that is not longer than 255 characters
