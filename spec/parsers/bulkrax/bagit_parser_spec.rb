@@ -293,7 +293,7 @@ module Bulkrax
         end
 
         it 'attempts to find the related record' do
-          expect(ActiveFedora::Base).to receive(:find).with('csv_entry').and_return(nil)
+          expect(Bulkrax.persistence_adapter).to receive(:find).with('csv_entry').and_return(nil)
 
           subject.write_files
         end
