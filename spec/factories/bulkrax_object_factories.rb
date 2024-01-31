@@ -7,7 +7,8 @@ FactoryBot.define do
         attributes: {},
         source_identifier_value: :source_identifier,
         work_identifier: :source,
-        work_identifier_search_field: 'source_sim'
+        work_identifier_search_field: 'source_sim',
+        entry: FactoryBot.build(:bulkrax_entry)
       )
     end
   end
