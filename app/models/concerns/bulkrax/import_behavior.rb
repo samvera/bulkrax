@@ -185,7 +185,8 @@ module Bulkrax
                           user: user,
                           klass: factory_class,
                           importer_run_id: importerexporter.last_run.id,
-                          update_files: update_files)
+                          update_files: update_files,
+                          entry: self)
     end
 
     def factory_class
