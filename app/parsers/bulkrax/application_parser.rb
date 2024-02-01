@@ -68,7 +68,7 @@ module Bulkrax
     # @return [Symbol] the name of the identifying property in the source system from which we're
     # importing (e.g. is *not* this application that mounts *this* Bulkrax engine).
     #
-    # @see #work_identifier
+    # @see #source_identifier
     # @see https://github.com/samvera-labs/bulkrax/wiki/CSV-Importer#source-identifier Bulkrax Wiki regarding source identifier
     def source_identifier
       @source_identifier ||= get_field_mapping_hash_for('source_identifier')&.values&.first&.[]('from')&.first&.to_sym || :source_identifier
@@ -76,7 +76,7 @@ module Bulkrax
 
     # @return [Symbol] the name of the identifying property for the system which we're importing
     #         into (e.g. the application that mounts *this* Bulkrax engine)
-    # @see #source_identifier
+    # @see #work_identifier
     def work_identifier
       @work_identifier ||= get_field_mapping_hash_for('source_identifier')&.keys&.first&.to_sym || :source
     end
