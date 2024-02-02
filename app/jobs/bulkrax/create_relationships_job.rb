@@ -81,7 +81,7 @@ module Bulkrax
           if @parent_record_members_added
             parent_record.save!
             # Ensure that the new relationship gets indexed onto the children
-            if parent_record.kind_of?(Valkyrie::Resource)
+            if parent_record.is_a?(Valkyrie::Resource)
               @child_members_added.each do |child|
                 Hyrax.index_adapter.save(resource: child)
               end
@@ -171,7 +171,7 @@ module Bulkrax
     end
 
     def add_to_work(child_record, parent_record)
-      parent_record.kind_of?(Valkyrie::Resource) ? add_to_valkyrie_work(child_record, parent_record) : add_to_af_work(child_record, parent_record)
+      parent_record.is_a?(Valkyrie::Resource) ? add_to_valkyrie_work(child_record, parent_record) : add_to_af_work(child_record, parent_record)
 
       @parent_record_members_added = true
       @child_members_added << child_record
