@@ -80,8 +80,15 @@ module Bulkrax
           # save record if members were added
           if @parent_record_members_added
             parent_record.save!
+            # TODO: Push logic into Bulkrax.persistence_adapter
             # Ensure that the new relationship gets indexed onto the children
-            @child_members_added.each(&:update_index)
+            if parent_record.is_a?(Valkyrie::Resource)
+              @child_members_added.each do |child|
+                Hyrax.index_adapter.save(resource: child)
+              end
+            else
+              @child_members_added.each(&:update_index)
+            end
           end
         end
       else
@@ -165,11 +172,32 @@ module Bulkrax
     end
 
     def add_to_work(child_record, parent_record)
+      parent_record.is_a?(Valkyrie::Resource) ? add_to_valkyrie_work(child_record, parent_record) : add_to_af_work(child_record, parent_record)
+
+      @parent_record_members_added = true
+      @child_members_added << child_record
+    end
+
+    def add_to_valkyrie_work(child_record, parent_record)
+      return true if parent_record.member_ids.include?(child_record.id)
+
+      parent_record.member_ids << child_record.id
+
+      # TODO: Hyrax is in the process of extracting an "Action" object that we could call.  It does
+      # provide validation that we may want to consider.
+      #
+      # NOTE: We may need to look at the step args we're passing, see
+      #      `Hyrax::WorksControllerBehavior#update_valkyrie_work`
+      #      Hyrax's `./app/controllers/concerns/hyrax/works_controller_behavior.rb`
+      #
+      change_set = Hyrax::ChangeSet.for(parent_record)
+      Hyrax::Transactions::Container['change_set.update_work'].call(change_set)
+    end
+
+    def add_to_af_work(child_record, parent_record)
       return true if parent_record.ordered_members.to_a.include?(child_record)
 
       parent_record.ordered_members << child_record
-      @parent_record_members_added = true
-      @child_members_added << child_record
     end
 
     def reschedule(parent_identifier:, importer_run_id:)
