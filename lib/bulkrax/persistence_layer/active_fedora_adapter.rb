@@ -6,7 +6,7 @@ module Bulkrax
       def self.find(id)
         ActiveFedora::Base.find(id)
       rescue ActiveFedora::ObjectNotFoundError => e
-        raise PersistenceLayer::RecordNotFound, e.message
+        raise PersistenceLayer::ObjectNotFoundError, e.message
       end
 
       def self.query(q, **kwargs)
