@@ -90,17 +90,18 @@ module Bulkrax
     def find
       found = find_by_id if attributes[:id].present?
       return found if found.present?
-    rescue Valkyrie::Persistence::ObjectNotFoundError
+      return search_by_identifier if attributes[work_identifier].present?
       false
-    else
-      search_by_identifier if attributes[work_identifier].present?
     end
 
     def find_by_id
+      # TODO: Push logic into Bulkrax.persistence_adapter; maybe
       # Rails / Ruby upgrade, we moved from :exists? to :exist?  However we want to continue (for a
       # bit) to support older versions.
       method_name = klass.respond_to?(:exist?) ? :exist? : :exists?
       klass.find(attributes[:id]) if klass.send(method_name, attributes[:id])
+    rescue Valkyrie::Persistence::ObjectNotFoundError
+      false
     end
 
     def find_or_create
@@ -110,11 +111,13 @@ module Bulkrax
     end
 
     def search_by_identifier
+      # TODO: Push logic into Bulkrax.persistence_adapter; maybe
       query = { work_identifier_search_field =>
                 source_identifier_value }
       # Query can return partial matches (something6 matches both something6 and something68)
       # so we need to weed out any that are not the correct full match. But other items might be
       # in the multivalued field, so we have to go through them one at a time.
+      #
       match = klass.where(query).detect { |m| m.send(work_identifier).include?(source_identifier_value) }
       return match if match
     end
