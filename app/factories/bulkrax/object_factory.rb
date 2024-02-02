@@ -92,7 +92,7 @@ module Bulkrax
       return found if found.present?
     rescue Valkyrie::Persistence::ObjectNotFoundError
       false
-    ensure
+    else
       search_by_identifier if attributes[work_identifier].present?
     end
 
