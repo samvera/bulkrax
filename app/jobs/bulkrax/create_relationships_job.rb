@@ -182,16 +182,8 @@ module Bulkrax
       return true if parent_record.member_ids.include?(child_record.id)
 
       parent_record.member_ids << child_record.id
-
-      # TODO: Hyrax is in the process of extracting an "Action" object that we could call.  It does
-      # provide validation that we may want to consider.
-      #
-      # NOTE: We may need to look at the step args we're passing, see
-      #      `Hyrax::WorksControllerBehavior#update_valkyrie_work`
-      #      Hyrax's `./app/controllers/concerns/hyrax/works_controller_behavior.rb`
-      #
-      change_set = Hyrax::ChangeSet.for(parent_record)
-      Hyrax::Transactions::Container['change_set.update_work'].call(change_set)
+      Hyrax.persister.save(resource: parent_record)
+      Hyrax.publisher.publish('object.membership.updated', object: parent_record)
     end
 
     def add_to_af_work(child_record, parent_record)
