@@ -179,6 +179,7 @@ module Bulkrax
       @factory ||= of.new(attributes: self.parsed_metadata,
                           source_identifier_value: identifier,
                           work_identifier: parser.work_identifier,
+                          work_identifier_search_field: parser.work_identifier_search_field,
                           related_parents_parsed_mapping: parser.related_parents_parsed_mapping,
                           replace_files: replace_files,
                           user: user,
@@ -188,22 +189,10 @@ module Bulkrax
     end
 
     def factory_class
-      fc = if self.parsed_metadata&.[]('model').present?
-             self.parsed_metadata&.[]('model').is_a?(Array) ? self.parsed_metadata&.[]('model')&.first : self.parsed_metadata&.[]('model')
-           elsif self.mapping&.[]('work_type').present?
-             self.parsed_metadata&.[]('work_type').is_a?(Array) ? self.parsed_metadata&.[]('work_type')&.first : self.parsed_metadata&.[]('work_type')
-           else
-             Bulkrax.default_work_type
-           end
-
-      # return the name of the collection or work
-      fc.tr!(' ', '_')
-      fc.downcase! if fc.match?(/[-_]/)
-      fc.camelcase.constantize
-    rescue NameError
-      nil
-    rescue
-      Bulkrax.default_work_type.constantize
+      # ATTENTION: Do not memoize this here; tests should catch the problem, but through out the
+      # lifecycle of parsing a CSV row or what not, we end up having different factory classes based
+      # on the encountered metadata.
+      FactoryClassFinder.find(entry: self)
     end
   end
 end

@@ -98,7 +98,7 @@ module Bulkrax
 
       if errors.present?
         # rubocop:disable Rails/SkipsModelValidations
-        importer_run.increment!(:failed_relationships, number_of_failures)
+        ImporterRun.update_counters(importer_run_id, failed_relationships: number_of_failures)
         # rubocop:enable Rails/SkipsModelValidations
 
         parent_entry&.set_status_info(errors.last, importer_run)
@@ -108,7 +108,7 @@ module Bulkrax
         return false # stop current job from continuing to run after rescheduling
       else
         # rubocop:disable Rails/SkipsModelValidations
-        Bulkrax::ImporterRun.find(importer_run_id).increment!(:processed_relationships, number_of_successes)
+        ImporterRun.update_counters(importer_run_id, processed_relationships: number_of_successes)
         # rubocop:enable Rails/SkipsModelValidations
       end
     end
@@ -158,7 +158,8 @@ module Bulkrax
     end
 
     def add_to_collection(child_record, parent_record)
-      parent_record.try(:reindex_extent=, Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX)
+      parent_record.try(:reindex_extent=, Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX) if
+        defined?(Hyrax::Adapters::NestingIndexAdapter)
       child_record.member_of_collections << parent_record
       child_record.save!
     end

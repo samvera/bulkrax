@@ -10,13 +10,17 @@ module Bulkrax
   #
   # This module came about through a desire to expose a quick means of vetting the accuracy of the
   # different parsers.
+  #
+  # @see .entry_for
   module EntrySpecHelper
     ##
     # @api public
     # @since v5.0.1
     #
-    # The purpose of this method is encapsulate the logic of creating the appropriate Bulkrax::Entry
-    # object based on the given data, identifier, and parser_class_name.
+    # The purpose of this method is encapsulate the logic of creating the appropriate
+    # {Bulkrax::Entry} object based on the given data, identifier, and parser_class_name.  Due to
+    # the different means of instantiation of {Bulkrax::Entry} subclasses, there are several
+    # optional parameters.
     #
     # From that entry, you should be able to test how {Bulkrax::Entry#build_metadata} populates the
     # {Bulkrax::Entry#parsed_metadata} variable.  Other uses may emerge.
@@ -29,9 +33,47 @@ module Bulkrax
     # @param parser_class_name [String] The name of the parser class you're wanting to test.
     # @param type [Sybmol] The type of entry (e.g. :entry, :collection, :file_set) for testing.
     # @param options [Hash<Symbol,Object>] these are to be passed along into the instantiation of
-    #        the various classes.  See implementation details.
+    #        the various classes.
+    # @option options [String] importer_name (Optional) The name of the test importer.  One will be
+    #         auto-assigned if unprovided.
+    # @option options [String] importer_admin_set_id (Optional) The ID of an admin set to deposit
+    #         into.  One will be auto-assigned if unprovided.  And this admin set does not need to
+    #         be persisted nor exist.  It is simply a required parameter for instantiating an
+    #         importer.
+    # @option options [User] user (Optional) The user who is performing the import.  One will be
+    #         auto-assigned if unprovided.  The user does not need to be persisted.  It is simply a
+    #         required parameter for instantiating an importer
+    # @option options [Integer] limit (Optional) You really shouldn't need to set this, but for
+    #         completeness it is provided.
+    # @option options [Hash<String, Object>] importer_field_mappings Each parser class may require
+    #         different field mappings.  See the given examples for more details.
     #
-    # @return [Bulkrax::Entry]
+    # @return [Bulkrax::Entry] a subclass of {Bulkrax::Entry} based on the application's
+    #         configuration.  It would behoove you to write a spec regarding the returned entry's
+    #         class.
+    #
+    # @example
+    #   entry = Bulkrax::EntrySpecHelper.entry_for(
+    #     data: { source_identifier: "123", title: "Hello World" },
+    #     parser_class_name: "Bulkrax::CsvParser",
+    #     importer_field_mappings: { 'import_file_path' => "path/to/file.csv" }
+    #   )
+    #
+    # @note In the case of the Bulkrax::CsvParser, the :data keyword is a Hash, where the keys are
+    #       the column name of the CSV you're importing.  The 'import_file_path' is a path to a CSV
+    #       file.  That CSV's columns does not need to match the :data's keys, though there may be
+    #       required headers on that CSV based on the parser implementation.
+    #
+    # @example
+    #   entry = Bulkrax::EntrySpecHelper.entry_for(
+    #     identifier: identifier,
+    #     data: File.read("/path/to/some/file.xml"),
+    #     parser_class_name: "Bulkrax::OaiDcParser",
+    #     parser_fields: { "base_url" => "http://oai.adventistdigitallibrary.org/OAI-script" }
+    #   )
+    #
+    # @note In the case of an OaiParser, the :data keyword should be a String.  And you'll need to
+    #       provide a :parser_fields with a "base_url".
     def self.entry_for(data:, identifier:, parser_class_name:, type: :entry, **options)
       importer = importer_for(parser_class_name: parser_class_name, **options)
       entry_type_method_name = ENTRY_TYPE_TO_METHOD_NAME_MAP.fetch(type)
@@ -58,6 +100,7 @@ module Bulkrax
            **options)
     end
 
+    ##
     # @api public
     #
     # @param parser_class_name [String]
@@ -121,16 +164,6 @@ module Bulkrax
     end
     private_class_method :importer_for
 
-    ##
-    # @api private
-    #
-    # @param data [Hash<Symbol,String>] we're expecting a hash with keys that are symbols and then
-    #        values that are strings.
-    #
-    # @return [Bulkrax::CsvEntry]
-    #
-    # @note As a foible of this implementation, you'll need to include along a CSV to establish the
-    #       columns that you'll parse (e.g. the first row
     def self.build_csv_entry_for(importer:, data:, identifier:, entry_class:, **_options)
       entry_class.new(
         importerexporter: importer,
@@ -138,13 +171,8 @@ module Bulkrax
         raw_metadata: data
       )
     end
+    private_class_method :build_csv_entry_for
 
-    ##
-    # @api private
-    #
-    # @param data [String] we're expecting a string that is well-formed XML for OAI parsing.
-    #
-    # @return [Bulkrax::OaiEntry]
     def self.build_oai_entry_for(importer:, data:, identifier:, entry_class:, **options)
       # The raw record assumes we take the XML data, parse it and then send that to the
       # OAI::GetRecordResponse object.
@@ -165,13 +193,8 @@ module Bulkrax
         raw_metadata: raw_metadata
       )
     end
+    private_class_method :build_oai_entry_for
 
-    ##
-    # @api private
-    #
-    # @param data [String] we're expecting a string that is well-formed XML.
-    #
-    # @return [Bulkrax::XmlEntry]
     def self.build_xml_entry_for(importer:, data:, identifier:, entry_class:, **options)
       raw_metadata = {
         importer.parser.source_identifier.to_s => identifier,
@@ -186,5 +209,6 @@ module Bulkrax
         raw_metadata: raw_metadata
       )
     end
+    private_class_method :build_xml_entry_for
   end
 end

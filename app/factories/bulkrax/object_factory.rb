@@ -28,15 +28,16 @@ module Bulkrax
     class_attribute :transformation_removes_blank_hash_values, default: false
 
     define_model_callbacks :save, :create
-    attr_reader :attributes, :object, :source_identifier_value, :klass, :replace_files, :update_files, :work_identifier, :related_parents_parsed_mapping, :importer_run_id
+    attr_reader :attributes, :object, :source_identifier_value, :klass, :replace_files, :update_files, :work_identifier, :work_identifier_search_field, :related_parents_parsed_mapping, :importer_run_id
 
     # rubocop:disable Metrics/ParameterLists
-    def initialize(attributes:, source_identifier_value:, work_identifier:, related_parents_parsed_mapping: nil, replace_files: false, user: nil, klass: nil, importer_run_id: nil, update_files: false)
+    def initialize(attributes:, source_identifier_value:, work_identifier:, work_identifier_search_field:, related_parents_parsed_mapping: nil, replace_files: false, user: nil, klass: nil, importer_run_id: nil, update_files: false)
       @attributes = ActiveSupport::HashWithIndifferentAccess.new(attributes)
       @replace_files = replace_files
       @update_files = update_files
       @user = user || User.batch_user
       @work_identifier = work_identifier
+      @work_identifier_search_field = work_identifier_search_field
       @related_parents_parsed_mapping = related_parents_parsed_mapping
       @source_identifier_value = source_identifier_value
       @klass = klass || Bulkrax.default_work_type.constantize
@@ -103,8 +104,7 @@ module Bulkrax
     end
 
     def search_by_identifier
-      work_index = ::ActiveFedora.index_field_mapper.solr_name(work_identifier, :facetable)
-      query = { work_index =>
+      query = { work_identifier_search_field =>
                 source_identifier_value }
       # Query can return partial matches (something6 matches both something6 and something68)
       # so we need to weed out any that are not the correct full match. But other items might be
@@ -119,7 +119,7 @@ module Bulkrax
     def create
       attrs = transform_attributes
       @object = klass.new
-      object.reindex_extent = Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX if object.respond_to?(:reindex_extent)
+      object.reindex_extent = Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX if defined?(Hyrax::Adapters::NestingIndexAdapter) && object.respond_to?(:reindex_extent)
       run_callbacks :save do
         run_callbacks :create do
           if klass == Collection
@@ -249,7 +249,7 @@ module Bulkrax
     def collection_type(attrs)
       return attrs if attrs['collection_type_gid'].present?
 
-      attrs['collection_type_gid'] = Hyrax::CollectionType.find_or_create_default_collection_type.gid
+      attrs['collection_type_gid'] = Hyrax::CollectionType.find_or_create_default_collection_type.to_global_id.to_s
       attrs
     end
 

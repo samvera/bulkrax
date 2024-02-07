@@ -2,9 +2,7 @@
 
 module Bulkrax
   class CsvCollectionEntry < CsvEntry
-    def factory_class
-      Collection
-    end
+    self.default_work_type = "Collection"
 
     # Use identifier set by CsvParser#unique_collection_identifier, which falls back
     # on the Collection's first title if record[source_identifier] is not present
@@ -15,7 +13,7 @@ module Bulkrax
     def add_collection_type_gid
       return if self.parsed_metadata['collection_type_gid'].present?
 
-      self.parsed_metadata['collection_type_gid'] = ::Hyrax::CollectionType.find_or_create_default_collection_type.gid
+      self.parsed_metadata['collection_type_gid'] = ::Hyrax::CollectionType.find_or_create_default_collection_type.to_global_id.to_s
     end
   end
 end

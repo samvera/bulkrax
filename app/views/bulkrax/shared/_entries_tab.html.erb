@@ -1,4 +1,4 @@
-<div role="tabpanel" class="tab-pane bulkrax-nav-tab-table-left-align" id="collection-entries">
+<div role="tabpanel" class="tab-pane bulkrax-nav-tab-table-left-align <%= pagination_anchor == 'work-entries' ? 'active' : '' %>" id="<%= pagination_anchor %>">
   <table class='table table-striped'>
     <thead>
       <tr>
@@ -12,9 +12,8 @@
     </thead>
     <tbody>
       <% entries.each do |e| %>
-        <% entry_path = item.class.to_s.include?('Importer') ? bulkrax.importer_entry_path(item.id, e.id) : bulkrax.exporter_entry_path(item.id, e.id) %>
         <tr>
-          <td><%= link_to e.identifier, entry_path %></td>
+          <td><%= link_to e.identifier, item_entry_path(item, e) %></td>
           <td><%= e.id %></td>
           <% if e.status == "Complete" %>
             <td><span class="glyphicon glyphicon-ok" style="color: green;"></span> <%= e.status %></td>
@@ -24,16 +23,22 @@
             <td><span class="glyphicon glyphicon-remove" style="color: <%= e.status == 'Deleted' ? 'green' : 'red' %>;"></span> <%= e.status %></td>
           <% end %>
           <% if e.last_error.present? %>
-            <td><%= link_to e.last_error.dig("error_class"), entry_path %></td>
+            <td><%= link_to e.last_error.dig("error_class"), item_entry_path(item, e) %></td>
           <% else %>
             <td></td>
           <% end %>
           <td><%= e.status_at %></td>
-          <td><%= link_to raw('<span class="glyphicon glyphicon-info-sign"></span>'), entry_path %></td>
+          <td>
+            <%= link_to raw('<span class="glyphicon glyphicon-info-sign"></span>'), item_entry_path(item, e) %>
+            <% if an_importer?(item) %>
+              <a class="glyphicon glyphicon-refresh" data-toggle="modal" data-target="#bulkraxItemModal" data-entry-id="<%= e.id %>"></a>
+            <% end %>
+            <%= link_to raw('<span class="glyphicon glyphicon-trash"></span>'), item_entry_path(item, e), method: :delete, data: { confirm: 'This will delete the entry and any work associated with it. Are you sure?' } %>
+          </td>
         </tr>
       <% end %>
     </tbody>
   </table>
   <%= page_entries_info(entries) %><br />
-  <%= paginate(entries, theme: 'blacklight', param_name: :collections_entries_page, params: { anchor: 'collection-entries' }) %>
+  <%= paginate(entries, theme: 'blacklight', param_name: pagination_param_name, params: { anchor: pagination_anchor }) %>
 </div>

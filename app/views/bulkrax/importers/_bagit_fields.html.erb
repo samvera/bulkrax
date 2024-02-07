@@ -1,15 +1,15 @@
 <div class='bagit_fields'>
 
-  <%#= fi.input :metadata_type, 
-    collection:  importer.import_metadata_type, 
+  <%#= fi.input :metadata_type,
+    collection:  importer.import_metadata_type,
     selected: importer.parser_fields['metadata_type'],
     include_blank: true,
     input_html: { class: 'form-control' }
     %>
   <%= fi.input :metadata_file_name, as: :string, input_html: { value: importer.parser_fields['metadata_file_name'] } %>
 
-  <%= fi.input :metadata_format, 
-    collection:  importer.import_metadata_format, 
+  <%= fi.input :metadata_format,
+    collection:  importer.import_metadata_format,
     selected: importer.parser_fields['metadata_format'],
     include_blank: true,
     input_html: { class: 'form-control' }
@@ -18,7 +18,8 @@
   <%= fi.input :visibility,
     collection: [
       ['Public', 'open'],
-      ['Private', 'restricted']
+      ['Private', 'restricted'],
+      ['Institution', 'authenticated']
     ],
     selected: importer.parser_fields['visibility'] || 'open',
     input_html: { class: 'form-control' }
