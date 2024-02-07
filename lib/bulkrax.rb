@@ -38,7 +38,7 @@ module Bulkrax
     # @return [#call] with arity 2.  The first parameter is a {Bulkrax::ApplicationParser} and the
     #         second parameter is an Integer for the index of the record encountered in the import.
     attr_accessor :fill_in_blank_source_identifiers
-    allow(Bulkrax.persistence_adapter).to receive(:find).and_return(nil)
+
     ##
     # @param coercer [#call]
     # @see Bulkrax::FactoryClassFinder
