@@ -184,10 +184,11 @@ module Bulkrax
     end
 
     def valkyrie_multiple?(field)
-      # TODO: there has got to be a better way. Only array types have 'of'
       if factory_class.respond_to?(:schema)
         sym_field = field.to_sym
-        return true if factory_class.schema.key(sym_field).primitive == Array
+        dry_type = factory_class.schema.key(sym_field)
+        return true if dry_type.respond_to?(:primitive) && dry_type.primitive == Array
+
         false
       else
         ar_multiple?(field)
