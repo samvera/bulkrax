@@ -1,8 +1,40 @@
 # frozen_string_literal: true
 
 module Bulkrax
+  # rubocop:disable Metrics/ClassLength
   class ValkyrieObjectFactory < ObjectFactory
     include ObjectFactoryInterface
+
+    def self.find(id)
+      if defined?(Hyrax)
+        begin
+          Hyrax.query_service.find_by(id: id)
+          # Because Hyrax is not a hard dependency, we need to transform the Hyrax exception into a
+          # common exception so that callers can handle a generalize exception.
+        rescue Hyrax::ObjectNotFoundError => e
+          raise ObjectFactoryInterface::ObjectNotFoundError, e.message
+        end
+      else
+        # NOTE: Fair warning; you might might need a custom query for find by alternate id.
+        Valkyrie.query_service.find_by(id: id)
+      end
+    rescue Valkyrie::Persistence::ObjectNotFoundError => e
+      raise ObjectFactoryInterface::ObjectNotFoundError, e.message
+    end
+
+    def self.solr_name(field_name)
+      # It's a bit unclear what this should be if we can't rely on Hyrax.
+      # TODO: Downstream implementers will need to figure this out.
+      raise NotImplementedError, "#{self}.#{__method__}" unless defined?(Hyrax)
+      Hyrax.index_field_mapper.solr_name(field_name)
+    end
+
+    def self.query(q, **kwargs)
+      # TODO: Without the Hyrax::QueryService, what are we left with?  Someone could choose
+      # ActiveFedora::QueryService.
+      raise NotImplementedError, "#{self}.#{__method__}" unless defined?(Hyrax)
+      Hyrax::QueryService.query(q, **kwargs)
+    end
 
     ##
     # Retrieve properties from M3 model
@@ -180,6 +212,7 @@ module Bulkrax
       Hyrax.custom_queries.find_child_file_sets(resource: resource)
     end
   end
+  # rubocop:enable Metrics/ClassLength
 
   class RecordInvalid < StandardError
   end
