@@ -286,7 +286,7 @@ module Bulkrax
     end
 
     def store_files(identifier, folder_count)
-      record = Bulkrax.persistence_adapter.find(identifier)
+      record = Bulkrax.object_factory.find(identifier)
       return unless record
 
       file_sets = record.file_set? ? Array.wrap(record) : record.file_sets

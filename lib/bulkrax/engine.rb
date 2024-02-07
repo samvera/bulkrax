@@ -17,9 +17,6 @@ module Bulkrax
     end
 
     initializer 'requires' do
-      require 'bulkrax/persistence_layer'
-      require 'bulkrax/persistence_layer/active_fedora_adapter' if defined?(ActiveFedora)
-      require 'bulkrax/persistence_layer/valkyrie_adapter' if defined?(Valkyrie)
       require 'bulkrax/transactions' if defined?(Hyrax::Transactions)
     end
 

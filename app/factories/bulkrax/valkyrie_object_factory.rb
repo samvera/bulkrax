@@ -2,6 +2,8 @@
 
 module Bulkrax
   class ValkyrieObjectFactory < ObjectFactory
+    include ObjectFactoryInterface
+
     ##
     # Retrieve properties from M3 model
     # @param klass the model

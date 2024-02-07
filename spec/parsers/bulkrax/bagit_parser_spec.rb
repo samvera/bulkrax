@@ -288,12 +288,12 @@ module Bulkrax
         let(:fileset_entry_2) { FactoryBot.create(:bulkrax_csv_entry_file_set, importerexporter: exporter) }
 
         before do
-          allow(Bulkrax.persistence_adapter).to receive(:query).and_return(work_ids_solr)
+          allow(Bulkrax.object_factory).to receive(:query).and_return(work_ids_solr)
           allow(exporter.entries).to receive(:where).and_return([work_entry_1, work_entry_2, fileset_entry_1, fileset_entry_2])
         end
 
         it 'attempts to find the related record' do
-          expect(Bulkrax.persistence_adapter).to receive(:find).with('csv_entry').and_return(nil)
+          expect(Bulkrax.object_factory).to receive(:find).with('csv_entry').and_return(nil)
 
           subject.write_files
         end

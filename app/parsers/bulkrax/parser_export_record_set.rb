@@ -149,12 +149,12 @@ module Bulkrax
       end
 
       def works
-        @works ||= Bulkrax.persistence_adapter.query(works_query, **works_query_kwargs)
+        @works ||= Bulkrax.object_factory.query(works_query, **works_query_kwargs)
       end
 
       def collections
         @collections ||= if collections_query
-                           Bulkrax.persistence_adapter.query(collections_query, **collections_query_kwargs)
+                           Bulkrax.object_factory.query(collections_query, **collections_query_kwargs)
                          else
                            []
                          end
@@ -175,7 +175,7 @@ module Bulkrax
         @file_sets ||= ParserExportRecordSet.in_batches(candidate_file_set_ids) do |batch_of_ids|
           fsq = "has_model_ssim:#{Bulkrax.file_model_class} AND id:(\"" + batch_of_ids.join('" OR "') + "\")"
           fsq += extra_filters if extra_filters.present?
-          Bulkrax.persistence_adapter.query(
+          Bulkrax.object_factory.query(
             fsq,
             { fl: "id", method: :post, rows: batch_of_ids.size }
           )
@@ -183,7 +183,7 @@ module Bulkrax
       end
 
       def solr_name(base_name)
-        Bulkrax.persistence_adapter.solr_name(base_name)
+        Bulkrax.object_factory.solr_name(base_name)
       end
     end
 
@@ -243,7 +243,7 @@ module Bulkrax
 
       def works
         @works ||= ParserExportRecordSet.in_batches(complete_entry_identifiers) do |ids|
-          Bulkrax.persistence_adapter.query(
+          Bulkrax.object_factory.query(
             extra_filters.to_s,
             **query_kwargs.merge(
               fq: [
@@ -258,7 +258,7 @@ module Bulkrax
 
       def collections
         @collections ||= ParserExportRecordSet.in_batches(complete_entry_identifiers) do |ids|
-          Bulkrax.persistence_adapter.query(
+          Bulkrax.object_factory.query(
             "has_model_ssim:Collection #{extra_filters}",
             **query_kwargs.merge(
               fq: [
@@ -277,7 +277,7 @@ module Bulkrax
       # @see Bulkrax::ParserExportRecordSet::Base#file_sets
       def file_sets
         @file_sets ||= ParserExportRecordSet.in_batches(complete_entry_identifiers) do |ids|
-          Bulkrax.persistence_adapter.query(
+          Bulkrax.object_factory.query(
             extra_filters,
             query_kwargs.merge(
               fq: [
