@@ -32,6 +32,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'rubyzip'
   s.add_dependency 'simple_form'
 
+  s.add_development_dependency 'dry-monads'
   s.add_development_dependency 'sqlite3', '~> 1.3.13'
   s.add_development_dependency 'simplecov'
   s.add_development_dependency 'redis', '~> 4.2'
