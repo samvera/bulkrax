@@ -2,9 +2,41 @@
 
 module Bulkrax
   class ObjectFactory # rubocop:disable Metrics/ClassLength
+    include ObjectFactoryInterface
+
     extend ActiveModel::Callbacks
     include Bulkrax::FileFactory
     include DynamicRecordLookup
+
+    ##
+    # @!group Class Method Interface
+    #
+    # @see Bulkrax::ObjectFactoryInterface
+    def self.find(id)
+      ActiveFedora::Base.find(id)
+    rescue ActiveFedora::ObjectNotFoundError => e
+      raise ObjectFactoryInterface::ObjectNotFoundError, e.message
+    end
+
+    def self.query(q, **kwargs)
+      ActiveFedora::SolrService.query(q, **kwargs)
+    end
+
+    def self.clean!
+      super do
+        ActiveFedora::Cleaner.clean!
+      end
+    end
+
+    def self.solr_name(field_name)
+      if defined?(Hyrax)
+        Hyrax.index_field_mapper.solr_name(field_name)
+      else
+        ActiveFedora.index_field_mapper.solr_name(field_name)
+      end
+    end
+    # @!endgroup Class Method Interface
+    ##
 
     # @api private
     #
@@ -66,7 +98,7 @@ module Bulkrax
     def run!
       self.run
       # Create the error exception if the object is not validly saved for some reason
-      raise ActiveFedora::RecordInvalid, object if !object.persisted? || object.changed?
+      raise ObjectFactoryInterface::RecordInvalid, object if !object.persisted? || object.changed?
       object
     end
 
@@ -95,7 +127,6 @@ module Bulkrax
     end
 
     def find_by_id
-      # TODO: Push logic into Bulkrax.persistence_adapter; maybe
       # Rails / Ruby upgrade, we moved from :exists? to :exist?  However we want to continue (for a
       # bit) to support older versions.
       method_name = klass.respond_to?(:exist?) ? :exist? : :exists?
@@ -111,7 +142,6 @@ module Bulkrax
     end
 
     def search_by_identifier
-      # TODO: Push logic into Bulkrax.persistence_adapter; maybe
       query = { work_identifier_search_field =>
                 source_identifier_value }
       # Query can return partial matches (something6 matches both something6 and something68)
