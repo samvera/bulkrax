@@ -53,7 +53,7 @@ module Bulkrax
       run
       return object if object.persisted?
 
-      raise(RecordInvalid, object)
+      raise(ObjectFactoryInterface::RecordInvalid, object)
     end
 
     def find_by_id
@@ -213,7 +213,4 @@ module Bulkrax
     end
   end
   # rubocop:enable Metrics/ClassLength
-
-  class RecordInvalid < StandardError
-  end
 end
