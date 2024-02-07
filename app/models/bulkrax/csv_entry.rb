@@ -157,9 +157,12 @@ module Bulkrax
     def build_system_metadata
       self.parsed_metadata['id'] = hyrax_record.id
       source_id = hyrax_record.send(work_identifier)
-      source_id = source_id.to_a.first if source_id.is_a?(ActiveTriples::Relation)
+      # Because ActiveTriples::Relation does not respond to #to_ary we can't rely on Array.wrap universally
+      source_id = source_id.to_a if source_id.is_a?(ActiveTriples::Relation)
+      source_id = Array.wrap(source_id).first
       self.parsed_metadata[source_identifier] = source_id
-      self.parsed_metadata[key_for_export('model')] = hyrax_record.has_model.first
+      model_name = hyrax_record.respond_to?(:to_rdf_representation) ? hyrax_record.to_rdf_representation : hyrax_record.has_model.first
+      self.parsed_metadata[key_for_export('model')] = model_name
     end
 
     def build_files_metadata

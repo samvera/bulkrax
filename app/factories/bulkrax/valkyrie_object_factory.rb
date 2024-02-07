@@ -26,14 +26,14 @@ module Bulkrax
       # It's a bit unclear what this should be if we can't rely on Hyrax.
       # TODO: Downstream implementers will need to figure this out.
       raise NotImplementedError, "#{self}.#{__method__}" unless defined?(Hyrax)
-      Hyrax.index_field_mapper.solr_name(field_name)
+      Hyrax.config.index_field_mapper.solr_name(field_name)
     end
 
     def self.query(q, **kwargs)
-      # TODO: Without the Hyrax::QueryService, what are we left with?  Someone could choose
-      # ActiveFedora::QueryService.
+      # TODO: Without the Hyrax::SolrService, what are we left with?  Someone could choose
+      # ActiveFedora::SolrService.
       raise NotImplementedError, "#{self}.#{__method__}" unless defined?(Hyrax)
-      Hyrax::QueryService.query(q, **kwargs)
+      Hyrax::SolrService.query(q, **kwargs)
     end
 
     ##

@@ -177,7 +177,7 @@ module Bulkrax
           fsq += extra_filters if extra_filters.present?
           Bulkrax.object_factory.query(
             fsq,
-            { fl: "id", method: :post, rows: batch_of_ids.size }
+            fl: "id", method: :post, rows: batch_of_ids.size
           )
         end
       end
@@ -279,7 +279,7 @@ module Bulkrax
         @file_sets ||= ParserExportRecordSet.in_batches(complete_entry_identifiers) do |ids|
           Bulkrax.object_factory.query(
             extra_filters,
-            query_kwargs.merge(
+            **query_kwargs.merge(
               fq: [
                 %(#{solr_name(work_identifier)}:("#{ids.join('" OR "')}")),
                 "has_model_ssim:#{Bulkrax.file_model_class}"
