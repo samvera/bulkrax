@@ -7,14 +7,19 @@ module Bulkrax
     subject(:delete_work_job) { described_class.new }
     let(:entry) { create(:bulkrax_entry) }
     let(:importer_run) { create(:bulkrax_importer_run) }
+    let(:factory) do
+      Bulkrax::ObjectFactory.new(attributes: {},
+                                 source_identifier_value: '123',
+                                 work_identifier: :source,
+                                 work_identifier_search_field: :source_identifier)
+    end
 
     describe 'successful job object removed' do
       before do
         work = instance_double("Work")
-        factory = instance_double("Bulkrax::ObjectFactory")
-        expect(work).to receive(:delete).and_return true
-        expect(factory).to receive(:find).and_return(work)
-        expect(entry).to receive(:factory).and_return(factory)
+        allow(work).to receive(:delete).and_return true
+        allow(factory.class).to receive(:find).and_return(work)
+        allow(entry).to receive(:factory).and_return(factory)
       end
 
       it 'increments :deleted_records' do
@@ -31,9 +36,8 @@ module Bulkrax
 
     describe 'successful job object not found' do
       before do
-        factory = instance_double("Bulkrax::ObjectFactory")
-        expect(factory).to receive(:find).and_return(nil)
-        expect(entry).to receive(:factory).and_return(factory)
+        allow(factory.class).to receive(:find).and_return(nil)
+        allow(entry).to receive(:factory).and_return(factory)
       end
 
       it 'increments :deleted_records' do
