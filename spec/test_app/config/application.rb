@@ -11,6 +11,7 @@ require "active_job/railtie"
 require "action_cable/engine"
 # require "rails/test_unit/railtie"
 require "sprockets/railtie"
+require 'dry/monads'
 
 Bundler.require(*Rails.groups)
 require "bulkrax"
