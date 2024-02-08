@@ -11,12 +11,18 @@ module Bulkrax
       true
     end
 
+    def file_for_import
+      @file_for_import ||= only_updates ? parser_fields['partial_import_file_path'] : import_file_path
+    end
+
+    def csv_data
+      @csv_data ||= entry_class.read_data(file_for_import)
+    end
+
     def records(_opts = {})
       return @records if @records.present?
 
-      file_for_import = only_updates ? parser_fields['partial_import_file_path'] : import_file_path
       # data for entry does not need source_identifier for csv, because csvs are read sequentially and mapped after raw data is read.
-      csv_data = entry_class.read_data(file_for_import)
       importer.parser_fields['total'] = csv_data.count
       importer.save
 
@@ -80,9 +86,17 @@ module Bulkrax
       file_sets.size
     end
 
-    # We could use CsvEntry#fields_from_data(data) but that would mean re-reading the data
+    # Prefer the csv data if it is already loaded
+    # If the csv data is not loaded and there are no records yet, we need to load the csv data (which is memoized)
+    # If the csv data is not loaded and there are records, then reading the records form memory is faster than rereading the csv
     def import_fields
-      @import_fields ||= records.inject(:merge).keys.compact.uniq
+      return @import_fields if @import_fields.present?
+      # this has to be the instance variable because calling the method will load it no matter what
+      @import_fields = if @csv_data.present? || @records.blank?
+                         csv_data.headers
+                       else
+                         records.inject(:merge).keys.compact.uniq
+                       end
     end
 
     def required_elements?(record)
