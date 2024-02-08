@@ -7,6 +7,7 @@ Bulkrax::Engine.routes.draw do
   end
   resources :importers do
     put :continue
+    get :entry_table
     get :export_errors
     collection do
       post :external_sets
