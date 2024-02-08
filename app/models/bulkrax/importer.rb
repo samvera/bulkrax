@@ -123,14 +123,14 @@ module Bulkrax
       @last_run ||= self.importer_runs.last
     end
 
+    def has_failed_entries?
+      entries.failed.any?
+    end
+
     def failed_statuses
       @failed_statuses ||= Bulkrax::Status.latest_by_statusable
                                           .includes(:statusable)
                                           .where('bulkrax_statuses.statusable_id IN (?) AND bulkrax_statuses.statusable_type = ? AND status_message = ?', self.entries.pluck(:id), 'Bulkrax::Entry', 'Failed')
-    end
-
-    def failed_entries
-      @failed_entries ||= failed_statuses.map(&:statusable)
     end
 
     def failed_messages
@@ -144,10 +144,6 @@ module Bulkrax
       @completed_statuses ||= Bulkrax::Status.latest_by_statusable
                                              .includes(:statusable)
                                              .where('bulkrax_statuses.statusable_id IN (?) AND bulkrax_statuses.statusable_type = ? AND status_message = ?', self.entries.pluck(:id), 'Bulkrax::Entry', 'Complete')
-    end
-
-    def completed_entries
-      @completed_entries ||= completed_statuses.map(&:statusable)
     end
 
     def seen

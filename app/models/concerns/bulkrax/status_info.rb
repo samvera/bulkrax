@@ -10,6 +10,9 @@ module Bulkrax
               as: :statusable,
               class_name: "Bulkrax::Status",
               inverse_of: :statusable
+      scope :failed, -> { where(status_message: 'Failed') }
+      scope :complete, -> { where(status_message: 'Complete') }
+      scope :pending, -> { where(status_message: 'Pending') }
     end
 
     def current_status
