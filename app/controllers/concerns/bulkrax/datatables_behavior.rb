@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Bulkrax
   module DatatablesBehavior
     extend ActiveSupport::Concern
