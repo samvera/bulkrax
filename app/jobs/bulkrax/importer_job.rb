@@ -6,18 +6,18 @@ module Bulkrax
 
     def perform(importer_id, only_updates_since_last_import = false)
       importer = Importer.find(importer_id)
+      importer.only_updates = only_updates_since_last_import || false
 
       importer.current_run
       unzip_imported_file(importer.parser)
-      import(importer, only_updates_since_last_import)
+      import(importer)
       update_current_run_counters(importer)
       schedule(importer) if importer.schedulable?
     rescue ::CSV::MalformedCSVError => e
       importer.set_status_info(e)
     end
 
-    def import(importer, only_updates_since_last_import)
-      importer.only_updates = only_updates_since_last_import || false
+    def import(importer)
       return unless importer.valid_import?
 
       importer.import_objects
