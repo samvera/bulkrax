@@ -1,13 +1,12 @@
 # frozen_string_literal: true
 
 namespace :bulkrax do
-
   desc 'Update all status messages from the latest status. This is to refresh the denormalized field'
-  task :update_status_messages => :environment do
+  task update_status_messages: :environment do
     @progress = ProgressBar.create(total: Bulkrax::Status.latest_by_statusable.count,
-      format:"%a %b\u{15E7}%i %c/%C %p%% %t",
-      progress_mark: ' ',
-      remainder_mark: "\u{FF65}")
+                                   format: "%a %b\u{15E7}%i %c/%C %p%% %t",
+                                   progress_mark: ' ',
+                                   remainder_mark: "\u{FF65}")
     Bulkrax::Status.latest_by_statusable.includes(:statusable).find_each do |status|
       status.statusable.update(status_message: status.status_message)
       @progress.increment

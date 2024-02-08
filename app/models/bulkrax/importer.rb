@@ -123,7 +123,7 @@ module Bulkrax
       @last_run ||= self.importer_runs.last
     end
 
-    def has_failed_entries?
+    def failed_entries?
       entries.failed.any?
     end
 
