@@ -195,6 +195,15 @@ module Bulkrax
       @object.thumbnail_id = nil
     end
 
+    def delete(user)
+      obj = find
+      return false unless obj
+
+      Hyrax.persister.delete(resource: obj)
+      Hyrax.index_adapter.delete(resource: obj)
+      Hyrax.publisher.publish('object.deleted', object: obj, user: user)
+    end
+
     private
 
     # TODO: Rename to transaction_create

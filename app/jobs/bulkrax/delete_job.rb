@@ -5,8 +5,9 @@ module Bulkrax
     queue_as :import
 
     def perform(entry, importer_run)
-      obj = entry.factory.find
-      obj&.delete
+      user = importer_run.importer.user
+      entry.factory.delete(user)
+
       # rubocop:disable Rails/SkipsModelValidations
       ImporterRun.increment_counter(:deleted_records, importer_run.id)
       ImporterRun.decrement_counter(:enqueued_records, importer_run.id)

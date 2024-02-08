@@ -122,7 +122,8 @@ module Bulkrax
     def find
       found = find_by_id if attributes[:id].present?
       return found if found.present?
-      return search_by_identifier if attributes[work_identifier].present?
+      return search_by_identifier if source_identifier_value.present?
+
       false
     end
 
@@ -187,6 +188,10 @@ module Bulkrax
     def log_deleted_fs(obj)
       msg = "Deleted All Files from #{obj.id}"
       Rails.logger.info("#{msg} (#{Array(attributes[work_identifier]).first})")
+    end
+
+    def delete(_user)
+      find&.delete
     end
 
     private

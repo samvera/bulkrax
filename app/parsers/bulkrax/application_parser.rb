@@ -311,6 +311,9 @@ module Bulkrax
         identifier: identifier
       ).first_or_create!
       entry.raw_metadata = raw_metadata
+      # Setting parsed_metadata specifically for the id so we can find the object via the
+      # id in a delete.  This is likely to get clobbered in a regular import, which is fine.
+      entry.parsed_metadata = { id: raw_metadata['id'] } if raw_metadata&.key?('id')
       entry.save!
       entry
     end
