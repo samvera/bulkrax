@@ -122,7 +122,8 @@ module Bulkrax
     def find
       found = find_by_id if attributes[:id].present?
       return found if found.present?
-      return search_by_identifier if attributes[work_identifier].present?
+      return search_by_identifier if source_identifier_value.present?
+
       false
     end
 
@@ -189,8 +190,8 @@ module Bulkrax
       Rails.logger.info("#{msg} (#{Array(attributes[work_identifier]).first})")
     end
 
-    def delete(obj, _user)
-      obj&.delete
+    def delete(_user)
+      find&.delete
     end
 
     private

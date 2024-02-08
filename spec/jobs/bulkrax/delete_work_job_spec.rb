@@ -18,7 +18,7 @@ module Bulkrax
       before do
         work = instance_double("Work")
         allow(work).to receive(:delete).and_return true
-        allow(factory.class).to receive(:find).and_return(work)
+        allow(factory).to receive(:find).and_return(work)
         allow(entry).to receive(:factory).and_return(factory)
       end
 
@@ -36,7 +36,7 @@ module Bulkrax
 
     describe 'successful job object not found' do
       before do
-        allow(factory.class).to receive(:find).and_return(nil)
+        allow(factory).to receive(:find).and_return(nil)
         allow(entry).to receive(:factory).and_return(factory)
       end
 
