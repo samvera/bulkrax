@@ -23,7 +23,7 @@ module Bulkrax
     end
 
     def latest?
-      self.id == self.class.where(statusable_id: self.statusable_id, statusable_type: self.statusable_type).order('id desc').pluck(:id).first
+      self.id == self.class.where(statusable_id: self.statusable_id, statusable_type: self.statusable_type).order('id desc').pick(:id)
     end
   end
 end
