@@ -189,6 +189,10 @@ module Bulkrax
       Rails.logger.info("#{msg} (#{Array(attributes[work_identifier]).first})")
     end
 
+    def delete(obj, _user)
+      obj&.delete
+    end
+
     private
 
     # @param [Hash] attrs the attributes to put in the environment

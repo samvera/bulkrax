@@ -6,14 +6,8 @@ module Bulkrax
 
     def perform(entry, importer_run)
       obj = entry.factory.class.find(entry.raw_metadata["id"])
-
-      if defined?(Valkyrie) && obj.class < Valkyrie::Resource
-        Hyrax.persister.delete(resource: obj)
-        Hyrax.index_adapter.delete(resource: obj)
-        Hyrax.publisher.publish('object.deleted', object: obj, user: importer_run.importer.user)
-      else
-        obj&.delete
-      end
+      user = importer_run.importer.user
+      entry.factory.delete(obj, user)
 
       # rubocop:disable Rails/SkipsModelValidations
       ImporterRun.increment_counter(:deleted_records, importer_run.id)
