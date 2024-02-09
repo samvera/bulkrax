@@ -26,10 +26,19 @@ module Bulkrax
       return @table_search if @table_search
       return @table_search = false if params['search']&.[]('value').blank?
 
-      table_search_value = params['search']&.[]('value')
-      @table_search = ['identifier', 'id', 'status_message', 'type', 'updated_at'].map do |col|
-        "cast(bulkrax_entries.#{col} as varchar(255)) ILIKE '%#{table_search_value}%'"
-      end.join(' OR ')
+      table_search_value = params['search']&.[]('value')&.downcase
+
+      ['identifier', 'id', 'status_message', 'type', 'updated_at'].map do |col|
+        column = Bulkrax::Entry.arel_table[col].lower
+        column = Arel::Nodes::NamedFunction.new('CAST', [column.as('text')])
+        @table_search = if @table_search
+                          @table_search.or(column.matches("%#{table_search_value}%"))
+                        else
+                          column.matches("%#{table_search_value}%")
+                        end
+      end
+
+      @table_search
     end
 
     def format_entries(entries, item)
