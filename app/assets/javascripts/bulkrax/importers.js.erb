@@ -74,12 +74,14 @@ function handleFileToggle(file_path) {
     $('#file_path').hide()
     $('#file_upload').hide()
     $('#cloud').hide()
+    $('#existing_options').hide()
     $('#file_path input').attr('required', null)
     $('#file_upload input').attr('required', null)
   } else {
     $('#file_path').show()
     $('#file_upload').hide()
     $('#cloud').hide()
+    $('#existing_options').hide()
     $('#file_path input').attr('required', 'required')
     $('#file_upload input').attr('required', null)
     $('#importer_parser_fields_file_style_specify_a_path_on_the_server').attr('checked', true)
@@ -89,6 +91,7 @@ function handleFileToggle(file_path) {
     $('#file_path').hide()
     $('#file_upload').show()
     $('#cloud').hide()
+    $('#existing_options').hide()
     $('#file_path input').attr('required', null)
     $('#file_upload input').attr('required', 'required')
   })
@@ -96,6 +99,7 @@ function handleFileToggle(file_path) {
     $('#file_path').show()
     $('#file_upload').hide()
     $('#cloud').hide()
+    $('#existing_options').hide()
     $('#file_path input').attr('required', 'required')
     $('#file_upload input').attr('required', null)
   })
@@ -103,9 +107,19 @@ function handleFileToggle(file_path) {
     $('#file_path').hide()
     $('#file_upload').hide()
     $('#cloud').show()
+    $('#existing_options').hide()
     $('#file_path input').attr('required', null)
     $('#file_upload input').attr('required', null)
   })
+  $('#importer_parser_fields_file_style_existing_entries').click(function(e){
+    $('#file_path').hide()
+    $('#file_upload').hide()
+    $('#cloud').hide()
+    $('#existing_options').show()
+    $('#file_path input').attr('required', null)
+    $('#file_upload input').attr('required', null)
+  })
+
 }
 
 function handleParserKlass() {

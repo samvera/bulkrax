@@ -209,6 +209,20 @@ module Bulkrax
       set_status_info(e)
     end
 
+    def rebuild_entries(_types_array = nil)
+      index = 0
+      importer.entries.where(status_message: parser_fields['entry_statuses']).find_each do |e|
+        seen[e.identifier] = true
+        if remove_and_rerun
+          "Bulkrax::DeleteAndImport#{type.camelize}Job".constantize.send(perform_method, e, current_run)
+        else
+          "Bulkrax::Import#{type.camelize}Job".constantize.send(perform_method, e.id, current_run.id)
+        end
+        increment_counters(index)
+        index += 1
+      end
+    end
+
     def create_entry_and_job(current_record, type, identifier = nil)
       identifier ||= current_record[source_identifier]
       new_entry = find_or_create_entry(send("#{type}_entry_class"),
