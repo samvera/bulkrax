@@ -12,5 +12,6 @@
       </tr>
     </thead>
   </table>
-  <div id='importer-entry-classes' class='hidden'><%= [@importer.parser.entry_class.to_s, @importer.parser.collection_entry_class.to_s, @importer.parser.file_set_entry_class.to_s].compact.join('|') %></div>
+  <% agent = instance_variable_get("@#{controller.controller_name.singularize}") %>
+  <div id='<%= "importer-entry-classes" %>' class='hidden'><%= [agent.parser.entry_class.to_s, agent.parser.collection_entry_class.to_s, agent.parser.file_set_entry_class.to_s].compact.join('|') %></div>
 </div>
