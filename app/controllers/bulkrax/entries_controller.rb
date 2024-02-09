@@ -17,13 +17,27 @@ module Bulkrax
 
     def update
       @entry = Entry.find(params[:id])
-      @entry.factory&.find&.destroy if params[:destroy_first]
-      @entry.build
-      @entry.save
+      type = case @entry.type.downcase
+             when /fileset/
+               'file_set'
+             when /collection/
+               'collection'
+             else
+               'work'
+             end
       item = @entry.importerexporter
+      # do not run counters as it loads the whole parser
+      current_run = item.current_run(skip_counts: true)
+      @entry.set_status_info('Pending', current_run)
+      if params[:destroy_first]
+        "Bulkrax::DeleteAndImport#{type.camelize}Job".constantize.perform_later(@entry, current_run)
+      else
+        "Bulkrax::Import#{type.camelize}Job".constantize.perform_later(@entry.id, current_run.id)
+      end
+
       entry_path = item.class.to_s.include?('Importer') ? bulkrax.importer_entry_path(item.id, @entry.id) : bulkrax.exporter_entry_path(item.id, @entry.id)
 
-      redirect_back fallback_location: entry_path, notice: "Entry update ran, new status is #{@entry.status}"
+      redirect_back fallback_location: entry_path, notice: "Entry #{@entry.id} update has been queued"
     end
 
     def destroy

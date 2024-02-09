@@ -113,57 +113,6 @@ module Bulkrax
       false
     end
 
-    def create_collections
-      create_objects(['collection'])
-    end
-
-    def create_works
-      create_objects(['work'])
-    end
-
-    def create_file_sets
-      create_objects(['file_set'])
-    end
-
-    def create_relationships
-      create_objects(['relationship'])
-    end
-
-    def create_objects(types_array = nil)
-      index = 0
-      (types_array || %w[collection work file_set relationship]).each do |type|
-        if type.eql?('relationship')
-          ScheduleRelationshipsJob.set(wait: 5.minutes).perform_later(importer_id: importerexporter.id)
-          next
-        end
-        send(type.pluralize).each do |current_record|
-          next unless record_has_source_identifier(current_record, index)
-          break if limit_reached?(limit, index)
-
-          seen[current_record[source_identifier]] = true
-          create_entry_and_job(current_record, type)
-          increment_counters(index, "#{type}": true)
-          index += 1
-        end
-        importer.record_status
-      end
-      true
-    rescue StandardError => e
-      set_status_info(e)
-    end
-
-    def create_entry_and_job(current_record, type)
-      new_entry = find_or_create_entry(send("#{type}_entry_class"),
-                                       current_record[source_identifier],
-                                       'Bulkrax::Importer',
-                                       current_record.to_h)
-      if current_record[:delete].present?
-        "Bulkrax::Delete#{type.camelize}Job".constantize.send(perform_method, new_entry, current_run)
-      else
-        "Bulkrax::Import#{type.camelize}Job".constantize.send(perform_method, new_entry.id, current_run.id)
-      end
-    end
-
     def write_partial_import_file(file)
       import_filename = import_file_path.split('/').last
       partial_import_filename = "#{File.basename(import_filename, '.csv')}_corrected_entries.csv"
@@ -204,7 +153,6 @@ module Bulkrax
     def entry_class
       CsvEntry
     end
-    alias work_entry_class entry_class
 
     def collection_entry_class
       CsvCollectionEntry
