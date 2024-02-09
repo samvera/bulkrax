@@ -401,6 +401,43 @@ module Bulkrax
           expect(response.status).to eq(200)
         end
       end
+
+      describe 'GET #entry_table' do
+        let(:importer) { FactoryBot.create(:bulkrax_importer) }
+        let(:valid_session) { {} }
+
+        before do
+          allow(controller).to receive(:table_order).and_return('created_at asc')
+        end
+
+        it 'returns a success response' do
+          get :entry_table, params: { importer_id: importer.to_param, format: :json }, session: valid_session
+          expect(response).to be_successful
+        end
+
+        it 'returns entries in the correct order' do
+          entry_1 = FactoryBot.create(:bulkrax_csv_entry, importerexporter: importer, created_at: 2.days.ago)
+          entry_2 = FactoryBot.create(:bulkrax_csv_entry, importerexporter: importer, created_at: 1.day.ago)
+          entry_3 = FactoryBot.create(:bulkrax_csv_entry, importerexporter: importer, created_at: 3.days.ago)
+          get :entry_table, params: { importer_id: importer.to_param, format: :json }, session: valid_session
+          parsed_response = JSON.parse(response.body)
+          entry_ids_in_response = parsed_response["data"].map { |e| e["id"] }
+          expect(entry_ids_in_response).to eq([entry_3.id, entry_1.id, entry_2.id])
+        end
+
+        context 'when table_search is present' do
+          it 'filters entries based on table_search' do
+            identifier_value = 'test_identifier'
+            matching_entry = FactoryBot.create(:bulkrax_csv_entry, importerexporter: importer, identifier: identifier_value)
+            non_matching_entry_1 = FactoryBot.create(:bulkrax_csv_entry, importerexporter: importer, identifier: "unrelated_identifier")
+            non_matching_entry_2 = FactoryBot.create(:bulkrax_csv_entry, importerexporter: importer, identifier: 'another_unrelated_identifier')
+            get :entry_table, params: { importer_id: importer.to_param, search: { value: identifier_value }, format: :json }, session: valid_session
+            entry_ids_in_response = JSON.parse(response.body)["data"].map { |e| e["id"] }
+            expect(entry_ids_in_response).to include(matching_entry.id)
+            expect(entry_ids_in_response).not_to include(non_matching_entry_1.id, non_matching_entry_2.id)
+          end
+        end
+      end
     end
   end
 end
