@@ -31,11 +31,11 @@ module Bulkrax
       ['identifier', 'id', 'status_message', 'type', 'updated_at'].map do |col|
         column = Bulkrax::Entry.arel_table[col].lower
         column = Arel::Nodes::NamedFunction.new('CAST', [column.as('text')])
-        if @table_search
-          @table_search = @table_search.or(column.matches("%#{table_search_value}%"))
-        else
-          @table_search = column.matches("%#{table_search_value}%")
-        end
+        @table_search = if @table_search
+                          @table_search.or(column.matches("%#{table_search_value}%"))
+                        else
+                          column.matches("%#{table_search_value}%")
+                        end
       end
 
       @table_search
