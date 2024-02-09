@@ -23,7 +23,12 @@ module Bulkrax
     end
 
     def latest?
-      self.id == self.class.where(statusable_id: self.statusable_id, statusable_type: self.statusable_type).order('id desc').pick(:id)
+      # TODO: remove if statment when we stop supporting Hyrax < 4
+      self.id == if Gem::Version.new(Rails::VERSION::STRING) >= Gem::Version.new('6.0.0')
+                   self.class.where(statusable_id: self.statusable_id, statusable_type: self.statusable_type).order('id desc').pick(:id)
+                 else
+                   self.class.where(statusable_id: self.statusable_id, statusable_type: self.statusable_type).order('id desc').pluck(:id).first # rubocop:disable Rails/Pick
+                 end
     end
   end
 end
