@@ -167,6 +167,10 @@ module Bulkrax
       parser.parser_fields['metadata_only'] == true
     end
 
+    def existing_entries?
+      parser.parser_fields['file_style']&.match(/Existing Entries/)
+    end
+
     def import_works
       import_objects(['work'])
     end
@@ -189,7 +193,7 @@ module Bulkrax
       self.only_updates ||= false
       self.save if self.new_record? # Object needs to be saved for statuses
       types = types_array || DEFAULT_OBJECT_TYPES
-      parser.create_objects(types)
+      existing_entries? ? parser.rebuild_entries(types) : parser.create_objects(types)
       mark_unseen_as_skipped
     rescue StandardError => e
       set_status_info(e)
