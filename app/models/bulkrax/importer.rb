@@ -202,7 +202,7 @@ module Bulkrax
     # After an import any entries we did not touch are skipped.
     # They are not really pending, complete for the last run, or failed
     def mark_unseen_as_skipped
-      entries.where.not(id. seen).find_each do |entry|
+      entries.where.not(identifier: seen.keys).find_each do |entry|
         entry.set_status_info('Skipped')
       end
     end

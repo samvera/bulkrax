@@ -25,7 +25,9 @@
   <h4>Add CSV File to Import:</h4>
   <%# accept a single file upload; data files and bags will need to be added another way %>
 
-  <%= fi.input :file_style, collection: ['Upload a File', 'Specify a Path on the Server', 'Existing Entries'], as: :radio_buttons, label: false %>
+  <% file_style_list = ['Upload a File', 'Specify a Path on the Server'] %>
+  <% file_style_list << 'Existing Entries' unless importer.new_record? %>
+  <%= fi.input :file_style, collection: file_style_list, as: :radio_buttons, label: false %>
   <div id='file_upload'>
     <%= fi.input 'file', as: :file, input_html: { accept: 'text/csv,application/zip' } %><br />
   </div>
