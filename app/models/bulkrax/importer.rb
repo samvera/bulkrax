@@ -103,11 +103,12 @@ module Bulkrax
       frequency.to_seconds != 0
     end
 
-    def current_run
+    def current_run(skip_counts: false)
       return @current_run if @current_run.present?
 
       @current_run = self.importer_runs.create!
       return @current_run if file? && zip?
+      return @current_run if skip_counts
 
       entry_counts = {
         total_work_entries: self.limit || parser.works_total,

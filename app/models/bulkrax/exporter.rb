@@ -106,9 +106,12 @@ module Bulkrax
       Importer.all.map { |i| [i.name, i.id] }
     end
 
-    def current_run
+    def current_run(skip_counts: false)
+      @current_run ||= self.exporter_runs.create! if skip_counts
+      return @current_run if @current_run
+
       total = self.limit || parser.total
-      @current_run ||= self.exporter_runs.create!(total_work_entries: total, enqueued_records: total)
+      @current_run = self.exporter_runs.create!(total_work_entries: total, enqueued_records: total)
     end
 
     def last_run
