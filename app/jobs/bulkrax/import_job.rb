@@ -3,6 +3,5 @@
 module Bulkrax
   class ImportJob < ApplicationJob
     queue_as :import
-
- end
+  end
 end
