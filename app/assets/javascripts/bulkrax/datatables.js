@@ -90,6 +90,7 @@ function statusSelect() {
   statusSelect.add(new Option('Complete'))
   statusSelect.add(new Option('Pending'))
   statusSelect.add(new Option('Failed'))
+  statusSelect.add(new Option('Skipped'))
   statusSelect.add(new Option('Deleted'))
   statusSelect.add(new Option('Complete (with failures)'))
 
