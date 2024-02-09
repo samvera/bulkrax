@@ -5,6 +5,10 @@ module Bulkrax
     queue_as :import
 
     def perform(entry, importer_run)
+<<<<<<< Updated upstream
+      self.delete_class.perform_now(entry, importer_run)
+      self.import_class.perform_now(entry, importer_run)
+=======
       status = self.class::DELETE_CLASS.perform_now(entry, importer_run)
       if status.status_message == "Deleted"
         entry = Bulkrax::Entry.find(entry.id) # maximum reload
@@ -15,6 +19,7 @@ module Bulkrax
       entry.set_status_info(e)
       # this causes caught exception to be reraised
       raise
+>>>>>>> Stashed changes
     end
   end
 end

@@ -29,6 +29,8 @@ module Bulkrax
       # do not run counters as it loads the whole parser
       current_run = item.current_run(skip_counts: true)
       @entry.set_status_info('Pending', current_run)
+      ScheduleRelationshipsJob.set(wait: 5.minutes).perform_later(importer_id: @entry.importer.id)
+
       if params[:destroy_first]
         "Bulkrax::DeleteAndImport#{type.camelize}Job".constantize.perform_later(@entry, current_run)
       else

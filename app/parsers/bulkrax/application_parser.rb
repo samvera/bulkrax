@@ -209,18 +209,38 @@ module Bulkrax
       set_status_info(e)
     end
 
-    def rebuild_entries(_types_array = nil)
+    def rebuild_entries(types_array = nil)
       index = 0
-      importer.entries.where(status_message: parser_fields['entry_statuses']).find_each do |e|
-        seen[e.identifier] = true
-        if remove_and_rerun
-          "Bulkrax::DeleteAndImport#{type.camelize}Job".constantize.send(perform_method, e, current_run)
-        else
-          "Bulkrax::Import#{type.camelize}Job".constantize.send(perform_method, e.id, current_run.id)
+      (types_array || %w[collection work file_set relationship]).each do |type|
+        # works are not gurneteed to have Work in the type
+
+        importer.entries.where(rebuild_entry_query(type, parser_fields['entry_statuses'])).find_each do |e|
+          seen[e.identifier] = true
+          e.status_info('Pending')
+          if remove_and_rerun
+            delay = calculate_type_delay(type)
+            "Bulkrax::DeleteAndImport#{type.camelize}Job".constantize.set(wait: delay).send(perform_method, e, current_run)
+          else
+            "Bulkrax::Import#{type.camelize}Job".constantize.send(perform_method, e.id, current_run.id)
+          end
+          increment_counters(index)
+          index += 1
         end
-        increment_counters(index)
-        index += 1
       end
+    end
+
+    def rebuild_entry_query(type, statuses)
+      type_col = Bulkrax::Entry.arel_table['type']
+      status_col = Bulkrax::Entry.arel_table['status_message']
+
+      query = (type == 'work' ? type_col.not.matches(%w[collection file_set]) : type_col.matches(type.camelize))
+      query.and(status_col.in(statuses))
+    end
+
+    def calculate_type_delay(type)
+      return 2.minutes if type == 'file_set'
+      return 1.minute if type == 'work'
+      return 0
     end
 
     def create_entry_and_job(current_record, type, identifier = nil)
@@ -229,10 +249,12 @@ module Bulkrax
                                        identifier,
                                        'Bulkrax::Importer',
                                        current_record.to_h)
+      new_entry.status_info('Pending')
       if current_record[:delete].present?
         "Bulkrax::Delete#{type.camelize}Job".constantize.send(perform_method, new_entry, current_run)
       elsif current_record[:remove_and_rerun].present? || remove_and_rerun
-        "Bulkrax::DeleteAndImport#{type.camelize}Job".constantize.send(perform_method, new_entry, current_run)
+        delay = calculate_type_delay(type)
+        "Bulkrax::DeleteAndImport#{type.camelize}Job".constantize.set(wait: delay).send(perform_method, new_entry, current_run)
       else
         "Bulkrax::Import#{type.camelize}Job".constantize.send(perform_method, new_entry.id, current_run.id)
       end
