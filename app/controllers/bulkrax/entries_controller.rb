@@ -30,7 +30,7 @@ module Bulkrax
       current_run = item.current_run(skip_counts: true)
       @entry.set_status_info('Pending', current_run)
       if params[:destroy_first]
-      "Bulkrax::DeleteAndImport#{type.camelize}Job".constantize.perform_later(@entry, current_run)
+        "Bulkrax::DeleteAndImport#{type.camelize}Job".constantize.perform_later(@entry, current_run)
       else
         "Bulkrax::Import#{type.camelize}Job".constantize.perform_later(@entry.id, current_run.id)
       end
