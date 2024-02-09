@@ -209,7 +209,7 @@ module Bulkrax
       set_status_info(e)
     end
 
-    def rebuild_entries(types_array = nil)
+    def rebuild_entries(_types_array = nil)
       index = 0
       importer.entries.where(status_message: parser_fields['entry_statuses']).find_each do |e|
         seen[e.identifier] = true

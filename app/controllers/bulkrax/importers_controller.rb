@@ -218,7 +218,7 @@ module Bulkrax
     end
 
     def importable_parser_fields
-      params&.[](:importer)&.[](:parser_fields)&.except(:file, :entry_statuses)&.keys + [{"entry_statuses"=>[]}]
+      params&.[](:importer)&.[](:parser_fields)&.except(:file, :entry_statuses)&.keys&. + [{ "entry_statuses" => [] }]
     end
 
     # Only allow a trusted parameters through.

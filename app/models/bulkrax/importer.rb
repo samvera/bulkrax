@@ -168,7 +168,7 @@ module Bulkrax
     end
 
     def existing_entries?
-      parser.parser_fields['file_style'].match(/Existing Entries/)
+      parser.parser_fields['file_style']&.match(/Existing Entries/)
     end
 
     def import_works
