@@ -27,7 +27,7 @@ module Bulkrax
       self.id == if Gem::Version.new(Rails::VERSION) >= Gem::Version.new('6.0.0')
                    self.class.where(statusable_id: self.statusable_id, statusable_type: self.statusable_type).order('id desc').pick(:id)
                  else
-                   self.class.where(statusable_id: self.statusable_id, statusable_type: self.statusable_type).order('id desc').pluck(:id).first
+                   self.class.where(statusable_id: self.statusable_id, statusable_type: self.statusable_type).order('id desc').pluck(:id).first # rubocop:disable Rails/Pic
                  end
     end
   end
