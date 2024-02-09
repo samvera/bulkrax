@@ -15,6 +15,10 @@ module Bulkrax
       entry.importer.current_run = ImporterRun.find(importer_run.id)
       entry.importer.record_status
       entry.set_status_info("Deleted", ImporterRun.find(importer_run.id))
+    rescue => e
+      entry.set_status_info(e)
+      # this causes caught exception to be reraised
+      raise
     end
   end
 end

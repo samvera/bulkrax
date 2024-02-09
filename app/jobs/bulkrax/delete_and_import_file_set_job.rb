@@ -2,7 +2,7 @@
 
 module Bulkrax
   class DeleteAndImportFileSetJob < DeleteAndImportJob
-    self.delete_class = Bulkrax::DeleteFileSetJob
-    self.import_class = Bulkrax::ImportFileSetJob
+    DELETE_CLASS = Bulkrax::DeleteFileSetJob
+    IMPORT_CLASS = Bulkrax::ImportFileSetJob
   end
 end
