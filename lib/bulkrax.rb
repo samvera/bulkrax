@@ -3,6 +3,7 @@
 require "bulkrax/version"
 require "bulkrax/engine"
 require 'active_support/all'
+require 'denormalize_fields'
 
 # rubocop:disable Metrics/ModuleLength
 module Bulkrax

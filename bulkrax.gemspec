@@ -21,6 +21,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'rails', '>= 5.1.6'
   s.add_dependency 'bagit', '~> 0.4'
   s.add_dependency 'coderay'
+  s.add_dependency 'denormalize_fields'
   s.add_dependency 'iso8601', '~> 0.9.0'
   s.add_dependency 'kaminari'
   s.add_dependency 'language_list', '~> 1.2', '>= 1.2.1'
@@ -32,6 +33,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'rubyzip'
   s.add_dependency 'simple_form'
 
+  s.add_development_dependency 'dry-monads'
   s.add_development_dependency 'sqlite3', '~> 1.3.13'
   s.add_development_dependency 'simplecov'
   s.add_development_dependency 'redis', '~> 4.2'
