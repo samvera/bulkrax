@@ -10,6 +10,7 @@ Bulkrax::Engine.routes.draw do
     get :entry_table
     get :export_errors
     collection do
+      get :importer_table
       post :external_sets
     end
     resources :entries, only: %i[show update destroy]

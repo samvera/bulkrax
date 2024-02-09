@@ -19,11 +19,19 @@ module Bulkrax
     # GET /importers
     def index
       # NOTE: We're paginating this in the browser.
-      @importers = Importer.order(created_at: :desc).all
       if api_request?
-        json_response('index')
+        @importers = Importer.order(created_at: :desc).all
+       json_response('index')
       elsif defined?(::Hyrax)
         add_importer_breadcrumbs
+      end
+    end
+
+    def importer_table
+      @importers = Importer.order(table_order).page(table_page).per(table_per_page)
+      @importers = @importers.where(importer_table_search) if importer_table_search.present?
+      respond_to do |format|
+        format.json { render json: format_importers(@importers) }
       end
     end
 
@@ -40,7 +48,7 @@ module Bulkrax
 
     def entry_table
       @entries = @importer.entries.order(table_order).page(table_page).per(table_per_page)
-      @entries = @entries.where(table_search) if table_search.present?
+      @entries = @entries.where(entry_table_search) if entry_table_search.present?
       respond_to do |format|
         format.json { render json: format_entries(@entries, @importer) }
       end
