@@ -60,15 +60,15 @@ RSpec.describe Bulkrax::ImportersController, type: :controller do
     end
   end
 
-  describe '#table_search' do
+  describe '#entry_table_search' do
     it 'returns false when params[:search][:value] is blank' do
       get :index, params: { search: { value: '' } }
-      expect(controller.table_search).to eq(false)
+      expect(controller.entry_table_search).to eq(false)
     end
 
     it 'returns a Arel::Nodes::Grouping node when params[:search][:value] is not blank' do
       get :index, params: { search: { value: 'some_value' } }
-      expect(controller.table_search).to be_a(Arel::Nodes::Grouping)
+      expect(controller.entry_table_search).to be_a(Arel::Nodes::Grouping)
     end
   end
 
@@ -95,7 +95,7 @@ RSpec.describe Bulkrax::ImportersController, type: :controller do
     end
   end
 
-  describe '#util_links' do
+  describe '#entry_util_links' do
     include Bulkrax::Engine.routes.url_helpers
 
     let(:item) { FactoryBot.create(:bulkrax_importer) }
@@ -103,7 +103,7 @@ RSpec.describe Bulkrax::ImportersController, type: :controller do
 
     it 'returns a string of HTML links' do
       get :index
-      result = controller.util_links(entry, item)
+      result = controller.entry_util_links(entry, item)
       expect(result).to be_a(String)
       expect(result).to include('glyphicon-info-sign')
       expect(result).to include('glyphicon-repeat')
@@ -112,46 +112,46 @@ RSpec.describe Bulkrax::ImportersController, type: :controller do
 
     it 'includes a link to the entry' do
       get :index
-      result = controller.util_links(entry, item)
+      result = controller.entry_util_links(entry, item)
       expect(result).to include(importer_entry_path(item, entry))
     end
 
     it 'includes a delete link to the entry' do
       get :index
-      result = controller.util_links(entry, item)
+      result = controller.entry_util_links(entry, item)
       expect(result).to include(importer_entry_path(item, entry))
       expect(result).to include('method="delete"')
     end
   end
 
-  describe '#entry_status' do
+  describe '#status_message_for' do
     let(:item) { FactoryBot.create(:bulkrax_importer) }
 
     it 'returns a string of HTML with a green checkmark when status_message is "Complete"' do
       entry = FactoryBot.create(:bulkrax_entry, importerexporter: item, status_message: 'Complete')
       get :index
-      result = controller.entry_status(entry)
+      result = controller.status_message_for(entry)
       expect(result).to include('<span class=\'glyphicon glyphicon-ok\' style=\'color: green;\'></span> Complete')
     end
 
     it 'returns a string of HTML with a blue "horizontal ellipsis" icon when status_message is "Pending"' do
       entry = FactoryBot.create(:bulkrax_entry, importerexporter: item, status_message: 'Pending')
       get :index
-      result = controller.entry_status(entry)
+      result = controller.status_message_for(entry)
       expect(result).to include('<span class=\'glyphicon glyphicon-option-horizontal\' style=\'color: blue;\'></span> Pending')
     end
 
     it 'returns a string of HTML with a red "remove" icon when status_message is neither "Complete" nor "Pending"' do
       entry = FactoryBot.create(:bulkrax_entry, importerexporter: item, status_message: 'Error')
       get :index
-      result = controller.entry_status(entry)
+      result = controller.status_message_for(entry)
       expect(result).to include('<span class=\'glyphicon glyphicon-remove\' style=\'color: red;\'></span> Error')
     end
 
     it 'returns a string of HTML with a red "remove" icon when status_message is "Deleted"' do
       entry = FactoryBot.create(:bulkrax_entry, importerexporter: item, status_message: 'Deleted')
       get :index
-      result = controller.entry_status(entry)
+      result = controller.status_message_for(entry)
       expect(result).to include('<span class=\'glyphicon glyphicon-remove\' style=\'color: red;\'></span> Deleted')
     end
   end

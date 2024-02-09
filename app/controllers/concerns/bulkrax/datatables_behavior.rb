@@ -33,10 +33,10 @@ module Bulkrax
         column = Arel::Nodes::NamedFunction.new('CAST', [column.as('text')])
         column = Arel::Nodes::NamedFunction.new('LOWER', [column])
         @entry_table_search = if @entry_table_search
-                          @entry_table_search.or(column.matches("%#{table_search_value}%"))
-                        else
-                          column.matches("%#{table_search_value}%")
-                        end
+                                @entry_table_search.or(column.matches("%#{table_search_value}%"))
+                              else
+                                column.matches("%#{table_search_value}%")
+                              end
       end
 
       @entry_table_search
@@ -53,10 +53,10 @@ module Bulkrax
         column = Arel::Nodes::NamedFunction.new('CAST', [column.as('text')])
         column = Arel::Nodes::NamedFunction.new('LOWER', [column])
         @importer_table_search = if @importer_table_search
-                          @importer_table_search.or(column.matches("%#{table_search_value}%"))
-                        else
-                          column.matches("%#{table_search_value}%")
-                        end
+                                   @importer_table_search.or(column.matches("%#{table_search_value}%"))
+                                 else
+                                   column.matches("%#{table_search_value}%")
+                                 end
       end
 
       @importer_table_search
