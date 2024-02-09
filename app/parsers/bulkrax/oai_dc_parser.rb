@@ -63,6 +63,12 @@ module Bulkrax
 
     delegate :list_sets, to: :client
 
+    def create_objects(types = [])
+      types.each do |object_type|
+        send("create_#{object_type.pluralize}")
+      end
+    end
+
     def create_collections
       metadata = {
         visibility: 'open'
@@ -86,27 +92,31 @@ module Bulkrax
       results = self.records(quick: true)
       return if results.blank?
       results.full.each_with_index do |record, index|
-        identifier = record.send(source_identifier)
-        if identifier.blank?
-          if Bulkrax.fill_in_blank_source_identifiers.present?
-            identifier = Bulkrax.fill_in_blank_source_identifiers.call(self, index)
-          else
-            invalid_record("Missing #{source_identifier} for #{record.to_h}\n")
-            next
-          end
-        end
-
+        identifier = record_has_source_identifier(record, index)
+        next unless identifier
         break if limit_reached?(limit, index)
+
         seen[identifier] = true
-        new_entry = entry_class.where(importerexporter: self.importerexporter, identifier: identifier).first_or_create!
-        if record.deleted?
-          DeleteWorkJob.send(perform_method, new_entry, importerexporter.current_run)
-        else
-          ImportWorkJob.send(perform_method, new_entry.id, importerexporter.current_run.id)
-        end
+        create_entry_and_job(record, 'work', identifier)
         increment_counters(index, work: true)
       end
       importer.record_status
+    rescue StandardError => e
+      set_status_info(e)
+    end
+
+    # oai records so not let us set the source identifier easily
+    def record_has_source_identifier(record, index)
+      identifier = record.send(source_identifier)
+      if identifier.blank?
+        if Bulkrax.fill_in_blank_source_identifiers.present?
+          identifier = Bulkrax.fill_in_blank_source_identifiers.call(self, index)
+        else
+          invalid_record("Missing #{source_identifier} for #{record.to_h}\n")
+          return false
+        end
+      end
+      identifier
     end
 
     def collections

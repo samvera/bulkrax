@@ -47,6 +47,10 @@ module Bulkrax
       raise NotImplementedError, 'must be defined'
     end
 
+    def work_entry_class
+      entry_class
+    end
+
     # @api public
     # @abstract Subclass and override {#collection_entry_class} to implement behavior for the parser.
     def collection_entry_class
@@ -157,6 +161,22 @@ module Bulkrax
       @visibility ||= self.parser_fields['visibility'] || 'open'
     end
 
+    def create_collections
+      create_objects(['collection'])
+    end
+
+    def create_works
+      create_objects(['work'])
+    end
+
+    def create_file_sets
+      create_objects(['file_set'])
+    end
+
+    def create_relationships
+      create_objects(['relationship'])
+    end
+
     # @api public
     #
     # @param types [Array<Symbol>] the types of objects that we'll create.
@@ -166,30 +186,42 @@ module Bulkrax
     # @see #create_works
     # @see #create_file_sets
     # @see #create_relationships
-    def create_objects(types = [])
-      types.each do |object_type|
-        send("create_#{object_type.pluralize}")
+    def create_objects(types_array = nil)
+      index = 0
+      (types_array || %w[collection work file_set relationship]).each do |type|
+        if type.eql?('relationship')
+          ScheduleRelationshipsJob.set(wait: 5.minutes).perform_later(importer_id: importerexporter.id)
+          next
+        end
+        send(type.pluralize).each do |current_record|
+          next unless record_has_source_identifier(current_record, index)
+          break if limit_reached?(limit, index)
+
+          seen[current_record[source_identifier]] = true
+          create_entry_and_job(current_record, type)
+          increment_counters(index, "#{type}": true)
+          index += 1
+        end
+        importer.record_status
       end
+      true
+    rescue StandardError => e
+      set_status_info(e)
     end
 
-    # @abstract Subclass and override {#create_collections} to implement behavior for the parser.
-    def create_collections
-      raise NotImplementedError, 'must be defined' if importer?
-    end
-
-    # @abstract Subclass and override {#create_works} to implement behavior for the parser.
-    def create_works
-      raise NotImplementedError, 'must be defined' if importer?
-    end
-
-    # @abstract Subclass and override {#create_file_sets} to implement behavior for the parser.
-    def create_file_sets
-      raise NotImplementedError, 'must be defined' if importer?
-    end
-
-    # @abstract Subclass and override {#create_relationships} to implement behavior for the parser.
-    def create_relationships
-      raise NotImplementedError, 'must be defined' if importer?
+    def create_entry_and_job(current_record, type, identifier = nil)
+      identifier ||= current_record[source_identifier]
+      new_entry = find_or_create_entry(send("#{type}_entry_class"),
+                                       identifier,
+                                       'Bulkrax::Importer',
+                                       current_record.to_h)
+      if current_record[:delete].present?
+        "Bulkrax::Delete#{type.camelize}Job".constantize.send(perform_method, new_entry, current_run)
+      elsif current_record[:remove_and_rerun].present?
+        "Bulkrax::DeleteAndImport#{type.camelize}Job".constantize.send(perform_method, new_entry, current_run)
+      else
+        "Bulkrax::Import#{type.camelize}Job".constantize.send(perform_method, new_entry.id, current_run.id)
+      end
     end
 
     # Optional, define if using browse everything for file upload
