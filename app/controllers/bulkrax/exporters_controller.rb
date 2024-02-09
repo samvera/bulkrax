@@ -18,7 +18,7 @@ module Bulkrax
       add_exporter_breadcrumbs if defined?(::Hyrax)
     end
 
-    def importer_table
+    def exporter_table
       @exporters = Exporter.order(table_order).page(table_page).per(table_per_page)
       @exporters = @exporters.where(exporter_table_search) if exporter_table_search.present?
       respond_to do |format|
