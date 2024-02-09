@@ -21,7 +21,7 @@ module Bulkrax
       raise StandardError, 'CSV path empty' if path.blank?
       options = {
         headers: true,
-        header_converters: ->(h) { h.to_s.gsub(/[^\w\d -]+/, '').strip.to_sym },
+        header_converters: ->(h) { h.to_s.gsub(/[^\w\d\. -]+/, '').strip.to_sym },
         encoding: 'utf-8'
       }.merge(csv_read_data_options)
 
