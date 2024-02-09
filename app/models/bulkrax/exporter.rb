@@ -23,6 +23,10 @@ module Bulkrax
       set_status_info(e)
     end
 
+    def remove_and_rerun
+      self.parser_fields['remove_and_rerun']
+    end
+
     # #export_source accessors
     # Used in form to prevent it from getting confused as to which value to populate #export_source with.
     # Also, used to display the correct selected value when rendering edit form.

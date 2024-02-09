@@ -14,7 +14,7 @@ module Bulkrax
              :seen, :increment_counters, :parser_fields, :user, :keys_without_numbers,
              :key_without_numbers, :status, :set_status_info, :status_info, :status_at,
              :exporter_export_path, :exporter_export_zip_path, :importer_unzip_path, :validate_only,
-             :zip?, :file?,
+             :zip?, :file?, :remove_and_rerun,
              to: :importerexporter
 
     # @todo Convert to `class_attribute :parser_fiels, default: {}`
@@ -217,7 +217,7 @@ module Bulkrax
                                        current_record.to_h)
       if current_record[:delete].present?
         "Bulkrax::Delete#{type.camelize}Job".constantize.send(perform_method, new_entry, current_run)
-      elsif current_record[:remove_and_rerun].present?
+      elsif current_record[:remove_and_rerun].present? || remove_and_rerun
         "Bulkrax::DeleteAndImport#{type.camelize}Job".constantize.send(perform_method, new_entry, current_run)
       else
         "Bulkrax::Import#{type.camelize}Job".constantize.send(perform_method, new_entry.id, current_run.id)

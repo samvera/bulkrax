@@ -188,12 +188,6 @@ module Bulkrax
       self.only_updates ||= false
       self.save if self.new_record? # Object needs to be saved for statuses
       types = types_array || DEFAULT_OBJECT_TYPES
-      if remove_and_rerun
-        self.entries.find_each do |e|
-          e.factory.find&.destroy!
-          e.destroy!
-        end
-      end
       parser.create_objects(types)
       mark_unseen_as_skipped
     rescue StandardError => e
