@@ -96,7 +96,7 @@
     <div class="bulkrax-nav-tab-bottom-margin">
       <!-- Nav tabs -->
       <div class="outline">
-        <%= render partial: 'bulkrax/shared/entries_tab' %>
+        <%= render partial: 'bulkrax/shared/entries_tab', locals: { item: @exporter } %>
       </div>
       <br>
       <%= link_to 'Edit', edit_exporter_path(@exporter) %>
