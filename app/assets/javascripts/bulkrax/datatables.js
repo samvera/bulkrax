@@ -90,7 +90,9 @@ function statusSelect() {
   statusSelect.add(new Option('Complete'))
   statusSelect.add(new Option('Pending'))
   statusSelect.add(new Option('Failed'))
-  debugger
+  statusSelect.add(new Option('Deleted'))
+  statusSelect.add(new Option('Complete (with failures)'))
+
   document.querySelector('div.dataTables_filter').firstChild.prepend(statusSelect)
 
   // Apply listener for user change in value
