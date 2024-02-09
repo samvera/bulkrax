@@ -3,8 +3,8 @@
 require "bulkrax/version"
 require "bulkrax/engine"
 require 'active_support/all'
+require 'coderay'
 require 'denormalize_fields'
-
 # rubocop:disable Metrics/ModuleLength
 module Bulkrax
   extend self # rubocop:disable Style/ModuleFunction
