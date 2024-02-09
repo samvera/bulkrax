@@ -1,9 +1,10 @@
 <div class="col-xs-12 main-header">
   <h1><span class="fa fa-cloud-upload" aria-hidden="true"></span> Importer: <%= @importer.name %></h1>
-  <% if @importer.parser_klass == 'Bulkrax::CsvParser' && @work_entries.map(&:failed?).any? %>
+
+  <% if @importer.failed_entries? %>
     <div class="pull-right">
-      <%= link_to 'Export Errored Entries', importer_export_errors_path(@importer.id), class: 'btn btn-primary' %>
-      <%= link_to 'Upload Corrected Entries', importer_upload_corrected_entries_path(@importer.id), class: 'btn btn-primary' %>
+      <%= link_to 'Export Errored Entries', importer_export_errors_path(@importer.id), class: 'btn btn-primary', data: { turbolinks: false }%>
+      <%= link_to 'Upload Corrected Entries', importer_upload_corrected_entries_path(@importer.id), class: 'btn btn-primary' if @importer.parser.is_a?(Bulkrax::CsvParser) %>
     </div>
   <% end %>
 </div>
@@ -75,19 +76,10 @@
 
     <div class="bulkrax-nav-tab-bottom-margin">
       <!-- Nav tabs -->
-      <ul class="bulkrax-nav-tab-top-margin tab-nav nav nav-tabs" role="tablist">
-        <li role="presentation" class="nav-link active"><a href="#work-entries" aria-controls="work-entries" role="tab" data-toggle="tab"><%= t('bulkrax.importer.labels.work_entries') %></a></li>
-        <li role="presentation" class="nav-link"><a href="#collection-entries" aria-controls="collection-entries" role="tab" data-toggle="tab"><%= t('bulkrax.importer.labels.collection_entries') %></a></li>
-        <li role="presentation" class="nav-link"><a href="#file-set-entries" aria-controls="file-set-entries" role="tab" data-toggle="tab"><%= t('bulkrax.importer.labels.file_set_entries') %></a></li>
-      </ul>
-      <!-- Tab panes -->
-      <div class="tab-content outline">
-        <%= render partial: 'bulkrax/shared/entries_tab', locals: { item: @importer, entries: @work_entries, pagination_param_name: :work_entries_page, pagination_anchor: 'work-entries' } %>
-        <%= render partial: 'bulkrax/shared/entries_tab', locals: { item: @importer, entries: @collection_entries, pagination_param_name: :collection_entries_path, pagination_anchor: 'collection-entries' } %>
-        <%= render partial: 'bulkrax/shared/entries_tab', locals: { item: @importer, entries: @file_set_entries, pagination_param_name: :file_set_entries_path, pagination_anchor: 'file-set-entries' } %>
+      <div class="outline">
+        <%= render partial: 'bulkrax/shared/entries_tab' %>
       </div>
-      <% all_entries = @work_entries + @collection_entries + @file_set_entries %>
-      <%= render partial: 'bulkrax/importers/edit_item_buttons', locals: { item: @importer, e: all_entries.first } if all_entries.present? %>
+      <%= render partial: 'bulkrax/importers/edit_item_buttons', locals: { item: @importer, e: @first_entry } if @first_entry.present? %>
     </div>
 
     <p class="bulkrax-p-align">

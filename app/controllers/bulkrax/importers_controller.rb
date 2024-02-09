@@ -6,23 +6,32 @@ module Bulkrax
     include Hyrax::ThemedLayoutController if defined?(::Hyrax)
     include Bulkrax::DownloadBehavior
     include Bulkrax::API
+    include Bulkrax::DatatablesBehavior
     include Bulkrax::ValidationHelper
 
     protect_from_forgery unless: -> { api_request? }
     before_action :token_authenticate!, if: -> { api_request? }, only: [:create, :update, :delete]
     before_action :authenticate_user!, unless: -> { api_request? }
     before_action :check_permissions
-    before_action :set_importer, only: [:show, :edit, :update, :destroy]
+    before_action :set_importer, only: [:show, :entry_table, :edit, :update, :destroy]
     with_themed_layout 'dashboard' if defined?(::Hyrax)
 
     # GET /importers
     def index
       # NOTE: We're paginating this in the browser.
-      @importers = Importer.order(created_at: :desc).all
       if api_request?
-        json_response('index')
+        @importers = Importer.order(created_at: :desc).all
+       json_response('index')
       elsif defined?(::Hyrax)
         add_importer_breadcrumbs
+      end
+    end
+
+    def importer_table
+      @importers = Importer.order(table_order).page(table_page).per(table_per_page)
+      @importers = @importers.where(importer_table_search) if importer_table_search.present?
+      respond_to do |format|
+        format.json { render json: format_importers(@importers) }
       end
     end
 
@@ -34,9 +43,15 @@ module Bulkrax
         add_importer_breadcrumbs
         add_breadcrumb @importer.name
       end
-      @work_entries = @importer.entries.where(type: @importer.parser.entry_class.to_s).page(params[:work_entries_page]).per(30)
-      @collection_entries = @importer.entries.where(type: @importer.parser.collection_entry_class.to_s).page(params[:collections_entries_page]).per(30)
-      @file_set_entries = @importer.entries.where(type: @importer.parser.file_set_entry_class.to_s).page(params[:file_set_entries_page]).per(30)
+      @first_entry = @importer.entries.first
+    end
+
+    def entry_table
+      @entries = @importer.entries.order(table_order).page(table_page).per(table_per_page)
+      @entries = @entries.where(entry_table_search) if entry_table_search.present?
+      respond_to do |format|
+        format.json { render json: format_entries(@entries, @importer) }
+      end
     end
 
     # GET /importers/new
@@ -210,7 +225,7 @@ module Bulkrax
 
     # Use callbacks to share common setup or constraints between actions.
     def set_importer
-      @importer = Importer.find(params[:id])
+      @importer = Importer.find(params[:id] || params[:importer_id])
     end
 
     def importable_params
