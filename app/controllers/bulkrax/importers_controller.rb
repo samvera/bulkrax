@@ -21,7 +21,7 @@ module Bulkrax
       # NOTE: We're paginating this in the browser.
       if api_request?
         @importers = Importer.order(created_at: :desc).all
-       json_response('index')
+        json_response('index')
       elsif defined?(::Hyrax)
         add_importer_breadcrumbs
       end
