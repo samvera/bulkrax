@@ -95,18 +95,9 @@
 
     <div class="bulkrax-nav-tab-bottom-margin">
       <!-- Nav tabs -->
-      <ul class="bulkrax-nav-tab-top-margin tab-nav nav nav-tabs" role="tablist">
-        <li role="presentation" class="nav-link active"><a href="#work-entries" aria-controls="work-entries" role="tab" data-toggle="tab"><%= t('bulkrax.exporter.labels.work_entries') %></a></li>
-        <li role="presentation" class="nav-link"><a href="#collection-entries" aria-controls="collection-entries" role="tab" data-toggle="tab"><%= t('bulkrax.exporter.labels.collection_entries') %></a></li>
-        <li role="presentation" class="nav-link"><a href="#file-set-entries" aria-controls="file-set-entries" role="tab" data-toggle="tab"><%= t('bulkrax.exporter.labels.file_set_entries') %></a></li>
-      </ul>
-      <!-- Tab panes -->
-      <div class="tab-content outline">
-        <%= render partial: 'bulkrax/shared/entries_tab', locals: { item: @exporter, entries: @work_entries, pagination_param_name:  :work_entries_page, pagination_anchor: 'work-entries' } %>
-        <%= render partial: 'bulkrax/shared/entries_tab', locals: { item: @exporter, entries: @collection_entries, pagination_param_name: :collection_entries_path, pagination_anchor: 'collection-entries' } %>
-        <%= render partial: 'bulkrax/shared/entries_tab', locals: { item: @exporter, entries: @file_set_entries, pagination_param_name: :file_set_entries_path, pagination_anchor: 'file-set-entries' } %>
+      <div class="outline">
+        <%= render partial: 'bulkrax/shared/entries_tab' %>
       </div>
-
       <br>
       <%= link_to 'Edit', edit_exporter_path(@exporter) %>
       |

@@ -3,7 +3,7 @@ Blacklight.onLoad(function() {
     $('#importer-show-table').DataTable( {
       'processing': true,
       'serverSide': true,
-      "ajax": window.location.href.replace(/(\/importers\/\d+)/, "$1/entry_table.json"),
+      "ajax": window.location.href.replace(/(\/(importers|exporters)\/\d+)/, "$1/entry_table.json"),
       "pageLength": 30,
       "lengthMenu": [[30, 100, 200], [30, 100, 200]],
       "columns": [
