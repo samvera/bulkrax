@@ -373,11 +373,15 @@ module Bulkrax
     end
 
     def find_or_create_entry(entryclass, identifier, type, raw_metadata = nil)
-      entry = entryclass.where(
+      # limit entry search to just this importer or exporter. Don't go moving them
+      entry = importerexporter.entries.where(
+        identifier: identifier
+      ).first
+      entry ||= entryclass.new(
         importerexporter_id: importerexporter.id,
         importerexporter_type: type,
         identifier: identifier
-      ).first_or_create!
+      )
       entry.raw_metadata = raw_metadata
       entry.save!
       entry
