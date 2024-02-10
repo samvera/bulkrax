@@ -196,7 +196,6 @@ module Bulkrax
         send(type.pluralize).each do |current_record|
           next unless record_has_source_identifier(current_record, index)
           break if limit_reached?(limit, index)
-
           seen[current_record[source_identifier]] = true
           create_entry_and_job(current_record, type)
           increment_counters(index, "#{type}": true)
@@ -216,7 +215,7 @@ module Bulkrax
 
         importer.entries.where(rebuild_entry_query(type, parser_fields['entry_statuses'])).find_each do |e|
           seen[e.identifier] = true
-          e.status_info('Pending')
+          e.status_info('Pending', importer.current_run)
           if remove_and_rerun
             delay = calculate_type_delay(type)
             "Bulkrax::DeleteAndImport#{type.camelize}Job".constantize.set(wait: delay).send(perform_method, e, current_run)
@@ -249,7 +248,7 @@ module Bulkrax
                                        identifier,
                                        'Bulkrax::Importer',
                                        current_record.to_h)
-      new_entry.status_info('Pending')
+      new_entry.status_info('Pending', importer.current_run)
       if current_record[:delete].present?
         "Bulkrax::Delete#{type.camelize}Job".constantize.send(perform_method, new_entry, current_run)
       elsif current_record[:remove_and_rerun].present? || remove_and_rerun
