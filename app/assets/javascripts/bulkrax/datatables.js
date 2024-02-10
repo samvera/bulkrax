@@ -3,7 +3,7 @@ Blacklight.onLoad(function() {
     $('#importer-show-table').DataTable( {
       'processing': true,
       'serverSide': true,
-      "ajax": window.location.href.replace(/(\/importers\/\d+)/, "$1/entry_table.json"),
+      "ajax": window.location.href.replace(/(\/(importers|exporters)\/\d+)/, "$1/entry_table.json"),
       "pageLength": 30,
       "lengthMenu": [[30, 100, 200], [30, 100, 200]],
       "columns": [
@@ -45,6 +45,29 @@ Blacklight.onLoad(function() {
         { "data": "total_collection_entries", "orderable": false },
         { "data": "total_work_entries", "orderable": false },
         { "data": "total_file_set_entries", "orderable": false },
+        { "data": "actions", "orderable": false }
+      ],
+      initComplete: function () {
+        // Add status filter
+        statusSelect.bind(this)()
+        // Add refresh link
+        refreshLink.bind(this)()
+      }
+    } );
+  }
+
+  if($('#exporters-table').length) {
+    $('#exporters-table').DataTable( {
+      'processing': true,
+      'serverSide': true,
+      "ajax": window.location.href.replace(/(\/exporters)/, "$1/exporter_table.json"),
+      "pageLength": 30,
+      "lengthMenu": [[30, 100, 200], [30, 100, 200]],
+      "columns": [
+        { "data": "name" },
+        { "data": "status_message" },
+        { "data": "created_at" },
+        { "data": "download" },
         { "data": "actions", "orderable": false }
       ],
       initComplete: function () {

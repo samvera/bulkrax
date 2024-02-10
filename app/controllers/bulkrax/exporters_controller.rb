@@ -4,9 +4,10 @@ module Bulkrax
   class ExportersController < ApplicationController
     include Hyrax::ThemedLayoutController if defined?(::Hyrax)
     include Bulkrax::DownloadBehavior
+    include Bulkrax::DatatablesBehavior
     before_action :authenticate_user!
     before_action :check_permissions
-    before_action :set_exporter, only: [:show, :edit, :update, :destroy]
+    before_action :set_exporter, only: [:show, :entry_table, :edit, :update, :destroy]
     with_themed_layout 'dashboard' if defined?(::Hyrax)
 
     # GET /exporters
@@ -17,16 +18,29 @@ module Bulkrax
       add_exporter_breadcrumbs if defined?(::Hyrax)
     end
 
+    def exporter_table
+      @exporters = Exporter.order(table_order).page(table_page).per(table_per_page)
+      @exporters = @exporters.where(exporter_table_search) if exporter_table_search.present?
+      respond_to do |format|
+        format.json { render json: format_exporters(@exporters) }
+      end
+    end
+
     # GET /exporters/1
     def show
       if defined?(::Hyrax)
         add_exporter_breadcrumbs
         add_breadcrumb @exporter.name
       end
+      @first_entry = @exporter.entries.first
+    end
 
-      @work_entries = @exporter.entries.where(type: @exporter.parser.entry_class.to_s).page(params[:work_entries_page]).per(30)
-      @collection_entries = @exporter.entries.where(type: @exporter.parser.collection_entry_class.to_s).page(params[:collections_entries_page]).per(30)
-      @file_set_entries = @exporter.entries.where(type: @exporter.parser.file_set_entry_class.to_s).page(params[:file_set_entries_page]).per(30)
+    def entry_table
+      @entries = @exporter.entries.order(table_order).page(table_page).per(table_per_page)
+      @entries = @entries.where(entry_table_search) if entry_table_search.present?
+      respond_to do |format|
+        format.json { render json: format_entries(@entries, @exporter) }
+      end
     end
 
     # GET /exporters/new
@@ -100,7 +114,7 @@ module Bulkrax
 
     # Use callbacks to share common setup or constraints between actions.
     def set_exporter
-      @exporter = Exporter.find(params[:id])
+      @exporter = Exporter.find(params[:id] || params[:exporter_id])
     end
 
     # Only allow a trusted parameters through.
