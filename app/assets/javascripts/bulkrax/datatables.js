@@ -56,6 +56,29 @@ Blacklight.onLoad(function() {
     } );
   }
 
+  if($('#exporters-table').length) {
+    $('#exporters-table').DataTable( {
+      'processing': true,
+      'serverSide': true,
+      "ajax": window.location.href.replace(/(\/exporters)/, "$1/exporter_table.json"),
+      "pageLength": 30,
+      "lengthMenu": [[30, 100, 200], [30, 100, 200]],
+      "columns": [
+        { "data": "name" },
+        { "data": "status_message" },
+        { "data": "created_at" },
+        { "data": "download" },
+        { "data": "actions", "orderable": false }
+      ],
+      initComplete: function () {
+        // Add status filter
+        statusSelect.bind(this)()
+        // Add refresh link
+        refreshLink.bind(this)()
+      }
+    } );
+  }
+
 })
 
 function entrySelect() {

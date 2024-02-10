@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 module Bulkrax
+  # rubocop:disable Metrics/ModuleLength
   module DatatablesBehavior
     extend ActiveSupport::Concern
 
@@ -62,6 +63,26 @@ module Bulkrax
       @importer_table_search
     end
 
+    def exporter_table_search
+      return @exporter_table_search if @exporter_table_search
+      return @exporter_table_search = false if params['search']&.[]('value').blank?
+
+      table_search_value = params['search']&.[]('value')&.downcase
+
+      ['name', 'status_message', 'created_at'].map do |col|
+        column = Bulkrax::Exporter.arel_table[col]
+        column = Arel::Nodes::NamedFunction.new('CAST', [column.as('text')])
+        column = Arel::Nodes::NamedFunction.new('LOWER', [column])
+        @exporter_table_search = if @exporter_table_search
+                                   @exporter_table_search.or(column.matches("%#{table_search_value}%"))
+                                 else
+                                   column.matches("%#{table_search_value}%")
+                                 end
+      end
+
+      @exporter_table_search
+    end
+
     def format_importers(importers)
       result = importers.map do |i|
         {
@@ -83,6 +104,23 @@ module Bulkrax
         data: result,
         recordsTotal: Bulkrax::Importer.count,
         recordsFiltered: importers.size
+      }
+    end
+
+    def format_exporters(exporters)
+      result = exporters.map do |e|
+        {
+          name: view_context.link_to(e.name, view_context.exporter_path(e)),
+          status_message: status_message_for(e),
+          created_at: e.created_at,
+          download: download_zip(e),
+          actions: exporter_util_links(e)
+        }
+      end
+      {
+        data: result,
+        recordsTotal: Bulkrax::Exporter.count,
+        recordsFiltered: exporters.size
       }
     end
 
@@ -132,5 +170,32 @@ module Bulkrax
       links << view_context.link_to(view_context.raw('<span class="glyphicon glyphicon-remove"></span>'), i, method: :delete, data: { confirm: 'Are you sure?' })
       links.join(" ")
     end
+
+    def exporter_util_links(i)
+      links = []
+      links << view_context.link_to(view_context.raw('<span class="glyphicon glyphicon-info-sign"></span>'), exporter_path(i))
+      links << view_context.link_to(view_context.raw('<span class="glyphicon glyphicon-pencil"></span>'), edit_exporter_path(i))
+      links << view_context.link_to(view_context.raw('<span class="glyphicon glyphicon-remove"></span>'), i, method: :delete, data: { confirm: 'Are you sure?' })
+      links.join(" ")
+    end
+
+    def download_zip(e)
+      return unless File.exist?(e.exporter_export_zip_path)
+
+      options_html = e.exporter_export_zip_files.flatten.map do |file_name|
+        "<option value='#{CGI.escapeHTML(file_name)}'>#{CGI.escapeHTML(file_name)}</option>"
+      end.join
+
+      form_html = "<form class='simple_form edit_exporter' id='edit_exporter_#{e.id}' action='#{view_context.exporter_download_path(e)}' accept-charset='UTF-8' method='get'>"
+      form_html += "<input name='utf8' type='hidden' value='✓'>"
+      form_html += "<select class='btn btn-default form-control' style='width: 200px' name='exporter[exporter_export_zip_files]' id='exporter_#{e.id}_exporter_export_zip_files'>"
+      form_html += options_html
+      form_html += "</select>\n" # add newline here to add a space between the dropdown and the download button
+      form_html += "<input type='submit' name='commit' value='Download' class='btn btn-default'>"
+      form_html += "</form>"
+
+      form_html
+    end
   end
+  # rubocop:enable Metrics/ModuleLength
 end
