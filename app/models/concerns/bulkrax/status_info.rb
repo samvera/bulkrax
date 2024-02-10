@@ -13,6 +13,7 @@ module Bulkrax
       scope :failed, -> { where(status_message: 'Failed') }
       scope :complete, -> { where(status_message: 'Complete') }
       scope :pending, -> { where(status_message: 'Pending') }
+      scope :skipped, -> { where(status_message: 'Skipped') }
     end
 
     def current_status
@@ -26,6 +27,10 @@ module Bulkrax
 
     def succeeded?
       current_status&.status_message&.match(/^Complete$/)
+    end
+
+    def skipped?
+      current_status&.status_message&.match('Skipped')
     end
 
     def status
