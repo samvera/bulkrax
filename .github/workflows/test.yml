@@ -40,7 +40,7 @@ jobs:
         run: bundle exec rake db:migrate db:test:prepare
 
       - name: Run rspec
-        run: bundle exec rake
+        run: bundle exec rake spec
 
       - name: Upload coverage results
         uses: actions/upload-artifact@v2
