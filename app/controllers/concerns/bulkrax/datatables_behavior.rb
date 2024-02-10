@@ -118,6 +118,8 @@ module Bulkrax
         "<td><span class='glyphicon glyphicon-ok' style='color: green;'></span> #{e.status_message}</td>"
       elsif e.status_message == "Pending"
         "<td><span class='glyphicon glyphicon-option-horizontal' style='color: blue;'></span> #{e.status_message}</td>"
+      elsif e.status_message == "Skipped"
+        "<td><span class='glyphicon glyphicon-step-forward' style='color: yellow;'></span> #{e.status_message}</td>"
       else
         "<td><span class='glyphicon glyphicon-remove' style='color: #{e.status == 'Deleted' ? 'green' : 'red'};'></span> #{e.status_message}</td>"
       end
