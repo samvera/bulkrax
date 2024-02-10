@@ -11,13 +11,29 @@ module Bulkrax
     def collection_entry_class; end
 
     # @todo not yet supported
-    def create_collections; end
+    def create_collections
+      raise NotImplementedError
+    end
 
     # @todo not yet supported
     def file_set_entry_class; end
 
     # @todo not yet supported
-    def create_file_sets; end
+    def create_file_sets
+      raise NotImplementedError
+    end
+
+    def file_sets
+      raise NotImplementedError
+    end
+
+    def collections
+      raise NotImplementedError
+    end
+
+    def works
+      records
+    end
 
     # TODO: change to differentiate between collection and work records when adding ability to import collection metadata
     def works_total
@@ -90,25 +106,6 @@ module Bulkrax
 
     def good_file_type?(path)
       %w[.xml .xls .xsd].include?(File.extname(path)) || ::Marcel::MimeType.for(path).include?('application/xml')
-    end
-
-    def create_works
-      records.each_with_index do |record, index|
-        next unless record_has_source_identifier(record, index)
-        break if !limit.nil? && index >= limit
-
-        seen[record[source_identifier]] = true
-        new_entry = find_or_create_entry(entry_class, record[source_identifier], 'Bulkrax::Importer', record)
-        if record[:delete].present?
-          DeleteWorkJob.send(perform_method, new_entry, current_run)
-        else
-          ImportWorkJob.send(perform_method, new_entry.id, current_run.id)
-        end
-        increment_counters(index, work: true)
-      end
-      importer.record_status
-    rescue StandardError => e
-      set_status_info(e)
     end
 
     def total

@@ -103,11 +103,12 @@ module Bulkrax
       frequency.to_seconds != 0
     end
 
-    def current_run
+    def current_run(skip_counts: false)
       return @current_run if @current_run.present?
 
       @current_run = self.importer_runs.create!
       return @current_run if file? && zip?
+      return @current_run if skip_counts
 
       entry_counts = {
         total_work_entries: self.limit || parser.works_total,
@@ -166,6 +167,10 @@ module Bulkrax
       parser.parser_fields['metadata_only'] == true
     end
 
+    def existing_entries?
+      parser.parser_fields['file_style']&.match(/Existing Entries/)
+    end
+
     def import_works
       import_objects(['work'])
     end
@@ -188,13 +193,7 @@ module Bulkrax
       self.only_updates ||= false
       self.save if self.new_record? # Object needs to be saved for statuses
       types = types_array || DEFAULT_OBJECT_TYPES
-      if remove_and_rerun
-        self.entries.find_each do |e|
-          e.factory.find&.destroy!
-          e.destroy!
-        end
-      end
-      parser.create_objects(types)
+      existing_entries? ? parser.rebuild_entries(types) : parser.create_objects(types)
       mark_unseen_as_skipped
     rescue StandardError => e
       set_status_info(e)
@@ -203,7 +202,7 @@ module Bulkrax
     # After an import any entries we did not touch are skipped.
     # They are not really pending, complete for the last run, or failed
     def mark_unseen_as_skipped
-      entries.where.not(id. seen).find_each do |entry|
+      entries.where.not(identifier: seen.keys).find_each do |entry|
         entry.set_status_info('Skipped')
       end
     end
