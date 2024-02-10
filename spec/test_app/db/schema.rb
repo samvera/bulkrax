@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2024_02_08_005801) do
+ActiveRecord::Schema.define(version: 2024_02_09_070952) do
 
   create_table "accounts", force: :cascade do |t|
     t.string "name"
@@ -42,7 +42,7 @@ ActiveRecord::Schema.define(version: 2024_02_08_005801) do
     t.string "importerexporter_type", default: "Bulkrax::Importer"
     t.integer "import_attempts", default: 0
     t.string "status_message", default: "Pending"
-    t.index ["identifier"], name: "index_bulkrax_entries_on_identifier"
+    t.index ["identifier", "importerexporter_id", "importerexporter_type"], name: "bulkrax_identifier_idx"
     t.index ["importerexporter_id", "importerexporter_type"], name: "bulkrax_entries_importerexporter_idx"
     t.index ["type"], name: "index_bulkrax_entries_on_type"
   end
