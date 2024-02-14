@@ -2,7 +2,7 @@
 
 module Bulkrax
   class ImporterJob < ApplicationJob
-    queue_as :import
+    queue_as Bulkrax.config.ingest_queue_name
 
     def perform(importer_id, only_updates_since_last_import = false)
       importer = Importer.find(importer_id)

@@ -2,7 +2,7 @@
 
 module Bulkrax
   class DeleteJob < ApplicationJob
-    queue_as :import
+    queue_as Bulkrax.config.ingest_queue_name
 
     # rubocop:disable Rails/SkipsModelValidations
     def perform(entry, importer_run)

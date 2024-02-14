@@ -6,7 +6,7 @@ module Bulkrax
   class ImportFileSetJob < ApplicationJob
     include DynamicRecordLookup
 
-    queue_as :import
+    queue_as Bulkrax.config.ingest_queue_name
 
     attr_reader :importer_run_id
 
