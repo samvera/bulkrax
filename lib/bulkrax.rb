@@ -63,6 +63,15 @@ module Bulkrax
       @factory_class_name_coercer || Bulkrax::FactoryClassFinder::DefaultCoercer
     end
 
+    attr_writer :ingest_queue_name
+    ##
+    # @return [String, Proc]
+    def ingest_queue_name
+      return @ingest_queue_name if @ingest_queue_name.present?
+      return Hyrax.config.ingest_queue_name if defined?(Hyrax)
+      :import
+    end
+
     ##
     # Configure the persistence adapter used for persisting imported data.
     #
