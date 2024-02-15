@@ -2,7 +2,7 @@
 
 module Bulkrax
   class DeleteJob < ApplicationJob
-    queue_as :import
+    queue_as Bulkrax.config.ingest_queue_name
 
     def perform(entry, importer_run)
       obj = entry.factory.find
