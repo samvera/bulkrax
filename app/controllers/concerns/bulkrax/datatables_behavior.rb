@@ -174,7 +174,7 @@ module Bulkrax
     def exporter_util_links(i)
       links = []
       links << view_context.link_to(view_context.raw('<span class="glyphicon glyphicon-info-sign"></span>'), exporter_path(i))
-      links << view_context.link_to(view_context.raw('<span class="glyphicon glyphicon-pencil"></span>'), edit_exporter_path(i))
+      links << view_context.link_to(view_context.raw('<span class="glyphicon glyphicon-pencil"></span>'), edit_exporter_path(i), data: { turbolinks: false })
       links << view_context.link_to(view_context.raw('<span class="glyphicon glyphicon-remove"></span>'), i, method: :delete, data: { confirm: 'Are you sure?' })
       links.join(" ")
     end
