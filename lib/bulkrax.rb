@@ -45,6 +45,21 @@ module Bulkrax
     attr_writer :persistence_adapter
 
     ##
+    # @param [String]
+    attr_writer :solr_key_for_member_file_ids
+
+    ##
+    # @return [String]
+    # @see https://github.com/samvera/hyrax/pull/6513
+    def solr_key_for_member_file_ids
+      return @solr_key_for_member_file_ids if @solr_key_for_member_file_ids.present?
+
+      return "member_ids_ssim" if defined?(Hyrax)
+
+      "#{file_model_class.name.to_s.underscore}_ids_ssim"
+    end
+
+    ##
     # @param coercer [#call]
     # @see Bulkrax::FactoryClassFinder
     attr_writer :factory_class_name_coercer
@@ -157,6 +172,8 @@ module Bulkrax
                  :reserved_properties=,
                  :server_name,
                  :server_name=,
+                 :solr_key_for_member_file_ids,
+                 :solr_key_for_member_file_ids=,
                  :use_locking,
                  :use_locking=,
                  :use_locking?
