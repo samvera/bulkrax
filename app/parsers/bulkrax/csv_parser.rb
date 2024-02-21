@@ -254,7 +254,7 @@ module Bulkrax
         target_file = File.join(files_path, file['file_name'].tr(' ', '_'))
         # Now because we want the files in place before the importer runs
         # Problematic for a large upload
-        Bulkrax::DownloadCloudFileJob.perform_now(file, target_file)
+        Bulkrax::DownloadCloudFileJob.perform_later(file, target_file)
       end
       return nil
     end
