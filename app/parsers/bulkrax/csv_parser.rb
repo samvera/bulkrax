@@ -241,9 +241,10 @@ module Bulkrax
     # @todo - investigate getting directory structure
     # @todo - investigate using perform_later, and having the importer check for
     #   DownloadCloudFileJob before it starts
-    def retrieve_cloud_files(files)
+    def retrieve_cloud_files(files, importer)
       files_path = File.join(path_for_import, 'files')
       FileUtils.mkdir_p(files_path) unless File.exist?(files_path)
+      target_files = []
       files.each_pair do |_key, file|
         # fixes bug where auth headers do not get attached properly
         if file['auth_header'].present?
@@ -252,10 +253,12 @@ module Bulkrax
         end
         # this only works for uniquely named files
         target_file = File.join(files_path, file['file_name'].tr(' ', '_'))
+        target_files << target_file
         # Now because we want the files in place before the importer runs
         # Problematic for a large upload
         Bulkrax::DownloadCloudFileJob.perform_later(file, target_file)
       end
+      importer[:parser_fields]['original_file_paths'] = target_files
       return nil
     end
 

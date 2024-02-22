@@ -189,12 +189,12 @@ module Bulkrax
     # @todo - investigate getting directory structure
     # @todo - investigate using perform_later, and having the importer check for
     #   DownloadCloudFileJob before it starts
-    def retrieve_cloud_files(files)
+    def retrieve_cloud_files(files, _importer)
       # There should only be one zip file for Bagit, take the first
       return if files['0'].blank?
       target_file = File.join(path_for_import, files['0']['file_name'].tr(' ', '_'))
       # Now because we want the files in place before the importer runs
-      Bulkrax::DownloadCloudFileJob.perform_now(files['0'], target_file)
+      Bulkrax::DownloadCloudFileJob.perform_later(files['0'], target_file)
       return target_file
     end
 
