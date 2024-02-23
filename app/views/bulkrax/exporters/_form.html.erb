@@ -33,8 +33,8 @@
     label: t('bulkrax.exporter.labels.importer'),
     required: true,
     prompt: 'Select from the list',
-    label_html: { class: 'importer export-source-option d-none' },
-    input_html: { class: 'importer export-source-option d-none form-control' },
+    label_html: { class: 'importer export-source-option d-none hidden' },
+    input_html: { class: 'importer export-source-option d-none hidden form-control' },
     collection:  form.object.importers_list.sort %>
 
   <%= form.input :export_source_collection,
@@ -42,9 +42,9 @@
     label: t('bulkrax.exporter.labels.collection'),
     required: true,
     placeholder: @collection&.title&.first,
-    label_html: { class: 'collection export-source-option d-none' },
+    label_html: { class: 'collection export-source-option d-none hidden' },
     input_html: {
-      class: 'collection export-source-option d-none form-control',
+      class: 'collection export-source-option d-none hidden form-control',
       data: {
         'autocomplete-url' => '/authorities/search/collections',
         'autocomplete' => 'collection'
@@ -56,8 +56,8 @@
     label: t('bulkrax.exporter.labels.worktype'),
     required: true,
     prompt: 'Select from the list',
-    label_html: { class: 'worktype export-source-option d-none' },
-    input_html: { class: 'worktype export-source-option d-none form-control' },
+    label_html: { class: 'worktype export-source-option d-none hidden' },
+    input_html: { class: 'worktype export-source-option d-none hidden form-control' },
     collection: Bulkrax.curation_concerns.map { |cc| [cc.to_s, cc.to_s] } %>
 
   <%= form.input :limit,
@@ -80,7 +80,7 @@
                  as: :boolean,
                  label: t('bulkrax.exporter.labels.filter_by_date') %>
 
-  <div id="date_filter_picker" class="d-none">
+  <div id="date_filter_picker" class="d-none hidden">
     <%= form.input :start_date,
                    as: :date,
                    label: t('bulkrax.exporter.labels.start_date'),
@@ -136,13 +136,13 @@
             // get the date filter option and show the corresponding date selectors
             $('.exporter_date_filter').change(function () {
                 if ($('.exporter_date_filter').find(".boolean").is(":checked"))
-                    $('#date_filter_picker').removeClass('d-none');
+                    $('#date_filter_picker').removeClass('d-none hidden');
                 else
-                    $('#date_filter_picker').addClass('d-none');
+                    $('#date_filter_picker').addClass('d-none hidden');
             });
 
             if ($('.exporter_date_filter').find(".boolean").is(":checked"))
-                $('#date_filter_picker').removeClass('d-none');
+                $('#date_filter_picker').removeClass('d-none hidden');
         });
     });
 </script>

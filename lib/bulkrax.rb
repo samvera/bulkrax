@@ -3,7 +3,8 @@
 require "bulkrax/version"
 require "bulkrax/engine"
 require 'active_support/all'
-
+require 'coderay'
+require 'denormalize_fields'
 # rubocop:disable Metrics/ModuleLength
 module Bulkrax
   extend self # rubocop:disable Style/ModuleFunction
@@ -40,6 +41,21 @@ module Bulkrax
     attr_accessor :fill_in_blank_source_identifiers
 
     ##
+    # @param [String]
+    attr_writer :solr_key_for_member_file_ids
+
+    ##
+    # @return [String]
+    # @see https://github.com/samvera/hyrax/pull/6513
+    def solr_key_for_member_file_ids
+      return @solr_key_for_member_file_ids if @solr_key_for_member_file_ids.present?
+
+      return "member_ids_ssim" if defined?(Hyrax)
+
+      "#{file_model_class.name.to_s.underscore}_ids_ssim"
+    end
+
+    ##
     # @param coercer [#call]
     # @see Bulkrax::FactoryClassFinder
     attr_writer :factory_class_name_coercer
@@ -56,6 +72,15 @@ module Bulkrax
     #   => Work
     def factory_class_name_coercer
       @factory_class_name_coercer || Bulkrax::FactoryClassFinder::DefaultCoercer
+    end
+
+    attr_writer :ingest_queue_name
+    ##
+    # @return [String, Proc]
+    def ingest_queue_name
+      return @ingest_queue_name if @ingest_queue_name.present?
+      return Hyrax.config.ingest_queue_name if defined?(Hyrax)
+      :import
     end
 
     attr_writer :use_locking
@@ -122,6 +147,8 @@ module Bulkrax
                  :reserved_properties=,
                  :server_name,
                  :server_name=,
+                 :solr_key_for_member_file_ids,
+                 :solr_key_for_member_file_ids=,
                  :use_locking,
                  :use_locking=,
                  :use_locking?

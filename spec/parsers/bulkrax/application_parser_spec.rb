@@ -17,13 +17,24 @@ module Bulkrax
     describe '#create_objects' do
       subject(:application_parser) { described_class.new(importer) }
 
-      it 'sends the create_* methods based on given types' do
-        expect(application_parser).to receive(:create_works)
-        expect(application_parser).to receive(:create_collections)
-        expect(application_parser).to receive(:create_file_sets)
-        expect(application_parser).to receive(:create_relationships)
+      it 'create_works calls create_objects' do
+        expect(application_parser).to receive(:create_objects).with(['work'])
+        application_parser.create_works
+      end
 
-        application_parser.create_objects(%w[collection work file_set relationship])
+      it 'create_collections calls create_objects' do
+        expect(application_parser).to receive(:create_objects).with(['collection'])
+        application_parser.create_collections
+      end
+
+      it 'create_file_sets calls create_objects' do
+        expect(application_parser).to receive(:create_objects).with(['file_set'])
+        application_parser.create_file_sets
+      end
+
+      it 'create_relationships calls create_objects' do
+        expect(application_parser).to receive(:create_objects).with(['relationship'])
+        application_parser.create_relationships
       end
     end
 

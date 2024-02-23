@@ -2,7 +2,7 @@
 
 module Bulkrax
   class DownloadCloudFileJob < ApplicationJob
-    queue_as :import
+    queue_as Bulkrax.config.ingest_queue_name
 
     # Retrieve cloud file and write to the imports directory
     # Note: if using the file system, the mounted directory in

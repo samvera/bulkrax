@@ -61,8 +61,8 @@ end
   RSpec.describe klass do
     let(:works) do
       [
-        SolrDocument.new(id: 1, file_set_ids_ssim: ["a", "b", "c"]),
-        SolrDocument.new(id: 2, file_set_ids_ssim: ["d", "e", "f"])
+        SolrDocument.new(id: 1, member_ids_ssim: ["a", "b", "c"]),
+        SolrDocument.new(id: 2, member_ids_ssim: ["d", "e", "f"])
       ]
     end
 
@@ -132,7 +132,7 @@ end
                    [works[1].id, parser.entry_class],
                    [collections[0].id, parser.collection_entry_class],
                    [collections[1].id, parser.collection_entry_class],
-                   [works[0].fetch("file_set_ids_ssim").first, parser.file_set_entry_class]
+                   [works[0].fetch(Bulkrax.solr_key_for_member_file_ids).first, parser.file_set_entry_class]
                  )
         end
       end
@@ -147,12 +147,12 @@ end
                    [works[1].id, parser.entry_class],
                    [collections[0].id, parser.collection_entry_class],
                    [collections[1].id, parser.collection_entry_class],
-                   [works[0].fetch("file_set_ids_ssim")[0], parser.file_set_entry_class],
-                   [works[0].fetch("file_set_ids_ssim")[1], parser.file_set_entry_class],
-                   [works[0].fetch("file_set_ids_ssim")[2], parser.file_set_entry_class],
-                   [works[1].fetch("file_set_ids_ssim")[0], parser.file_set_entry_class],
-                   [works[1].fetch("file_set_ids_ssim")[1], parser.file_set_entry_class],
-                   [works[1].fetch("file_set_ids_ssim")[2], parser.file_set_entry_class]
+                   [works[0].fetch(Bulkrax.solr_key_for_member_file_ids)[0], parser.file_set_entry_class],
+                   [works[0].fetch(Bulkrax.solr_key_for_member_file_ids)[1], parser.file_set_entry_class],
+                   [works[0].fetch(Bulkrax.solr_key_for_member_file_ids)[2], parser.file_set_entry_class],
+                   [works[1].fetch(Bulkrax.solr_key_for_member_file_ids)[0], parser.file_set_entry_class],
+                   [works[1].fetch(Bulkrax.solr_key_for_member_file_ids)[1], parser.file_set_entry_class],
+                   [works[1].fetch(Bulkrax.solr_key_for_member_file_ids)[2], parser.file_set_entry_class]
                  )
         end
       end
@@ -167,12 +167,12 @@ end
                    [works[1].id, parser.entry_class],
                    [collections[0].id, parser.collection_entry_class],
                    [collections[1].id, parser.collection_entry_class],
-                   [works[0].fetch("file_set_ids_ssim")[0], parser.file_set_entry_class],
-                   [works[0].fetch("file_set_ids_ssim")[1], parser.file_set_entry_class],
-                   [works[0].fetch("file_set_ids_ssim")[2], parser.file_set_entry_class],
-                   [works[1].fetch("file_set_ids_ssim")[0], parser.file_set_entry_class],
-                   [works[1].fetch("file_set_ids_ssim")[1], parser.file_set_entry_class],
-                   [works[1].fetch("file_set_ids_ssim")[2], parser.file_set_entry_class]
+                   [works[0].fetch(Bulkrax.solr_key_for_member_file_ids)[0], parser.file_set_entry_class],
+                   [works[0].fetch(Bulkrax.solr_key_for_member_file_ids)[1], parser.file_set_entry_class],
+                   [works[0].fetch(Bulkrax.solr_key_for_member_file_ids)[2], parser.file_set_entry_class],
+                   [works[1].fetch(Bulkrax.solr_key_for_member_file_ids)[0], parser.file_set_entry_class],
+                   [works[1].fetch(Bulkrax.solr_key_for_member_file_ids)[1], parser.file_set_entry_class],
+                   [works[1].fetch(Bulkrax.solr_key_for_member_file_ids)[2], parser.file_set_entry_class]
                  )
         end
       end

@@ -113,14 +113,14 @@ module Bulkrax
       #
       # @see #file_sets
       def candidate_file_set_ids
-        @candidate_file_set_ids ||= works.flat_map { |work| work.fetch("#{Bulkrax.file_model_class.to_s.underscore}_ids_ssim", []) }
+        @candidate_file_set_ids ||= works.flat_map { |work| work.fetch(Bulkrax.solr_key_for_member_file_ids, []) }
       end
 
       # @note Specifically not memoizing this so we can merge values without changing the object.
       #
       # No sense attempting to query for more than the limit.
       def query_kwargs
-        { fl: "id,#{Bulkrax.file_model_class.to_s.underscore}_ids_ssim", method: :post, rows: row_limit }
+        { fl: "id,#{Bulkrax.solr_key_for_member_file_ids}", method: :post, rows: row_limit }
       end
 
       # If we have a limit, we need not query beyond that limit

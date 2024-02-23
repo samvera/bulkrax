@@ -2,7 +2,7 @@
 
 module Bulkrax
   class DeleteJob < ApplicationJob
-    queue_as :import
+    queue_as Bulkrax.config.ingest_queue_name
 
     def perform(entry, importer_run)
       user = importer_run.importer.user
@@ -16,6 +16,10 @@ module Bulkrax
       entry.importer.current_run = ImporterRun.find(importer_run.id)
       entry.importer.record_status
       entry.set_status_info("Deleted", ImporterRun.find(importer_run.id))
+    rescue => e
+      entry.set_status_info(e)
+      # this causes caught exception to be reraised
+      raise
     end
   end
 end

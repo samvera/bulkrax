@@ -26,14 +26,14 @@ function removeRequired(allSources) {
 
 // hide all export_source
 function hide(allSources) {
-  allSources.addClass('d-none');
-  allSources.find('#exporter_export_source').addClass('.d-none').attr('type', 'd-none');
+  allSources.addClass('d-none hidden');
+  allSources.find('#exporter_export_source').addClass('.d-none hidden').attr('type', 'd-none hidden');
 }
 
 // unhide selected export_source
 function unhideSelected(selectedSource) {
-  selectedSource.removeClass('d-none').removeAttr('type');
-  selectedSource.parent().removeClass('d-none').removeAttr('type');
+  selectedSource.removeClass('d-none hidden').removeAttr('type');
+  selectedSource.parent().removeClass('d-none hidden').removeAttr('type');
 };
 
 // add the autocomplete javascript

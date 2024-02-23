@@ -40,7 +40,7 @@ module Bulkrax
 
     include DynamicRecordLookup
 
-    queue_as :import
+    queue_as Bulkrax.config.ingest_queue_name
 
     # @param parent_identifier [String] Work/Collection ID or Bulkrax::Entry source_identifiers
     # @param importer_run [Bulkrax::ImporterRun] current importer run (needed to properly update counters)
