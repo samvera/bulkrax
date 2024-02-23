@@ -120,7 +120,7 @@ module Bulkrax
       #
       # No sense attempting to query for more than the limit.
       def query_kwargs
-        { fl: "id,member_ids_ssim", method: :post, rows: row_limit }
+        { fl: "id,#{Bulkrax.solr_key_for_member_file_ids}", method: :post, rows: row_limit }
       end
 
       # If we have a limit, we need not query beyond that limit
