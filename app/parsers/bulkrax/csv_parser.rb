@@ -205,7 +205,7 @@ module Bulkrax
         target_files << target_file
         # Now because we want the files in place before the importer runs
         # Problematic for a large upload
-        Bulkrax::DownloadCloudFileJob.perform_now(file, target_file)
+        Bulkrax::DownloadCloudFileJob.perform_later(file, target_file)
       end
       importer[:parser_fields]['original_file_paths'] = target_files
       return nil
