@@ -3,8 +3,27 @@
 require "bulkrax/version"
 require "bulkrax/engine"
 require 'active_support/all'
+
 require 'coderay'
+require 'csv'
 require 'denormalize_fields'
+require 'erb'
+require 'iso8601'
+require 'language_list'
+require 'marcel'
+require 'nokogiri'
+require 'ostruct'
+require 'zip'
+
+def conditional_require(gem_name)
+  require gem_name
+rescue LoadError
+  ENV["BULKRAX_NO_#{gem_name.upcase}"] = 'true'
+end
+
+conditional_require 'bagit'
+conditional_require 'rdf'
+
 # rubocop:disable Metrics/ModuleLength
 module Bulkrax
   extend self # rubocop:disable Style/ModuleFunction
