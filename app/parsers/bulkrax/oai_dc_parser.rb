@@ -105,6 +105,24 @@ module Bulkrax
       set_status_info(e)
     end
 
+    def create_file_sets; end
+
+    def create_relationships
+      ScheduleRelationshipsJob.set(wait: 5.minutes).perform_later(importer_id: importerexporter.id)
+    end
+
+    def record_raw_metadata(record)
+      nil
+    end
+
+    def record_deleted?(record)
+      false
+    end
+
+    def record_remove_and_rerun?(record)
+      false
+    end
+
     # oai records so not let us set the source identifier easily
     def record_has_source_identifier(record, index)
       identifier = record.send(source_identifier)
