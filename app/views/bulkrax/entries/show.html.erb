@@ -36,7 +36,7 @@
         <% factory_record = @entry.factory.find %>
         <% if factory_record.present? && @entry.factory_class %>
           <strong><%= @entry.factory_class.to_s %> Link:</strong>
-          <% if @entry.factory_class.to_s == 'Collection' %>
+          <% if @entry.factory_class.to_s.downcase.include?('collection') %>
             <%= link_to @entry.factory_class.to_s, hyrax.polymorphic_path(factory_record) %>
           <% else %>
             <%= link_to @entry.factory_class.to_s, main_app.polymorphic_path(factory_record) %>

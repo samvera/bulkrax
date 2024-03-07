@@ -87,15 +87,25 @@ module Bulkrax
       cx = Hyrax::Forms::ResourceForm.for(klass.new).prepopulate!
       cx.validate(attrs)
 
-      result = transaction_create
-               .with_step_args(
+      result = if klass < Hyrax::PcdmCollection
+        create_collection_transaction.with_step_args(
+          'change_set.set_user_as_depositor' => { user: @user },
+          'change_set.add_to_collections' => { collection_ids: attributes[related_parents_parsed_mapping] }, # Array(params[:parent_id])
+          'collection_resource.apply_collection_type_permissions' => { user: @user }
+        )
+
+      #elsif klass == FileSetResource
+
+
+      else
+        create_work_transaction.with_step_args(
           # "work_resource.add_to_parent" => {parent_id: @related_parents_parsed_mapping, user: @user},
           "work_resource.#{Bulkrax::Transactions::Container::ADD_BULKRAX_FILES}" => { files: get_s3_files(remote_files: attributes["remote_files"]), user: @user },
           "change_set.set_user_as_depositor" => { user: @user },
           "work_resource.change_depositor" => { user: @user },
           'work_resource.save_acl' => { permissions_params: [attrs.try('visibility') || 'open'].compact }
         )
-               .call(cx)
+      end.call(cx)
 
       if result.failure?
         msg = result.failure[0].to_s
@@ -118,7 +128,7 @@ module Bulkrax
       cx = Hyrax::Forms::ResourceForm.for(@object)
       cx.validate(attrs)
 
-      result = transaction_update
+      result = update_work_transaction
                .with_step_args(
           "work_resource.#{Bulkrax::Transactions::Container::ADD_BULKRAX_FILES}" => { files: get_s3_files(remote_files: attributes["remote_files"]), user: @user }
 
@@ -182,7 +192,7 @@ module Bulkrax
       existing_files = fetch_child_file_sets(resource: @object)
 
       existing_files.each do |fs|
-        Hyrax::Transactions::Container["file_set.destroy"]
+        transactions["file_set.destroy"]
           .with_step_args("file_set.remove_from_work" => { user: @user },
                           "file_set.delete" => { user: @user })
           .call(fs)
@@ -206,19 +216,48 @@ module Bulkrax
 
     private
 
-    # TODO: Rename to transaction_create
-    def transaction_create
-      Hyrax::Transactions::Container["work_resource.#{Bulkrax::Transactions::Container::CREATE_WITH_BULK_BEHAVIOR}"]
+    def create_collection_transaction
+      # Hyrax::Transactions::CollectionCreate.new(steps: Bulkrax::Transactions::Container::COLLECTION_CREATE_WITH_BULK_BEHAVIOR)
+      # change_set.create_collection
+      transactions["change_set.create_collection"]
+      # Hyrax::Transactions::Container["collection_resource.#{Bulkrax::Transactions::Container::COLLECTION_CREATE_WITH_BULK_BEHAVIOR}"]
+    end
+
+    # TODO: Rename to create_work_transaction
+    def create_work_transaction
+      # check if collection and call a different registration
+      transactions["work_resource.#{Bulkrax::Transactions::Container::CREATE_WITH_BULK_BEHAVIOR}"]
     end
 
     # Customize Hyrax::Transactions::WorkUpdate transaction with bulkrax
-    def transaction_update
-      Hyrax::Transactions::Container["work_resource.#{Bulkrax::Transactions::Container::UPDATE_WITH_BULK_BEHAVIOR}"]
+    def update_work_transaction
+      transactions["work_resource.#{Bulkrax::Transactions::Container::UPDATE_WITH_BULK_BEHAVIOR}"]
+    end
+
+    def create_file_set_transaction
+      # TODO:
     end
 
     # Query child FileSet in the resource/object
     def fetch_child_file_sets(resource:)
       Hyrax.custom_queries.find_child_file_sets(resource: resource)
+    end
+    
+    ##
+    # @api private
+    #
+    # @return [#[]] a resolver for Hyrax's Transactions; this *should* be a
+    #   thread-safe {Dry::Container}, but callers to this method should strictly
+    #   use +#[]+ for access.
+    #
+    # @example
+    #   transactions['change_set.create_work'].call(my_form)
+    #
+    # @see Hyrax::Transactions::Container
+    # @see Hyrax::Transactions::Transaction
+    # @see https://dry-rb.org/gems/dry-container
+    def transactions
+      Hyrax::Transactions::Container
     end
   end
   # rubocop:enable Metrics/ClassLength

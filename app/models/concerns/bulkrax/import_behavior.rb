@@ -28,6 +28,8 @@ module Bulkrax
     end
 
     def add_user_to_permission_templates!
+      return unless @item.respond_to?(:reset_access_controls!)
+
       permission_template = Hyrax::PermissionTemplate.find_or_create_by!(source_id: @item.id)
 
       Hyrax::PermissionTemplateAccess.find_or_create_by!(
