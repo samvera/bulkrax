@@ -175,11 +175,12 @@ module Bulkrax
       transaction = yield
 
       result = transaction.call(form)
-      return result unless result.failure?
 
-      msg = result.failure[0].to_s
-      msg += " - #{result.failure[1].full_messages.join(',')}" if result.failure[1].respond_to?(:full_messages)
-      raise StandardError, msg, result.trace
+      result.value_or do
+        msg = result.failure[0].to_s
+        msg += " - #{result.failure[1].full_messages.join(',')}" if result.failure[1].respond_to?(:full_messages)
+        raise StandardError, msg, result.trace
+      end
     end
 
     def get_s3_files(remote_files: {})
