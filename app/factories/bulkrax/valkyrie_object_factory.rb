@@ -90,7 +90,7 @@ module Bulkrax
       result = transaction_create
                .with_step_args(
           # "work_resource.add_to_parent" => {parent_id: @related_parents_parsed_mapping, user: @user},
-          "work_resource.#{Bulkrax::Transactions::Container::ADD_BULKRAX_FILES}" => { files: get_s3_files(remote_files: attributes["remote_files"]), user: @user },
+          "work_resource.add_bulkrax_files" => { files: get_s3_files(remote_files: attributes["remote_files"]), user: @user },
           "change_set.set_user_as_depositor" => { user: @user },
           "work_resource.change_depositor" => { user: @user },
           'work_resource.save_acl' => { permissions_params: [attrs.try('visibility') || 'open'].compact }
@@ -120,7 +120,7 @@ module Bulkrax
 
       result = transaction_update
                .with_step_args(
-          "work_resource.#{Bulkrax::Transactions::Container::ADD_BULKRAX_FILES}" => { files: get_s3_files(remote_files: attributes["remote_files"]), user: @user }
+          "work_resource.add_bulkrax_files" => { files: get_s3_files(remote_files: attributes["remote_files"]), user: @user }
 
           # TODO: uncomment when we upgrade Hyrax 4.x
           # 'work_resource.save_acl' => { permissions_params: [attrs.try('visibility') || 'open'].compact }
@@ -208,12 +208,12 @@ module Bulkrax
 
     # TODO: Rename to transaction_create
     def transaction_create
-      Hyrax::Transactions::Container["work_resource.#{Bulkrax::Transactions::Container::CREATE_WITH_BULK_BEHAVIOR}"]
+      Hyrax::Transactions::Container["work_resource.create_with_bulk_behavior"]
     end
 
     # Customize Hyrax::Transactions::WorkUpdate transaction with bulkrax
     def transaction_update
-      Hyrax::Transactions::Container["work_resource.#{Bulkrax::Transactions::Container::UPDATE_WITH_BULK_BEHAVIOR}"]
+      Hyrax::Transactions::Container["work_resource.update_with_bulk_behavior"]
     end
 
     # Query child FileSet in the resource/object
