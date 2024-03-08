@@ -35,11 +35,11 @@
       <% if @importer.present? %>
         <% factory_record = @entry.factory.find %>
         <% if factory_record.present? && @entry.factory_class %>
-          <strong><%= @entry.factory_class.to_s %> Link:</strong>
-          <% if @entry.factory_class.to_s == 'Collection' %>
-            <%= link_to @entry.factory_class.to_s, hyrax.polymorphic_path(factory_record) %>
+          <strong><%= @entry.factory_class.model_name.human %> Link:</strong>
+          <% if defined?(Hyrax) && @entry.factory_class.model_name.human == 'Collection' %>
+            <%= link_to @entry.factory_class.model_name.human, hyrax.polymorphic_path(factory_record) %>
           <% else %>
-            <%= link_to @entry.factory_class.to_s, main_app.polymorphic_path(factory_record) %>
+            <%= link_to @entry.factory_class.model_name.human, main_app.polymorphic_path(factory_record) %>
           <% end %>
         <% else %>
           <strong>Item Link:</strong> Item has not yet been imported successfully
@@ -47,11 +47,11 @@
       <% else %>
         <% record = @entry&.hyrax_record %>
         <% if record.present? && @entry.factory_class %>
-          <strong><%= record.class.to_s %> Link:</strong>
-          <% if defined?(Collection) && record.is_a?(Collection) %>
-            <%= link_to record.class.to_s, hyrax.polymorphic_path(record) %>
+          <strong><%= record.model_name.human %> Link:</strong>
+          <% if defined?(Hyrax) && record.model_name.human == "Collection" %>
+            <%= link_to record.model_name.human, hyrax.polymorphic_path(record) %>
           <% else %>
-            <%= link_to record.class.to_s, main_app.polymorphic_path(record) %>
+            <%= link_to record.model_name.human, main_app.polymorphic_path(record) %>
           <% end %>
         <% else %>
           <strong>Item Link:</strong> No item associated with this entry or class unknown
