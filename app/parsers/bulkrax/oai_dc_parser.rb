@@ -111,15 +111,15 @@ module Bulkrax
       ScheduleRelationshipsJob.set(wait: 5.minutes).perform_later(importer_id: importerexporter.id)
     end
 
-    def record_raw_metadata(record)
+    def record_raw_metadata(_record)
       nil
     end
 
-    def record_deleted?(record)
+    def record_deleted?(_record)
       false
     end
 
-    def record_remove_and_rerun?(record)
+    def record_remove_and_rerun?(_record)
       false
     end
 
