@@ -272,7 +272,7 @@ module Bulkrax
     end
 
     # Optional, define if using browse everything for file upload
-    def retrieve_cloud_files(files); end
+    def retrieve_cloud_files(_files, _importer); end
 
     # @param file [#path, #original_filename] the file object that with the relevant data for the
     #        import.
