@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'csv'
-
 module Bulkrax
   # TODO: We need to rework this class some to address the Metrics/ClassLength rubocop offense.
   # We do too much in these entry classes. We need to extract the common logic from the various

@@ -1,6 +1,4 @@
 # frozen_string_literal: true
-require 'marcel'
-
 module Bulkrax
   class XmlParser < ApplicationParser
     def entry_class

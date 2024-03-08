@@ -1,6 +1,4 @@
 # frozen_string_literal: true
-require 'zip'
-require 'marcel'
 
 module Bulkrax
   # An abstract class that establishes the API for Bulkrax's import and export parsing.
