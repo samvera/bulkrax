@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'iso8601'
-
 module Bulkrax
   class Importer < ApplicationRecord # rubocop:disable Metrics/ClassLength
     include Bulkrax::ImporterExporterBehavior

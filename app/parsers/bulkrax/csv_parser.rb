@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'csv'
 module Bulkrax
   class CsvParser < ApplicationParser # rubocop:disable Metrics/ClassLength
     include ErroredEntries
