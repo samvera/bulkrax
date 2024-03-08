@@ -1,8 +1,5 @@
 # frozen_string_literal: true
 
-require 'erb'
-require 'ostruct'
-
 module Bulkrax
   class OaiEntry < Entry
     serialize :raw_metadata, Bulkrax::NormalizedJson

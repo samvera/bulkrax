@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'language_list'
-
 module Bulkrax
   class ApplicationMatcher
     attr_accessor :to, :from, :parsed, :if, :split, :excluded, :nested_type
