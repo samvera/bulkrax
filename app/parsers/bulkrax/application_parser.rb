@@ -247,11 +247,13 @@ module Bulkrax
     end
 
     def record_deleted?(record)
-      record[:delete].present?
+      return false unless record.key?(:delete)
+      ActiveModel::Type::Boolean.new.cast(record[:delete])
     end
 
     def record_remove_and_rerun?(record)
-      record[:remove_and_rerun].present?
+      return false unless record.key?(:remove_and_rerun)
+      ActiveModel::Type::Boolean.new.cast(record[:remove_and_rerun])
     end
 
     def create_entry_and_job(current_record, type, identifier = nil)
