@@ -17,13 +17,6 @@ module Bulkrax
         steps
       end.freeze
 
-      namespace "collection_resource" do |ops|
-        ops.register COLLECTION_CREATE_WITH_BULK_BEHAVIOR do
-          Hyrax::Transactions::CollectionCreate.new(steps: COLLECTION_CREATE_WITH_BULK_BEHAVIOR_STEPS)
-        end
-
-      end
-
       namespace "work_resource" do |ops|
         ops.register 'create_with_bulk_behavior' do
           Hyrax::Transactions::WorkCreate.new(steps: CREATE_WITH_BULK_BEHAVIOR_STEPS)
