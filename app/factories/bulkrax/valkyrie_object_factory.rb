@@ -230,10 +230,10 @@ module Bulkrax
 
     def conditionally_destroy_existing_files
       return unless @replace_files
-      case klass
-      when Hyrax::PcdmCollection, Hyrax::FileSet
+    
+      if [Hyrax::PcdmCollection, Hyrax::FileSet].include?(klass)
         return
-      when Valkyrie::Resource
+      elsif klass.ancestors.include?(Valkyrie::Resource)
         destroy_existing_files
       else
         raise "Unexpected #{klass} for #{self.class}##{__method__}"
