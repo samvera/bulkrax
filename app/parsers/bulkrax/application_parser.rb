@@ -240,16 +240,30 @@ module Bulkrax
       return 0
     end
 
+    def record_raw_metadata(record)
+      record.to_h
+    end
+
+    def record_deleted?(record)
+      return false unless record.key?(:delete)
+      ActiveModel::Type::Boolean.new.cast(record[:delete])
+    end
+
+    def record_remove_and_rerun?(record)
+      return false unless record.key?(:remove_and_rerun)
+      ActiveModel::Type::Boolean.new.cast(record[:remove_and_rerun])
+    end
+
     def create_entry_and_job(current_record, type, identifier = nil)
       identifier ||= current_record[source_identifier]
       new_entry = find_or_create_entry(send("#{type}_entry_class"),
                                        identifier,
                                        'Bulkrax::Importer',
-                                       current_record.to_h)
+                                       record_raw_metadata(current_record))
       new_entry.status_info('Pending', importer.current_run)
-      if current_record[:delete].present?
+      if record_deleted?(current_record)
         "Bulkrax::Delete#{type.camelize}Job".constantize.send(perform_method, new_entry, current_run)
-      elsif current_record[:remove_and_rerun].present? || remove_and_rerun
+      elsif record_remove_and_rerun?(current_record) || remove_and_rerun
         delay = calculate_type_delay(type)
         "Bulkrax::DeleteAndImport#{type.camelize}Job".constantize.set(wait: delay).send(perform_method, new_entry, current_run)
       else
