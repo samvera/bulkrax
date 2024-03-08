@@ -39,7 +39,7 @@ module Bulkrax
     ##
     # Retrieve properties from M3 model
     # @param klass the model
-    # return Array<string>
+    # @return [Array<String>]
     def self.schema_properties(klass)
       @schema_properties_map ||= {}
 
@@ -80,64 +80,104 @@ module Bulkrax
               .merge(alternate_ids: [source_identifier_value])
               .symbolize_keys
 
-      # temporary workaround just to see if we can get the import to work
       attrs[:title] = [''] if attrs[:title].blank?
       attrs[:creator] = [''] if attrs[:creator].blank?
 
-      cx = Hyrax::Forms::ResourceForm.for(klass.new).prepopulate!
-      cx.validate(attrs)
+      object = klass.new
+      @object = case object
+                when Hyrax::PcdmCollection
+                  create_collection(object: object, attrs: attrs)
+                when Hyrax::FileSet
+                  # TODO
+                when Hyrax::Resource
+                  create_work(object: object, attrs: attrs)
+                else
+                  raise "Unable to handle #{klass} for #{self.class}##{__method__}"
+                end
+    end
 
-      result = if klass < Hyrax::PcdmCollection
-        create_collection_transaction.with_step_args(
-          'change_set.set_user_as_depositor' => { user: @user },
-          'change_set.add_to_collections' => { collection_ids: attributes[related_parents_parsed_mapping] }, # Array(params[:parent_id])
-          'collection_resource.apply_collection_type_permissions' => { user: @user }
-        )
-
-      #elsif klass == FileSetResource
-
-
-      else
-        create_work_transaction.with_step_args(
-          # "work_resource.add_to_parent" => {parent_id: @related_parents_parsed_mapping, user: @user},
-          "work_resource.#{Bulkrax::Transactions::Container::ADD_BULKRAX_FILES}" => { files: get_s3_files(remote_files: attributes["remote_files"]), user: @user },
-          "change_set.set_user_as_depositor" => { user: @user },
-          "work_resource.change_depositor" => { user: @user },
-          'work_resource.save_acl' => { permissions_params: [attrs.try('visibility') || 'open'].compact }
-        )
-      end.call(cx)
-
-      if result.failure?
-        msg = result.failure[0].to_s
-        msg += " - #{result.failure[1].full_messages.join(',')}" if result.failure[1].respond_to?(:full_messages)
-        raise StandardError, msg, result.trace
+    def create_work(object:, attrs:)
+      perform_transaction_for(object: object, attrs: attrs) do
+        transactions["work_resource.create_with_bulk_behavior"]
+          .with_step_args(
+            "work_resource.add_to_parent" => { parent_id: attrs[related_parents_parsed_mapping], user: @user },
+            "work_resource.add_bulkrax_files" => { files: get_s3_files(remote_files: attributes["remote_files"]), user: @user },
+            "change_set.set_user_as_depositor" => { user: @user },
+            "work_resource.change_depositor" => { user: @user },
+            'work_resource.save_acl' => { permissions_params: [attrs.try('visibility') || 'open'].compact }
+          )
       end
+    end
 
-      @object = result.value!
-
-      @object
+    def create_collection(object:, attrs:)
+      perform_transaction_for(object: object, attrs: attrs) do
+        transactions['change_set.create_collection']
+          .with_step_args(
+            'change_set.set_user_as_depositor' => { user: @user },
+            'change_set.add_to_collections' => { collection_ids: Array(attrs[related_parents_parsed_mapping]) },
+            'collection_resource.apply_collection_type_permissions' => { user: @user }
+          )
+      end
     end
 
     def update
       raise "Object doesn't exist" unless @object
 
-      destroy_existing_files if @replace_files && ![Collection, FileSet].include?(klass)
-
+      conditionally_destroy_existing_files
       attrs = transform_attributes(update: true)
 
-      cx = Hyrax::Forms::ResourceForm.for(@object)
-      cx.validate(attrs)
+      @object = case @object
+                when Hyrax::PcdmCollection
+                  # update_collection(attrs)
+                when Hyrax::FileSet
+                  # TODO
+                when Hyrax::Resource
+                  update_work(object: @object, attrs: attrs)
+                else
+                  raise "Unable to handle #{klass} for #{self.class}##{__method__}"
+                end
+    end
 
-      result = update_work_transaction
-               .with_step_args(
-          "work_resource.#{Bulkrax::Transactions::Container::ADD_BULKRAX_FILES}" => { files: get_s3_files(remote_files: attributes["remote_files"]), user: @user }
+    def update_work(object:, attrs:)
+      perform_transaction_for(object: object, attrs: attrs) do
+        transactions["work_resource.update_with_bulk_behavior"]
+          .with_step_args(
+                        "work_resource.add_bulkrax_files" => { files: get_s3_files(remote_files: attrs["remote_files"]), user: @user },
+                        'work_resource.save_acl' => { permissions_params: [attrs.try('visibility') || 'open'].compact }
+                      )
+      end
+    end
 
-          # TODO: uncomment when we upgrade Hyrax 4.x
-          # 'work_resource.save_acl' => { permissions_params: [attrs.try('visibility') || 'open'].compact }
-        )
-               .call(cx)
+    ##
+    # @param object [Valkyrie::Resource]
+    # @param attrs [Valkyrie::Resource]
+    # @return [Valkyrie::Resource] when we successfully processed the
+    #         transaction (e.g. the transaction's data was valid according to
+    #         the derived form)
+    #
+    # @yield the returned value of the yielded block should be a
+    #        {Hyrax::Transactions::Transaction}.  We yield because the we first
+    #        want to check if the attributes are valid.  And if so, then process
+    #        the transaction, which is something that could trigger expensive
+    #        operations.  Put another way, don't do something expensive if the
+    #        data is invalid.
+    #
+    # TODO What do we return when the calculated form fails?
+    # @raise [StandardError] when there was a failure calling the translation.
+    def perform_transaction_for(object:, attrs:)
+      form = Hyrax::Forms::ResourceForm.for(object).prepopulate!
 
-      @object = result.value!
+      # TODO: Handle validations
+      form.validate(attrs)
+
+      transaction = yield
+
+      result = transaction.call(form)
+      return result unless result.failure?
+
+      msg = result.failure[0].to_s
+      msg += " - #{result.failure[1].full_messages.join(',')}" if result.failure[1].respond_to?(:full_messages)
+      raise StandardError, msg, result.trace
     end
 
     def get_s3_files(remote_files: {})
@@ -187,6 +227,18 @@ module Bulkrax
                             end
     end
 
+    def conditionally_destroy_existing_files
+      return unless @replace_files
+      case klass
+      when Hyrax::PcdmCollection, Hyrax::FileSet
+        return
+      when Valkyrie::Resource
+        destroy_existing_files
+      else
+        raise "Unexpected #{klass} for #{self.class}##{__method__}"
+      end
+    end
+
     # @Override Destroy existing files with Hyrax::Transactions
     def destroy_existing_files
       existing_files = fetch_child_file_sets(resource: @object)
@@ -216,35 +268,13 @@ module Bulkrax
 
     private
 
-    def create_collection_transaction
-      # Hyrax::Transactions::CollectionCreate.new(steps: Bulkrax::Transactions::Container::COLLECTION_CREATE_WITH_BULK_BEHAVIOR)
-      # change_set.create_collection
-      transactions["change_set.create_collection"]
-      # Hyrax::Transactions::Container["collection_resource.#{Bulkrax::Transactions::Container::COLLECTION_CREATE_WITH_BULK_BEHAVIOR}"]
-    end
-
-    # TODO: Rename to create_work_transaction
-    def create_work_transaction
-      # check if collection and call a different registration
-      transactions["work_resource.#{Bulkrax::Transactions::Container::CREATE_WITH_BULK_BEHAVIOR}"]
-    end
-
-    # Customize Hyrax::Transactions::WorkUpdate transaction with bulkrax
-    def update_work_transaction
-      transactions["work_resource.#{Bulkrax::Transactions::Container::UPDATE_WITH_BULK_BEHAVIOR}"]
-    end
-
-    def create_file_set_transaction
-      # TODO:
-    end
-
     # Query child FileSet in the resource/object
     def fetch_child_file_sets(resource:)
       Hyrax.custom_queries.find_child_file_sets(resource: resource)
     end
-    
+
     ##
-    # @api private
+    # @api public
     #
     # @return [#[]] a resolver for Hyrax's Transactions; this *should* be a
     #   thread-safe {Dry::Container}, but callers to this method should strictly
