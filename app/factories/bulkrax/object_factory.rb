@@ -104,7 +104,7 @@ module Bulkrax
 
     def update
       raise "Object doesn't exist" unless object
-      destroy_existing_files if @replace_files && ![Collection, FileSet].include?(klass)
+      destroy_existing_files if @replace_files && ![Collection, CollectionResource, FileSet].include?(klass)
       attrs = transform_attributes(update: true)
       run_callbacks :save do
         if klass == Collection
