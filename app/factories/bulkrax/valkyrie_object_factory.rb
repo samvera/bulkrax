@@ -49,6 +49,12 @@ module Bulkrax
       @schema_properties_map[klass_key]
     end
 
+    def self.ordered_file_sets_for(object)
+      return [] if object.blank?
+
+      Hyrax.custom_queries.find_child_file_sets(resource: object)
+    end
+
     def run!
       run
       return object if object.persisted?
@@ -101,7 +107,7 @@ module Bulkrax
         transactions["work_resource.create_with_bulk_behavior"]
           .with_step_args(
             "work_resource.add_to_parent" => { parent_id: attrs[related_parents_parsed_mapping], user: @user },
-            "work_resource.add_bulkrax_files" => { files: get_s3_files(remote_files: attributes["remote_files"]), user: @user },
+            "work_resource.add_bulkrax_files" =>  { files: get_files(attrs) }, #get_s3_files(remote_files: attrs["remote_files"]), user: @user },
             "change_set.set_user_as_depositor" => { user: @user },
             "work_resource.change_depositor" => { user: @user },
             'work_resource.save_acl' => { permissions_params: [attrs.try('visibility') || 'open'].compact }
@@ -142,7 +148,7 @@ module Bulkrax
       perform_transaction_for(object: object, attrs: attrs) do
         transactions["work_resource.update_with_bulk_behavior"]
           .with_step_args(
-                        "work_resource.add_bulkrax_files" => { files: get_s3_files(remote_files: attrs["remote_files"]), user: @user },
+                        "work_resource.add_bulkrax_files" => { files: get_files(attrs) }, # get_s3_files(remote_files: attrs["remote_files"]), user: @user }
                         'work_resource.save_acl' => { permissions_params: [attrs.try('visibility') || 'open'].compact }
                       )
       end
@@ -183,7 +189,6 @@ module Bulkrax
     end
 
     def get_files(attrs)
-      byebug
       get_local_files(attrs) #+ get_s3_files(remote_files: attrs["remote_files"])
     end
 
@@ -250,9 +255,9 @@ module Bulkrax
     def conditionally_destroy_existing_files
       return unless @replace_files
     
-      if [Hyrax::PcdmCollection, Hyrax::FileSet].include?(klass)
+      if [Hyrax::PcdmCollection, Hyrax::FileSet, Bulkrax::ValkyrieObjectFactory].include?(klass)
         return
-      elsif klass.ancestors.include?(Valkyrie::Resource)
+      elsif klass.ancestors.include?(Valkyrie::Resource) && klass != CollectionResource
         destroy_existing_files
       else
         raise "Unexpected #{klass} for #{self.class}##{__method__}"

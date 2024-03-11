@@ -113,8 +113,9 @@ module Bulkrax
     end
 
     def ordered_file_sets
+      # Bulkrax.object_factory.ordered_file_sets_for
       # OVERRIDE Hyrda-works 1.2.0 - this method was deprecated in v1.0
-      object&.ordered_members.to_a.select(&:file_set?)
+      Bulkrax.object_factory.ordered_file_sets_for(object)
     end
 
     def import_files
