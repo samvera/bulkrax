@@ -230,7 +230,7 @@ module Bulkrax
       type_col = Bulkrax::Entry.arel_table['type']
       status_col = Bulkrax::Entry.arel_table['status_message']
 
-      query = (type == 'work' ? type_col.not.matches(%w[collection file_set]) : type_col.matches(type.camelize))
+      query = (type == 'work' ? type_col.does_not_match_all(%w[collection file_set]) : type_col.matches(type.camelize))
       query.and(status_col.in(statuses))
     end
 
