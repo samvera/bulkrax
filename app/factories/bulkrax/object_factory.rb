@@ -35,6 +35,11 @@ module Bulkrax
         ActiveFedora.index_field_mapper.solr_name(field_name)
       end
     end
+
+    def self.ordered_file_sets_for(object)
+      object&.ordered_members.to_a.select(&:file_set?)
+    end
+
     # @!endgroup Class Method Interface
     ##
 
