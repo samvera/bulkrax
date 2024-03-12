@@ -49,12 +49,6 @@ module Bulkrax
       @schema_properties_map[klass_key]
     end
 
-    def self.ordered_file_sets_for(object)
-      return [] if object.blank?
-
-      Hyrax.custom_queries.find_child_file_sets(resource: object)
-    end
-
     def run!
       run
       return object if object.persisted?
@@ -180,7 +174,6 @@ module Bulkrax
 
       transaction = yield
 
-      # result = transaction.call(form)
       result = transaction.call(form)
 
       result.value_or do
@@ -188,23 +181,6 @@ module Bulkrax
         msg += " - #{result.failure[1].full_messages.join(',')}" if result.failure[1].respond_to?(:full_messages)
         raise StandardError, msg, result.trace
       end
-    end
-
-    def get_files(attrs)
-      get_local_files(attrs) #+ get_s3_files(remote_files: attrs["remote_files"])
-    end
-
-    def get_local_files(attrs)
-      # byebug # what properties will we get here?
-      # {:title=>["valkyrie resource 3"], :admin_set_id=>"admin_set/default", :contributor=>[], :creator=>["jg"], :description=>[], :identifier=>[], :keyword=>["bulk test"], :publisher=>[], :language=>[], :license=>[], :resource_type=>["Image"], :rights_statement=>[""], :source=>["6"], :subject=>[], :uploaded_files=>[40], :alternate_ids=>["6"]}
-      # Hyrax::UploadedFile.find'40'
-      return [] if attrs[:uploaded_files].blank?
-
-      @files = attrs[:uploaded_files].map do |file_id|
-        Hyrax::UploadedFile.find(file_id)
-      end
-
-      @files
     end
 
     def get_s3_files(remote_files: {})
@@ -259,7 +235,7 @@ module Bulkrax
     
       if [Hyrax::PcdmCollection, Hyrax::FileSet, CollectionResource].include?(klass)
         return
-      elsif klass.ancestors.include?(Valkyrie::Resource) && klass != CollectionResource
+      elsif klass.ancestors.include?(Valkyrie::Resource)
         destroy_existing_files
       else
         raise "Unexpected #{klass} for #{self.class}##{__method__}"

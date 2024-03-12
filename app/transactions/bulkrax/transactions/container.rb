@@ -37,7 +37,7 @@ module Bulkrax
       end
 
       namespace "file_set_resource" do |ops|
-        # TODO:
+        # TODO: to implement
       end
     end
   end

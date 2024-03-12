@@ -16,9 +16,10 @@ module Wings
         @query_service = query_service
       end
 
-      def find_by_source_identifier(work_identifier:, source_identifier_value:, use_valkyrie: Hyrax.config.use_valkyrie?)
-        work_identifier_key = Bulkrax.object_factory.solr_name(work_identifier)
-        af_object = ActiveFedora::Base.where("#{work_identifier_key}:#{source_identifier_value}").first
+      def find_by_source_identifier(identifier:, use_valkyrie: true)
+        # TODO: Make more dynamic. Not all application use bulkrax_identifier
+        # Fetch the app's source_identifier and search by that instead
+        af_object = ActiveFedora::Base.where("bulkrax_identifier_sim:#{identifier}").first
 
         return af_object unless use_valkyrie
 
