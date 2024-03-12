@@ -8,12 +8,12 @@ module Bulkrax
 
       CREATE_WITH_BULK_BEHAVIOR_STEPS = begin
         steps = Hyrax::Transactions::WorkCreate::DEFAULT_STEPS.dup
-        steps[steps.index("work_resource.add_file_sets")] = "work_resource.add_bulkrax_files"
+        # steps[steps.index("work_resource.add_file_sets")] = "work_resource.add_bulkrax_files"
         steps
       end.freeze
       UPDATE_WITH_BULK_BEHAVIOR_STEPS = begin
         steps = Hyrax::Transactions::WorkUpdate::DEFAULT_STEPS.dup
-        steps[steps.index("work_resource.add_file_sets")] = "work_resource.add_bulkrax_files"
+        # steps[steps.index("work_resource.add_file_sets")] = "work_resource.add_bulkrax_files"
         steps
       end.freeze
 
