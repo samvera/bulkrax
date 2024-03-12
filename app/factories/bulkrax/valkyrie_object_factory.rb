@@ -107,7 +107,7 @@ module Bulkrax
         transactions["work_resource.create_with_bulk_behavior"]
           .with_step_args(
             "work_resource.add_to_parent" => { parent_id: attrs[related_parents_parsed_mapping], user: @user },
-            'work_resource.add_file_sets' => { uploaded_files: get_files(attrs)}, 
+            'work_resource.add_file_sets' => { uploaded_files: get_files(attrs) },
             # "work_resource.add_bulkrax_files" =>  { files: get_files(attrs), user: @user }, #get_s3_files(remote_files: attrs["remote_files"]), user: @user },
             "change_set.set_user_as_depositor" => { user: @user },
             "work_resource.change_depositor" => { user: @user },
@@ -149,10 +149,10 @@ module Bulkrax
       perform_transaction_for(object: object, attrs: attrs) do
         transactions["work_resource.update_with_bulk_behavior"]
           .with_step_args(
-            'work_resource.add_file_sets' => { uploaded_files: get_files(attrs)}, 
-                        # "work_resource.add_bulkrax_files" => { files: get_files(attrs), user: @user }, # get_s3_files(remote_files: attrs["remote_files"]), user: @user }
-                        'work_resource.save_acl' => { permissions_params: [attrs.try('visibility') || 'open'].compact }
-                      )
+            'work_resource.add_file_sets' => { uploaded_files: get_files(attrs) },
+            # "work_resource.add_bulkrax_files" => { files: get_files(attrs), user: @user }, # get_s3_files(remote_files: attrs["remote_files"]), user: @user }
+            'work_resource.save_acl' => { permissions_params: [attrs.try('visibility') || 'open'].compact }
+          )
       end
     end
 
@@ -190,13 +190,10 @@ module Bulkrax
     end
 
     def get_files(attrs)
-      get_local_files(attrs) #+ get_s3_files(remote_files: attrs["remote_files"])
+      get_local_files(attrs) # + get_s3_files(remote_files: attrs["remote_files"])
     end
 
     def get_local_files(attrs)
-      # byebug # what properties will we get here?
-      # {:title=>["valkyrie resource 3"], :admin_set_id=>"admin_set/default", :contributor=>[], :creator=>["jg"], :description=>[], :identifier=>[], :keyword=>["bulk test"], :publisher=>[], :language=>[], :license=>[], :resource_type=>["Image"], :rights_statement=>[""], :source=>["6"], :subject=>[], :uploaded_files=>[40], :alternate_ids=>["6"]}
-      # Hyrax::UploadedFile.find'40'
       return [] if attrs[:uploaded_files].blank?
 
       @files = attrs[:uploaded_files].map do |file_id|
@@ -255,7 +252,7 @@ module Bulkrax
 
     def conditionally_destroy_existing_files
       return unless @replace_files
-    
+
       if [Hyrax::PcdmCollection, Hyrax::FileSet, CollectionResource].include?(klass)
         return
       elsif klass.ancestors.include?(Valkyrie::Resource)
