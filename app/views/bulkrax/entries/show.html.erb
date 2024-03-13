@@ -33,6 +33,7 @@
 
     <p class='bulkrax-p-align'>
       <% if @importer.present? %>
+	<%# TODO Consider how to account for Bulkrax.collection_model_class %>
         <% factory_record = @entry.factory.find %>
         <% if factory_record.present? && @entry.factory_class %>
           <strong><%= @entry.factory_class.model_name.human %> Link:</strong>

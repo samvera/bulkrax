@@ -67,7 +67,7 @@ module Bulkrax
         end
 
         context 'when a collection is found' do
-          let(:collection) { instance_double(::Collection) }
+          let(:collection) { Bulkrax.collection_model_class.new }
 
           before do
             allow(Bulkrax.object_factory).to receive(:find).with(id).and_return(collection)
