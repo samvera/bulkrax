@@ -11,6 +11,7 @@ module Bulkrax
         unless self.importerexporter.validate_only
           raise CollectionsCreatedError unless collections_created?
           @item = factory.run!
+          # TODO: This is a cheat for the class is a CollectionEntry.  Consider that we have default_work_type.
           add_user_to_permission_templates! if self.class.to_s.include?("Collection") && defined?(::Hyrax)
           parent_jobs if self.parsed_metadata[related_parents_parsed_mapping]&.join.present?
           child_jobs if self.parsed_metadata[related_children_parsed_mapping]&.join.present?

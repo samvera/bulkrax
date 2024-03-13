@@ -162,9 +162,9 @@ module Bulkrax
       object.reindex_extent = Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX if defined?(Hyrax::Adapters::NestingIndexAdapter) && object.respond_to?(:reindex_extent)
       run_callbacks :save do
         run_callbacks :create do
-          if klass == Collection
+          if klass == Bulkrax.collection_model_class
             create_collection(attrs)
-          elsif klass == FileSet
+          elsif klass == Bulkrax.file_model_class
             create_file_set(attrs)
           else
             create_work(attrs)

@@ -87,9 +87,9 @@ module Bulkrax
 
       object = klass.new
       @object = case object
-                when Hyrax::PcdmCollection
+                when Bulkrax.collection_model_class
                   create_collection(object: object, attrs: attrs)
-                when Hyrax::FileSet
+                when Bulkrax.file_model_class
                   # TODO
                 when Hyrax::Resource
                   create_work(object: object, attrs: attrs)
@@ -129,9 +129,9 @@ module Bulkrax
       attrs = transform_attributes(update: true)
 
       @object = case @object
-                when Hyrax::PcdmCollection
+                when Bulkrax.collection_model_class
                   # update_collection(attrs)
-                when Hyrax::FileSet
+                when Bulkrax.file_model_class
                   # TODO
                 when Hyrax::Resource
                   update_work(object: @object, attrs: attrs)
@@ -233,7 +233,7 @@ module Bulkrax
     def conditionally_destroy_existing_files
       return unless @replace_files
       case klass
-      when Hyrax::PcdmCollection, Hyrax::FileSet
+      when Bulkrax.collection_model_class, Bulkrax.file_model_class
         return
       when Valkyrie::Resource
         destroy_existing_files

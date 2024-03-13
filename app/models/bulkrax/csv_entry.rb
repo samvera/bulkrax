@@ -144,7 +144,7 @@ module Bulkrax
       self.parsed_metadata = {}
 
       build_system_metadata
-      build_files_metadata if defined?(Collection) && !hyrax_record.is_a?(Collection)
+      build_files_metadata if Bulkrax.collection_model_class.present? && !hyrax_record.is_a?(Bulkrax.collection_model_class)
       build_relationship_metadata
       build_mapping_metadata
       self.save!

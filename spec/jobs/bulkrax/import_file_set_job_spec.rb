@@ -167,7 +167,7 @@ module Bulkrax
           end
 
           context 'when it references a collection' do
-            let(:non_work) { build(:collection) }
+            let(:non_work) { Bulkrax.collection_model_class.new }
 
             it 'raises an error' do
               expect { import_file_set_job.perform(entry.id, importer_run.id) }
