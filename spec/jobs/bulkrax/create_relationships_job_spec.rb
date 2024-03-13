@@ -15,13 +15,18 @@ module Bulkrax
     let(:parent_id) { parent_entry.identifier }
     let(:child_id) { child_entry.identifier }
 
+    around do |spec|
+      old = Bulkrax.object_factory
+      Bulkrax.object_factory = Bulkrax::MockObjectFactory
+      spec.run
+      Bulkrax.object_factory = old
+    end
     before do
       allow_any_instance_of(Ability).to receive(:authorize!).and_return(true)
 
       allow(create_relationships_job).to receive(:reschedule)
       allow(::Hyrax.config).to receive(:curation_concerns).and_return([Work])
-      allow(parent_record).to receive(:save!)
-      allow(child_record).to receive(:save!)
+      allow(Bulkrax::MockObjectFactory).to receive(:save!).and_return(true)
       allow(child_record).to receive(:update_index)
       allow(child_record).to receive(:member_of_collections).and_return([])
       allow(parent_record).to receive(:ordered_members).and_return([])
