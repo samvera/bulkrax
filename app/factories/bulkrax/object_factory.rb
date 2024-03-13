@@ -112,7 +112,7 @@ module Bulkrax
       destroy_existing_files if @replace_files && ![Bulkrax.config.collection_classes, Bulkrax.config.file_model_class].flatten.include?(klass)
       attrs = transform_attributes(update: true)
       run_callbacks :save do
-        if klass == Collection
+        if Bulkrax.config.collection_classes.include?(klass)
           update_collection(attrs)
         elsif klass == Bulkrax.config.file_model_class
           update_file_set(attrs)
