@@ -33,13 +33,10 @@ module Bulkrax
   # @api public
   class Configuration
     attr_accessor :api_definition,
-                  :collection_classes,
-                  :curation_concerns,
                   :default_field_mapping,
                   :default_work_type,
                   :export_path,
                   :field_mappings,
-                  :file_model_class,
                   :generated_metadata_mapping,
                   :import_path,
                   :multi_value_element_join_on,
@@ -93,6 +90,18 @@ module Bulkrax
     def factory_class_name_coercer
       @factory_class_name_coercer || Bulkrax::FactoryClassFinder::DefaultCoercer
     end
+
+    def file_model_class
+      @file_model_class ||= defined?(::Hyrax) ? ::FileSet : File
+    end
+
+    attr_writer :file_model_class
+
+    def curation_concerns
+      @curation_concerns ||= defined?(::Hyrax) ? ::Hyrax.config.curation_concerns : []
+    end
+
+    attr_writer :curation_concerns
 
     attr_writer :ingest_queue_name
     ##
@@ -190,30 +199,6 @@ module Bulkrax
     conf.server_name = 'bulkrax@example.com'
     conf.relationship_job_class = "Bulkrax::CreateRelationshipsJob"
     conf.required_elements = ['title']
-
-    def conf.collection_classes
-      @collection_classes ||= defined?(::Valkyrie) ? [Collection, CollectionResource] : [Collection]
-    end
-
-    def conf.collection_classes=(val)
-      @collection_classes = [val]
-    end
-
-    def conf.curation_concerns
-      @curation_concerns ||= defined?(::Hyrax) ? ::Hyrax.config.curation_concerns : []
-    end
-
-    def conf.curation_concerns=(val)
-      @curation_concerns = val
-    end
-
-    def conf.file_model_class
-      @file_model_class ||= defined?(::Hyrax) ? ::FileSet : File
-    end
-
-    def conf.file_model_class=(val)
-      @file_model_class = val
-    end
 
     # Hash of Generic field_mappings for use in the view
     # There must be one field_mappings hash per view partial
