@@ -36,6 +36,22 @@ module Bulkrax
       Hyrax::SolrService.query(q, **kwargs)
     end
 
+    def self.save!(resource:, user:, persister: Hyrax.persister, index_adapter: Hyrax.index_adapter)
+      if resource.respond_to?(:save!)
+        resource.save!
+      else
+        result = persister.save(resource: resource)
+        raise Valkyrie::Persistence::ObjectNotFoundError unless result
+        index_adapter.save(resource: result)
+        if result.collection?
+          Hyrax.publisher.publish('collection.metadata.updated', collection: result, user: user)
+        else
+          Hyrax.publisher.publish('object.metadata.updated', object: result, user: user)
+        end
+        resource
+      end
+    end
+
     ##
     # Retrieve properties from M3 model
     # @param klass the model
@@ -215,7 +231,7 @@ module Bulkrax
 
     # @Override remove branch for FileSets replace validation with errors
     def new_remote_files
-      @new_remote_files ||= if @object.is_a? FileSet
+      @new_remote_files ||= if @object.is_a? Bulkrax.file_model_class
                               parsed_remote_files.select do |file|
                                 # is the url valid?
                                 is_valid = file[:url]&.match(URI::ABS_URI)

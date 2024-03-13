@@ -35,6 +35,10 @@ module Bulkrax
         ActiveFedora.index_field_mapper.solr_name(field_name)
       end
     end
+
+    def self.save!(resource:, **)
+      resource.save!
+    end
     # @!endgroup Class Method Interface
     ##
 
