@@ -108,7 +108,7 @@ module Bulkrax
           .with_step_args(
             "work_resource.add_to_parent" => { parent_id: attrs[related_parents_parsed_mapping], user: @user },
             'work_resource.add_file_sets' => { uploaded_files: get_files(attrs) },
-            # "work_resource.add_bulkrax_files" =>  { files: get_files(attrs), user: @user }, #get_s3_files(remote_files: attrs["remote_files"]), user: @user },
+            # "work_resource.add_bulkrax_files" =>  { files: get_files(attrs), user: @user }, #get_s3_files(remote_files: attrs[:remote_files]), user: @user },
             "change_set.set_user_as_depositor" => { user: @user },
             "work_resource.change_depositor" => { user: @user },
             'work_resource.save_acl' => { permissions_params: [attrs.try('visibility') || 'open'].compact }
@@ -150,7 +150,7 @@ module Bulkrax
         transactions["work_resource.update_with_bulk_behavior"]
           .with_step_args(
             'work_resource.add_file_sets' => { uploaded_files: get_files(attrs) },
-            # "work_resource.add_bulkrax_files" => { files: get_files(attrs), user: @user }, # get_s3_files(remote_files: attrs["remote_files"]), user: @user }
+            # "work_resource.add_bulkrax_files" => { files: get_files(attrs), user: @user }, # get_s3_files(remote_files: attrs[:remote_files]), user: @user }
             'work_resource.save_acl' => { permissions_params: [attrs.try('visibility') || 'open'].compact }
           )
       end
@@ -190,7 +190,7 @@ module Bulkrax
     end
 
     def get_files(attrs)
-      get_local_files(attrs) # + get_s3_files(remote_files: attrs["remote_files"])
+      get_local_files(attrs) + get_s3_files(remote_files: attrs[:remote_files])
     end
 
     def get_local_files(attrs)

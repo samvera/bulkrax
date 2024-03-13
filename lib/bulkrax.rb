@@ -33,6 +33,7 @@ module Bulkrax
   # @api public
   class Configuration
     attr_accessor :api_definition,
+                  :collection_classes,
                   :curation_concerns,
                   :default_field_mapping,
                   :default_work_type,
@@ -122,6 +123,8 @@ module Bulkrax
   def_delegators :@config,
                  :api_definition,
                  :api_definition=,
+                 :collection_classes,
+                 :collection_classes=,
                  :curation_concerns,
                  :curation_concerns=,
                  :default_field_mapping,
@@ -187,6 +190,14 @@ module Bulkrax
     conf.server_name = 'bulkrax@example.com'
     conf.relationship_job_class = "Bulkrax::CreateRelationshipsJob"
     conf.required_elements = ['title']
+
+    def conf.collection_classes
+      @collection_classes ||= defined?(::Valkyrie) ? [Collection, CollectionResource] : [Collection]
+    end
+
+    def conf.collection_classes=(val)
+      @collection_classes = [val]
+    end
 
     def conf.curation_concerns
       @curation_concerns ||= defined?(::Hyrax) ? ::Hyrax.config.curation_concerns : []
