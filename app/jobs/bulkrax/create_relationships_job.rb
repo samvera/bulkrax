@@ -79,8 +79,7 @@ module Bulkrax
 
           # save record if members were added
           if @parent_record_members_added
-            parent_record.save!
-            # TODO: Push logic into Bulkrax.object_factory
+            parent_record.save! # TODO: Push logic into Bulkrax.object_factory
             # Ensure that the new relationship gets indexed onto the children
             if parent_record.is_a?(Valkyrie::Resource)
               @child_members_added.each do |child|
