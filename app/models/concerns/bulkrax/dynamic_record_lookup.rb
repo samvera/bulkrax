@@ -28,22 +28,5 @@ module Bulkrax
       # also accounts for when the found entry isn't a part of this importer
       record.is_a?(Entry) ? [record, record.factory.find] : [nil, record]
     end
-
-    # Check if the record is a Work
-    def curation_concern?(record)
-      available_work_types.include?(record.class)
-    end
-
-    private
-
-    # @return [Array<Class>] list of work type classes
-    def available_work_types
-      # If running in a Hyku app, do not include disabled work types
-      @available_work_types ||= if defined?(::Hyku)
-                                  ::Site.instance.available_works.map(&:constantize)
-                                else
-                                  Bulkrax.curation_concerns
-                                end
-    end
   end
 end
