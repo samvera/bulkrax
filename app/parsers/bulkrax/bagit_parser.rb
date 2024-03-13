@@ -166,7 +166,7 @@ unless ENV.fetch('BULKRAX_NO_BAGIT', 'false').to_s == 'true'
       # @todo - investigate getting directory structure
       # @todo - investigate using perform_later, and having the importer check for
       #   DownloadCloudFileJob before it starts
-      def retrieve_cloud_files(files)
+      def retrieve_cloud_files(files, _importer)
         # There should only be one zip file for Bagit, take the first
         return if files['0'].blank?
         target_file = File.join(path_for_import, files['0']['file_name'].tr(' ', '_'))

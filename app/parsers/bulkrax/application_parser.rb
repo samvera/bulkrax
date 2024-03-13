@@ -230,7 +230,7 @@ module Bulkrax
       type_col = Bulkrax::Entry.arel_table['type']
       status_col = Bulkrax::Entry.arel_table['status_message']
 
-      query = (type == 'work' ? type_col.not.matches(%w[collection file_set]) : type_col.matches(type.camelize))
+      query = (type == 'work' ? type_col.does_not_match_all(%w[collection file_set]) : type_col.matches(type.camelize))
       query.and(status_col.in(statuses))
     end
 
@@ -272,7 +272,7 @@ module Bulkrax
     end
 
     # Optional, define if using browse everything for file upload
-    def retrieve_cloud_files(files); end
+    def retrieve_cloud_files(_files, _importer); end
 
     # @param file [#path, #original_filename] the file object that with the relevant data for the
     #        import.
