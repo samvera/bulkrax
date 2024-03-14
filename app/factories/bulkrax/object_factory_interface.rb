@@ -45,6 +45,12 @@ module Bulkrax
       def save!(resource:, user:)
         raise NotImplementedError, "#{self}.#{__method__}"
       end
+
+      # rubocop:disable Metrics/ParameterLists
+      def search_by_property(value:, klass:, field: nil, search_field: nil, name_field: nil, verify_property: false)
+        raise NotImplementedError, "#{self}.#{__method__}"
+      end
+      # rubocop:enable Metrics/ParameterLists
     end
   end
 end

@@ -110,7 +110,7 @@ RSpec.describe Bulkrax::EntrySpecHelper do
       it { is_expected.to be_a(Bulkrax::OaiDcEntry) }
 
       it "parses metadata" do
-        allow(Collection).to receive(:where).and_return([])
+        allow(Bulkrax.object_factory).to receive(:search_by_property).and_return(nil)
         entry.build_metadata
 
         expect(entry.factory_class).to eq(Work)
