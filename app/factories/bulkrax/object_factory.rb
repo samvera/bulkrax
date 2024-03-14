@@ -33,6 +33,11 @@ module Bulkrax
     # @return [ActiveFedora::Base] when a match is found, an instance of given
     #         :klass
     # rubocop:disable Metrics/ParameterLists
+    #
+    # @note HEY WE'RE USING THIS FOR A WINGS CUSTOM QUERY.  BE CAREFUL WITH
+    #       REMOVING IT.
+    #
+    # @see # {Wings::CustomQueries::FindBySourceIdentifier#find_by_model_and_property_value}
     def self.search_by_property(value:, klass:, field: nil, search_field: nil, name_field: nil, verify_property: false)
       return if verify_property && !klass.properties.keys.include?(search_field)
 
