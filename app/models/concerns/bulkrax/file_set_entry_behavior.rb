@@ -5,7 +5,7 @@ module Bulkrax
     extend ActiveSupport::Concern
 
     included do
-      self.default_work_type = "::FileSet"
+      self.default_work_type = Bulkrax.file_model_class.to_s
     end
 
     def file_reference

@@ -137,6 +137,7 @@ module Bulkrax
     end
 
     def export_properties
+      # TODO: Does this work for Valkyrie?
       properties = Bulkrax.curation_concerns.map { |work| work.properties.keys }.flatten.uniq.sort
       properties.reject { |prop| Bulkrax.reserved_properties.include?(prop) }
     end

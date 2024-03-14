@@ -53,6 +53,26 @@ module Bulkrax
     end
 
     ##
+    # @param value [String]
+    # @param klass [Class, #where]
+    # @param field [String, Symbol] A convenience parameter where we pass the
+    #        same value to search_field and name_field.
+    # @param name_field [String] the ActiveFedora::Base property name
+    #        (e.g. "title")
+    # @return [NilClass] when no object is found.
+    # @return [Valkyrie::Resource] when a match is found, an instance of given
+    #         :klass
+    # rubocop:disable Metrics/ParameterLists
+    def self.search_by_property(value:, klass:, field: nil, name_field: nil, **)
+      name_field ||= field
+      raise "Expected named_field or field got nil" if name_field.blank?
+
+      # Return nil or a single object.
+      Hyrax.query_service.custom_query.find_by_model_and_property_value(model: klass, property: name_field, value: value)
+    end
+    # rubocop:enable Metrics/ParameterLists
+
+    ##
     # Retrieve properties from M3 model
     # @param klass the model
     # @return [Array<String>]
@@ -80,21 +100,6 @@ module Bulkrax
 
     def find_by_id
       Hyrax.query_service.find_by(id: attributes[:id]) if attributes.key? :id
-    end
-
-    def search_by_identifier
-      # Query can return partial matches (something6 matches both something6 and something68)
-      # so we need to weed out any that are not the correct full match. But other items might be
-      # in the multivalued field, so we have to go through them one at a time.
-      match = Hyrax.query_service.custom_queries.find_by_source_identifier(
-        work_identifier: work_identifier,
-        source_identifier_value: source_identifier_value
-      )
-
-      return match if match
-    rescue => err
-      Hyrax.logger.error(err)
-      false
     end
 
     def create

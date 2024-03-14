@@ -69,6 +69,7 @@ RSpec.describe Bulkrax do
 
       it 'has a default curation_concerns' do
         expect(described_class.curation_concerns).to eq([Work])
+        expect(described_class.curation_concern_internal_resources).to eq(['Work'])
       end
 
       it 'is settable' do
@@ -76,6 +77,7 @@ RSpec.describe Bulkrax do
 
         expect(described_class).to respond_to(:curation_concerns=)
         expect(described_class.curation_concerns).to eq(['test'])
+        expect(described_class.curation_concern_internal_resources).to eq(['test'])
       end
     end
 
@@ -90,6 +92,7 @@ RSpec.describe Bulkrax do
 
       it 'has a default file_model_class' do
         expect(described_class.file_model_class).to eq(FileSet)
+        expect(described_class.file_model_internal_resource).to eq("FileSet")
       end
 
       it 'is settable' do
@@ -97,6 +100,7 @@ RSpec.describe Bulkrax do
 
         expect(described_class).to respond_to(:file_model_class=)
         expect(described_class.file_model_class).to eq(File)
+        expect(described_class.file_model_internal_resource).to eq("File")
       end
     end
 
@@ -111,6 +115,7 @@ RSpec.describe Bulkrax do
 
       it 'has a default collection_model_class' do
         expect(described_class.collection_model_class).to eq(Collection)
+        expect(described_class.collection_model_internal_resource).to eq("Collection")
       end
 
       it 'is settable' do
@@ -119,6 +124,7 @@ RSpec.describe Bulkrax do
 
         expect(described_class).to respond_to(:collection_model_class=)
         expect(described_class.collection_model_class).to eq(Bulkrax)
+        expect(described_class.collection_model_internal_resource).to eq("Bulkrax")
       end
     end
 

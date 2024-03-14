@@ -11,6 +11,20 @@ module Bulkrax
   RSpec.describe ObjectFactory do
     subject(:object_factory) { build(:object_factory) }
 
+    describe '.search_by_property' do
+      let(:collections) do
+        [
+          FactoryBot.build(:collection, title: ["Specific Title"]),
+          FactoryBot.build(:collection, title: ["Title"])
+        ]
+      end
+      let(:klass) { double(where: collections) }
+
+      it 'does find the collection with a partial match' do
+        collection = described_class.search_by_property(value: "Title", field: :title, klass: klass)
+        expect(collection.title).to eq(["Title"])
+      end
+    end
     describe 'is capable of looking up records dynamically' do
       include_examples 'dynamic record lookup'
     end

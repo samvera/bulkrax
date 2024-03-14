@@ -97,17 +97,29 @@ module Bulkrax
 
     attr_writer :collection_model_class
 
+    def collection_model_internal_resource
+      collection_model_class.try(:internal_resource) || collection_model_class.to_s
+    end
+
     def file_model_class
       @file_model_class ||= defined?(::Hyrax) ? ::FileSet : File
     end
 
     attr_writer :file_model_class
 
+    def file_model_internal_resource
+      file_model_class.try(:internal_resource) || file_model_class.to_s
+    end
+
     def curation_concerns
       @curation_concerns ||= defined?(::Hyrax) ? ::Hyrax.config.curation_concerns : []
     end
 
     attr_writer :curation_concerns
+
+    def curation_concern_internal_resources
+      curation_concerns.map { |cc| cc.try(:internal_resource) || cc.to_s }.uniq
+    end
 
     attr_writer :ingest_queue_name
     ##
@@ -139,9 +151,11 @@ module Bulkrax
                  :api_definition,
                  :api_definition=,
                  :collection_model_class,
+                 :collection_model_internal_resource,
                  :collection_model_class=,
                  :curation_concerns,
                  :curation_concerns=,
+                 :curation_concern_internal_resources,
                  :default_field_mapping,
                  :default_field_mapping=,
                  :default_work_type,
@@ -154,6 +168,7 @@ module Bulkrax
                  :field_mappings=,
                  :file_model_class,
                  :file_model_class=,
+                 :file_model_internal_resource,
                  :fill_in_blank_source_identifiers,
                  :fill_in_blank_source_identifiers=,
                  :generated_metadata_mapping,
