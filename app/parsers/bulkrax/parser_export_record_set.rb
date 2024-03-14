@@ -189,7 +189,7 @@ module Bulkrax
 
     class All < Base
       def works_query
-        "has_model_ssim:(#{Bulkrax.curation_concerns.join(' OR ')}) #{extra_filters}"
+        "has_model_ssim:(#{Bulkrax.curation_concern_internal_resources.join(' OR ')}) #{extra_filters}"
       end
 
       def collections_query
@@ -200,7 +200,7 @@ module Bulkrax
     class Collection < Base
       def works_query
         "member_of_collection_ids_ssim:#{importerexporter.export_source} #{extra_filters} AND " \
-        "has_model_ssim:(#{Bulkrax.curation_concerns.join(' OR ')})"
+        "has_model_ssim:(#{Bulkrax.curation_concern_internal_resources.join(' OR ')})"
       end
 
       def collections_query
@@ -248,7 +248,7 @@ module Bulkrax
             **query_kwargs.merge(
               fq: [
                 %(#{solr_name(work_identifier)}:("#{ids.join('" OR "')}")),
-                "has_model_ssim:(#{Bulkrax.curation_concerns.join(' OR ')})"
+                "has_model_ssim:(#{Bulkrax.curation_concern_internal_resources.join(' OR ')})"
               ],
               fl: 'id'
             )

@@ -117,6 +117,10 @@ module Bulkrax
 
     attr_writer :curation_concerns
 
+    def curation_concern_internal_resources
+      curation_concerns.map { |cc| cc.try(:internal_resource) || cc.to_s }.uniq
+    end
+
     attr_writer :ingest_queue_name
     ##
     # @return [String, Proc]
@@ -151,6 +155,7 @@ module Bulkrax
                  :collection_model_class=,
                  :curation_concerns,
                  :curation_concerns=,
+                 :curation_concern_internal_resources,
                  :default_field_mapping,
                  :default_field_mapping=,
                  :default_work_type,
