@@ -173,7 +173,7 @@ module Bulkrax
       # @see https://github.com/samvera/hyrax/blob/64c0bbf0dc0d3e1b49f040b50ea70d177cc9d8f6/app/indexers/hyrax/work_indexer.rb#L15-L18
       def file_sets
         @file_sets ||= ParserExportRecordSet.in_batches(candidate_file_set_ids) do |batch_of_ids|
-          fsq = "has_model_ssim:#{Bulkrax.file_model_class} AND id:(\"" + batch_of_ids.join('" OR "') + "\")"
+          fsq = "has_model_ssim:#{Bulkrax.file_model_internal_resource} AND id:(\"" + batch_of_ids.join('" OR "') + "\")"
           fsq += extra_filters if extra_filters.present?
           Bulkrax.object_factory.query(
             fsq,
@@ -193,10 +193,7 @@ module Bulkrax
       end
 
       def collections_query
-        # TODO: What should this be given Bulkrax.collection_model_class?  In
-        # Hyku 6, the collection_model_class will be CollectionResource, but we
-        # will have a model ssim of Collection.
-        "has_model_ssim:Collection #{extra_filters}"
+        "has_model_ssim:#{Bulkrax.collection_model_internal_resource} #{extra_filters}"
       end
     end
 
@@ -208,7 +205,7 @@ module Bulkrax
 
       def collections_query
         "(id:#{importerexporter.export_source} #{extra_filters}) OR " \
-        "(has_model_ssim:Collection AND member_of_collection_ids_ssim:#{importerexporter.export_source})"
+        "(has_model_ssim:#{Bulkrax.collection_model_internal_resource} AND member_of_collection_ids_ssim:#{importerexporter.export_source})"
       end
     end
 
@@ -262,11 +259,11 @@ module Bulkrax
       def collections
         @collections ||= ParserExportRecordSet.in_batches(complete_entry_identifiers) do |ids|
           Bulkrax.object_factory.query(
-            "has_model_ssim:Collection #{extra_filters}",
+            "has_model_ssim:#{Bulkrax.collection_model_internal_resource} #{extra_filters}",
             **query_kwargs.merge(
               fq: [
                 %(#{solr_name(work_identifier)}:("#{ids.join('" OR "')}")),
-                "has_model_ssim:Collection"
+                "has_model_ssim:#{Bulkrax.collection_model_internal_resource}"
               ],
               fl: "id"
             )
@@ -285,7 +282,7 @@ module Bulkrax
             **query_kwargs.merge(
               fq: [
                 %(#{solr_name(work_identifier)}:("#{ids.join('" OR "')}")),
-                "has_model_ssim:#{Bulkrax.file_model_class}"
+                "has_model_ssim:#{Bulkrax.file_model_internal_resource}"
               ],
               fl: 'id'
             )
