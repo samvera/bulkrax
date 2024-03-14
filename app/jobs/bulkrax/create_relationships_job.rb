@@ -53,7 +53,7 @@ module Bulkrax
     #
     # rubocop:disable Metrics/MethodLength
     def perform(parent_identifier:, importer_run_id:) # rubocop:disable Metrics/AbcSize
-      importer_run = Bulkrax::ImporterRun.find(importer_run_id)
+      @importer_run = Bulkrax::ImporterRun.find(importer_run_id)
       ability = Ability.new(importer_run.user)
 
       parent_entry, parent_record = find_record(parent_identifier, importer_run_id)
@@ -79,8 +79,7 @@ module Bulkrax
 
           # save record if members were added
           if @parent_record_members_added
-            parent_record.save!
-            # TODO: Push logic into Bulkrax.object_factory
+            Bulkrax.object_factory.save!(resource: parent_record, user: importer_run.user)
             # Ensure that the new relationship gets indexed onto the children
             if parent_record.is_a?(Valkyrie::Resource)
               @child_members_added.each do |child|
@@ -121,6 +120,8 @@ module Bulkrax
     end
     # rubocop:enable Metrics/MethodLength
 
+    attr_reader :importer_run
+
     private
 
     ##
@@ -158,7 +159,7 @@ module Bulkrax
       # We could do this outside of the loop, but that could lead to odd counter failures.
       ability.authorize!(:edit, parent_record)
 
-      parent_record.is_a?(Collection) ? add_to_collection(child_record, parent_record) : add_to_work(child_record, parent_record)
+      parent_record.is_a?(Bulkrax.collection_model_class) ? add_to_collection(child_record, parent_record) : add_to_work(child_record, parent_record)
 
       child_record.file_sets.each(&:update_index) if update_child_records_works_file_sets? && child_record.respond_to?(:file_sets)
       relationship.destroy
@@ -167,8 +168,8 @@ module Bulkrax
     def add_to_collection(child_record, parent_record)
       parent_record.try(:reindex_extent=, Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX) if
         defined?(Hyrax::Adapters::NestingIndexAdapter)
-      child_record.member_of_collections << parent_record
-      child_record.save!
+      child_record.member_of_collections << parent_record # TODO: This is not going to work for Valkyrie.  Look to add_to_work for inspiration.
+      Bulkrax.object_factory.save!(resource: child_record, user: importer_run.user)
     end
 
     def add_to_work(child_record, parent_record)

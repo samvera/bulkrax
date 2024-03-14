@@ -41,6 +41,10 @@ module Bulkrax
       def query(q, **kwargs)
         raise NotImplementedError, "#{self}.#{__method__}"
       end
+
+      def save!(resource:, user:)
+        raise NotImplementedError, "#{self}.#{__method__}"
+      end
     end
   end
 end

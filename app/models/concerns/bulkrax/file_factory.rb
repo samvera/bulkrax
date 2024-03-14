@@ -11,7 +11,7 @@ module Bulkrax
     # otherwise it gets reuploaded by `work_actor`.
     # support multiple files; ensure attributes[:file] is an Array
     def upload_ids
-      return [] if klass == Collection
+      return [] if klass == Bulkrax.collection_model_class
       attributes[:file] = file_paths
       import_files
     end
@@ -19,7 +19,7 @@ module Bulkrax
     def file_attributes(update_files = false)
       @update_files = update_files
       hash = {}
-      return hash if klass == Collection
+      return hash if klass == Bulkrax.collection_model_class
       hash[:uploaded_files] = upload_ids if attributes[:file].present?
       hash[:remote_files] = new_remote_files if new_remote_files.present?
       hash

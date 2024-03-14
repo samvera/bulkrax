@@ -67,7 +67,7 @@ module Bulkrax
         end
 
         context 'when a collection is found' do
-          let(:collection) { instance_double(::Collection) }
+          let(:collection) { Bulkrax.collection_model_class.new }
 
           before do
             allow(Bulkrax.object_factory).to receive(:find).with(id).and_return(collection)
@@ -94,32 +94,6 @@ module Bulkrax
           it 'returns nil' do
             expect(subject.find_record(id, importer_run_id)[1]).to be_nil
           end
-        end
-      end
-    end
-
-    describe '#curation_concern?' do
-      context 'when record is a work' do
-        let(:record) { build(:work) }
-
-        it 'returns true' do
-          expect(subject.curation_concern?(record)).to eq(true)
-        end
-      end
-
-      context 'when record is a collection' do
-        let(:record) { build(:collection) }
-
-        it 'returns false' do
-          expect(subject.curation_concern?(record)).to eq(false)
-        end
-      end
-
-      context 'when record is an Entry' do
-        let(:record) { build(:bulkrax_entry) }
-
-        it 'returns false' do
-          expect(subject.curation_concern?(record)).to eq(false)
         end
       end
     end
