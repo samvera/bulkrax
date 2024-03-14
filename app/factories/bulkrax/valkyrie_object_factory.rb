@@ -128,8 +128,7 @@ module Bulkrax
         transactions["work_resource.create_with_bulk_behavior"]
           .with_step_args(
             "work_resource.add_to_parent" => { parent_id: attrs[related_parents_parsed_mapping], user: @user },
-            'work_resource.add_file_sets' => { uploaded_files: get_files(attrs) },
-            # "work_resource.add_bulkrax_files" =>  { files: get_files(attrs), user: @user }, #get_s3_files(remote_files: attrs[:remote_files]), user: @user },
+            'work_resource.add_file_sets' => { uploaded_files: get_files(attrs), user: @user },
             "change_set.set_user_as_depositor" => { user: @user },
             "work_resource.change_depositor" => { user: @user },
             'work_resource.save_acl' => { permissions_params: [attrs['visibility'] || 'open'].compact }
@@ -170,8 +169,7 @@ module Bulkrax
       perform_transaction_for(object: object, attrs: attrs) do
         transactions["work_resource.update_with_bulk_behavior"]
           .with_step_args(
-            'work_resource.add_file_sets' => { uploaded_files: get_files(attrs) },
-            # "work_resource.add_bulkrax_files" => { files: get_files(attrs), user: @user }, # get_s3_files(remote_files: attrs[:remote_files]), user: @user }
+            'work_resource.add_file_sets' => { uploaded_files: get_files(attrs), user: @user },
             'work_resource.save_acl' => { permissions_params: [attrs.try('visibility') || 'open'].compact }
           )
       end
@@ -211,24 +209,17 @@ module Bulkrax
     end
 
     def get_files(attrs)
-      get_local_files(attrs) + get_s3_files(remote_files: attrs[:remote_files])
+      get_local_files(uploaded_files: attrs[:uploaded_files]) + get_s3_files(remote_files: attrs[:remote_files])
     end
 
-    def get_local_files(attrs)
-      return [] if attrs[:uploaded_files].blank?
-
-      @files = attrs[:uploaded_files].map do |file_id|
+    def get_local_files(uploaded_files: [])
+      Array.wrap(uploaded_files).map do |file_id|
         Hyrax::UploadedFile.find(file_id)
       end
-
-      @files
     end
 
     def get_s3_files(remote_files: {})
-      if remote_files.blank?
-        Hyrax.logger.info "No remote files listed for #{attributes['source_identifier']}"
-        return []
-      end
+      return [] if remote_files.blank?
 
       s3_bucket_name = ENV.fetch("STAGING_AREA_S3_BUCKET", "comet-staging-area-#{Rails.env}")
       s3_bucket = Rails.application.config.staging_area_s3_connection
