@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+require 'ruby-progressbar'
 
 namespace :bulkrax do
   desc 'Update all status messages from the latest status. This is to refresh the denormalized field'
