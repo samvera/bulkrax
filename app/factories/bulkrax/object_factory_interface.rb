@@ -28,6 +28,14 @@ module Bulkrax
         raise NotImplementedError, "#{self}.#{__method__}"
       end
 
+      def find_or_nil(id)
+        find(id)
+      rescue NotImplementedError => e
+        raise e
+      rescue
+        nil
+      end
+
       def solr_name(field_name)
         raise NotImplementedError, "#{self}.#{__method__}"
       end
