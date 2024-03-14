@@ -6,7 +6,8 @@ module Wings
       # Custom query override specific to Wings
 
       def self.queries
-        [:find_by_source_identifier]
+        [:find_by_source_identifier,
+         :find_by_model_and_property_value]
       end
 
       attr_reader :query_service
@@ -21,6 +22,15 @@ module Wings
         # Fetch the app's source_identifier and search by that instead
         af_object = ActiveFedora::Base.where("bulkrax_identifier_sim:#{identifier}").first
 
+        return af_object unless use_valkyrie
+
+        resource_factory.to_resource(object: af_object)
+      end
+
+      def find_by_model_and_property_value(model:, property:, value:, use_valkyrie: Hyrax.config.use_valkyrie?)
+        af_object = Bulkrax::ObjectFactory.search_by_property(value: value, klass: model, field: property)
+
+        return if af_object.blank?
         return af_object unless use_valkyrie
 
         resource_factory.to_resource(object: af_object)

@@ -109,7 +109,7 @@ module Bulkrax
 
     def find_collection(collection_identifier)
       Bulkrax.object_factory.search_by_property(
-        klass: Collection,
+        klass: Bulkrax.collection_model_class,
         value: collection_identifier,
         search_field: work_identifier,
         name_field: work_identifier,

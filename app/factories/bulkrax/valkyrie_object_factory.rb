@@ -53,6 +53,26 @@ module Bulkrax
     end
 
     ##
+    # @param value [String]
+    # @param klass [Class, #where]
+    # @param field [String, Symbol] A convenience parameter where we pass the
+    #        same value to search_field and name_field.
+    # @param name_field [String] the ActiveFedora::Base property name
+    #        (e.g. "title")
+    # @return [NilClass] when no object is found.
+    # @return [Valkyrie::Resource] when a match is found, an instance of given
+    #         :klass
+    # rubocop:disable Metrics/ParameterLists
+    def self.search_by_property(value:, klass:, field: nil, name_field: nil, **)
+      name_field ||= field
+      raise "Expected named_field or field got nil" if name_field.blank?
+
+      # Return nil or a single object.
+      Hyrax.query_service.custom_query.find_by_model_and_property_value(model: klass, property: name_field, value: value)
+    end
+    # rubocop:enable Metrics/ParameterLists
+
+    ##
     # Retrieve properties from M3 model
     # @param klass the model
     # @return [Array<String>]
