@@ -8,14 +8,22 @@ module Bulkrax
 
     ##
     # @param value [String]
+    # @param klass [Class, #where]
     # @param field [String, Symbol] A convenience parameter where we pass the
     #        same value to search_field and name_field.
-    # @param search_field [String, Symbol] the Solr field name (e.g. "title_tesim")
-    # @param name_field [String] the ActiveFedora::Base property name (e.g. "title")
-    # @param klass [Class, #where]
+    # @param search_field [String, Symbol] the Solr field name
+    #        (e.g. "title_tesim")
+    # @param name_field [String] the ActiveFedora::Base property name
+    #        (e.g. "title")
+    # @param verify_property [TrueClass] when true, verify that the given :klass
+    #
     # @return [NilClass] when no object is found.
-    # @return [ActiveFedora::Base] when a match is found, an instance of given :klass
-    def self.search_by_property(value:, field: nil, search_field: nil, name_field: nil, klass: ActiveFedora::Base)
+    # @return [ActiveFedora::Base] when a match is found, an instance of given
+    #         :klass
+    # rubocop:disable Metrics/ParameterLists
+    def self.search_by_property(value:, klass:, field: nil, search_field: nil, name_field: nil, verify_property: false)
+      return if verify_property && !klass.properties.keys.include?(search_field)
+
       search_field ||= field
       name_field ||= field
       raise "You must provide either (search_field AND name_field) OR field parameters" if search_field.nil? || name_field.nil?
@@ -27,9 +35,18 @@ module Bulkrax
       # A ssi field is string, so we're looking at exact matches.
       # A tesi field is text, so partial matches work.
       #
-      match = klass.where(search_field => value).detect { |m| m.send(name_field).include?(value) }
+      # We need to wrap the result in an Array, else we might have a scalar that
+      # will result again in partial matches.
+      match = klass.where(search_field => value).detect do |m|
+        # Don't use Array.wrap as we likely have an ActiveTriples::Relation
+        # which defiantly claims to be an Array yet does not behave consistently
+        # with an Array.  Hopefully the name_field is not a Date or Time object,
+        # Because that too will be a mess.
+        Array(m.send(name_field)).include?(value)
+      end
       return match if match
     end
+    # rubocop:enable Metrics/ParameterLists
 
     # @api private
     #

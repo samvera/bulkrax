@@ -61,12 +61,12 @@ module Bulkrax
       end
 
       it 'expects only one collection' do
-        allow(Collection).to receive(:where).and_return([collection])
+        allow(Bulkrax.object_factory).to receive(:search_by_property).and_return(collection)
         entry.find_collection_ids
         expect(entry.collection_ids.length).to eq(1)
       end
       it 'fails if there is no collection' do
-        allow(Collection).to receive(:where).and_return([])
+        allow(Bulkrax.object_factory).to receive(:search_by_property).and_return(nil)
         entry.find_collection_ids
         expect(entry.collection_ids.length).to eq(0)
       end
