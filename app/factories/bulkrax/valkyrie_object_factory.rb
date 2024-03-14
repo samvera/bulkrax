@@ -273,12 +273,12 @@ module Bulkrax
 
     def conditionally_destroy_existing_files
       return unless @replace_files
-      case klass
-      when Bulkrax.collection_model_class, Bulkrax.file_model_class
-        return
-      when Valkyrie::Resource
+
+      if klass < Valkyrie::Resource
         destroy_existing_files
-      else
+      elsif [Bulkrax.collection_model_class, Bulkrax.file_model_class].include?(klass)
+        return
+      else 
         raise "Unexpected #{klass} for #{self.class}##{__method__}"
       end
     end

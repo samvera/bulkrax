@@ -30,7 +30,8 @@ module Hyrax
       def find_by_model_and_property_value(model:, property:, value:)
         sql_query = sql_for_find_by_model_and_property_value
         # NOTE: Do we need to ask the model for it's internal_resource?
-        query_service.run_query(sql_query, model.internal_resource, property, value).first
+        # TODO: no => undefined method `internal_resource' for Image:Class
+        query_service.run_query(sql_query, model, property, value).first
       end
 
       private
