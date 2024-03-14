@@ -36,6 +36,22 @@ module Bulkrax
       Hyrax::SolrService.query(q, **kwargs)
     end
 
+    def self.save!(resource:, user:, persister: Hyrax.persister, index_adapter: Hyrax.index_adapter)
+      if resource.respond_to?(:save!)
+        resource.save!
+      else
+        result = persister.save(resource: resource)
+        raise Valkyrie::Persistence::ObjectNotFoundError unless result
+        index_adapter.save(resource: result)
+        if result.collection?
+          Hyrax.publisher.publish('collection.metadata.updated', collection: result, user: user)
+        else
+          Hyrax.publisher.publish('object.metadata.updated', object: result, user: user)
+        end
+        resource
+      end
+    end
+
     ##
     # Retrieve properties from M3 model
     # @param klass the model
@@ -85,9 +101,9 @@ module Bulkrax
 
       object = klass.new
       @object = case object
-                when Hyrax::PcdmCollection
+                when Bulkrax.collection_model_class
                   create_collection(object: object, attrs: attrs)
-                when Hyrax::FileSet
+                when Bulkrax.file_model_class
                   # TODO
                 when Hyrax::Resource
                   create_work(object: object, attrs: attrs)
@@ -127,9 +143,9 @@ module Bulkrax
       attrs = transform_attributes(update: true)
 
       @object = case @object
-                when Hyrax::PcdmCollection
+                when Bulkrax.collection_model_class
                   # update_collection(attrs)
-                when Hyrax::FileSet
+                when Bulkrax.file_model_class
                   # TODO
                 when Hyrax::Resource
                   update_work(object: @object, attrs: attrs)
@@ -213,7 +229,7 @@ module Bulkrax
 
     # @Override remove branch for FileSets replace validation with errors
     def new_remote_files
-      @new_remote_files ||= if @object.is_a? FileSet
+      @new_remote_files ||= if @object.is_a? Bulkrax.file_model_class
                               parsed_remote_files.select do |file|
                                 # is the url valid?
                                 is_valid = file[:url]&.match(URI::ABS_URI)
@@ -230,10 +246,10 @@ module Bulkrax
 
     def conditionally_destroy_existing_files
       return unless @replace_files
-
-      if [Hyrax::PcdmCollection, Hyrax::FileSet].include?(klass)
+      case klass
+      when Bulkrax.collection_model_class, Bulkrax.file_model_class
         return
-      elsif klass.ancestors.include?(Valkyrie::Resource)
+      when Valkyrie::Resource
         destroy_existing_files
       else
         raise "Unexpected #{klass} for #{self.class}##{__method__}"
