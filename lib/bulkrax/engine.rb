@@ -46,19 +46,19 @@ module Bulkrax
 
         if defined?(::Goddess::CustomQueryContainer)
           strategies = ::Goddess::CustomQueryContainer.known_custom_queries_and_their_strategies
-          strategies.merge(custom_query_strategies)
+          strategies = strategies.merge(custom_query_strategies)
           ::Goddess::CustomQueryContainer.known_custom_queries_and_their_strategies = strategies
         end
 
         if defined?(::Frigg::CustomQueryContainer)
           strategies = ::Frigg::CustomQueryContainer.known_custom_queries_and_their_strategies
-          strategies.merge(custom_query_strategies)
+          strategies = strategies.merge(custom_query_strategies)
           ::Frigg::CustomQueryContainer.known_custom_queries_and_their_strategies = strategies
         end
 
         if defined?(::Freyja::CustomQueryContainer)
           strategies = ::Freyja::CustomQueryContainer.known_custom_queries_and_their_strategies
-          strategies.merge(custom_query_strategies)
+          strategies = strategies.merge(custom_query_strategies)
           ::Freyja::CustomQueryContainer.known_custom_queries_and_their_strategies = strategies
         end
       end
