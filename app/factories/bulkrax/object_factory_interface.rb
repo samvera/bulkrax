@@ -36,6 +36,12 @@ module Bulkrax
         nil
       end
 
+      ##
+      # @return [Array<String>]
+      def export_properties
+        raise NotImplementedError, "#{self}.#{__method__}"
+      end
+
       def solr_name(field_name)
         raise NotImplementedError, "#{self}.#{__method__}"
       end

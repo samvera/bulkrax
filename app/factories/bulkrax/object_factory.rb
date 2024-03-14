@@ -10,6 +10,16 @@ module Bulkrax
 
     ##
     # @!group Class Method Interface
+
+    ##
+    # @see Bulkrax::ObjectFactoryInterface
+    def self.export_properties
+      # TODO: Consider how this may or may not work for Valkyrie
+      properties = Bulkrax.curation_concerns.map { |work| work.properties.keys }.flatten.uniq.sort
+      properties.reject { |prop| Bulkrax.reserved_properties.include?(prop) }
+    end
+
+    ##
     #
     # @see Bulkrax::ObjectFactoryInterface
     def self.find(id)
