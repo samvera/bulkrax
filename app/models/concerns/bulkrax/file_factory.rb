@@ -133,6 +133,8 @@ module Bulkrax
     def update_filesets(current_file)
       if @update_files && local_file_sets.present?
         fileset = local_file_sets.shift
+        # TODO: Handle valkyrie way
+        return if fileset.is_a? Hyrax::Resource
         return nil if fileset.files.first.checksum.value == Digest::SHA1.file(current_file.file.path).to_s
 
         fileset.files.first.create_version

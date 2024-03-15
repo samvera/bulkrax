@@ -33,7 +33,7 @@ module Bulkrax
     end
 
     def self.add_resource_to_collection(collection:, resource:, user:)
-      resource.member_of_collections_ids << collection.id
+      resource.member_of_collection_ids << collection.id
       save!(resource: resource, user: user)
     end
 
