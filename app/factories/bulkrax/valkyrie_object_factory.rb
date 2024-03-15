@@ -5,6 +5,43 @@ module Bulkrax
   class ValkyrieObjectFactory < ObjectFactory
     include ObjectFactoryInterface
 
+    ##
+    # When you want a different set of transactions you can change the
+    # container.
+    #
+    # @note Within {Bulkrax::ValkyrieObjectFactory} there are several calls to
+    #       transactions; so you'll need your container to register those
+    #       transactions.
+    def self.transactions
+      @transactions || Hyrax::Transactions::Container
+    end
+
+    def transactions
+      self.class.transactions
+    end
+
+    ##
+    # @!group Class Method Interface
+
+    ##
+    # @note This does not save either object.  We need to do that in another
+    #       loop.  Why?  Because we might be adding many items to the parent.
+    def self.add_child_to_parent_work(parent:, child:)
+      return true if parent.member_ids.include?(child.id)
+
+      parent.member_ids << child.id
+    end
+
+    def self.add_resource_to_collection(collection:, resource:, user:)
+      resource.member_of_collection_ids << collection.id
+      save!(resource: resource, user: user)
+    end
+
+    def self.update_index_for_file_sets_of(resource:)
+      file_sets = Hyrax.query_service.custom_queries.find_child_file_sets(resource: resource)
+      update_index(resources: file_sets)
+    end
+
     def self.find(id)
       if defined?(Hyrax)
         begin
@@ -28,6 +65,10 @@ module Bulkrax
       Hyrax.config.index_field_mapper.solr_name(field_name)
     end
 
+    def self.publish(event:, **kwargs)
+      Hyrax.publisher.publish(event, **kwargs)
+    end
+
     def self.query(q, **kwargs)
       # Someone could choose ActiveFedora::SolrService.  But I think we're
       # assuming Valkyrie is specifcally working for Hyrax.  Someone could make
@@ -36,19 +77,25 @@ module Bulkrax
       Hyrax::SolrService.query(q, **kwargs)
     end
 
-    def self.save!(resource:, user:, persister: Hyrax.persister, index_adapter: Hyrax.index_adapter)
+    def self.save!(resource:, user:)
       if resource.respond_to?(:save!)
         resource.save!
       else
-        result = persister.save(resource: resource)
+        result = Hyrax.persister.save(resource: resource)
         raise Valkyrie::Persistence::ObjectNotFoundError unless result
-        index_adapter.save(resource: result)
+        Hyrax.index_adapter.save(resource: result)
         if result.collection?
-          Hyrax.publisher.publish('collection.metadata.updated', collection: result, user: user)
+          publish('collection.metadata.updated', collection: result, user: user)
         else
-          Hyrax.publisher.publish('object.metadata.updated', object: result, user: user)
+          publish('object.metadata.updated', object: result, user: user)
         end
         resource
+      end
+    end
+
+    def self.update_index(resources:)
+      Array(resources).each do |resource|
+        Hyrax.index_adapter.save(resource: resource)
       end
     end
 
@@ -85,6 +132,12 @@ module Bulkrax
       @schema_properties_map[klass_key]
     end
 
+    def self.ordered_file_sets_for(object)
+      return [] if object.blank?
+
+      Hyrax.custom_queries.find_child_file_sets(resource: object)
+    end
+
     def run!
       run
       return object if object.persisted?
@@ -100,8 +153,6 @@ module Bulkrax
       attrs = transform_attributes
               .merge(alternate_ids: [source_identifier_value])
               .symbolize_keys
-
-      # TODO: How do we set the parent_id?
 
       attrs[:title] = [''] if attrs[:title].blank?
       attrs[:creator] = [''] if attrs[:creator].blank?
@@ -120,11 +171,12 @@ module Bulkrax
     end
 
     def create_work(object:, attrs:)
+      # NOTE: We do not add relationships here; that is part of the create
+      # relationships job.
       perform_transaction_for(object: object, attrs: attrs) do
-        transactions["work_resource.create_with_bulk_behavior"]
+        transactions["change_set.create_work"]
           .with_step_args(
-            "work_resource.add_to_parent" => { parent_id: attrs[:parent_id], user: @user },
-            "work_resource.add_bulkrax_files" => { files: get_s3_files(remote_files: attributes["remote_files"]), user: @user },
+            'work_resource.add_file_sets' => { uploaded_files: get_files(attrs) },
             "change_set.set_user_as_depositor" => { user: @user },
             "work_resource.change_depositor" => { user: @user },
             'work_resource.save_acl' => { permissions_params: [attrs['visibility'] || 'open'].compact }
@@ -133,11 +185,12 @@ module Bulkrax
     end
 
     def create_collection(object:, attrs:)
+      # NOTE: We do not add relationships here; that is part of the create
+      # relationships job.
       perform_transaction_for(object: object, attrs: attrs) do
         transactions['change_set.create_collection']
           .with_step_args(
             'change_set.set_user_as_depositor' => { user: @user },
-            'change_set.add_to_collections' => { collection_ids: Array(attrs[:parent_id]) },
             'collection_resource.apply_collection_type_permissions' => { user: @user }
           )
       end
@@ -151,9 +204,10 @@ module Bulkrax
 
       @object = case @object
                 when Bulkrax.collection_model_class
-                  # TODO: update_collection(attrs)
+                  update_collection(object: @object, attrs: attrs)
                 when Bulkrax.file_model_class
                   # TODO: update_file_set(attrs)
+                  raise "FileSet update not implemented"
                 when Hyrax::Resource
                   update_work(object: @object, attrs: attrs)
                 else
@@ -163,11 +217,19 @@ module Bulkrax
 
     def update_work(object:, attrs:)
       perform_transaction_for(object: object, attrs: attrs) do
-        transactions["work_resource.update_with_bulk_behavior"]
+        transactions["change_set.update_work"]
           .with_step_args(
-                        # "work_resource.add_bulkrax_files" => { files: get_s3_files(remote_files: attrs["remote_files"]), user: @user },
-                        'work_resource.save_acl' => { permissions_params: [attrs.try('visibility') || 'open'].compact }
-                      )
+            'work_resource.add_file_sets' => { uploaded_files: get_files(attrs) },
+            'work_resource.save_acl' => { permissions_params: [attrs.try('visibility') || 'open'].compact }
+          )
+      end
+    end
+
+    def update_collection(object:, attrs:)
+      # NOTE: We do not add relationships here; that is part of the create
+      # relationships job.
+      perform_transaction_for(object: object, attrs: attrs) do
+        transactions['change_set.update_collection']
       end
     end
 
@@ -204,11 +266,18 @@ module Bulkrax
       end
     end
 
-    def get_s3_files(remote_files: {})
-      if remote_files.blank?
-        Hyrax.logger.info "No remote files listed for #{attributes['source_identifier']}"
-        return []
+    def get_files(attrs)
+      get_local_files(uploaded_files: attrs[:uploaded_files]) + get_s3_files(remote_files: attrs[:remote_files])
+    end
+
+    def get_local_files(uploaded_files: [])
+      Array.wrap(uploaded_files).map do |file_id|
+        Hyrax::UploadedFile.find(file_id)
       end
+    end
+
+    def get_s3_files(remote_files: {})
+      return [] if remote_files.blank?
 
       s3_bucket_name = ENV.fetch("STAGING_AREA_S3_BUCKET", "comet-staging-area-#{Rails.env}")
       s3_bucket = Rails.application.config.staging_area_s3_connection
@@ -229,8 +298,9 @@ module Bulkrax
 
     def apply_depositor_metadata(object, user)
       object.depositor = user.email
+      # TODO: Should we leverage the object factory's save! method?
       object = Hyrax.persister.save(resource: object)
-      Hyrax.publisher.publish("object.metadata.updated", object: object, user: @user)
+      self.class.publish(event: "object.metadata.updated", object: object, user: @user)
       object
     end
 
@@ -253,10 +323,10 @@ module Bulkrax
 
     def conditionally_destroy_existing_files
       return unless @replace_files
-      case klass
-      when Bulkrax.collection_model_class, Bulkrax.file_model_class
+
+      if [Bulkrax.collection_model_class, Bulkrax.file_model_class].include?(klass)
         return
-      when Valkyrie::Resource
+      elsif klass < Valkyrie::Resource
         destroy_existing_files
       else
         raise "Unexpected #{klass} for #{self.class}##{__method__}"
@@ -268,7 +338,7 @@ module Bulkrax
       existing_files = fetch_child_file_sets(resource: @object)
 
       existing_files.each do |fs|
-        Hyrax::Transactions::Container["file_set.destroy"]
+        transactions["file_set.destroy"]
           .with_step_args("file_set.remove_from_work" => { user: @user },
                           "file_set.delete" => { user: @user })
           .call(fs)
@@ -287,7 +357,7 @@ module Bulkrax
 
       Hyrax.persister.delete(resource: obj)
       Hyrax.index_adapter.delete(resource: obj)
-      Hyrax.publisher.publish('object.deleted', object: obj, user: user)
+      self.class.publish(event: 'object.deleted', object: obj, user: user)
     end
 
     private
@@ -295,23 +365,6 @@ module Bulkrax
     # Query child FileSet in the resource/object
     def fetch_child_file_sets(resource:)
       Hyrax.custom_queries.find_child_file_sets(resource: resource)
-    end
-
-    ##
-    # @api public
-    #
-    # @return [#[]] a resolver for Hyrax's Transactions; this *should* be a
-    #   thread-safe {Dry::Container}, but callers to this method should strictly
-    #   use +#[]+ for access.
-    #
-    # @example
-    #   transactions['change_set.create_work'].call(my_form)
-    #
-    # @see Hyrax::Transactions::Container
-    # @see Hyrax::Transactions::Transaction
-    # @see https://dry-rb.org/gems/dry-container
-    def transactions
-      Hyrax::Transactions::Container
     end
   end
   # rubocop:enable Metrics/ClassLength
