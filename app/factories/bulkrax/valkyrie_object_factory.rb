@@ -24,14 +24,14 @@ module Bulkrax
 
     def self.solr_name(field_name)
       # It's a bit unclear what this should be if we can't rely on Hyrax.
-      # TODO: Downstream implementers will need to figure this out.
       raise NotImplementedError, "#{self}.#{__method__}" unless defined?(Hyrax)
       Hyrax.config.index_field_mapper.solr_name(field_name)
     end
 
     def self.query(q, **kwargs)
-      # TODO: Without the Hyrax::SolrService, what are we left with?  Someone could choose
-      # ActiveFedora::SolrService.
+      # Someone could choose ActiveFedora::SolrService.  But I think we're
+      # assuming Valkyrie is specifcally working for Hyrax.  Someone could make
+      # another object factory.
       raise NotImplementedError, "#{self}.#{__method__}" unless defined?(Hyrax)
       Hyrax::SolrService.query(q, **kwargs)
     end
@@ -109,7 +109,7 @@ module Bulkrax
                 when Bulkrax.collection_model_class
                   create_collection(object: object, attrs: attrs)
                 when Bulkrax.file_model_class
-                  # TODO
+                  # TODO: create_file_set(object: object, attrs: attrs)
                 when Hyrax::Resource
                   create_work(object: object, attrs: attrs)
                 else
@@ -125,7 +125,7 @@ module Bulkrax
             "work_resource.add_bulkrax_files" => { files: get_s3_files(remote_files: attributes["remote_files"]), user: @user },
             "change_set.set_user_as_depositor" => { user: @user },
             "work_resource.change_depositor" => { user: @user },
-            'work_resource.save_acl' => { permissions_params: [attrs.try('visibility') || 'open'].compact }
+            'work_resource.save_acl' => { permissions_params: [attrs['visibility'] || 'open'].compact }
           )
       end
     end
@@ -149,9 +149,9 @@ module Bulkrax
 
       @object = case @object
                 when Bulkrax.collection_model_class
-                  # update_collection(attrs)
+                  # TODO: update_collection(attrs)
                 when Bulkrax.file_model_class
-                  # TODO
+                  # TODO: update_file_set(attrs)
                 when Hyrax::Resource
                   update_work(object: @object, attrs: attrs)
                 else
