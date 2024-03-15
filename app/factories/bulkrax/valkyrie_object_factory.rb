@@ -204,9 +204,10 @@ module Bulkrax
 
       @object = case @object
                 when Bulkrax.collection_model_class
-                  # TODO: update_collection(attrs)
+                  update_collection(object: @object, attrs: attrs)
                 when Bulkrax.file_model_class
                   # TODO: update_file_set(attrs)
+                  raise "FileSet update not implemented"
                 when Hyrax::Resource
                   update_work(object: @object, attrs: attrs)
                 else
@@ -221,6 +222,14 @@ module Bulkrax
             'work_resource.add_file_sets' => { uploaded_files: get_files(attrs) },
             'work_resource.save_acl' => { permissions_params: [attrs.try('visibility') || 'open'].compact }
           )
+      end
+    end
+
+    def update_collection(object:, attrs:)
+      # NOTE: We do not add relationships here; that is part of the create
+      # relationships job.
+      perform_transaction_for(object: object, attrs: attrs) do
+        transactions['change_set.update_collection']
       end
     end
 
