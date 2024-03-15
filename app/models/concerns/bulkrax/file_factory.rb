@@ -114,7 +114,7 @@ module Bulkrax
 
     def ordered_file_sets
       # OVERRIDE Hyrda-works 1.2.0 - this method was deprecated in v1.0
-      object&.ordered_members.to_a.select(&:file_set?)
+      Bulkrax.object_factory.ordered_file_sets_for(object)
     end
 
     def import_files
@@ -130,9 +130,12 @@ module Bulkrax
       update_filesets(u)
     end
 
+    # rubocop:disable Metrics/AbcSize
     def update_filesets(current_file)
       if @update_files && local_file_sets.present?
         fileset = local_file_sets.shift
+        # TODO: Handle valkyrie way
+        return if fileset.is_a? Hyrax::Resource
         return nil if fileset.files.first.checksum.value == Digest::SHA1.file(current_file.file.path).to_s
 
         fileset.files.first.create_version
@@ -150,5 +153,6 @@ module Bulkrax
         current_file.id
       end
     end
+    # rubocop:enable Metrics/AbcSize
   end
 end

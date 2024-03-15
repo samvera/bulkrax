@@ -12,6 +12,26 @@ module Bulkrax
     # @!group Class Method Interface
 
     ##
+    # @note This does not save either object.  We need to do that in another
+    #       loop.  Why?  Because we might be adding many items to the parent.
+    def self.add_child_to_parent_work(parent:, child:)
+      return true if parent.ordered_members.to_a.include?(child_record)
+
+      parent.ordered_members << child
+    end
+
+    def self.add_resource_to_collection(collection:, resource:, user:)
+      collection.try(:reindex_extent=, Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX) if
+        defined?(Hyrax::Adapters::NestingIndexAdapter)
+      resource.member_of_collections << collection
+      save!(resource: resource, user: user)
+    end
+
+    def self.update_index_for_file_sets_of(resource:)
+      resource.file_sets.each(&:update_index) if resource.respond_to?(:file_sets)
+    end
+
+    ##
     # @see Bulkrax::ObjectFactoryInterface
     def self.export_properties
       # TODO: Consider how this may or may not work for Valkyrie
@@ -26,6 +46,10 @@ module Bulkrax
       ActiveFedora::Base.find(id)
     rescue ActiveFedora::ObjectNotFoundError => e
       raise ObjectFactoryInterface::ObjectNotFoundError, e.message
+    end
+
+    def self.publish(**)
+      return true
     end
 
     ##
@@ -93,8 +117,16 @@ module Bulkrax
       end
     end
 
+    def self.ordered_file_sets_for(object)
+      object&.ordered_members.to_a.select(&:file_set?)
+    end
+
     def self.save!(resource:, **)
       resource.save!
+    end
+
+    def self.update_index(resources: [])
+      Array(resources).each(&:update_index)
     end
     # @!endgroup Class Method Interface
     ##

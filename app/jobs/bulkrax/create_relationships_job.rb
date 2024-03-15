@@ -80,14 +80,8 @@ module Bulkrax
           # save record if members were added
           if @parent_record_members_added
             Bulkrax.object_factory.save!(resource: parent_record, user: importer_run.user)
-            # Ensure that the new relationship gets indexed onto the children
-            if parent_record.is_a?(Valkyrie::Resource)
-              @child_members_added.each do |child|
-                Hyrax.index_adapter.save(resource: child)
-              end
-            else
-              @child_members_added.each(&:update_index)
-            end
+            Bulkrax.object_factory.publish(event: 'object.membership.updated', object: parent_record)
+            Bulkrax.object_factory.update_index(resources: @child_members_added)
           end
         end
       else
@@ -110,7 +104,7 @@ module Bulkrax
         parent_entry&.set_status_info(errors.last, importer_run)
 
         # TODO: This can create an infinite job cycle, consider a time to live tracker.
-        reschedule({ parent_identifier: parent_identifier, importer_run_id: importer_run_id })
+        reschedule(parent_identifier: parent_identifier, importer_run_id: importer_run_id)
         return false # stop current job from continuing to run after rescheduling
       else
         # rubocop:disable Rails/SkipsModelValidations
@@ -159,38 +153,32 @@ module Bulkrax
       # We could do this outside of the loop, but that could lead to odd counter failures.
       ability.authorize!(:edit, parent_record)
 
-      parent_record.is_a?(Bulkrax.collection_model_class) ? add_to_collection(child_record, parent_record) : add_to_work(child_record, parent_record)
+      if parent_record.is_a?(Bulkrax.collection_model_class)
+        add_to_collection(child_record, parent_record)
+      else
+        add_to_work(child_record, parent_record)
+      end
 
-      child_record.file_sets.each(&:update_index) if update_child_records_works_file_sets? && child_record.respond_to?(:file_sets)
+      Bulkrax.object_factory.update_index_for_file_sets_of(resource: child_record) if update_child_records_works_file_sets?
+
       relationship.destroy
     end
 
     def add_to_collection(child_record, parent_record)
-      parent_record.try(:reindex_extent=, Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX) if
-        defined?(Hyrax::Adapters::NestingIndexAdapter)
-      child_record.member_of_collections << parent_record # TODO: This is not going to work for Valkyrie.  Look to add_to_work for inspiration.
-      Bulkrax.object_factory.save!(resource: child_record, user: importer_run.user)
+      Bulkrax.object_factory.add_resource_to_collection(
+        collection: parent_record,
+        resource: child_record,
+        user: importer_run.user
+      )
     end
 
     def add_to_work(child_record, parent_record)
-      parent_record.is_a?(Valkyrie::Resource) ? add_to_valkyrie_work(child_record, parent_record) : add_to_af_work(child_record, parent_record)
-
-      @parent_record_members_added = true
-      @child_members_added << child_record
-    end
-
-    def add_to_valkyrie_work(child_record, parent_record)
-      return true if parent_record.member_ids.include?(child_record.id)
-
-      parent_record.member_ids << child_record.id
-      Hyrax.persister.save(resource: parent_record)
-      Hyrax.publisher.publish('object.membership.updated', object: parent_record)
-    end
-
-    def add_to_af_work(child_record, parent_record)
-      return true if parent_record.ordered_members.to_a.include?(child_record)
-
-      parent_record.ordered_members << child_record
+      # NOTE: The .add_child_to_parent_work should not persist changes to the
+      #       child nor parent.  We'll do that elsewhere in this loop.
+      Bulkrax.object_factory.add_child_to_parent_work(
+        parent: parent_record,
+        child: child_record
+      )
     end
 
     def reschedule(parent_identifier:, importer_run_id:)
