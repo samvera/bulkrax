@@ -22,6 +22,13 @@ module Bulkrax
     end
 
     class_methods do
+      ##
+      # @note This does not save either object.  We need to do that in another
+      #       loop.  Why?  Because we might be adding many items to the parent.
+      def add_child_to_parent_work(parent:, child:)
+        raise NotImplementedError, "#{self}.#{__method__}"
+      end
+
       def add_resource_to_collection(collection:, resource:, user:)
         raise NotImplementedError, "#{self}.#{__method__}"
       end
@@ -57,6 +64,10 @@ module Bulkrax
         raise e
       rescue
         nil
+      end
+
+      def publish(event:, **kwargs)
+        raise NotImplementedError, "#{self}.#{__method__}"
       end
 
       def query(q, **kwargs)

@@ -7,6 +7,16 @@ module Bulkrax
 
     ##
     # @!group Class Method Interface
+
+    ##
+    # @note This does not save either object.  We need to do that in another
+    #       loop.  Why?  Because we might be adding many items to the parent.
+    def self.add_child_to_parent_work(parent:, child:)
+      return true if parent.member_ids.include?(child.id)
+
+      parent.member_ids << child.id
+    end
+
     def self.add_resource_to_collection(collection:, resource:, user:)
       resource.member_of_collections_ids << collection.id
       save!(resource: resource, user: user)
@@ -40,6 +50,10 @@ module Bulkrax
       Hyrax.config.index_field_mapper.solr_name(field_name)
     end
 
+    def self.publish(event:, **kwargs)
+      Hyrax.publisher.publish(event, **kwargs)
+    end
+
     def self.query(q, **kwargs)
       # Someone could choose ActiveFedora::SolrService.  But I think we're
       # assuming Valkyrie is specifcally working for Hyrax.  Someone could make
@@ -56,9 +70,9 @@ module Bulkrax
         raise Valkyrie::Persistence::ObjectNotFoundError unless result
         Hyrax.index_adapter.save(resource: result)
         if result.collection?
-          Hyrax.publisher.publish('collection.metadata.updated', collection: result, user: user)
+          publish('collection.metadata.updated', collection: result, user: user)
         else
-          Hyrax.publisher.publish('object.metadata.updated', object: result, user: user)
+          publish('object.metadata.updated', object: result, user: user)
         end
         resource
       end
@@ -258,8 +272,9 @@ module Bulkrax
 
     def apply_depositor_metadata(object, user)
       object.depositor = user.email
+      # TODO: Should we leverage the object factory's save! method?
       object = Hyrax.persister.save(resource: object)
-      Hyrax.publisher.publish("object.metadata.updated", object: object, user: @user)
+      self.class.publish("object.metadata.updated", object: object, user: @user)
       object
     end
 
@@ -316,7 +331,7 @@ module Bulkrax
 
       Hyrax.persister.delete(resource: obj)
       Hyrax.index_adapter.delete(resource: obj)
-      Hyrax.publisher.publish('object.deleted', object: obj, user: user)
+      self.class.publish('object.deleted', object: obj, user: user)
     end
 
     private

@@ -80,6 +80,7 @@ module Bulkrax
           # save record if members were added
           if @parent_record_members_added
             Bulkrax.object_factory.save!(resource: parent_record, user: importer_run.user)
+            Bulkrax.object_factory.publish(event: 'object.membership.updated', object: parent_record)
             Bulkrax.object_factory.update_index(resources: @child_members_added)
           end
         end
@@ -152,9 +153,14 @@ module Bulkrax
       # We could do this outside of the loop, but that could lead to odd counter failures.
       ability.authorize!(:edit, parent_record)
 
-      parent_record.is_a?(Bulkrax.collection_model_class) ? add_to_collection(child_record, parent_record) : add_to_work(child_record, parent_record)
+      if parent_record.is_a?(Bulkrax.collection_model_class)
+        add_to_collection(child_record, parent_record)
+      else
+        add_to_work(child_record, parent_record)
+      end
 
       Bulkrax.object_factory.conditionally_update_index_for_file_sets_of(resource: child_record) if update_child_records_works_file_sets?
+
       relationship.destroy
     end
 
@@ -167,24 +173,12 @@ module Bulkrax
     end
 
     def add_to_work(child_record, parent_record)
-      parent_record.is_a?(Valkyrie::Resource) ? add_to_valkyrie_work(child_record, parent_record) : add_to_af_work(child_record, parent_record)
-
-      @parent_record_members_added = true
-      @child_members_added << child_record
-    end
-
-    def add_to_valkyrie_work(child_record, parent_record)
-      return true if parent_record.member_ids.include?(child_record.id)
-
-      parent_record.member_ids << child_record.id
-      Hyrax.persister.save(resource: parent_record)
-      Hyrax.publisher.publish('object.membership.updated', object: parent_record)
-    end
-
-    def add_to_af_work(child_record, parent_record)
-      return true if parent_record.ordered_members.to_a.include?(child_record)
-
-      parent_record.ordered_members << child_record
+      # NOTE: The .add_child_to_parent_work should not persist changes to the
+      #       child nor parent.  We'll do that elsewhere in this loop.
+      Bulkrax.object_factory.add_child_to_parent_work(
+        parent: parent_record,
+        child: child_record
+      )
     end
 
     def reschedule(parent_identifier:, importer_run_id:)
