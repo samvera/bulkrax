@@ -104,7 +104,7 @@ module Bulkrax
         parent_entry&.set_status_info(errors.last, importer_run)
 
         # TODO: This can create an infinite job cycle, consider a time to live tracker.
-        reschedule({ parent_identifier: parent_identifier, importer_run_id: importer_run_id })
+        reschedule(parent_identifier: parent_identifier, importer_run_id: importer_run_id)
         return false # stop current job from continuing to run after rescheduling
       else
         # rubocop:disable Rails/SkipsModelValidations
