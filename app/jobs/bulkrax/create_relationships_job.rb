@@ -159,10 +159,11 @@ module Bulkrax
     end
 
     def add_to_collection(child_record, parent_record)
-      parent_record.try(:reindex_extent=, Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX) if
-        defined?(Hyrax::Adapters::NestingIndexAdapter)
-      child_record.member_of_collections << parent_record # TODO: This is not going to work for Valkyrie.  Look to add_to_work for inspiration.
-      Bulkrax.object_factory.save!(resource: child_record, user: importer_run.user)
+      Bulkrax.object_factory.add_resource_to_collection(
+        collection: parent_record,
+        resource: child_record,
+        user: importer_run.user
+      )
     end
 
     def add_to_work(child_record, parent_record)

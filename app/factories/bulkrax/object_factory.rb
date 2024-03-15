@@ -10,6 +10,12 @@ module Bulkrax
 
     ##
     # @!group Class Method Interface
+    def self.add_resource_to_collection(collection:, resource:, user:)
+      collection.try(:reindex_extent=, Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX) if
+        defined?(Hyrax::Adapters::NestingIndexAdapter)
+      resource.member_of_collections << collection
+      save!(resource: resource, user: user)
+    end
 
     def self.conditionally_update_index_for_file_sets_of(resource:)
       resource.file_sets.each(&:update_index) if resource.respond_to?(:file_sets)

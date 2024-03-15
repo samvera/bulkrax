@@ -49,12 +49,11 @@ module Bulkrax
           end
         end
 
-        def associate_collection(child:, parent:)
-        end
-        def associate_work(child:, parent:)
-        end
-        def associate_file(child:, parent:)
-        end
+        def associate_collection(child:, parent:); end
+
+        def associate_work(child:, parent:); end
+
+        def associate_file(child:, parent:); end
       end
     end
   end

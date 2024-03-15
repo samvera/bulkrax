@@ -5,6 +5,13 @@ module Bulkrax
   class ValkyrieObjectFactory < ObjectFactory
     include ObjectFactoryInterface
 
+    ##
+    # @!group Class Method Interface
+    def self.add_resource_to_collection(collection:, resource:, user:)
+      resource.member_of_collections_ids << collection.id
+      save!(resource: resource, user: user)
+    end
+
     def self.conditionally_update_index_for_file_sets_of(resource:)
       file_sets = Hyrax.query_service.custom_queries.find_child_file_sets(resource: resource)
       update_index(resources: file_sets)

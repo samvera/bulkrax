@@ -22,6 +22,10 @@ module Bulkrax
     end
 
     class_methods do
+      def add_resource_to_collection(collection:, resource:, user:)
+        raise NotImplementedError, "#{self}.#{__method__}"
+      end
+
       ##
       # @yield when Rails application is running in test environment.
       def clean!
