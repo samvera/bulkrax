@@ -6,6 +6,21 @@ module Bulkrax
     include ObjectFactoryInterface
 
     ##
+    # When you want a different set of transactions you can change the
+    # container.
+    #
+    # @note Within {Bulkrax::ValkyrieObjectFactory} there are several calls to
+    #       transactions; so you'll need your container to register those
+    #       transactions.
+    def self.transactions
+      @transactions || Hyrax::Transactions::Container
+    end
+
+    def transactions
+      self.class.transactions
+    end
+
+    ##
     # @!group Class Method Interface
 
     ##
@@ -159,7 +174,7 @@ module Bulkrax
       # NOTE: We do not add relationships here; that is part of the create
       # relationships job.
       perform_transaction_for(object: object, attrs: attrs) do
-        transactions["work_resource.create_with_bulk_behavior"]
+        transactions["change_set.create_work"]
           .with_step_args(
             'work_resource.add_file_sets' => { uploaded_files: get_files(attrs) },
             "change_set.set_user_as_depositor" => { user: @user },
@@ -201,7 +216,7 @@ module Bulkrax
 
     def update_work(object:, attrs:)
       perform_transaction_for(object: object, attrs: attrs) do
-        transactions["work_resource.update_with_bulk_behavior"]
+        transactions["change_set.update_work"]
           .with_step_args(
             'work_resource.add_file_sets' => { uploaded_files: get_files(attrs) },
             'work_resource.save_acl' => { permissions_params: [attrs.try('visibility') || 'open'].compact }
@@ -341,23 +356,6 @@ module Bulkrax
     # Query child FileSet in the resource/object
     def fetch_child_file_sets(resource:)
       Hyrax.custom_queries.find_child_file_sets(resource: resource)
-    end
-
-    ##
-    # @api public
-    #
-    # @return [#[]] a resolver for Hyrax's Transactions; this *should* be a
-    #   thread-safe {Dry::Container}, but callers to this method should strictly
-    #   use +#[]+ for access.
-    #
-    # @example
-    #   transactions['change_set.create_work'].call(my_form)
-    #
-    # @see Hyrax::Transactions::Container
-    # @see Hyrax::Transactions::Transaction
-    # @see https://dry-rb.org/gems/dry-container
-    def transactions
-      Hyrax::Transactions::Container
     end
   end
   # rubocop:enable Metrics/ClassLength

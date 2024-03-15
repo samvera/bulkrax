@@ -16,10 +16,6 @@ module Bulkrax
       end
     end
 
-    initializer 'requires' do
-      require 'bulkrax/transactions' if defined?(Hyrax::Transactions)
-    end
-
     config.generators do |g|
       g.test_framework :rspec
       begin
