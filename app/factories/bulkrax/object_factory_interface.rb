@@ -42,7 +42,7 @@ module Bulkrax
 
       ##
       # @param resource [Object] something that *might* have file_sets members.
-      def conditionally_update_index_for_file_sets_of(resource:)
+      def update_index_for_file_sets_of(resource:)
         raise NotImplementedError, "#{self}.#{__method__}"
       end
 

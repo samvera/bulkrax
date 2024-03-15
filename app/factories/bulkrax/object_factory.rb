@@ -27,7 +27,7 @@ module Bulkrax
       save!(resource: resource, user: user)
     end
 
-    def self.conditionally_update_index_for_file_sets_of(resource:)
+    def self.update_index_for_file_sets_of(resource:)
       resource.file_sets.each(&:update_index) if resource.respond_to?(:file_sets)
     end
 

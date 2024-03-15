@@ -159,7 +159,7 @@ module Bulkrax
         add_to_work(child_record, parent_record)
       end
 
-      Bulkrax.object_factory.conditionally_update_index_for_file_sets_of(resource: child_record) if update_child_records_works_file_sets?
+      Bulkrax.object_factory.update_index_for_file_sets_of(resource: child_record) if update_child_records_works_file_sets?
 
       relationship.destroy
     end

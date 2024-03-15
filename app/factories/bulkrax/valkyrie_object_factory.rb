@@ -22,7 +22,7 @@ module Bulkrax
       save!(resource: resource, user: user)
     end
 
-    def self.conditionally_update_index_for_file_sets_of(resource:)
+    def self.update_index_for_file_sets_of(resource:)
       file_sets = Hyrax.query_service.custom_queries.find_child_file_sets(resource: resource)
       update_index(resources: file_sets)
     end
