@@ -276,7 +276,7 @@ module Bulkrax
       object.depositor = user.email
       # TODO: Should we leverage the object factory's save! method?
       object = Hyrax.persister.save(resource: object)
-      self.class.publish("object.metadata.updated", object: object, user: @user)
+      self.class.publish(event: "object.metadata.updated", object: object, user: @user)
       object
     end
 
@@ -333,7 +333,7 @@ module Bulkrax
 
       Hyrax.persister.delete(resource: obj)
       Hyrax.index_adapter.delete(resource: obj)
-      self.class.publish('object.deleted', object: obj, user: user)
+      self.class.publish(event: 'object.deleted', object: obj, user: user)
     end
 
     private
