@@ -37,6 +37,13 @@ module Bulkrax
       save!(resource: resource, user: user)
     end
 
+    ##
+    # @see Hyrax::ObjectFactory.add_user_to_collection_permissions
+    def self.add_user_to_collection_permissions(collection:, user:)
+      # NOTE: We're inheriting from Hyrax::ObjectFactory
+      super
+    end
+
     def self.update_index_for_file_sets_of(resource:)
       file_sets = Hyrax.query_service.custom_queries.find_child_file_sets(resource: resource)
       update_index(resources: file_sets)

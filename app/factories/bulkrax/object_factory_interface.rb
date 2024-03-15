@@ -33,6 +33,10 @@ module Bulkrax
         raise NotImplementedError, "#{self}.#{__method__}"
       end
 
+      def add_user_to_collection_permissions(collection:, user:)
+        raise NotImplementedError, "#{self}.#{__method__}"
+      end
+
       ##
       # @yield when Rails application is running in test environment.
       def clean!
@@ -93,6 +97,10 @@ module Bulkrax
         raise NotImplementedError, "#{self}.#{__method__}"
       end
       # rubocop:enable Metrics/ParameterLists
+    end
+
+    def add_user_to_collection_permissions(*args)
+      self.class.add_user_to_collection_permissions(*args)
     end
   end
 end
