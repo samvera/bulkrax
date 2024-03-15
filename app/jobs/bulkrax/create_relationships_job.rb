@@ -154,7 +154,7 @@ module Bulkrax
 
       parent_record.is_a?(Bulkrax.collection_model_class) ? add_to_collection(child_record, parent_record) : add_to_work(child_record, parent_record)
 
-      child_record.file_sets.each(&:update_index) if update_child_records_works_file_sets? && child_record.respond_to?(:file_sets)
+      Bulkrax.object_factory.conditionally_update_index_for_file_sets_of(resource: child_record) if update_child_records_works_file_sets?
       relationship.destroy
     end
 

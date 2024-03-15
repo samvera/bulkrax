@@ -23,6 +23,25 @@ module Bulkrax
 
     class_methods do
       ##
+      # @yield when Rails application is running in test environment.
+      def clean!
+        return true unless Rails.env.test?
+        yield
+      end
+
+      ##
+      # @param resource [Object] something that *might* have file_sets members.
+      def conditionally_update_index_for_file_sets_of(resource:)
+        raise NotImplementedError, "#{self}.#{__method__}"
+      end
+
+      ##
+      # @return [Array<String>]
+      def export_properties
+        raise NotImplementedError, "#{self}.#{__method__}"
+      end
+
+      ##
       # @see ActiveFedora::Base.find
       def find(id)
         raise NotImplementedError, "#{self}.#{__method__}"
@@ -36,28 +55,6 @@ module Bulkrax
         nil
       end
 
-      ##
-      # @param resources [Array<Object>]
-      def update_index(resources: [])
-        raise NotImplementedError, "#{self}.#{__method__}"
-      end
-
-      ##
-      # @return [Array<String>]
-      def export_properties
-        raise NotImplementedError, "#{self}.#{__method__}"
-      end
-
-      def solr_name(field_name)
-        raise NotImplementedError, "#{self}.#{__method__}"
-      end
-
-      # @yield when Rails application is running in test environment.
-      def clean!
-        return true unless Rails.env.test?
-        yield
-      end
-
       def query(q, **kwargs)
         raise NotImplementedError, "#{self}.#{__method__}"
       end
@@ -68,6 +65,16 @@ module Bulkrax
 
       # rubocop:disable Metrics/ParameterLists
       def search_by_property(value:, klass:, field: nil, search_field: nil, name_field: nil, verify_property: false)
+        raise NotImplementedError, "#{self}.#{__method__}"
+      end
+
+      def solr_name(field_name)
+        raise NotImplementedError, "#{self}.#{__method__}"
+      end
+
+      ##
+      # @param resources [Array<Object>]
+      def update_index(resources: [])
         raise NotImplementedError, "#{self}.#{__method__}"
       end
       # rubocop:enable Metrics/ParameterLists

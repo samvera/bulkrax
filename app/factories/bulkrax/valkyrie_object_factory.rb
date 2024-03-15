@@ -5,6 +5,11 @@ module Bulkrax
   class ValkyrieObjectFactory < ObjectFactory
     include ObjectFactoryInterface
 
+    def self.conditionally_update_index_for_file_sets_of(resource:)
+      file_sets = Hyrax.query_service.custom_queries.find_child_file_sets(resource: resource)
+      update_index(resources: file_sets)
+    end
+
     def self.find(id)
       if defined?(Hyrax)
         begin
