@@ -80,14 +80,7 @@ module Bulkrax
           # save record if members were added
           if @parent_record_members_added
             Bulkrax.object_factory.save!(resource: parent_record, user: importer_run.user)
-            # Ensure that the new relationship gets indexed onto the children
-            if parent_record.is_a?(Valkyrie::Resource)
-              @child_members_added.each do |child|
-                Hyrax.index_adapter.save(resource: child)
-              end
-            else
-              @child_members_added.each(&:update_index)
-            end
+            Bulkrax.object_factory.update_index(resources: @child_members_added)
           end
         end
       else

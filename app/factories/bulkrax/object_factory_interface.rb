@@ -37,6 +37,12 @@ module Bulkrax
       end
 
       ##
+      # @param resources [Array<Object>]
+      def update_index(resources: [])
+        raise NotImplementedError, "#{self}.#{__method__}"
+      end
+
+      ##
       # @return [Array<String>]
       def export_properties
         raise NotImplementedError, "#{self}.#{__method__}"

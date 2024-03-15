@@ -100,6 +100,10 @@ module Bulkrax
     def self.save!(resource:, **)
       resource.save!
     end
+
+    def self.update_index(resources: [])
+      Array(resources).each(&:update_index)
+    end
     # @!endgroup Class Method Interface
     ##
 

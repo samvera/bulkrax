@@ -36,19 +36,25 @@ module Bulkrax
       Hyrax::SolrService.query(q, **kwargs)
     end
 
-    def self.save!(resource:, user:, persister: Hyrax.persister, index_adapter: Hyrax.index_adapter)
+    def self.save!(resource:, user:)
       if resource.respond_to?(:save!)
         resource.save!
       else
-        result = persister.save(resource: resource)
+        result = Hyrax.persister.save(resource: resource)
         raise Valkyrie::Persistence::ObjectNotFoundError unless result
-        index_adapter.save(resource: result)
+        Hyrax.index_adapter.save(resource: result)
         if result.collection?
           Hyrax.publisher.publish('collection.metadata.updated', collection: result, user: user)
         else
           Hyrax.publisher.publish('object.metadata.updated', object: result, user: user)
         end
         resource
+      end
+    end
+
+    def self.update_index(resources:)
+      Array(resources).each do |resource|
+        Hyrax.index_adapter.save(resource: resource)
       end
     end
 
@@ -269,7 +275,7 @@ module Bulkrax
         return
       elsif klass < Valkyrie::Resource
         destroy_existing_files
-      else 
+      else
         raise "Unexpected #{klass} for #{self.class}##{__method__}"
       end
     end
