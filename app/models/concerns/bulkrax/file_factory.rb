@@ -130,6 +130,7 @@ module Bulkrax
       update_filesets(u)
     end
 
+    # rubocop:disable Metrics/AbcSize
     def update_filesets(current_file)
       if @update_files && local_file_sets.present?
         fileset = local_file_sets.shift
@@ -152,5 +153,6 @@ module Bulkrax
         current_file.id
       end
     end
+    # rubocop:enable Metrics/AbcSize
   end
 end
