@@ -156,10 +156,11 @@ module Bulkrax
     end
 
     def create_work(object:, attrs:)
+      # NOTE: We do not add relationships here; that is part of the create
+      # relationships job.
       perform_transaction_for(object: object, attrs: attrs) do
         transactions["work_resource.create_with_bulk_behavior"]
           .with_step_args(
-            "work_resource.add_to_parent" => { parent_id: attrs[related_parents_parsed_mapping], user: @user },
             'work_resource.add_file_sets' => { uploaded_files: get_files(attrs) },
             "change_set.set_user_as_depositor" => { user: @user },
             "work_resource.change_depositor" => { user: @user },
@@ -169,11 +170,12 @@ module Bulkrax
     end
 
     def create_collection(object:, attrs:)
+      # NOTE: We do not add relationships here; that is part of the create
+      # relationships job.
       perform_transaction_for(object: object, attrs: attrs) do
         transactions['change_set.create_collection']
           .with_step_args(
             'change_set.set_user_as_depositor' => { user: @user },
-            'change_set.add_to_collections' => { collection_ids: Array(attrs[related_parents_parsed_mapping]) },
             'collection_resource.apply_collection_type_permissions' => { user: @user }
           )
       end
