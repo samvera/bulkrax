@@ -2,7 +2,6 @@
 
 module Bulkrax
   # This class is provided for object stubbery and mockery.
-  class MockObjectFactory
-    include Bulkrax::ObjectFactoryInterface
+  class MockObjectFactory < Bulkrax::ObjectFactoryInterface
   end
 end

@@ -2,8 +2,10 @@
 
 module Bulkrax
   # rubocop:disable Metrics/ClassLength
-  class ValkyrieObjectFactory < ObjectFactory
-    include ObjectFactoryInterface
+  class ValkyrieObjectFactory < ObjectFactoryInterface
+    # TODO: the following module needs revisiting for Valkyrie work.
+    #       proposal is to create Bulkrax::ValkyrieFileFactory.
+    include Bulkrax::FileFactory
 
     ##
     # When you want a different set of transactions you can change the
@@ -120,7 +122,7 @@ module Bulkrax
     def self.search_by_property(value:, klass:, field: nil, name_field: nil, **)
       name_field ||= field
       raise "Expected named_field or field got nil" if name_field.blank?
-      return unless value.present?
+      return if value.blank?
 
       # Return nil or a single object.
       Hyrax.query_service.custom_query.find_by_model_and_property_value(model: klass, property: name_field, value: value)
@@ -158,11 +160,12 @@ module Bulkrax
     end
 
     def create_file_set(attrs)
+      # TODO: Make it work for Valkyrie
     end
 
     def transform_attributes
       attrs = super.merge(alternate_ids: [source_identifier_value])
-        .symbolize_keys
+                   .symbolize_keys
 
       attrs[:title] = [''] if attrs[:title].blank?
       attrs[:creator] = [''] if attrs[:creator].blank?
@@ -184,6 +187,8 @@ module Bulkrax
     end
 
     def create_collection(attrs)
+      # TODO: Handle Collection Type
+      #
       # NOTE: We do not add relationships here; that is part of the create
       # relationships job.
       perform_transaction_for(object: object, attrs: attrs) do
@@ -193,10 +198,6 @@ module Bulkrax
             'collection_resource.apply_collection_type_permissions' => { user: @user }
           )
       end
-    end
-
-    def create_file_set(attrs)
-      # TODO: Make it work
     end
 
     def conditionall_apply_depositor_metadata

@@ -1,12 +1,9 @@
 # frozen_string_literal: true
 
 module Bulkrax
-  class ObjectFactory # rubocop:disable Metrics/ClassLength
-    include ObjectFactoryInterface
-
-    extend ActiveModel::Callbacks
+  # rubocop:disable Metrics/ClassLength
+  class ObjectFactory < ObjectFactoryInterface
     include Bulkrax::FileFactory
-    include DynamicRecordLookup
 
     ##
     # @!group Class Method Interface
@@ -115,8 +112,9 @@ module Bulkrax
     #
     # @see # {Wings::CustomQueries::FindBySourceIdentifier#find_by_model_and_property_value}
     def self.search_by_property(value:, klass:, field: nil, search_field: nil, name_field: nil, verify_property: false)
+      # We're not going to try to match nil nor "".
+      return if value.blank?
       return if verify_property && !klass.properties.keys.include?(search_field)
-      return unless value.present?
 
       search_field ||= field
       name_field ||= field
@@ -174,118 +172,8 @@ module Bulkrax
     # @!endgroup Class Method Interface
     ##
 
-    # @api private
-    #
-    # These are the attributes that we assume all "work type" classes (e.g. the given :klass) will
-    # have in addition to their specific attributes.
-    #
-    # @return [Array<Symbol>]
-    # @see #permitted_attributes
-    class_attribute :base_permitted_attributes,
-      default: %i[id edit_users edit_groups read_groups visibility work_members_attributes admin_set_id]
-
-    # @return [Boolean]
-    #
-    # @example
-    #   Bulkrax::ObjectFactory.transformation_removes_blank_hash_values = true
-    #
-    # @see #transform_attributes
-    # @see https://github.com/samvera-labs/bulkrax/pull/708 For discussion concerning this feature
-    # @see https://github.com/samvera-labs/bulkrax/wiki/Interacting-with-Metadata For documentation
-    #      concerning default behavior.
-    class_attribute :transformation_removes_blank_hash_values, default: false
-
-    define_model_callbacks :save, :create
-    attr_reader :attributes, :object, :source_identifier_value, :klass, :replace_files, :update_files, :work_identifier, :work_identifier_search_field, :related_parents_parsed_mapping, :importer_run_id
-
-    # rubocop:disable Metrics/ParameterLists
-    def initialize(attributes:, source_identifier_value:, work_identifier:, work_identifier_search_field:, related_parents_parsed_mapping: nil, replace_files: false, user: nil, klass: nil, importer_run_id: nil, update_files: false)
-      @attributes = ActiveSupport::HashWithIndifferentAccess.new(attributes)
-      @replace_files = replace_files
-      @update_files = update_files
-      @user = user || User.batch_user
-      @work_identifier = work_identifier
-      @work_identifier_search_field = work_identifier_search_field
-      @related_parents_parsed_mapping = related_parents_parsed_mapping
-      @source_identifier_value = source_identifier_value
-      @klass = klass || Bulkrax.default_work_type.constantize
-      @importer_run_id = importer_run_id
-    end
-    # rubocop:enable Metrics/ParameterLists
-
-    # update files is set, replace files is set or this is a create
-    def with_files
-      update_files || replace_files || !object
-    end
-
-    def run
-      arg_hash = { id: attributes[:id], name: 'UPDATE', klass: klass }
-      @object = find
-      if object
-        conditionally_set_reindex_extent
-        ActiveSupport::Notifications.instrument('import.importer', arg_hash) { update }
-      else
-        ActiveSupport::Notifications.instrument('import.importer', arg_hash.merge(name: 'CREATE')) { create }
-      end
-      yield(object) if block_given?
-      object
-    end
-
-    def run!
-      self.run
-      # Create the error exception if the object is not validly saved for some reason
-      raise ObjectFactoryInterface::RecordInvalid, object if !object.persisted? || object.changed?
-      object
-    end
-
-    def update
-      raise "Object doesn't exist" unless object
-      conditionally_destroy_existing_files
-
-      attrs = transform_attributes(update: true)
-      run_callbacks :save do
-        if klass == Bulkrax.collection_model_class
-          update_collection(attrs)
-        elsif klass == Bulkrax.file_model_class
-          update_file_set(attrs)
-        else
-          update_work(attrs)
-        end
-      end
-      conditionally_apply_depositor_metadata
-      log_updated(object)
-    end
-
-    def conditionally_set_reindex_extent
-      return unless defined?(Hyrax::Adapters::NestingIndexAdapter)
-      return unless object.respond_to?(:reindex_extent)
-      object.reindex_extent = Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX
-    end
-
-    def conditionally_destroy_existing_files
-      return unless @replace_files
-
-      return if [Bulkrax.collection_model_class, Bulkrax.file_model_class].include?(klass)
-
-      destroy_existing_files
-    end
-
-    def conditionally_apply_depositor_metadata
-      object.apply_depositor_metadata(@user) && object.save! if object.depositor.nil?
-    end
-
-    ##
-    # @api public
-    #
-    # @return [Object] when we've found the object by the entry's :id or by it's
-    #         source_identifier
-    # @return [FalseClass] when we cannot find the object.
-    def find
-      find_by_id || search_by_identifier || false
-    end
-
     def find_by_id
-      return false unless attributes[:id].present?
+      return false if attributes[:id].blank?
       # Rails / Ruby upgrade, we moved from :exists? to :exist?  However we want to continue (for a
       # bit) to support older versions.
       method_name = klass.respond_to?(:exist?) ? :exist? : :exists?
@@ -293,65 +181,6 @@ module Bulkrax
     rescue Valkyrie::Persistence::ObjectNotFoundError
       false
     end
-
-    def find_or_create
-      o = find
-      return o if o
-      run(&:save!)
-    end
-
-    def search_by_identifier
-      return false unless source_identifier_value.present?
-
-      self.class.search_by_property(
-        klass: klass,
-        search_field: work_identifier_search_field,
-        value: source_identifier_value,
-        name_field: work_identifier
-      )
-    end
-
-    # An ActiveFedora bug when there are many habtm <-> has_many associations means they won't all get saved.
-    # https://github.com/projecthydra/active_fedora/issues/874
-    # 2+ years later, still open!
-    def create
-      attrs = transform_attributes
-      @object = klass.new
-      conditionally_set_reindex_extent
-      run_callbacks :save do
-        run_callbacks :create do
-          if klass == Bulkrax.collection_model_class
-            create_collection(attrs)
-          elsif klass == Bulkrax.file_model_class
-            create_file_set(attrs)
-          else
-            create_work(attrs)
-          end
-        end
-      end
-
-      conditionally_apply_depositor_metadata
-      log_created(object)
-    end
-
-    private
-
-    def log_created(obj)
-      msg = "Created #{klass.model_name.human} #{obj.id}"
-      Rails.logger.info("#{msg} (#{Array(attributes[work_identifier]).first})")
-    end
-
-    def log_updated(obj)
-      msg = "Updated #{klass.model_name.human} #{obj.id}"
-      Rails.logger.info("#{msg} (#{Array(attributes[work_identifier]).first})")
-    end
-
-    def log_deleted_fs(obj)
-      msg = "Deleted All Files from #{obj.id}"
-      Rails.logger.info("#{msg} (#{Array(attributes[work_identifier]).first})")
-    end
-
-    public
 
     def delete(_user)
       find&.delete
@@ -445,52 +274,6 @@ module Bulkrax
       update == true ? actor.update_content(tmp_file) : actor.create_content(tmp_file, from_url: true)
       tmp_file.close
     end
-
-    def clean_attrs(attrs)
-      # avoid the "ArgumentError: Identifier must be a string of size > 0 in order to be treeified" error
-      # when setting object.attributes
-      attrs.delete('id') if attrs['id'].blank?
-      attrs
-    end
-
-    def collection_type(attrs)
-      return attrs if attrs['collection_type_gid'].present?
-
-      attrs['collection_type_gid'] = Hyrax::CollectionType.find_or_create_default_collection_type.to_global_id.to_s
-      attrs
-    end
-
-    # Override if we need to map the attributes from the parser in
-    # a way that is compatible with how the factory needs them.
-    def transform_attributes(update: false)
-      @transform_attributes = attributes.slice(*permitted_attributes)
-      @transform_attributes.merge!(file_attributes(update_files)) if with_files
-      @transform_attributes = remove_blank_hash_values(@transform_attributes) if transformation_removes_blank_hash_values?
-      update ? @transform_attributes.except(:id) : @transform_attributes
-    end
-
-    # Regardless of what the Parser gives us, these are the properties we are prepared to accept.
-    def permitted_attributes
-      klass.properties.keys.map(&:to_sym) + base_permitted_attributes
-    end
-
-    # Return a copy of the given attributes, such that all values that are empty or an array of all
-    # empty values are fully emptied.  (See implementation details)
-    #
-    # @param attributes [Hash]
-    # @return [Hash]
-    #
-    # @see https://github.com/emory-libraries/dlp-curate/issues/1973
-    def remove_blank_hash_values(attributes)
-      dupe = attributes.dup
-      dupe.each do |key, values|
-        if values.is_a?(Array) && values.all? { |value| value.is_a?(String) && value.empty? }
-          dupe[key] = []
-        elsif values.is_a?(String) && values.empty?
-          dupe[key] = nil
-        end
-      end
-      dupe
-    end
   end
+  # rubocop:enable Metrics/ClassLength
 end
