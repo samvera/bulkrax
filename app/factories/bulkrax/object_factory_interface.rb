@@ -254,8 +254,10 @@ module Bulkrax
       raise NotImplementedError, "#{self.class}##{__method__}"
     end
 
+    ##
+    # Assumes object will respond_to save
     def find_or_create
-      find || run(&:save!)
+      find || self.class.save!(object: run, user: @user)
     end
 
     def run
