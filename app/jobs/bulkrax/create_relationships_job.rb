@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 module Bulkrax
+  ##
   # Responsible for creating parent-child relationships between Works and Collections.
   #
   # Handles three kinds of relationships:
@@ -42,6 +43,7 @@ module Bulkrax
 
     queue_as Bulkrax.config.ingest_queue_name
 
+    ##
     # @param parent_identifier [String] Work/Collection ID or Bulkrax::Entry source_identifiers
     # @param importer_run [Bulkrax::ImporterRun] current importer run (needed to properly update counters)
     #
