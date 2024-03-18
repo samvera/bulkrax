@@ -216,6 +216,17 @@ module Bulkrax
     end
     # rubocop:enable Metrics/ParameterLists
 
+    ##
+    # NOTE: There has been a long-standing implementation where we might reset
+    # the @update_files when we call #file_attributes.  As we refactor
+    # towards extracting a class, this attr_writer preserves the behavior.
+    #
+    # Jeremy here, I think the behavior of setting the instance variable when
+    # calling file_attributes is wrong, but now is not the time to untwine.
+    attr_writer :update_files
+
+    alias update_files? update_files
+
     # An ActiveFedora bug when there are many habtm <-> has_many associations
     # means they won't all get saved.
     # https://github.com/projecthydra/active_fedora/issues/874 9+ years later,
@@ -399,7 +410,7 @@ module Bulkrax
     # a way that is compatible with how the factory needs them.
     def transform_attributes(update: false)
       @transform_attributes = attributes.slice(*permitted_attributes)
-      @transform_attributes.merge!(file_attributes(update_files)) if with_files
+      @transform_attributes.merge!(file_attributes(update_files?)) if with_files
       @transform_attributes = remove_blank_hash_values(@transform_attributes) if transformation_removes_blank_hash_values?
       update ? @transform_attributes.except(:id) : @transform_attributes
     end
