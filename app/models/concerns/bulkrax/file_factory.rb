@@ -22,8 +22,10 @@ module Bulkrax
     extend ActiveSupport::Concern
 
     included do
+      class_attribute :file_set_factory_inner_workings_class, default: Bulkrax::FileFactory::InnerWorkings
+
       def file_set_factory_inner_workings
-        @file_set_factory_inner_workings ||= Bulkrax::FileFactory::InnerWorkings.new(object_factory: self)
+        @file_set_factory_inner_workings ||= file_set_factory_inner_workings_class.new(object_factory: self)
       end
 
       delegate :file_attributes, :destroy_existing_files, to: :file_set_factory_inner_workings
