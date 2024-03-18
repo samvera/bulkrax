@@ -45,19 +45,10 @@ module Bulkrax
     end
 
     def self.find(id)
-      if defined?(Hyrax)
-        begin
-          Hyrax.query_service.find_by(id: id)
-          # Because Hyrax is not a hard dependency, we need to transform the Hyrax exception into a
-          # common exception so that callers can handle a generalize exception.
-        rescue Hyrax::ObjectNotFoundError => e
-          raise ObjectFactoryInterface::ObjectNotFoundError, e.message
-        end
-      else
-        # NOTE: Fair warning; you might might need a custom query for find by alternate id.
-        Valkyrie.query_service.find_by(id: id)
-      end
-    rescue Valkyrie::Persistence::ObjectNotFoundError => e
+      Hyrax.query_service.find_by(id: id)
+      # Because Hyrax is not a hard dependency, we need to transform the Hyrax exception into a
+      # common exception so that callers can handle a generalize exception.
+    rescue Hyrax::ObjectNotFoundError => e
       raise ObjectFactoryInterface::ObjectNotFoundError, e.message
     end
 
@@ -141,6 +132,15 @@ module Bulkrax
       Hyrax.custom_queries.find_child_file_sets(resource: object)
     end
 
+    def delete(user)
+      obj = find
+      return false unless obj
+
+      Hyrax.persister.delete(resource: obj)
+      Hyrax.index_adapter.delete(resource: obj)
+      self.class.publish(event: 'object.deleted', object: obj, user: user)
+    end
+
     def run!
       run
       return object if object.persisted?
@@ -148,21 +148,21 @@ module Bulkrax
       raise(ObjectFactoryInterface::RecordInvalid, object)
     end
 
-    def find_by_id
-      Hyrax.query_service.find_by(id: attributes[:id]) if attributes.key? :id
+    private
+
+    def conditionall_apply_depositor_metadata
+      # We handle this in transactions
+      nil
+    end
+
+    def conditionally_set_reindex_extent
+      # Valkyrie does not concern itself with the reindex extent; no nesting
+      # indexers here!
+      nil
     end
 
     def create_file_set(attrs)
       # TODO: Make it work for Valkyrie
-    end
-
-    def transform_attributes
-      attrs = super.merge(alternate_ids: [source_identifier_value])
-                   .symbolize_keys
-
-      attrs[:title] = [''] if attrs[:title].blank?
-      attrs[:creator] = [''] if attrs[:creator].blank?
-      attrs
     end
 
     def create_work(attrs)
@@ -193,37 +193,8 @@ module Bulkrax
       end
     end
 
-    def conditionall_apply_depositor_metadata
-      # We handle this in transactions
-      nil
-    end
-
-    def conditionally_set_reindex_extent
-      # Valkyrie does not concern itself with the reindex extent; no nesting
-      # indexers here!
-      nil
-    end
-
-    def update_work(attrs)
-      perform_transaction_for(object: object, attrs: attrs) do
-        transactions["change_set.update_work"]
-          .with_step_args(
-            'work_resource.add_file_sets' => { uploaded_files: get_files(attrs) },
-            'work_resource.save_acl' => { permissions_params: [attrs.try('visibility') || 'open'].compact }
-          )
-      end
-    end
-
-    def update_collection(attrs)
-      # NOTE: We do not add relationships here; that is part of the create
-      # relationships job.
-      perform_transaction_for(object: object, attrs: attrs) do
-        transactions['change_set.update_collection']
-      end
-    end
-
-    def update_file_set(attrs)
-      # TODO: Make it work
+    def find_by_id
+      Hyrax.query_service.find_by(id: attributes[:id]) if attributes.key? :id
     end
 
     ##
@@ -257,6 +228,28 @@ module Bulkrax
         msg += " - #{result.failure[1].full_messages.join(',')}" if result.failure[1].respond_to?(:full_messages)
         raise StandardError, msg, result.trace
       end
+    end
+
+    def update_work(attrs)
+      perform_transaction_for(object: object, attrs: attrs) do
+        transactions["change_set.update_work"]
+          .with_step_args(
+            'work_resource.add_file_sets' => { uploaded_files: get_files(attrs) },
+            'work_resource.save_acl' => { permissions_params: [attrs.try('visibility') || 'open'].compact }
+          )
+      end
+    end
+
+    def update_collection(attrs)
+      # NOTE: We do not add relationships here; that is part of the create
+      # relationships job.
+      perform_transaction_for(object: object, attrs: attrs) do
+        transactions['change_set.update_collection']
+      end
+    end
+
+    def update_file_set(attrs)
+      # TODO: Make it work
     end
 
     def get_files(attrs)
@@ -332,13 +325,13 @@ module Bulkrax
       @object.thumbnail_id = nil
     end
 
-    def delete(user)
-      obj = find
-      return false unless obj
+    def transform_attributes
+      attrs = super.merge(alternate_ids: [source_identifier_value])
+                .symbolize_keys
 
-      Hyrax.persister.delete(resource: obj)
-      Hyrax.index_adapter.delete(resource: obj)
-      self.class.publish(event: 'object.deleted', object: obj, user: user)
+      attrs[:title] = [''] if attrs[:title].blank?
+      attrs[:creator] = [''] if attrs[:creator].blank?
+      attrs
     end
 
     private
