@@ -116,6 +116,7 @@ module Bulkrax
     # @see # {Wings::CustomQueries::FindBySourceIdentifier#find_by_model_and_property_value}
     def self.search_by_property(value:, klass:, field: nil, search_field: nil, name_field: nil, verify_property: false)
       return if verify_property && !klass.properties.keys.include?(search_field)
+      return unless value.present?
 
       search_field ||= field
       name_field ||= field
@@ -221,7 +222,7 @@ module Bulkrax
       arg_hash = { id: attributes[:id], name: 'UPDATE', klass: klass }
       @object = find
       if object
-        object.reindex_extent = Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX if object.respond_to?(:reindex_extent)
+        conditionally_set_reindex_extent
         ActiveSupport::Notifications.instrument('import.importer', arg_hash) { update }
       else
         ActiveSupport::Notifications.instrument('import.importer', arg_hash.merge(name: 'CREATE')) { create }
@@ -239,7 +240,8 @@ module Bulkrax
 
     def update
       raise "Object doesn't exist" unless object
-      destroy_existing_files if @replace_files && ![Bulkrax.collection_model_class, Bulkrax.file_model_class].include?(klass)
+      conditionally_destroy_existing_files
+
       attrs = transform_attributes(update: true)
       run_callbacks :save do
         if klass == Bulkrax.collection_model_class
@@ -250,19 +252,40 @@ module Bulkrax
           update_work(attrs)
         end
       end
-      object.apply_depositor_metadata(@user) && object.save! if object.depositor.nil?
+      conditionally_apply_depositor_metadata
       log_updated(object)
     end
 
-    def find
-      found = find_by_id if attributes[:id].present?
-      return found if found.present?
-      return search_by_identifier if source_identifier_value.present?
+    def conditionally_set_reindex_extent
+      return unless defined?(Hyrax::Adapters::NestingIndexAdapter)
+      return unless object.respond_to?(:reindex_extent)
+      object.reindex_extent = Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX
+    end
 
-      false
+    def conditionally_destroy_existing_files
+      return unless @replace_files
+
+      return if [Bulkrax.collection_model_class, Bulkrax.file_model_class].include?(klass)
+
+      destroy_existing_files
+    end
+
+    def conditionally_apply_depositor_metadata
+      object.apply_depositor_metadata(@user) && object.save! if object.depositor.nil?
+    end
+
+    ##
+    # @api public
+    #
+    # @return [Object] when we've found the object by the entry's :id or by it's
+    #         source_identifier
+    # @return [FalseClass] when we cannot find the object.
+    def find
+      find_by_id || search_by_identifier || false
     end
 
     def find_by_id
+      return false unless attributes[:id].present?
       # Rails / Ruby upgrade, we moved from :exists? to :exist?  However we want to continue (for a
       # bit) to support older versions.
       method_name = klass.respond_to?(:exist?) ? :exist? : :exists?
@@ -278,6 +301,8 @@ module Bulkrax
     end
 
     def search_by_identifier
+      return false unless source_identifier_value.present?
+
       self.class.search_by_property(
         klass: klass,
         search_field: work_identifier_search_field,
@@ -292,7 +317,7 @@ module Bulkrax
     def create
       attrs = transform_attributes
       @object = klass.new
-      object.reindex_extent = Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX if defined?(Hyrax::Adapters::NestingIndexAdapter) && object.respond_to?(:reindex_extent)
+      conditionally_set_reindex_extent
       run_callbacks :save do
         run_callbacks :create do
           if klass == Bulkrax.collection_model_class
@@ -304,9 +329,12 @@ module Bulkrax
           end
         end
       end
-      object.apply_depositor_metadata(@user) && object.save! if object.depositor.nil?
+
+      conditionally_apply_depositor_metadata
       log_created(object)
     end
+
+    private
 
     def log_created(obj)
       msg = "Created #{klass.model_name.human} #{obj.id}"
@@ -322,6 +350,8 @@ module Bulkrax
       msg = "Deleted All Files from #{obj.id}"
       Rails.logger.info("#{msg} (#{Array(attributes[work_identifier]).first})")
     end
+
+    public
 
     def delete(_user)
       find&.delete

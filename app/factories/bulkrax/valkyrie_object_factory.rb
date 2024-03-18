@@ -120,6 +120,7 @@ module Bulkrax
     def self.search_by_property(value:, klass:, field: nil, name_field: nil, **)
       name_field ||= field
       raise "Expected named_field or field got nil" if name_field.blank?
+      return unless value.present?
 
       # Return nil or a single object.
       Hyrax.query_service.custom_query.find_by_model_and_property_value(model: klass, property: name_field, value: value)
@@ -156,28 +157,19 @@ module Bulkrax
       Hyrax.query_service.find_by(id: attributes[:id]) if attributes.key? :id
     end
 
-    def create
-      attrs = transform_attributes
-              .merge(alternate_ids: [source_identifier_value])
-              .symbolize_keys
+    def create_file_set(attrs)
+    end
+
+    def transform_attributes
+      attrs = super.merge(alternate_ids: [source_identifier_value])
+        .symbolize_keys
 
       attrs[:title] = [''] if attrs[:title].blank?
       attrs[:creator] = [''] if attrs[:creator].blank?
-
-      object = klass.new
-      @object = case object
-                when Bulkrax.collection_model_class
-                  create_collection(object: object, attrs: attrs)
-                when Bulkrax.file_model_class
-                  # TODO: create_file_set(object: object, attrs: attrs)
-                when Hyrax::Resource
-                  create_work(object: object, attrs: attrs)
-                else
-                  raise "Unable to handle #{klass} for #{self.class}##{__method__}"
-                end
+      attrs
     end
 
-    def create_work(object:, attrs:)
+    def create_work(attrs)
       # NOTE: We do not add relationships here; that is part of the create
       # relationships job.
       perform_transaction_for(object: object, attrs: attrs) do
@@ -191,7 +183,7 @@ module Bulkrax
       end
     end
 
-    def create_collection(object:, attrs:)
+    def create_collection(attrs)
       # NOTE: We do not add relationships here; that is part of the create
       # relationships job.
       perform_transaction_for(object: object, attrs: attrs) do
@@ -203,26 +195,22 @@ module Bulkrax
       end
     end
 
-    def update
-      raise "Object doesn't exist" unless @object
-
-      conditionally_destroy_existing_files
-      attrs = transform_attributes(update: true)
-
-      @object = case @object
-                when Bulkrax.collection_model_class
-                  update_collection(object: @object, attrs: attrs)
-                when Bulkrax.file_model_class
-                  # TODO: update_file_set(attrs)
-                  raise "FileSet update not implemented"
-                when Hyrax::Resource
-                  update_work(object: @object, attrs: attrs)
-                else
-                  raise "Unable to handle #{klass} for #{self.class}##{__method__}"
-                end
+    def create_file_set(attrs)
+      # TODO: Make it work
     end
 
-    def update_work(object:, attrs:)
+    def conditionall_apply_depositor_metadata
+      # We handle this in transactions
+      nil
+    end
+
+    def conditionally_set_reindex_extent
+      # Valkyrie does not concern itself with the reindex extent; no nesting
+      # indexers here!
+      nil
+    end
+
+    def update_work(attrs)
       perform_transaction_for(object: object, attrs: attrs) do
         transactions["change_set.update_work"]
           .with_step_args(
@@ -232,12 +220,16 @@ module Bulkrax
       end
     end
 
-    def update_collection(object:, attrs:)
+    def update_collection(attrs)
       # NOTE: We do not add relationships here; that is part of the create
       # relationships job.
       perform_transaction_for(object: object, attrs: attrs) do
         transactions['change_set.update_collection']
       end
+    end
+
+    def update_file_set(attrs)
+      # TODO: Make it work
     end
 
     ##
@@ -326,18 +318,6 @@ module Bulkrax
                                 file[:url]&.match(URI::ABS_URI)
                               end
                             end
-    end
-
-    def conditionally_destroy_existing_files
-      return unless @replace_files
-
-      if [Bulkrax.collection_model_class, Bulkrax.file_model_class].include?(klass)
-        return
-      elsif klass < Valkyrie::Resource
-        destroy_existing_files
-      else
-        raise "Unexpected #{klass} for #{self.class}##{__method__}"
-      end
     end
 
     # @Override Destroy existing files with Hyrax::Transactions
