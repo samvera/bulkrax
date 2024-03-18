@@ -106,6 +106,16 @@ module Bulkrax
     end
 
     ##
+    # @param resource [Object]
+    #
+    # @return [Array<Object>] interrogate the given :object and return an array
+    #         of object's file sets.  When the object is a file set, return that
+    #         file set as an Array of one element.
+    def self.file_sets_for(resource:)
+      raise NotImplementedError, "#{self}.#{__method__}"
+    end
+
+    ##
     # @see ActiveFedora::Base.find
     def self.find(id)
       raise NotImplementedError, "#{self}.#{__method__}"

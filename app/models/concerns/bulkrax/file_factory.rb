@@ -45,27 +45,18 @@ module Bulkrax
     end
 
     def new_remote_files
-      @new_remote_files ||= if object.is_a? FileSet
-                              parsed_remote_files.select do |file|
-                                # is the url valid?
-                                is_valid = file[:url]&.match(URI::ABS_URI)
-                                # does the file already exist
-                                is_existing = object.import_url && object.import_url == file[:url]
-                                is_valid && !is_existing
-                              end
-                            elsif object.present? && object.file_sets.present?
-                              parsed_remote_files.select do |file|
-                                # is the url valid?
-                                is_valid = file[:url]&.match(URI::ABS_URI)
-                                # does the file already exist
-                                is_existing = object.file_sets.detect { |f| f.import_url && f.import_url == file[:url] }
-                                is_valid && !is_existing
-                              end
-                            else
-                              parsed_remote_files.select do |file|
-                                file[:url]&.match(URI::ABS_URI)
-                              end
-                            end
+      return @new_remote_files if @new_remote_files
+
+      # TODO: This code could first loop through all remote files and select
+      # only the valid ones; then load the file_sets and do comparisons.
+      file_sets = self.class.file_sets_for(resource: object)
+      @new_remote_files = parsed_remote_files.select do |file|
+        # is the url valid?
+        is_valid = file[:url]&.match(URI::ABS_URI)
+        # does the file already exist
+        is_existing = file_sets.detect { |f| f.import_url && f.import_url == file[:url] }
+        is_valid && !is_existing
+      end
     end
 
     def file_paths

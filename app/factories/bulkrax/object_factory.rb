@@ -36,6 +36,13 @@ module Bulkrax
       properties.reject { |prop| Bulkrax.reserved_properties.include?(prop) }
     end
 
+    def self.file_sets_for(resource:)
+      return [] if resource.blank?
+      return [resource] if resource.is_a?(Bulkrax.file_model_class)
+
+      resource.file_sets
+    end
+
     ##
     #
     # @see Bulkrax::ObjectFactoryInterface

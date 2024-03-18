@@ -44,6 +44,13 @@ module Bulkrax
       update_index(resources: file_sets)
     end
 
+    def self.file_sets_for(resource:)
+      return [] if resource.blank?
+      return [resource] if resource.is_a?(Bulkrax.file_model_class)
+
+      Hyrax.query_service.custom_queries.find_child_file_sets(resource: resource)
+    end
+
     def self.find(id)
       Hyrax.query_service.find_by(id: id)
       # Because Hyrax is not a hard dependency, we need to transform the Hyrax exception into a
@@ -289,23 +296,6 @@ module Bulkrax
       remote_files.map { |r| r["url"] }.map do |key|
         s3_bucket.files.get(key)
       end.compact
-    end
-
-    # @Override remove branch for FileSets replace validation with errors
-    def new_remote_files
-      @new_remote_files ||= if @object.is_a? Bulkrax.file_model_class
-                              parsed_remote_files.select do |file|
-                                # is the url valid?
-                                is_valid = file[:url]&.match(URI::ABS_URI)
-                                # does the file already exist
-                                is_existing = @object.import_url && @object.import_url == file[:url]
-                                is_valid && !is_existing
-                              end
-                            else
-                              parsed_remote_files.select do |file|
-                                file[:url]&.match(URI::ABS_URI)
-                              end
-                            end
     end
 
     # @Override Destroy existing files with Hyrax::Transactions
