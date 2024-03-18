@@ -44,8 +44,46 @@ module Bulkrax
       raise NotImplementedError, "#{self}.#{__method__}"
     end
 
+    ##
+    # Add the user to the collection; assuming the given collection is a
+    # Collection.  This is also only something we use in Hyrax.
+    #
+    # @param collection [#id]
+    # @param user [User]
+    # @see Bulkrax.collection_model_class
     def self.add_user_to_collection_permissions(collection:, user:)
-      raise NotImplementedError, "#{self}.#{__method__}"
+      return unless collection.is_a?(Bulkrax.collection_model_class)
+      return unless defined?(Hyrax)
+
+      permission_template = Hyrax::PermissionTemplate.find_or_create_by!(source_id: collection.id)
+
+      # NOTE: Should we extract the specific logic here?  Also, does it make
+      # sense to apply permissions to the permission template (and then update)
+      # instead of applying permissions directly to the collection?
+      Hyrax::PermissionTemplateAccess.find_or_create_by!(
+        permission_template_id: permission_template.id,
+        agent_id: user.user_key,
+        agent_type: 'user',
+        access: 'manage'
+      )
+
+      # NOTE: This is a bit surprising that we'd add admin as a group.
+      Hyrax::PermissionTemplateAccess.find_or_create_by!(
+        permission_template_id: permission_template.id,
+        agent_id: 'admin',
+        agent_type: 'group',
+        access: 'manage'
+      )
+
+      if permission_template.respond_to?(:reset_access_controls_for)
+        # Hyrax 4+
+        permission_template.reset_access_controls_for(collection: collection)
+      elsif collection.respond_to?(:reset_access_controls!)
+        # Hyrax 3 or earlier
+        collection.reset_access_controls!
+      else
+        raise "Unable to reset access controls for #{collection.class} ID=#{collection.id}"
+      end
     end
 
     ##
@@ -126,7 +164,7 @@ module Bulkrax
                       read_groups
                       visibility
                       work_members_attributes
-                    ]
+                      ]
 
     # @return [Boolean]
     #
