@@ -131,15 +131,16 @@ module Bulkrax
 
       def remove_file_set(fileset:)
         # TODO: We need to consider the Valkyrie pathway
-        fileset.files.first.create_version
+        file = fileset.files.first
+        file.create_version
         opts = {}
-        opts[:path] = fileset.files.first.id.split('/', 2).last
+        opts[:path] = file.id.split('/', 2).last
         opts[:original_name] = 'removed.png'
         opts[:mime_type] = 'image/png'
 
         fileset.add_file(File.open(Bulkrax.removed_image_path), opts)
         fileset.save
-        ::CreateDerivativesJob.set(wait: 1.minute).perform_later(fileset, fileset.files.first.id)
+        ::CreateDerivativesJob.set(wait: 1.minute).perform_later(fileset, file.id)
       end
 
       def local_file_sets
@@ -170,8 +171,9 @@ module Bulkrax
 
       def update_filesets(current_file)
         if @update_files && local_file_sets.present?
+          # NOTE: We're mutating local_file_sets as we process the updated file.
           fileset = local_file_sets.shift
-          update_file_set(file_set: fileset, uploaded_file: current_file)
+          update_file_set(file_set: fileset, uploaded: current_file)
         else
           current_file.save
           current_file.id
@@ -180,19 +182,22 @@ module Bulkrax
 
       ##
       # @return [NilClass] indicating that we've successfully began work on the file_set.
-      def update_file_set(fileset:, uploaded_file:)
+      def update_file_set(fileset:, uploaded:)
         # TODO: We need to consider the Valkyrie pathway
-        return nil if fileset.files.first.checksum.value == Digest::SHA1.file(uploaded_file.file.path).to_s
+        file = fileset.files.first
+        uploaded_file = uploaded.file
 
-        fileset.files.first.create_version
+        return nil if file.checksum.value == Digest::SHA1.file(uploaded_file.path).to_s
+
+        file.create_version
         opts = {}
-        opts[:path] = fileset.files.first.id.split('/', 2).last
-        opts[:original_name] = uploaded_file.file.file.original_filename
-        opts[:mime_type] = uploaded_file.file.content_type
+        opts[:path] = file.id.split('/', 2).last
+        opts[:original_name] = uploaded_file.file.original_filename
+        opts[:mime_type] = uploaded_file.content_type
 
-        fileset.add_file(File.open(uploaded_file.file.to_s), opts)
+        fileset.add_file(File.open(uploaded_file.to_s), opts)
         fileset.save
-        ::CreateDerivativesJob.set(wait: 1.minute).perform_later(fileset, fileset.files.first.id)
+        ::CreateDerivativesJob.set(wait: 1.minute).perform_later(fileset, file.id)
         nil
       end
     end
