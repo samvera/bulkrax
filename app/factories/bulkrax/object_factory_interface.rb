@@ -255,8 +255,12 @@ module Bulkrax
     end
 
     ##
-    # Assumes object will respond_to save
+    # @return [Object] either the one found in persistence or the one created
+    #         via the run method.
+    # @see .save!
     def find_or_create
+      # Do we need to call save!   This was how we previously did this but it
+      # seems odd that we'd not find it.  Also, why not simply call create.
       find || self.class.save!(object: run, user: @user)
     end
 
