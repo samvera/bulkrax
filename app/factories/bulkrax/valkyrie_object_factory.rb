@@ -150,6 +150,15 @@ module Bulkrax
 
     private
 
+    def apply_depositor_metadata
+      return if object.depositor.present?
+
+      object.depositor = @user.email
+      object = Hyrax.persister.save(resource: object)
+      self.class.publish(event: "object.metadata.updated", object: object, user: @user)
+      object
+    end
+
     def conditionall_apply_depositor_metadata
       # We handle this in transactions
       nil
@@ -230,11 +239,19 @@ module Bulkrax
       end
     end
 
+    ##
+    # We accept attributes based on the model schema
+    def permitted_attributes
+      return Bulkrax::ValkyrieObjectFactory.schema_properties(klass) if klass.respond_to?(:schema)
+      # fallback to support ActiveFedora model name
+      klass.properties.keys.map(&:to_sym) + base_permitted_attributes
+    end
+
     def update_work(attrs)
       perform_transaction_for(object: object, attrs: attrs) do
         transactions["change_set.update_work"]
           .with_step_args(
-            'work_resource.add_file_sets' => { uploaded_files: get_files(attrs) },
+            'work_resource.add_file_sets' => { uploaded_files: uploaded_files_from(attrs) },
             'work_resource.save_acl' => { permissions_params: [attrs.try('visibility') || 'open'].compact }
           )
       end
@@ -252,17 +269,17 @@ module Bulkrax
       # TODO: Make it work
     end
 
-    def get_files(attrs)
-      get_local_files(uploaded_files: attrs[:uploaded_files]) + get_s3_files(remote_files: attrs[:remote_files])
+    def uploaded_files_from(attrs)
+      uploaded_local_files(uploaded_files: attrs[:uploaded_files]) + uploaded_s3_files(remote_files: attrs[:remote_files])
     end
 
-    def get_local_files(uploaded_files: [])
+    def uploaded_local_files(uploaded_files: [])
       Array.wrap(uploaded_files).map do |file_id|
         Hyrax::UploadedFile.find(file_id)
       end
     end
 
-    def get_s3_files(remote_files: {})
+    def uploaded_s3_files(remote_files: {})
       return [] if remote_files.blank?
 
       s3_bucket_name = ENV.fetch("STAGING_AREA_S3_BUCKET", "comet-staging-area-#{Rails.env}")
@@ -272,22 +289,6 @@ module Bulkrax
       remote_files.map { |r| r["url"] }.map do |key|
         s3_bucket.files.get(key)
       end.compact
-    end
-
-    ##
-    # We accept attributes based on the model schema
-    def permitted_attributes
-      return Bulkrax::ValkyrieObjectFactory.schema_properties(klass) if klass.respond_to?(:schema)
-      # fallback to support ActiveFedora model name
-      klass.properties.keys.map(&:to_sym) + base_permitted_attributes
-    end
-
-    def apply_depositor_metadata(object, user)
-      object.depositor = user.email
-      # TODO: Should we leverage the object factory's save! method?
-      object = Hyrax.persister.save(resource: object)
-      self.class.publish(event: "object.metadata.updated", object: object, user: @user)
-      object
     end
 
     # @Override remove branch for FileSets replace validation with errors
@@ -327,14 +328,12 @@ module Bulkrax
 
     def transform_attributes
       attrs = super.merge(alternate_ids: [source_identifier_value])
-                .symbolize_keys
+                   .symbolize_keys
 
       attrs[:title] = [''] if attrs[:title].blank?
       attrs[:creator] = [''] if attrs[:creator].blank?
       attrs
     end
-
-    private
 
     # Query child FileSet in the resource/object
     def fetch_child_file_sets(resource:)

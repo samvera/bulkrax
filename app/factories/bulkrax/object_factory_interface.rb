@@ -164,7 +164,7 @@ module Bulkrax
                       read_groups
                       visibility
                       work_members_attributes
-                      ]
+                    ]
 
     # @return [Boolean]
     #
@@ -226,7 +226,7 @@ module Bulkrax
         end
       end
 
-      conditionally_apply_depositor_metadata
+      apply_depositor_metadata
       log_created(object)
     end
 
@@ -311,6 +311,7 @@ module Bulkrax
         end
       end
       conditionally_apply_depositor_metadata
+      apply_depositor_metadata
       log_updated(object)
     end
 
@@ -318,6 +319,10 @@ module Bulkrax
 
     def add_user_to_collection_permissions(*args)
       self.class.add_user_to_collection_permissions(*args)
+    end
+
+    def apply_depositor_metadata
+      object.apply_depositor_metadata(@user) && object.save! if object.depositor.nil?
     end
 
     def clean_attrs(attrs)
@@ -346,10 +351,6 @@ module Bulkrax
       return if [Bulkrax.collection_model_class, Bulkrax.file_model_class].include?(klass)
 
       destroy_existing_files
-    end
-
-    def conditionally_apply_depositor_metadata
-      object.apply_depositor_metadata(@user) && object.save! if object.depositor.nil?
     end
 
     # Regardless of what the Parser gives us, these are the properties we are
