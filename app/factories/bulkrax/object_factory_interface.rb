@@ -197,6 +197,7 @@ module Bulkrax
       :replace_files,
       :source_identifier_value,
       :update_files,
+      :user,
       :work_identifier,
       :work_identifier_search_field
     )

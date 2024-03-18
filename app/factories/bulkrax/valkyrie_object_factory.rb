@@ -3,9 +3,46 @@
 module Bulkrax
   # rubocop:disable Metrics/ClassLength
   class ValkyrieObjectFactory < ObjectFactoryInterface
+    class FileFactoryInnerWorkings < Bulkrax::FileFactory::InnerWorkings
+      def remove_file_set(file_set:)
+        file_metadata = Hyrax.custom_queries.find_files(file_set: file_set).first
+        raise "No file metadata records found for #{file_set.class} ID=#{file_set.id}" unless file_metadata
+
+        Hyrax::VersioningService.create(file_metadata, user, File.new(Bulkrax.removed_image_path))
+
+        ::ValkyrieCreateDerivativesJob.set(wait: 1.minute).perform_later(file_set.id, file_metadata.id)
+      end
+
+      ##
+      # Replace an existing :file_set's file with the :uploaded file.
+      #
+      # @param file_set [Hyrax::FileSet, Object]
+      # @param uploaded [Hyrax::UploadedFile]
+      #
+      # @return [NilClass]
+      def update_file_set(file_set:, uploaded:)
+        file_metadata = Hyrax.custom_queries.find_files(file_set: file_set).first
+        raise "No file metadata records found for #{file_set.class} ID=#{file_set.id}" unless file_metadata
+
+        uploaded_file = uploaded.file
+
+        # TODO: Is this accurate?  We'll need to interrogate the file_metadata
+        # object.  Should it be `file_metadata.checksum.first.to_s` Or something
+        # else?
+        return nil if file_metadata.checksum.first == Digest::SHA1.file(uploaded_file.path).to_s
+
+        Hyrax::VersioningService.create(file_metadata, user, uploaded_file)
+
+        ::ValkyrieCreateDerivativesJob.set(wait: 1.minute).perform_later(file_set.id, file_metadata.id)
+        nil
+      end
+    end
+
     # TODO: the following module needs revisiting for Valkyrie work.
     #       proposal is to create Bulkrax::ValkyrieFileFactory.
     include Bulkrax::FileFactory
+
+    self.file_set_factory_inner_workings_class = Bulkrax::ValkyrieObjectFactory::FileFactoryInnerWorkings
 
     ##
     # When you want a different set of transactions you can change the
@@ -300,7 +337,7 @@ module Bulkrax
 
     # @Override Destroy existing files with Hyrax::Transactions
     def destroy_existing_files
-      existing_files = fetch_child_file_sets(resource: @object)
+      existing_files = Hyrax.custom_queries.find_child_file_sets(resource: resource)
 
       existing_files.each do |fs|
         transactions["file_set.destroy"]
@@ -323,11 +360,6 @@ module Bulkrax
       attrs[:title] = [''] if attrs[:title].blank?
       attrs[:creator] = [''] if attrs[:creator].blank?
       attrs
-    end
-
-    # Query child FileSet in the resource/object
-    def fetch_child_file_sets(resource:)
-      Hyrax.custom_queries.find_child_file_sets(resource: resource)
     end
   end
   # rubocop:enable Metrics/ClassLength

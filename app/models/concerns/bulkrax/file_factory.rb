@@ -38,7 +38,7 @@ module Bulkrax
 
       attr_reader :object_factory
 
-      delegate :object, :klass, :attributes, to: :object_factory
+      delegate :object, :klass, :attributes, :user, to: :object_factory
 
       # Find existing files or upload new files. This assumes a Work will have unique file titles;
       #   and that those file titles will not have changed
@@ -127,22 +127,22 @@ module Bulkrax
 
       def set_removed_filesets
         local_file_sets.each do |fileset|
-          remove_file_set(fileset: fileset)
+          remove_file_set(file_set: fileset)
         end
       end
 
-      def remove_file_set(fileset:)
+      def remove_file_set(file_set:)
         # TODO: We need to consider the Valkyrie pathway
-        file = fileset.files.first
+        file = file_set.files.first
         file.create_version
         opts = {}
         opts[:path] = file.id.split('/', 2).last
         opts[:original_name] = 'removed.png'
         opts[:mime_type] = 'image/png'
 
-        fileset.add_file(File.open(Bulkrax.removed_image_path), opts)
-        fileset.save
-        ::CreateDerivativesJob.set(wait: 1.minute).perform_later(fileset, file.id)
+        file_set.add_file(File.open(Bulkrax.removed_image_path), opts)
+        file_set.save
+        ::CreateDerivativesJob.set(wait: 1.minute).perform_later(file_set, file.id)
       end
 
       def local_file_sets
@@ -184,9 +184,9 @@ module Bulkrax
 
       ##
       # @return [NilClass] indicating that we've successfully began work on the file_set.
-      def update_file_set(fileset:, uploaded:)
+      def update_file_set(file_set:, uploaded:)
         # TODO: We need to consider the Valkyrie pathway
-        file = fileset.files.first
+        file = file_set.files.first
         uploaded_file = uploaded.file
 
         return nil if file.checksum.value == Digest::SHA1.file(uploaded_file.path).to_s
@@ -197,9 +197,9 @@ module Bulkrax
         opts[:original_name] = uploaded_file.file.original_filename
         opts[:mime_type] = uploaded_file.content_type
 
-        fileset.add_file(File.open(uploaded_file.to_s), opts)
-        fileset.save
-        ::CreateDerivativesJob.set(wait: 1.minute).perform_later(fileset, file.id)
+        file_set.add_file(File.open(uploaded_file.to_s), opts)
+        file_set.save
+        ::CreateDerivativesJob.set(wait: 1.minute).perform_later(file_set, file.id)
         nil
       end
     end
