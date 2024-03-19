@@ -6,6 +6,9 @@ require 'rails_helper'
 module Bulkrax
   RSpec.describe CsvEntry, type: :model do
     describe '.read_data' do
+      before do
+        allow(Bulkrax.object_factory).to receive(:search_by_property).and_return(nil)
+      end
       it 'handles mixed case and periods for column names' do
         path = File.expand_path('../../fixtures/csv/mixed-case.csv', __dir__)
         data = described_class.read_data(path)

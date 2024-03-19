@@ -103,22 +103,18 @@ module Bulkrax
       self.importerexporter_type == 'Bulkrax::Exporter'
     end
 
-    def valid_system_id(model_class)
-      return true if model_class.properties.keys.include?(work_identifier)
-      raise(
-        "#{model_class} does not implement the system_identifier_field: #{work_identifier}"
-      )
-    end
-
     def last_run
       self.importerexporter&.last_run
     end
 
     def find_collection(collection_identifier)
-      return unless Collection.properties.keys.include?(work_identifier)
-      Collection.where(
-        work_identifier => collection_identifier
-      ).detect { |m| m.send(work_identifier).include?(collection_identifier) }
+      Bulkrax.object_factory.search_by_property(
+        klass: Collection,
+        value: collection_identifier,
+        search_field: work_identifier,
+        name_field: work_identifier,
+        verify_property: true
+      )
     end
   end
 end

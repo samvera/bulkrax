@@ -43,6 +43,7 @@ ActiveRecord::Schema.define(version: 2024_02_09_070952) do
     t.integer "import_attempts", default: 0
     t.string "status_message", default: "Pending"
     t.index ["identifier", "importerexporter_id", "importerexporter_type"], name: "bulkrax_identifier_idx"
+    t.index ["identifier"], name: "index_bulkrax_entries_on_identifier"
     t.index ["importerexporter_id", "importerexporter_type"], name: "bulkrax_entries_importerexporter_idx"
     t.index ["type"], name: "index_bulkrax_entries_on_type"
   end
@@ -646,4 +647,14 @@ ActiveRecord::Schema.define(version: 2024_02_09_070952) do
     t.index ["work_id"], name: "index_work_view_stats_on_work_id"
   end
 
+  add_foreign_key "bulkrax_exporter_runs", "bulkrax_exporters", column: "exporter_id"
+  add_foreign_key "bulkrax_importer_runs", "bulkrax_importers", column: "importer_id"
+  add_foreign_key "bulkrax_pending_relationships", "bulkrax_importer_runs", column: "importer_run_id"
+  add_foreign_key "collection_type_participants", "hyrax_collection_types"
+  add_foreign_key "curation_concerns_operations", "users"
+  add_foreign_key "mailboxer_conversation_opt_outs", "mailboxer_conversations", column: "conversation_id"
+  add_foreign_key "mailboxer_notifications", "mailboxer_conversations", column: "conversation_id"
+  add_foreign_key "mailboxer_receipts", "mailboxer_notifications", column: "notification_id"
+  add_foreign_key "permission_template_accesses", "permission_templates"
+  add_foreign_key "uploaded_files", "users"
 end
