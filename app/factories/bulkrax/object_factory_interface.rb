@@ -338,16 +338,31 @@ module Bulkrax
           update_work(attrs)
         end
       end
-      conditionally_apply_depositor_metadata
       apply_depositor_metadata
       log_updated(object)
     end
 
-    private
-
     def add_user_to_collection_permissions(*args)
-      self.class.add_user_to_collection_permissions(*args)
+      arguments = args.first
+      self.class.add_user_to_collection_permissions(**arguments)
     end
+
+    def log_created(obj)
+      msg = "Created #{klass.model_name.human} #{obj.id}"
+      Rails.logger.info("#{msg} (#{Array(attributes[work_identifier]).first})")
+    end
+
+    def log_updated(obj)
+      msg = "Updated #{klass.model_name.human} #{obj.id}"
+      Rails.logger.info("#{msg} (#{Array(attributes[work_identifier]).first})")
+    end
+
+    def log_deleted_fs(obj)
+      msg = "Deleted All Files from #{obj.id}"
+      Rails.logger.info("#{msg} (#{Array(attributes[work_identifier]).first})")
+    end
+
+    private
 
     def apply_depositor_metadata
       object.apply_depositor_metadata(@user) && object.save! if object.depositor.nil?

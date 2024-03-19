@@ -224,7 +224,7 @@ module Bulkrax
       perform_transaction_for(object: object, attrs: attrs) do
         transactions["change_set.create_work"]
           .with_step_args(
-            'work_resource.add_file_sets' => { uploaded_files: get_files(attrs) },
+            'work_resource.add_file_sets' => { uploaded_files: uploaded_files_from(attrs) },
             "change_set.set_user_as_depositor" => { user: @user },
             "work_resource.change_depositor" => { user: @user },
             'work_resource.save_acl' => { permissions_params: [attrs['visibility'] || 'open'].compact }
@@ -353,7 +353,7 @@ module Bulkrax
       @object.thumbnail_id = nil
     end
 
-    def transform_attributes
+    def transform_attributes(update: false)
       attrs = super.merge(alternate_ids: [source_identifier_value])
                    .symbolize_keys
 

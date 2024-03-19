@@ -127,6 +127,9 @@ module Bulkrax
 
       def set_removed_filesets
         local_file_sets.each do |fileset|
+          # TODO: We need to consider the Valkyrie pathway
+          return if fileset.is_a?(Valkyrie::Resource)
+
           remove_file_set(file_set: fileset)
         end
       end
@@ -166,7 +169,7 @@ module Bulkrax
 
       def import_file(path)
         u = Hyrax::UploadedFile.new
-        u.user_id = @user.id
+        u.user_id = user.id
         u.file = CarrierWave::SanitizedFile.new(path)
         update_filesets(u)
       end
