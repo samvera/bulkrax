@@ -104,6 +104,7 @@ module Bulkrax
     end
 
     def valid_system_id(model_class)
+      # TODO: Maybe extract to Bulkrax.object_factory
       return true if model_class.properties.keys.include?(work_identifier)
       raise(
         "#{model_class} does not implement the system_identifier_field: #{work_identifier}"
@@ -115,6 +116,7 @@ module Bulkrax
     end
 
     def find_collection(collection_identifier)
+      # TODO: Extract method to Bulkrax.object_factory
       return unless Collection.properties.keys.include?(work_identifier)
       Collection.where(
         work_identifier => collection_identifier

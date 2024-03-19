@@ -2,6 +2,8 @@
 
 module Bulkrax
   class CsvCollectionEntry < CsvEntry
+    # TODO: Similar to the has_model_ssim conundrum; we want to ask for the
+    # collection_model_class_type.â
     self.default_work_type = "Collection"
 
     # Use identifier set by CsvParser#unique_collection_identifier, which falls back

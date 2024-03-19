@@ -47,7 +47,7 @@ module Bulkrax
     end
 
     def child_jobs
-      raise ::StandardError, 'A FileSet cannot be a parent of a Collection, Work, or other FileSet'
+      raise ::StandardError, "A #{Bulkrax.file_model_class} cannot be a parent of a #{Bulkrax.collection_model_class}, Work, or other #{Bulkrax.file_model_class}"
     end
   end
 end

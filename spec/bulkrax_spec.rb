@@ -100,6 +100,28 @@ RSpec.describe Bulkrax do
       end
     end
 
+    context 'collection_model_class' do
+      after do
+        described_class.collection_model_class = Collection
+      end
+
+      it 'responds to collection_model_class' do
+        expect(described_class).to respond_to(:collection_model_class)
+      end
+
+      it 'has a default collection_model_class' do
+        expect(described_class.collection_model_class).to eq(Collection)
+      end
+
+      it 'is settable' do
+        # Not really a collection, but proves the setter
+        described_class.collection_model_class = Bulkrax
+
+        expect(described_class).to respond_to(:collection_model_class=)
+        expect(described_class.collection_model_class).to eq(Bulkrax)
+      end
+    end
+
     context 'parsers' do
       it 'has a default' do
         expect(described_class.parsers).to eq([

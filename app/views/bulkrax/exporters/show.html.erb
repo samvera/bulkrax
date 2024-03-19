@@ -39,7 +39,8 @@
       <strong><%= t('bulkrax.exporter.labels.export_source') %>:</strong>
       <% case @exporter.export_from %>
       <% when 'collection' %>
-        <% collection = Collection.find(@exporter.export_source) %>
+	<%# TODO: We need to rely on the `Bulkrax.object_factory'%>
+        <% collection = Bulkrax.collection_model_class.find(@exporter.export_source) %>
         <%= link_to collection&.title&.first, hyrax.dashboard_collection_path(collection.id) %>
       <% when 'importer' %>
         <% importer = Bulkrax::Importer.find(@exporter.export_source) %>

@@ -197,6 +197,9 @@ module Bulkrax
       end
 
       def collections_query
+        # TODO: What should this be given Bulkrax.collection_model_class?  In
+        # Hyku 6, the collection_model_class will be CollectionResource, but we
+        # will have a model ssim of Collection.
         "has_model_ssim:Collection #{extra_filters}"
       end
     end

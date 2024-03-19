@@ -95,6 +95,12 @@ module Bulkrax
       @factory_class_name_coercer || Bulkrax::FactoryClassFinder::DefaultCoercer
     end
 
+    def collection_model_class
+      @collection_model_class ||= Collection
+    end
+
+    attr_writer :collection_model_class
+
     def file_model_class
       @file_model_class ||= defined?(::Hyrax) ? ::FileSet : File
     end
@@ -164,6 +170,8 @@ module Bulkrax
   def_delegators :@config,
                  :api_definition,
                  :api_definition=,
+                 :collection_model_class,
+                 :collection_model_class=,
                  :curation_concerns,
                  :curation_concerns=,
                  :default_field_mapping,

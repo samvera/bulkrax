@@ -104,7 +104,7 @@ module Bulkrax
     end
 
     def add_metadata_for_model
-      if defined?(::Collection) && factory_class == ::Collection
+      if factory_class.present? && factory_class == Bulkrax.collection_model_class
         add_collection_type_gid if defined?(::Hyrax)
         # add any additional collection metadata methods here
       elsif factory_class == Bulkrax.file_model_class
