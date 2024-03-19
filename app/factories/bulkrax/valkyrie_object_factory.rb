@@ -187,6 +187,8 @@ module Bulkrax
 
     def run!
       run
+      # reload the object
+      object = find
       return object if object.persisted?
 
       raise(ObjectFactoryInterface::RecordInvalid, object)
