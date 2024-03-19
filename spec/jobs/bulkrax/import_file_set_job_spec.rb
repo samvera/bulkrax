@@ -176,7 +176,7 @@ module Bulkrax
           end
 
           context 'when it references a file set' do
-            let(:non_work) { instance_double(::FileSet) }
+            let(:non_work) { Bulkrax.file_model_class.new }
 
             it 'raises an error' do
               expect { import_file_set_job.perform(entry.id, importer_run.id) }
