@@ -22,6 +22,7 @@ module Bulkrax
       @records = csv_data.map { |record_data| entry_class.data_for_entry(record_data, nil, self) }
     end
 
+    # rubocop:disable Metrics/AbcSize
     def build_records
       @collections = []
       @works = []
@@ -51,6 +52,7 @@ module Bulkrax
 
       true
     end
+    # rubocop:enabled Metrics/AbcSize
 
     def collections
       build_records if @collections.nil?

@@ -128,7 +128,7 @@ module Bulkrax
       def set_removed_filesets
         local_file_sets.each do |fileset|
           # TODO: We need to consider the Valkyrie pathway
-          return if fileset.is_a?(Valkyrie::Resource)
+          next if fileset.is_a?(Valkyrie::Resource)
 
           remove_file_set(file_set: fileset)
         end
