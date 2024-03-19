@@ -33,7 +33,7 @@ module Bulkrax
             next unless r.key?(model_mapping)
 
             model = r[model_mapping].nil? ? "" : r[model_mapping].strip
-            if model.casecmp('collection').zero?
+            if model.casecmp('collection').zero? || model.casecmp('collectionresource').zero?
               @collections << r
             elsif model.casecmp('fileset').zero?
               @file_sets << r
