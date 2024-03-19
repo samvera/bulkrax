@@ -337,7 +337,7 @@ module Bulkrax
 
     # @Override Destroy existing files with Hyrax::Transactions
     def destroy_existing_files
-      existing_files = Hyrax.custom_queries.find_child_file_sets(resource: resource)
+      existing_files = Hyrax.custom_queries.find_child_file_sets(resource: object)
 
       existing_files.each do |fs|
         transactions["file_set.destroy"]
