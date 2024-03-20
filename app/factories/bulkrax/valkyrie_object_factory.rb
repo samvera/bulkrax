@@ -69,6 +69,7 @@ module Bulkrax
       return true if parent.member_ids.include?(child.id)
 
       parent.member_ids << child.id
+      parent.save
     end
 
     def self.add_resource_to_collection(collection:, resource:, user:)
