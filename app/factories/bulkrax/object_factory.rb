@@ -77,7 +77,7 @@ module Bulkrax
     #
     # @see # {Wings::CustomQueries::FindBySourceIdentifier#find_by_model_and_property_value}
     def self.search_by_property(value:, klass:, field: nil, search_field: nil, name_field: nil, verify_property: false)
-      return nil if klass < Valkyrie::Resource
+      return nil unless klass.respond_to?(:where)
       # We're not going to try to match nil nor "".
       return if value.blank?
       return if verify_property && !klass.properties.keys.include?(search_field)
