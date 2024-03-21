@@ -133,7 +133,7 @@ function refreshLink() {
   refreshLink.onclick = function() {
     this.api().ajax.reload(null, false)
   }.bind(this)
-  refreshLink.classList.value = 'glyphicon glyphicon-refresh'
+  refreshLink.classList.value = 'fa fa-refresh'
   refreshLink.style.marginLeft = '10px'
   document.querySelector('div.dataTables_filter').firstChild.append(refreshLink)
 }
