@@ -428,6 +428,8 @@ module Bulkrax
     end
 
     def unzip(file_to_unzip)
+      return untar(file_to_unzip) if file_to_unzip.end_with?('.tar.gz')
+
       Zip::File.open(file_to_unzip) do |zip_file|
         zip_file.each do |entry|
           entry_path = File.join(importer_unzip_path, entry.name)
@@ -435,6 +437,13 @@ module Bulkrax
           zip_file.extract(entry, entry_path) unless File.exist?(entry_path)
         end
       end
+    end
+
+    def untar(file_to_untar)
+      Dir.mkdir(importer_unzip_path) unless File.directory?(importer_unzip_path)
+      command = "tar -xzf #{Shellwords.escape(file_to_untar)} -C #{Shellwords.escape(importer_unzip_path)}"
+      result = system(command)
+      raise "Failed to extract #{file_to_untar}" unless result
     end
 
     def zip

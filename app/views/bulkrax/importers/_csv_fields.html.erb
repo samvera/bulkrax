@@ -29,7 +29,7 @@
   <% file_style_list << 'Existing Entries' unless importer.new_record? %>
   <%= fi.input :file_style, collection: file_style_list, as: :radio_buttons, label: false %>
   <div id='file_upload'>
-    <%= fi.input 'file', as: :file, input_html: { accept: 'text/csv,application/zip' } %><br />
+    <%= fi.input 'file', as: :file, input_html: { accept: 'text/csv,application/zip,application/gzip' } %><br />
   </div>
   <div id='file_path'>
     <%= fi.input :import_file_path, as: :string, input_html: { value: importer.parser_fields['import_file_path'] } %>
