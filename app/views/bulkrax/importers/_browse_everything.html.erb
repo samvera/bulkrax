@@ -3,10 +3,10 @@
 	f = "#{form.lookup_action}_importer"
 	f = "#{f}_#{@importer.id}" unless @importer.new_record?
 %>
-<div id='cloud-files'> 
+<div id='cloud-files'>
 	<button type="button" data-toggle="browse-everything" data-route="<%=browse_everything_engine.root_path%>"
 		data-target="#<%= f %>" class="btn btn-primary" id="browse">
-		<span class="glyphicon glyphicon-plus"></span>
+		<span class="fa fa-plus"></span>
 		Add Cloud Files
 	</button>
 </div>
