@@ -145,37 +145,37 @@ module Bulkrax
 
     def entry_util_links(e, item)
       links = []
-      links << view_context.link_to(view_context.raw('<span class="glyphicon glyphicon-info-sign"></span>'), view_context.item_entry_path(item, e))
-      links << "<a class='glyphicon glyphicon-repeat' data-toggle='modal' data-target='#bulkraxItemModal' data-entry-id='#{e.id}'></a>" if view_context.an_importer?(item)
-      links << view_context.link_to(view_context.raw('<span class="glyphicon glyphicon-trash"></span>'), view_context.item_entry_path(item, e), method: :delete, data: { confirm: 'This will delete the entry and any work associated with it. Are you sure?' })
+      links << view_context.link_to(view_context.raw('<span class="fa fa-info-circle"></span>'), view_context.item_entry_path(item, e))
+      links << "<a class='fa fa-repeat' data-toggle='modal' data-target='#bulkraxItemModal' data-entry-id='#{e.id}'></a>" if view_context.an_importer?(item)
+      links << view_context.link_to(view_context.raw('<span class="fa fa-trash"></span>'), view_context.item_entry_path(item, e), method: :delete, data: { confirm: 'This will delete the entry and any work associated with it. Are you sure?' })
       links.join(" ")
     end
 
     def status_message_for(e)
       if e.status_message == "Complete"
-        "<td><span class='glyphicon glyphicon-ok' style='color: green;'></span> #{e.status_message}</td>"
+        "<td><span class='fa fa-check' style='color: green;'></span> #{e.status_message}</td>"
       elsif e.status_message == "Pending"
-        "<td><span class='glyphicon glyphicon-option-horizontal' style='color: blue;'></span> #{e.status_message}</td>"
+        "<td><span class='fa fa-ellipsis-h' style='color: blue;'></span> #{e.status_message}</td>"
       elsif e.status_message == "Skipped"
-        "<td><span class='glyphicon glyphicon-step-forward' style='color: yellow;'></span> #{e.status_message}</td>"
+        "<td><span class='fa fa-step-forward' style='color: yellow;'></span> #{e.status_message}</td>"
       else
-        "<td><span class='glyphicon glyphicon-remove' style='color: #{e.status == 'Deleted' ? 'green' : 'red'};'></span> #{e.status_message}</td>"
+        "<td><span class='fa fa-remove' style='color: #{e.status == 'Deleted' ? 'green' : 'red'};'></span> #{e.status_message}</td>"
       end
     end
 
     def importer_util_links(i)
       links = []
-      links << view_context.link_to(view_context.raw('<span class="glyphicon glyphicon-info-sign"></span>'), importer_path(i))
-      links << view_context.link_to(view_context.raw('<span class="glyphicon glyphicon-pencil"></span>'), edit_importer_path(i))
-      links << view_context.link_to(view_context.raw('<span class="glyphicon glyphicon-remove"></span>'), i, method: :delete, data: { confirm: 'Are you sure?' })
+      links << view_context.link_to(view_context.raw('<span class="fa fa-info-circle"></span>'), importer_path(i))
+      links << view_context.link_to(view_context.raw('<span class="fa fa-pencil"></span>'), edit_importer_path(i))
+      links << view_context.link_to(view_context.raw('<span class="fa fa-remove"></span>'), i, method: :delete, data: { confirm: 'Are you sure?' })
       links.join(" ")
     end
 
     def exporter_util_links(i)
       links = []
-      links << view_context.link_to(view_context.raw('<span class="glyphicon glyphicon-info-sign"></span>'), exporter_path(i))
-      links << view_context.link_to(view_context.raw('<span class="glyphicon glyphicon-pencil"></span>'), edit_exporter_path(i), data: { turbolinks: false })
-      links << view_context.link_to(view_context.raw('<span class="glyphicon glyphicon-remove"></span>'), i, method: :delete, data: { confirm: 'Are you sure?' })
+      links << view_context.link_to(view_context.raw('<span class="fa fa-info-circle"></span>'), exporter_path(i))
+      links << view_context.link_to(view_context.raw('<span class="fa fa-pencil"></span>'), edit_exporter_path(i), data: { turbolinks: false })
+      links << view_context.link_to(view_context.raw('<span class="fa fa-remove"></span>'), i, method: :delete, data: { confirm: 'Are you sure?' })
       links.join(" ")
     end
 

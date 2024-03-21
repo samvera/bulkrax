@@ -7,7 +7,7 @@
     <p>
     Upload <b>only</b> the corrected entries for the <b><%= @importer.name %></b> importer. To export failed entries for correction,
     <%= link_to importer_export_errors_path(@importer.id) do %>
-      click here <span class='glyphicon glyphicon-download-alt'></span>
+      click here <span class='fa fa-download'></span>
     <% end %>
     </p>
     <p>Only CSV files are allowed.</p>
@@ -18,7 +18,7 @@
           <div class='fileupload-buttonbar hide-required-tag'>
             <%= fi.input 'file',
               as: :file,
-              label: "<span class='glyphicon glyphicon-plus'></span><span> Add file...</span>".html_safe,
+              label: "<span class='fa fa-plus'></span><span> Add file...</span>".html_safe,
               label_html: {
                 class: 'btn btn-success'
               },

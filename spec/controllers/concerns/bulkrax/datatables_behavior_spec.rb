@@ -105,9 +105,9 @@ RSpec.describe Bulkrax::ImportersController, type: :controller do
       get :index
       result = controller.entry_util_links(entry, item)
       expect(result).to be_a(String)
-      expect(result).to include('glyphicon-info-sign')
-      expect(result).to include('glyphicon-repeat')
-      expect(result).to include('glyphicon-trash')
+      expect(result).to include('fa-info-circle')
+      expect(result).to include('fa-repeat')
+      expect(result).to include('fa-trash')
     end
 
     it 'includes a link to the entry' do
@@ -131,28 +131,28 @@ RSpec.describe Bulkrax::ImportersController, type: :controller do
       entry = FactoryBot.create(:bulkrax_entry, importerexporter: item, status_message: 'Complete')
       get :index
       result = controller.status_message_for(entry)
-      expect(result).to include('<span class=\'glyphicon glyphicon-ok\' style=\'color: green;\'></span> Complete')
+      expect(result).to include('<span class=\'fa fa-check\' style=\'color: green;\'></span> Complete')
     end
 
     it 'returns a string of HTML with a blue "horizontal ellipsis" icon when status_message is "Pending"' do
       entry = FactoryBot.create(:bulkrax_entry, importerexporter: item, status_message: 'Pending')
       get :index
       result = controller.status_message_for(entry)
-      expect(result).to include('<span class=\'glyphicon glyphicon-option-horizontal\' style=\'color: blue;\'></span> Pending')
+      expect(result).to include('<span class=\'fa fa-ellipsis-h\' style=\'color: blue;\'></span> Pending')
     end
 
     it 'returns a string of HTML with a red "remove" icon when status_message is neither "Complete" nor "Pending"' do
       entry = FactoryBot.create(:bulkrax_entry, importerexporter: item, status_message: 'Error')
       get :index
       result = controller.status_message_for(entry)
-      expect(result).to include('<span class=\'glyphicon glyphicon-remove\' style=\'color: red;\'></span> Error')
+      expect(result).to include('<span class=\'fa fa-remove\' style=\'color: red;\'></span> Error')
     end
 
     it 'returns a string of HTML with a red "remove" icon when status_message is "Deleted"' do
       entry = FactoryBot.create(:bulkrax_entry, importerexporter: item, status_message: 'Deleted')
       get :index
       result = controller.status_message_for(entry)
-      expect(result).to include('<span class=\'glyphicon glyphicon-remove\' style=\'color: red;\'></span> Deleted')
+      expect(result).to include('<span class=\'fa fa-remove\' style=\'color: red;\'></span> Deleted')
     end
   end
 end
