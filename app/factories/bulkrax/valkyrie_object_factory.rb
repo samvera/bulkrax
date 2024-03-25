@@ -288,10 +288,16 @@ module Bulkrax
 
     ##
     # We accept attributes based on the model schema
+    #
+    # @return [Array<Symbols>]
     def permitted_attributes
-      return Bulkrax::ValkyrieObjectFactory.schema_properties(klass) if klass.respond_to?(:schema)
-      # fallback to support ActiveFedora model name
-      klass.properties.keys.map(&:to_sym) + base_permitted_attributes
+      @permitted_attributes ||= (
+        base_permitted_attributes + if klass.respond_to?(:schema)
+                                      Bulkrax::ValkyrieObjectFactory.schema_properties(klass)
+                                    else
+                                      klass.properties.keys.map(&:to_sym)
+                                    end
+      ).uniq
     end
 
     def update_work(attrs)
