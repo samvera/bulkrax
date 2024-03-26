@@ -184,6 +184,8 @@ module Bulkrax
     end
 
     def valkyrie_multiple?(field)
+      return false if field == 'visibility'
+
       if factory_class.respond_to?(:schema)
         sym_field = field.to_sym
         dry_type = factory_class.schema.key(sym_field)
