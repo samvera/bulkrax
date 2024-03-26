@@ -70,7 +70,7 @@ module Bulkrax
     # @return [Symbol] the name of the identifying property in the source system from which we're
     # importing (e.g. is *not* this application that mounts *this* Bulkrax engine).
     #
-    # @see #work_identifier
+    # @see #source_identifier
     # @see https://github.com/samvera-labs/bulkrax/wiki/CSV-Importer#source-identifier Bulkrax Wiki regarding source identifier
     def source_identifier
       @source_identifier ||= get_field_mapping_hash_for('source_identifier')&.values&.first&.[]('from')&.first&.to_sym || :source_identifier
@@ -78,7 +78,7 @@ module Bulkrax
 
     # @return [Symbol] the name of the identifying property for the system which we're importing
     #         into (e.g. the application that mounts *this* Bulkrax engine)
-    # @see #source_identifier
+    # @see #work_identifier
     def work_identifier
       @work_identifier ||= get_field_mapping_hash_for('source_identifier')&.keys&.first&.to_sym || :source
     end
@@ -394,6 +394,9 @@ module Bulkrax
         identifier: identifier
       )
       entry.raw_metadata = raw_metadata
+      # Setting parsed_metadata specifically for the id so we can find the object via the
+      # id in a delete.  This is likely to get clobbered in a regular import, which is fine.
+      entry.parsed_metadata = { id: raw_metadata['id'] } if raw_metadata&.key?('id')
       entry.save!
       entry
     end
@@ -425,6 +428,8 @@ module Bulkrax
     end
 
     def unzip(file_to_unzip)
+      return untar(file_to_unzip) if file_to_unzip.end_with?('.tar.gz')
+
       Zip::File.open(file_to_unzip) do |zip_file|
         zip_file.each do |entry|
           entry_path = File.join(importer_unzip_path, entry.name)
@@ -432,6 +437,13 @@ module Bulkrax
           zip_file.extract(entry, entry_path) unless File.exist?(entry_path)
         end
       end
+    end
+
+    def untar(file_to_untar)
+      Dir.mkdir(importer_unzip_path) unless File.directory?(importer_unzip_path)
+      command = "tar -xzf #{Shellwords.escape(file_to_untar)} -C #{Shellwords.escape(importer_unzip_path)}"
+      result = system(command)
+      raise "Failed to extract #{file_to_untar}" unless result
     end
 
     def zip

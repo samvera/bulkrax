@@ -60,7 +60,7 @@ module Bulkrax
       end
 
       # Correctly populate export_source_collection input
-      @collection = Collection.find(@exporter.export_source) if @exporter.export_source.present? && @exporter.export_from == 'collection'
+      @collection = Bulkrax.object_factory.find(@exporter.export_source) if @exporter.export_source.present? && @exporter.export_from == 'collection'
     end
 
     # POST /exporters

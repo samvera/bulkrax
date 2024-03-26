@@ -2,7 +2,7 @@
 
 module Bulkrax
   class RdfCollectionEntry < RdfEntry
-    self.default_work_type = "Collection"
+    self.default_work_type = Bulkrax.collection_model_class.to_s
     def record
       @record ||= self.raw_metadata
     end

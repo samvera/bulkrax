@@ -16,7 +16,7 @@ module Bulkrax
     validates :admin_set_id, presence: true if defined?(::Hyrax)
     validates :parser_klass, presence: true
 
-    delegate :valid_import?, :write_errored_entries_file, :visibility, to: :parser
+    delegate :create_parent_child_relationships, :valid_import?, :write_errored_entries_file, :visibility, to: :parser
 
     attr_accessor :only_updates, :file_style, :file
     attr_writer :current_run

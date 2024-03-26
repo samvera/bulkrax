@@ -22,20 +22,53 @@ RSpec.describe Bulkrax::EntrySpecHelper do
         }
       end
 
-      let(:data) { { model: "Work", source_identifier: identifier, title: "If You Want to Go Far" } }
+      context 'when ActiveFedora object' do
+        let(:data) { { model: "Work", source_identifier: identifier, title: "If You Want to Go Far" } }
 
-      it { is_expected.to be_a(Bulkrax::CsvEntry) }
+        before do
+          allow(Bulkrax).to receive(:object_factory).and_return(Bulkrax::ObjectFactory)
+        end
 
-      it "parses metadata" do
-        entry.build_metadata
+        it { is_expected.to be_a(Bulkrax::CsvEntry) }
 
-        expect(entry.factory_class).to eq(Work)
-        {
-          "title" => ["If You Want to Go Far"],
-          "admin_set_id" => "admin_set/default",
-          "source" => [identifier]
-        }.each do |key, value|
-          expect(entry.parsed_metadata.fetch(key)).to eq(value)
+        it "parses metadata" do
+          entry.build_metadata
+
+          expect(entry.factory_class).to eq(Work)
+          {
+            "title" => ["If You Want to Go Far"],
+            "admin_set_id" => "admin_set/default",
+            "source" => [identifier]
+          }.each do |key, value|
+            expect(entry.parsed_metadata.fetch(key)).to eq(value)
+          end
+        end
+      end
+
+      context 'when using ValkyrieObjectFactory' do
+        ['Work', 'WorkResource'].each do |model_name|
+          context "for #{model_name}" do
+            let(:data) { { model: model_name, source_identifier: identifier, title: "If You Want to Go Far" } }
+
+            before do
+              allow(Bulkrax).to receive(:object_factory).and_return(Bulkrax::ValkyrieObjectFactory)
+            end
+
+            it { is_expected.to be_a(Bulkrax::CsvEntry) }
+
+            it "parses metadata" do
+              entry.build_metadata
+
+              expect(entry.factory_class).to eq(model_name.constantize)
+              {
+                "title" => ["If You Want to Go Far"],
+                "admin_set_id" => "admin_set/default",
+                "source" => [identifier]
+              }.each do |key, value|
+                expect(entry.parsed_metadata.fetch(key)).to eq(value)
+              end
+            end
+          end
         end
       end
     end
@@ -77,7 +110,7 @@ RSpec.describe Bulkrax::EntrySpecHelper do
       it { is_expected.to be_a(Bulkrax::OaiDcEntry) }
 
       it "parses metadata" do
-        allow(Collection).to receive(:where).and_return([])
+        allow(Bulkrax.object_factory).to receive(:search_by_property).and_return(nil)
         entry.build_metadata
 
         expect(entry.factory_class).to eq(Work)

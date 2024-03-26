@@ -149,12 +149,12 @@ module Bulkrax
       end
 
       def works
-        @works ||= ActiveFedora::SolrService.query(works_query, **works_query_kwargs)
+        @works ||= Bulkrax.object_factory.query(works_query, **works_query_kwargs)
       end
 
       def collections
         @collections ||= if collections_query
-                           ActiveFedora::SolrService.query(collections_query, **collections_query_kwargs)
+                           Bulkrax.object_factory.query(collections_query, **collections_query_kwargs)
                          else
                            []
                          end
@@ -173,43 +173,39 @@ module Bulkrax
       # @see https://github.com/samvera/hyrax/blob/64c0bbf0dc0d3e1b49f040b50ea70d177cc9d8f6/app/indexers/hyrax/work_indexer.rb#L15-L18
       def file_sets
         @file_sets ||= ParserExportRecordSet.in_batches(candidate_file_set_ids) do |batch_of_ids|
-          fsq = "has_model_ssim:#{Bulkrax.file_model_class} AND id:(\"" + batch_of_ids.join('" OR "') + "\")"
+          fsq = "has_model_ssim:#{Bulkrax.file_model_internal_resource} AND id:(\"" + batch_of_ids.join('" OR "') + "\")"
           fsq += extra_filters if extra_filters.present?
-          ActiveFedora::SolrService.query(
+          Bulkrax.object_factory.query(
             fsq,
-            { fl: "id", method: :post, rows: batch_of_ids.size }
+            fl: "id", method: :post, rows: batch_of_ids.size
           )
         end
       end
 
       def solr_name(base_name)
-        if Module.const_defined?(:Solrizer)
-          ::Solrizer.solr_name(base_name)
-        else
-          ::ActiveFedora.index_field_mapper.solr_name(base_name)
-        end
+        Bulkrax.object_factory.solr_name(base_name)
       end
     end
 
     class All < Base
       def works_query
-        "has_model_ssim:(#{Bulkrax.curation_concerns.join(' OR ')}) #{extra_filters}"
+        "has_model_ssim:(#{Bulkrax.curation_concern_internal_resources.join(' OR ')}) #{extra_filters}"
       end
 
       def collections_query
-        "has_model_ssim:Collection #{extra_filters}"
+        "has_model_ssim:#{Bulkrax.collection_model_internal_resource} #{extra_filters}"
       end
     end
 
     class Collection < Base
       def works_query
         "member_of_collection_ids_ssim:#{importerexporter.export_source} #{extra_filters} AND " \
-        "has_model_ssim:(#{Bulkrax.curation_concerns.join(' OR ')})"
+        "has_model_ssim:(#{Bulkrax.curation_concern_internal_resources.join(' OR ')})"
       end
 
       def collections_query
         "(id:#{importerexporter.export_source} #{extra_filters}) OR " \
-        "(has_model_ssim:Collection AND member_of_collection_ids_ssim:#{importerexporter.export_source})"
+        "(has_model_ssim:#{Bulkrax.collection_model_internal_resource} AND member_of_collection_ids_ssim:#{importerexporter.export_source})"
       end
     end
 
@@ -247,12 +243,12 @@ module Bulkrax
 
       def works
         @works ||= ParserExportRecordSet.in_batches(complete_entry_identifiers) do |ids|
-          ActiveFedora::SolrService.query(
+          Bulkrax.object_factory.query(
             extra_filters.to_s,
             **query_kwargs.merge(
               fq: [
                 %(#{solr_name(work_identifier)}:("#{ids.join('" OR "')}")),
-                "has_model_ssim:(#{Bulkrax.curation_concerns.join(' OR ')})"
+                "has_model_ssim:(#{Bulkrax.curation_concern_internal_resources.join(' OR ')})"
               ],
               fl: 'id'
             )
@@ -262,12 +258,12 @@ module Bulkrax
 
       def collections
         @collections ||= ParserExportRecordSet.in_batches(complete_entry_identifiers) do |ids|
-          ActiveFedora::SolrService.query(
-            "has_model_ssim:Collection #{extra_filters}",
+          Bulkrax.object_factory.query(
+            "has_model_ssim:#{Bulkrax.collection_model_internal_resource} #{extra_filters}",
             **query_kwargs.merge(
               fq: [
                 %(#{solr_name(work_identifier)}:("#{ids.join('" OR "')}")),
-                "has_model_ssim:Collection"
+                "has_model_ssim:#{Bulkrax.collection_model_internal_resource}"
               ],
               fl: "id"
             )
@@ -281,12 +277,12 @@ module Bulkrax
       # @see Bulkrax::ParserExportRecordSet::Base#file_sets
       def file_sets
         @file_sets ||= ParserExportRecordSet.in_batches(complete_entry_identifiers) do |ids|
-          ActiveFedora::SolrService.query(
+          Bulkrax.object_factory.query(
             extra_filters,
-            query_kwargs.merge(
+            **query_kwargs.merge(
               fq: [
                 %(#{solr_name(work_identifier)}:("#{ids.join('" OR "')}")),
-                "has_model_ssim:#{Bulkrax.file_model_class}"
+                "has_model_ssim:#{Bulkrax.file_model_internal_resource}"
               ],
               fl: 'id'
             )

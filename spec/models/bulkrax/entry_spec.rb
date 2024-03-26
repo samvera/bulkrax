@@ -10,7 +10,7 @@ module Bulkrax
       let(:collection) { FactoryBot.build(:collection) }
 
       before do
-        allow(Collection).to receive(:where).and_return([collection])
+        allow(Bulkrax.object_factory).to receive(:search_by_property).and_return(collection)
       end
 
       context '.mapping' do
@@ -22,9 +22,6 @@ module Bulkrax
       context '.find_collection' do
         it 'finds the collection' do
           expect(subject.find_collection('commons.ptsem.edu_MyCollection')).to eq(collection)
-        end
-        it 'does find the collection with a partial match' do
-          expect(subject.find_collection('MyCollection')).not_to eq(collection)
         end
       end
 

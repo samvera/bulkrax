@@ -63,8 +63,11 @@ module Bulkrax
     end
 
     def check_parent_is_a_work!(parent_identifier)
-      error_msg = %(A record with the ID "#{parent_identifier}" was found, but it was a #{parent_record.class}, which is not an valid/available work type)
-      raise ::StandardError, error_msg unless curation_concern?(parent_record)
+      case parent_record
+      when Bulkrax.collection_model_class, Bulkrax.file_model_class
+        error_msg = %(A record with the ID "#{parent_identifier}" was found, but it was a #{parent_record.class}, which is not an valid/available work type)
+        raise ::StandardError, error_msg
+      end
     end
 
     def find_parent_record(parent_identifier)

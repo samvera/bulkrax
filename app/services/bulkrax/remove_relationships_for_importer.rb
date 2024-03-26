@@ -57,7 +57,7 @@ module Bulkrax
         obj = entry.factory.find
         next if obj.is_a?(Bulkrax.file_model_class) # FileSets must be attached to a Work
 
-        if obj.is_a?(Collection)
+        if obj.is_a?(Bulkrax.collection_model_class)
           remove_relationships_from_collection(obj)
         else
           remove_relationships_from_work(obj)

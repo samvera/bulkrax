@@ -2,7 +2,7 @@
 
 module Bulkrax
   class CsvCollectionEntry < CsvEntry
-    self.default_work_type = "Collection"
+    self.default_work_type = Bulkrax.collection_model_class.to_s
 
     # Use identifier set by CsvParser#unique_collection_identifier, which falls back
     # on the Collection's first title if record[source_identifier] is not present

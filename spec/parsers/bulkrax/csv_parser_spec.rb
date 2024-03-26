@@ -633,7 +633,7 @@ module Bulkrax
       end
 
       before do
-        allow(ActiveFedora::SolrService).to receive(:query).and_return(SolrDocument.new(id: work_id))
+        allow(Bulkrax.object_factory).to receive(:query).and_return(SolrDocument.new(id: work_id))
         allow(exporter.entries).to receive(:where).and_return([entry])
         allow(parser).to receive(:headers).and_return(entry.parsed_metadata.keys)
       end

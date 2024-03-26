@@ -8,7 +8,7 @@ module Bulkrax
 
     describe '#default_work_type' do
       subject { entry.default_work_type }
-      it { is_expected.to eq("::FileSet") }
+      it { is_expected.to eq("FileSet") }
     end
 
     describe '#file_reference' do

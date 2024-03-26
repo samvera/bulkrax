@@ -58,10 +58,6 @@ module Bulkrax
     attr_accessor :fill_in_blank_source_identifiers
 
     ##
-    # @param adapter [Class<Bulkrax::PersistenceLayer::AbstractAdapter>]
-    attr_writer :persistence_adapter
-
-    ##
     # @param [String]
     attr_writer :solr_key_for_member_file_ids
 
@@ -95,17 +91,35 @@ module Bulkrax
       @factory_class_name_coercer || Bulkrax::FactoryClassFinder::DefaultCoercer
     end
 
+    def collection_model_class
+      @collection_model_class ||= Collection
+    end
+
+    attr_writer :collection_model_class
+
+    def collection_model_internal_resource
+      collection_model_class.try(:internal_resource) || collection_model_class.to_s
+    end
+
     def file_model_class
       @file_model_class ||= defined?(::Hyrax) ? ::FileSet : File
     end
 
     attr_writer :file_model_class
 
+    def file_model_internal_resource
+      file_model_class.try(:internal_resource) || file_model_class.to_s
+    end
+
     def curation_concerns
       @curation_concerns ||= defined?(::Hyrax) ? ::Hyrax.config.curation_concerns : []
     end
 
     attr_writer :curation_concerns
+
+    def curation_concern_internal_resources
+      curation_concerns.map { |cc| cc.try(:internal_resource) || cc.to_s }.uniq
+    end
 
     attr_writer :ingest_queue_name
     ##
@@ -114,34 +128,6 @@ module Bulkrax
       return @ingest_queue_name if @ingest_queue_name.present?
       return Hyrax.config.ingest_queue_name if defined?(Hyrax)
       :import
-    end
-
-    ##
-    # Configure the persistence adapter used for persisting imported data.
-    #
-    # @return [Class<Bulkrax::PersistenceLayer::AbstractAdapter>]
-    # @see Bulkrax::PersistenceLayer
-    def persistence_adapter
-      @persistence_adapter || derived_persistence_adapter
-    end
-
-    def derived_persistence_adapter
-      if defined?(Hyrax)
-        # There's probably some configuration of Hyrax we could use to better refine this; but it's
-        # likely a reasonable guess.  The main goal is to not break existing implementations and
-        # maintain an upgrade path.
-        if Gem::Version.new(Hyrax::VERSION) >= Gem::Version.new('6.0.0')
-          Bulkrax::PersistenceLayer::ValkyrieAdapter
-        else
-          Bulkrax::PersistenceLayer::ActiveFedoraAdapter
-        end
-      elsif defined?(ActiveFedora)
-        Bulkrax::PersistenceLayer::ActiveFedoraAdapter
-      elsif defined?(Valkyrie)
-        Bulkrax::PersistenceLayer::ValkyrieAdapter
-      else
-        raise "Unable to derive a persistence adapter"
-      end
     end
 
     attr_writer :use_locking
@@ -164,8 +150,12 @@ module Bulkrax
   def_delegators :@config,
                  :api_definition,
                  :api_definition=,
+                 :collection_model_class,
+                 :collection_model_internal_resource,
+                 :collection_model_class=,
                  :curation_concerns,
                  :curation_concerns=,
+                 :curation_concern_internal_resources,
                  :default_field_mapping,
                  :default_field_mapping=,
                  :default_work_type,
@@ -178,6 +168,7 @@ module Bulkrax
                  :field_mappings=,
                  :file_model_class,
                  :file_model_class=,
+                 :file_model_internal_resource,
                  :fill_in_blank_source_identifiers,
                  :fill_in_blank_source_identifiers=,
                  :generated_metadata_mapping,
@@ -192,8 +183,6 @@ module Bulkrax
                  :object_factory=,
                  :parsers,
                  :parsers=,
-                 :persistence_adapter,
-                 :persistence_adapter=,
                  :qa_controlled_properties,
                  :qa_controlled_properties=,
                  :related_children_field_mapping,

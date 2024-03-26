@@ -1,9 +1,16 @@
 en:
+  helpers: 
+    action: 
+      importer:
+        new: "New"
+      exporter: 
+        new: "New"
   bulkrax:
     admin:
       sidebar:
         exporters: Exporters
         importers: Importers
+    cancel: "Cancel"
     exporter:
       labels:
         all: All

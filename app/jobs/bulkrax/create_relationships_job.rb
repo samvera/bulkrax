@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 module Bulkrax
+  ##
   # Responsible for creating parent-child relationships between Works and Collections.
   #
   # Handles three kinds of relationships:
@@ -42,6 +43,7 @@ module Bulkrax
 
     queue_as Bulkrax.config.ingest_queue_name
 
+    ##
     # @param parent_identifier [String] Work/Collection ID or Bulkrax::Entry source_identifiers
     # @param importer_run [Bulkrax::ImporterRun] current importer run (needed to properly update counters)
     #
@@ -53,7 +55,7 @@ module Bulkrax
     #
     # rubocop:disable Metrics/MethodLength
     def perform(parent_identifier:, importer_run_id:) # rubocop:disable Metrics/AbcSize
-      importer_run = Bulkrax::ImporterRun.find(importer_run_id)
+      @importer_run = Bulkrax::ImporterRun.find(importer_run_id)
       ability = Ability.new(importer_run.user)
 
       parent_entry, parent_record = find_record(parent_identifier, importer_run_id)
@@ -79,9 +81,9 @@ module Bulkrax
 
           # save record if members were added
           if @parent_record_members_added
-            parent_record.save!
-            # Ensure that the new relationship gets indexed onto the children
-            @child_members_added.each(&:update_index)
+            Bulkrax.object_factory.save!(resource: parent_record, user: importer_run.user)
+            Bulkrax.object_factory.publish(event: 'object.membership.updated', object: parent_record)
+            Bulkrax.object_factory.update_index(resources: @child_members_added)
           end
         end
       else
@@ -104,7 +106,7 @@ module Bulkrax
         parent_entry&.set_status_info(errors.last, importer_run)
 
         # TODO: This can create an infinite job cycle, consider a time to live tracker.
-        reschedule({ parent_identifier: parent_identifier, importer_run_id: importer_run_id })
+        reschedule(parent_identifier: parent_identifier, importer_run_id: importer_run_id)
         return false # stop current job from continuing to run after rescheduling
       else
         # rubocop:disable Rails/SkipsModelValidations
@@ -113,6 +115,8 @@ module Bulkrax
       end
     end
     # rubocop:enable Metrics/MethodLength
+
+    attr_reader :importer_run
 
     private
 
@@ -151,25 +155,32 @@ module Bulkrax
       # We could do this outside of the loop, but that could lead to odd counter failures.
       ability.authorize!(:edit, parent_record)
 
-      parent_record.is_a?(Collection) ? add_to_collection(child_record, parent_record) : add_to_work(child_record, parent_record)
+      if parent_record.is_a?(Bulkrax.collection_model_class)
+        add_to_collection(child_record, parent_record)
+      else
+        add_to_work(child_record, parent_record)
+      end
 
-      child_record.file_sets.each(&:update_index) if update_child_records_works_file_sets? && child_record.respond_to?(:file_sets)
+      Bulkrax.object_factory.update_index_for_file_sets_of(resource: child_record) if update_child_records_works_file_sets?
+
       relationship.destroy
     end
 
     def add_to_collection(child_record, parent_record)
-      parent_record.try(:reindex_extent=, Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX) if
-        defined?(Hyrax::Adapters::NestingIndexAdapter)
-      child_record.member_of_collections << parent_record
-      child_record.save!
+      Bulkrax.object_factory.add_resource_to_collection(
+        collection: parent_record,
+        resource: child_record,
+        user: importer_run.user
+      )
     end
 
     def add_to_work(child_record, parent_record)
-      return true if parent_record.ordered_members.to_a.include?(child_record)
-
-      parent_record.ordered_members << child_record
-      @parent_record_members_added = true
-      @child_members_added << child_record
+      # NOTE: The .add_child_to_parent_work should not persist changes to the
+      #       child nor parent.  We'll do that elsewhere in this loop.
+      Bulkrax.object_factory.add_child_to_parent_work(
+        parent: parent_record,
+        child: child_record
+      )
     end
 
     def reschedule(parent_identifier:, importer_run_id:)

@@ -22,6 +22,7 @@ module Bulkrax
       @records = csv_data.map { |record_data| entry_class.data_for_entry(record_data, nil, self) }
     end
 
+    # rubocop:disable Metrics/AbcSize
     def build_records
       @collections = []
       @works = []
@@ -33,7 +34,9 @@ module Bulkrax
             next unless r.key?(model_mapping)
 
             model = r[model_mapping].nil? ? "" : r[model_mapping].strip
-            if model.casecmp('collection').zero?
+            # TODO: Eventually this should be refactored to us Hyrax.config.collection_model
+            #       We aren't right now because so many Bulkrax users are in between Fedora and Valkyrie
+            if model.casecmp('collection').zero? || model.casecmp('collectionresource').zero?
               @collections << r
             elsif model.casecmp('fileset').zero?
               @file_sets << r
@@ -51,6 +54,7 @@ module Bulkrax
 
       true
     end
+    # rubocop:enabled Metrics/AbcSize
 
     def collections
       build_records if @collections.nil?
@@ -236,7 +240,7 @@ module Bulkrax
     end
 
     def store_files(identifier, folder_count)
-      record = ActiveFedora::Base.find(identifier)
+      record = Bulkrax.object_factory.find(identifier)
       return unless record
 
       file_sets = record.file_set? ? Array.wrap(record) : record.file_sets

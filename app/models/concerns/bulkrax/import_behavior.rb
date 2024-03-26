@@ -11,7 +11,7 @@ module Bulkrax
         unless self.importerexporter.validate_only
           raise CollectionsCreatedError unless collections_created?
           @item = factory.run!
-          add_user_to_permission_templates! if self.class.to_s.include?("Collection") && defined?(::Hyrax)
+          add_user_to_permission_templates!
           parent_jobs if self.parsed_metadata[related_parents_parsed_mapping]&.join.present?
           child_jobs if self.parsed_metadata[related_children_parsed_mapping]&.join.present?
         end
@@ -28,22 +28,15 @@ module Bulkrax
     end
 
     def add_user_to_permission_templates!
-      permission_template = Hyrax::PermissionTemplate.find_or_create_by!(source_id: @item.id)
-
-      Hyrax::PermissionTemplateAccess.find_or_create_by!(
-        permission_template_id: permission_template.id,
-        agent_id: user.user_key,
-        agent_type: 'user',
-        access: 'manage'
-      )
-      Hyrax::PermissionTemplateAccess.find_or_create_by!(
-        permission_template_id: permission_template.id,
-        agent_id: 'admin',
-        agent_type: 'group',
-        access: 'manage'
-      )
-
-      @item.reset_access_controls!
+      # NOTE: This is a cheat for the class is a CollectionEntry.  Consider
+      # that we have default_work_type.
+      #
+      # TODO: This guard clause is not necessary as we can handle it in the
+      # underlying factory.  However, to do that requires adjusting about 7
+      # failing specs.  So for now this refactor appears acceptable
+      return unless defined?(::Hyrax)
+      return unless self.class.to_s.include?("Collection")
+      factory.add_user_to_collection_permissions(collection: @item, user: user)
     end
 
     def parent_jobs
