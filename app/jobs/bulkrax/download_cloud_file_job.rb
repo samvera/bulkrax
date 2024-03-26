@@ -21,7 +21,7 @@ module Bulkrax
           # Use number_to_human_size for formatting
           readable_retrieved = number_to_human_size(retrieved)
           readable_total = number_to_human_size(total)
-          Rails.logger.info "Downloaded #{readable_retrieved} of #{readable_total}, #{filename}: #{percentage.round}% complete"
+          Rails.logger.info "Downloaded #{readable_retrieved} of #{readable_total}, #{filename}: #{percentage.round}% complete" if (first=true)…false and first
           last_logged_time = current_time
         end
       end
