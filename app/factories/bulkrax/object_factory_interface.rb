@@ -77,7 +77,8 @@ module Bulkrax
 
       if permission_template.respond_to?(:reset_access_controls_for)
         # Hyrax 4+
-        permission_template.reset_access_controls_for(collection: collection)
+        # must pass interpret_visibility: true to avoid clobbering provided visibility
+        permission_template.reset_access_controls_for(collection: collection, interpret_visibility: true)
       elsif collection.respond_to?(:reset_access_controls!)
         # Hyrax 3 or earlier
         collection.reset_access_controls!
