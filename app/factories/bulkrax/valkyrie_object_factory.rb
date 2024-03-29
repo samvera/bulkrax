@@ -100,7 +100,6 @@ module Bulkrax
       end
     end
 
-
     def self.file_sets_for(resource:)
       return [] if resource.blank?
       return [resource] if resource.is_a?(Bulkrax.file_model_class)
@@ -160,7 +159,6 @@ module Bulkrax
       file_sets = Hyrax.query_service.custom_queries.find_child_file_sets(resource: resource)
       update_index(resources: file_sets)
     end
-
 
     ##
     # @param value [String]
