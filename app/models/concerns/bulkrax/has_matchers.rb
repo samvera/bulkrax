@@ -140,39 +140,36 @@ module Bulkrax
     end
 
     def supported_bulkrax_fields
-      @supported_bulkrax_fields ||=
-        %W[
-          id
-          file
-          remote_files
-          model
-          visibility
-          delete
-          #{related_parents_parsed_mapping}
-          #{related_children_parsed_mapping}
-        ]
+      @supported_bulkrax_fields ||= fields_that_are_always_singular +
+                                    fields_that_are_always_multiple
     end
 
     ##
     # Determine a multiple properties field
     def multiple?(field)
-      @multiple_bulkrax_fields ||=
-        %W[
-          file
-          remote_files
-          rights_statement
-          #{related_parents_parsed_mapping}
-          #{related_children_parsed_mapping}
-        ]
+      return true if fields_that_are_always_singular.include?(field.to_s)
+      return false if fields_that_are_always_multiple.include?(field.to_s)
 
-      return true if @multiple_bulkrax_fields.include?(field)
-      return false if field == 'model'
-
+      # TODO: Extract logic to object factory
       if Bulkrax.object_factory == Bulkrax::ValkyrieObjectFactory
         field_supported?(field) && valkyrie_multiple?(field)
       else
         field_supported?(field) && ar_multiple?(field)
       end
+    end
+
+    def fields_that_are_always_multiple
+      %w[id delete model visibility]
+    end
+
+    def fields_that_are_always_singular
+      @fields_that_are_always_singular ||= %W[
+        file
+        remote_files
+        rights_statement
+        #{related_parents_parsed_mapping}
+        #{related_children_parsed_mapping}
+      ]
     end
 
     def schema_form_definitions
@@ -184,8 +181,6 @@ module Bulkrax
     end
 
     def valkyrie_multiple?(field)
-      return false if field == 'visibility'
-
       if factory_class.respond_to?(:schema)
         sym_field = field.to_sym
         dry_type = factory_class.schema.key(sym_field)
