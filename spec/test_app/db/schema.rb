@@ -101,8 +101,6 @@ ActiveRecord::Schema.define(version: 2024_02_09_070952) do
     t.integer "total_file_set_entries", default: 0
     t.integer "processed_works", default: 0
     t.integer "failed_works", default: 0
-    t.integer "processed_children", default: 0
-    t.integer "failed_children", default: 0
     t.index ["importer_id"], name: "index_bulkrax_importer_runs_on_importer_id"
   end
 
@@ -646,4 +644,14 @@ ActiveRecord::Schema.define(version: 2024_02_09_070952) do
     t.index ["work_id"], name: "index_work_view_stats_on_work_id"
   end
 
+  add_foreign_key "bulkrax_exporter_runs", "bulkrax_exporters", column: "exporter_id"
+  add_foreign_key "bulkrax_importer_runs", "bulkrax_importers", column: "importer_id"
+  add_foreign_key "bulkrax_pending_relationships", "bulkrax_importer_runs", column: "importer_run_id"
+  add_foreign_key "collection_type_participants", "hyrax_collection_types"
+  add_foreign_key "curation_concerns_operations", "users"
+  add_foreign_key "mailboxer_conversation_opt_outs", "mailboxer_conversations", column: "conversation_id"
+  add_foreign_key "mailboxer_notifications", "mailboxer_conversations", column: "conversation_id"
+  add_foreign_key "mailboxer_receipts", "mailboxer_notifications", column: "notification_id"
+  add_foreign_key "permission_template_accesses", "permission_templates"
+  add_foreign_key "uploaded_files", "users"
 end
