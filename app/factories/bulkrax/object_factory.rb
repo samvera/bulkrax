@@ -36,6 +36,17 @@ module Bulkrax
       properties.reject { |prop| Bulkrax.reserved_properties.include?(prop) }
     end
 
+    def self.field_multi_value?(field:, model:)
+      return false unless field_supported?(field: field, model: model)
+      return false unless model.singleton_methods.include?(:properties)
+
+      model&.properties&.[](field)&.[]("multiple")
+    end
+
+    def self.field_supported?(field:, model:)
+      model.method_defined?(field) && model.properties[field].present?
+    end
+
     def self.file_sets_for(resource:)
       return [] if resource.blank?
       return [resource] if resource.is_a?(Bulkrax.file_model_class)

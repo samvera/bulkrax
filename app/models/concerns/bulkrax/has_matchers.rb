@@ -130,13 +130,7 @@ module Bulkrax
       return false if excluded?(field)
       return true if supported_bulkrax_fields.include?(field)
 
-      if Bulkrax.object_factory == Bulkrax::ValkyrieObjectFactory
-        # used in cases where we have a Fedora object class but use the Valkyrie object factory
-        property_defined = factory_class.singleton_methods.include?(:properties) && factory_class.properties[field].present?
-        factory_class.method_defined?(field) && (property_defined || Bulkrax::ValkyrieObjectFactory.schema_properties(factory_class).include?(field))
-      else
-        factory_class.method_defined?(field) && factory_class.properties[field].present?
-      end
+      Bulkrax.object_factory.field_supported?(field: field, model: factory_class)
     end
 
     def supported_bulkrax_fields
@@ -150,12 +144,7 @@ module Bulkrax
       return true if fields_that_are_always_singular.include?(field.to_s)
       return false if fields_that_are_always_multiple.include?(field.to_s)
 
-      # TODO: Extract logic to object factory
-      if Bulkrax.object_factory == Bulkrax::ValkyrieObjectFactory
-        field_supported?(field) && valkyrie_multiple?(field)
-      else
-        field_supported?(field) && ar_multiple?(field)
-      end
+      Bulkrax.object_factory.field_multi_value?(field: field, model: factory_class)
     end
 
     def fields_that_are_always_multiple
@@ -174,22 +163,6 @@ module Bulkrax
 
     def schema_form_definitions
       @schema_form_definitions ||= ::SchemaLoader.new.form_definitions_for(factory_class.name.underscore.to_sym)
-    end
-
-    def ar_multiple?(field)
-      factory_class.singleton_methods.include?(:properties) && factory_class&.properties&.[](field)&.[]("multiple")
-    end
-
-    def valkyrie_multiple?(field)
-      if factory_class.respond_to?(:schema)
-        sym_field = field.to_sym
-        dry_type = factory_class.schema.key(sym_field)
-        return true if dry_type.respond_to?(:primitive) && dry_type.primitive == Array
-
-        false
-      else
-        ar_multiple?(field)
-      end
     end
 
     # Hyrax field to use for the given import field

@@ -77,10 +77,29 @@ module Bulkrax
       save!(resource: resource, user: user)
     end
 
-    def self.update_index_for_file_sets_of(resource:)
-      file_sets = Hyrax.query_service.custom_queries.find_child_file_sets(resource: resource)
-      update_index(resources: file_sets)
+    def self.field_multi_value?(field:, model:)
+      return false unless field_supported?(field: field, model: model)
+
+      if model.respond_to?(:schema)
+        dry_type = model.schema.key(field.to_sym)
+        return true if dry_type.respond_to?(:primitive) && dry_type.primitive == Array
+
+        false
+      else
+        Bulkrax::ObjectFactory.field_multi_value?(field: field, model: model)
+      end
     end
+
+    def self.field_supported?(field:, model:)
+      if model.respond_to?(:schema)
+        schema_properties(model).include?(field)
+      else
+        # We *might* have a Fedora object, so we need to consider that approach as
+        # well.
+        Bulkrax::ObjectFactory.field_supported?(field: field, model: model)
+      end
+    end
+
 
     def self.file_sets_for(resource:)
       return [] if resource.blank?
@@ -136,6 +155,12 @@ module Bulkrax
         Hyrax.index_adapter.save(resource: resource)
       end
     end
+
+    def self.update_index_for_file_sets_of(resource:)
+      file_sets = Hyrax.query_service.custom_queries.find_child_file_sets(resource: resource)
+      update_index(resources: file_sets)
+    end
+
 
     ##
     # @param value [String]

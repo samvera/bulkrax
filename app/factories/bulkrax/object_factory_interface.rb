@@ -107,6 +107,31 @@ module Bulkrax
     end
 
     ##
+    # @param field [String]
+    # @param model [Class]
+    #
+    # @return [TrueClass] when the given :field is a valid property on the given
+    #         :model.
+
+    # @return [FalseClass] when the given :field is **not** a valid property on
+    #         the given :model.
+    def self.field_supported?(field:, model:)
+      raise NotImplementedError, "#{self}.#{__method__}"
+    end
+
+    ##
+    # @param field [String]
+    # @param model [Class]
+    #
+    # @return [TrueClass] when the given :field is a multi-value property on the
+    #         given :model.
+    # @return [FalseClass] when given :field is **not** a scalar (not
+    #         multi-value) property on the given :model.
+    def self.field_multi_value?(field:, model:)
+      raise NotImplementedError, "#{self}.#{__method__}"
+    end
+
+    ##
     # @param resource [Object]
     #
     # @return [Array<Object>] interrogate the given :object and return an array
