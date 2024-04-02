@@ -20,14 +20,14 @@ module Bulkrax
       return unless defined?(::Hyrax)
 
       if params[:importer][:admin_set_id].blank?
-        params[:importer][:admin_set_id] = AdminSet::DEFAULT_ID
+        params[:importer][:admin_set_id] = Bulkrax.object_factory.default_admin_set_id
       else
-        AdminSet.find(params[:importer][:admin_set_id])
+        Bulkrax.object_factory.find(params[:importer][:admin_set_id])
       end
       return true
     rescue ActiveFedora::ObjectNotFoundError, Bulkrax::ObjectFactoryInterface::ObjectNotFoundError
       logger.warn("AdminSet #{params[:importer][:admin_set_id]} not found. Using default admin set.")
-      params[:importer][:admin_set_id] = AdminSet::DEFAULT_ID
+      params[:importer][:admin_set_id] = Bulkrax.object_factory.default_admin_set_id
       return true
     end
 

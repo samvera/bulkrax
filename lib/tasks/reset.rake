@@ -12,8 +12,7 @@ namespace :hyrax do
     desc 'Reset fedora / solr and corresponding database tables w/o clearing other active record tables like users'
     task works_and_collections: [:environment] do
       confirm('You are about to delete all works and collections, this is not reversable!')
-      require 'active_fedora/cleaner'
-      ActiveFedora::Cleaner.clean!
+      Bulkrax.object_factory.clean!
       Hyrax::PermissionTemplateAccess.delete_all
       Hyrax::PermissionTemplate.delete_all
       Bulkrax::PendingRelationship.delete_all
@@ -33,16 +32,17 @@ namespace :hyrax do
       Mailboxer::Conversation::OptOut.delete_all
       Mailboxer::Conversation.delete_all
       AccountElevator.switch!(Site.instance.account) if defined?(AccountElevator)
+
       # we need to wait till Fedora is done with its cleanup
       # otherwise creating the admin set will fail
-      while AdminSet.exist?(AdminSet::DEFAULT_ID)
+      while Bulkrax.object_factory.default_admin_set_or_nil
         puts 'waiting for delete to finish before reinitializing Fedora'
         sleep 20
       end
 
       Hyrax::CollectionType.find_or_create_default_collection_type
       Hyrax::CollectionType.find_or_create_admin_set_type
-      AdminSet.find_or_create_default_admin_set_id
+      Bulkrax.object_factory.find_or_create_default_admin_set
 
       collection_types = Hyrax::CollectionType.all
       collection_types.each do |c|

@@ -115,6 +115,10 @@ module Bulkrax
       raise ObjectFactoryInterface::ObjectNotFoundError, e.message
     end
 
+    def self.find_or_create_default_admin_set
+      Hyrax::AdminSetCreateService.find_or_create_default_admin_set
+    end
+
     def self.solr_name(field_name)
       # It's a bit unclear what this should be if we can't rely on Hyrax.
       raise NotImplementedError, "#{self}.#{__method__}" unless defined?(Hyrax)

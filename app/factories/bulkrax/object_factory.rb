@@ -63,6 +63,11 @@ module Bulkrax
       raise ObjectFactoryInterface::ObjectNotFoundError, e.message
     end
 
+    def self.find_or_create_default_admin_set
+      # NOTE: Hyrax 5+ removed this method
+      AdminSet.find_or_create_default_admin_set_id
+    end
+
     def self.publish(**)
       return true
     end

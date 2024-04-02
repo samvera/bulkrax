@@ -95,9 +95,24 @@ module Bulkrax
     end
 
     ##
-    # @param resource [Object] something that *might* have file_sets members.
-    def self.update_index_for_file_sets_of(resource:)
-      raise NotImplementedError, "#{self}.#{__method__}"
+    # @return [String]
+    def self.default_admin_set_id
+      if defined?(Hyrax::AdminSetCreateService::DEFAULT_ID)
+        return Hyrax::AdminSetCreateService::DEFAULT_ID
+      elsif defined?(AdminSet::DEFAULT_ID)
+        return AdminSet::DEFAULT_ID
+      else
+        return 'admin_set/default'
+      end
+    end
+
+    ##
+    # @return [Object] when we have an existing admin set.
+    # @return [NilClass] when we the default admin set does not exist.
+    #
+    # @see .find_or_nil
+    def self.default_admin_set_or_nil
+      find_or_nil(default_admin_set_id)
     end
 
     ##
@@ -128,6 +143,10 @@ module Bulkrax
     # @return [FalseClass] when given :field is **not** a scalar (not
     #         multi-value) property on the given :model.
     def self.field_multi_value?(field:, model:)
+      raise NotImplementedError, "#{self}.#{__method__}"
+    end
+
+    def self.find_or_create_default_admin_set
       raise NotImplementedError, "#{self}.#{__method__}"
     end
 
@@ -179,6 +198,12 @@ module Bulkrax
     ##
     # @param resources [Array<Object>]
     def self.update_index(resources: [])
+      raise NotImplementedError, "#{self}.#{__method__}"
+    end
+
+    ##
+    # @param resource [Object] something that *might* have file_sets members.
+    def self.update_index_for_file_sets_of(resource:)
       raise NotImplementedError, "#{self}.#{__method__}"
     end
     # rubocop:enable Metrics/ParameterLists

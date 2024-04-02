@@ -287,7 +287,7 @@ module Bulkrax
     context 'with application/json request' do
       before do
         allow(controller).to receive(:api_request?).and_return(true)
-        allow(AdminSet).to receive(:find).with('admin_set/default')
+        allow(Bulkrax.object_factory).to receive(:find).with('admin_set/default')
         allow(User).to receive(:batch_user).and_return(FactoryBot.create(:user))
         allow(controller).to receive(:valid_parser_fields?).and_return(true)
       end
@@ -331,7 +331,7 @@ module Bulkrax
 
       describe 'PUT #update' do
         before do
-          allow(AdminSet).to receive(:find).with('admin_set/default')
+          allow(Bulkrax.object_factory).to receive(:find).with('admin_set/default')
           allow(User).to receive(:batch_user).and_return(FactoryBot.create(:user))
         end
 
