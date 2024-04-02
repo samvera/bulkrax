@@ -1,153 +1,171 @@
 # frozen_string_literal: true
 
 module Bulkrax
-  class ObjectFactory # rubocop:disable Metrics/ClassLength
-    extend ActiveModel::Callbacks
+  # rubocop:disable Metrics/ClassLength
+  class ObjectFactory < ObjectFactoryInterface
     include Bulkrax::FileFactory
-    include DynamicRecordLookup
 
-    # @api private
-    #
-    # These are the attributes that we assume all "work type" classes (e.g. the given :klass) will
-    # have in addition to their specific attributes.
-    #
-    # @return [Array<Symbol>]
-    # @see #permitted_attributes
-    class_attribute :base_permitted_attributes,
-      default: %i[id edit_users edit_groups read_groups visibility work_members_attributes admin_set_id]
+    ##
+    # @!group Class Method Interface
 
-    # @return [Boolean]
-    #
-    # @example
-    #   Bulkrax::ObjectFactory.transformation_removes_blank_hash_values = true
-    #
-    # @see #transform_attributes
-    # @see https://github.com/samvera-labs/bulkrax/pull/708 For discussion concerning this feature
-    # @see https://github.com/samvera-labs/bulkrax/wiki/Interacting-with-Metadata For documentation
-    #      concerning default behavior.
-    class_attribute :transformation_removes_blank_hash_values, default: false
+    ##
+    # @note This does not save either object.  We need to do that in another
+    #       loop.  Why?  Because we might be adding many items to the parent.
+    def self.add_child_to_parent_work(parent:, child:)
+      return true if parent.ordered_members.to_a.include?(child_record)
 
-    define_model_callbacks :save, :create
-    attr_reader :attributes, :object, :source_identifier_value, :klass, :replace_files, :update_files, :work_identifier, :work_identifier_search_field, :related_parents_parsed_mapping, :importer_run_id
+      parent.ordered_members << child
+    end
 
+    def self.add_resource_to_collection(collection:, resource:, user:)
+      collection.try(:reindex_extent=, Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX) if
+        defined?(Hyrax::Adapters::NestingIndexAdapter)
+      resource.member_of_collections << collection
+      save!(resource: resource, user: user)
+    end
+
+    def self.update_index_for_file_sets_of(resource:)
+      resource.file_sets.each(&:update_index) if resource.respond_to?(:file_sets)
+    end
+
+    ##
+    # @see Bulkrax::ObjectFactoryInterface
+    def self.export_properties
+      # TODO: Consider how this may or may not work for Valkyrie
+      properties = Bulkrax.curation_concerns.map { |work| work.properties.keys }.flatten.uniq.sort
+      properties.reject { |prop| Bulkrax.reserved_properties.include?(prop) }
+    end
+
+    def self.field_multi_value?(field:, model:)
+      return false unless field_supported?(field: field, model: model)
+      return false unless model.singleton_methods.include?(:properties)
+
+      model&.properties&.[](field)&.[]("multiple")
+    end
+
+    def self.field_supported?(field:, model:)
+      model.method_defined?(field) && model.properties[field].present?
+    end
+
+    def self.file_sets_for(resource:)
+      return [] if resource.blank?
+      return [resource] if resource.is_a?(Bulkrax.file_model_class)
+
+      resource.file_sets
+    end
+
+    ##
+    #
+    # @see Bulkrax::ObjectFactoryInterface
+    def self.find(id)
+      ActiveFedora::Base.find(id)
+    rescue ActiveFedora::ObjectNotFoundError => e
+      raise ObjectFactoryInterface::ObjectNotFoundError, e.message
+    end
+
+    def self.find_or_create_default_admin_set
+      # NOTE: Hyrax 5+ removed this method
+      AdminSet.find_or_create_default_admin_set_id
+    end
+
+    def self.publish(**)
+      return true
+    end
+
+    ##
+    # @param value [String]
+    # @param klass [Class, #where]
+    # @param field [String, Symbol] A convenience parameter where we pass the
+    #        same value to search_field and name_field.
+    # @param search_field [String, Symbol] the Solr field name
+    #        (e.g. "title_tesim")
+    # @param name_field [String] the ActiveFedora::Base property name
+    #        (e.g. "title")
+    # @param verify_property [TrueClass] when true, verify that the given :klass
+    #
+    # @return [NilClass] when no object is found.
+    # @return [ActiveFedora::Base] when a match is found, an instance of given
+    #         :klass
     # rubocop:disable Metrics/ParameterLists
-    def initialize(attributes:, source_identifier_value:, work_identifier:, work_identifier_search_field:, related_parents_parsed_mapping: nil, replace_files: false, user: nil, klass: nil, importer_run_id: nil, update_files: false)
-      @attributes = ActiveSupport::HashWithIndifferentAccess.new(attributes)
-      @replace_files = replace_files
-      @update_files = update_files
-      @user = user || User.batch_user
-      @work_identifier = work_identifier
-      @work_identifier_search_field = work_identifier_search_field
-      @related_parents_parsed_mapping = related_parents_parsed_mapping
-      @source_identifier_value = source_identifier_value
-      @klass = klass || Bulkrax.default_work_type.constantize
-      @importer_run_id = importer_run_id
+    #
+    # @note HEY WE'RE USING THIS FOR A WINGS CUSTOM QUERY.  BE CAREFUL WITH
+    #       REMOVING IT.
+    #
+    # @see # {Wings::CustomQueries::FindBySourceIdentifier#find_by_model_and_property_value}
+    def self.search_by_property(value:, klass:, field: nil, search_field: nil, name_field: nil, verify_property: false)
+      return nil unless klass.respond_to?(:where)
+      # We're not going to try to match nil nor "".
+      return if value.blank?
+      return if verify_property && !klass.properties.keys.include?(search_field)
+
+      search_field ||= field
+      name_field ||= field
+      raise "You must provide either (search_field AND name_field) OR field parameters" if search_field.nil? || name_field.nil?
+      # NOTE: Query can return partial matches (something6 matches both
+      # something6 and something68) so we need to weed out any that are not the
+      # correct full match. But other items might be in the multivalued field,
+      # so we have to go through them one at a time.
+      #
+      # A ssi field is string, so we're looking at exact matches.
+      # A tesi field is text, so partial matches work.
+      #
+      # We need to wrap the result in an Array, else we might have a scalar that
+      # will result again in partial matches.
+      match = klass.where(search_field => value).detect do |m|
+        # Don't use Array.wrap as we likely have an ActiveTriples::Relation
+        # which defiantly claims to be an Array yet does not behave consistently
+        # with an Array.  Hopefully the name_field is not a Date or Time object,
+        # Because that too will be a mess.
+        Array(m.send(name_field)).include?(value)
+      end
+      return match if match
     end
     # rubocop:enable Metrics/ParameterLists
 
-    # update files is set, replace files is set or this is a create
-    def with_files
-      update_files || replace_files || !object
+    def self.query(q, **kwargs)
+      ActiveFedora::SolrService.query(q, **kwargs)
     end
 
-    def run
-      arg_hash = { id: attributes[:id], name: 'UPDATE', klass: klass }
-      @object = find
-      if object
-        object.reindex_extent = Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX if object.respond_to?(:reindex_extent)
-        ActiveSupport::Notifications.instrument('import.importer', arg_hash) { update }
+    def self.clean!
+      super do
+        ActiveFedora::Cleaner.clean!
+      end
+    end
+
+    def self.solr_name(field_name)
+      if defined?(Hyrax)
+        Hyrax.index_field_mapper.solr_name(field_name)
       else
-        ActiveSupport::Notifications.instrument('import.importer', arg_hash.merge(name: 'CREATE')) { create }
+        ActiveFedora.index_field_mapper.solr_name(field_name)
       end
-      yield(object) if block_given?
-      object
     end
 
-    def run!
-      self.run
-      # Create the error exception if the object is not validly saved for some reason
-      raise ActiveFedora::RecordInvalid, object if !object.persisted? || object.changed?
-      object
+    def self.ordered_file_sets_for(object)
+      object&.ordered_members.to_a.select(&:file_set?)
     end
 
-    def update
-      raise "Object doesn't exist" unless object
-      destroy_existing_files if @replace_files && ![Collection, FileSet].include?(klass)
-      attrs = transform_attributes(update: true)
-      run_callbacks :save do
-        if klass == Collection
-          update_collection(attrs)
-        elsif klass == FileSet
-          update_file_set(attrs)
-        else
-          update_work(attrs)
-        end
-      end
-      object.apply_depositor_metadata(@user) && object.save! if object.depositor.nil?
-      log_updated(object)
+    def self.save!(resource:, **)
+      resource.save!
     end
 
-    def find
-      found = find_by_id if attributes[:id].present?
-      return found if found.present?
-      return search_by_identifier if attributes[work_identifier].present?
+    def self.update_index(resources: [])
+      Array(resources).each(&:update_index)
     end
+    # @!endgroup Class Method Interface
+    ##
 
     def find_by_id
-      klass.find(attributes[:id]) if klass.exists?(attributes[:id])
+      return false if attributes[:id].blank?
+      # Rails / Ruby upgrade, we moved from :exists? to :exist?  However we want to continue (for a
+      # bit) to support older versions.
+      method_name = klass.respond_to?(:exist?) ? :exist? : :exists?
+      klass.find(attributes[:id]) if klass.send(method_name, attributes[:id])
+    rescue Valkyrie::Persistence::ObjectNotFoundError
+      false
     end
 
-    def find_or_create
-      o = find
-      return o if o
-      run(&:save!)
-    end
-
-    def search_by_identifier
-      query = { work_identifier_search_field =>
-                source_identifier_value }
-      # Query can return partial matches (something6 matches both something6 and something68)
-      # so we need to weed out any that are not the correct full match. But other items might be
-      # in the multivalued field, so we have to go through them one at a time.
-      match = klass.where(query).detect { |m| m.send(work_identifier).include?(source_identifier_value) }
-      return match if match
-    end
-
-    # An ActiveFedora bug when there are many habtm <-> has_many associations means they won't all get saved.
-    # https://github.com/projecthydra/active_fedora/issues/874
-    # 2+ years later, still open!
-    def create
-      attrs = transform_attributes
-      @object = klass.new
-      object.reindex_extent = Hyrax::Adapters::NestingIndexAdapter::LIMITED_REINDEX if defined?(Hyrax::Adapters::NestingIndexAdapter) && object.respond_to?(:reindex_extent)
-      run_callbacks :save do
-        run_callbacks :create do
-          if klass == Collection
-            create_collection(attrs)
-          elsif klass == FileSet
-            create_file_set(attrs)
-          else
-            create_work(attrs)
-          end
-        end
-      end
-      object.apply_depositor_metadata(@user) && object.save! if object.depositor.nil?
-      log_created(object)
-    end
-
-    def log_created(obj)
-      msg = "Created #{klass.model_name.human} #{obj.id}"
-      Rails.logger.info("#{msg} (#{Array(attributes[work_identifier]).first})")
-    end
-
-    def log_updated(obj)
-      msg = "Updated #{klass.model_name.human} #{obj.id}"
-      Rails.logger.info("#{msg} (#{Array(attributes[work_identifier]).first})")
-    end
-
-    def log_deleted_fs(obj)
-      msg = "Deleted All Files from #{obj.id}"
-      Rails.logger.info("#{msg} (#{Array(attributes[work_identifier]).first})")
+    def delete(_user)
+      find&.delete
     end
 
     private
@@ -238,52 +256,6 @@ module Bulkrax
       update == true ? actor.update_content(tmp_file) : actor.create_content(tmp_file, from_url: true)
       tmp_file.close
     end
-
-    def clean_attrs(attrs)
-      # avoid the "ArgumentError: Identifier must be a string of size > 0 in order to be treeified" error
-      # when setting object.attributes
-      attrs.delete('id') if attrs['id'].blank?
-      attrs
-    end
-
-    def collection_type(attrs)
-      return attrs if attrs['collection_type_gid'].present?
-
-      attrs['collection_type_gid'] = Hyrax::CollectionType.find_or_create_default_collection_type.to_global_id.to_s
-      attrs
-    end
-
-    # Override if we need to map the attributes from the parser in
-    # a way that is compatible with how the factory needs them.
-    def transform_attributes(update: false)
-      @transform_attributes = attributes.slice(*permitted_attributes)
-      @transform_attributes.merge!(file_attributes(update_files)) if with_files
-      @transform_attributes = remove_blank_hash_values(@transform_attributes) if transformation_removes_blank_hash_values?
-      update ? @transform_attributes.except(:id) : @transform_attributes
-    end
-
-    # Regardless of what the Parser gives us, these are the properties we are prepared to accept.
-    def permitted_attributes
-      klass.properties.keys.map(&:to_sym) + base_permitted_attributes
-    end
-
-    # Return a copy of the given attributes, such that all values that are empty or an array of all
-    # empty values are fully emptied.  (See implementation details)
-    #
-    # @param attributes [Hash]
-    # @return [Hash]
-    #
-    # @see https://github.com/emory-libraries/dlp-curate/issues/1973
-    def remove_blank_hash_values(attributes)
-      dupe = attributes.dup
-      dupe.each do |key, values|
-        if values.is_a?(Array) && values.all? { |value| value.is_a?(String) && value.empty? }
-          dupe[key] = []
-        elsif values.is_a?(String) && values.empty?
-          dupe[key] = nil
-        end
-      end
-      dupe
-    end
   end
+  # rubocop:enable Metrics/ClassLength
 end

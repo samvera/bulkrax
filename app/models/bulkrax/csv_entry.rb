@@ -104,7 +104,7 @@ module Bulkrax
     end
 
     def add_metadata_for_model
-      if defined?(::Collection) && factory_class == ::Collection
+      if factory_class.present? && factory_class == Bulkrax.collection_model_class
         add_collection_type_gid if defined?(::Hyrax)
         # add any additional collection metadata methods here
       elsif factory_class == Bulkrax.file_model_class
@@ -144,7 +144,7 @@ module Bulkrax
       self.parsed_metadata = {}
 
       build_system_metadata
-      build_files_metadata if defined?(Collection) && !hyrax_record.is_a?(Collection)
+      build_files_metadata if Bulkrax.collection_model_class.present? && !hyrax_record.is_a?(Bulkrax.collection_model_class)
       build_relationship_metadata
       build_mapping_metadata
       self.save!
@@ -156,9 +156,12 @@ module Bulkrax
     def build_system_metadata
       self.parsed_metadata['id'] = hyrax_record.id
       source_id = hyrax_record.send(work_identifier)
-      source_id = source_id.to_a.first if source_id.is_a?(ActiveTriples::Relation)
+      # Because ActiveTriples::Relation does not respond to #to_ary we can't rely on Array.wrap universally
+      source_id = source_id.to_a if source_id.is_a?(ActiveTriples::Relation)
+      source_id = Array.wrap(source_id).first
       self.parsed_metadata[source_identifier] = source_id
-      self.parsed_metadata[key_for_export('model')] = hyrax_record.has_model.first
+      model_name = hyrax_record.respond_to?(:to_rdf_representation) ? hyrax_record.to_rdf_representation : hyrax_record.has_model.first
+      self.parsed_metadata[key_for_export('model')] = model_name
     end
 
     def build_files_metadata

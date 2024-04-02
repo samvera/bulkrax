@@ -29,6 +29,8 @@ module Bulkrax
       def self.call(name, suffix: SUFFIX)
         if name.end_with?(suffix)
           name.constantize
+        elsif name == "FileSet"
+          Bulkrax.file_model_class
         else
           begin
             "#{name}#{suffix}".constantize

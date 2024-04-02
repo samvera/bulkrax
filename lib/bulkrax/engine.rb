@@ -5,18 +5,13 @@ require 'oai'
 module Bulkrax
   class Engine < ::Rails::Engine
     isolate_namespace Bulkrax
+
     initializer :append_migrations do |app|
       if !app.root.to_s.match(root.to_s) && app.root.join('db/migrate').children.none? { |path| path.fnmatch?("*.bulkrax.rb") }
         config.paths["db/migrate"].expanded.each do |expanded_path|
           app.config.paths["db/migrate"] << expanded_path
         end
       end
-    end
-
-    initializer 'requires' do
-      require 'bulkrax/persistence_layer'
-      require 'bulkrax/persistence_layer/active_fedora_adapter' if defined?(ActiveFedora)
-      require 'bulkrax/persistence_layer/valkyrie_adapter' if defined?(Valkyrie)
     end
 
     config.generators do |g|
@@ -38,6 +33,28 @@ module Bulkrax
         hyrax_view_path = paths.detect { |path| path.match(%r{^#{hyrax_engine_root}}) }
         paths.insert(paths.index(hyrax_view_path), File.join(my_engine_root, 'app', 'views')) if hyrax_view_path
         ActionController::Base.view_paths = paths.uniq
+
+        custom_query_strategies = {
+          find_by_model_and_property_value: :find_single_or_nil
+        }
+
+        if defined?(::Goddess::CustomQueryContainer)
+          strategies = ::Goddess::CustomQueryContainer.known_custom_queries_and_their_strategies
+          strategies = strategies.merge(custom_query_strategies)
+          ::Goddess::CustomQueryContainer.known_custom_queries_and_their_strategies = strategies
+        end
+
+        if defined?(::Frigg::CustomQueryContainer)
+          strategies = ::Frigg::CustomQueryContainer.known_custom_queries_and_their_strategies
+          strategies = strategies.merge(custom_query_strategies)
+          ::Frigg::CustomQueryContainer.known_custom_queries_and_their_strategies = strategies
+        end
+
+        if defined?(::Freyja::CustomQueryContainer)
+          strategies = ::Freyja::CustomQueryContainer.known_custom_queries_and_their_strategies
+          strategies = strategies.merge(custom_query_strategies)
+          ::Freyja::CustomQueryContainer.known_custom_queries_and_their_strategies = strategies
+        end
       end
     end
   end

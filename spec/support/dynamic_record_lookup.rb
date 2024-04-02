@@ -10,7 +10,7 @@ module Bulkrax
       allow(::Hyrax.config).to receive(:curation_concerns).and_return([Work])
       # DRY spec setup -- by default, assume #find_record doesn't find anything
       allow(Entry).to receive(:find_by).and_return(nil)
-      allow(ActiveFedora::Base).to receive(:find).and_return(nil)
+      allow(Bulkrax.object_factory).to receive(:find).and_return(nil)
     end
 
     describe '#find_record' do
@@ -19,7 +19,7 @@ module Bulkrax
 
         it 'looks through entries and all work types' do
           expect(Entry).to receive(:find_by).with({ identifier: source_identifier, importerexporter_type: 'Bulkrax::Importer', importerexporter_id: importer_id }).once
-          expect(ActiveFedora::Base).to receive(:find).with(source_identifier).once.and_return(ActiveFedora::ObjectNotFoundError)
+          expect(Bulkrax.object_factory).to receive(:find).with(source_identifier).once.and_return(Bulkrax::ObjectFactoryInterface::ObjectNotFoundError)
 
           subject.find_record(source_identifier, importer_run_id)
         end
@@ -61,16 +61,16 @@ module Bulkrax
 
         it 'looks through entries and all work types' do
           expect(Entry).to receive(:find_by).with({ identifier: id, importerexporter_type: 'Bulkrax::Importer', importerexporter_id: importer_id }).once
-          expect(ActiveFedora::Base).to receive(:find).with(id).once.and_return(nil)
+          expect(Bulkrax.object_factory).to receive(:find).with(id).once.and_return(nil)
 
           subject.find_record(id, importer_run_id)
         end
 
         context 'when a collection is found' do
-          let(:collection) { instance_double(::Collection) }
+          let(:collection) { Bulkrax.collection_model_class.new }
 
           before do
-            allow(ActiveFedora::Base).to receive(:find).with(id).and_return(collection)
+            allow(Bulkrax.object_factory).to receive(:find).with(id).and_return(collection)
           end
 
           it 'returns the collection' do
@@ -82,7 +82,7 @@ module Bulkrax
           let(:work) { instance_double(::Work) }
 
           before do
-            allow(ActiveFedora::Base).to receive(:find).with(id).and_return(work)
+            allow(Bulkrax.object_factory).to receive(:find).with(id).and_return(work)
           end
 
           it 'returns the work' do
@@ -94,32 +94,6 @@ module Bulkrax
           it 'returns nil' do
             expect(subject.find_record(id, importer_run_id)[1]).to be_nil
           end
-        end
-      end
-    end
-
-    describe '#curation_concern?' do
-      context 'when record is a work' do
-        let(:record) { build(:work) }
-
-        it 'returns true' do
-          expect(subject.curation_concern?(record)).to eq(true)
-        end
-      end
-
-      context 'when record is a collection' do
-        let(:record) { build(:collection) }
-
-        it 'returns false' do
-          expect(subject.curation_concern?(record)).to eq(false)
-        end
-      end
-
-      context 'when record is an Entry' do
-        let(:record) { build(:bulkrax_entry) }
-
-        it 'returns false' do
-          expect(subject.curation_concern?(record)).to eq(false)
         end
       end
     end

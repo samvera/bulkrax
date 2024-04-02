@@ -77,7 +77,7 @@ unless ENV.fetch('BULKRAX_NO_BAGIT', 'false').to_s == 'true'
         file_set_entries = importerexporter.entries.where(type: file_set_entry_class.to_s)
 
         work_entries[0..limit || total].each do |entry|
-          record = ActiveFedora::Base.find(entry.identifier)
+          record = Bulkrax.object_factory.find(entry.identifier)
           next unless record
 
           bag_entries = [entry]

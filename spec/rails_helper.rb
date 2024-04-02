@@ -17,6 +17,11 @@ FactoryBot.find_definitions
 
 Bulkrax.default_work_type = 'Work'
 
+# In Bulkrax 7+ we introduced a new object factory.  And we've been moving code
+# into that construct; namely code that involves the types of object's we're
+# working with.
+Bulkrax.object_factory = Bulkrax::ObjectFactory
+
 # Requires supporting ruby files with custom matchers and macros, etc, in
 # spec/support/ and its subdirectories. Files matching `spec/**/*_spec.rb` are
 # run as spec files by default. This means that files in spec/support that end

@@ -22,6 +22,7 @@ module Bulkrax
       @records = csv_data.map { |record_data| entry_class.data_for_entry(record_data, nil, self) }
     end
 
+    # rubocop:disable Metrics/AbcSize
     def build_records
       @collections = []
       @works = []
@@ -33,7 +34,9 @@ module Bulkrax
             next unless r.key?(model_mapping)
 
             model = r[model_mapping].nil? ? "" : r[model_mapping].strip
-            if model.casecmp('collection').zero?
+            # TODO: Eventually this should be refactored to us Hyrax.config.collection_model
+            #       We aren't right now because so many Bulkrax users are in between Fedora and Valkyrie
+            if model.casecmp('collection').zero? || model.casecmp('collectionresource').zero?
               @collections << r
             elsif model.casecmp('fileset').zero?
               @file_sets << r
@@ -51,6 +54,7 @@ module Bulkrax
 
       true
     end
+    # rubocop:enabled Metrics/AbcSize
 
     def collections
       build_records if @collections.nil?
@@ -227,6 +231,7 @@ module Bulkrax
         CSV.open(setup_export_file(folder_count), "w", headers: export_headers, write_headers: true) do |csv|
           group.each do |entry|
             csv << entry.parsed_metadata
+            # TODO: This is precarious when we have descendents of Bulkrax::CsvCollectionEntry
             next if importerexporter.metadata_only? || entry.type == 'Bulkrax::CsvCollectionEntry'
 
             store_files(entry.identifier, folder_count.to_s)
@@ -236,7 +241,7 @@ module Bulkrax
     end
 
     def store_files(identifier, folder_count)
-      record = ActiveFedora::Base.find(identifier)
+      record = Bulkrax.object_factory.find(identifier)
       return unless record
 
       file_sets = record.file_set? ? Array.wrap(record) : record.file_sets
@@ -288,6 +293,9 @@ module Bulkrax
 
     def sort_entries(entries)
       # always export models in the same order: work, collection, file set
+      #
+      # TODO: This is a problem in that only these classes are compared.  Instead
+      #       We should add a comparison operator to the classes.
       entries.sort_by do |entry|
         case entry.type
         when 'Bulkrax::CsvCollectionEntry'

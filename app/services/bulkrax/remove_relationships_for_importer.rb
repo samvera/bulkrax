@@ -57,7 +57,7 @@ module Bulkrax
         obj = entry.factory.find
         next if obj.is_a?(Bulkrax.file_model_class) # FileSets must be attached to a Work
 
-        if obj.is_a?(Collection)
+        if obj.is_a?(Bulkrax.collection_model_class)
           remove_relationships_from_collection(obj)
         else
           remove_relationships_from_work(obj)
@@ -78,12 +78,14 @@ module Bulkrax
 
       return if defined?(Hyrax)
 
+      # NOTE: This should not need to be migrated to the object factory.
       # Remove parent collection relationships
       collection.member_of_collections.each do |parent_col|
         Hyrax::Collections::NestedCollectionPersistenceService
           .remove_nested_relationship_for(parent: parent_col, child: collection)
       end
 
+      # NOTE: This should not need to be migrated to the object factory.
       # Remove child collection relationships
       collection.member_collections.each do |child_col|
         Hyrax::Collections::NestedCollectionPersistenceService

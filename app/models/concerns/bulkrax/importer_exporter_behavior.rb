@@ -53,9 +53,11 @@ module Bulkrax
       filename = parser_fields&.[]('import_file_path')
       return false unless filename
       return false unless File.file?(filename)
+
       returning_value = false
       File.open(filename) do |file|
-        returning_value = ::Marcel::MimeType.for(file).include?('application/zip')
+        mime_type = ::Marcel::MimeType.for(file)
+        returning_value = mime_type.include?('application/zip') || mime_type.include?('application/gzip')
       end
       returning_value
     end

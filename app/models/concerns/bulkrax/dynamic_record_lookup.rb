@@ -18,32 +18,15 @@ module Bulkrax
       begin
         # the identifier parameter can be a :source_identifier or the id of an object
         record = Entry.find_by(default_scope.merge({ importerexporter_id: importer_id })) || Entry.find_by(default_scope)
-        record ||= ActiveFedora::Base.find(identifier)
+        record ||= Bulkrax.object_factory.find(identifier)
       # NameError for if ActiveFedora isn't installed
-      rescue NameError, ActiveFedora::ObjectNotFoundError
+      rescue NameError, ActiveFedora::ObjectNotFoundError, Bulkrax::ObjectFactoryInterface::ObjectNotFoundError
         record = nil
       end
 
       # return the found entry here instead of searching for it again in the CreateRelationshipsJob
       # also accounts for when the found entry isn't a part of this importer
       record.is_a?(Entry) ? [record, record.factory.find] : [nil, record]
-    end
-
-    # Check if the record is a Work
-    def curation_concern?(record)
-      available_work_types.include?(record.class)
-    end
-
-    private
-
-    # @return [Array<Class>] list of work type classes
-    def available_work_types
-      # If running in a Hyku app, do not include disabled work types
-      @available_work_types ||= if defined?(::Hyku)
-                                  ::Site.instance.available_works.map(&:constantize)
-                                else
-                                  Bulkrax.curation_concerns
-                                end
     end
   end
 end
