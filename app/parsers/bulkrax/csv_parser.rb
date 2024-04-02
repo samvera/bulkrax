@@ -231,6 +231,7 @@ module Bulkrax
         CSV.open(setup_export_file(folder_count), "w", headers: export_headers, write_headers: true) do |csv|
           group.each do |entry|
             csv << entry.parsed_metadata
+            # TODO: This is precarious when we have descendents of Bulkrax::CsvCollectionEntry
             next if importerexporter.metadata_only? || entry.type == 'Bulkrax::CsvCollectionEntry'
 
             store_files(entry.identifier, folder_count.to_s)
@@ -292,6 +293,9 @@ module Bulkrax
 
     def sort_entries(entries)
       # always export models in the same order: work, collection, file set
+      #
+      # TODO: This is a problem in that only these classes are compared.  Instead
+      #       We should add a comparison operator to the classes.
       entries.sort_by do |entry|
         case entry.type
         when 'Bulkrax::CsvCollectionEntry'
