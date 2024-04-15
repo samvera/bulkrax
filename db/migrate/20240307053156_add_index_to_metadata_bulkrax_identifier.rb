@@ -1,4 +1,4 @@
-class AddIndexToMetadataBulkraxIdentifier < ActiveRecord::Migration[6.1]
+class AddIndexToMetadataBulkraxIdentifier < ActiveRecord::Migration[5.2]
   def up
     return unless table_exists?(:orm_resources)
     return if index_exists?(:orm_resources, "(((metadata -> 'bulkrax_identifier'::text) ->> 0))", name: 'index_on_bulkrax_identifier')
