@@ -224,6 +224,12 @@ module Bulkrax
                       id
                       read_groups
                       visibility
+                      visibility_during_embargo
+                      embargo_release_date
+                      visibility_after_embargo
+                      visibility_during_lease
+                      lease_expiration_date
+                      visibility_after_lease
                       work_members_attributes
                     ]
 

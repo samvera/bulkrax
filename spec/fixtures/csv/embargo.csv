@@ -1,0 +1,2 @@
+model,title,creator,source_identifier,visibility, visibility_during_embargo,embargo_release_date,visibility_after_embargo
+Work,An Image,user,123456789,restricted,embargo,2024-04-19,open

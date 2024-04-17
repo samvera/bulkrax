@@ -148,7 +148,18 @@ module Bulkrax
     end
 
     def fields_that_are_always_multiple
-      %w[id delete model visibility]
+      @fields_that_are_always_multiple = %W[
+        id
+        delete
+        model
+        visibility 
+        visibility_during_embargo
+        embargo_release_date
+        visibility_after_embargo
+        visibility_during_lease
+        lease_expiration_date
+        visibility_after_lease
+      ]
     end
 
     def fields_that_are_always_singular

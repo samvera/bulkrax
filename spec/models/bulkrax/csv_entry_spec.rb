@@ -1256,6 +1256,62 @@ module Bulkrax
         end
       end
     end
+
+    describe 'exposing lease attributes for parser' do 
+      let(:data) { 
+        {
+        'model': 'Work',
+        'title': 'Image',
+        'creator': 'user A',
+        'source_identifier': '123456789',
+        'visibility': 'embargo',
+        'visibility_during_embargo': 'restricted',
+        'embargo_release_date': '2054-04-19',
+        'visibility_after_embargo': 'open'
+        }
+      }
+      let(:entry) { Bulkrax::EntrySpecHelper.entry_for(identifier: '123456789',
+      data: data,
+      parser_class_name: 'Bulkrax::CsvParser', 
+      parser_fields: { 'import_file_path': 'spec/fixtures/csv/embargo.csv'} ) }
+
+      it 'embargo attributes are included in the parsed metadata' do
+        entry.build_metadata
+
+        expect(entry.parsed_metadata['visibility']).to eq('embargo')
+        expect(entry.parsed_metadata['visibility_during_embargo']).to eq('restricted')
+        expect(entry.parsed_metadata['embargo_release_date']).to eq('2054-04-19')
+        expect(entry.parsed_metadata['visibility_after_embargo']).to eq('open')
+      end
+    end
+
+    describe 'exposing lease attributes for parser' do 
+      let(:data) { 
+        {
+        'model': 'Work',
+        'title': 'Image',
+        'creator': 'user A',
+        'source_identifier': '123456789',
+        'visibility': 'lease',
+        'visibility_during_lease': 'restricted',
+        'lease_expiration_date': '2054-04-19',
+        'visibility_after_lease': 'open'
+        }
+      }
+      let(:entry) { Bulkrax::EntrySpecHelper.entry_for(identifier: '123456789',
+      data: data,
+      parser_class_name: 'Bulkrax::CsvParser', 
+      parser_fields: { 'import_file_path': 'spec/fixtures/csv/lease.csv'} ) }
+
+      it 'embargo attributes are included in the parsed metadata' do
+        entry.build_metadata
+
+        expect(entry.parsed_metadata['visibility']).to eq('lease')
+        expect(entry.parsed_metadata['visibility_during_lease']).to eq('restricted')
+        expect(entry.parsed_metadata['lease_expiration_date']).to eq('2054-04-19')
+        expect(entry.parsed_metadata['visibility_after_lease']).to eq('open')
+      end
+    end
   end
 end
 # rubocop: enable Metrics/BlockLength
