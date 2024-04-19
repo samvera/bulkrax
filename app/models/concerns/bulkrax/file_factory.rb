@@ -32,6 +32,8 @@ module Bulkrax
     end
 
     class InnerWorkings
+      include Loggable
+
       def initialize(object_factory:)
         @object_factory = object_factory
       end
@@ -155,7 +157,7 @@ module Bulkrax
       end
 
       def ordered_file_sets
-        return [] unless object.present?
+        return [] if object.blank?
 
         Bulkrax.object_factory.ordered_file_sets_for(object)
       end
