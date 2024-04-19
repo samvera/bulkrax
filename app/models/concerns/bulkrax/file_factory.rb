@@ -155,6 +155,8 @@ module Bulkrax
       end
 
       def ordered_file_sets
+        return [] unless object.present?
+
         Bulkrax.object_factory.ordered_file_sets_for(object)
       end
 
