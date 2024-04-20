@@ -121,7 +121,7 @@ module Bulkrax
       def destroy_existing_files
         return unless object.present? && object.file_sets.present?
         object.file_sets.each do |fs|
-          Hyrax::Actors::FileSetActor.new(fs, @user).destroy
+          Hyrax::Actors::FileSetActor.new(fs, user).destroy
         end
         @object = object.reload
         log_deleted_fs(object)
