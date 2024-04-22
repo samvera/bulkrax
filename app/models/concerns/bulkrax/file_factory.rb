@@ -32,6 +32,8 @@ module Bulkrax
     end
 
     class InnerWorkings
+      include Loggable
+
       def initialize(object_factory:)
         @object_factory = object_factory
       end
@@ -119,7 +121,7 @@ module Bulkrax
       def destroy_existing_files
         return unless object.present? && object.file_sets.present?
         object.file_sets.each do |fs|
-          Hyrax::Actors::FileSetActor.new(fs, @user).destroy
+          Hyrax::Actors::FileSetActor.new(fs, user).destroy
         end
         @object = object.reload
         log_deleted_fs(object)
@@ -155,6 +157,8 @@ module Bulkrax
       end
 
       def ordered_file_sets
+        return [] if object.blank?
+
         Bulkrax.object_factory.ordered_file_sets_for(object)
       end
 

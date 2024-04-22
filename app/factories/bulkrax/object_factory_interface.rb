@@ -20,6 +20,7 @@ module Bulkrax
   class ObjectFactoryInterface
     extend ActiveModel::Callbacks
     include DynamicRecordLookup
+    include Loggable
 
     # We're inheriting from an ActiveRecord exception as that is something we
     # know will be here; and something that the main_app will be expect to be
@@ -402,21 +403,6 @@ module Bulkrax
     def add_user_to_collection_permissions(*args)
       arguments = args.first
       self.class.add_user_to_collection_permissions(**arguments)
-    end
-
-    def log_created(obj)
-      msg = "Created #{klass.model_name.human} #{obj.id}"
-      Rails.logger.info("#{msg} (#{Array(attributes[work_identifier]).first})")
-    end
-
-    def log_updated(obj)
-      msg = "Updated #{klass.model_name.human} #{obj.id}"
-      Rails.logger.info("#{msg} (#{Array(attributes[work_identifier]).first})")
-    end
-
-    def log_deleted_fs(obj)
-      msg = "Deleted All Files from #{obj.id}"
-      Rails.logger.info("#{msg} (#{Array(attributes[work_identifier]).first})")
     end
 
     private
