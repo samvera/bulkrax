@@ -149,6 +149,14 @@ module Bulkrax
       @seen ||= {}
     end
 
+    def original_file?
+      File.exists?(self.parser_fields['import_file_path'])
+    end
+
+    def original_file
+      self.parser_fields['import_file_path'] if original_file?
+    end
+
     def replace_files
       self.parser_fields['replace_files']
     end
