@@ -150,7 +150,7 @@ module Bulkrax
     end
 
     def original_file?
-      File.exists?(self.parser_fields['import_file_path'])
+      File.exist?(self.parser_fields['import_file_path'])
     end
 
     def original_file
