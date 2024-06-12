@@ -250,7 +250,7 @@ module Bulkrax
 
     def file_set_operation_for(user:)
       Hyrax::Operation.create!(user: user,
-        operation_type: "Attach Remote File")
+                               operation_type: "Attach Remote File")
     end
   end
   # rubocop:enable Metrics/ClassLength
