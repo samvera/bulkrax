@@ -245,7 +245,7 @@ module Bulkrax
       actor.file_set.import_url = remote_file['url']
       auth_header = remote_file.fetch('auth_header', {})
 
-      ImportUrlJob.perform_now(actor.file_set, operation_for(user: @user), auth_header)
+      ImportUrlJob.perform_now(actor.file_set, file_set_operation_for(user: @user), auth_header)
     end
 
     def file_set_operation_for(user:)
