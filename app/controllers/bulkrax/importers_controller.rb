@@ -13,7 +13,7 @@ module Bulkrax
     before_action :token_authenticate!, if: -> { api_request? }, only: [:create, :update, :delete]
     before_action :authenticate_user!, unless: -> { api_request? }
     before_action :check_permissions
-    before_action :set_importer, only: [:show, :entry_table, :edit, :update, :destroy]
+    before_action :set_importer, only: [:show, :entry_table, :edit, :update, :destroy, :original_file]
     with_themed_layout 'dashboard' if defined?(::Hyrax)
 
     # GET /importers
@@ -198,6 +198,14 @@ module Bulkrax
         render json: { base_url: params[:base_url], sets: @sets }
       else
         render json: { base_url: params[:base_url], error: "unable to pull data from #{params[:base_url]}" }
+      end
+    end
+
+    def original_file
+      if @importer.original_file?
+        send_file @importer.original_file
+      else
+        redirect_to @importer, alert: 'Importer does not support file re-download or the imported file is not found on the server.'
       end
     end
 

@@ -11,6 +11,7 @@ Bulkrax::Engine.routes.draw do
   end
   resources :importers do
     put :continue
+    get :original_file
     get :entry_table
     get :export_errors
     collection do
