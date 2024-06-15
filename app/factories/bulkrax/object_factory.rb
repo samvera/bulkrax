@@ -228,33 +228,29 @@ module Bulkrax
       actor.create_metadata(attrs)
       actor.create_content(uploaded_file) if uploaded_file
       actor.attach_to_work(work, attrs)
-      handle_remote_file(remote_file: remote_file, actor: actor, update: false) if remote_file
+      handle_remote_file(remote_file: remote_file, actor: actor) if remote_file
     end
 
     def update_file_set(attrs)
       file_set_attrs = attrs.slice(*object.attributes.keys)
       actor = ::Hyrax::Actors::FileSetActor.new(object, @user)
       attrs['remote_files']&.each do |remote_file|
-        handle_remote_file(remote_file: remote_file, actor: actor, update: true)
+        handle_remote_file(remote_file: remote_file, actor: actor)
       end
       actor.update_metadata(file_set_attrs)
     end
 
-    def handle_remote_file(remote_file:, actor:, update: false)
+    def handle_remote_file(remote_file:, actor:)
       actor.file_set.label = remote_file['file_name']
       actor.file_set.import_url = remote_file['url']
+      auth_header = remote_file.fetch('auth_header', {})
 
-      url = remote_file['url']
-      tmp_file = Tempfile.new(remote_file['file_name'].split('.').first)
-      tmp_file.binmode
+      ImportUrlJob.perform_now(actor.file_set, file_set_operation_for(user: @user), auth_header)
+    end
 
-      URI.open(url) do |url_file|
-        tmp_file.write(url_file.read)
-      end
-
-      tmp_file.rewind
-      update == true ? actor.update_content(tmp_file) : actor.create_content(tmp_file, from_url: true)
-      tmp_file.close
+    def file_set_operation_for(user:)
+      Hyrax::Operation.create!(user: user,
+                               operation_type: "Attach Remote File")
     end
   end
   # rubocop:enable Metrics/ClassLength
