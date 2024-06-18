@@ -1,13 +1,15 @@
 <div class='csv_fields'>
 
   <%= fi.input :visibility,
+    label: 'Default Visibility',
     collection: [
       ['Public', 'open'],
       ['Private', 'restricted'],
       ['Institution', 'authenticated']
     ],
     selected: importer.parser_fields['visibility'] || 'open',
-    input_html: { class: 'form-control' }
+    input_html: { class: 'form-control' },
+    hint: 'If your CSV includes the visibility field, it will override the default setting.'
   %>
 
   <% if defined?(::Hyrax) %>
