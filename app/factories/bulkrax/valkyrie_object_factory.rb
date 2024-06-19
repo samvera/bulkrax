@@ -225,10 +225,10 @@ module Bulkrax
     private
 
     def apply_depositor_metadata
-      return if object.depositor.present?
+      return if @object.depositor.present?
 
-      object.depositor = @user.email
-      object = Hyrax.persister.save(resource: object)
+      @object.depositor = @user.email
+      object = Hyrax.persister.save(resource: @object)
       self.class.publish(event: "object.metadata.updated", object: object, user: @user)
       object
     end
