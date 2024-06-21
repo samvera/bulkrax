@@ -7,7 +7,7 @@ module Bulkrax
     file_set = entry.factory.find
     if file_set
       parent = file_set.parent
-      if parent && parent.respond_to?(:ordered_members)
+      if parent&.respond_to?(:ordered_members)
         om = parent.ordered_members.to_a
         om.delete(file_set)
         parent.ordered_members = om
@@ -20,5 +20,4 @@ module Bulkrax
 
     super
   end
-
 end
