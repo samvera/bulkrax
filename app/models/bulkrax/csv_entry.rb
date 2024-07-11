@@ -21,7 +21,7 @@ module Bulkrax
       options = {
         headers: true,
         header_converters: ->(h) { h.to_s.strip.to_sym },
-        encoding: 'utf-8'
+        encoding: 'bom|utf-8'
       }.merge(csv_read_data_options)
 
       results = CSV.read(path, **options)

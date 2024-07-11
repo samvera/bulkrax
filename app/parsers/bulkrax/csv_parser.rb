@@ -89,16 +89,11 @@ module Bulkrax
     end
 
     def missing_elements(record)
-      keys_from_record = keys_without_numbers(record.reject { |_, v| v.blank? }.keys.compact.uniq.map(&:to_s))
-      keys = []
-      # Because we're persisting the mapping in the database, these are likely string keys.
-      # However, there's no guarantee.  So, we need to ensure that by running stringify.
-      importerexporter.mapping.stringify_keys.map do |k, v|
-        Array.wrap(v['from']).each do |vf|
-          keys << k if keys_from_record.include?(vf)
-        end
-      end
-      required_elements.map(&:to_s) - keys.uniq.map(&:to_s)
+      keys_from_record = extract_keys_from_record(record)
+      keys = collect_keys_from_mapping(keys_from_record)
+      required_elements_str = normalize_elements(required_elements)
+
+      identify_missing_elements(required_elements_str, keys)
     end
 
     def valid_import?
@@ -401,6 +396,29 @@ module Bulkrax
     end
 
     private
+
+    def extract_keys_from_record(record)
+      keys_without_numbers(record.reject { |_, v| v.blank? }.keys.compact.uniq.map(&:to_s).map(&:strip).map { |k| Bulkrax.normalize_string(k) })
+    end
+
+    def collect_keys_from_mapping(keys_from_record)
+      keys = []
+      importerexporter.mapping.stringify_keys.each do |k, v|
+        Array.wrap(v['from']).each do |vf|
+          vf_str = Bulkrax.normalize_string(vf.to_s.strip)
+          keys << k.to_s.strip if keys_from_record.include?(vf_str)
+        end
+      end
+      keys.uniq.map(&:to_s).map(&:strip).map { |k| Bulkrax.normalize_string(k) }
+    end
+
+    def normalize_elements(elements)
+      elements.map(&:to_s).map(&:strip).map { |k| Bulkrax.normalize_string(k) }
+    end
+
+    def identify_missing_elements(required_elements, keys)
+      required_elements - keys
+    end
 
     def unique_collection_identifier(collection_hash)
       entry_uid = collection_hash[source_identifier]
