@@ -149,12 +149,16 @@ module Bulkrax
       @seen ||= {}
     end
 
+    def import_file_path
+      self.parser_fields['import_file_path']
+    end
+
     def original_file?
-      File.exist?(self.parser_fields['import_file_path'])
+      import_file_path && File.exist?(import_file_path)
     end
 
     def original_file
-      self.parser_fields['import_file_path'] if original_file?
+      import_file_path if original_file?
     end
 
     def replace_files
