@@ -374,7 +374,6 @@ module Bulkrax
           s3_bucket.files.get(key)
         end.compact
       else
-        # For local testing, create Hyrax::UploadedFile objects from URLs
         remote_files.map do |r|
           file_path = download_file(r["url"])
           next unless file_path
@@ -404,7 +403,7 @@ module Bulkrax
       # TODO: add migration to Hyrax::UploadedFile so that it can accept filenames
       # ref: https://github.com/samvera/hyrax/blob/main/app/models/hyrax/uploaded_file.rb
       file = File.open(file_path)
-      uploaded_file = Hyrax::UploadedFile.create(file: file, user: @user)
+      uploaded_file = Hyrax::UploadedFile.create(file: file, user: @user, filename: file_name)
       file.close
       uploaded_file
     rescue => e
