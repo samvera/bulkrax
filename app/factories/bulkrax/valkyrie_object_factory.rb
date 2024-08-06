@@ -400,8 +400,6 @@ module Bulkrax
     end
 
     def create_uploaded_file(file_path, file_name)
-      # TODO: add migration to Hyrax::UploadedFile so that it can accept filenames
-      # ref: https://github.com/samvera/hyrax/blob/main/app/models/hyrax/uploaded_file.rb
       file = File.open(file_path)
       uploaded_file = Hyrax::UploadedFile.create(file: file, user: @user, filename: file_name)
       file.close
