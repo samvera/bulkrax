@@ -350,7 +350,10 @@ module Bulkrax
     end
 
     def uploaded_files_from(attrs)
-      uploaded_local_files(uploaded_files: attrs[:uploaded_files]) + uploaded_s3_files(remote_files: attrs[:remote_files])
+      uploaded_local_files(uploaded_files: attrs[:uploaded_files]) +
+      # TODO: disabled until we get s3 details 
+      # uploaded_s3_files(remote_files: attrs[:remote_files]) +
+      uploaded_remote_files(remote_files: attrs[:remote_files])
     end
 
     def uploaded_local_files(uploaded_files: [])
@@ -369,6 +372,44 @@ module Bulkrax
       remote_files.map { |r| r["url"] }.map do |key|
         s3_bucket.files.get(key)
       end.compact
+    end
+
+    def uploaded_remote_files(remote_files: {})
+      thumbnail_url = self.attributes['thumbnail_url']
+      combined_files = remote_files + [thumbnail_url] if thumbnail_url.present?
+
+      combined_files.map do |r|
+        file_path = download_file(r["url"])
+        next unless file_path
+
+        create_uploaded_file(file_path, r["file_name"])
+      end.compact
+    end
+
+    def download_file(url)
+      require 'open-uri'
+      require 'tempfile'
+
+      begin
+        file = Tempfile.new
+        file.binmode
+        file.write(URI.open(url).read)
+        file.rewind
+        file.path
+      rescue => e
+        Rails.logger.debug "Failed to download file from #{url}: #{e.message}"
+        nil
+      end
+    end
+
+    def create_uploaded_file(file_path, file_name)
+      file = File.open(file_path)
+      uploaded_file = Hyrax::UploadedFile.create(file: file, user: @user, filename: file_name)
+      file.close
+      uploaded_file
+    rescue => e
+      Rails.logger.debug "Failed to create Hyrax::UploadedFile for #{file_name}: #{e.message}"
+      nil
     end
 
     # @Override Destroy existing files with Hyrax::Transactions
