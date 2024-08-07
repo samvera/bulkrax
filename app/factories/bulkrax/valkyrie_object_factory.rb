@@ -350,7 +350,10 @@ module Bulkrax
     end
 
     def uploaded_files_from(attrs)
-      uploaded_local_files(uploaded_files: attrs[:uploaded_files]) + uploaded_s3_files(remote_files: attrs[:remote_files])
+      uploaded_local_files(uploaded_files: attrs[:uploaded_files]) +
+      # TODO: disabled until we get s3 details 
+      # uploaded_s3_files(remote_files: attrs[:remote_files]) +
+      uploaded_remote_files(remote_files: attrs[:remote_files])
     end
 
     def uploaded_local_files(uploaded_files: [])
@@ -362,25 +365,25 @@ module Bulkrax
     def uploaded_s3_files(remote_files: {})
       return [] if remote_files.blank?
 
-      # Check if the S3 bucket should be used
-      use_s3 = ENV.fetch("USE_S3", "false") == "true"
+      s3_bucket_name = ENV.fetch("STAGING_AREA_S3_BUCKET", "comet-staging-area-#{Rails.env}")
+      s3_bucket = Rails.application.config.staging_area_s3_connection
+                       .directories.get(s3_bucket_name)
 
-      if use_s3
-        s3_bucket_name = ENV.fetch("STAGING_AREA_S3_BUCKET", "comet-staging-area-#{Rails.env}")
-        s3_bucket = Rails.application.config.staging_area_s3_connection
-                         .directories.get(s3_bucket_name)
+      remote_files.map { |r| r["url"] }.map do |key|
+        s3_bucket.files.get(key)
+      end.compact
+    end
 
-        remote_files.map { |r| r["url"] }.map do |key|
-          s3_bucket.files.get(key)
-        end.compact
-      else
-        remote_files.map do |r|
-          file_path = download_file(r["url"])
-          next unless file_path
+    def uploaded_remote_files(remote_files: {})
+      thumbnail_url = self.attributes['thumbnail_url']
+      combined_files = remote_files + [thumbnail_url] if thumbnail_url.present?
 
-          create_uploaded_file(file_path, r["file_name"])
-        end.compact
-      end
+      combined_files.map do |r|
+        file_path = download_file(r["url"])
+        next unless file_path
+
+        create_uploaded_file(file_path, r["file_name"])
+      end.compact
     end
 
     def download_file(url)
