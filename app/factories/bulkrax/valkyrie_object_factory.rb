@@ -377,9 +377,9 @@ module Bulkrax
 
     def uploaded_files_from(attrs)
       uploaded_local_files(uploaded_files: attrs[:uploaded_files]) +
-      # TODO: disabled until we get s3 details 
-      # uploaded_s3_files(remote_files: attrs[:remote_files]) +
-      uploaded_remote_files(remote_files: attrs[:remote_files])
+        # TODO: disabled until we get s3 details
+        # uploaded_s3_files(remote_files: attrs[:remote_files]) +
+        uploaded_remote_files(remote_files: attrs[:remote_files])
     end
 
     def uploaded_local_files(uploaded_files: [])
@@ -401,7 +401,7 @@ module Bulkrax
     end
 
     def uploaded_remote_files(remote_files: {})
-      combined_files_with(remote_files:).map do |r|
+      combined_files_with(remote_files: remote_files).map do |r|
         file_path = download_file(r["url"])
         next unless file_path
 
