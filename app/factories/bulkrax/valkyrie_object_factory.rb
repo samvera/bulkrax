@@ -252,14 +252,38 @@ module Bulkrax
       # NOTE: We do not add relationships here; that is part of the create
       # relationships job.
       perform_transaction_for(object: object, attrs: attrs) do
+        uploaded_files = uploaded_files_from(attrs)
+        file_set_params = file_set_params_for(uploaded_files, combined_files_with(remote_files: attrs["remote_files"]))
         transactions["change_set.create_work"]
           .with_step_args(
-            'work_resource.add_file_sets' => { uploaded_files: uploaded_files_from(attrs) },
+            'work_resource.add_file_sets' => { uploaded_files: uploaded_files, file_set_params: file_set_params },
             "change_set.set_user_as_depositor" => { user: @user },
             "work_resource.change_depositor" => { user: @user },
             'work_resource.save_acl' => { permissions_params: [attrs['visibility'] || 'open'].compact }
           )
       end
+    end
+
+    def combined_files_with(remote_files:)
+      thumbnail_url = self.attributes['thumbnail_url']
+      @combined_files ||= (thumbnail_url.present? ? remote_files + [thumbnail_url] : remote_files)
+    end
+
+    def file_set_params_for(uploaded_files, combined_files)
+      # handling remote files requires a filename to avoid the default carrierwave file name assignment.
+      # Here we tag along only the keys that are not 'url' or 'file_name' as file_set attributes.
+      # To have the additional attributes appear on the file_set, they must be:
+      # - included in the file_set_metadata.yaml
+      # - overriden in file_set_args from Hyrax::WorkUploadsHandler
+      additional_attributes = combined_files.map do |hash|
+        hash.reject { |key, _| key == 'url' || key == 'file_name' }
+      end
+
+      file_attrs = []
+      uploaded_files.each_with_index do |f, index|
+        file_attrs << ({ uploaded_file_id: f["id"].to_s, filename: combined_files[index]["file_name"] }).merge(additional_attributes[index])
+      end
+      file_attrs.compact.uniq
     end
 
     def create_collection(attrs)
@@ -329,9 +353,11 @@ module Bulkrax
 
     def update_work(attrs)
       perform_transaction_for(object: object, attrs: attrs) do
+        uploaded_files = uploaded_files_from(attrs)
+        file_set_params = file_set_params_for(uploaded_files, combined_files_with(remote_files: attrs["remote_files"]))
         transactions["change_set.update_work"]
           .with_step_args(
-            'work_resource.add_file_sets' => { uploaded_files: uploaded_files_from(attrs) },
+            'work_resource.add_file_sets' => { uploaded_files: uploaded_files, file_set_params: file_set_params },
             'work_resource.save_acl' => { permissions_params: [attrs.try('visibility') || 'open'].compact }
           )
       end
@@ -350,7 +376,10 @@ module Bulkrax
     end
 
     def uploaded_files_from(attrs)
-      uploaded_local_files(uploaded_files: attrs[:uploaded_files]) + uploaded_s3_files(remote_files: attrs[:remote_files])
+      uploaded_local_files(uploaded_files: attrs[:uploaded_files]) +
+        # TODO: disabled until we get s3 details
+        # uploaded_s3_files(remote_files: attrs[:remote_files]) +
+        uploaded_remote_files(remote_files: attrs[:remote_files])
     end
 
     def uploaded_local_files(uploaded_files: [])
@@ -369,6 +398,41 @@ module Bulkrax
       remote_files.map { |r| r["url"] }.map do |key|
         s3_bucket.files.get(key)
       end.compact
+    end
+
+    def uploaded_remote_files(remote_files: {})
+      combined_files_with(remote_files: remote_files).map do |r|
+        file_path = download_file(r["url"])
+        next unless file_path
+
+        create_uploaded_file(file_path, r["file_name"])
+      end.compact
+    end
+
+    def download_file(url)
+      require 'open-uri'
+      require 'tempfile'
+
+      begin
+        file = Tempfile.new
+        file.binmode
+        file.write(URI.open(url).read)
+        file.rewind
+        file.path
+      rescue => e
+        Rails.logger.debug "Failed to download file from #{url}: #{e.message}"
+        nil
+      end
+    end
+
+    def create_uploaded_file(file_path, file_name)
+      file = File.open(file_path)
+      uploaded_file = Hyrax::UploadedFile.create(file: file, user: @user, filename: file_name)
+      file.close
+      uploaded_file
+    rescue => e
+      Rails.logger.debug "Failed to create Hyrax::UploadedFile for #{file_name}: #{e.message}"
+      nil
     end
 
     # @Override Destroy existing files with Hyrax::Transactions
