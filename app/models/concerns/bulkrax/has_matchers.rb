@@ -65,6 +65,7 @@ module Bulkrax
 
       parsed_metadata[name] ||= []
       parsed_metadata[name] += Array.wrap(value).flatten
+      parsed_metadata[name].uniq!
     end
 
     def set_parsed_object_data(object_multiple, object_name, name, index, value)
