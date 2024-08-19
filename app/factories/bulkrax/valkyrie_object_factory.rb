@@ -266,6 +266,7 @@ module Bulkrax
 
     def combined_files_with(remote_files:)
       thumbnail_url = self.attributes['thumbnail_url']
+      return [thumbnail_url] if remote_files.blank?
       @combined_files ||= (thumbnail_url.present? ? remote_files + [thumbnail_url] : remote_files)
     end
 
