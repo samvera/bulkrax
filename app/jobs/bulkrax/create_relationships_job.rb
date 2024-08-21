@@ -43,6 +43,7 @@ module Bulkrax
 
     queue_as Bulkrax.config.ingest_queue_name
 
+    attr_accessor :user, :importer_run, :errors
     ##
     # @param parent_identifier [String] Work/Collection ID or Bulkrax::Entry source_identifiers
     # @param importer_run [Bulkrax::ImporterRun] current importer run (needed to properly update counters)
@@ -54,9 +55,10 @@ module Bulkrax
     # is the child in the relationship, and vice versa if a child_identifier is passed.
     #
     # rubocop:disable Metrics/MethodLength
-    def perform(parent_identifier:, importer_run_id:) # rubocop:disable Metrics/AbcSize
-      @importer_run = Bulkrax::ImporterRun.find(importer_run_id)
-      ability = Ability.new(importer_run.user)
+    def perform(parent_identifier:, importer_run_id: nil, run_user: nil) # rubocop:disable Metrics/AbcSize
+      importer_run = Bulkrax::ImporterRun.find(importer_run_id) if importer_run_id
+      user = run_user || importer_run&.user
+      ability = Ability.new(user)
 
       parent_entry, parent_record = find_record(parent_identifier, importer_run_id)
 
@@ -69,10 +71,11 @@ module Bulkrax
       if parent_record
         conditionally_acquire_lock_for(parent_record.id) do
           ActiveRecord::Base.uncached do
-            Bulkrax::PendingRelationship.where(parent_id: parent_identifier, importer_run_id: importer_run_id)
+            Bulkrax::PendingRelationship.where(parent_id: parent_identifier)
                                         .ordered.find_each do |rel|
               process(relationship: rel, importer_run_id: importer_run_id, parent_record: parent_record, ability: ability)
               number_of_successes += 1
+              @parent_record_members_added = true
             rescue => e
               number_of_failures += 1
               errors << e
@@ -81,7 +84,7 @@ module Bulkrax
 
           # save record if members were added
           if @parent_record_members_added
-            Bulkrax.object_factory.save!(resource: parent_record, user: importer_run.user)
+            Bulkrax.object_factory.save!(resource: parent_record, user: user)
             Bulkrax.object_factory.publish(event: 'object.membership.updated', object: parent_record)
             Bulkrax.object_factory.update_index(resources: @child_members_added)
           end
@@ -107,7 +110,7 @@ module Bulkrax
 
         # TODO: This can create an infinite job cycle, consider a time to live tracker.
         reschedule(parent_identifier: parent_identifier, importer_run_id: importer_run_id)
-        return false # stop current job from continuing to run after rescheduling
+        return errors # stop current job from continuing to run after rescheduling
       else
         # rubocop:disable Rails/SkipsModelValidations
         ImporterRun.update_counters(importer_run_id, processed_relationships: number_of_successes)
@@ -115,8 +118,6 @@ module Bulkrax
       end
     end
     # rubocop:enable Metrics/MethodLength
-
-    attr_reader :importer_run
 
     private
 
@@ -170,7 +171,7 @@ module Bulkrax
       Bulkrax.object_factory.add_resource_to_collection(
         collection: parent_record,
         resource: child_record,
-        user: importer_run.user
+        user: user
       )
     end
 
