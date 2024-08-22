@@ -249,8 +249,8 @@ module Bulkrax
     end
 
     def create_work(attrs)
-      # NOTE: We do not add relationships here; that is part of the create
-      # relationships job.
+      # NOTE: We do not add relationships here; that is part of the create relationships job.
+      attrs = HashWithIndifferentAccess.new(attrs)
       perform_transaction_for(object: object, attrs: attrs) do
         uploaded_files = uploaded_files_from(attrs)
         file_set_params = file_set_params_for(uploaded_files, combined_files_with(remote_files: attrs["remote_files"]))
@@ -259,13 +259,13 @@ module Bulkrax
             'work_resource.add_file_sets' => { uploaded_files: uploaded_files, file_set_params: file_set_params },
             "change_set.set_user_as_depositor" => { user: @user },
             "work_resource.change_depositor" => { user: @user },
-            'work_resource.save_acl' => { permissions_params: [attrs['visibility'] || 'open'].compact }
+            'work_resource.save_acl' => { permissions_params: [attrs.try('visibility') || 'open'].compact }
           )
       end
     end
 
     def combined_files_with(remote_files:)
-      thumbnail_url = self.attributes['thumbnail_url']
+      thumbnail_url = HashWithIndifferentAccess.new(self.attributes)['thumbnail_url']
       return [thumbnail_url] if remote_files.blank?
       @combined_files ||= (thumbnail_url.present? ? remote_files + [thumbnail_url] : remote_files)
     end
@@ -277,7 +277,7 @@ module Bulkrax
       # - included in the file_set_metadata.yaml
       # - overriden in file_set_args from Hyrax::WorkUploadsHandler
       additional_attributes = combined_files.map do |hash|
-        hash.reject { |key, _| key == 'url' || key == 'file_name' }
+        hash.reject { |key, _| key.to_s == 'url' || key.to_s == 'file_name' }
       end
 
       file_attrs = []
@@ -353,6 +353,7 @@ module Bulkrax
     end
 
     def update_work(attrs)
+      attrs = HashWithIndifferentAccess.new(attrs)
       perform_transaction_for(object: object, attrs: attrs) do
         uploaded_files = uploaded_files_from(attrs)
         file_set_params = file_set_params_for(uploaded_files, combined_files_with(remote_files: attrs["remote_files"]))
