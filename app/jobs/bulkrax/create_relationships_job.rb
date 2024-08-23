@@ -111,12 +111,14 @@ module Bulkrax
         parent_entry&.set_status_info(errors.last, importer_run)
         failure_count += 1
 
-        CreateRelationshipsJob.set(wait: 10.minutes).perform_later(
-          parent_identifier: parent_identifier,
-          importer_run_id: importer_run_id,
-          run_user: run_user,
-          failure_count: failure_count
-        ) if failure_count < max_failure_count
+        if failure_count < max_failure_count
+          CreateRelationshipsJob.set(wait: 10.minutes).perform_later(
+            parent_identifier: parent_identifier,
+            importer_run_id: importer_run_id,
+            run_user: run_user,
+            failure_count: failure_count
+          )
+        end
         return errors # stop current job from continuing to run after rescheduling
       else
         # rubocop:disable Rails/SkipsModelValidations
