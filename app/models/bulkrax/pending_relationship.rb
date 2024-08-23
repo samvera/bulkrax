@@ -2,6 +2,8 @@
 
 module Bulkrax
   class PendingRelationship < ApplicationRecord
+    include Bulkrax::StatusInfo
+
     belongs_to :importer_run
 
     # Ideally we wouldn't have a column named "order", as it is a reserved SQL term.  However, if we
