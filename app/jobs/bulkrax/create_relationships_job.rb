@@ -112,7 +112,7 @@ module Bulkrax
         failure_count += 1
 
         if failure_count < max_failure_count
-          CreateRelationshipsJob.set(wait: 10.minutes).perform_later(
+         reschedule(
             parent_identifier: parent_identifier,
             importer_run_id: importer_run_id,
             run_user: run_user,
@@ -191,6 +191,10 @@ module Bulkrax
         parent: parent_record,
         child: child_record
       )
+    end
+
+    def reschedule(**kargs)
+      CreateRelationshipsJob.set(wait: 10.minutes).perform_later(**kargs)
     end
   end
 end
