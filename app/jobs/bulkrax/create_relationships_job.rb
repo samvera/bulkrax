@@ -112,7 +112,7 @@ module Bulkrax
         failure_count += 1
 
         if failure_count < max_failure_count
-         reschedule(
+          reschedule(
             parent_identifier: parent_identifier,
             importer_run_id: importer_run_id,
             run_user: run_user,
