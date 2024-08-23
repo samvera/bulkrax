@@ -38,6 +38,7 @@ module Bulkrax
     #
     # @see https://github.com/scientist-softserv/louisville-hyku/commit/128a9ef
     class_attribute :update_child_records_works_file_sets, default: false
+    class_attribute :max_failure_count, default: 5
 
     include DynamicRecordLookup
 
@@ -109,8 +110,13 @@ module Bulkrax
 
         parent_entry&.set_status_info(errors.last, importer_run)
         failure_count += 1
-        # TODO: This can create an infinite job cycle, consider a time to live tracker.
-        reschedule(parent_identifier: parent_identifier, importer_run_id: importer_run_id, failure_count: failure_count) if failure_count < 5
+
+        CreateRelationshipsJob.set(wait: 10.minutes).perform_later(
+          parent_identifier: parent_identifier,
+          importer_run_id: importer_run_id,
+          run_user: run_user,
+          failure_count: failure_count
+        ) if failure_count < max_failure_count
         return errors # stop current job from continuing to run after rescheduling
       else
         # rubocop:disable Rails/SkipsModelValidations
@@ -182,13 +188,6 @@ module Bulkrax
       Bulkrax.object_factory.add_child_to_parent_work(
         parent: parent_record,
         child: child_record
-      )
-    end
-
-    def reschedule(parent_identifier:, importer_run_id:)
-      CreateRelationshipsJob.set(wait: 10.minutes).perform_later(
-        parent_identifier: parent_identifier,
-        importer_run_id: importer_run_id
       )
     end
   end
