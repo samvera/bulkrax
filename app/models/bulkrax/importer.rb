@@ -1,9 +1,7 @@
 # frozen_string_literal: true
 
-require 'iso8601'
-
 module Bulkrax
-  class Importer < ApplicationRecord
+  class Importer < ApplicationRecord # rubocop:disable Metrics/ClassLength
     include Bulkrax::ImporterExporterBehavior
     include Bulkrax::StatusInfo
 
@@ -18,7 +16,7 @@ module Bulkrax
     validates :admin_set_id, presence: true if defined?(::Hyrax)
     validates :parser_klass, presence: true
 
-    delegate :valid_import?, :write_errored_entries_file, :visibility, to: :parser
+    delegate :create_parent_child_relationships, :valid_import?, :write_errored_entries_file, :visibility, to: :parser
 
     attr_accessor :only_updates, :file_style, :file
     attr_writer :current_run
@@ -103,11 +101,12 @@ module Bulkrax
       frequency.to_seconds != 0
     end
 
-    def current_run
+    def current_run(skip_counts: false)
       return @current_run if @current_run.present?
 
       @current_run = self.importer_runs.create!
       return @current_run if file? && zip?
+      return @current_run if skip_counts
 
       entry_counts = {
         total_work_entries: self.limit || parser.works_total,
@@ -123,8 +122,43 @@ module Bulkrax
       @last_run ||= self.importer_runs.last
     end
 
+    def failed_entries?
+      entries.failed.any?
+    end
+
+    def failed_statuses
+      @failed_statuses ||= Bulkrax::Status.latest_by_statusable
+                                          .includes(:statusable)
+                                          .where('bulkrax_statuses.statusable_id IN (?) AND bulkrax_statuses.statusable_type = ? AND status_message = ?', self.entries.pluck(:id), 'Bulkrax::Entry', 'Failed')
+    end
+
+    def failed_messages
+      failed_statuses.each_with_object({}) do |e, i|
+        i[e.error_message] ||= []
+        i[e.error_message] << e.id
+      end
+    end
+
+    def completed_statuses
+      @completed_statuses ||= Bulkrax::Status.latest_by_statusable
+                                             .includes(:statusable)
+                                             .where('bulkrax_statuses.statusable_id IN (?) AND bulkrax_statuses.statusable_type = ? AND status_message = ?', self.entries.pluck(:id), 'Bulkrax::Entry', 'Complete')
+    end
+
     def seen
       @seen ||= {}
+    end
+
+    def import_file_path
+      self.parser_fields['import_file_path']
+    end
+
+    def original_file?
+      import_file_path && File.exist?(import_file_path)
+    end
+
+    def original_file
+      import_file_path if original_file?
     end
 
     def replace_files
@@ -133,6 +167,18 @@ module Bulkrax
 
     def update_files
       self.parser_fields['update_files']
+    end
+
+    def remove_and_rerun
+      self.parser_fields['remove_and_rerun']
+    end
+
+    def metadata_only?
+      parser.parser_fields['metadata_only'] == true
+    end
+
+    def existing_entries?
+      parser.parser_fields['file_style']&.match(/Existing Entries/)
     end
 
     def import_works
@@ -157,9 +203,18 @@ module Bulkrax
       self.only_updates ||= false
       self.save if self.new_record? # Object needs to be saved for statuses
       types = types_array || DEFAULT_OBJECT_TYPES
-      parser.create_objects(types)
+      existing_entries? ? parser.rebuild_entries(types) : parser.create_objects(types)
+      mark_unseen_as_skipped
     rescue StandardError => e
       set_status_info(e)
+    end
+
+    # After an import any entries we did not touch are skipped.
+    # They are not really pending, complete for the last run, or failed
+    def mark_unseen_as_skipped
+      entries.where.not(identifier: seen.keys).find_each do |entry|
+        entry.set_status_info('Skipped')
+      end
     end
 
     # Prepend the base_url to ensure unique set identifiers
@@ -191,10 +246,6 @@ module Bulkrax
       "#{self.id}_#{self.created_at.strftime('%Y%m%d%H%M%S')}_#{self.importer_runs.last.id}"
     rescue
       "#{self.id}_#{self.created_at.strftime('%Y%m%d%H%M%S')}"
-    end
-
-    def metadata_only?
-      parser.parser_fields['metadata_only'] == true
     end
   end
 end

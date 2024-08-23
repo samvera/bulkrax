@@ -1,8 +1,5 @@
 # frozen_string_literal: true
 
-require_dependency "bulkrax/application_controller"
-require_dependency "oai"
-
 module Bulkrax
   class EntriesController < ApplicationController
     include Hyrax::ThemedLayoutController if defined?(::Hyrax)
@@ -17,6 +14,58 @@ module Bulkrax
         show_exporter
       end
     end
+
+    def update
+      @entry = Entry.find(params[:id])
+      type = case @entry.type.downcase
+             when /fileset/
+               'file_set'
+             when /collection/
+               'collection'
+             else
+               'work'
+             end
+      item = @entry.importerexporter
+      # do not run counters as it loads the whole parser
+      current_run = item.current_run(skip_counts: true)
+      @entry.set_status_info('Pending', current_run)
+      ScheduleRelationshipsJob.set(wait: 5.minutes).perform_later(importer_id: @entry.importer.id)
+
+      if params[:destroy_first]
+        "Bulkrax::DeleteAndImport#{type.camelize}Job".constantize.perform_later(@entry, current_run)
+      else
+        "Bulkrax::Import#{type.camelize}Job".constantize.perform_later(@entry.id, current_run.id)
+      end
+
+      entry_path = item.class.to_s.include?('Importer') ? bulkrax.importer_entry_path(item.id, @entry.id) : bulkrax.exporter_entry_path(item.id, @entry.id)
+
+      redirect_back fallback_location: entry_path, notice: "Entry #{@entry.id} update has been queued"
+    end
+
+    def destroy
+      @entry = Entry.find(params[:id])
+      @status = ""
+      begin
+        work = @entry.factory&.find
+        if work.present?
+          work.destroy
+          @entry.destroy
+          @status = "Entry and work deleted"
+        else
+          @entry.destroy
+          @status = "Entry deleted"
+        end
+      rescue StandardError => e
+        @status = "Error: #{e.message}"
+      end
+
+      item = @entry.importerexporter
+      entry_path = item.class.to_s.include?('Importer') ? bulkrax.importer_entry_path(item.id, @entry.id) : bulkrax.exporter_entry_path(item.id, @entry.id)
+
+      redirect_back fallback_location: entry_path, notice: @status
+    end
+
+    protected
 
     # GET /importers/1/entries/1
     def show_importer

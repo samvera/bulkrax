@@ -4,6 +4,26 @@ require "bulkrax/version"
 require "bulkrax/engine"
 require 'active_support/all'
 
+require 'coderay'
+require 'csv'
+require 'denormalize_fields'
+require 'erb'
+require 'iso8601'
+require 'language_list'
+require 'marcel'
+require 'nokogiri'
+require 'ostruct'
+require 'zip'
+
+def conditional_require(gem_name)
+  require gem_name
+rescue LoadError
+  ENV["BULKRAX_NO_#{gem_name.upcase}"] = 'true'
+end
+
+conditional_require 'bagit'
+conditional_require 'rdf'
+
 # rubocop:disable Metrics/ModuleLength
 module Bulkrax
   extend self # rubocop:disable Style/ModuleFunction
@@ -13,13 +33,10 @@ module Bulkrax
   # @api public
   class Configuration
     attr_accessor :api_definition,
-                  :curation_concerns,
                   :default_field_mapping,
                   :default_work_type,
                   :export_path,
                   :field_mappings,
-                  :file_model_class,
-                  :fill_in_blank_source_identifiers,
                   :generated_metadata_mapping,
                   :import_path,
                   :multi_value_element_join_on,
@@ -34,6 +51,84 @@ module Bulkrax
                   :required_elements,
                   :reserved_properties,
                   :server_name
+
+    ##
+    # @return [#call] with arity 2.  The first parameter is a {Bulkrax::ApplicationParser} and the
+    #         second parameter is an Integer for the index of the record encountered in the import.
+    attr_accessor :fill_in_blank_source_identifiers
+
+    ##
+    # @param [String]
+    attr_writer :solr_key_for_member_file_ids
+
+    ##
+    # @return [String]
+    # @see https://github.com/samvera/hyrax/pull/6513
+    def solr_key_for_member_file_ids
+      return @solr_key_for_member_file_ids if @solr_key_for_member_file_ids.present?
+
+      return "member_ids_ssim" if defined?(Hyrax)
+
+      "#{file_model_class.name.to_s.underscore}_ids_ssim"
+    end
+
+    ##
+    # @param coercer [#call]
+    # @see Bulkrax::FactoryClassFinder
+    attr_writer :factory_class_name_coercer
+
+    ##
+    # A function responsible for converting the name of a factory class to the corresponding
+    # constant.
+    #
+    # @return [#call, Bulkrax::FactoryClassFinder::DefaultCoercer] an object responding to call,
+    #         with one positional parameter (e.g. arity == 1)
+    #
+    # @example
+    #   Bulkrax.factory_class_name_coercer.call("Work")
+    #   => Work
+    def factory_class_name_coercer
+      @factory_class_name_coercer || Bulkrax::FactoryClassFinder::DefaultCoercer
+    end
+
+    def collection_model_class
+      @collection_model_class ||= Collection
+    end
+
+    attr_writer :collection_model_class
+
+    def collection_model_internal_resource
+      collection_model_class.try(:internal_resource) || collection_model_class.to_s
+    end
+
+    def file_model_class
+      @file_model_class ||= defined?(::Hyrax) ? ::FileSet : File
+    end
+
+    attr_writer :file_model_class
+
+    def file_model_internal_resource
+      file_model_class.try(:internal_resource) || file_model_class.to_s
+    end
+
+    def curation_concerns
+      @curation_concerns ||= defined?(::Hyrax) ? ::Hyrax.config.curation_concerns : []
+    end
+
+    attr_writer :curation_concerns
+
+    def curation_concern_internal_resources
+      curation_concerns.map { |cc| cc.try(:internal_resource) || cc.to_s }.uniq
+    end
+
+    attr_writer :ingest_queue_name
+    ##
+    # @return [String, Proc]
+    def ingest_queue_name
+      return @ingest_queue_name if @ingest_queue_name.present?
+      return Hyrax.config.ingest_queue_name if defined?(Hyrax)
+      :import
+    end
 
     attr_writer :use_locking
 
@@ -55,18 +150,25 @@ module Bulkrax
   def_delegators :@config,
                  :api_definition,
                  :api_definition=,
+                 :collection_model_class,
+                 :collection_model_internal_resource,
+                 :collection_model_class=,
                  :curation_concerns,
                  :curation_concerns=,
+                 :curation_concern_internal_resources,
                  :default_field_mapping,
                  :default_field_mapping=,
                  :default_work_type,
                  :default_work_type=,
                  :export_path,
                  :export_path=,
+                 :factory_class_name_coercer,
+                 :factory_class_name_coercer=,
                  :field_mappings,
                  :field_mappings=,
                  :file_model_class,
                  :file_model_class=,
+                 :file_model_internal_resource,
                  :fill_in_blank_source_identifiers,
                  :fill_in_blank_source_identifiers=,
                  :generated_metadata_mapping,
@@ -97,6 +199,8 @@ module Bulkrax
                  :reserved_properties=,
                  :server_name,
                  :server_name=,
+                 :solr_key_for_member_file_ids,
+                 :solr_key_for_member_file_ids=,
                  :use_locking,
                  :use_locking=,
                  :use_locking?
@@ -116,22 +220,6 @@ module Bulkrax
     conf.server_name = 'bulkrax@example.com'
     conf.relationship_job_class = "Bulkrax::CreateRelationshipsJob"
     conf.required_elements = ['title']
-
-    def conf.curation_concerns
-      @curation_concerns ||= defined?(::Hyrax) ? ::Hyrax.config.curation_concerns : []
-    end
-
-    def conf.curation_concerns=(val)
-      @curation_concerns = val
-    end
-
-    def conf.file_model_class
-      @file_model_class ||= defined?(::Hyrax) ? ::FileSet : File
-    end
-
-    def conf.file_model_class=(val)
-      @file_model_class = val
-    end
 
     # Hash of Generic field_mappings for use in the view
     # There must be one field_mappings hash per view partial

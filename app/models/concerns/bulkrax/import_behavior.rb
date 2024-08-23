@@ -11,7 +11,7 @@ module Bulkrax
         unless self.importerexporter.validate_only
           raise CollectionsCreatedError unless collections_created?
           @item = factory.run!
-          add_user_to_permission_templates! if self.class.to_s.include?("Collection") && defined?(::Hyrax)
+          add_user_to_permission_templates!
           parent_jobs if self.parsed_metadata[related_parents_parsed_mapping]&.join.present?
           child_jobs if self.parsed_metadata[related_children_parsed_mapping]&.join.present?
         end
@@ -28,22 +28,15 @@ module Bulkrax
     end
 
     def add_user_to_permission_templates!
-      permission_template = Hyrax::PermissionTemplate.find_or_create_by!(source_id: @item.id)
-
-      Hyrax::PermissionTemplateAccess.find_or_create_by!(
-        permission_template_id: permission_template.id,
-        agent_id: user.user_key,
-        agent_type: 'user',
-        access: 'manage'
-      )
-      Hyrax::PermissionTemplateAccess.find_or_create_by!(
-        permission_template_id: permission_template.id,
-        agent_id: 'admin',
-        agent_type: 'group',
-        access: 'manage'
-      )
-
-      @item.reset_access_controls!
+      # NOTE: This is a cheat for the class is a CollectionEntry.  Consider
+      # that we have default_work_type.
+      #
+      # TODO: This guard clause is not necessary as we can handle it in the
+      # underlying factory.  However, to do that requires adjusting about 7
+      # failing specs.  So for now this refactor appears acceptable
+      return unless defined?(::Hyrax)
+      return unless self.class.to_s.include?("Collection")
+      factory.add_user_to_collection_permissions(collection: @item, user: user)
     end
 
     def parent_jobs
@@ -179,6 +172,7 @@ module Bulkrax
       @factory ||= of.new(attributes: self.parsed_metadata,
                           source_identifier_value: identifier,
                           work_identifier: parser.work_identifier,
+                          work_identifier_search_field: parser.work_identifier_search_field,
                           related_parents_parsed_mapping: parser.related_parents_parsed_mapping,
                           replace_files: replace_files,
                           user: user,
@@ -188,22 +182,10 @@ module Bulkrax
     end
 
     def factory_class
-      fc = if self.parsed_metadata&.[]('model').present?
-             self.parsed_metadata&.[]('model').is_a?(Array) ? self.parsed_metadata&.[]('model')&.first : self.parsed_metadata&.[]('model')
-           elsif self.mapping&.[]('work_type').present?
-             self.parsed_metadata&.[]('work_type').is_a?(Array) ? self.parsed_metadata&.[]('work_type')&.first : self.parsed_metadata&.[]('work_type')
-           else
-             Bulkrax.default_work_type
-           end
-
-      # return the name of the collection or work
-      fc.tr!(' ', '_')
-      fc.downcase! if fc.match?(/[-_]/)
-      fc.camelcase.constantize
-    rescue NameError
-      nil
-    rescue
-      Bulkrax.default_work_type.constantize
+      # ATTENTION: Do not memoize this here; tests should catch the problem, but through out the
+      # lifecycle of parsing a CSV row or what not, we end up having different factory classes based
+      # on the encountered metadata.
+      FactoryClassFinder.find(entry: self)
     end
   end
 end

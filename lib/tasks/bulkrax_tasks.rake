@@ -1,6 +1,19 @@
 # frozen_string_literal: true
+require 'ruby-progressbar'
 
 namespace :bulkrax do
+  desc 'Update all status messages from the latest status. This is to refresh the denormalized field'
+  task update_status_messages: :environment do
+    @progress = ProgressBar.create(total: Bulkrax::Status.latest_by_statusable.count,
+                                   format: "%a %b\u{15E7}%i %c/%C %p%% %t",
+                                   progress_mark: ' ',
+                                   remainder_mark: "\u{FF65}")
+    Bulkrax::Status.latest_by_statusable.includes(:statusable).find_each do |status|
+      status.statusable.update(status_message: status.status_message)
+      @progress.increment
+    end
+  end
+
   # Usage example: rails bulkrax:generate_test_csvs['5','100','GenericWork']
   desc 'Generate CSVs with fake data for testing purposes'
   task :generate_test_csvs, [:num_of_csvs, :csv_rows, :record_type] => :environment do |_t, args|
@@ -124,7 +137,7 @@ namespace :bulkrax do
   end
 
   def make_new_exports
-    Bulkrax::Exporter.all.each { |e| Bulkrax::ExporterJob.perform_later(e.id) }
+    Bulkrax::Exporter.find_each { |e| Bulkrax::ExporterJob.perform_later(e.id) }
   rescue => e
     puts "(#{e.message})"
   end

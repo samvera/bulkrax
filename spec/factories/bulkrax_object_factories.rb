@@ -6,7 +6,8 @@ FactoryBot.define do
       new(
         attributes: {},
         source_identifier_value: :source_identifier,
-        work_identifier: :source
+        work_identifier: :source,
+        work_identifier_search_field: 'source_sim'
       )
     end
   end

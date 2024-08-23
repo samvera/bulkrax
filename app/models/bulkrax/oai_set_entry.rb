@@ -2,9 +2,7 @@
 
 module Bulkrax
   class OaiSetEntry < OaiEntry
-    def factory_class
-      Collection
-    end
+    self.default_work_type = Bulkrax.collection_model_class.to_s
 
     def build_metadata
       self.parsed_metadata = self.raw_metadata

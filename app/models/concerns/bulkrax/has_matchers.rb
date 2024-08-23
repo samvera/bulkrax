@@ -56,11 +56,16 @@ module Bulkrax
       end
     end
 
+    def get_object_name(field)
+      mapping&.[](field)&.[]('object')
+    end
+
     def set_parsed_data(name, value)
       return parsed_metadata[name] = value unless multiple?(name)
 
       parsed_metadata[name] ||= []
       parsed_metadata[name] += Array.wrap(value).flatten
+      parsed_metadata[name].uniq!
     end
 
     def set_parsed_object_data(object_multiple, object_name, name, index, value)
@@ -125,41 +130,51 @@ module Bulkrax
 
       return false if excluded?(field)
       return true if supported_bulkrax_fields.include?(field)
-      return factory_class.method_defined?(field) && factory_class.properties[field].present?
+
+      Bulkrax.object_factory.field_supported?(field: field, model: factory_class)
     end
 
     def supported_bulkrax_fields
-      @supported_bulkrax_fields ||=
-        %W[
-          id
-          file
-          remote_files
-          model
-          visibility
-          delete
-          #{related_parents_parsed_mapping}
-          #{related_children_parsed_mapping}
-        ]
+      @supported_bulkrax_fields ||= fields_that_are_always_singular +
+                                    fields_that_are_always_multiple
     end
 
+    ##
+    # Determine a multiple properties field
     def multiple?(field)
-      @multiple_bulkrax_fields ||=
-        %W[
-          file
-          remote_files
-          rights_statement
-          #{related_parents_parsed_mapping}
-          #{related_children_parsed_mapping}
-        ]
+      return true if fields_that_are_always_singular.include?(field.to_s)
+      return false if fields_that_are_always_multiple.include?(field.to_s)
 
-      return true if @multiple_bulkrax_fields.include?(field)
-      return false if field == 'model'
-
-      field_supported?(field) && factory_class&.properties&.[](field)&.[]('multiple')
+      Bulkrax.object_factory.field_multi_value?(field: field, model: factory_class)
     end
 
-    def get_object_name(field)
-      mapping&.[](field)&.[]('object')
+    def fields_that_are_always_multiple
+      @fields_that_are_always_multiple = %w[
+        id
+        delete
+        model
+        visibility
+        visibility_during_embargo
+        embargo_release_date
+        visibility_after_embargo
+        visibility_during_lease
+        lease_expiration_date
+        visibility_after_lease
+      ]
+    end
+
+    def fields_that_are_always_singular
+      @fields_that_are_always_singular ||= %W[
+        file
+        remote_files
+        rights_statement
+        #{related_parents_parsed_mapping}
+        #{related_children_parsed_mapping}
+      ]
+    end
+
+    def schema_form_definitions
+      @schema_form_definitions ||= ::SchemaLoader.new.form_definitions_for(factory_class.name.underscore.to_sym)
     end
 
     # Hyrax field to use for the given import field

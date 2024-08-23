@@ -1,31 +1,37 @@
 # frozen_string_literal: true
 
-require_dependency 'bulkrax/application_controller'
-require_dependency 'oai'
-
 module Bulkrax
   # rubocop:disable Metrics/ClassLength
-  class ImportersController < ApplicationController
+  class ImportersController < ::Bulkrax::ApplicationController
     include Hyrax::ThemedLayoutController if defined?(::Hyrax)
     include Bulkrax::DownloadBehavior
     include Bulkrax::API
+    include Bulkrax::DatatablesBehavior
     include Bulkrax::ValidationHelper
 
     protect_from_forgery unless: -> { api_request? }
     before_action :token_authenticate!, if: -> { api_request? }, only: [:create, :update, :delete]
     before_action :authenticate_user!, unless: -> { api_request? }
     before_action :check_permissions
-    before_action :set_importer, only: [:show, :edit, :update, :destroy]
+    before_action :set_importer, only: [:show, :entry_table, :edit, :update, :destroy, :original_file]
     with_themed_layout 'dashboard' if defined?(::Hyrax)
 
     # GET /importers
     def index
       # NOTE: We're paginating this in the browser.
-      @importers = Importer.order(created_at: :desc).all
       if api_request?
+        @importers = Importer.order(created_at: :desc).all
         json_response('index')
       elsif defined?(::Hyrax)
         add_importer_breadcrumbs
+      end
+    end
+
+    def importer_table
+      @importers = Importer.order(table_order).page(table_page).per(table_per_page)
+      @importers = @importers.where(importer_table_search) if importer_table_search.present?
+      respond_to do |format|
+        format.json { render json: format_importers(@importers) }
       end
     end
 
@@ -37,9 +43,15 @@ module Bulkrax
         add_importer_breadcrumbs
         add_breadcrumb @importer.name
       end
-      @work_entries = @importer.entries.where(type: @importer.parser.entry_class.to_s).page(params[:work_entries_page]).per(30)
-      @collection_entries = @importer.entries.where(type: @importer.parser.collection_entry_class.to_s).page(params[:collections_entries_page]).per(30)
-      @file_set_entries = @importer.entries.where(type: @importer.parser.file_set_entry_class.to_s).page(params[:file_set_entries_page]).per(30)
+      @first_entry = @importer.entries.first
+    end
+
+    def entry_table
+      @entries = @importer.entries.order(table_order).page(table_page).per(table_per_page)
+      @entries = @entries.where(entry_table_search) if entry_table_search.present?
+      respond_to do |format|
+        format.json { render json: format_entries(@entries, @importer) }
+      end
     end
 
     # GET /importers/new
@@ -189,6 +201,14 @@ module Bulkrax
       end
     end
 
+    def original_file
+      if @importer.original_file?
+        send_file @importer.original_file
+      else
+        redirect_to @importer, alert: 'Importer does not support file re-download or the imported file is not found on the server.'
+      end
+    end
+
     # GET /importers/1/export_errors
     def export_errors
       @importer = Importer.find(params[:importer_id])
@@ -202,10 +222,11 @@ module Bulkrax
       return if file.blank? && cloud_files.blank?
       @importer[:parser_fields]['import_file_path'] = @importer.parser.write_import_file(file) if file.present?
       if cloud_files.present?
+        @importer[:parser_fields]['cloud_file_paths'] = cloud_files
         # For BagIt, there will only be one bag, so we get the file_path back and set import_file_path
         # For CSV, we expect only file uploads, so we won't get the file_path back
         # and we expect the import_file_path to be set already
-        target = @importer.parser.retrieve_cloud_files(cloud_files)
+        target = @importer.parser.retrieve_cloud_files(cloud_files, @importer)
         @importer[:parser_fields]['import_file_path'] = target if target.present?
       end
       @importer.save
@@ -213,7 +234,7 @@ module Bulkrax
 
     # Use callbacks to share common setup or constraints between actions.
     def set_importer
-      @importer = Importer.find(params[:id])
+      @importer = Importer.find(params[:id] || params[:importer_id])
     end
 
     def importable_params
@@ -221,7 +242,7 @@ module Bulkrax
     end
 
     def importable_parser_fields
-      params&.[](:importer)&.[](:parser_fields)&.except(:file)&.keys
+      params&.[](:importer)&.[](:parser_fields)&.except(:file, :entry_statuses)&.keys&. + [{ "entry_statuses" => [] }]
     end
 
     # Only allow a trusted parameters through.
@@ -241,7 +262,7 @@ module Bulkrax
     end
 
     def list_external_sets
-      url = params[:base_url] || (@harvester ? @harvester.base_url : nil)
+      url = params[:base_url] || @harvester&.base_url
       setup_client(url) if url.present?
 
       @sets = [['All', 'all']]
@@ -310,10 +331,16 @@ module Bulkrax
     end
 
     def set_files_parser_fields
+      @importer.parser_fields['update_files'] =
+        @importer.parser_fields['replace_files'] =
+          @importer.parser_fields['remove_and_rerun'] =
+            @importer.parser_fields['metadata_only'] = false
       if params[:commit] == 'Update Metadata and Files'
         @importer.parser_fields['update_files'] = true
       elsif params[:commit] == ('Update and Replace Files' || 'Update and Re-Harvest All Items')
         @importer.parser_fields['replace_files'] = true
+      elsif params[:commit] == 'Remove and Rerun'
+        @importer.parser_fields['remove_and_rerun'] = true
       elsif params[:commit] == 'Update and Harvest Updated Items'
         return
       else

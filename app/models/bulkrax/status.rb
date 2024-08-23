@@ -2,7 +2,7 @@
 
 module Bulkrax
   class Status < ApplicationRecord
-    belongs_to :statusable, polymorphic: true
+    belongs_to :statusable, polymorphic: true, denormalize: { fields: %i[status_message], if: :latest? }
     belongs_to :runnable, polymorphic: true
     serialize :error_backtrace, Array
 
@@ -20,6 +20,15 @@ module Bulkrax
       latest_status_table = Arel::Table.new(latest_status_query).alias(:latest_status)
       status_table.join(latest_status_query.as(latest_status_table.name.to_s), Arel::Nodes::InnerJoin)
                   .on(status_table[:id].eq(latest_status_table[:latest_status_id]))
+    end
+
+    def latest?
+      # TODO: remove if statment when we stop supporting Hyrax < 4
+      self.id == if Gem::Version.new(Rails::VERSION::STRING) >= Gem::Version.new('6.0.0')
+                   self.class.where(statusable_id: self.statusable_id, statusable_type: self.statusable_type).order('id desc').pick(:id)
+                 else
+                   self.class.where(statusable_id: self.statusable_id, statusable_type: self.statusable_type).order('id desc').pluck(:id).first # rubocop:disable Rails/Pick
+                 end
     end
   end
 end

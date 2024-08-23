@@ -1,6 +1,4 @@
 # frozen_string_literal: true
-require 'zip'
-require 'marcel'
 
 module Bulkrax
   # An abstract class that establishes the API for Bulkrax's import and export parsing.
@@ -14,7 +12,7 @@ module Bulkrax
              :seen, :increment_counters, :parser_fields, :user, :keys_without_numbers,
              :key_without_numbers, :status, :set_status_info, :status_info, :status_at,
              :exporter_export_path, :exporter_export_zip_path, :importer_unzip_path, :validate_only,
-             :zip?, :file?,
+             :zip?, :file?, :remove_and_rerun,
              to: :importerexporter
 
     # @todo Convert to `class_attribute :parser_fiels, default: {}`
@@ -45,6 +43,10 @@ module Bulkrax
     # @abstract Subclass and override {#entry_class} to implement behavior for the parser.
     def entry_class
       raise NotImplementedError, 'must be defined'
+    end
+
+    def work_entry_class
+      entry_class
     end
 
     # @api public
@@ -81,6 +83,13 @@ module Bulkrax
       @work_identifier ||= get_field_mapping_hash_for('source_identifier')&.keys&.first&.to_sym || :source
     end
 
+    # @return [Symbol] the solr property of the source_identifier. Used for searching.
+    #         defaults to work_identifier value + "_sim"
+    # @see #work_identifier
+    def work_identifier_search_field
+      @work_identifier_search_field ||= Array.wrap(get_field_mapping_hash_for('source_identifier')&.values&.first&.[]('search_field'))&.first&.to_s || "#{work_identifier}_sim"
+    end
+
     # @return [String]
     def generated_metadata_mapping
       @generated_metadata_mapping ||= 'generated'
@@ -95,7 +104,7 @@ module Bulkrax
     # @return [String]
     # @see #related_parents_field_mapping
     def related_parents_parsed_mapping
-      @related_parents_parsed_mapping ||= (get_field_mapping_hash_for('related_parents_field_mapping')&.keys&.first || 'parents')
+      @related_parents_parsed_mapping ||= get_field_mapping_hash_for('related_parents_field_mapping')&.keys&.first || 'parents'
     end
 
     # @return [String, NilClass]
@@ -107,7 +116,7 @@ module Bulkrax
     # @return [String]
     # @see #related_children_raw_mapping
     def related_children_parsed_mapping
-      @related_children_parsed_mapping ||= (get_field_mapping_hash_for('related_children_field_mapping')&.keys&.first || 'children')
+      @related_children_parsed_mapping ||= get_field_mapping_hash_for('related_children_field_mapping')&.keys&.first || 'children'
     end
 
     # @api private
@@ -150,6 +159,22 @@ module Bulkrax
       @visibility ||= self.parser_fields['visibility'] || 'open'
     end
 
+    def create_collections
+      create_objects(['collection'])
+    end
+
+    def create_works
+      create_objects(['work'])
+    end
+
+    def create_file_sets
+      create_objects(['file_set'])
+    end
+
+    def create_relationships
+      create_objects(['relationship'])
+    end
+
     # @api public
     #
     # @param types [Array<Symbol>] the types of objects that we'll create.
@@ -159,34 +184,95 @@ module Bulkrax
     # @see #create_works
     # @see #create_file_sets
     # @see #create_relationships
-    def create_objects(types = [])
-      types.each do |object_type|
-        send("create_#{object_type.pluralize}")
+    def create_objects(types_array = nil)
+      index = 0
+      (types_array || %w[collection work file_set relationship]).each do |type|
+        if type.eql?('relationship')
+          ScheduleRelationshipsJob.set(wait: 5.minutes).perform_later(importer_id: importerexporter.id)
+          next
+        end
+        send(type.pluralize).each do |current_record|
+          next unless record_has_source_identifier(current_record, index)
+          break if limit_reached?(limit, index)
+          seen[current_record[source_identifier]] = true
+          create_entry_and_job(current_record, type)
+          increment_counters(index, "#{type}": true)
+          index += 1
+        end
+        importer.record_status
+      end
+      true
+    rescue StandardError => e
+      set_status_info(e)
+    end
+
+    def rebuild_entries(types_array = nil)
+      index = 0
+      (types_array || %w[collection work file_set relationship]).each do |type|
+        # works are not gurneteed to have Work in the type
+
+        importer.entries.where(rebuild_entry_query(type, parser_fields['entry_statuses'])).find_each do |e|
+          seen[e.identifier] = true
+          e.status_info('Pending', importer.current_run)
+          if remove_and_rerun
+            delay = calculate_type_delay(type)
+            "Bulkrax::DeleteAndImport#{type.camelize}Job".constantize.set(wait: delay).send(perform_method, e, current_run)
+          else
+            "Bulkrax::Import#{type.camelize}Job".constantize.send(perform_method, e.id, current_run.id)
+          end
+          increment_counters(index)
+          index += 1
+        end
       end
     end
 
-    # @abstract Subclass and override {#create_collections} to implement behavior for the parser.
-    def create_collections
-      raise NotImplementedError, 'must be defined' if importer?
+    def rebuild_entry_query(type, statuses)
+      type_col = Bulkrax::Entry.arel_table['type']
+      status_col = Bulkrax::Entry.arel_table['status_message']
+
+      query = (type == 'work' ? type_col.does_not_match_all(%w[collection file_set]) : type_col.matches(type.camelize))
+      query.and(status_col.in(statuses))
     end
 
-    # @abstract Subclass and override {#create_works} to implement behavior for the parser.
-    def create_works
-      raise NotImplementedError, 'must be defined' if importer?
+    def calculate_type_delay(type)
+      return 2.minutes if type == 'file_set'
+      return 1.minute if type == 'work'
+      return 0
     end
 
-    # @abstract Subclass and override {#create_file_sets} to implement behavior for the parser.
-    def create_file_sets
-      raise NotImplementedError, 'must be defined' if importer?
+    def record_raw_metadata(record)
+      record.to_h
     end
 
-    # @abstract Subclass and override {#create_relationships} to implement behavior for the parser.
-    def create_relationships
-      raise NotImplementedError, 'must be defined' if importer?
+    def record_deleted?(record)
+      return false unless record.key?(:delete)
+      ActiveModel::Type::Boolean.new.cast(record[:delete])
+    end
+
+    def record_remove_and_rerun?(record)
+      return false unless record.key?(:remove_and_rerun)
+      ActiveModel::Type::Boolean.new.cast(record[:remove_and_rerun])
+    end
+
+    def create_entry_and_job(current_record, type, identifier = nil)
+      identifier ||= current_record[source_identifier]
+      new_entry = find_or_create_entry(send("#{type}_entry_class"),
+                                       identifier,
+                                       'Bulkrax::Importer',
+                                       record_raw_metadata(current_record))
+      new_entry.status_info('Pending', importer.current_run)
+      if record_deleted?(current_record)
+        "Bulkrax::Delete#{type.camelize}Job".constantize.send(perform_method, new_entry, current_run)
+      elsif record_remove_and_rerun?(current_record) || remove_and_rerun
+        delay = calculate_type_delay(type)
+        "Bulkrax::DeleteAndImport#{type.camelize}Job".constantize.set(wait: delay).send(perform_method, new_entry, current_run)
+      else
+        "Bulkrax::Import#{type.camelize}Job".constantize.send(perform_method, new_entry.id, current_run.id)
+      end
     end
 
     # Optional, define if using browse everything for file upload
-    def retrieve_cloud_files(files); end
+    def retrieve_cloud_files(_files, _importer); end
 
     # @param file [#path, #original_filename] the file object that with the relevant data for the
     #        import.
@@ -270,8 +356,8 @@ module Bulkrax
       current_run.invalid_records ||= ""
       current_run.invalid_records += message
       current_run.save
-      ImporterRun.find(current_run.id).increment!(:failed_records)
-      ImporterRun.find(current_run.id).decrement!(:enqueued_records) unless ImporterRun.find(current_run.id).enqueued_records <= 0 # rubocop:disable Style/IdenticalConditionalBranches
+      ImporterRun.increment_counter(:failed_records, current_run.id)
+      ImporterRun.decrement_counter(:enqueued_records, current_run.id) unless ImporterRun.find(current_run.id).enqueued_records <= 0 # rubocop:disable Style/IdenticalConditionalBranches
     end
     # rubocop:enable Rails/SkipsModelValidations
 
@@ -298,12 +384,19 @@ module Bulkrax
     end
 
     def find_or_create_entry(entryclass, identifier, type, raw_metadata = nil)
-      entry = entryclass.where(
+      # limit entry search to just this importer or exporter. Don't go moving them
+      entry = importerexporter.entries.where(
+        identifier: identifier
+      ).first
+      entry ||= entryclass.new(
         importerexporter_id: importerexporter.id,
         importerexporter_type: type,
         identifier: identifier
-      ).first_or_create!
+      )
       entry.raw_metadata = raw_metadata
+      # Setting parsed_metadata specifically for the id so we can find the object via the
+      # id in a delete.  This is likely to get clobbered in a regular import, which is fine.
+      entry.parsed_metadata = { id: raw_metadata['id'] } if raw_metadata&.key?('id')
       entry.save!
       entry
     end
@@ -335,6 +428,8 @@ module Bulkrax
     end
 
     def unzip(file_to_unzip)
+      return untar(file_to_unzip) if file_to_unzip.end_with?('.tar.gz')
+
       Zip::File.open(file_to_unzip) do |zip_file|
         zip_file.each do |entry|
           entry_path = File.join(importer_unzip_path, entry.name)
@@ -342,6 +437,13 @@ module Bulkrax
           zip_file.extract(entry, entry_path) unless File.exist?(entry_path)
         end
       end
+    end
+
+    def untar(file_to_untar)
+      Dir.mkdir(importer_unzip_path) unless File.directory?(importer_unzip_path)
+      command = "tar -xzf #{Shellwords.escape(file_to_untar)} -C #{Shellwords.escape(importer_unzip_path)}"
+      result = system(command)
+      raise "Failed to extract #{file_to_untar}" unless result
     end
 
     def zip

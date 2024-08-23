@@ -18,7 +18,7 @@
             <%= form.button :submit, value: 'Create', class: 'btn btn-primary' %>
             |
             <% cancel_path = form.object.persisted? ? importer_path(form.object) : importers_path %>
-            <%= link_to t('.cancel'), cancel_path, class: 'btn btn-default ' %>
+            <%= link_to t('bulkrax.cancel'), cancel_path, class: 'btn btn-default ' %>
           </div>
         </div>
       <% end %>

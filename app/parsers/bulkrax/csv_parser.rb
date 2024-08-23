@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'csv'
 module Bulkrax
   class CsvParser < ApplicationParser # rubocop:disable Metrics/ClassLength
     include ErroredEntries
@@ -23,6 +22,7 @@ module Bulkrax
       @records = csv_data.map { |record_data| entry_class.data_for_entry(record_data, nil, self) }
     end
 
+    # rubocop:disable Metrics/AbcSize
     def build_records
       @collections = []
       @works = []
@@ -34,7 +34,9 @@ module Bulkrax
             next unless r.key?(model_mapping)
 
             model = r[model_mapping].nil? ? "" : r[model_mapping].strip
-            if model.casecmp('collection').zero?
+            # TODO: Eventually this should be refactored to us Hyrax.config.collection_model
+            #       We aren't right now because so many Bulkrax users are in between Fedora and Valkyrie
+            if model.casecmp('collection').zero? || model.casecmp('collectionresource').zero?
               @collections << r
             elsif model.casecmp('fileset').zero?
               @file_sets << r
@@ -52,6 +54,7 @@ module Bulkrax
 
       true
     end
+    # rubocop:enabled Metrics/AbcSize
 
     def collections
       build_records if @collections.nil?
@@ -113,57 +116,6 @@ module Bulkrax
       false
     end
 
-    def create_collections
-      create_objects(['collection'])
-    end
-
-    def create_works
-      create_objects(['work'])
-    end
-
-    def create_file_sets
-      create_objects(['file_set'])
-    end
-
-    def create_relationships
-      create_objects(['relationship'])
-    end
-
-    def create_objects(types_array = nil)
-      index = 0
-      (types_array || %w[collection work file_set relationship]).each do |type|
-        if type.eql?('relationship')
-          ScheduleRelationshipsJob.set(wait: 5.minutes).perform_later(importer_id: importerexporter.id)
-          next
-        end
-        send(type.pluralize).each do |current_record|
-          next unless record_has_source_identifier(current_record, index)
-          break if limit_reached?(limit, index)
-
-          seen[current_record[source_identifier]] = true
-          create_entry_and_job(current_record, type)
-          increment_counters(index, "#{type}": true)
-          index += 1
-        end
-        importer.record_status
-      end
-      true
-    rescue StandardError => e
-      set_status_info(e)
-    end
-
-    def create_entry_and_job(current_record, type)
-      new_entry = find_or_create_entry(send("#{type}_entry_class"),
-                                       current_record[source_identifier],
-                                       'Bulkrax::Importer',
-                                       current_record.to_h)
-      if current_record[:delete].present?
-        "Bulkrax::Delete#{type.camelize}Job".constantize.send(perform_method, new_entry, current_run)
-      else
-        "Bulkrax::Import#{type.camelize}Job".constantize.send(perform_method, new_entry.id, current_run.id)
-      end
-    end
-
     def write_partial_import_file(file)
       import_filename = import_file_path.split('/').last
       partial_import_filename = "#{File.basename(import_filename, '.csv')}_corrected_entries.csv"
@@ -204,7 +156,6 @@ module Bulkrax
     def entry_class
       CsvEntry
     end
-    alias work_entry_class entry_class
 
     def collection_entry_class
       CsvCollectionEntry
@@ -242,9 +193,10 @@ module Bulkrax
     # @todo - investigate getting directory structure
     # @todo - investigate using perform_later, and having the importer check for
     #   DownloadCloudFileJob before it starts
-    def retrieve_cloud_files(files)
+    def retrieve_cloud_files(files, importer)
       files_path = File.join(path_for_import, 'files')
       FileUtils.mkdir_p(files_path) unless File.exist?(files_path)
+      target_files = []
       files.each_pair do |_key, file|
         # fixes bug where auth headers do not get attached properly
         if file['auth_header'].present?
@@ -253,10 +205,12 @@ module Bulkrax
         end
         # this only works for uniquely named files
         target_file = File.join(files_path, file['file_name'].tr(' ', '_'))
+        target_files << target_file
         # Now because we want the files in place before the importer runs
         # Problematic for a large upload
-        Bulkrax::DownloadCloudFileJob.perform_now(file, target_file)
+        Bulkrax::DownloadCloudFileJob.perform_later(file, target_file)
       end
+      importer[:parser_fields]['original_file_paths'] = target_files
       return nil
     end
 
@@ -277,6 +231,7 @@ module Bulkrax
         CSV.open(setup_export_file(folder_count), "w", headers: export_headers, write_headers: true) do |csv|
           group.each do |entry|
             csv << entry.parsed_metadata
+            # TODO: This is precarious when we have descendents of Bulkrax::CsvCollectionEntry
             next if importerexporter.metadata_only? || entry.type == 'Bulkrax::CsvCollectionEntry'
 
             store_files(entry.identifier, folder_count.to_s)
@@ -286,7 +241,7 @@ module Bulkrax
     end
 
     def store_files(identifier, folder_count)
-      record = ActiveFedora::Base.find(identifier)
+      record = Bulkrax.object_factory.find(identifier)
       return unless record
 
       file_sets = record.file_set? ? Array.wrap(record) : record.file_sets
@@ -338,6 +293,9 @@ module Bulkrax
 
     def sort_entries(entries)
       # always export models in the same order: work, collection, file set
+      #
+      # TODO: This is a problem in that only these classes are compared.  Instead
+      #       We should add a comparison operator to the classes.
       entries.sort_by do |entry|
         case entry.type
         when 'Bulkrax::CsvCollectionEntry'

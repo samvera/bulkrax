@@ -34,4 +34,5 @@ end
 
 group :lint do
   gem 'bixby'
+  gem 'rubocop-factory_bot', require: false
 end

@@ -6,6 +6,9 @@ require 'rails_helper'
 module Bulkrax
   RSpec.describe CsvEntry, type: :model do
     describe '.read_data' do
+      before do
+        allow(Bulkrax.object_factory).to receive(:search_by_property).and_return(nil)
+      end
       it 'handles mixed case and periods for column names' do
         path = File.expand_path('../../fixtures/csv/mixed-case.csv', __dir__)
         data = described_class.read_data(path)
@@ -1251,6 +1254,66 @@ module Bulkrax
           expect(entry.parsed_metadata['dummy_2']).to eq('b2')
           expect(entry.parsed_metadata['dummy_3']).to eq('c3')
         end
+      end
+    end
+
+    describe 'exposing embargo attributes for parser' do
+      let(:data) do
+        {
+          'model': 'Work',
+          'title': 'Image',
+          'creator': 'user A',
+          'source_identifier': '123456789',
+          'visibility': 'embargo',
+          'visibility_during_embargo': 'restricted',
+          'embargo_release_date': '2054-04-19',
+          'visibility_after_embargo': 'open'
+        }
+      end
+      let(:entry) do
+        Bulkrax::EntrySpecHelper.entry_for(identifier: '123456789',
+                                           data: data,
+                                           parser_class_name: 'Bulkrax::CsvParser',
+                                           parser_fields: { 'import_file_path': 'spec/fixtures/csv/embargo-lease.csv' })
+      end
+
+      it 'embargo attributes are included in the parsed metadata' do
+        entry.build_metadata
+
+        expect(entry.parsed_metadata['visibility']).to eq('embargo')
+        expect(entry.parsed_metadata['visibility_during_embargo']).to eq('restricted')
+        expect(entry.parsed_metadata['embargo_release_date']).to eq('2054-04-19')
+        expect(entry.parsed_metadata['visibility_after_embargo']).to eq('open')
+      end
+    end
+
+    describe 'exposing lease attributes for parser' do
+      let(:data) do
+        {
+          'model': 'Work',
+          'title': 'Image',
+          'creator': 'user A',
+          'source_identifier': '987654321',
+          'visibility': 'lease',
+          'visibility_during_lease': 'restricted',
+          'lease_expiration_date': '2054-04-19',
+          'visibility_after_lease': 'open'
+        }
+      end
+      let(:entry) do
+        Bulkrax::EntrySpecHelper.entry_for(identifier: '123456789',
+                                           data: data,
+                                           parser_class_name: 'Bulkrax::CsvParser',
+                                           parser_fields: { 'import_file_path': 'spec/fixtures/csv/embargo-lease.csv' })
+      end
+
+      it 'lease attributes are included in the parsed metadata' do
+        entry.build_metadata
+
+        expect(entry.parsed_metadata['visibility']).to eq('lease')
+        expect(entry.parsed_metadata['visibility_during_lease']).to eq('restricted')
+        expect(entry.parsed_metadata['lease_expiration_date']).to eq('2054-04-19')
+        expect(entry.parsed_metadata['visibility_after_lease']).to eq('open')
       end
     end
   end

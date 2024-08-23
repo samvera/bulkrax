@@ -12,6 +12,8 @@ Bulkrax.setup do |config|
 
   # Factory Class to use when generating and saving objects
   config.object_factory = Bulkrax::ObjectFactory
+  # Use this for a Postgres-backed Valkyrized Hyrax
+  # config.object_factory = Bulkrax::ValkyrieObjectFactory
 
   # Path to store pending imports
   # config.import_path = 'tmp/imports'
@@ -47,7 +49,7 @@ Bulkrax.setup do |config|
   #   (For more info on importing relationships, see Bulkrax Wiki: https://github.com/samvera-labs/bulkrax/wiki/Configuring-Bulkrax#parent-child-relationship-field-mappings)
   #
   # #   e.g. to add the required source_identifier field
-  #   #   config.field_mappings["Bulkrax::CsvParser"]["source_id"] = { from: ["old_source_id"], source_identifier: true  }
+  #   #   config.field_mappings["Bulkrax::CsvParser"]["source_id"] = { from: ["old_source_id"], source_identifier: true, search_field: 'source_id_sim' }
   # If you want Bulkrax to fill in source_identifiers for you, see below
 
   # To duplicate a set of mappings from one parser to another

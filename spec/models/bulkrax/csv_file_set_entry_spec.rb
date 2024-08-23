@@ -6,6 +6,11 @@ module Bulkrax
   RSpec.describe CsvFileSetEntry, type: :model do
     subject(:entry) { described_class.new }
 
+    describe '#default_work_type' do
+      subject { entry.default_work_type }
+      it { is_expected.to eq("FileSet") }
+    end
+
     describe '#file_reference' do
       context 'when parsed_metadata includes the "file" property' do
         before do

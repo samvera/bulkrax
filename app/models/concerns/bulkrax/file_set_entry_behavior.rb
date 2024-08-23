@@ -2,8 +2,10 @@
 
 module Bulkrax
   module FileSetEntryBehavior
-    def factory_class
-      ::FileSet
+    extend ActiveSupport::Concern
+
+    included do
+      self.default_work_type = Bulkrax.file_model_class.to_s
     end
 
     def file_reference
@@ -45,7 +47,7 @@ module Bulkrax
     end
 
     def child_jobs
-      raise ::StandardError, 'A FileSet cannot be a parent of a Collection, Work, or other FileSet'
+      raise ::StandardError, "A #{Bulkrax.file_model_class} cannot be a parent of a #{Bulkrax.collection_model_class}, Work, or other #{Bulkrax.file_model_class}"
     end
   end
 end

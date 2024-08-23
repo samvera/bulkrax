@@ -2,6 +2,7 @@
 
 # This file is copied to spec/ when you run 'rails generate rspec:install'
 require 'spec_helper'
+require 'bulkrax/entry_spec_helper'
 ENV['RAILS_ENV'] ||= 'test'
 require 'simplecov'
 SimpleCov.start
@@ -16,6 +17,11 @@ FactoryBot.definition_file_paths << File.join(File.dirname(__FILE__), 'factories
 FactoryBot.find_definitions
 
 Bulkrax.default_work_type = 'Work'
+
+# In Bulkrax 7+ we introduced a new object factory.  And we've been moving code
+# into that construct; namely code that involves the types of object's we're
+# working with.
+Bulkrax.object_factory = Bulkrax::ObjectFactory
 
 # Requires supporting ruby files with custom matchers and macros, etc, in
 # spec/support/ and its subdirectories. Files matching `spec/**/*_spec.rb` are
@@ -69,7 +75,7 @@ RSpec.configure do |config|
   end
 
   # Remove this line if you're not using ActiveRecord or ActiveRecord fixtures
-  config.fixture_path = "#{::Rails.root}/spec/fixtures"
+  config.fixture_path = Rails.root.join('spec', 'fixtures')
 
   # If you're not using ActiveRecord, or you'd prefer not to run each of your
   # examples within a transaction, remove the following line or assign false
