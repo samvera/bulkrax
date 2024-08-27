@@ -150,7 +150,7 @@ module Bulkrax
       end
     end
 
-    # The visibility of the record.  Acceptable values are: "open", "embaro", "lease", "authenticated", "restricted".  The default is "open"
+    # The visibility of the record.  Acceptable values are: "open", "embargo", "lease", "authenticated", "restricted".  The default is "open"
     #
     # @return [String]
     # @see https://github.com/samvera/hydra-head/blob/main/hydra-access-controls/app/models/concerns/hydra/access_controls/access_right.rb Hydra::AccessControls::AccessRight for details on the range of values.
