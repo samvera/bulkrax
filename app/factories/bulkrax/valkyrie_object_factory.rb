@@ -266,8 +266,8 @@ module Bulkrax
 
     def combined_files_with(remote_files:)
       thumbnail_url = HashWithIndifferentAccess.new(self.attributes)['thumbnail_url']
-      return [thumbnail_url] if remote_files.blank?
-      @combined_files ||= (thumbnail_url.present? ? remote_files + [thumbnail_url] : remote_files)
+      r = remote_files || []
+      thumbnail_url.present? ? r + [thumbnail_url] : r
     end
 
     def file_set_params_for(uploaded_files, combined_files)
