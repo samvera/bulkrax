@@ -217,7 +217,7 @@ module Bulkrax
       run
       # reload the object
       object = find
-      return object if object.persisted?
+      return object if object&.persisted?
 
       raise(ObjectFactoryInterface::RecordInvalid, object)
     end
@@ -252,8 +252,7 @@ module Bulkrax
       # NOTE: We do not add relationships here; that is part of the create relationships job.
       attrs = HashWithIndifferentAccess.new(attrs)
       perform_transaction_for(object: object, attrs: attrs) do
-        uploaded_files = uploaded_files_from(attrs)
-        file_set_params = file_set_params_for(uploaded_files, combined_files_with(remote_files: attrs["remote_files"]))
+        uploaded_files, file_set_params = prep_fileset_content(attrs)
         transactions["change_set.create_work"]
           .with_step_args(
             'work_resource.add_file_sets' => { uploaded_files: uploaded_files, file_set_params: file_set_params },
@@ -264,25 +263,57 @@ module Bulkrax
       end
     end
 
-    def combined_files_with(remote_files:)
+    ## Prepare fileset data in the required format for creating or updating a work
+    # TODO: Determine why attrs is different from attributes?
+    # TODO: Disabled s3 until we get additional details
+    def prep_fileset_content(attrs)
+      # combine remote_files + thumbnail_url [Array < { url:, file_name:, * }]
       thumbnail_url = HashWithIndifferentAccess.new(self.attributes)['thumbnail_url']
+      all_remote_files = merge_thumbnails(remote_files: attrs["remote_files"], thumbnail_url: thumbnail_url)
+      # combine local & remote files [Array < Hash &/or String]
+      all_local_files = self.attributes['file']
+      all_files = all_local_files + all_remote_files
+
+      # collect all uploaded files [Array < Hyrax::UploadedFile]
+      uploaded_local = uploaded_local_files(uploaded_files: attrs[:uploaded_files])
+      uploaded_remote = uploaded_remote_files(remote_files: all_remote_files)
+      # uploaded_s3 = uploaded_s3_files(remote_files: attrs[:remote_files])
+      uploaded_files = uploaded_local + uploaded_remote
+
+      # add in other attributes
+      file_set_params = file_set_params_for(uploads: uploaded_files, files: all_files)
+      # return data for filesets
+      [uploaded_files, file_set_params]
+    end
+
+    # supports using thumbnail_url to import a thumbnail separately from other remote_files
+    # in the format thumbnail_url: { url:, file_name: }
+    def merge_thumbnails(remote_files:, thumbnail_url:)
       r = remote_files || []
       thumbnail_url.present? ? r + [thumbnail_url] : r
     end
 
-    def file_set_params_for(uploaded_files, combined_files)
-      # handling remote files requires a filename to avoid the default carrierwave file name assignment.
-      # Here we tag along only the keys that are not 'url' or 'file_name' as file_set attributes.
-      # To have the additional attributes appear on the file_set, they must be:
-      # - included in the file_set_metadata.yaml
-      # - overriden in file_set_args from Hyrax::WorkUploadsHandler
-      additional_attributes = combined_files.map do |hash|
-        hash.reject { |key, _| key.to_s == 'url' || key.to_s == 'file_name' }
+    # formats file info and facilitates additional custom file_set attributes
+    # To have the additional attributes appear on the file_set, they must be:
+    # - included in the file_set_metadata.yaml
+    # - overridden in file_set_args from Hyrax::WorkUploadsHandler
+    # @param uploads [Array < Hyrax::UploadedFile]
+    # @param files [Array < Hash or String]
+    # @return [Array < Hash]
+    def file_set_params_for(uploads:, files:)
+      # remove url, file_name and paths from attributes
+      additional_attributes = files.map do |f|
+        case f
+        when String
+          {}
+        else
+          f.reject { |key, _| key.to_s == 'url' || key.to_s == 'file_name' }
+        end
       end
 
       file_attrs = []
-      uploaded_files.each_with_index do |f, index|
-        file_attrs << ({ uploaded_file_id: f["id"].to_s, filename: combined_files[index]["file_name"] }).merge(additional_attributes[index])
+      uploads.each_with_index do |f, index|
+        file_attrs << ({ uploaded_file_id: f["id"].to_s, filename: files[index]["file_name"] }).merge(additional_attributes[index])
       end
       file_attrs.compact.uniq
     end
@@ -355,8 +386,7 @@ module Bulkrax
     def update_work(attrs)
       attrs = HashWithIndifferentAccess.new(attrs)
       perform_transaction_for(object: object, attrs: attrs) do
-        uploaded_files = uploaded_files_from(attrs)
-        file_set_params = file_set_params_for(uploaded_files, combined_files_with(remote_files: attrs["remote_files"]))
+        uploaded_files, file_set_params = prep_fileset_content(attrs)
         transactions["change_set.update_work"]
           .with_step_args(
             'work_resource.add_file_sets' => { uploaded_files: uploaded_files, file_set_params: file_set_params },
@@ -377,20 +407,13 @@ module Bulkrax
       # TODO: Make it work
     end
 
-    def uploaded_files_from(attrs)
-      uploaded_local_files(uploaded_files: attrs[:uploaded_files]) +
-        # TODO: disabled until we get s3 details
-        # uploaded_s3_files(remote_files: attrs[:remote_files]) +
-        uploaded_remote_files(remote_files: attrs[:remote_files])
-    end
-
     def uploaded_local_files(uploaded_files: [])
       Array.wrap(uploaded_files).map do |file_id|
         Hyrax::UploadedFile.find(file_id)
       end
     end
 
-    def uploaded_s3_files(remote_files: {})
+    def uploaded_s3_files(remote_files: [])
       return [] if remote_files.blank?
 
       s3_bucket_name = ENV.fetch("STAGING_AREA_S3_BUCKET", "comet-staging-area-#{Rails.env}")
@@ -402,8 +425,8 @@ module Bulkrax
       end.compact
     end
 
-    def uploaded_remote_files(remote_files: {})
-      combined_files_with(remote_files: remote_files).map do |r|
+    def uploaded_remote_files(remote_files: [])
+      remote_files.map do |r|
         file_path = download_file(r["url"])
         next unless file_path
 
