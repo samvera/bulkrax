@@ -413,7 +413,7 @@ module Bulkrax
       end
     end
 
-    def uploaded_s3_files(remote_files: {})
+    def uploaded_s3_files(remote_files: [])
       return [] if remote_files.blank?
 
       s3_bucket_name = ENV.fetch("STAGING_AREA_S3_BUCKET", "comet-staging-area-#{Rails.env}")
@@ -425,7 +425,7 @@ module Bulkrax
       end.compact
     end
 
-    def uploaded_remote_files(remote_files: {})
+    def uploaded_remote_files(remote_files: [])
       remote_files.map do |r|
         file_path = download_file(r["url"])
         next unless file_path
