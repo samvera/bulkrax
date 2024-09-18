@@ -67,7 +67,7 @@ Blacklight.onLoad(function() {
         { "data": "name" },
         { "data": "status_message" },
         { "data": "created_at" },
-        { "data": "download" },
+        { "data": "download", "orderable": false },
         { "data": "actions", "orderable": false }
       ],
       initComplete: function () {

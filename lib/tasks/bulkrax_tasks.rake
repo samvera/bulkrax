@@ -141,4 +141,25 @@ namespace :bulkrax do
   rescue => e
     puts "(#{e.message})"
   end
+
+  desc "Resave importers"
+  task resave_importers: :environment do
+    if defined?(::Hyku)
+      Account.find_each do |account|
+        next if account.name == "search"
+        switch!(account)
+        puts "=============== updating #{account.name} ============"
+
+        resave_importers
+
+        puts "=============== finished updating #{account.name} ============"
+      end
+    else
+      resave_importers
+    end
+  end
+
+  def resave_importers
+    Bulkrax::Importer.find_each(&:save!)
+  end
 end
