@@ -18,6 +18,9 @@ module Bulkrax
 
     delegate :create_parent_child_relationships, :valid_import?, :write_errored_entries_file, :visibility, to: :parser
 
+    after_save :set_last_imported_at_from_importer_run
+    after_save :set_next_import_at_from_importer_run
+
     attr_accessor :only_updates, :file_style, :file
     attr_writer :current_run
 
@@ -246,6 +249,28 @@ module Bulkrax
       "#{self.id}_#{self.created_at.strftime('%Y%m%d%H%M%S')}_#{self.importer_runs.last.id}"
     rescue
       "#{self.id}_#{self.created_at.strftime('%Y%m%d%H%M%S')}"
+    end
+
+    private
+
+    # Adding this here since we can update the importer without running the importer.
+    # When we simply save the importer (as in just updating the importer from the options),
+    # it does not trigger the after_save callback in the importer_run.
+    def set_last_imported_at_from_importer_run
+      return if @skip_set_last_imported_at # Prevent infinite loop
+
+      @skip_set_last_imported_at = true
+      importer_runs.last&.set_last_imported_at
+      @skip_set_last_imported_at = false
+    end
+
+    # @see #set_last_imported_at_from_importer_run
+    def set_next_import_at_from_importer_run
+      return if @skip_set_next_import_at # Prevent infinite loop
+
+      @skip_set_next_import_at = true
+      importer_runs.last&.set_next_import_at
+      @skip_set_next_import_at = false
     end
   end
 end
