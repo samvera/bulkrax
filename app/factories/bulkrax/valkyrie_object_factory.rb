@@ -271,7 +271,7 @@ module Bulkrax
       thumbnail_url = HashWithIndifferentAccess.new(self.attributes)['thumbnail_url']
       all_remote_files = merge_thumbnails(remote_files: attrs["remote_files"], thumbnail_url: thumbnail_url)
       # combine local & remote files [Array < Hash &/or String]
-      all_local_files = self.attributes['file']
+      all_local_files = self.attributes['file'] || []
       all_files = all_local_files + all_remote_files
 
       # collect all uploaded files [Array < Hyrax::UploadedFile]
@@ -307,7 +307,9 @@ module Bulkrax
         when String
           {}
         else
-          f.reject { |key, _| key.to_s == 'url' || key.to_s == 'file_name' }
+          temp = f.reject { |key, _| key.to_s == 'url' || key.to_s == 'file_name' }
+          temp['import_url'] = f['url']
+          temp
         end
       end
 
