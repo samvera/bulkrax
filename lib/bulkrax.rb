@@ -98,7 +98,22 @@ module Bulkrax
     attr_writer :collection_model_class
 
     def collection_model_internal_resource
-      collection_model_class.try(:internal_resource) || collection_model_class.to_s
+      # WARN: Using #try on :internal_resource can yield unexpected results.
+      # If the method is undefined, it can return a truthy value instead of
+      # the typical nil.
+      #
+      # E.g.
+      # ```ruby
+      # Hyrax::FileSet.try(:internal_resource) || 'hi'
+      # => #<Dry::Types::Result::Failure input=:internal_resource error=...
+      # ```
+      ir = begin
+             collection_model_class.internal_resource
+           rescue NoMethodError
+             nil
+           end
+
+      ir.presence || collection_model_class.to_s
     end
 
     def file_model_class
@@ -108,7 +123,22 @@ module Bulkrax
     attr_writer :file_model_class
 
     def file_model_internal_resource
-      file_model_class.try(:internal_resource) || file_model_class.to_s
+      # WARN: Using #try on :internal_resource can yield unexpected results.
+      # If the method is undefined, it can return a truthy value instead of
+      # the typical nil.
+      #
+      # E.g.
+      # ```ruby
+      # Hyrax::FileSet.try(:internal_resource) || 'hi'
+      # => #<Dry::Types::Result::Failure input=:internal_resource error=...
+      # ```
+      ir = begin
+             file_model_class.internal_resource
+           rescue NoMethodError
+             nil
+           end
+
+      ir.presence || file_model_class.to_s
     end
 
     def curation_concerns
@@ -118,7 +148,24 @@ module Bulkrax
     attr_writer :curation_concerns
 
     def curation_concern_internal_resources
-      curation_concerns.map { |cc| cc.try(:internal_resource) || cc.to_s }.uniq
+      curation_concerns.map do |cc|
+        # WARN: Using #try on :internal_resource can yield unexpected results.
+        # If the method is undefined, it can return a truthy value instead of
+        # the typical nil.
+        #
+        # E.g.
+        # ```ruby
+        # Hyrax::FileSet.try(:internal_resource) || 'hi'
+        # => #<Dry::Types::Result::Failure input=:internal_resource error=...
+        # ```
+        ir = begin
+               cc.internal_resource
+             rescue NoMethodError
+               nil
+             end
+
+        ir.presence || cc.to_s
+      end.uniq
     end
 
     attr_writer :ingest_queue_name
