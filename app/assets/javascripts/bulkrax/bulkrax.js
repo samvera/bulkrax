@@ -19,4 +19,5 @@ $(document).on('turbolinks:load ready', function() {
     })
     return true
   })
+  $('#fileupload-bulkrax').hyraxUploader({maxNumberOfFiles: 1});
 });
