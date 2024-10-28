@@ -43,7 +43,46 @@
 
   <%= fi.input :file_style, collection: ['Upload a File', 'Specify a Path on the Server', 'Add Cloud File'], as: :radio_buttons, label: false %>
   <div id='file_upload'>
-    <%= fi.input 'file', as: :file, input_html: {accept: 'application/zip'} %><br />
+    <% if defined?(::Hyrax) %>
+      <div id="fileupload-bulkrax">
+        <noscript><input type="hidden" name="redirect" value="<%= main_app.root_path %>" /></noscript>
+        <table role="presentation" class="table table-striped"><tbody class="files"></tbody></table>
+        <div class="fileupload-buttonbar">
+          <div class="row">
+            <div class="col-12">
+              <div class="fileinput-button" id="add-files">
+                <input id="addfiles" type="file" style="display:none;" name="files[]" accept="text/csv,application/zip,application/gzip" />
+                <button type="button" class="btn btn-success" onclick="document.getElementById('addfiles').click();">
+                  <span class="fa fa-plus"></span>
+                  <span>Add Files</span>
+                </button>
+              </div>
+              <button type="reset" id="file-upload-cancel-btn" class="btn btn-warning cancel">
+                <span class="fa fa-ban"></span>
+                <span>Cancel Upload</span>
+              </button>
+              <span class="fileupload-process"></span>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-12">
+              <div class="fileupload-progress fade">
+                <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100">
+                  <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" style="width:0%;"></div>
+                </div>
+                <div class="progress-extended">&nbsp;</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="dropzone">
+          Drop files here to upload
+        </div>
+      </div>
+    <%= render 'hyrax/uploads/js_templates' %>    
+    <% else %>
+      <%= fi.input 'file', as: :file, input_html: {accept: 'application/zip'} %><br />
+    <% end %>
   </div>
   <div id='file_path'>
     <%= fi.input :import_file_path, as: :string, input_html: { value: importer.parser_fields['import_file_path'] } %>
@@ -54,3 +93,27 @@
     <% end %>
   </div>
 </div>
+
+<script type="text/javascript">
+  $(function() {
+    if ($('#fileupload-bulkrax').length) {
+      console.log('Initializing uploader on #fileupload-bulkrax');
+      $('#fileupload-bulkrax').hyraxUploader({
+        maxNumberOfFiles: 1,
+        add: function (e, data) {
+          console.log('Add event triggered with data:', data);
+          var that = this;
+          $.post('/uploads/', { files: [data.files[0].name] }, function (result) {
+            console.log('File post successful:', result);
+            data.formData = { id: result.files[0].id };
+            $.blueimp.fileupload.prototype.options.add.call(that, e, data);
+          }).fail(function() {
+            console.log('Error posting file');
+          });
+        }
+      }).on('fileuploadadded', function (e, data) {
+        console.log('File upload added event triggered with data:', data);
+      });
+    }
+  });
+</script>
