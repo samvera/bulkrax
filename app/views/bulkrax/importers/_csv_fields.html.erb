@@ -30,42 +30,7 @@
   
   <div id='file_upload'>
     <% if defined?(::Hyrax) %>
-      <div id="fileupload-bulkrax">
-        <noscript><input type="hidden" name="redirect" value="<%= main_app.root_path %>" /></noscript>
-        <table role="presentation" class="table table-striped"><tbody class="files"></tbody></table>
-        <div class="fileupload-buttonbar">
-          <div class="row">
-            <div class="col-12">
-              <div class="fileinput-button" id="add-files">
-                <input id="addfiles" type="file" style="display:none;" name="files[]" accept="text/csv,application/zip,application/gzip" />
-                <button type="button" class="btn btn-success" onclick="document.getElementById('addfiles').click();">
-                  <span class="fa fa-plus"></span>
-                  <span>Add Files</span>
-                </button>
-              </div>
-              <button type="reset" id="file-upload-cancel-btn" class="btn btn-warning cancel">
-                <span class="fa fa-ban"></span>
-                <span>Cancel Upload</span>
-              </button>
-              <span class="fileupload-process"></span>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-12">
-              <div class="fileupload-progress fade">
-                <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100">
-                  <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" style="width:0%;"></div>
-                </div>
-                <div class="progress-extended">&nbsp;</div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="dropzone">
-          Drop files here to upload
-        </div>
-      </div>
-      <%= render 'hyrax/uploads/js_templates' %>
+      <%= render 'bulkrax/importers/file_uploader', accepted_file_types: 'text/csv,application/zip,application/gzip' %>
     <% else %>
       <%= fi.input 'file', as: :file, input_html: { accept: 'text/csv,application/zip,application/gzip' } %><br />
     <% end %>
