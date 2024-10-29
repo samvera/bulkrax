@@ -20,40 +20,4 @@ $(document).on('turbolinks:load ready', function() {
     });
     return true;
   });
-
-  // Initialize the uploader
-  $('.fileupload-bulkrax').hyraxUploader({ maxNumberOfFiles: 1 });
-
-  // Function to toggle 'required' attribute based on uploaded files
-  function toggleRequiredAttribute() {
-    const fileInput = $('#addfiles');
-    const uploadedFilesTable = $('.fileupload-bulkrax tbody.files');
-
-    if (uploadedFilesTable.find('tr.template-download').length > 0) {
-      // Remove 'required' if there are uploaded files
-      fileInput.removeAttr('required');
-    } else {
-      // Add 'required' if no uploaded files
-      fileInput.attr('required', 'required');
-    }
-  }
-
-  // Check the required attribute when a file is added or removed
-  $('#addfiles').on('change', function() {
-    toggleRequiredAttribute();
-  });
-
-  // Also check when an upload completes or is canceled
-  $('.fileupload-bulkrax').on('fileuploadcompleted fileuploaddestroyed', function() {
-    toggleRequiredAttribute();
-  });
-
-  // Ensure 'required' is only added if there are no files on form reset
-  $('#file-upload-cancel-btn').on('click', function() {
-    $('#addfiles').attr('required', 'required');
-    $('#addfiles').val(''); // Clear file input to ensure 'required' behavior resets
-  });
-
-  // Initial check in case files are already uploaded
-  toggleRequiredAttribute();
 });
