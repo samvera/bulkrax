@@ -11,6 +11,8 @@ ENGINE_RAILS_ROOT = File.join(File.dirname(__FILE__), '../')
 # Prevent database truncation if the environment is production
 abort("The Rails environment is running in production mode!") if Rails.env.production?
 require 'rspec/rails'
+require 'rails-controller-testing'
+Rails::Controller::Testing.install
 # Add additional requires below this line. Rails is not loaded until this point!
 
 FactoryBot.definition_file_paths << File.join(File.dirname(__FILE__), 'factories')
