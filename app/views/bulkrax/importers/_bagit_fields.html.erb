@@ -61,28 +61,3 @@
     <% end %>
   </div>
 </div>
-
-<!-- Uploader initialization script -->
-<script type="text/javascript">
-  $(function() {
-    if ($('#fileupload-bulkrax').length) {
-      // console.log('Initializing uploader on #fileupload-bulkrax');
-      $('#fileupload-bulkrax').hyraxUploader({
-        maxNumberOfFiles: 1,
-        add: function (e, data) {
-          console.log('Add event triggered with data:', data);
-          var that = this;
-          $.post('/uploads/', { files: [data.files[0].name] }, function (result) {
-            console.log('File post successful:', result);
-            data.formData = { id: result.files[0].id };
-            $.blueimp.fileupload.prototype.options.add.call(that, e, data);
-          }).fail(function() {
-            console.log('Error posting file');
-          });
-        }
-      }).on('fileuploadadded', function (e, data) {
-        // console.log('File upload added event triggered with data:', data);
-      });
-    }
-  });
-</script>

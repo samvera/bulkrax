@@ -1,11 +1,11 @@
-<div id="fileupload-bulkrax">
+<div class="fileupload-bulkrax">
   <noscript><input type="hidden" name="redirect" value="<%= main_app.root_path %>" /></noscript>
   <table role="presentation" class="table table-striped"><tbody class="files"></tbody></table>
   <div class="fileupload-buttonbar">
     <div class="row">
       <div class="col-12">
         <div class="fileinput-button" id="add-files">
-          <input id="addfiles" type="file" style="display:none;" name="files[]" 
+          <input id="addfiles" type="file" style="display:none;" name="files[]"
                  accept="<%= accepted_file_types || 'text/csv,application/zip,application/gzip' %>" multiple />
           <button type="button" class="btn btn-success" onclick="document.getElementById('addfiles').click();">
             <span class="fa fa-plus"></span>
