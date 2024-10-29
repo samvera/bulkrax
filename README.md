@@ -24,6 +24,14 @@ $ rails db:migrate
 
 If using Sidekiq, set up queues for `import` and `export`.
 
+### Bundle errors on ARM
+
+If posix-spawn is failing to bundle on an ARM based processor, try the following
+
+`bundle config build.posix-spawn --with-cflags="-Wno-incompatible-function-pointer-types"`
+
+Then rebundle. See https://github.com/rtomayko/posix-spawn/issues/92
+
 ### Manual Installation
 
 Add this line to your application's Gemfile:
