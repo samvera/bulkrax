@@ -78,6 +78,7 @@ module Bulkrax
 
     # POST /importers
     # rubocop:disable Metrics/MethodLength
+    # rubocop:disable Metrics/AbcSize
     def create
       # rubocop:disable Style/IfInsideElse
       if api_request?
@@ -113,6 +114,7 @@ module Bulkrax
       end
       # rubocop:enable Style/IfInsideElse
     end
+    # rubocop:enable Metrics/AbcSize
 
     # PATCH/PUT /importers/1
     # # @todo refactor so as to not need to disable rubocop
@@ -240,7 +242,6 @@ module Bulkrax
 
       @importer.save
     end
-    
 
     # Use callbacks to share common setup or constraints between actions.
     def set_importer

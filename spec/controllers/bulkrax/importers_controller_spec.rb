@@ -132,15 +132,16 @@ module Bulkrax
         end
       end
 
-      let(:file) { fixture_file_upload('./spec/fixtures/files/ok.csv') }
-      let(:uploaded_file) { Hyrax::UploadedFile.create(file: file) }
-      
+      let(:user) { FactoryBot.create(:user) }
+      let(:file) { fixture_file_upload('./spec/fixtures/csv/ok.csv') }
+      let(:uploaded_file) { Hyrax::UploadedFile.create(file: file, user: user) }
+
       context 'with file uploads' do
         it 'assigns uploaded files correctly during creation' do
           post :create, params: { importer: valid_attributes, uploaded_files: [uploaded_file.id] }, session: valid_session
           expect(assigns(:importer).parser_fields['import_file_path']).to be_present
         end
-      
+
         it 'assigns uploaded files correctly during update' do
           importer = Importer.create! valid_attributes
           put :update, params: { id: importer.to_param, importer: valid_attributes, uploaded_files: [uploaded_file.id] }, session: valid_session
@@ -183,15 +184,16 @@ module Bulkrax
         end
       end
 
-      let(:file) { fixture_file_upload('./spec/fixtures/files/ok.csv') }
-      let(:uploaded_file) { Hyrax::UploadedFile.create(file: file) }
-      
+      let(:user) { FactoryBot.create(:user) }
+      let(:file) { fixture_file_upload('./spec/fixtures/csv/ok.csv') }
+      let(:uploaded_file) { Hyrax::UploadedFile.create(file: file, user: user) }
+
       context 'with file uploads' do
         it 'assigns uploaded files correctly during creation' do
           post :create, params: { importer: valid_attributes, uploaded_files: [uploaded_file.id] }, session: valid_session
           expect(assigns(:importer).parser_fields['import_file_path']).to be_present
         end
-      
+
         it 'assigns uploaded files correctly during update' do
           importer = Importer.create! valid_attributes
           put :update, params: { id: importer.to_param, importer: valid_attributes, uploaded_files: [uploaded_file.id] }, session: valid_session

@@ -32,6 +32,10 @@ group :development, :test do
   gem 'sqlite3', '~> 1.4'
 end
 
+group :test do
+  gem 'rails-controller-testing'
+end
+
 group :lint do
   gem 'bixby'
   gem 'rubocop-factory_bot', require: false
