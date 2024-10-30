@@ -12,3 +12,4 @@ spec/test_app/log/*.log
 spec/test_app/tmp/
 tmp/**
 *~undo-tree~
+/vendor

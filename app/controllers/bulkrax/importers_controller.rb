@@ -78,11 +78,13 @@ module Bulkrax
 
     # POST /importers
     # rubocop:disable Metrics/MethodLength
+    # rubocop:disable Metrics/AbcSize
     def create
       # rubocop:disable Style/IfInsideElse
       if api_request?
         return return_json_response unless valid_create_params?
       end
+      uploads = Hyrax::UploadedFile.find(params[:uploaded_files]) if params[:uploaded_files].present?
       file = file_param
       cloud_files = cloud_params
 
@@ -93,7 +95,7 @@ module Bulkrax
       # on a new import otherwise it only gets updated during the update path
       @importer.parser_fields['update_files'] = true if params[:commit] == 'Create and Import'
       if @importer.save
-        files_for_import(file, cloud_files)
+        files_for_import(file, cloud_files, uploads)
         if params[:commit] == 'Create and Import'
           Bulkrax::ImporterJob.send(@importer.parser.perform_method, @importer.id)
           render_request('Importer was successfully created and import has been queued.')
@@ -112,6 +114,7 @@ module Bulkrax
       end
       # rubocop:enable Style/IfInsideElse
     end
+    # rubocop:enable Metrics/AbcSize
 
     # PATCH/PUT /importers/1
     # # @todo refactor so as to not need to disable rubocop
@@ -120,7 +123,7 @@ module Bulkrax
       if api_request?
         return return_json_response unless valid_update_params?
       end
-
+      uploads = Hyrax::UploadedFile.find(params[:uploaded_files]) if params[:uploaded_files].present?
       file = file_param
       cloud_files = cloud_params
 
@@ -128,7 +131,7 @@ module Bulkrax
       field_mapping_params if params[:importer][:parser_fields].present?
 
       if @importer.update(importer_params)
-        files_for_import(file, cloud_files) unless file.nil? && cloud_files.nil?
+        files_for_import(file, cloud_files, uploads)
         # do not perform the import
         unless params[:commit] == 'Update Importer'
           set_files_parser_fields
@@ -218,8 +221,9 @@ module Bulkrax
 
     private
 
-    def files_for_import(file, cloud_files)
-      return if file.blank? && cloud_files.blank?
+    def files_for_import(file, cloud_files, uploads)
+      return if file.blank? && cloud_files.blank? && uploads.blank?
+
       @importer[:parser_fields]['import_file_path'] = @importer.parser.write_import_file(file) if file.present?
       if cloud_files.present?
         @importer[:parser_fields]['cloud_file_paths'] = cloud_files
@@ -229,6 +233,13 @@ module Bulkrax
         target = @importer.parser.retrieve_cloud_files(cloud_files, @importer)
         @importer[:parser_fields]['import_file_path'] = target if target.present?
       end
+
+      if uploads.present?
+        uploads.each do |upload|
+          @importer[:parser_fields]['import_file_path'] = @importer.parser.write_import_file(upload.file.file)
+        end
+      end
+
       @importer.save
     end
 

@@ -41,9 +41,16 @@
   <p>File upload and Cloud File upload must be a Zip file containing a single BagIt Bag, or a folder containing multiple BagIt Bags.</p>
   <p>The Server Path can point to a BagIt Bag, a folder containing BagIt Bags, or a zip file containing either.</p>
 
-  <%= fi.input :file_style, collection: ['Upload a File', 'Specify a Path on the Server', 'Add Cloud File'], as: :radio_buttons, label: false %>
+<%= fi.input :file_style,
+  collection: ['Upload a File', 'Specify a Path on the Server'] +
+              (defined?(::Hyrax) && Hyrax.config.browse_everything? ? ['Add Cloud File'] : []),
+  as: :radio_buttons, label: false %>
   <div id='file_upload'>
-    <%= fi.input 'file', as: :file, input_html: {accept: 'application/zip'} %><br />
+    <% if defined?(::Hyrax) %>
+      <%= render 'bulkrax/importers/file_uploader', accepted_file_types: 'application/zip' %>
+    <% else %>
+      <%= fi.input 'file', as: :file, input_html: {accept: 'application/zip'} %><br />
+    <% end %>
   </div>
   <div id='file_path'>
     <%= fi.input :import_file_path, as: :string, input_html: { value: importer.parser_fields['import_file_path'] } %>

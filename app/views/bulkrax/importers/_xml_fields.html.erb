@@ -47,16 +47,22 @@
   <p>File upload and Cloud File upload MUST be a either a single XML file (for metadata only import) OR a Zip file containing the XML files and data files, each in a separate folder.</p>
   <p>The Server Path can point to a folder containing XML files and data files to import, or direct to the XML file itself.</p>
 
-  <%= fi.input :file_style, collection: ['Upload a File', 'Specify a Path on the Server', 'Add Cloud File'], as: :radio_buttons, label: false %>
+<%= fi.input :file_style,
+  collection: ['Upload a File', 'Specify a Path on the Server'] +
+              (defined?(::Hyrax) && Hyrax.config.browse_everything? ? ['Add Cloud File'] : []),
+  as: :radio_buttons, label: false %>
   <div id='file_upload'>
-    <%= fi.input 'file', as: :file, input_html: {accept: ['application/zip', 'application/xml']} %><br />
+    <% if defined?(::Hyrax) %>
+      <%= render 'bulkrax/importers/file_uploader', accepted_file_types: 'application/zip,application/xml' %>
+    <% else %>
+      <%= fi.input 'file', as: :file, input_html: {accept: ['application/zip', 'application/xml']} %><br />
+    <% end%>
   </div>
   <div id='file_path'>
     <%= fi.input :import_file_path, as: :string, input_html: { value: importer.parser_fields['import_file_path'] } %>
   </div>
   <div id='cloud'>
     <% if defined?(::Hyrax) && Hyrax.config.browse_everything? %>
-      <%= render 'browse_everything', form: form %>
     <% end %>
   </div>
 </div>
