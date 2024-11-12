@@ -129,7 +129,7 @@ module Bulkrax
     def add_file
       self.parsed_metadata['file'] ||= []
       if record['file']&.is_a?(String)
-        self.parsed_metadata['file'] = record['file'].split(Bulkrax.multi_value_element_split_on)
+        self.parsed_metadata['file'] = record['file'].split(parser.multi_value_element_split_on)
       elsif record['file'].is_a?(Array)
         self.parsed_metadata['file'] = record['file']
       end
@@ -350,7 +350,7 @@ module Bulkrax
       return [] unless parent_field_mapping.present? && record[parent_field_mapping].present?
 
       identifiers = []
-      split_references = record[parent_field_mapping].split(Bulkrax.multi_value_element_split_on)
+      split_references = record[parent_field_mapping].split(parser.multi_value_element_split_on)
       split_references.each do |c_reference|
         matching_collection_entries = importerexporter.entries.select do |e|
           (e.raw_metadata&.[](source_identifier) == c_reference) &&

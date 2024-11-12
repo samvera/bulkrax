@@ -34,6 +34,10 @@ module Bulkrax
       true
     end
 
+    def self.multi_value_element_split_on
+      Bulkrax.multi_value_element_split_on
+    end
+
     def initialize(importerexporter)
       @importerexporter = importerexporter
       @headers = []
