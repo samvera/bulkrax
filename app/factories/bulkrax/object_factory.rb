@@ -165,7 +165,7 @@ module Bulkrax
     end
 
     def delete(_user)
-      find&.delete
+      find&.delete(eradicate: true)
     end
 
     private
