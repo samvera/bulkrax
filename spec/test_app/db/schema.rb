@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2024_03_07_053156) do
+ActiveRecord::Schema.define(version: 2024_09_16_182823) do
 
   create_table "accounts", force: :cascade do |t|
     t.string "name"
@@ -101,8 +101,6 @@ ActiveRecord::Schema.define(version: 2024_03_07_053156) do
     t.integer "total_file_set_entries", default: 0
     t.integer "processed_works", default: 0
     t.integer "failed_works", default: 0
-    t.integer "processed_children", default: 0
-    t.integer "failed_children", default: 0
     t.index ["importer_id"], name: "index_bulkrax_importer_runs_on_importer_id"
   end
 
@@ -121,6 +119,8 @@ ActiveRecord::Schema.define(version: 2024_03_07_053156) do
     t.datetime "last_error_at"
     t.datetime "last_succeeded_at"
     t.string "status_message", default: "Pending"
+    t.datetime "last_imported_at"
+    t.datetime "next_import_at"
     t.index ["user_id"], name: "index_bulkrax_importers_on_user_id"
   end
 
@@ -131,6 +131,7 @@ ActiveRecord::Schema.define(version: 2024_03_07_053156) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "order", default: 0
+    t.string "status_message", default: "Pending"
     t.index ["child_id"], name: "index_bulkrax_pending_relationships_on_child_id"
     t.index ["importer_run_id"], name: "index_bulkrax_pending_relationships_on_importer_run_id"
     t.index ["parent_id"], name: "index_bulkrax_pending_relationships_on_parent_id"
@@ -581,6 +582,7 @@ ActiveRecord::Schema.define(version: 2024_03_07_053156) do
     t.string "file_set_uri"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "filename"
     t.index ["file_set_uri"], name: "index_uploaded_files_on_file_set_uri"
     t.index ["user_id"], name: "index_uploaded_files_on_user_id"
   end
