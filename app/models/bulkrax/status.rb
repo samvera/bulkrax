@@ -2,7 +2,7 @@
 
 module Bulkrax
   class Status < ApplicationRecord
-    belongs_to :statusable, polymorphic: true, denormalize: { fields: %i[status_message], if: :latest? }
+    belongs_to :statusable, polymorphic: true, denormalize: { fields: %i[status_message error_class], if: :latest? }
     belongs_to :runnable, polymorphic: true
     serialize :error_backtrace, Array
 
