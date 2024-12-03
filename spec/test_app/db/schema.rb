@@ -79,6 +79,7 @@ ActiveRecord::Schema.define(version: 2024_12_03_010707) do
     t.boolean "include_thumbnails", default: false
     t.boolean "generated_metadata", default: false
     t.string "status_message", default: "Pending"
+    t.string "error_class"
     t.index ["user_id"], name: "index_bulkrax_exporters_on_user_id"
   end
 
@@ -102,6 +103,8 @@ ActiveRecord::Schema.define(version: 2024_12_03_010707) do
     t.integer "total_file_set_entries", default: 0
     t.integer "processed_works", default: 0
     t.integer "failed_works", default: 0
+    t.integer "processed_children", default: 0
+    t.integer "failed_children", default: 0
     t.index ["importer_id"], name: "index_bulkrax_importer_runs_on_importer_id"
   end
 
@@ -122,6 +125,7 @@ ActiveRecord::Schema.define(version: 2024_12_03_010707) do
     t.string "status_message", default: "Pending"
     t.datetime "last_imported_at"
     t.datetime "next_import_at"
+    t.string "error_class"
     t.index ["user_id"], name: "index_bulkrax_importers_on_user_id"
   end
 
