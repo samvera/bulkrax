@@ -9,7 +9,7 @@ namespace :bulkrax do
                                    progress_mark: ' ',
                                    remainder_mark: "\u{FF65}")
     Bulkrax::Status.latest_by_statusable.includes(:statusable).find_each do |status|
-      status.statusable.update(status_message: status.status_message)
+      status.statusable.update(status_message: status.status_message, error_class: status.error_class)
       @progress.increment
     end
   end
