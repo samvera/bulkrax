@@ -132,7 +132,7 @@ module Bulkrax
           status_message: status_message_for(e),
           type: e.type,
           updated_at: e.updated_at,
-          errors: e.latest_status&.error_class&.present? ? view_context.link_to(e.latest_status.error_class, view_context.item_entry_path(item, e), title: e.latest_status.error_message) : "",
+          errors: e.status_message == 'Failed' ? view_context.link_to(e.error_class, view_context.item_entry_path(item, e)) : "",
           actions: entry_util_links(e, item)
         }
       end
