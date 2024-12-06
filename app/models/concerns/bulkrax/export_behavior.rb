@@ -32,7 +32,7 @@ module Bulkrax
         mime = ::Marcel::MimeType.for(file_set.original_file.file.io)
       else # original non valkyrie version
         fn = file_set.original_file.file_name.first
-        mime = ::Marcel::MimeType.for(file_set.original_file.mime_type)
+        mime = ::Marcel::MimeType.for(declared_type: file_set.original_file.mime_type)
       end
       ext_mime = ::Marcel::MimeType.for(name: fn)
       if fn.include?(file_set.id) || importerexporter.metadata_only?
