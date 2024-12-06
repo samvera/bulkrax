@@ -26,11 +26,15 @@ module Bulkrax
 
     # Prepend the file_set id to ensure a unique filename and also one that is not longer than 255 characters
     def filename(file_set)
-      # NOTE: Will this work with Valkyrie?
       return if file_set.original_file.blank?
-      fn = file_set.original_file.file_name.first
-      mime = ::Marcel::MimeType.for(file_set.original_file.mime_type)
-      ext_mime = ::Marcel::MimeType.for(file_set.original_file.file_name)
+      if file_set.original_file.respond_to?(:original_filename) # valkyrie
+        fn = file_set.original_file.original_filename
+        mime = ::Marcel::MimeType.for(file_set.original_file.file.io)
+      else # original non valkyrie version
+        fn = file_set.original_file.file_name.first
+        mime = ::Marcel::MimeType.for(declared_type: file_set.original_file.mime_type)
+      end
+      ext_mime = ::Marcel::MimeType.for(name: fn)
       if fn.include?(file_set.id) || importerexporter.metadata_only?
         filename = "#{fn}.#{mime.to_sym}"
         filename = fn if mime.to_s == ext_mime.to_s
