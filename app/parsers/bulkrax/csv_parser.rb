@@ -255,7 +255,7 @@ module Bulkrax
         file = filename(fs)
         next if file.blank? || fs.original_file.blank?
 
-        io = fs.original_file.respond_to?(:uri) ? fs.original_file.uri : fs.original_file.file.io
+        io = fs.original_file.respond_to?(:uri) ? open(fs.original_file.uri) : fs.original_file.file.io
         File.open(File.join(path, file), 'wb') do |f|
           f.write(io.read)
           f.close
