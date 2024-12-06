@@ -29,7 +29,7 @@ module Bulkrax
       return if file_set.original_file.blank?
       if file_set.original_file.respond_to?(:original_filename) # valkyrie
         fn = file_set.original_file.original_filename
-        mime =::Marcel::MimeType.for(file_set.original_file.file.io)
+        mime = ::Marcel::MimeType.for(file_set.original_file.file.io)
       else # original non valkyrie version
         fn = file_set.original_file.file_name.first
         mime = ::Marcel::MimeType.for(file_set.original_file.mime_type)
