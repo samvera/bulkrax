@@ -165,7 +165,10 @@ module Bulkrax
     end
 
     def delete(_user)
-      find&.delete(eradicate: true)
+      obj = find
+      return false unless obj
+
+      obj.delete(eradicate: true)
     end
 
     private
