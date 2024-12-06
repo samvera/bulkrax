@@ -244,15 +244,19 @@ module Bulkrax
       record = Bulkrax.object_factory.find(identifier)
       return unless record
 
-      file_sets = record.file_set? ? Array.wrap(record) : record.file_sets
+      if record.file_set?
+        file_sets = Array.wrap(record)
+      else # for valkyrie
+        file_sets = record.respond_to?(:file_sets) ? record.file_sets : record.members&.select{|m| m.file_set?}
+      end
       file_sets << record.thumbnail if exporter.include_thumbnails && record.thumbnail.present? && record.work?
       file_sets.each do |fs|
         path = File.join(exporter_export_path, folder_count, 'files')
         FileUtils.mkdir_p(path) unless File.exist? path
         file = filename(fs)
         next if file.blank? || fs.original_file.blank?
-
-        io = open(fs.original_file.uri)
+        byebug
+        io = fs.original_file.respond_to?(:uri) ? (fs.original_file.uri) : fs.original_file.file.io
         File.open(File.join(path, file), 'wb') do |f|
           f.write(io.read)
           f.close
