@@ -92,7 +92,7 @@ module Bulkrax
     end
 
     def collection_model_class
-      @collection_model_class ||= Collection
+      @collection_model_class ||= Collection if defined?(::Hyrax)
     end
 
     attr_writer :collection_model_class
