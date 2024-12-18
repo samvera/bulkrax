@@ -2,8 +2,8 @@
   <h1><span class='fa fa-cloud-upload' aria-hidden='true'></span> Upload Corrected Entries: <%= @importer.name %></h1>
 </div>
 
-<div class='panel panel-default'>
-  <div class='panel-body'>
+<div class='panel card panel-default'>
+  <div class='panel-body card-body'>
     <p>
     Upload <b>only</b> the corrected entries for the <b><%= @importer.name %></b> importer. To export failed entries for correction,
     <%= link_to importer_export_errors_path(@importer.id) do %>
