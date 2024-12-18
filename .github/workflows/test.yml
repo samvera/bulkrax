@@ -24,7 +24,7 @@ jobs:
           key: ${{ matrix.ruby }}
 
       - name: Setup Ruby
-        uses: ruby/setup-ruby@v1.159.0
+        uses: ruby/setup-ruby@v1.204.0
         with:
           ruby-version: ${{ matrix.ruby }}
 
