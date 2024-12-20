@@ -81,7 +81,8 @@ module Bulkrax
       return false unless field_supported?(field: field, model: model)
 
       if model.respond_to?(:schema)
-        dry_type = model.schema.key(field.to_sym)
+        schema = model.new.singleton_class.schema || model.schema
+        dry_type = schema.key(field.to_sym)
         return true if dry_type.respond_to?(:primitive) && dry_type.primitive == Array
 
         false
@@ -193,7 +194,8 @@ module Bulkrax
       @schema_properties_map ||= {}
 
       klass_key = klass.name
-      @schema_properties_map[klass_key] = klass.schema.map { |k| k.name.to_s } unless @schema_properties_map.key?(klass_key)
+      schema = klass.new.singleton_class.schema || klass.schema
+      @schema_properties_map[klass_key] = schema.map { |k| k.name.to_s } unless @schema_properties_map.key?(klass_key)
 
       @schema_properties_map[klass_key]
     end
