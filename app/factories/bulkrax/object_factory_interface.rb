@@ -319,9 +319,9 @@ module Bulkrax
     #
     # @return [Object] when we've found the object by the entry's :id or by it's
     #         source_identifier
-    # @return [FalseClass] when we cannot find the object.
+    # @return [NilClass] when we cannot find the object.
     def find
-      find_by_id || search_by_identifier || false
+      find_by_id || search_by_identifier || nil
     end
 
     ##
