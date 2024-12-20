@@ -7,7 +7,7 @@
     <div class="panel card panel-default importer-form">
       <%= simple_form_for @importer, html: { multipart: true } do |form| %>
         <%= render 'form', importer: @importer, form: form %>
-        <div class="panel-footer card-footer">
+        <div class="panel-footer card-footer bulkrax-card-footer">
           <div class='pull-right'>
             <% if ENV['SHOW_CREATE_AND_VALIDATE'] == 'true' %>
               <%= form.button :submit, value: 'Create and Validate', class: 'btn btn-primary' %>
