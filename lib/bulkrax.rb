@@ -39,8 +39,6 @@ module Bulkrax
                   :field_mappings,
                   :generated_metadata_mapping,
                   :import_path,
-                  :multi_value_element_join_on,
-                  :multi_value_element_split_on,
                   :object_factory,
                   :parsers,
                   :qa_controlled_properties,
@@ -175,6 +173,33 @@ module Bulkrax
       ENV.key?("REDIS_HOST")
     end
     alias use_locking? use_locking
+
+    DEFAULT_MULTI_VALUE_ELEMENT_JOIN_ON = ' | '
+    # Specify the delimiter for joining an attribute's multi-value array into a string.
+    #
+    # @note the specific delimiter should likely be present in the multi_value_element_split_on
+    #       expression.
+    def multi_value_element_join_on
+      @multi_value_element_join_on ||= DEFAULT_MULTI_VALUE_ELEMENT_JOIN_ON
+    end
+
+    attr_writer :multi_value_element_split_on
+
+    DEFAULT_MULTI_VALUE_ELEMENT_SPLIT_ON = /\s*[:;|]\s*/.freeze
+    # @return [RegexClass] the regular express to use to "split" an attribute's values.  If set to
+    # `true` use the DEFAULT_MULTI_VALUE_ELEMENT_JOIN_ON.
+    #
+    # @note The "true" value is to preserve backwards compatibility.
+    # @see DEFAULT_MULTI_VALUE_ELEMENT_JOIN_ON
+    def multi_value_element_split_on
+      if @multi_value_element_split_on.is_a?(TrueClass)
+        DEFAULT_MULTI_VALUE_ELEMENT_SPLIT_ON
+      else
+        @multi_value_element_split_on ||= DEFAULT_MULTI_VALUE_ELEMENT_SPLIT_ON
+      end
+    end
+
+    attr_writer :multi_value_element_join_on
   end
 
   def config
@@ -359,29 +384,6 @@ module Bulkrax
         ).result
       )
     )
-  end
-
-  DEFAULT_MULTI_VALUE_ELEMENT_JOIN_ON = ' | '
-  # Specify the delimiter for joining an attribute's multi-value array into a string.
-  #
-  # @note the specific delimiter should likely be present in the multi_value_element_split_on
-  #       expression.
-  def multi_value_element_join_on
-    @multi_value_element_join_on ||= DEFAULT_MULTI_VALUE_ELEMENT_JOIN_ON
-  end
-
-  DEFAULT_MULTI_VALUE_ELEMENT_SPLIT_ON = /\s*[:;|]\s*/.freeze
-  # @return [RegexClass] the regular express to use to "split" an attribute's values.  If set to
-  # `true` use the DEFAULT_MULTI_VALUE_ELEMENT_JOIN_ON.
-  #
-  # @note The "true" value is to preserve backwards compatibility.
-  # @see DEFAULT_MULTI_VALUE_ELEMENT_JOIN_ON
-  def multi_value_element_split_on
-    if @multi_value_element_join_on.is_a?(TrueClass)
-      DEFAULT_MULTI_VALUE_ELEMENT_SPLIT_ON
-    else
-      @multi_value_element_split_on ||= DEFAULT_MULTI_VALUE_ELEMENT_SPLIT_ON
-    end
   end
 
   # Responsible for stripping hidden characters from the given string.
