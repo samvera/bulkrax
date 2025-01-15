@@ -2,6 +2,10 @@
 // All this logic will automatically be available in application.js.
 
 function prepBulkrax(event) {
+  if($('form#new_importer').length < 1) {
+    return true;
+  }
+
   var refresh_button = $('.refresh-set-source');
   var base_url = $('#importer_parser_fields_base_url');
   var initial_base_url = base_url.val();
