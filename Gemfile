@@ -16,7 +16,14 @@ gem 'blacklight'
 gem 'bootstrap-sass', '~> 3.4.1'
 gem 'coderay'
 gem 'factory_bot_rails'
-gem 'hyrax', '>= 2.3'
+
+# Conditional logic based on Ruby version
+if RUBY_VERSION >= '3.0.0'
+  gem 'hyrax', '>= 2.3'
+else
+  gem 'hyrax', '~> 4.0'
+end
+
 gem 'oai'
 gem 'rsolr', '>= 1.0'
 gem 'rspec-rails'
