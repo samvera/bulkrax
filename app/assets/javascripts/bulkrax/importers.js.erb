@@ -2,7 +2,7 @@
 // All this logic will automatically be available in application.js.
 
 function prepBulkrax(event) {
-  if($('form#new_importer').length < 1) {
+  if($('form#new_importer, form.edit_importer').length < 1) {
     return true;
   }
 
