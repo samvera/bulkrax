@@ -3,6 +3,10 @@ Blacklight.onLoad(function() {
     $('#importer-show-table').DataTable( {
       'processing': true,
       'serverSide': true,
+      'width': '100%',
+      'autoWidth': false,
+      'scrollX': true,
+      'scrollCollapse': true,
       "ajax": window.location.href.replace(/(\/(importers|exporters)\/\d+)/, "$1/entry_table.json"),
       "pageLength": 30,
       "lengthMenu": [[30, 100, 200], [30, 100, 200]],
@@ -15,6 +19,14 @@ Blacklight.onLoad(function() {
         { "data": "errors", "orderable": false },
         { "data": "actions", "orderable": false }
       ],
+      drawCallback: function() {
+        // Remove the inline styles that DataTables adds to the scrollHeadInner and table elements
+        // it's not perfect but better than the style being applied
+        setTimeout(function() {
+          $('.dataTables_scrollHeadInner').removeAttr('style');
+          $('.table.table-striped.dataTable.no-footer').removeAttr('style');
+        }, 100);
+      },
       initComplete: function () {
         // Add entry class filter
         entrySelect.bind(this)()

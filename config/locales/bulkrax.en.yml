@@ -1,9 +1,9 @@
 en:
-  helpers: 
-    action: 
+  helpers:
+    action:
       importer:
         new: "New"
-      exporter: 
+      exporter:
         new: "New"
   bulkrax:
     admin:
@@ -75,6 +75,8 @@ en:
         identifier: Identifier
         entry_id: Entry ID
         status: Status
+        type: Type
+        updated_at: Updated At
         errors: Errors
         status_set_at: Status Set At
         actions: Actions
