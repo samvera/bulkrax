@@ -379,7 +379,10 @@ module Bulkrax
     # We expect a single CSV at the top level of the zip in the CSVParser
     # but we are willing to go look for it if need be
     def real_import_file_path
-      return Dir["#{importer_unzip_path}/**/*.csv"].reject { |path| in_files_dir?(path) }.first if file? && zip?
+      if file? && zip?
+        csv_files = Dir["#{importer_unzip_path}/**/*.csv"].reject { |path| in_files_dir?(path) }
+        return csv_files.first if csv_files.any?
+      end
 
       parser_fields['import_file_path']
     end
