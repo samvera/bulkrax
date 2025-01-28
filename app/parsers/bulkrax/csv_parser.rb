@@ -360,6 +360,10 @@ module Bulkrax
       @path_to_files = File.join(
           zip? ? importer_unzip_path : File.dirname(import_file_path), 'files', filename
         )
+
+      return @path_to_files if File.exist?(@path_to_files)
+
+      File.join(importer_unzip_path, 'files', filename) if file? && zip?
     end
 
     private
