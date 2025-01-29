@@ -239,6 +239,14 @@ module Bulkrax
     # If the import data is zipped, unzip it to this path
     def importer_unzip_path
       @importer_unzip_path ||= File.join(parser.base_path, "import_#{path_string}")
+      return @importer_unzip_path if Dir.exist?(@importer_unzip_path)
+
+      # turns "tmp/imports/tenant/import_1_20250122035229_1" to "tmp/imports/tenant/import_1_20250122035229"
+      base_importer_unzip_path = @importer_unzip_path.split('_')[0...-1].join('_')
+
+      # If we don't have an existing unzip path, we'll try and find it.
+      # Just in case there are multiple paths, we sort by the number at the end of the path and get the last one
+      @importer_unzip_path = Dir.glob(base_importer_unzip_path + '*').sort_by { |path| path.split(base_importer_unzip_path).last[1..-1].to_i }.last
     end
 
     def errored_entries_csv_path
