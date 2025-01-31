@@ -237,9 +237,9 @@ module Bulkrax
     # end
 
     # If the import data is zipped, unzip it to this path
-    def importer_unzip_path
+    def importer_unzip_path(mkdir: false)
       @importer_unzip_path ||= File.join(parser.base_path, "import_#{path_string}")
-      return @importer_unzip_path if Dir.exist?(@importer_unzip_path)
+      return @importer_unzip_path if Dir.exist?(@importer_unzip_path) || mkdir == true
 
       # turns "tmp/imports/tenant/import_1_20250122035229_1" to "tmp/imports/tenant/import_1_20250122035229"
       base_importer_unzip_path = @importer_unzip_path.split('_')[0...-1].join('_')
