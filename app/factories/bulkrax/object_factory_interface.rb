@@ -53,7 +53,7 @@ module Bulkrax
     # @param user [User]
     # @see Bulkrax.collection_model_class
     def self.add_user_to_collection_permissions(collection:, user:)
-      return unless collection.is_a?(Bulkrax.collection_model_class)
+      return unless collection.is_a?(Bulkrax.collection_model_class.to_s.constantize)
       return unless defined?(Hyrax)
 
       permission_template = Hyrax::PermissionTemplate.find_or_create_by!(source_id: collection.id)
@@ -296,9 +296,9 @@ module Bulkrax
       conditionally_set_reindex_extent
       run_callbacks :save do
         run_callbacks :create do
-          if klass == Bulkrax.collection_model_class
+          if klass == Bulkrax.collection_model_class.to_s.constantize
             create_collection(attrs)
-          elsif klass == Bulkrax.file_model_class
+          elsif klass == Bulkrax.file_model_class.to_s.constantize
             create_file_set(attrs)
           else
             create_work(attrs)
@@ -388,9 +388,9 @@ module Bulkrax
 
       attrs = transform_attributes(update: true)
       run_callbacks :save do
-        if klass == Bulkrax.collection_model_class
+        if klass == Bulkrax.collection_model_class.to_s.constantize
           update_collection(attrs)
-        elsif klass == Bulkrax.file_model_class
+        elsif klass == Bulkrax.file_model_class.to_s.constantize
           update_file_set(attrs)
         else
           update_work(attrs)
@@ -434,7 +434,7 @@ module Bulkrax
     def conditionally_destroy_existing_files
       return unless @replace_files
 
-      return if [Bulkrax.collection_model_class, Bulkrax.file_model_class].include?(klass)
+      return if [Bulkrax.collection_model_class.to_s.constantize, Bulkrax.file_model_class.to_s.constantize].include?(klass)
 
       destroy_existing_files
     end

@@ -49,7 +49,7 @@ module Bulkrax
 
     def self.file_sets_for(resource:)
       return [] if resource.blank?
-      return [resource] if resource.is_a?(Bulkrax.file_model_class)
+      return [resource] if resource.is_a?(Bulkrax.file_model_class.to_s.constantize)
 
       resource.file_sets
     end

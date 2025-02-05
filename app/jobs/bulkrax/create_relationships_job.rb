@@ -165,7 +165,7 @@ module Bulkrax
       # We could do this outside of the loop, but that could lead to odd counter failures.
       ability.authorize!(:edit, parent_record)
 
-      if parent_record.is_a?(Bulkrax.collection_model_class)
+      if parent_record.is_a?(Bulkrax.collection_model_class.to_s.constantize)
         add_to_collection(child_record, parent_record)
       else
         add_to_work(child_record, parent_record)

@@ -15,7 +15,6 @@ gemspec
 gem 'blacklight'
 gem 'bootstrap-sass', '~> 3.4.1'
 gem 'coderay'
-gem 'concurrent-ruby', '1.3.4'
 gem 'factory_bot_rails'
 
 # Conditional logic based on Ruby version

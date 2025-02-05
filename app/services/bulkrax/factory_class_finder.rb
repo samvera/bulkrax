@@ -30,7 +30,7 @@ module Bulkrax
         if name.end_with?(suffix)
           name.constantize
         elsif name == "FileSet"
-          Bulkrax.file_model_class
+          Bulkrax.file_model_class.to_s.constantize
         else
           begin
             "#{name}#{suffix}".constantize
