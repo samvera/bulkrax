@@ -433,7 +433,6 @@ module Bulkrax
       remote_files.map do |r|
         file_path = download_file(r["url"])
         next unless file_path
-
         create_uploaded_file(file_path, r["file_name"])
       end.compact
     end
@@ -449,8 +448,7 @@ module Bulkrax
         file.rewind
         file.path
       rescue => e
-        Rails.logger.debug "Failed to download file from #{url}: #{e.message}"
-        nil
+        raise "Failed to download file from #{url}: #{e.message}"
       end
     end
 
@@ -460,8 +458,7 @@ module Bulkrax
       file.close
       uploaded_file
     rescue => e
-      Rails.logger.debug "Failed to create Hyrax::UploadedFile for #{file_name}: #{e.message}"
-      nil
+      raise "Failed to create Hyrax::UploadedFile for #{file_name}: #{e.message}"
     end
 
     # @Override Destroy existing files with Hyrax::Transactions
