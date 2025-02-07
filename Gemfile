@@ -26,6 +26,7 @@ else
 end
 
 gem 'oai'
+gem 'pg'
 gem 'rsolr', '>= 1.0'
 gem 'rspec-rails'
 gem 'twitter-typeahead-rails', '0.11.1.pre.corejavascript'
