@@ -44,6 +44,8 @@ module Bulkrax
 
     self.file_set_factory_inner_workings_class = Bulkrax::ValkyrieObjectFactory::FileFactoryInnerWorkings
 
+    delegate :transactions, to: :class
+
     ##
     # When you want a different set of transactions you can change the
     # container.
@@ -53,10 +55,6 @@ module Bulkrax
     #       transactions.
     def self.transactions
       @transactions || Hyrax::Transactions::Container
-    end
-
-    def transactions
-      self.class.transactions
     end
 
     ##

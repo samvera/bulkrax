@@ -16,7 +16,7 @@ def main(opts = {})
   headers['Authorization'] = "Token: #{opts.delete(:auth_token)}"
   params = build_params(opts)
 
-  logger.info("POST to #{url} - PARAMS #{params}")
+  Rails.logger.info("POST to #{url} - PARAMS #{params}")
 
   conn = Faraday.new(
     url: url,
@@ -90,10 +90,6 @@ def build_url(importer_id, url, port = nil)
   url = File.join(url, path)
   url = File.join(url, importer_id) if importer_id
   return url
-end
-
-def logger
-  Rails.logger
 end
 
 def version
