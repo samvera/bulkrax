@@ -440,7 +440,7 @@ module Bulkrax
     end
 
     def untar(file_to_untar)
-      Dir.mkdir(importer_unzip_path(mkdir: true)) unless File.directory?(importer_unzip_path)
+      Dir.mkdir(importer_unzip_path) unless File.directory?(importer_unzip_path(mkdir: true))
       command = "tar -xzf #{Shellwords.escape(file_to_untar)} -C #{Shellwords.escape(importer_unzip_path)}"
       result = system(command)
       raise "Failed to extract #{file_to_untar}" unless result
