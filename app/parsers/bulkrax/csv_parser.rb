@@ -341,7 +341,16 @@ module Bulkrax
         file_mapping = Bulkrax.field_mappings.dig(self.class.to_s, 'file', :from)&.first&.to_sym || :file
         next if r[file_mapping].blank?
 
-        r[file_mapping].split(Bulkrax.multi_value_element_split_on).map do |f|
+        split_value = Bulkrax.field_mappings.dig(self.class.to_s, :file, :split)
+        split_pattern = case split_value
+                        when Regexp
+                          split_value
+                        when String
+                          Regexp.new(split_value)
+                        else
+                          Bulkrax.multi_value_element_split_on
+                        end
+        r[file_mapping].split(split_pattern).map do |f|
           file = File.join(path_to_files, f.tr(' ', '_'))
           if File.exist?(file) # rubocop:disable Style/GuardClause
             file
