@@ -21,7 +21,10 @@ jobs:
         uses: actions/cache@v4.2.0
         with:
           path: vendor/bundle
-          key: ${{ matrix.ruby }}
+          key: ${{ runner.os }}-bundle-${{ matrix.ruby }}-${{ hashFiles('**/Gemfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bundle-${{ matrix.ruby }}-
+            ${{ runner.os }}-bundle-
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1.204.0
