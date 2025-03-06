@@ -30,6 +30,7 @@ module Bulkrax
       return unless parser.file? && parser.zip?
 
       parser.unzip(parser.parser_fields['import_file_path'])
+      parser.remove_spaces_from_filenames
     end
 
     def update_current_run_counters(importer)

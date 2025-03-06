@@ -446,6 +446,21 @@ module Bulkrax
       raise "Failed to extract #{file_to_untar}" unless result
     end
 
+    # File names referenced in CSVs have spaces replaced with underscores
+    # @see Bulkrax::CsvParser#file_paths
+    def remove_spaces_from_filenames
+      files = Dir.glob(File.join(importer_unzip_path, 'files', '*'))
+      files_with_spaces = files.select { |f| f.split('/').last.match?(' ') }
+      return if files_with_spaces.blank?
+
+      files_with_spaces.map! { |path| Pathname.new(path) }
+      files_with_spaces.each do |path|
+        filename = path.basename
+        filename_without_spaces = filename.to_s.tr(' ', '_')
+        path.rename(File.join(path.dirname, filename_without_spaces))
+      end
+    end
+
     def zip
       FileUtils.mkdir_p(exporter_export_zip_path)
 
