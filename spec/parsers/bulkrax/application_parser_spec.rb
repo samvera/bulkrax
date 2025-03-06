@@ -123,5 +123,43 @@ module Bulkrax
         it { is_expected.to be_truthy }
       end
     end
+
+    describe '#remove_spaces_from_filenames' do
+      let(:parser) { described_class.new(importer) }
+      let(:before_filenames) { ['spec/fixtures/csv/files/no_space.jpg', 'spec/fixtures/csv/files/has space.jpg'] }
+      let(:after_filenames) { ['spec/fixtures/csv/files/no_space.jpg', 'spec/fixtures/csv/files/has_space.jpg'] }
+
+      before do
+        before_filenames.each do |file_path|
+          File.write(file_path, 'w')
+        end
+
+        allow(Dir).to receive(:glob).and_return(before_filenames)
+      end
+
+      after do
+        after_filenames.each do |file_path|
+          File.delete(file_path)
+        end
+      end
+
+      it 'renames files to replace spaces with underscores' do
+        expect(File.exist?('spec/fixtures/csv/files/has space.jpg')).to eq(true)
+        expect(File.exist?('spec/fixtures/csv/files/has_space.jpg')).to eq(false)
+
+        parser.remove_spaces_from_filenames
+
+        expect(File.exist?('spec/fixtures/csv/files/has space.jpg')).to eq(false)
+        expect(File.exist?('spec/fixtures/csv/files/has_space.jpg')).to eq(true)
+      end
+
+      it 'does not alter files that do not have spaces in their name' do
+        expect(File.exist?('spec/fixtures/csv/files/no_space.jpg')).to eq(true)
+
+        parser.remove_spaces_from_filenames
+
+        expect(File.exist?('spec/fixtures/csv/files/no_space.jpg')).to eq(true)
+      end
+    end
   end
 end
