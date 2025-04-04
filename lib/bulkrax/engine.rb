@@ -35,7 +35,7 @@ module Bulkrax
         ActionController::Base.view_paths = paths.uniq
 
         custom_query_strategies = {
-          find_by_model_and_property_value: :find_single_or_nil
+          find_by_property_value: :find_single_or_nil
         }
 
         if defined?(::Goddess::CustomQueryContainer)
