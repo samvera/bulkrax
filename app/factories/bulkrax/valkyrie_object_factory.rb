@@ -179,7 +179,7 @@ module Bulkrax
       raise "Expected named_field or field got nil" if name_field.blank?
       return if value.blank?
       # Return nil or a single object.
-      Hyrax.query_service.custom_queries.find_by_property_value(property: name_field, value:, search_field:)
+      Hyrax.query_service.custom_queries.find_by_property_value(property: name_field, value: value, search_field: search_field)
     end
     # rubocop:enable Metrics/ParameterLists
 

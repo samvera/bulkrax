@@ -16,7 +16,9 @@ module Wings
         @query_service = query_service
       end
 
+      # rubocop:disable Lint/UnusedMethodArgument
       def find_by_property_value(property:, value:, search_field:, use_valkyrie: Hyrax.config.use_valkyrie?)
+        # rubocop:enable Lint/UnusedMethodArgument
         # NOTE: This is using the Bulkrax::ObjectFactory (e.g. the one envisioned for ActiveFedora).
         # In doing this, we avoid the situation where Bulkrax::ValkyrieObjectFactory calls this custom query.
 

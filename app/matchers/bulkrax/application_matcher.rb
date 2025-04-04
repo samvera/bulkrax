@@ -16,8 +16,9 @@ module Bulkrax
 
     def result(_parser, content)
       return nil if self.excluded == true || Bulkrax.reserved_properties.include?(self.to)
+      # rubocop:disable Style/RedundantParentheses
       return nil if self.if && (!self.if.is_a?(Array) && self.if.length != 2)
-
+      # rubocop:enable Style/RedundantParentheses
       if self.if
         return unless content.send(self.if[0], Regexp.new(self.if[1]))
       end
