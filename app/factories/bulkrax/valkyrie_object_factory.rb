@@ -174,13 +174,12 @@ module Bulkrax
     # @return [Valkyrie::Resource] when a match is found, an instance of given
     #         :klass
     # rubocop:disable Metrics/ParameterLists
-    def self.search_by_property(value:, klass:, field: nil, name_field: nil, **)
+    def self.search_by_property(value:, field: nil, name_field: nil, search_field:, **)
       name_field ||= field
       raise "Expected named_field or field got nil" if name_field.blank?
       return if value.blank?
-
       # Return nil or a single object.
-      Hyrax.query_service.custom_query.find_by_model_and_property_value(model: klass, property: name_field, value: value)
+      Hyrax.query_service.custom_queries.find_by_property_value(property: name_field, value: value, search_field: search_field)
     end
     # rubocop:enable Metrics/ParameterLists
 
