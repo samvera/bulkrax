@@ -65,11 +65,11 @@ module Bulkrax
     #       loop.  Why?  Because we might be adding many items to the parent.
     def self.add_child_to_parent_work(parent:, child:)
       return true if parent.member_ids.include?(child.id)
-
       parent.member_ids << child.id
-      parent.save
     end
 
+    ##
+    # The resource added to a collection can be either a work or another collection.
     def self.add_resource_to_collection(collection:, resource:, user:)
       resource.member_of_collection_ids << collection.id
       save!(resource: resource, user: user)
@@ -137,9 +137,7 @@ module Bulkrax
     end
 
     def self.save!(resource:, user:)
-      if resource.respond_to?(:save!)
-        resource.save!
-      else
+      if defined?(Hyrax)
         result = Hyrax.persister.save(resource: resource)
         raise Valkyrie::Persistence::ObjectNotFoundError unless result
         Hyrax.index_adapter.save(resource: result)
@@ -148,8 +146,10 @@ module Bulkrax
         else
           publish('object.metadata.updated', object: result, user: user)
         end
-        resource
+      else
+        resource.save!
       end
+      resource
     end
 
     def self.update_index(resources:)
