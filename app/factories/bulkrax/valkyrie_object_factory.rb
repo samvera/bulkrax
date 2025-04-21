@@ -125,6 +125,8 @@ module Bulkrax
     end
 
     def self.publish(event:, **kwargs)
+      # It's a bit unclear what this should be if we can't rely on Hyrax.
+      raise NotImplementedError, "#{self}.#{__method__}" unless defined?(Hyrax)
       Hyrax.publisher.publish(event, **kwargs)
     end
 
@@ -142,9 +144,9 @@ module Bulkrax
         raise Valkyrie::Persistence::ObjectNotFoundError unless result
         Hyrax.index_adapter.save(resource: result)
         if result.collection?
-          publish('collection.metadata.updated', collection: result, user: user)
+          self.publish(event: 'collection.metadata.updated', collection: result, user: user)
         else
-          publish('object.metadata.updated', object: result, user: user)
+          self.publish(event: 'object.metadata.updated', object: result, user: user)
         end
       else
         resource.save!
@@ -209,7 +211,7 @@ module Bulkrax
 
       Hyrax.persister.delete(resource: obj)
       Hyrax.index_adapter.delete(resource: obj)
-      self.class.publish(event: 'object.deleted', object: obj, user: user)
+      self.publish(event: 'object.deleted', object: obj, user: user)
     end
 
     def run!
@@ -228,7 +230,7 @@ module Bulkrax
 
       @object.depositor = @user.email
       object = Hyrax.persister.save(resource: @object)
-      self.class.publish(event: "object.metadata.updated", object: object, user: @user)
+      self.publish(event: "object.metadata.updated", object: object, user: @user)
       object
     end
 

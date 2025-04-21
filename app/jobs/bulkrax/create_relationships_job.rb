@@ -59,12 +59,12 @@ module Bulkrax
     def perform(parent_identifier:, importer_run_id: nil, run_user: nil, failure_count: 0) # rubocop:disable Metrics/AbcSize
       @importer_run_id = importer_run_id
       @importer_run = Bulkrax::ImporterRun.find(importer_run_id) if importer_run_id
-      user = run_user || importer_run&.user
-      @ability = Ability.new(user)
+      @user = run_user || importer_run&.user
+      @ability = Ability.new(@user)
 
       @number_of_successes = 0
       @number_of_failures = 0
-      errors = []
+      @errors = []
       @parent_record_members_added = false
 
       parent_entry, parent_record = find_record(parent_identifier, importer_run_id)
@@ -80,15 +80,15 @@ module Bulkrax
         end
       else
         number_of_failures = 1
-        errors = ["Parent record not yet available for creating relationships with children records."]
+        @errors = ["Parent record not yet available for creating relationships with children records."]
       end
 
-      if errors.present?
+      if @errors.present?
         # rubocop:disable Rails/SkipsModelValidations
         ImporterRun.update_counters(importer_run_id, failed_relationships: number_of_failures)
         # rubocop:enable Rails/SkipsModelValidations
 
-        parent_entry&.set_status_info(errors.last, importer_run)
+        parent_entry&.set_status_info(@errors.last, importer_run)
         failure_count += 1
 
         if failure_count < max_failure_count
@@ -99,7 +99,7 @@ module Bulkrax
             failure_count: failure_count
           )
         end
-        return errors # stop current job from continuing to run after rescheduling
+        return @errors # stop current job from continuing to run after rescheduling
       else
         # rubocop:disable Rails/SkipsModelValidations
         ImporterRun.update_counters(importer_run_id, processed_relationships: number_of_successes)
@@ -135,28 +135,27 @@ module Bulkrax
     # The parent does not need to be saved, as the relationship is stored on the child.
     # but we do reindex the parent after all the children are added.
     def process_parent_as_collection(parent_record:, parent_identifier:)
-        ActiveRecord::Base.uncached do
-          Bulkrax::PendingRelationship.where(parent_id: parent_identifier)
-                                      .ordered.find_each do |rel|
-            raise "#{rel} needs a child to create relationship" if rel.child_id.nil?
-            raise "#{rel} needs a parent to create relationship" if rel.parent_id.nil?
-            add_to_collection(relationship: rel, parent_record: parent_record, ability: ability)
-            self.number_of_successes += 1
-            @parent_record_members_added = true
-          rescue => e
-            self.number_of_failures += 1
-            rel.set_status_info(e, importer_run)
-            errors << e
-          end
+      ActiveRecord::Base.uncached do
+        Bulkrax::PendingRelationship.where(parent_id: parent_identifier)
+                                    .ordered.find_each do |rel|
+          raise "#{rel} needs a child to create relationship" if rel.child_id.nil?
+          raise "#{rel} needs a parent to create relationship" if rel.parent_id.nil?
+          add_to_collection(relationship: rel, parent_record: parent_record, ability: ability)
+          self.number_of_successes += 1
+          @parent_record_members_added = true
+        rescue => e
+          rel.update(status_message: e.message)
+          self.number_of_failures += 1
+          @errors << e
         end
+      end
 
-        # if collection members were added, we reindex the collection
-        # The collection members have already saved the relationships
-        if @parent_record_members_added
-          Bulkrax.object_factory.update_index(resources: [parent_record])
-          # TODO: is there any reason we might need to index the chilren after updating the parent?
-          Bulkrax.object_factory.publish(event: 'object.membership.updated', object: parent_record)
-        end
+      # if collection members were added, we reindex the collection
+      # The collection members have already saved the relationships
+      return unless @parent_record_members_added
+      Bulkrax.object_factory.update_index(resources: [parent_record])
+      # TODO: is there any reason we might need to index the chilren after updating the parent?
+      Bulkrax.object_factory.publish(event: 'object.membership.updated', object: parent_record, user: @user)
     end
 
     # When the parent is a work, we save the relationship on the parent.
@@ -172,16 +171,16 @@ module Bulkrax
             self.number_of_successes += 1
             @parent_record_members_added = true
           rescue => e
+            rel.update(status_message: e.message)
             self.number_of_failures += 1
-            rel.set_status_info(e, importer_run)
-            errors << e
+            @errors << e
           end
         end
 
         # save record if members were added
         if @parent_record_members_added
-          Bulkrax.object_factory.save!(resource: parent_record, user: user)
-          Bulkrax.object_factory.publish(event: 'object.membership.updated', object: parent_record)
+          Bulkrax.object_factory.save!(resource: parent_record, user: @user)
+          Bulkrax.object_factory.publish(event: 'object.membership.updated', object: parent_record, user: @user)
         end
       end
     end
@@ -200,7 +199,7 @@ module Bulkrax
         Bulkrax.object_factory.add_resource_to_collection(
           collection: parent_record,
           resource: child_record,
-          user: user
+          user: @user
         )
       end
       relationship.destroy
