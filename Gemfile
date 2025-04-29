@@ -18,12 +18,9 @@ gem 'coderay'
 gem 'concurrent-ruby', '1.3.4'
 gem 'factory_bot_rails'
 
-# Conditional logic based on Ruby version
-if RUBY_VERSION >= '3.0.0'
-  gem 'hyrax', '>= 2.3'
-else
-  gem 'hyrax', '~> 4.0'
-end
+# Bulkrax supports Hyrax 2.3 through 4.x only.
+# Hyrax 5+ requires Rails 7.2 and is not yet supported.
+gem 'hyrax', '>= 2.3', '< 5.0'
 
 gem 'oai'
 gem 'pg'
