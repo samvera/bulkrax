@@ -188,13 +188,8 @@ module Bulkrax
     # @param klass the model
     # @return [Array<String>]
     def self.schema_properties(klass)
-      @schema_properties_map ||= {}
-
-      klass_key = klass.name
       schema = klass.new.singleton_class.schema || klass.schema
-      @schema_properties_map[klass_key] = schema.map { |k| k.name.to_s } unless @schema_properties_map.key?(klass_key)
-
-      @schema_properties_map[klass_key]
+      schema.map { |k| k.name.to_s }
     end
 
     def self.ordered_file_sets_for(object)
