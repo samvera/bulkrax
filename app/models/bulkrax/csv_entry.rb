@@ -118,12 +118,12 @@ module Bulkrax
     end
 
     def add_ingested_metadata
-      # we do not want to sort the values in the record before adding the metadata.
-      # if we do, the factory_class will be set to the default_work_type for all values that come before "model" or "work type"
-      record.each do |key, value|
-        index = key[/\d+/].to_i - 1 if key[/\d+/].to_i != 0
-        add_metadata(key_without_numbers(key), value, index)
-      end
+      processed_dynamically = Set.new
+
+      process_flexible_schema_attributes(processed_dynamically) if flexible_schema_enabled?
+      process_remaining_attributes(processed_dynamically)
+
+      self.parsed_metadata
     end
 
     def add_file
@@ -394,6 +394,64 @@ module Bulkrax
 
     def map_file_sets(file_sets)
       file_sets.map { |fs| filename(fs).to_s if filename(fs).present? }.compact
+    end
+
+    def flexible_schema_enabled?
+      flexible_enabled = Hyrax.config.respond_to?(:flexible?) && Hyrax.config.flexible?
+      if flexible_enabled && factory_class.present?
+        begin
+          schema_attributes = fetch_schema_attributes
+          mapping_keys = mapping.keys.to_set
+
+          record.each do |raw_key, value|
+            next if value.blank?
+
+            attribute_name = key_without_numbers(raw_key.to_s)
+            next unless dynamic_attribute?(attribute_name, mapping_keys, schema_attributes)
+
+            add_dynamic_attribute(attribute_name, value)
+            processed_set.add(attribute_name)
+          end
+        rescue => e
+          Rails.logger.error("Bulkrax::CsvEntry dynamic flexible schema check failed: #{e.message}")
+        end
+      end
+    end
+
+    def fetch_schema_attributes
+      latest_schema_id = Hyrax::FlexibleSchema.current_schema_id
+      @latest_schema_attributes_cache ||= {}
+      cache_key = "#{factory_class}-#{latest_schema_id}"
+
+      @latest_schema_attributes_cache[cache_key] ||= begin
+        Hyrax::Schema(factory_class, schema_version: latest_schema_id).attributes.keys.map(&:to_s).to_set
+                                                     rescue => e
+                                                       Rails.logger.error("Bulkrax::CsvEntry failed to load flexible schema attributes for #{factory_class} v#{latest_schema_id}: #{e.message}")
+                                                       Set.new
+      end
+    end
+
+    def dynamic_attribute?(attribute_name, mapping_keys, schema_attributes)
+      !mapping_keys.include?(attribute_name) && schema_attributes.include?(attribute_name)
+    end
+
+    def add_dynamic_attribute(attribute_name, value)
+      self.parsed_metadata[attribute_name] ||= []
+      vals = value.is_a?(String) ? value.split(Bulkrax.multi_value_element_split_on) : Array.wrap(value)
+      current_vals = self.parsed_metadata[attribute_name] || []
+      self.parsed_metadata[attribute_name] = current_vals.concat(vals.reject(&:blank?))
+    end
+
+    def process_remaining_attributes(processed_set)
+      record.each do |key, value|
+        attribute_name = key_without_numbers(key.to_s)
+        next if processed_set.include?(attribute_name)
+
+        index = key[/\d+/]&.to_i
+        index = index && index != 0 ? index - 1 : nil
+
+        add_metadata(key_without_numbers(key), value, index)
+      end
     end
   end
 end
