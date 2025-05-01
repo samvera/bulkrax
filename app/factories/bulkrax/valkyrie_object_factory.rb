@@ -188,13 +188,20 @@ module Bulkrax
     # @param klass the model
     # @return [Array<String>]
     def self.schema_properties(klass)
-      @schema_properties_map ||= {}
-
-      klass_key = klass.name
-      schema = klass.new.singleton_class.schema || klass.schema
-      @schema_properties_map[klass_key] = schema.map { |k| k.name.to_s }
-
-      @schema_properties_map[klass_key]
+      # --> Use caching only if flexible metadata is NOT enabled
+      if Hyrax.config.respond_to?(:flexible?) && Hyrax.config.flexible?
+        schema = klass.new.singleton_class.schema || klass.schema
+        return schema.map { |k| k.name.to_s }
+      else
+        # Use caching for static schemas
+        @schema_properties_map ||= {}
+        klass_key = klass.name
+        unless @schema_properties_map.key?(klass_key)
+          schema = klass.new.singleton_class.schema || klass.schema
+          @schema_properties_map[klass_key] = schema.map { |k| k.name.to_s }
+        end
+        return @schema_properties_map[klass_key]
+      end
     end
 
     def self.ordered_file_sets_for(object)
@@ -361,12 +368,14 @@ module Bulkrax
 
       attrs.each do |key, value|
         setter_method = "#{key}="
-        next unless form.respond_to?(setter_method)
-        begin
-            form.send(setter_method, value)
-        rescue => e
-          Rails.logger.error "[Bulkrax ValkyrieObjectFactory] Error setting form.#{key} for object ID #{object.id || 'new'}: #{e.message}"
-          end
+        if form.respond_to?(setter_method)
+            begin
+                form.send(setter_method, value)
+            rescue => e
+                Rails.logger.error "[Bulkrax ValkyrieObjectFactory] Error setting form.#{key} for object ID #{object.id || 'new'}: #{e.message}"
+                raise e
+            end
+        end
       end
 
       transaction = yield
