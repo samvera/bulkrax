@@ -192,7 +192,7 @@ module Bulkrax
 
       klass_key = klass.name
       schema = klass.new.singleton_class.schema || klass.schema
-      @schema_properties_map[klass_key] = schema.map { |k| k.name.to_s } unless @schema_properties_map.key?(klass_key)
+      @schema_properties_map[klass_key] = schema.map { |k| k.name.to_s }
 
       @schema_properties_map[klass_key]
     end
@@ -356,8 +356,18 @@ module Bulkrax
     def perform_transaction_for(object:, attrs:)
       form = Hyrax::Forms::ResourceForm.for(object).prepopulate!
 
-      # TODO: Handle validations
-      form.validate(attrs)
+      is_valid = form.validate(attrs)
+      Rails.logger.error "[Bulkrax ValkyrieObjectFactory] Form validation errors for object ID #{object.id || 'new'}: #{form.errors.full_messages.inspect}" unless is_valid
+
+      attrs.each do |key, value|
+        setter_method = "#{key}="
+        next unless form.respond_to?(setter_method)
+        begin
+            form.send(setter_method, value)
+        rescue => e
+          Rails.logger.error "[Bulkrax ValkyrieObjectFactory] Error setting form.#{key} for object ID #{object.id || 'new'}: #{e.message}"
+          end
+      end
 
       transaction = yield
 
@@ -366,7 +376,8 @@ module Bulkrax
       result.value_or do
         msg = result.failure[0].to_s
         msg += " - #{result.failure[1].full_messages.join(',')}" if result.failure[1].respond_to?(:full_messages)
-        raise StandardError, msg, result.trace
+        full_msg = "[Bulkrax ValkyrieObjectFactory] Transaction failure for object ID #{object.id || 'new'}: #{msg}"
+        raise StandardError, full_msg, result.trace
       end
     end
 
