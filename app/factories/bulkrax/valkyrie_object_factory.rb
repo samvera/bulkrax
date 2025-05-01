@@ -192,7 +192,7 @@ module Bulkrax
 
       klass_key = klass.name
       schema = klass.new.singleton_class.schema || klass.schema
-      @schema_properties_map[klass_key] = schema.map { |k| k.name.to_s } unless @schema_properties_map.key?(klass_key)
+      @schema_properties_map[klass_key] = schema.map { |k| k.name.to_s } 
 
       @schema_properties_map[klass_key]
     end
