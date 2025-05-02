@@ -54,11 +54,13 @@ module Bulkrax
       end
 
       context 'when adding a child work to a parent collection' do
-        let(:pending_rel_test) { create(:pending_relationship,
-                                        importer_run_id: importer.current_run.id,
-                                        parent_id: parent_identifier,
-                                        child_id: work1_entry.identifier,
-                                        order: 1) }
+        let(:pending_rel_test) do
+          create(:pending_relationship,
+                 importer_run_id: importer.current_run.id,
+                 parent_id: parent_identifier,
+                 child_id: work1_entry.identifier,
+                 order: 1)
+        end
         let(:parent_identifier) { collection1_entry.identifier }
 
         before do
@@ -86,11 +88,13 @@ module Bulkrax
       end
 
       context 'when adding a child collection to a parent collection' do
-        let(:pending_rel_test) { create(:pending_relationship,
-                                        importer_run_id: importer.current_run.id,
-                                        parent_id: parent_identifier,
-                                        child_id: collection2_entry.identifier,
-                                        order: 1) }
+        let(:pending_rel_test) do
+          create(:pending_relationship,
+                 importer_run_id: importer.current_run.id,
+                 parent_id: parent_identifier,
+                 child_id: collection2_entry.identifier,
+                 order: 1)
+        end
         let(:parent_identifier) { collection1_entry.identifier }
 
         before do
@@ -118,11 +122,13 @@ module Bulkrax
       end
 
       context 'when adding a child work to a parent work' do
-        let(:pending_rel_test) { create(:pending_relationship,
-                                        importer_run_id: importer.current_run.id,
-                                        parent_id: parent_identifier,
-                                        child_id: work2_entry.identifier,
-                                        order: 1) }
+        let(:pending_rel_test) do
+          create(:pending_relationship,
+                 importer_run_id: importer.current_run.id,
+                 parent_id: parent_identifier,
+                 child_id: work2_entry.identifier,
+                 order: 1)
+        end
         let(:parent_identifier) { work1_entry.identifier }
         let(:update_child_records_works_file_sets?) { false }
 
@@ -151,11 +157,13 @@ module Bulkrax
       end
 
       context 'when adding a child collection to a parent work' do
-        let(:pending_rel_test) { create(:pending_relationship,
-                                        importer_run_id: importer.current_run.id,
-                                        parent_id: parent_identifier,
-                                        child_id: collection1_entry.identifier,
-                                        order: 1) }
+        let(:pending_rel_test) do
+          create(:pending_relationship,
+                 importer_run_id: importer.current_run.id,
+                 parent_id: parent_identifier,
+                 child_id: collection1_entry.identifier,
+                 order: 1)
+        end
         let(:parent_identifier) { work1_entry.identifier }
 
         before do
@@ -175,18 +183,20 @@ module Bulkrax
       end
 
       context 'when adding a child record that is not found' do
-        let(:pending_rel_test) { create(:pending_relationship,
-                                        importer_run_id: importer.current_run.id,
-                                        parent_id: parent_identifier,
-                                        child_id: child_id,
-                                        order: 1) }
+        let(:pending_rel_test) do
+          create(:pending_relationship,
+                 importer_run_id: importer.current_run.id,
+                 parent_id: parent_identifier,
+                 child_id: child_id,
+                 order: 1)
+        end
         let(:parent_identifier) { collection1_entry.identifier }
         let(:child_id) { 'not_found' }
 
         before do
-        allow(create_relationships_job).to receive(:find_record).with(parent_identifier, importer.current_run.id).and_return([work1_entry, work1])
-        allow(create_relationships_job).to receive(:find_record).with(child_id, importer.current_run.id).and_return([nil, nil])
-        pending_rel_test
+          allow(create_relationships_job).to receive(:find_record).with(parent_identifier, importer.current_run.id).and_return([work1_entry, work1])
+          allow(create_relationships_job).to receive(:find_record).with(child_id, importer.current_run.id).and_return([nil, nil])
+          pending_rel_test
         end
 
         it 'reschedules the job' do
@@ -199,18 +209,20 @@ module Bulkrax
       end
 
       context 'when adding a parent record that is not found' do
-        let(:pending_rel_test) { create(:pending_relationship,
-                                        importer_run_id: importer.current_run.id,
-                                        parent_id: parent_identifier,
-                                        child_id: child_id,
-                                        order: 1) }
+        let(:pending_rel_test) do
+          create(:pending_relationship,
+                 importer_run_id: importer.current_run.id,
+                 parent_id: parent_identifier,
+                 child_id: child_id,
+                 order: 1)
+        end
         let(:parent_identifier) { 'not_found' }
         let(:child_id) { work1_entry.identifier }
 
         before do
-        allow(create_relationships_job).to receive(:find_record).with(parent_identifier, importer.current_run.id).and_return([nil, nil])
-        allow(create_relationships_job).to receive(:find_record).with(child_id, importer.current_run.id).and_return([work1_entry, work1])
-        pending_rel_test
+          allow(create_relationships_job).to receive(:find_record).with(parent_identifier, importer.current_run.id).and_return([nil, nil])
+          allow(create_relationships_job).to receive(:find_record).with(child_id, importer.current_run.id).and_return([work1_entry, work1])
+          pending_rel_test
         end
 
         it 'reschedules the job' do
