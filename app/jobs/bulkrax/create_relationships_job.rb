@@ -79,13 +79,13 @@ module Bulkrax
           process_parent_as_work(parent_record: parent_record, parent_identifier: parent_identifier)
         end
       else
-        number_of_failures = 1
-        @errors = ["Parent record not yet available for creating relationships with children records."]
+        @number_of_failures = 1
+        @errors = ["Parent record #{parent_identifier} not yet available for creating relationships with children records."]
       end
 
       if @errors.present?
         # rubocop:disable Rails/SkipsModelValidations
-        ImporterRun.update_counters(importer_run_id, failed_relationships: number_of_failures)
+        ImporterRun.update_counters(importer_run_id, failed_relationships: @number_of_failures)
         # rubocop:enable Rails/SkipsModelValidations
 
         parent_entry&.set_status_info(@errors.last, importer_run)
@@ -95,14 +95,14 @@ module Bulkrax
           reschedule(
             parent_identifier: parent_identifier,
             importer_run_id: importer_run_id,
-            run_user: run_user,
+            run_user: @user,
             failure_count: failure_count
           )
         end
         return @errors # stop current job from continuing to run after rescheduling
       else
         # rubocop:disable Rails/SkipsModelValidations
-        ImporterRun.update_counters(importer_run_id, processed_relationships: number_of_successes)
+        ImporterRun.update_counters(importer_run_id, processed_relationships: @number_of_successes)
         # rubocop:enable Rails/SkipsModelValidations
       end
     end
@@ -141,11 +141,11 @@ module Bulkrax
           raise "#{rel} needs a child to create relationship" if rel.child_id.nil?
           raise "#{rel} needs a parent to create relationship" if rel.parent_id.nil?
           add_to_collection(relationship: rel, parent_record: parent_record, ability: ability)
-          self.number_of_successes += 1
+          @number_of_successes += 1
           @parent_record_members_added = true
         rescue => e
           rel.update(status_message: e.message)
-          self.number_of_failures += 1
+          @number_of_failures += 1
           @errors << e
         end
       end
@@ -154,7 +154,6 @@ module Bulkrax
       # The collection members have already saved the relationships
       return unless @parent_record_members_added
       Bulkrax.object_factory.update_index(resources: [parent_record])
-      # TODO: is there any reason we might need to index the chilren after updating the parent?
       Bulkrax.object_factory.publish(event: 'object.membership.updated', object: parent_record, user: @user)
     end
 
@@ -172,7 +171,7 @@ module Bulkrax
             @parent_record_members_added = true
           rescue => e
             rel.update(status_message: e.message)
-            self.number_of_failures += 1
+            @number_of_failures += 1
             @errors << e
           end
         end
