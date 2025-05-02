@@ -176,7 +176,7 @@ module Bulkrax
     # rubocop:disable Metrics/ParameterLists
     def self.search_by_property(value:, field: nil, name_field: nil, search_field:, **)
       name_field ||= field
-      raise "Expected named_field or field got nil" if name_field.blank?
+      raise "Expected name_field or field got nil" if name_field.blank?
       return if value.blank?
       # Return nil or a single object.
       Hyrax.query_service.custom_queries.find_by_property_value(property: name_field, value: value, search_field: search_field)
@@ -186,13 +186,13 @@ module Bulkrax
     ##
     # Retrieve properties from M3 model
     # @param klass the model
-    # @return [Array<String>]
+    # @return [Array<String>] property names
     def self.schema_properties(klass)
       @schema_properties_map ||= {}
-
       klass_key = klass.name
-      schema = klass.new.singleton_class.schema || klass.schema
-      @schema_properties_map[klass_key] = schema.map { |k| k.name.to_s } 
+
+      definitions = Hyrax::FlexibleSchema.definitions_for(class_name: klass_key)
+      @schema_properties_map[klass_key] = definitions.keys
 
       @schema_properties_map[klass_key]
     end
@@ -351,13 +351,28 @@ module Bulkrax
     #        operations.  Put another way, don't do something expensive if the
     #        data is invalid.
     #
-    # TODO What do we return when the calculated form fails?
     # @raise [StandardError] when there was a failure calling the translation.
     def perform_transaction_for(object:, attrs:)
-      form = Hyrax::Forms::ResourceForm.for(object).prepopulate!
+      form = Hyrax::Forms::ResourceForm.for(object)
 
-      # TODO: Handle validations
+      form.prepopulate!
+
+      dynamic_definitions = Hyrax::FlexibleSchema.definitions_for(class_name: object.class.name)
+      dynamic_definitions.each do |prop_name, definition|
+        prop_sym = prop_name.to_sym
+        setter_method = "#{prop_name}=".to_sym
+
+        if form.respond_to?(setter_method) && attrs.key?(prop_sym)
+          form.send(setter_method, attrs[prop_sym])
+        end
+      end
+
       form.validate(attrs)
+
+      if form.errors.any?
+        Rails.logger.error "[#{self.class}] Validation failed for #{object.class} id: #{object.try(:id)}. Errors: #{form.errors.messages.inspect}"
+        raise ObjectFactoryInterface::RecordInvalid.new(form)
+      end
 
       transaction = yield
 
