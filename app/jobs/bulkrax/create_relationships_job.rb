@@ -58,7 +58,7 @@ module Bulkrax
     # rubocop:disable Metrics/MethodLength
     def perform(parent_identifier:, importer_run_id: nil, run_user: nil, failure_count: 0) # rubocop:disable Metrics/AbcSize
       @importer_run_id = importer_run_id
-      @importer_run = Bulkrax::ImporterRun.find(importer_run_id) if importer_run_id
+      @importer_run = Bulkrax::ImporterRun.find(@importer_run_id) if @importer_run_id
       @user = run_user || importer_run&.user
       @ability = Ability.new(@user)
 
@@ -67,7 +67,7 @@ module Bulkrax
       @errors = []
       @parent_record_members_added = false
 
-      parent_entry, parent_record = find_record(parent_identifier, importer_run_id)
+      parent_entry, parent_record = find_record(parent_identifier, @importer_run_id)
       if parent_record
         # Works and collections are different breeds of animals:
         # - works know both their children (file_sets and child works) in member_ids
@@ -85,7 +85,7 @@ module Bulkrax
 
       if @errors.present?
         # rubocop:disable Rails/SkipsModelValidations
-        ImporterRun.update_counters(importer_run_id, failed_relationships: @number_of_failures)
+        ImporterRun.update_counters(@importer_run_id, failed_relationships: @number_of_failures)
         # rubocop:enable Rails/SkipsModelValidations
 
         parent_entry&.set_status_info(@errors.last, importer_run)
@@ -94,7 +94,7 @@ module Bulkrax
         if failure_count < max_failure_count
           reschedule(
             parent_identifier: parent_identifier,
-            importer_run_id: importer_run_id,
+            importer_run_id: @importer_run_id,
             run_user: @user,
             failure_count: failure_count
           )
@@ -102,7 +102,7 @@ module Bulkrax
         return @errors # stop current job from continuing to run after rescheduling
       else
         # rubocop:disable Rails/SkipsModelValidations
-        ImporterRun.update_counters(importer_run_id, processed_relationships: @number_of_successes)
+        ImporterRun.update_counters(@importer_run_id, processed_relationships: @number_of_successes)
         # rubocop:enable Rails/SkipsModelValidations
       end
     end
@@ -136,7 +136,7 @@ module Bulkrax
     # but we do reindex the parent after all the children are added.
     def process_parent_as_collection(parent_record:, parent_identifier:)
       ActiveRecord::Base.uncached do
-        Bulkrax::PendingRelationship.where(parent_id: parent_identifier)
+        Bulkrax::PendingRelationship.where(parent_id: parent_identifier, importer_run_id: @importer_run_id)
                                     .ordered.find_each do |rel|
           raise "#{rel} needs a child to create relationship" if rel.child_id.nil?
           raise "#{rel} needs a parent to create relationship" if rel.parent_id.nil?
@@ -162,7 +162,7 @@ module Bulkrax
     def process_parent_as_work(parent_record:, parent_identifier:)
       conditionally_acquire_lock_for(parent_record.id.to_s) do
         ActiveRecord::Base.uncached do
-          Bulkrax::PendingRelationship.where(parent_id: parent_identifier)
+          Bulkrax::PendingRelationship.where(parent_id: parent_identifier, importer_run_id: @importer_run_id)
                                       .ordered.find_each do |rel|
             raise "#{rel} needs a child to create relationship" if rel.child_id.nil?
             raise "#{rel} needs a parent to create relationship" if rel.parent_id.nil?
@@ -188,33 +188,34 @@ module Bulkrax
     # child nor parent.  We'll do that elsewhere in this loop.
     # It is important to lock the child records as they are the ones being saved.
     def add_to_collection(relationship:, parent_record:, ability:)
-      _child_entry, child_record = find_record(relationship.child_id, importer_run_id)
-      conditionally_acquire_lock_for(child_record.id.to_s) do
-        raise "#{relationship} could not find child record" unless child_record
-        raise "Cannot add child collection (ID=#{relationship.child_id}) to parent work (ID=#{relationship.parent_id})" if child_record.collection? && parent_record.work?
-        ability.authorize!(:edit, child_record)
-        # We could do this outside of the loop, but that could lead to odd counter failures.
-        ability.authorize!(:edit, parent_record)
-        Bulkrax.object_factory.add_resource_to_collection(
-          collection: parent_record,
-          resource: child_record,
-          user: @user
-        )
+      ActiveRecord::Base.uncached do
+        _child_entry, child_record = find_record(relationship.child_id, @importer_run_id)
+        conditionally_acquire_lock_for(child_record.id.to_s) do
+          raise "#{relationship} could not find child record" unless child_record
+          raise "Cannot add child collection (ID=#{relationship.child_id}) to parent work (ID=#{relationship.parent_id})" if child_record.collection? && parent_record.work?
+          ability.authorize!(:edit, child_record)
+          # We could do this outside of the loop, but that could lead to odd counter failures.
+          ability.authorize!(:edit, parent_record)
+          Bulkrax.object_factory.add_resource_to_collection(
+            collection: parent_record,
+            resource: child_record,
+            user: @user
+          )
+        end
+        relationship.destroy
       end
-      relationship.destroy
     end
 
     # NOTE: This should not persist changes to the
     # child nor parent.  We'll do that elsewhere in this loop.
     def add_to_work(relationship:, parent_record:, ability:)
-      _child_entry, child_record = find_record(relationship.child_id, importer_run_id)
+      _child_entry, child_record = find_record(relationship.child_id, @importer_run_id)
       raise "#{relationship} could not find child record" unless child_record
       raise "Cannot add child collection (ID=#{relationship.child_id}) to parent work (ID=#{relationship.parent_id})" if child_record.collection? && parent_record.work?
 
       ability.authorize!(:edit, child_record)
       # We could do this outside of the loop, but that could lead to odd counter failures.
       ability.authorize!(:edit, parent_record)
-
       Bulkrax.object_factory.add_child_to_parent_work(
         parent: parent_record,
         child: child_record
