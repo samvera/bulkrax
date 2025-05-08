@@ -9,16 +9,17 @@ module Bulkrax
     let(:ability) { instance_double(Ability) }
 
     # create objects
-    let(:collection1) { build(:collection) }
-    let(:collection2) { build(:collection) }
-    let(:work1) { build(:work) }
-    let(:work2) { build(:work) }
+    let(:collection1) { build(:collection, id: 'collection1_id') }
+    let(:collection2) { build(:collection, id: 'collection2_id') }
+    let(:work1) { build(:work, id: 'work1_id') }
+    let(:work2) { build(:work, id: 'work1_id') }
+    let(:updated_parent) { double('updated_parent') }
 
     # create entries
-    let(:collection1_entry) { create(:bulkrax_csv_entry_collection, importerexporter: importer) }
-    let(:collection2_entry) { create(:bulkrax_csv_entry_collection, importerexporter: importer) }
-    let(:work1_entry) { create(:bulkrax_csv_entry_work, importerexporter: importer) }
-    let(:work2_entry) { create(:bulkrax_csv_entry_work, importerexporter: importer) }
+    let(:collection1_entry) { create(:bulkrax_csv_entry_collection, identifier: 'collection1_entry', importerexporter: importer) }
+    let(:collection2_entry) { create(:bulkrax_csv_entry_collection, identifier: 'collection2_entry', importerexporter: importer) }
+    let(:work1_entry) { create(:bulkrax_csv_entry_work, identifier: 'work1_entry', importerexporter: importer) }
+    let(:work2_entry) { create(:bulkrax_csv_entry_work, identifier: 'work2_entry', importerexporter: importer) }
 
     before do
       allow(ImporterRun).to receive(:update_counters).and_return(true)
@@ -30,8 +31,12 @@ module Bulkrax
       allow(Bulkrax.object_factory).to receive(:update_index).and_return(true)
       allow(Bulkrax.object_factory).to receive(:publish).and_return(true)
       allow(create_relationships_job).to receive(:reschedule)
-      allow(Bulkrax.object_factory).to receive(:add_child_to_parent_work).and_return(true)
+      allow(Bulkrax.object_factory).to receive(:add_child_to_parent_work).and_return(updated_parent)
       allow(Bulkrax.object_factory).to receive(:save!).and_return(true)
+      allow(Bulkrax.object_factory).to receive(:find).with(collection1.id).and_return(collection1)
+      allow(Bulkrax.object_factory).to receive(:find).with(collection2.id).and_return(collection2)
+      allow(Bulkrax.object_factory).to receive(:find).with(work1.id).and_return(work1)
+      allow(Bulkrax.object_factory).to receive(:find).with(work2.id).and_return(work2)
     end
 
     around do |spec|
@@ -99,7 +104,7 @@ module Bulkrax
 
         before do
           allow(create_relationships_job).to receive(:find_record).with(parent_identifier, importer.current_run.id).and_return([collection1_entry, collection1])
-          allow(create_relationships_job).to receive(:find_record).with(work1_entry.identifier, importer.current_run.id).and_return([collection2_entry, collection2])
+          allow(create_relationships_job).to receive(:find_record).with(collection2_entry.identifier, importer.current_run.id).and_return([collection2_entry, collection2])
           pending_rel_test
         end
 
@@ -131,6 +136,7 @@ module Bulkrax
         end
         let(:parent_identifier) { work1_entry.identifier }
         let(:update_child_records_works_file_sets?) { false }
+        let(:updated_parent) { work1 }
 
         before do
           allow(create_relationships_job).to receive(:find_record).with(parent_identifier, importer.current_run.id).and_return([work1_entry, work1])
@@ -140,7 +146,7 @@ module Bulkrax
 
         it 'calls the object factory to assign the child work to the parent_work' do
           expect(Bulkrax.object_factory).to receive(:add_child_to_parent_work).with(parent: work1, child: work2)
-          expect(Bulkrax.object_factory).to receive(:save!).with(resource: work1, user: importer.current_run.user)
+          expect(Bulkrax.object_factory).to receive(:update_index).with(resources: [work1])
           expect(Bulkrax.object_factory).not_to receive(:update_index_for_file_sets_of)
           expect(ImporterRun).to receive(:update_counters).with(importer.current_run.id, processed_relationships: 1)
           perform
