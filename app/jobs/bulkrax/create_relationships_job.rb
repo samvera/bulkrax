@@ -163,20 +163,19 @@ module Bulkrax
     end
 
     # When the parent is a work, we save the relationship on the parent.
-    # We prefer to save all of the children and then save the parent once. Concurrent
+    # We prefer to save all of the member relationships and then save the parent once. Concurrent
     # jobs may be trying to save the parent at the same time, so we need to lock the parent
     # record while we are adding the children to it.
     # However the locking appears to not be working so as a workaround we will save each member as we go,
     # but only index the parent once at the end.
     def process_parent_as_work(parent_record:, parent_identifier:)
       conditionally_acquire_lock_for(parent_record.id.to_s) do
-        updated_parent = parent_record
         ActiveRecord::Base.uncached do
           Bulkrax::PendingRelationship.where(parent_id: parent_identifier, importer_run_id: @importer_run_id)
                                       .ordered.find_each do |rel|
             raise "#{rel} needs a child to create relationship" if rel.child_id.nil?
             raise "#{rel} needs a parent to create relationship" if rel.parent_id.nil?
-            updated_parent = add_to_work(relationship: rel, parent_record: updated_parent, ability: ability)
+            add_to_work(relationship: rel, parent_record: parent_record, ability: ability)
             self.number_of_successes += 1
             @parent_record_members_added = true
           rescue => e
@@ -188,8 +187,9 @@ module Bulkrax
 
         # save record if members were added
         if @parent_record_members_added
-          Bulkrax.object_factory.update_index(resources: [updated_parent])
-          Bulkrax.object_factory.publish(event: 'object.membership.updated', object: updated_parent, user: @user)
+          reloaded_parent = Bulkrax.object_factory.find(parent_record.id)
+          Bulkrax.object_factory.update_index(resources: [reloaded_parent])
+          Bulkrax.object_factory.publish(event: 'object.membership.updated', object: reloaded_parent, user: @user)
         end
       end
     end

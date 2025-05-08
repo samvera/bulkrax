@@ -66,6 +66,7 @@ module Bulkrax
     # saving it with each child, but waiting until the end to reindex.
     # To do this we are bypassing the save! method defined below
     def self.add_child_to_parent_work(parent:, child:)
+      parent = self.find(parent.id)
       return true if parent.member_ids.include?(child.id)
       parent.member_ids << child.id
       Hyrax.persister.save(resource: parent)
