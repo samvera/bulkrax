@@ -112,6 +112,8 @@ module Bulkrax
 
     ##
     # We can use Hyrax's lock manager when we have one available.
+    # However it's not certain that this is actually working, so to be
+    # as safe as possible, we will reload resources before we update.
     if defined?(::Hyrax)
       include Hyrax::Lockable
 
@@ -152,21 +154,29 @@ module Bulkrax
 
       # if collection members were added, we reindex the collection
       # The collection members have already saved the relationships
+      # To index the parent, we want to make sure we have the latest version of the parent,
+      # because another job may have updated it in the meantime.
       return unless @parent_record_members_added
-      Bulkrax.object_factory.update_index(resources: [parent_record])
-      Bulkrax.object_factory.publish(event: 'object.membership.updated', object: parent_record, user: @user)
+      reloaded_parent = Bulkrax.object_factory.find(parent_record.id)
+      Bulkrax.object_factory.update_index(resources: [reloaded_parent])
+      Bulkrax.object_factory.publish(event: 'object.membership.updated', object: reloaded_parent, user: @user)
     end
 
     # When the parent is a work, we save the relationship on the parent.
-    # We save all of the children and then save the parent once.
+    # We prefer to save all of the children and then save the parent once. Concurrent
+    # jobs may be trying to save the parent at the same time, so we need to lock the parent
+    # record while we are adding the children to it.
+    # However the locking appears to not be working so as a workaround we will save each member as we go,
+    # but only index the parent once at the end.
     def process_parent_as_work(parent_record:, parent_identifier:)
       conditionally_acquire_lock_for(parent_record.id.to_s) do
+        updated_parent = parent_record
         ActiveRecord::Base.uncached do
           Bulkrax::PendingRelationship.where(parent_id: parent_identifier, importer_run_id: @importer_run_id)
                                       .ordered.find_each do |rel|
             raise "#{rel} needs a child to create relationship" if rel.child_id.nil?
             raise "#{rel} needs a parent to create relationship" if rel.parent_id.nil?
-            add_to_work(relationship: rel, parent_record: parent_record, ability: ability)
+            updated_parent = add_to_work(relationship: rel, parent_record: updated_parent, ability: ability)
             self.number_of_successes += 1
             @parent_record_members_added = true
           rescue => e
@@ -178,24 +188,25 @@ module Bulkrax
 
         # save record if members were added
         if @parent_record_members_added
-          Bulkrax.object_factory.save!(resource: parent_record, user: @user)
-          Bulkrax.object_factory.publish(event: 'object.membership.updated', object: parent_record, user: @user)
+          Bulkrax.object_factory.update_index(resources: [updated_parent])
+          Bulkrax.object_factory.publish(event: 'object.membership.updated', object: updated_parent, user: @user)
         end
       end
     end
 
-    # NOTE: This should not persist changes to the
-    # child nor parent.  We'll do that elsewhere in this loop.
-    # It is important to lock the child records as they are the ones being saved.
+    # NOTE: the child changes are saved in the object factory.
     def add_to_collection(relationship:, parent_record:, ability:)
       ActiveRecord::Base.uncached do
         _child_entry, child_record = find_record(relationship.child_id, @importer_run_id)
+        raise "#{relationship} could not find child record" unless child_record
+        raise "Cannot add child collection (ID=#{relationship.child_id}) to parent work (ID=#{relationship.parent_id})" if child_record.collection? && parent_record.work?
+        ability.authorize!(:edit, child_record)
+        # We could do this outside of the loop, but that could lead to odd counter failures.
+        ability.authorize!(:edit, parent_record)
+        # It is important to lock the child records as they are the ones being saved.
+        # However, locking doesn't seem to be working so we will reload the child record before saving.
+        # This is a workaround for the fact that the lock manager doesn't seem to be working.
         conditionally_acquire_lock_for(child_record.id.to_s) do
-          raise "#{relationship} could not find child record" unless child_record
-          raise "Cannot add child collection (ID=#{relationship.child_id}) to parent work (ID=#{relationship.parent_id})" if child_record.collection? && parent_record.work?
-          ability.authorize!(:edit, child_record)
-          # We could do this outside of the loop, but that could lead to odd counter failures.
-          ability.authorize!(:edit, parent_record)
           Bulkrax.object_factory.add_resource_to_collection(
             collection: parent_record,
             resource: child_record,
@@ -206,8 +217,10 @@ module Bulkrax
       end
     end
 
-    # NOTE: This should not persist changes to the
-    # child nor parent.  We'll do that elsewhere in this loop.
+    # NOTE: we only update the parent's member_ids and prefer to not save the parent until all children are added.
+    # However, the locking appears to be working so as a workaround we will save each member as we go.
+    # This is a workaround for the fact that the lock manager doesn't seem to be working.
+    # To avoid having to reload the parent, we return the updated parent to the calling method.
     def add_to_work(relationship:, parent_record:, ability:)
       _child_entry, child_record = find_record(relationship.child_id, @importer_run_id)
       raise "#{relationship} could not find child record" unless child_record
@@ -216,13 +229,15 @@ module Bulkrax
       ability.authorize!(:edit, child_record)
       # We could do this outside of the loop, but that could lead to odd counter failures.
       ability.authorize!(:edit, parent_record)
-      Bulkrax.object_factory.add_child_to_parent_work(
+      updated_parent = Bulkrax.object_factory.add_child_to_parent_work(
         parent: parent_record,
         child: child_record
       )
       # default is false for this... do not typically need to index file sets of child records
       Bulkrax.object_factory.update_index_for_file_sets_of(resource: child_record) if update_child_records_works_file_sets?
       relationship.destroy
+
+      updated_parent
     end
 
     def reschedule(**kargs)
