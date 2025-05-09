@@ -2,49 +2,48 @@
 
 require 'rails_helper'
 
-# Dear maintainer and code reader.  This spec stubs and mocks far too many
-# things to be immediately effective.  Why?  Because we don't have a functional
-# test object factory and data model.
-#
-# Because of this and a significant refactor of the object model; namely that we
-# moved to a repository pattern where we tell the repository to perform the
-# various commands instead of commands directly on the object.  This moved to a
-# repository pattern is necessitated by the shift from Hyrax's ActiveFedora
-# usage to Hyrax's Valkyrie uses.
 module Bulkrax
   RSpec.describe CreateRelationshipsJob, type: :job do
     let(:create_relationships_job) { described_class.new }
     let(:importer) { FactoryBot.create(:bulkrax_importer_csv_complex) }
-    let(:parent_entry) { create(:bulkrax_csv_entry_collection, importerexporter: importer) }
-    let(:child_entry) { create(:bulkrax_csv_entry_work, importerexporter: importer) }
-    let(:parent_record) { build(:collection) }
-    let(:child_record) { build(:work) }
-    let(:pending_rel) { create(:pending_relationship_collection_parent, importer_run: importer.current_run, parent_id: parent_id, child_id: child_id) }
-    let(:pending_rel_work) { build(:pending_relationship_work_parent) }
-    let(:parent_id) { parent_entry.identifier }
-    let(:child_id) { child_entry.identifier }
+    let(:ability) { instance_double(Ability) }
+
+    # create objects
+    let(:collection1) { build(:collection, id: 'collection1_id') }
+    let(:collection2) { build(:collection, id: 'collection2_id') }
+    let(:work1) { build(:work, id: 'work1_id') }
+    let(:work2) { build(:work, id: 'work1_id') }
+    let(:updated_parent) { double('updated_parent') }
+
+    # create entries
+    let(:collection1_entry) { create(:bulkrax_csv_entry_collection, identifier: 'collection1_entry', importerexporter: importer) }
+    let(:collection2_entry) { create(:bulkrax_csv_entry_collection, identifier: 'collection2_entry', importerexporter: importer) }
+    let(:work1_entry) { create(:bulkrax_csv_entry_work, identifier: 'work1_entry', importerexporter: importer) }
+    let(:work2_entry) { create(:bulkrax_csv_entry_work, identifier: 'work2_entry', importerexporter: importer) }
+
+    before do
+      allow(ImporterRun).to receive(:update_counters).and_return(true)
+      allow(Ability).to receive(:new).and_return(ability)
+      allow(ability).to receive(:authorize!).and_return(true)
+      # The real work happens in the object factory. Each object factory
+      # should have its own tests to verify that it does the right thing.
+      allow(Bulkrax.object_factory).to receive(:add_resource_to_collection).and_return(true)
+      allow(Bulkrax.object_factory).to receive(:update_index).and_return(true)
+      allow(Bulkrax.object_factory).to receive(:publish).and_return(true)
+      allow(create_relationships_job).to receive(:reschedule)
+      allow(Bulkrax.object_factory).to receive(:add_child_to_parent_work).and_return(updated_parent)
+      allow(Bulkrax.object_factory).to receive(:save!).and_return(true)
+      allow(Bulkrax.object_factory).to receive(:find).with(collection1.id).and_return(collection1)
+      allow(Bulkrax.object_factory).to receive(:find).with(collection2.id).and_return(collection2)
+      allow(Bulkrax.object_factory).to receive(:find).with(work1.id).and_return(work1)
+      allow(Bulkrax.object_factory).to receive(:find).with(work2.id).and_return(work2)
+    end
 
     around do |spec|
       old = Bulkrax.object_factory
       Bulkrax.object_factory = Bulkrax::MockObjectFactory
       spec.run
       Bulkrax.object_factory = old
-    end
-    before do
-      allow_any_instance_of(Ability).to receive(:authorize!).and_return(true)
-
-      allow(create_relationships_job).to receive(:reschedule)
-      allow(::Hyrax.config).to receive(:curation_concerns).and_return([Work])
-      allow(Bulkrax::MockObjectFactory).to receive(:save!).and_return(true)
-      allow(child_record).to receive(:update_index)
-      allow(child_record).to receive(:member_of_collections).and_return([])
-      allow(parent_record).to receive(:ordered_members).and_return([])
-
-      allow(create_relationships_job).to receive(:find_record)
-      allow(create_relationships_job).to receive(:find_record).with(parent_id, importer.current_run.id).and_return([parent_entry, parent_record])
-      allow(create_relationships_job).to receive(:find_record).with(child_id, importer.current_run.id).and_return([child_entry, child_record])
-
-      pending_rel
     end
 
     describe 'is capable of looking up records dynamically' do
@@ -54,20 +53,33 @@ module Bulkrax
     describe '#perform' do
       subject(:perform) do
         create_relationships_job.perform(
-          parent_identifier: parent_id, # source_identifier
+          parent_identifier: parent_identifier, # source_identifier
           importer_run_id: importer.current_run.id
         )
       end
 
-      xcontext 'when adding a child work to a parent collection' do
-        before { allow(child_record).to receive(:file_sets).and_return([]) }
+      context 'when adding a child work to a parent collection' do
+        let(:pending_rel_test) do
+          create(:pending_relationship,
+                 importer_run_id: importer.current_run.id,
+                 parent_id: parent_identifier,
+                 child_id: work1_entry.identifier,
+                 order: 1)
+        end
+        let(:parent_identifier) { collection1_entry.identifier }
 
-        it 'assigns the parent to the child\'s #member_of_collections' do
-          expect { perform }.to change(child_record, :member_of_collections).from([]).to([parent_record])
+        before do
+          allow(create_relationships_job).to receive(:find_record).with(parent_identifier, importer.current_run.id).and_return([collection1_entry, collection1])
+          allow(create_relationships_job).to receive(:find_record).with(work1_entry.identifier, importer.current_run.id).and_return([work1_entry, work1])
+          pending_rel_test
         end
 
-        it 'increments the processed relationships counter on the importer run' do
-          expect { perform }.to change { importer.current_run.reload.processed_relationships }.by(1)
+        it 'calls the object factory to assign the child work to the collection' do
+          expect(Bulkrax.object_factory).to receive(:add_resource_to_collection).with(collection: collection1, resource: work1, user: importer.current_run.user)
+          expect(Bulkrax.object_factory).to receive(:update_index).with(resources: [collection1])
+          expect(Bulkrax.object_factory).to receive(:publish).with(event: 'object.membership.updated', object: collection1, user: importer.current_run.user)
+          expect(ImporterRun).to receive(:update_counters).with(importer.current_run.id, processed_relationships: 1)
+          perform
         end
 
         it 'deletes the pending relationship' do
@@ -80,16 +92,28 @@ module Bulkrax
         end
       end
 
-      xcontext 'when adding a child collection to a parent collection' do
-        let(:child_record) { build(:another_collection) }
-        let(:child_entry) { create(:bulkrax_csv_another_entry_collection, importerexporter: importer) }
+      context 'when adding a child collection to a parent collection' do
+        let(:pending_rel_test) do
+          create(:pending_relationship,
+                 importer_run_id: importer.current_run.id,
+                 parent_id: parent_identifier,
+                 child_id: collection2_entry.identifier,
+                 order: 1)
+        end
+        let(:parent_identifier) { collection1_entry.identifier }
 
-        it 'assigns the parent to the child\'s #member_of_collections' do
-          expect { perform }.to change(child_record, :member_of_collections).from([]).to([parent_record])
+        before do
+          allow(create_relationships_job).to receive(:find_record).with(parent_identifier, importer.current_run.id).and_return([collection1_entry, collection1])
+          allow(create_relationships_job).to receive(:find_record).with(collection2_entry.identifier, importer.current_run.id).and_return([collection2_entry, collection2])
+          pending_rel_test
         end
 
-        it 'increments the processed relationships counter on the importer run' do
-          expect { perform }.to change { importer.current_run.reload.processed_relationships }.by(1)
+        it 'calls the object factory to assign the child collection to the collection' do
+          expect(Bulkrax.object_factory).to receive(:add_resource_to_collection).with(collection: collection1, resource: collection2, user: importer.current_run.user)
+          expect(Bulkrax.object_factory).to receive(:update_index).with(resources: [collection1])
+          expect(Bulkrax.object_factory).to receive(:publish).with(event: 'object.membership.updated', object: collection1, user: importer.current_run.user)
+          expect(ImporterRun).to receive(:update_counters).with(importer.current_run.id, processed_relationships: 1)
+          perform
         end
 
         it 'deletes the pending relationship' do
@@ -100,61 +124,118 @@ module Bulkrax
           perform
           expect(create_relationships_job).not_to have_received(:reschedule)
         end
-
-        # TODO: Do we need to account for this because of Hyrax 2.9.x implementations?
-        xit 'runs NestedCollectionPersistenceService'
       end
 
-      xcontext 'when adding a child work to a parent work' do
-        let(:parent_record) { build(:another_work) }
-        let(:parent_entry) { create(:bulkrax_csv_entry_work, identifier: "other_identifier", importerexporter: importer) }
+      context 'when adding a child work to a parent work' do
+        let(:pending_rel_test) do
+          create(:pending_relationship,
+                 importer_run_id: importer.current_run.id,
+                 parent_id: parent_identifier,
+                 child_id: work2_entry.identifier,
+                 order: 1)
+        end
+        let(:parent_identifier) { work1_entry.identifier }
+        let(:update_child_records_works_file_sets?) { false }
+        let(:updated_parent) { work1 }
 
-        it 'assigns the child to the parent\'s #ordered_members' do
-          expect { perform }.to change(parent_record, :ordered_members).from([]).to([child_record])
+        before do
+          allow(create_relationships_job).to receive(:find_record).with(parent_identifier, importer.current_run.id).and_return([work1_entry, work1])
+          allow(create_relationships_job).to receive(:find_record).with(work2_entry.identifier, importer.current_run.id).and_return([work2_entry, work2])
+          pending_rel_test
         end
 
-        it 'reindexes the child work' do
+        it 'calls the object factory to assign the child work to the parent_work' do
+          expect(Bulkrax.object_factory).to receive(:add_child_to_parent_work).with(parent: work1, child: work2)
+          expect(Bulkrax.object_factory).to receive(:update_index).with(resources: [work1])
+          expect(Bulkrax.object_factory).not_to receive(:update_index_for_file_sets_of)
+          expect(ImporterRun).to receive(:update_counters).with(importer.current_run.id, processed_relationships: 1)
           perform
-          expect(child_record).to have_received(:update_index)
-        end
-
-        it 'increments the processed relationships counter on the importer run' do
-          expect { perform }.to change { importer.current_run.reload.processed_relationships }.by(1)
         end
 
         it 'deletes the pending relationship' do
           expect { perform }.to change(Bulkrax::PendingRelationship, :count).by(-1)
         end
+
+        it 'does not reschedule the job' do
+          perform
+          expect(create_relationships_job).not_to have_received(:reschedule)
+        end
       end
 
-      xcontext 'when adding a child collection to a parent work' do
-        let(:child_entry) { create(:bulkrax_csv_entry_collection, importerexporter: importer) }
-        let(:parent_entry) { create(:bulkrax_csv_entry_work, importerexporter: importer) }
-        let(:child_record) { build(:collection) }
-        let(:parent_record) { build(:work) }
+      context 'when adding a child collection to a parent work' do
+        let(:pending_rel_test) do
+          create(:pending_relationship,
+                 importer_run_id: importer.current_run.id,
+                 parent_id: parent_identifier,
+                 child_id: collection1_entry.identifier,
+                 order: 1)
+        end
+        let(:parent_identifier) { work1_entry.identifier }
+
+        before do
+          allow(create_relationships_job).to receive(:find_record).with(parent_identifier, importer.current_run.id).and_return([work1_entry, work1])
+          allow(create_relationships_job).to receive(:find_record).with(collection1_entry.identifier, importer.current_run.id).and_return([collection1_entry, collection1])
+          pending_rel_test
+        end
 
         it 'logs an error to the parent entry' do
-          expect { perform }.to change(parent_entry, :failed?).to(true)
+          expect { perform }.to change(work1_entry, :failed?).to(true)
         end
 
         it 'increments current importer run\'s :failed_relationships' do
-          expect { perform }.to change { importer.current_run.reload.failed_relationships }.by(1)
-        end
-      end
-
-      xcontext 'when adding a child record that is not found' do
-        it 'reschudules the job' do
-          expect(create_relationships_job).to receive(:find_record).with(child_id, importer.current_run.id).and_return([nil, nil])
+          expect(ImporterRun).to receive(:update_counters).with(importer.current_run.id, failed_relationships: 1)
           perform
-          expect(create_relationships_job).to have_received(:reschedule).with(parent_identifier: parent_id, importer_run_id: importer.current_run.id)
         end
       end
 
-      xcontext 'when adding a parent record that is not found' do
+      context 'when adding a child record that is not found' do
+        let(:pending_rel_test) do
+          create(:pending_relationship,
+                 importer_run_id: importer.current_run.id,
+                 parent_id: parent_identifier,
+                 child_id: child_id,
+                 order: 1)
+        end
+        let(:parent_identifier) { collection1_entry.identifier }
+        let(:child_id) { 'not_found' }
+
+        before do
+          allow(create_relationships_job).to receive(:find_record).with(parent_identifier, importer.current_run.id).and_return([work1_entry, work1])
+          allow(create_relationships_job).to receive(:find_record).with(child_id, importer.current_run.id).and_return([nil, nil])
+          pending_rel_test
+        end
+
         it 'reschedules the job' do
-          expect(create_relationships_job).to receive(:find_record).with(parent_id, importer.current_run.id).and_return([nil, nil])
-          perform
-          expect(create_relationships_job).to have_received(:reschedule).with(parent_identifier: parent_id, importer_run_id: importer.current_run.id)
+          expect(ImporterRun).to receive(:update_counters).with(importer.current_run.id, failed_relationships: 1)
+          expect(create_relationships_job).to receive(:reschedule).with(parent_identifier: parent_identifier, importer_run_id: importer.current_run.id, run_user: importer.current_run.user, failure_count: 1)
+          result = perform
+          # Expect the result to be an array containing one RuntimeError
+          expect(result).to match([an_instance_of(RuntimeError)])
+        end
+      end
+
+      context 'when adding a parent record that is not found' do
+        let(:pending_rel_test) do
+          create(:pending_relationship,
+                 importer_run_id: importer.current_run.id,
+                 parent_id: parent_identifier,
+                 child_id: child_id,
+                 order: 1)
+        end
+        let(:parent_identifier) { 'not_found' }
+        let(:child_id) { work1_entry.identifier }
+
+        before do
+          allow(create_relationships_job).to receive(:find_record).with(parent_identifier, importer.current_run.id).and_return([nil, nil])
+          allow(create_relationships_job).to receive(:find_record).with(child_id, importer.current_run.id).and_return([work1_entry, work1])
+          pending_rel_test
+        end
+
+        it 'reschedules the job' do
+          expect(ImporterRun).to receive(:update_counters).with(importer.current_run.id, failed_relationships: 1)
+          expect(create_relationships_job).to receive(:reschedule).with(parent_identifier: parent_identifier, importer_run_id: importer.current_run.id, run_user: importer.current_run.user, failure_count: 1)
+          result = perform
+          expect(result).to eq(["Parent record #{parent_identifier} not yet available for creating relationships with children records."])
         end
       end
     end

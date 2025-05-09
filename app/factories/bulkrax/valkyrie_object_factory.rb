@@ -61,16 +61,21 @@ module Bulkrax
     # @!group Class Method Interface
 
     ##
-    # @note This does not save either object.  We need to do that in another
-    #       loop.  Why?  Because we might be adding many items to the parent.
+    # When adding a child to a parent work, we save the parent.
+    # Locking appears inconsistent, so we are finding the parent and
+    # saving it with each child, but waiting until the end to reindex.
+    # To do this we are bypassing the save! method defined below
     def self.add_child_to_parent_work(parent:, child:)
+      parent = self.find(parent.id)
       return true if parent.member_ids.include?(child.id)
-
       parent.member_ids << child.id
-      parent.save
+      Hyrax.persister.save(resource: parent)
     end
 
+    ##
+    # The resource added to a collection can be either a work or another collection.
     def self.add_resource_to_collection(collection:, resource:, user:)
+      resource = self.find(resource.id)
       resource.member_of_collection_ids << collection.id
       save!(resource: resource, user: user)
     end
@@ -125,6 +130,8 @@ module Bulkrax
     end
 
     def self.publish(event:, **kwargs)
+      # It's a bit unclear what this should be if we can't rely on Hyrax.
+      raise NotImplementedError, "#{self}.#{__method__}" unless defined?(Hyrax)
       Hyrax.publisher.publish(event, **kwargs)
     end
 
@@ -137,19 +144,19 @@ module Bulkrax
     end
 
     def self.save!(resource:, user:)
-      if resource.respond_to?(:save!)
-        resource.save!
-      else
+      if defined?(Hyrax)
         result = Hyrax.persister.save(resource: resource)
         raise Valkyrie::Persistence::ObjectNotFoundError unless result
         Hyrax.index_adapter.save(resource: result)
         if result.collection?
-          publish('collection.metadata.updated', collection: result, user: user)
+          self.publish(event: 'collection.metadata.updated', collection: result, user: user)
         else
-          publish('object.metadata.updated', object: result, user: user)
+          self.publish(event: 'object.metadata.updated', object: result, user: user)
         end
-        resource
+      else
+        resource.save!
       end
+      resource
     end
 
     def self.update_index(resources:)
@@ -209,7 +216,7 @@ module Bulkrax
 
       Hyrax.persister.delete(resource: obj)
       Hyrax.index_adapter.delete(resource: obj)
-      self.class.publish(event: 'object.deleted', object: obj, user: user)
+      Hyrax.publisher.publish('object.deleted', object: obj, user: user)
     end
 
     def run!
@@ -228,7 +235,7 @@ module Bulkrax
 
       @object.depositor = @user.email
       object = Hyrax.persister.save(resource: @object)
-      self.class.publish(event: "object.metadata.updated", object: object, user: @user)
+      Hyrax.publisher.publish("object.metadata.updated", object: object, user: @user)
       object
     end
 
@@ -334,7 +341,7 @@ module Bulkrax
     end
 
     def find_by_id
-      Hyrax.query_service.find_by(id: attributes[:id]) if attributes.key? :id
+      find(id: attributes[:id]) if attributes.key? :id
     end
 
     ##
