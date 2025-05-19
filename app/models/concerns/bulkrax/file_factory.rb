@@ -62,9 +62,9 @@ module Bulkrax
       @file_paths ||= Array.wrap(attributes[:file])&.select { |file| File.exist?(file) }
     end
 
-    # Retrieve the orginal filenames for the files to be imported
+    # Retrieve the original filenames for the files to be imported
     def work_files_filenames
-      object.file_sets.map { |fn| fn.original_file.file_name.to_a }.flatten if object.present? && object.file_sets.present?
+      object.file_sets.map { |fn| fn.original_file&.file_name&.to_a }.flatten if object.present? && object.file_sets.present?
     end
 
     # Retrieve the filenames for the files to be imported
