@@ -38,6 +38,46 @@ module Bulkrax
       end
     end
 
+    # Customized create method for Valkyrie so that @object gets set
+    def create
+      attrs = transform_attributes
+      @object = klass.new
+      conditionally_set_reindex_extent
+      run_callbacks :save do
+        run_callbacks :create do
+          @object = if klass == Bulkrax.collection_model_class
+                      create_collection(attrs)
+                    elsif klass == Bulkrax.file_model_class
+                      create_file_set(attrs)
+                    else
+                      create_work(attrs)
+                    end
+        end
+      end
+
+      apply_depositor_metadata
+      log_created(@object)
+    end
+
+    # Customized update method for Valkyrie so that @object gets set
+    def update
+      raise "Object doesn't exist" unless object
+      conditionally_destroy_existing_files
+
+      attrs = transform_attributes(update: true)
+      run_callbacks :save do
+        @object = if klass == Bulkrax.collection_model_class
+                    update_collection(attrs)
+                  elsif klass == Bulkrax.file_model_class
+                    update_file_set(attrs)
+                  else
+                    update_work(attrs)
+                  end
+      end
+      apply_depositor_metadata
+      log_updated(@object)
+    end
+
     # TODO: the following module needs revisiting for Valkyrie work.
     #       proposal is to create Bulkrax::ValkyrieFileFactory.
     include Bulkrax::FileFactory

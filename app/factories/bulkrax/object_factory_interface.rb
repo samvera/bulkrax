@@ -297,11 +297,11 @@ module Bulkrax
       run_callbacks :save do
         run_callbacks :create do
           if klass == Bulkrax.collection_model_class
-            @object = create_collection(attrs)
+            create_collection(attrs)
           elsif klass == Bulkrax.file_model_class
             create_file_set(attrs)
           else
-            @object = create_work(attrs)
+            create_work(attrs)
           end
         end
       end
