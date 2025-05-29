@@ -23,7 +23,7 @@ module Bulkrax
     end
 
     def latest?
-      # TODO: remove if statment when we stop supporting Hyrax < 4
+      # TODO: remove if statement when we stop supporting Hyrax < 4
       self.id == if Gem::Version.new(Rails::VERSION::STRING) >= Gem::Version.new('6.0.0')
                    self.class.where(statusable_id: self.statusable_id, statusable_type: self.statusable_type).order('id desc').pick(:id)
                  else
