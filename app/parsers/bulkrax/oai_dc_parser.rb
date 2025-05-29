@@ -61,8 +61,6 @@ module Bulkrax
       ['contributor', 'coverage', 'creator', 'date', 'description', 'format', 'identifier', 'language', 'publisher', 'relation', 'rights', 'source', 'subject', 'title', 'type']
     end
 
-    delegate :list_sets, to: :client
-
     def create_objects(types = [])
       types.each do |object_type|
         send("create_#{object_type.pluralize}")
