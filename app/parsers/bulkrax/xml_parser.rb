@@ -62,6 +62,10 @@ module Bulkrax
             # Retrieve all records
             elements = entry_class.read_data(md).xpath("//#{record_element}")
             r += elements.map { |el| entry_class.data_for_entry(el, source_identifier, self) }
+          rescue => e
+            importer = Importer.find(entry_class.runnable_id)
+            importer.set_status_info(e, importer)
+            raise => e  
           end
           # Flatten because we may have multiple records per array
           r.compact.flatten
@@ -69,6 +73,10 @@ module Bulkrax
           metadata_paths.map do |md|
             data = entry_class.read_data(md).xpath("//#{record_element}").first # Take only the first record
             entry_class.data_for_entry(data, source_identifier, self)
+          rescue => e
+            importer = Importer.find(entry_class.runnable_id)
+            importer.set_status_info(e, importer)
+            raise => e  
           end.compact # No need to flatten because we take only the first record
         end
     end
