@@ -209,8 +209,11 @@ module Bulkrax
     def rebuild_entries(types_array = nil)
       index = 0
       (types_array || %w[collection work file_set relationship]).each do |type|
-        # works are not gurneteed to have Work in the type
-
+        # works are not guaranteed to have Work in the type
+        if type.eql?('relationship')
+          ScheduleRelationshipsJob.set(wait: 5.minutes).perform_later(importer_id: importerexporter.id)
+          next
+        end
         importer.entries.where(rebuild_entry_query(type, parser_fields['entry_statuses'])).find_each do |e|
           seen[e.identifier] = true
           e.status_info('Pending', importer.current_run)
