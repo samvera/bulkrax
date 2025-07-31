@@ -13,3 +13,4 @@ spec/test_app/tmp/
 tmp/**
 *~undo-tree~
 /vendor
+.tool-versions

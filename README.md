@@ -208,6 +208,28 @@ We encourage everyone to help improve this project.  Bug reports and pull reques
 
 This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant](https://contributor-covenant.org) code of conduct.
 
+### Running tests
+- The tests use sqlite as the database, so no extra dependencies are required. 
+- Ensure you are using a supported version of Ruby (`ruby -v` should be greater or equal to 2.7) 
+- Decide on your version of Hyrax to test against and export it to your environment, then bundle install. The Hyrax version should be greater or equal to 2.3.
+```bash
+export HYRAX_VERSION="~> 4.0.0"
+bundle install
+```
+- Run the test migrations
+```bash
+bundle exec bin/rails db:migrate RAILS_ENV=test
+```
+- Run the tests
+```bash
+bundle exec rspec
+```
+
+- Run the style checker / linter
+```bash
+bundle exec rubocop
+```
+
 ## Questions
 Questions can be sent to support@notch8.com. Please make sure to include "Bulkrax" in the subject line of your email.
 
