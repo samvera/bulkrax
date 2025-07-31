@@ -152,6 +152,7 @@ module Bulkrax
     end
 
     def self.find(id)
+      # byebug
       Hyrax.query_service.find_by(id: id)
       # Because Hyrax is not a hard dependency, we need to transform the Hyrax exception into a
       # common exception so that callers can handle a generalize exception.
@@ -226,6 +227,7 @@ module Bulkrax
       raise "Expected named_field or field got nil" if name_field.blank?
       return if value.blank?
       # Return nil or a single object.
+      # byebug
       Hyrax.query_service.custom_queries.find_by_property_value(property: name_field, value: value, search_field: search_field)
     end
     # rubocop:enable Metrics/ParameterLists
