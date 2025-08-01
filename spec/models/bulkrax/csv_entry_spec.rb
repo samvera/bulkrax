@@ -69,11 +69,11 @@ module Bulkrax
           "shape" => { from: ["shape"] },
           'source_identifier' => { from: ['source_identifier'], source_identifier: true }
         }
-        class ::Avacado < Work
+        class ::Avocado < Work
           property :shape, predicate: ::RDF::Vocab::DC.format
         end
         spec.run
-        Object.send(:remove_const, :Avacado)
+        Object.send(:remove_const, :Avocado)
         Bulkrax.field_mappings['Bulkrax::CsvParser'] = old
       end
       let(:path) { File.expand_path('../../fixtures/csv/factory_class_test.csv', __dir__) }
@@ -83,12 +83,12 @@ module Bulkrax
           parser_fields: { "import_file_path" => path }
         )
       end
-      let(:data) { { work_type: "Avacado", title: "A Yummy Friend", shape: "Kind of Lumpy", source_identifier: "1234-5678" } }
+      let(:data) { { work_type: "Avocado", title: "A Yummy Friend", shape: "Kind of Lumpy", source_identifier: "1234-5678" } }
       subject(:entry) { described_class.new(importerexporter: importer, raw_metadata: data, identifier: data.fetch(:source_identifier)) }
 
       it "must establish a factory class before attempting to add other metadata" do
         entry.build_metadata
-        expect(entry.factory_class).to eq(Avacado)
+        expect(entry.factory_class).to eq(Avocado)
       end
     end
 

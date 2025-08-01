@@ -10,36 +10,35 @@ module Bulkrax
 
   RSpec.describe ValkyrieObjectFactory do
     describe '.search_by_property' do
-      let(:active_fedora_relation) { instance_double('ActiveFedora::Relation') }
-      let(:generic_works) do
-        [
-          FactoryBot.build(:work, title: ["Specific Title"]),
-          FactoryBot.build(:another_work, title: ["Title"])
-        ]
+      let(:active_fedora_relation) { ActiveFedora::Relation.new(ActiveFedora::Base) }
+      let(:target_work) { FactoryBot.build(:avocado_work) }
+      let(:other_work) { FactoryBot.build(:another_avocado_work) }
+
+      around do |spec|
+        class ::Avocado < Work
+          property :bulkrax_identifier, predicate: ::RDF::URI("https://hykucommons.org/terms/bulkrax_identifier"), multiple: false
+        end
+        spec.run
+        Object.send(:remove_const, :Avocado)
       end
-      let(:klass) { double(where: generic_works) }
+
       before do
         Hyrax.query_service.custom_queries.register_query_handler(Wings::CustomQueries::FindBySourceIdentifier)
         stub_request(:get, "http://localhost:8985/solr/hydra-test/select?fl=id&q=_query_:%22%7B!field%20f=bulkrax_identifier_tesim%7DTitle%22&qt=standard&rows=1000&sort=system_create_dtsi%20asc&start=0&wt=json")
-          .with(
-            headers: {
-              'Accept' => '*/*',
-              'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3',
-              'User-Agent' => 'Faraday v2.13.4'
-            }
-          )
           .to_return(status: 200, body: '{}', headers: {})
-        allow(ActiveFedora::Base).to receive(:where).with({ "bulkrax_identifier_tesim" => "Title" }).and_return(active_fedora_relation)
-        allow(active_fedora_relation).to receive(:detect).and_yield(generic_works[1])
+        allow(ActiveFedora::Base).to receive(:where).with({ "bulkrax_identifier_tesim" => "BU_Collegian-19481124" }).and_return(active_fedora_relation)
+        allow(active_fedora_relation).to receive(:each).and_yield(target_work).and_yield(other_work)
       end
+
       it 'does find the collection with a partial match' do
         work = described_class.search_by_property(
-          value: "Title",
+          value: "BU_Collegian-19481124",
           search_field: "bulkrax_identifier_tesim",
           name_field: :bulkrax_identifier,
-          klass: klass
+          klass: ActiveFedora::Base
         )
-        expect(work.title).to eq(["Title"])
+        expect(work.title).to eq(["A Work"])
+        expect(ActiveFedora::Base).to have_received(:where).with({ "bulkrax_identifier_tesim" => "BU_Collegian-19481124" })
       end
     end
   end

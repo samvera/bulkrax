@@ -22,8 +22,14 @@ module Wings
         # NOTE: This is using the Bulkrax::ObjectFactory (e.g. the one envisioned for ActiveFedora).
         # In doing this, we avoid the situation where Bulkrax::ValkyrieObjectFactory calls this custom query.
 
-        # This is doing a solr search so we have to use the search_field instead of the property
-        af_object = Bulkrax::ObjectFactory.search_by_property(value: value, klass: ActiveFedora::Base, field: search_field)
+        # This is doing a solr search first, so we have to use the search_field instead of the property for "field"
+        # If it cannot find the object in Solr, it falls back to an ActiveFedora search, if the object is an ActiveFedora object
+        af_object = Bulkrax::ObjectFactory.search_by_property(
+          value: value,
+          klass: ActiveFedora::Base,
+          field: search_field,
+          name_field: property
+        )
 
         return if af_object.blank?
         return af_object unless use_valkyrie
