@@ -9,11 +9,17 @@ on:
 
 jobs:
   rspec:
+    env:
+      HYRAX_VERSION: "${{ matrix.hyrax }}"
     runs-on: ubuntu-latest
     strategy:
       matrix:
         ruby: ['2.7', '3.2']
-    name: Run specs with ruby ${{ matrix.ruby }}
+        hyrax: ['~> 4.0', '~> 5.0.1']
+        exclude:
+          - ruby: '2.7'
+            hyrax: '~> 5.0.1'
+    name: Run specs with ruby ${{ matrix.ruby }} and hyrax ${{ matrix.hyrax }}
     steps:
       - uses: actions/checkout@v2
 
@@ -21,7 +27,7 @@ jobs:
         uses: actions/cache@v4.2.0
         with:
           path: vendor/bundle
-          key: ${{ matrix.ruby }}
+          key: ${{ matrix.ruby }} ${{ matrix.hyrax }}
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1.204.0
@@ -35,6 +41,7 @@ jobs:
         run: |
           bundle config path vendor/bundle
           bundle install
+          echo bundle info hyrax
 
       - name: Migrate test database
         run: bundle exec rake db:migrate db:test:prepare
@@ -43,9 +50,10 @@ jobs:
         run: bundle exec rake spec
 
       - name: Upload coverage results
+        if: ${{ matrix.ruby == '2.7' }}
         uses: actions/upload-artifact@v4.4.0
         with:
-          name: coverage-report-${{ matrix.ruby }}
+          name: coverage-report
           path: coverage/**
           include-hidden-files: true
 
@@ -59,7 +67,7 @@ jobs:
       - name: Download coverage report
         uses: actions/download-artifact@v4.1.8
         with:
-          name: coverage-report-2.7
+          name: coverage-report
           path: coverage
 
       - name: SimpleCov Check
