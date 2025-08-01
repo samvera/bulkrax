@@ -441,6 +441,11 @@ module Bulkrax
       end
 
       context 'when exporting all' do
+        before do
+          stub_request(:head, %r{http://localhost:8986/rest/test/.*}).to_return(status: 200, body: "", headers: {})
+          stub_request(:get, %r{http://localhost:8986/rest/test/.*}).to_return(status: 200, body: "", headers: {})
+        end
+
         it 'exports works, collections, and file sets' do
           expect(Bulkrax::ExportWorkJob).to receive(:perform_now).exactly(record_set.count).times
 
