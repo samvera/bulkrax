@@ -83,6 +83,10 @@ module Bulkrax
       add_local
 
       self.parsed_metadata
+    rescue => e
+      self.save!
+      self.set_status_info(e, self)
+      raise => e
     end
 
     def validate_record
