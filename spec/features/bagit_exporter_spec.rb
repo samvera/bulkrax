@@ -8,6 +8,8 @@ module Bulkrax
     let(:exporter) { FactoryBot.create(:bulkrax_exporter, parser_klass: 'Bulkrax::BagitParser', export_from: 'all') }
     let(:bulkrax_exporter_run) { FactoryBot.create(:bulkrax_exporter_run, exporter: exporter) }
     before do
+      stub_request(:head, %r{http://localhost:8986/rest/test.*}).to_return(status: 200, body: "", headers: {})
+      stub_request(:get, %r{http://localhost:8986/rest/test.*}).to_return(status: 200, body: "", headers: {})
       importer.import_works
       allow(exporter.parser).to receive(:current_records_for_export)
         .and_return(importer.entries.map { |e| [e.identifier, e.class] })

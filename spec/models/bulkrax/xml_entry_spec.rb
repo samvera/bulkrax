@@ -123,12 +123,12 @@ module Bulkrax
     describe '#build_metadata' do
       subject(:entry) { described_class.new(importerexporter: importer) }
       before do
-        class ::Avacado < Work
+        class ::Avocado < Work
           property :shape, predicate: ::RDF::Vocab::DC.format
         end
       end
       after do
-        Object.send(:remove_const, :Avacado)
+        Object.send(:remove_const, :Avocado)
       end
       let(:importer) { FactoryBot.build(:bulkrax_importer_xml) }
       let(:raw_metadata) do
@@ -136,7 +136,7 @@ module Bulkrax
          "<entry>" \
          "<TitleLargerEntity>Green Friend for All</TitleLargerEntity>" \
          "<shape>Lumpy and Kind of Brown</shape>" \
-         "<model>Avacado</model>" \
+         "<model>Avocado</model>" \
          "<DrisUnique>123</DrisUnique>" \
          "</entry>"
       end
@@ -148,7 +148,7 @@ module Bulkrax
         expect(entry.build_metadata)
         expect(entry.parsed_metadata["shape"]).to eq(["Lumpy and Kind of Brown"])
         expect(entry.parsed_metadata["title"]).to eq(["Green Friend for All"])
-        expect(entry.factory_class).to eq(Avacado)
+        expect(entry.factory_class).to eq(Avocado)
       end
     end
   end

@@ -76,12 +76,12 @@ module Bulkrax
       before do
         # NOTE: Not up for messing with the thumbnail url
         importer.parser_fields['thumbnail_url'] = ''
-        class ::Avacado < Work
+        class ::Avocado < Work
           property :shape, predicate: ::RDF::Vocab::DC.format
         end
       end
       after do
-        Object.send(:remove_const, :Avacado)
+        Object.send(:remove_const, :Avocado)
       end
 
       # rubocop:disable RSpec/VerifiedDoubles
@@ -92,7 +92,7 @@ module Bulkrax
                 # the other metadata.
                 [
                   double(name: "shape", content: "Lumpy and Kind of Brown"),
-                  double(name: "model", content: "Avacado")
+                  double(name: "model", content: "Avocado")
                 ])]
       end
       # rubocop:enable RSpec/VerifiedDoubles
@@ -113,7 +113,7 @@ module Bulkrax
         # Verifying that I have field mappings
         expect(entry.parser.model_field_mappings).to eq(["model"])
         entry.build_metadata
-        expect(entry.factory_class).to eq(Avacado)
+        expect(entry.factory_class).to eq(Avocado)
         expect(entry.parsed_metadata["shape"]).to eq(["Lumpy and Kind of Brown"])
       end
     end
