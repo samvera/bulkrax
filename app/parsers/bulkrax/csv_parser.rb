@@ -22,7 +22,7 @@ module Bulkrax
       @records = csv_data.map { |record_data| entry_class.data_for_entry(record_data, nil, self) }
     rescue => e
       importer.set_status_info(e, importer)
-      raise => e
+      raise "Error parsing CSV: #{e.message}"
     end
 
     # rubocop:disable Metrics/AbcSize
