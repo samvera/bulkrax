@@ -85,6 +85,13 @@ module Bulkrax
       self.parsed_metadata
     end
 
+    # limited metadata is needed for delete jobs
+    def build_metadata_for_delete
+      self.parsed_metadata = {}
+      add_identifier
+      self.parsed_metadata
+    end
+
     def validate_record
       raise StandardError, 'Record not found' if record.nil?
       unless importerexporter.parser.required_elements?(record)
