@@ -38,7 +38,7 @@ module Bulkrax
             #       We aren't right now because so many Bulkrax users are in between Fedora and Valkyrie
             if model.casecmp('collection').zero? || model.casecmp('collectionresource').zero?
               @collections << r
-            elsif model.casecmp('fileset').zero?
+            elsif model.casecmp('fileset').zero? || model.casecmp('hyrax::fileset').zero?
               @file_sets << r
             else
               @works << r

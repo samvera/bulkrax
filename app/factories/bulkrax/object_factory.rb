@@ -166,7 +166,7 @@ module Bulkrax
 
     def delete(_user)
       obj = find
-      return false unless obj
+      raise ObjectFactoryInterface::ObjectNotFoundError, "Object not found to delete" unless obj
 
       obj.delete(eradicate: true)
     end
