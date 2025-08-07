@@ -42,32 +42,32 @@ module Bulkrax
         allow(entry).to receive(:set_status_info)
       end
 
-    it 'raises an error and sets status info' do
-      # Expect the error to be raised
-      expect {
-        delete_work_job.perform(entry, importer_run)
-      }.to raise_error(StandardError, "Record not found")
+      it 'raises an error and sets status info' do
+        # Expect the error to be raised
+        expect do
+          delete_work_job.perform(entry, importer_run)
+        end.to raise_error(StandardError, "Record not found")
 
-      # Verify set_status_info was called with the error
-      expect(entry).to have_received(:set_status_info).with(instance_of(StandardError))
-    end
-
-    it 'does not increment deleted_records or decrement enqueued_records' do
-      expect(importer_run.enqueued_records).to eq(1)
-      expect(importer_run.deleted_records).to eq(0)
-
-      # Call perform but rescue the error
-      begin
-        delete_work_job.perform(entry, importer_run)
-      rescue StandardError
-        # Ignore the error
+        # Verify set_status_info was called with the error
+        expect(entry).to have_received(:set_status_info).with(instance_of(StandardError))
       end
-      importer_run.reload
 
-      # Counters should remain unchanged
-      expect(importer_run.enqueued_records).to eq(1)
-      expect(importer_run.deleted_records).to eq(0)
-    end
+      it 'does not increment deleted_records or decrement enqueued_records' do
+        expect(importer_run.enqueued_records).to eq(1)
+        expect(importer_run.deleted_records).to eq(0)
+
+        # Call perform but rescue the error
+        begin
+          delete_work_job.perform(entry, importer_run)
+        rescue StandardError
+          # Ignore the error
+        end
+        importer_run.reload
+
+        # Counters should remain unchanged
+        expect(importer_run.enqueued_records).to eq(1)
+        expect(importer_run.deleted_records).to eq(0)
+      end
     end
   end
 end
