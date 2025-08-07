@@ -34,22 +34,40 @@ module Bulkrax
       end
     end
 
-    describe 'successful job object not found' do
+    describe 'unsuccessful job when object not found' do
       before do
         allow(factory).to receive(:find).and_return(nil)
         allow(entry).to receive(:factory).and_return(factory)
+        allow(factory).to receive(:delete).and_raise(StandardError, "Record not found")
+        allow(entry).to receive(:set_status_info)
       end
 
-      it 'increments :deleted_records' do
-        expect(importer_run.enqueued_records).to eq(1)
-        expect(importer_run.deleted_records).to eq(0)
-
+    it 'raises an error and sets status info' do
+      # Expect the error to be raised
+      expect {
         delete_work_job.perform(entry, importer_run)
-        importer_run.reload
+      }.to raise_error(StandardError, "Record not found")
 
-        expect(importer_run.enqueued_records).to eq(0)
-        expect(importer_run.deleted_records).to eq(1)
+      # Verify set_status_info was called with the error
+      expect(entry).to have_received(:set_status_info).with(instance_of(StandardError))
+    end
+
+    it 'does not increment deleted_records or decrement enqueued_records' do
+      expect(importer_run.enqueued_records).to eq(1)
+      expect(importer_run.deleted_records).to eq(0)
+
+      # Call perform but rescue the error
+      begin
+        delete_work_job.perform(entry, importer_run)
+      rescue StandardError
+        # Ignore the error
       end
+      importer_run.reload
+
+      # Counters should remain unchanged
+      expect(importer_run.enqueued_records).to eq(1)
+      expect(importer_run.deleted_records).to eq(0)
+    end
     end
   end
 end
