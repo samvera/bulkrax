@@ -88,7 +88,8 @@ module Bulkrax
     # limited metadata is needed for delete jobs
     def build_metadata_for_delete
       self.parsed_metadata = {}
-      add_identifier
+      establish_factory_class
+      add_ingested_metadata
       self.parsed_metadata
     end
 
