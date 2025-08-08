@@ -34,21 +34,38 @@ module Bulkrax
       end
     end
 
-    describe 'successful job object not found' do
+    describe 'unsuccessful job when object not found' do
       before do
         allow(factory).to receive(:find).and_return(nil)
         allow(entry).to receive(:factory).and_return(factory)
+        allow(entry).to receive(:set_status_info)
       end
 
-      it 'increments :deleted_records' do
+      it 'raises an error and sets status info' do
+        # Expect the error to be raised
+        expect do
+          delete_work_job.perform(entry, importer_run)
+        end.to raise_error(Bulkrax::ObjectFactoryInterface::ObjectNotFoundError, "Object not found to delete")
+
+        # Verify set_status_info was called with the error
+        expect(entry).to have_received(:set_status_info).with(instance_of(Bulkrax::ObjectFactoryInterface::ObjectNotFoundError))
+      end
+
+      it 'does not increment deleted_records or decrement enqueued_records' do
         expect(importer_run.enqueued_records).to eq(1)
         expect(importer_run.deleted_records).to eq(0)
 
-        delete_work_job.perform(entry, importer_run)
+        # Call perform but rescue the error
+        begin
+          delete_work_job.perform(entry, importer_run)
+        rescue StandardError
+          # Ignore the error
+        end
         importer_run.reload
 
-        expect(importer_run.enqueued_records).to eq(0)
-        expect(importer_run.deleted_records).to eq(1)
+        # Counters should remain unchanged
+        expect(importer_run.enqueued_records).to eq(1)
+        expect(importer_run.deleted_records).to eq(0)
       end
     end
   end

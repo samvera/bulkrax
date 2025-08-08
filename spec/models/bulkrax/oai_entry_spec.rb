@@ -109,7 +109,7 @@ module Bulkrax
         allow(entry).to receive_message_chain(:record, :header, :identifier).and_return("some_identifier")
         allow(entry).to receive_message_chain(:record, :header, :set_spec).and_return([])
         allow(entry).to receive_message_chain(:record, :metadata, :children).and_return(nodes)
-        allow(entry).to receive_message_chain(:raw_metadata, :[]).and_return({ children: [], parents: [] })
+        allow(entry).to receive_message_chain(:raw_metadata).and_return({ children: [], parents: [] })
         # Verifying that I have field mappings
         expect(entry.parser.model_field_mappings).to eq(["model"])
         entry.build_metadata
@@ -141,7 +141,7 @@ module Bulkrax
         allow(entry).to receive_message_chain(:record, :header, :identifier).and_return("some_identifier")
         allow(entry).to receive_message_chain(:record, :header, :set_spec).and_return([])
         allow(entry).to receive_message_chain(:record, :metadata, :children).and_return([])
-        allow(entry).to receive_message_chain(:raw_metadata, :[]).and_return({ children: [], parents: [] })
+        allow(entry).to receive_message_chain(:raw_metadata).and_return({ children: [], parents: [] })
         entry.build_metadata
         expect(entry.parsed_metadata['admin_set_id']).to eq 'MyString'
       end

@@ -66,27 +66,68 @@ module Bulkrax
       entry.default_work_type.constantize
     end
 
+    private
+
     ##
     # @api private
     # @return [String]
     def name
-      fc = if entry.parsed_metadata&.[]('model').present?
-             Array.wrap(entry.parsed_metadata['model']).first
-           elsif entry.importerexporter&.mapping&.[]('work_type').present?
-             # Because of delegation's nil guard, we're reaching rather far into the implementation
-             # details.
-             Array.wrap(entry.parsed_metadata['work_type']).first
-           else
-             entry.default_work_type
-           end
+      # Try each strategy in order until one returns a value
+      fc = find_factory_class_name || entry.default_work_type
 
-      # Let's coerce this into the right shape; we're not mutating the string because it might well
-      # be frozen.
-      fc = fc.tr(' ', '_')
-      fc = fc.downcase if fc.match?(/[-_]/)
-      fc.camelcase
+      # Normalize the string format
+      normalize_class_name(fc)
     rescue
       entry.default_work_type
+    end
+
+    ##
+    # Try each strategy in sequence to find a factory class name
+    # @return [String, nil] the factory class name or nil if none found
+    def find_factory_class_name
+      prioritized_strategies = [
+        :model_from_parsed_metadata,
+        :work_type_from_parsed_metadata,
+        :model_from_raw_metadata,
+        :model_from_mapped_field
+      ]
+
+      # Return the first non-nil result
+      prioritized_strategies.each do |strategy|
+        result = send(strategy)
+        return result if result.present?
+      end
+
+      nil
+    end
+
+    def model_from_parsed_metadata
+      Array.wrap(entry.parsed_metadata['model']).first if entry.parsed_metadata&.[]('model').present?
+    end
+
+    def work_type_from_parsed_metadata
+      Array.wrap(entry.parsed_metadata['work_type']).first if entry.importerexporter&.mapping&.[]('work_type').present?
+    end
+
+    def model_from_raw_metadata
+      Array.wrap(entry.raw_metadata&.[]('model'))&.first if entry.raw_metadata&.[]('model').present?
+    end
+
+    def model_from_mapped_field
+      return nil unless entry.parser.model_field_mappings.any? { |field| entry.raw_metadata&.[](field).present? }
+      field = entry.parser.model_field_mappings.find { |f| entry.raw_metadata&.[](f).present? }
+      Array.wrap(entry.raw_metadata[field]).first
+    end
+
+    ##
+    # Normalize a class name string to proper format
+    # @param name [String] the class name to normalize
+    # @return [String] the normalized class name
+    def normalize_class_name(name)
+      name = name.to_s
+      name = name.tr(' ', '_')
+      name = name.downcase if name.match?(/[-_]/)
+      name.camelcase
     end
   end
 end

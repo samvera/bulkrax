@@ -6,6 +6,17 @@ module Bulkrax
 
     def perform(entry, importer_run)
       user = importer_run.importer.user
+
+      # When we delete, we don't go through the build process.
+      # However, we need the identifier to be set for the entry.
+      # This enables us to delete based on the ID, not just the source_identifier.
+      if entry.respond_to?(:build_metadata_for_delete) &&
+         entry.parsed_metadata.nil? &&
+         entry.raw_metadata.present?
+        entry.build_metadata_for_delete
+        entry.save!
+      end
+
       entry.factory.delete(user)
 
       # rubocop:disable Rails/SkipsModelValidations

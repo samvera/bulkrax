@@ -155,7 +155,7 @@ module Bulkrax
       Hyrax.query_service.find_by(id: id)
       # Because Hyrax is not a hard dependency, we need to transform the Hyrax exception into a
       # common exception so that callers can handle a generalize exception.
-    rescue Hyrax::ObjectNotFoundError => e
+    rescue Hyrax::ObjectNotFoundError, Valkyrie::Persistence::ObjectNotFoundError => e
       raise ObjectFactoryInterface::ObjectNotFoundError, e.message
     end
 
@@ -252,7 +252,7 @@ module Bulkrax
 
     def delete(user)
       obj = find
-      return false unless obj
+      raise ObjectFactoryInterface::ObjectNotFoundError, "Object not found to delete" unless obj
 
       Hyrax.persister.delete(resource: obj)
       Hyrax.index_adapter.delete(resource: obj)
@@ -381,7 +381,7 @@ module Bulkrax
     end
 
     def find_by_id
-      find(id: attributes[:id]) if attributes.key? :id
+      self.class.find(attributes[:id]) if attributes.key? :id
     end
 
     ##
