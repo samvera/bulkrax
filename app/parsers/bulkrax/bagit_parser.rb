@@ -30,6 +30,10 @@ unless ENV.fetch('BULKRAX_NO_BAGIT', 'false').to_s == 'true'
         raise StandardError, 'No metadata files were found' if metadata_paths.blank?
         @import_fields ||= metadata_paths.sample(10).map do |path|
           entry_class.fields_from_data(entry_class.read_data(path))
+        rescue => e
+          importer = Importer.find(entry_class.runnable_id)
+          importer.set_status_info(e, importer)
+          raise => e
         end.flatten.compact.uniq
       end
 
@@ -41,6 +45,10 @@ unless ENV.fetch('BULKRAX_NO_BAGIT', 'false').to_s == 'true'
           raise StandardError, 'No metadata files were found' if path.blank?
           data = entry_class.read_data(path)
           get_data(bag, data)
+        rescue => e
+          importer = Importer.find(entry_class.runnable_id)
+          importer.set_status_info(e, importer)
+          raise => e
         end
 
         @records = @records.flatten
