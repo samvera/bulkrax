@@ -41,5 +41,82 @@ module Bulkrax
         expect(ActiveFedora::Base).to have_received(:where).with({ "bulkrax_identifier_tesim" => "BU_Collegian-19481124" })
       end
     end
+    describe 'Hyrax-dependent methods' do
+      context 'with Hyrax available' do
+        describe '#solr_name' do
+          it 'passes the method to Hyrax' do
+            allow(Hyrax).to receive_message_chain(:config, :index_field_mapper, :solr_name).with('anything')
+            described_class.solr_name('anything')
+            expect(Hyrax.config.index_field_mapper).to have_received(:solr_name).with('anything')
+          end
+        end
+        describe '#publish' do
+          it 'passes the method to Hyrax' do
+            allow(Hyrax).to receive_message_chain(:publisher, :publish).with(Object)
+            described_class.publish(event: Object)
+            expect(Hyrax.publisher).to have_received(:publish).with(Object)
+          end
+        end
+        describe '#query' do
+          it 'passes the method to Hyrax' do
+            allow(Hyrax::SolrService).to receive(:query).with('anything')
+            described_class.query('anything')
+            expect(Hyrax::SolrService).to have_received(:query).with('anything')
+          end
+        end
+        describe '#save!' do
+          context 'without a returned object' do
+            it 'raises an error' do
+              our_mock = double(Object)
+              allow(Hyrax.persister).to receive(:save).with(resource: our_mock).and_return(nil)
+              expect do
+                described_class.save!(resource: our_mock, user: create(:user))
+              end.to raise_error(Valkyrie::Persistence::ObjectNotFoundError)
+            end
+          end
+        end
+      end
+      context 'with no Hyrax available' do
+        around do |example|
+          # Store original state
+          had_constant = defined?(Hyrax)
+          original_value = Hyrax if had_constant
+          # Remove for test
+          Object.send(:remove_const, :Hyrax) if had_constant
+          example.run
+          # Restore
+          Object.const_set(:Hyrax, original_value) if had_constant
+        end
+        describe '#solr_name' do
+          it 'raises an error' do
+            expect do
+              described_class.solr_name('anything')
+            end.to raise_error(NotImplementedError)
+          end
+        end
+        describe '#publish' do
+          it 'raises an error' do
+            expect do
+              described_class.publish(event: 'anything')
+            end.to raise_error(NotImplementedError)
+          end
+        end
+        describe '#query' do
+          it 'raises an error' do
+            expect do
+              described_class.query('anything')
+            end.to raise_error(NotImplementedError)
+          end
+        end
+        describe '#save!' do
+          it 'just does a plain old save' do
+            our_mock = double(Object)
+            allow(our_mock).to receive(:save!)
+            described_class.save!(resource: our_mock, user: create(:user))
+            expect(our_mock).to have_received(:save!)
+          end
+        end
+      end
+    end
   end
 end
