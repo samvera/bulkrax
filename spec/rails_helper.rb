@@ -5,7 +5,9 @@ require 'spec_helper'
 require 'bulkrax/entry_spec_helper'
 ENV['RAILS_ENV'] ||= 'test'
 require 'simplecov'
-SimpleCov.start
+SimpleCov.start do
+  add_filter 'spec/'
+end
 require File.expand_path("../test_app/config/environment", __FILE__)
 ENGINE_RAILS_ROOT = File.join(File.dirname(__FILE__), '../')
 # Prevent database truncation if the environment is production
