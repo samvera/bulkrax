@@ -292,6 +292,7 @@ module Bulkrax
 
     def create_file_set(attrs)
       # TODO: Make it work for Valkyrie
+      raise NotImplementedError, __method__.to_s
     end
 
     def create_work(attrs)
