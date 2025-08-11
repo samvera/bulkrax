@@ -52,16 +52,18 @@ module Bulkrax
         end
         describe '#publish' do
           it 'passes the method to Hyrax' do
-            allow(Hyrax).to receive_message_chain(:publisher, :publish).with(Object)
-            described_class.publish(event: Object)
-            expect(Hyrax.publisher).to have_received(:publish).with(Object)
+            publisher_double = double("Hyrax::Publisher")
+            allow(Hyrax).to receive(:publisher).and_return(publisher_double)
+            allow(publisher_double).to receive(:publish)
+            described_class.publish(event: 'something')
+            expect(Hyrax.publisher).to have_received(:publish).with("something", any_args)
           end
         end
         describe '#query' do
           it 'passes the method to Hyrax' do
-            allow(Hyrax::SolrService).to receive(:query).with('anything')
-            described_class.query('anything')
-            expect(Hyrax::SolrService).to have_received(:query).with('anything')
+            allow(Hyrax::SolrService).to receive(:query).with('anything', any_args)
+            ValkyrieObjectFactory.query('anything')
+            expect(Hyrax::SolrService).to have_received(:query).with('anything', any_args)
           end
         end
         describe '#save!' do
