@@ -211,6 +211,10 @@ This project is intended to be a safe, welcoming space for collaboration, and co
 ### Running tests
 - The tests use sqlite as the database, so no extra dependencies are required. 
 - Ensure you are using a supported version of Ruby (`ruby -v` should be greater or equal to 2.7) 
+- If you are using a ruby version earlier than 3.0.0, install bundler explicitly (newer versions of ruby will automatically install an appropriate bundler version)
+```bash
+/path/to/ruby/install/bin/gem install bundler -v '~> 2.4.0'
+```
 - Decide on your version of Hyrax to test against and export it to your environment, then bundle install. The Hyrax version should be greater or equal to 2.3.
 ```bash
 export HYRAX_VERSION="~> 4.0.0"
