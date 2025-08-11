@@ -209,7 +209,7 @@ module Bulkrax
       existing_entries? ? parser.rebuild_entries(types) : parser.create_objects(types)
       mark_unseen_as_skipped
     rescue StandardError => e
-      set_status_info(e)
+      set_status_info(e, self)
     end
 
     # After an import any entries we did not touch are skipped.
