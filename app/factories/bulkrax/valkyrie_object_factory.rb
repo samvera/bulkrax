@@ -392,7 +392,7 @@ module Bulkrax
     #         the derived form)
     #
     # @yield the returned value of the yielded block should be a
-    #        {Hyrax::Transactions::Transaction}.  We yield because the we first
+    #        {Hyrax::Transactions::Transaction}.  We yield because we first
     #        want to check if the attributes are valid.  And if so, then process
     #        the transaction, which is something that could trigger expensive
     #        operations.  Put another way, don't do something expensive if the

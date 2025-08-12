@@ -26,6 +26,8 @@ Bulkrax.default_work_type = 'Work'
 # into that construct; namely code that involves the types of object's we're
 # working with.
 Bulkrax.object_factory = Bulkrax::ObjectFactory
+# Might sometimes want to use the alternate object factory
+# Bulkrax.object_factory = Bulkrax::ValkyrieObjectFactory
 
 # Requires supporting ruby files with custom matchers and macros, etc, in
 # spec/support/ and its subdirectories. Files matching `spec/**/*_spec.rb` are

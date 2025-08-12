@@ -9,6 +9,19 @@ module Bulkrax
   # up Fedora and SOLR; something that remains non-desirous due to speed.
 
   RSpec.describe ValkyrieObjectFactory do
+    subject(:object_factory) { build(:valkyrie_object_factory) }
+    before do
+      # Not sure whether or not we need this yet
+      allow(Bulkrax).to receive(:object_factory).and_return(described_class)
+      allow(Bulkrax).to receive_message_chain(:setup, :object_factory).and_return(described_class)
+    end
+
+    xdescribe '.create' do
+      it 'can create stuff' do
+        object_factory.create
+      end
+    end
+
     describe '.search_by_property' do
       let(:active_fedora_relation) { ActiveFedora::Relation.new(ActiveFedora::Base) }
       let(:target_work) { FactoryBot.build(:avocado_work) }
@@ -119,6 +132,9 @@ module Bulkrax
           end
         end
       end
+    end
+    describe 'is capable of looking up records dynamically' do
+      include_examples 'dynamic record lookup'
     end
   end
 end
