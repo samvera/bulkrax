@@ -86,7 +86,7 @@ module Bulkrax
     rescue => e
       self.save!
       self.set_status_info(e, self)
-      raise => e
+      raise "Metadata failed to build: #{e.message}"
     end
 
     def validate_record

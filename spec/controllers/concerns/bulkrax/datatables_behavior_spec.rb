@@ -97,13 +97,14 @@ RSpec.describe Bulkrax::ImportersController, type: :controller do
 
   describe '#format_statuses' do
     let(:item) { FactoryBot.create(:bulkrax_importer) }
-    let(:entry_1) { FactoryBot.create(:bulkrax_entry, importerexporter: item) }
-    let(:entry_2) { FactoryBot.create(:bulkrax_entry, importerexporter: item) }
-    let(:entries) { [entry_1, entry_2] }
-    let(:status_1) { FactoryBot.create(:bulkrax_status) }
-    let(:status_2) { FactoryBot.create(:bulkrax_status) }
-    let(:status_3) { FactoryBot.create(:bulkrax_status) }
-    let(:statuses) { [status_1, status_2, status_3] }
+    let(:run) { FactoryBot.create(:bulkrax_importer_run, importer: item) }
+    let!(:statuses) do
+      [
+        FactoryBot.create(:bulkrax_status, runnable: run, status_message: "First status"),
+        FactoryBot.create(:bulkrax_status, runnable: run, status_message: "Second status"),
+        FactoryBot.create(:bulkrax_status, runnable: run, status_message: "Third status")
+      ]
+    end
 
     it 'returns a hash with the correct structure' do
       get :index
@@ -111,12 +112,12 @@ RSpec.describe Bulkrax::ImportersController, type: :controller do
       expect(result).to be_a(Hash)
       expect(result.keys).to contain_exactly(:data, :recordsTotal, :recordsFiltered)
       expect(result[:data]).to be_a(Array)
-      expect(result[:data].first.keys).to contain_exactly(:identifier, :id, :status_message, :type, :updated_at, :errors, :actions)
+      expect(result[:data].first.keys).to contain_exactly(:actions, :created_at, :error_class, :id, :runnable_id, :status_message, :updated_at)
     end
 
     it 'returns the correct number of statuses' do
       get :index
-      result = controller.format_statuses(statuses, item)
+      result = controller.format_statuses(statuses, run)
       expect(result[:recordsTotal]).to eq(statuses.size)
       expect(result[:recordsFiltered]).to eq(statuses.size)
     end
@@ -129,8 +130,8 @@ RSpec.describe Bulkrax::ImportersController, type: :controller do
     let(:entry) { FactoryBot.create(:bulkrax_entry, importerexporter: item) }
 
     it 'returns a string of HTML links' do
-      get :index
       result = controller.entry_util_links(entry, item)
+      get :index
       expect(result).to be_a(String)
       expect(result).to include('fa-info-circle')
       expect(result).to include('fa-repeat')

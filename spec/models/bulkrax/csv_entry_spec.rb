@@ -237,7 +237,7 @@ module Bulkrax
               expect(subject.status_message).to eq 'Pending'
               expect(subject.error_class).to eq nil
               expect { subject.build_metadata }
-                .to raise_error(StandardError, %("hello world" is not a valid and/or active authority ID for the :rights_statement field))
+                .to raise_error(StandardError, %(Metadata failed to build: "hello world" is not a valid and/or active authority ID for the :rights_statement field))
               expect(subject.status_message).to eq 'Failed'
               expect(subject.error_class).to eq 'StandardError'
             end
@@ -296,7 +296,7 @@ module Bulkrax
               expect(subject.status_message).to eq 'Pending'
               expect(subject.error_class).to eq nil
               expect { subject.build_metadata }
-                .to raise_error(StandardError, %("hello world" is not a valid and/or active authority ID for the :license field))
+                .to raise_error(StandardError, %(Metadata failed to build: "hello world" is not a valid and/or active authority ID for the :license field))
               expect(subject.status_message).to eq 'Failed'
               expect(subject.error_class).to eq 'StandardError'
             end

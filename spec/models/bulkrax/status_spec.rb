@@ -24,6 +24,7 @@ module Bulkrax
     context 'for importers' do
       let(:importer_without_errors) { FactoryBot.create(:bulkrax_importer) }
       let(:importer_with_errors) { Bulkrax::Importer.new }
+
       context 'when there are no errors' do
         it 'can display the current status' do
           importer_without_errors.save
@@ -34,8 +35,13 @@ module Bulkrax
         end
       end
       context 'when there are errors' do
+
+        before do
+          allow_any_instance_of(AdminSet).to receive(:update_index).and_return(true)
+        end
+
         it 'can display a history' do
-          # expect { importer_with_errors.import_objects }.to raise_error(StandardError)
+          expect { importer_with_errors.import_objects }.to raise_error(StandardError)
           importer_with_errors.import_objects
           expect(importer_with_errors.statuses.count).to eq 1
           expect(importer_with_errors.status_message).to eq 'Failed'
@@ -103,7 +109,7 @@ module Bulkrax
             allow(entry_with_errors).to receive(:raw_metadata).and_return(source_identifier: '1', some_field: 'some data', title: 'Missing Collection Example')
           end
           it 'can display a history' do
-            expect { entry_with_errors.build_metadata }.to raise_error(CollectionsCreatedError)
+            expect { entry_with_errors.build_metadata }.to raise_error(RuntimeError, /Metadata failed to build/)
             expect(entry_with_errors.statuses.count).to eq 1
             expect(entry_with_errors.status_message).to eq 'Failed'
             expect(entry_with_errors.statuses[0].status_message).to eq 'Failed'

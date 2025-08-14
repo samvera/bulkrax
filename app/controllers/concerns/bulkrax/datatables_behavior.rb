@@ -147,13 +147,12 @@ module Bulkrax
     def format_statuses(statuses, item)
       result = statuses.map do |s|
         {
-          identifier: view_context.link_to(s.identifier, view_context.item_status_path(item, s)),
           id: s.id,
           status_message: s.status_message,
           error_class: s.error_class,
           created_at: s.created_at,
           updated_at: s.updated_at,
-          runnable_id: view_context.link_to(s.runnable_id, view_context.importer_path(item)),
+          runnable_id: view_context.link_to(s.runnable_id, importer_path(item)),
           actions: status_util_links(s, item)
         }
       end
@@ -172,10 +171,10 @@ module Bulkrax
       links.join(" ")
     end
 
-    def status_util_links(_s, item)
+    def status_util_links(s, item)
       links = []
-      links << view_context.link_to(view_context.raw('<span class="fa fa-info-circle"></span>'), view_context.item_status_path(item, e))
-      links << "<a class='fa fa-repeat' data-toggle='modal' data-target='#bulkraxItemModal' data-entry-id='#{e.id}'></a>" if view_context.an_importer?(item)
+      links << view_context.link_to(view_context.raw('<span class="fa fa-info-circle"></span>'), importer_status_path(item, s))
+      links << "<a class='fa fa-repeat' data-toggle='modal' data-target='#bulkraxItemModal' data-entry-id='#{s.id}'></a>" if view_context.an_importer?(item)
       links.join(" ")
     end
 
