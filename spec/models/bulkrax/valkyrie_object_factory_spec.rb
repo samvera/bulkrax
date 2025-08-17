@@ -41,6 +41,16 @@ module Bulkrax
         expect(ActiveFedora::Base).to have_received(:where).with({ "bulkrax_identifier_tesim" => "BU_Collegian-19481124" })
       end
     end
+    describe '.create_file_set' do
+      let(:valkyrie_object_factory) do
+        described_class.new(attributes: [], source_identifier_value: 'abc123', work_identifier: '123abc', work_identifier_search_field: 'some_field_tesim')
+      end
+      it "raises a not implemented error, since it's not implemented" do
+        expect do
+          valkyrie_object_factory.send(:create_file_set, {})
+        end.to raise_error(NotImplementedError)
+      end
+    end
     describe 'Hyrax-dependent methods' do
       context 'with Hyrax available' do
         describe '#solr_name' do
