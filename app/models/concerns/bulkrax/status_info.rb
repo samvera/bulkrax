@@ -50,11 +50,48 @@ module Bulkrax
       else
         self.statuses.create!(status_message: 'Failed', runnable: runnable, error_class: e.class.to_s, error_message: e.message, error_backtrace: e.backtrace)
       end
+    rescue => e
+      save_with_placeholder_to_capture_status(e, runnable)
     end
 
     alias status_info set_status_info
 
     deprecation_deprecate status_info: "Favor Bulkrax::StatusInfo.set_status_info.  We will be removing .status_info in Bulkrax v6.0.0"
+
+    def save_with_placeholder_to_capture_status(e, runnable)
+      case e.class.to_s
+      when 'ActiveRecord::RecordInvalid'
+        runnable.user = current_or_placeholder_user if runnable.user.nil?
+        runnable.admin_set_id = placeholder_admin_set_id if runnable.admin_set_id.nil?
+        runnable.name = 'Placeholder Name' if runnable.name.nil?
+        runnable.parser_klass = Bulkrax::CsvParser if runnable.parser_klass.nil?
+        runnable.save!
+        runnable.errors.each do |error|
+          set_status_info(error, runnable)
+        end
+      when 'ActiveRecord::RecordNotSaved'
+        runnable.user = current_or_placeholder_user if runnable.user.nil?
+        runnable.admin_set_id = placeholder_admin_set_id if runnable.admin_set_id.nil?
+        runnable.name = 'Placeholder Name' if runnable.name.nil?
+        runnable.parser_klass = Bulkrax::CsvParser if runnable.parser_klass.nil?
+        runnable.save!
+        runnable.errors.each do |error|
+          set_status_info(error, runnable)
+        end
+      end
+    end
+
+    def current_or_placeholder_user
+      placeholder_user = User.new(display_name: 'Placeholder User')
+      placeholder_user.save!
+      @current_user.presence || placeholder_user
+    end
+
+    def placeholder_admin_set_id
+      placeholder_admin_set = AdminSet.new(title: ['Placeholder Admin Set'])
+      placeholder_admin_set.save!
+      placeholder_admin_set.id
+    end
 
     # api compatible with previous error structure
     def last_error
