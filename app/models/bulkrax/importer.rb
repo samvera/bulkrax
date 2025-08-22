@@ -5,8 +5,13 @@ module Bulkrax
     include Bulkrax::ImporterExporterBehavior
     include Bulkrax::StatusInfo
 
-    serialize :parser_fields, JSON
-    serialize :field_mapping, JSON
+    if Rails.version < '7.1'
+      serialize :parser_fields, JSON
+      serialize :field_mapping, JSON
+    else
+      serialize :parser_fields, coder: JSON
+      serialize :field_mapping, coder: JSON
+    end
 
     belongs_to :user
     has_many :importer_runs, dependent: :destroy

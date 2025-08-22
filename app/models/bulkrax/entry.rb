@@ -18,9 +18,15 @@ module Bulkrax
     alias importer importerexporter
     alias exporter importerexporter
 
-    serialize :parsed_metadata, Bulkrax::NormalizedJson
-    # Do not serialize raw_metadata as so we can support xml or other formats
-    serialize :collection_ids, Array
+    if Rails.version < '7.1'
+      serialize :parsed_metadata, Bulkrax::NormalizedJson
+      # Do not serialize raw_metadata as so we can support xml or other formats
+      serialize :collection_ids, Array
+    else
+      serialize :parsed_metadata, coder: Bulkrax::NormalizedJson
+      # Do not serialize raw_metadata as so we can support xml or other formats
+      serialize :collection_ids, type: Array
+    end
 
     paginates_per 5
 
