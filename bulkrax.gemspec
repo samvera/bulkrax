@@ -18,7 +18,7 @@ Gem::Specification.new do |s|
 
   s.files = Dir["{app,config,db,lib}/**/*", "LICENSE", "Rakefile", "README.md"]
 
-  s.add_dependency 'rails', '>= 5.1.6', '< 7.0.0'
+  s.add_dependency 'rails', '>= 5.1.6', '< 8.0.0'
   s.add_dependency 'bagit', '~> 0.6.0'
   s.add_dependency 'coderay'
   s.add_dependency 'denormalize_fields'
