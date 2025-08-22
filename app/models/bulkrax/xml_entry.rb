@@ -3,7 +3,11 @@
 module Bulkrax
   # Generic XML Entry
   class XmlEntry < Entry
-    serialize :raw_metadata, Bulkrax::NormalizedJson
+    if Rails.version < '7.1'
+      serialize :raw_metadata, Bulkrax::NormalizedJson
+    else
+      serialize :raw_metadata, coder: Bulkrax::NormalizedJson
+    end
 
     def self.fields_from_data(data); end
 
