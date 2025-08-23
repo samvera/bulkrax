@@ -143,11 +143,38 @@ module Bulkrax
       }
     end
 
+    def format_statuses(statuses, item)
+      result = statuses.map do |status|
+        {
+          identifier: view_context.link_to(status.id, importer_status_path(item, status)),
+          id: status.id,
+          status_message: status.status_message,
+          error_class: status.error_class,
+          created_at: status.created_at,
+          updated_at: status.updated_at,
+          runnable_id: view_context.link_to(status.runnable_id, importer_path(item)),
+          actions: status_util_links(status, item)
+        }
+      end
+      {
+        data: result,
+        recordsTotal: statuses.size,
+        recordsFiltered: statuses.size
+      }
+    end
+
     def entry_util_links(e, item)
       links = []
       links << view_context.link_to(view_context.raw('<span class="fa fa-info-circle"></span>'), view_context.item_entry_path(item, e))
       links << "<a class='fa fa-repeat' data-toggle='modal' data-target='#bulkraxItemModal' data-entry-id='#{e.id}'></a>" if view_context.an_importer?(item)
       links << view_context.link_to(view_context.raw('<span class="fa fa-trash"></span>'), view_context.item_entry_path(item, e), method: :delete, data: { confirm: 'This will delete the entry and any work associated with it. Are you sure?' })
+      links.join(" ")
+    end
+
+    def status_util_links(status, item)
+      links = []
+      links << view_context.link_to(view_context.raw('<span class="fa fa-info-circle"></span>'), importer_status_path(item, status))
+      links << "<a class='fa fa-repeat' data-toggle='modal' data-target='#bulkraxItemModal' data-entry-id='#{status.id}'></a>" if view_context.an_importer?(item)
       links.join(" ")
     end
 

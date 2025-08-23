@@ -8,6 +8,7 @@ Bulkrax::Engine.routes.draw do
       get :exporter_table
     end
     resources :entries, only: %i[show update destroy]
+    resources :statuses, only: :show
   end
   resources :importers do
     put :continue
@@ -19,6 +20,7 @@ Bulkrax::Engine.routes.draw do
       post :external_sets
     end
     resources :entries, only: %i[show update destroy]
+    resources :statuses, only: :show
     get :upload_corrected_entries
     post :upload_corrected_entries_file
   end

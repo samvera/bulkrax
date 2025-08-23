@@ -118,7 +118,14 @@ module Bulkrax
         end
 
         it 'fails and stores an error' do
+          expect(subject.status_message).to eq 'Pending'
+          expect(subject.error_class).to eq nil
           expect { subject.build_metadata }.to raise_error(StandardError)
+          expect(subject.status_message).to eq 'Failed'
+          expect(subject.statuses[0].status_message).to eq 'Failed'
+          expect(subject.statuses[0].error_message).to eq 'Missing required elements, missing element(s) are: title'
+          expect(subject.statuses[0].error_backtrace.nil?).to eq false
+          expect(subject.error_class).to eq 'StandardError'
         end
       end
 
@@ -227,8 +234,12 @@ module Bulkrax
             end
 
             it 'raises a StandardError' do
+              expect(subject.status_message).to eq 'Pending'
+              expect(subject.error_class).to eq nil
               expect { subject.build_metadata }
                 .to raise_error(StandardError, %("hello world" is not a valid and/or active authority ID for the :rights_statement field))
+              expect(subject.status_message).to eq 'Failed'
+              expect(subject.error_class).to eq 'StandardError'
             end
           end
         end
@@ -282,8 +293,12 @@ module Bulkrax
             end
 
             it 'raises a StandardError' do
+              expect(subject.status_message).to eq 'Pending'
+              expect(subject.error_class).to eq nil
               expect { subject.build_metadata }
                 .to raise_error(StandardError, %("hello world" is not a valid and/or active authority ID for the :license field))
+              expect(subject.status_message).to eq 'Failed'
+              expect(subject.error_class).to eq 'StandardError'
             end
           end
         end
