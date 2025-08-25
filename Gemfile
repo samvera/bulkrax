@@ -18,12 +18,12 @@ gem 'coderay'
 gem 'concurrent-ruby', '1.3.4'
 gem 'factory_bot_rails'
 
-# Bulkrax supports Hyrax 2.3 through 5.0.x only.
-# Hyrax 5.1+ requires Rails 7.2 and is not yet supported.
-gem 'hyrax', ENV['HYRAX_VERSION'] || '~> 5.0.0'
+# Bulkrax supports Hyrax 2.3 through 5.2 only.
+gem 'hyrax', ENV['HYRAX_VERSION'] || '~> 5.0'
 
 gem 'oai'
 gem 'pg'
+gem 'rails', ENV['RAILS_GEM_VERSION'] || '~> 7.2'
 gem 'rsolr', '>= 1.0'
 gem 'rspec-rails'
 gem 'twitter-typeahead-rails', '0.11.1.pre.corejavascript'

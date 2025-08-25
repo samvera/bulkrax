@@ -3,7 +3,11 @@
 unless ENV.fetch('BULKRAX_NO_RDF', 'false').to_s == 'true'
   module Bulkrax
     class RdfEntry < Entry
-      serialize :raw_metadata, Bulkrax::NormalizedJson
+      if Rails.version < '7.1'
+        serialize :raw_metadata, Bulkrax::NormalizedJson
+      else
+        serialize :raw_metadata, coder: Bulkrax::NormalizedJson
+      end
 
       def self.read_data(path)
         RDF::Reader.open(path)
