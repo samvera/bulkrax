@@ -2,6 +2,15 @@
 
 module Bulkrax
   module FileSetEntryBehavior
+    class FileNameError < StandardError
+    end
+
+    class OrphanFileSetError < StandardError
+    end
+
+    class FilePathError < StandardError
+    end
+
     extend ActiveSupport::Concern
 
     included do
@@ -21,11 +30,11 @@ module Bulkrax
 
         path_to_file = parser.path_to_files(filename: filename)
 
-        parsed_metadata['file'][i] = path_to_file
+        parsed_metadata['file'][i] = path_to_file if path_to_file.present?
       end
       parsed_metadata['file'].delete('')
 
-      raise ::StandardError, "one or more file paths are invalid: #{parsed_metadata['file'].join(', ')}" unless parsed_metadata['file'].map { |file_path| ::File.file?(file_path) }.all?
+      raise FilePathError, "one or more file paths are invalid: #{parsed_metadata['file'].join(', ')}" unless parsed_metadata['file'].map { |file_path| ::File.file?(file_path) }.all?
 
       parsed_metadata['file']
     end
@@ -33,13 +42,13 @@ module Bulkrax
     def validate_presence_of_filename!
       return if parsed_metadata&.[](file_reference)&.map(&:present?)&.any?
 
-      raise StandardError, 'File set must have a filename'
+      raise FileNameError, 'File set must have a filename'
     end
 
     def validate_presence_of_parent!
       return if parsed_metadata[related_parents_parsed_mapping]&.map(&:present?)&.any?
 
-      raise StandardError, 'File set must be related to at least one work'
+      raise OrphanFileSetError, 'File set must be related to at least one work'
     end
 
     def parent_jobs

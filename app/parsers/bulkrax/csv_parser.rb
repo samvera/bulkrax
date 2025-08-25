@@ -382,6 +382,7 @@ module Bulkrax
 
       return @path_to_files if File.exist?(@path_to_files)
 
+      # TODO: This method silently returns nil if there is no file & no zip file
       File.join(importer_unzip_path, 'files', filename) if file? && zip?
     end
 
