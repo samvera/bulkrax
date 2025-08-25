@@ -8,7 +8,7 @@ module Bulkrax
     if Rails.version < '7.1'
       serialize :error_backtrace, Array
     else
-      serialize :error_backtrace, type: Array
+      serialize :error_backtrace, coder: YAML, type: Array
     end
 
     scope :for_importers, -> { where(statusable_type: 'Bulkrax::Importer') }

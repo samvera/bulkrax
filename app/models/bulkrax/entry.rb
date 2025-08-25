@@ -25,7 +25,7 @@ module Bulkrax
     else
       serialize :parsed_metadata, coder: Bulkrax::NormalizedJson
       # Do not serialize raw_metadata as so we can support xml or other formats
-      serialize :collection_ids, type: Array
+      serialize :collection_ids, coder: YAML, type: Array
     end
 
     paginates_per 5
