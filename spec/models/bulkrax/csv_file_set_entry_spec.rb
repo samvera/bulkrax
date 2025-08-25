@@ -33,15 +33,42 @@ module Bulkrax
       end
     end
 
+    describe '#validate_presence_of_parent!' do
+      context 'when parent is missing' do
+        before do
+          entry.parsed_metadata = { 'remote_files' => ['test.png'] }
+          allow(entry).to receive(:related_parents_parsed_mapping).and_return('parents')
+        end
+        it 'raises an error' do
+          # entry.validate_presence_of_parent!
+          expect { entry.validate_presence_of_parent! }.to raise_error(FileSetEntryBehavior::OrphanFileSetError, 'File set must be related to at least one work')
+        end
+      end
+    end
+
+    describe '#add_path_to_file' do
+      context 'when file is not present' do
+        subject(:entry) { described_class.new(importerexporter: FactoryBot.create(:bulkrax_importer_csv), type: "Bulkrax::CsvFileSetEntry") }
+
+        before do
+          entry.parsed_metadata = { 'file' => ['test.png'] }
+          allow(entry.parser).to receive(:importer_unzip_path).and_return('some_real_path')
+        end
+        it 'raises an error' do
+          expect { entry.add_path_to_file }.to raise_error(FileSetEntryBehavior::FilePathError, 'one or more file paths are invalid: test.png')
+        end
+      end
+    end
+
     describe '#validate_presence_of_filename!' do
       context 'when filename is missing' do
         before do
           entry.parsed_metadata = {}
         end
 
-        it 'raises a StandardError' do
+        it 'raises a FileNameError' do
           expect { entry.validate_presence_of_filename! }
-            .to raise_error(StandardError, 'File set must have a filename')
+            .to raise_error(FileSetEntryBehavior::FileNameError, 'File set must have a filename')
         end
       end
 
@@ -50,7 +77,7 @@ module Bulkrax
           entry.parsed_metadata = { 'file' => ['test.png'] }
         end
 
-        it 'does not raise a StandardError' do
+        it 'does not raise an error' do
           expect { entry.validate_presence_of_filename! }
             .not_to raise_error
         end
@@ -61,9 +88,9 @@ module Bulkrax
           entry.parsed_metadata = { 'file' => [''] }
         end
 
-        it 'raises a StandardError' do
+        it 'raises a FileNameError' do
           expect { entry.validate_presence_of_filename! }
-            .to raise_error(StandardError, 'File set must have a filename')
+            .to raise_error(FileSetEntryBehavior::FileNameError, 'File set must have a filename')
         end
       end
     end
