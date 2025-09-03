@@ -5,6 +5,23 @@ module Bulkrax
   # We do too much in these entry classes. We need to extract the common logic from the various
   # entry models into a module that can be shared between them.
   class CsvEntry < Entry # rubocop:disable Metrics/ClassLength
+    class CsvPathError < StandardError
+      def initialize(message)
+        super(message)
+      end
+    end
+
+    class RecordNotFound < StandardError
+      def initialize(message)
+        super(message)
+      end
+    end
+
+    class MissingMetadata < StandardError
+      def initialize(message)
+        super(message)
+      end
+    end
     serialize :raw_metadata, Bulkrax::NormalizedJson
 
     def self.fields_from_data(data)
@@ -16,7 +33,7 @@ module Bulkrax
     # there's a risk that this reads the whole file into memory and could cause a memory leak
     # we strip any special characters out of the headers. looking at you Excel
     def self.read_data(path)
-      raise StandardError, 'CSV path empty' if path.blank?
+      raise CsvPathError, 'CSV path empty' if path.blank?
       options = {
         headers: true,
         header_converters: ->(h) { h.to_s.gsub(/[^\w\d\. -]+/, '').strip.to_sym },
@@ -94,9 +111,9 @@ module Bulkrax
     end
 
     def validate_record
-      raise StandardError, 'Record not found' if record.nil?
+      raise RecordNotFound, 'Record not found' if record.nil?
       unless importerexporter.parser.required_elements?(record)
-        raise StandardError, "Missing required elements, missing element(s) are: "\
+        raise MissingMetadata, "Missing required elements, missing element(s) are: "\
 "#{importerexporter.parser.missing_elements(record).join(', ')}"
       end
     end
@@ -351,40 +368,7 @@ module Bulkrax
       Bulkrax::CsvMatcher
     end
 
-    def collection_identifiers
-      return @collection_identifiers if @collection_identifiers.present?
-
-      parent_field_mapping = self.class.parent_field(parser)
-      return [] unless parent_field_mapping.present? && record[parent_field_mapping].present?
-
-      identifiers = []
-      split_references = record[parent_field_mapping].split(Bulkrax.multi_value_element_split_on)
-      split_references.each do |c_reference|
-        matching_collection_entries = importerexporter.entries.select do |e|
-          (e.raw_metadata&.[](source_identifier) == c_reference) &&
-            e.is_a?(CsvCollectionEntry)
-        end
-        raise ::StandardError, 'Only expected to find one matching entry' if matching_collection_entries.count > 1
-        identifiers << matching_collection_entries.first&.identifier
-      end
-      @collection_identifiers = identifiers.compact.presence || []
-    end
-
-    def collections_created?
-      # TODO: look into if this method is still needed after new relationships code
-      true
-    end
-
     def find_collection_ids
-      return self.collection_ids if collections_created?
-      if collection_identifiers.present?
-        collection_identifiers.each do |collection_id|
-          c = find_collection(collection_id)
-          skip = c.blank? || self.collection_ids.include?(c.id)
-          self.collection_ids << c.id unless skip
-        end
-      end
-
       self.collection_ids
     end
 

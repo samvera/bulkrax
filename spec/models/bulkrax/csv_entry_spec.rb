@@ -31,6 +31,11 @@ module Bulkrax
         data = described_class.read_data(path)
         expect(data.count).to eq(1)
       end
+      context 'without a path' do
+        it 'raises an error' do
+          expect { described_class.read_data(nil) }.to raise_error(CsvEntry::CsvPathError, 'CSV path empty')
+        end
+      end
     end
 
     context 'AttributeBuilderMethod.for' do
@@ -118,7 +123,7 @@ module Bulkrax
         end
 
         it 'fails and stores an error' do
-          expect { subject.build_metadata }.to raise_error(StandardError)
+          expect { subject.build_metadata }.to raise_error(CsvEntry::MissingMetadata, "Missing required elements, missing element(s) are: title")
         end
       end
 
@@ -1314,6 +1319,17 @@ module Bulkrax
         expect(entry.parsed_metadata['visibility_during_lease']).to eq('restricted')
         expect(entry.parsed_metadata['lease_expiration_date']).to eq('2054-04-19')
         expect(entry.parsed_metadata['visibility_after_lease']).to eq('open')
+      end
+    end
+    describe '#validate_record' do
+      context 'with no raw_metadata' do
+        before do
+          allow(subject).to receive(:raw_metadata).and_return(nil)
+        end
+
+        it 'raises an error' do
+          expect { subject.validate_record }.to raise_error(CsvEntry::RecordNotFound, 'Record not found')
+        end
       end
     end
   end
