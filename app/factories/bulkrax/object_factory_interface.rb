@@ -210,6 +210,17 @@ module Bulkrax
     # rubocop:enable Metrics/ParameterLists
 
     ##
+    # @return [String] the name of the model class for the given resource/object.
+    def self.model_name(resource:)
+      raise NotImplementedError, "#{self}.#{__method__}"
+    end
+
+    ##
+    # @return [String] the name of the model class for the given resource/object.
+    def self.thumbnail_for(resource:)
+      raise NotImplementedError, "#{self}.#{__method__}"
+    end
+    ##
     # @api private
     #
     # These are the attributes that we assume all "work type" classes (e.g. the

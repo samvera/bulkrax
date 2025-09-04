@@ -248,7 +248,10 @@ module Bulkrax
       if file_sets.nil? # for valkyrie
         file_sets = record.respond_to?(:file_sets) ? record.file_sets : record.members&.select(&:file_set?)
       end
-      file_sets << record.thumbnail if exporter.include_thumbnails && record.thumbnail.present? && record.work?
+
+      thumbnail = Bulkrax.object_factory.thumbnail_for(resource: record)
+      file_sets << thumbnail if thumbnail.present?
+
       file_sets.each do |fs|
         path = File.join(exporter_export_path, folder_count, 'files')
         FileUtils.mkdir_p(path) unless File.exist? path
