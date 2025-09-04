@@ -249,18 +249,8 @@ module Bulkrax
         file_sets = record.respond_to?(:file_sets) ? record.file_sets : record.members&.select(&:file_set?)
       end
 
-      # @TODO: consider moving logic into bulkrax object factory (also in csv_entry)
-      if exporter.include_thumbnails && record.work?
-        result = begin
-          if record.respond_to?(:thumbnail) && record.thumbnail.present?
-            record.thumbnail
-          elsif record.respond_to?(:thumbnail_id) && record.thumbnail_id.present?
-            Bulkrax.object_factory.find(record.thumbnail_id.to_s)
-          end
-        rescue Bulkrax::ObjectFactoryInterface::ObjectNotFoundError
-        end
-      end
-      file_sets << result if result.present?
+      thumbnail = Bulkrax.object_factory.thumbnail_for(resource: record)
+      file_sets << thumbnail if thumbnail.present?
 
       file_sets.each do |fs|
         path = File.join(exporter_export_path, folder_count, 'files')

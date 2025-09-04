@@ -35,6 +35,13 @@ module Bulkrax
     end
 
     ##
+    # @return [Object] the thumbnail for the resource/object
+    def self.thumbnail_for(resource:)
+      return nil unless resource.respond_to?(:thumbnail)
+      resource.thumbnail
+    end
+
+    ##
     # @see Bulkrax::ObjectFactoryInterface
     def self.export_properties
       # TODO: Consider how this may or may not work for Valkyrie

@@ -324,21 +324,10 @@ module Bulkrax
 
     def build_thumbnail_files
       return unless importerexporter.include_thumbnails
+      thumbnail = Bulkrax.object_factory.thumbnail_for(resource: hyrax_record)
+      return unless thumbnail
 
-      # @TODO: consider moving logic into bulkrax object factory (also in csv_parser)
-      file_sets = begin
-        if hyrax_record.respond_to?(:thumbnail)
-          Array.wrap(hyrax_record.thumbnail)
-        elsif hyrax_record.respond_to?(:thumbnail_id)
-          Array.wrap(Bulkrax.object_factory.find(hyrax_record.thumbnail_id.to_s))
-        else
-          []
-        end
-      rescue Bulkrax::ObjectFactoryInterface::ObjectNotFoundError
-        []
-      end
-
-      filenames = map_file_sets(file_sets)
+      filenames = map_file_sets(Array.wrap(thumbnail))
       thumbnail_mapping = 'thumbnail_file'
       handle_join_on_export(thumbnail_mapping, filenames, false)
     end
