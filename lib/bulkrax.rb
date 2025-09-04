@@ -127,11 +127,8 @@ module Bulkrax
       # Hyrax::FileSet.try(:internal_resource) || 'hi'
       # => #<Dry::Types::Result::Failure input=:internal_resource error=...
       # ```
-      if file_model_class.respond_to?(:internal_resource)
-        file_model_class.internal_resource
-      else
-        file_model_class.to_s
-      end
+      instance = file_model_class.new
+      instance.respond_to?(:internal_resource) ? instance.internal_resource : file_model_class.to_s
     end
 
     def curation_concerns
@@ -151,7 +148,8 @@ module Bulkrax
         # Hyrax::FileSet.try(:internal_resource) || 'hi'
         # => #<Dry::Types::Result::Failure input=:internal_resource error=...
         # ```
-        cc.respond_to?(:internal_resource) ? cc.internal_resource : cc.to_s
+        instance = cc.new
+        instance.respond_to?(:internal_resource) ? instance.internal_resource : cc.to_s
       end.uniq
     end
 
