@@ -107,11 +107,8 @@ module Bulkrax
       # Hyrax::FileSet.try(:internal_resource) || 'hi'
       # => #<Dry::Types::Result::Failure input=:internal_resource error=...
       # ```
-      if collection_model_class.respond_to?(:internal_resource)
-        collection_model_class.internal_resource
-      else
-        collection_model_class.to_s
-      end
+      instance = collection_model_class.new
+      instance.respond_to?(:internal_resource) ? instance.internal_resource : collection_model_class.to_s
     end
 
     def file_model_class

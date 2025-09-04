@@ -211,6 +211,17 @@ module Bulkrax
     end
 
     ##
+    # If we always want the valkyrized resource name, even for unmigrated objects, we can
+    # simply use resource.model_name.name. At this point, we are differentiating
+    # to help identify items which have been migrated to Valkyrie vs those which have not.
+    #
+    # @return [String] the name of the model class for the given resource/object.
+    def self.model_name(resource:)
+      raise NotImplementedError, "#{self}.#{__method__}" unless defined?(Hyrax)
+      resource.model_name.klass.to_s
+    end
+
+    ##
     # @param value [String]
     # @param klass [Class, #where]
     # @param field [String, Symbol] A convenience parameter where we pass the

@@ -29,6 +29,12 @@ module Bulkrax
     end
 
     ##
+    # @return [String] the name of the model class for the given resource/object.
+    def self.model_name(resource:)
+      resource.has_model.first
+    end
+
+    ##
     # @see Bulkrax::ObjectFactoryInterface
     def self.export_properties
       # TODO: Consider how this may or may not work for Valkyrie
