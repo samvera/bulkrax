@@ -54,6 +54,14 @@ module Bulkrax
       end
     end
 
+    def statuses_table
+      @statuses = @importer.statuses.order(table_order).page(table_page).per(table_per_page)
+      @statuses = @statuses.where(status_table_search) if status_table_search.present?
+      respond_to do |format|
+        format.json { render json: format_statuses(@statuses, @importer) }
+      end
+    end
+
     # GET /importers/new
     def new
       @importer = Importer.new

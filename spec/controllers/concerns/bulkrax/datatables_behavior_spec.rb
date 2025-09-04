@@ -95,6 +95,33 @@ RSpec.describe Bulkrax::ImportersController, type: :controller do
     end
   end
 
+  describe '#format_statuses' do
+    let(:item) { FactoryBot.create(:bulkrax_importer) }
+    let(:entry_1) { FactoryBot.create(:bulkrax_entry, importerexporter: item) }
+    let(:entry_2) { FactoryBot.create(:bulkrax_entry, importerexporter: item) }
+    let(:entries) { [entry_1, entry_2] }
+    let(:status_1) { FactoryBot.create(:bulkrax_status) }
+    let(:status_2) { FactoryBot.create(:bulkrax_status) }
+    let(:status_3) { FactoryBot.create(:bulkrax_status) }
+    let(:statuses) { [status_1, status_2, status_3] }
+
+    it 'returns a hash with the correct structure' do
+      get :index
+      result = controller.format_statuses(statuses, item)
+      expect(result).to be_a(Hash)
+      expect(result.keys).to contain_exactly(:data, :recordsTotal, :recordsFiltered)
+      expect(result[:data]).to be_a(Array)
+      expect(result[:data].first.keys).to contain_exactly(:identifier, :id, :status_message, :type, :updated_at, :errors, :actions)
+    end
+
+    it 'returns the correct number of statuses' do
+      get :index
+      result = controller.format_statuses(statuses, item)
+      expect(result[:recordsTotal]).to eq(statuses.size)
+      expect(result[:recordsFiltered]).to eq(statuses.size)
+    end
+  end
+
   describe '#entry_util_links' do
     include Bulkrax::Engine.routes.url_helpers
 
@@ -121,6 +148,28 @@ RSpec.describe Bulkrax::ImportersController, type: :controller do
       result = controller.entry_util_links(entry, item)
       expect(result).to include(importer_entry_path(item, entry))
       expect(result).to include('method="delete"')
+    end
+  end
+
+  describe '#status_util_links' do
+    include Bulkrax::Engine.routes.url_helpers
+
+    let(:item) { FactoryBot.create(:bulkrax_importer) }
+    let(:entry) { FactoryBot.create(:bulkrax_entry, importerexporter: item) }
+    let(:status) { FactoryBot.create(:bulkrax_status) }
+
+    it 'returns a string of HTML links' do
+      get :index
+      result = controller.status_util_links(status, item)
+      expect(result).to be_a(String)
+      expect(result).to include('fa-info-circle')
+      expect(result).to include('fa-repeat')
+    end
+
+    it 'includes a link to the status' do
+      get :index
+      result = controller.status_util_links(status, item)
+      expect(result).to include(importer_status_path(item, status))
     end
   end
 
