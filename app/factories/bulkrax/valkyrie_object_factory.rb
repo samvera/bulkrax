@@ -223,7 +223,7 @@ module Bulkrax
 
     ##
     # @return [Object] the thumbnail for the resource/object
-    def self.thumbnail(resource:)
+    def self.thumbnail_for(resource:)
       return nil unless resource.respond_to?(:thumbnail_id) && resource.thumbnail_id.present?
       Bulkrax.object_factory.find(resource.thumbnail_id.to_s)
     rescue Bulkrax::ObjectFactoryInterface::ObjectNotFoundError
