@@ -79,7 +79,8 @@ RSpec.configure do |config|
   end
 
   # Remove this line if you're not using ActiveRecord or ActiveRecord fixtures
-  config.fixture_path = Rails.root.join('spec', 'fixtures')
+  config.fixture_path = Rails.root.join('spec', 'fixtures') if Rails.version < '7.2'
+  config.fixture_paths = [Rails.root.join('spec', 'fixtures')] if Rails.version >= '7.2'
 
   # If you're not using ActiveRecord, or you'd prefer not to run each of your
   # examples within a transaction, remove the following line or assign false
