@@ -374,7 +374,40 @@ module Bulkrax
       Bulkrax::CsvMatcher
     end
 
+    def collection_identifiers
+      return @collection_identifiers if @collection_identifiers.present?
+
+      parent_field_mapping = self.class.parent_field(parser)
+      return [] unless parent_field_mapping.present? && record[parent_field_mapping].present?
+
+      identifiers = []
+      split_references = record[parent_field_mapping].split(Bulkrax.multi_value_element_split_on)
+      split_references.each do |c_reference|
+        matching_collection_entries = importerexporter.entries.select do |e|
+          (e.raw_metadata&.[](source_identifier) == c_reference) &&
+            e.is_a?(CsvCollectionEntry)
+        end
+        raise ::StandardError, 'Only expected to find one matching entry' if matching_collection_entries.count > 1
+        identifiers << matching_collection_entries.first&.identifier
+      end
+      @collection_identifiers = identifiers.compact.presence || []
+    end
+
+    def collections_created?
+      # TODO: look into if this method is still needed after new relationships code
+      true
+    end
+
     def find_collection_ids
+      return self.collection_ids if collections_created?
+      if collection_identifiers.present?
+        collection_identifiers.each do |collection_id|
+          c = find_collection(collection_id)
+          skip = c.blank? || self.collection_ids.include?(c.id)
+          self.collection_ids << c.id unless skip
+        end
+      end
+
       self.collection_ids
     end
 
