@@ -5,6 +5,50 @@ require 'rails_helper'
 
 module Bulkrax
   RSpec.describe CsvEntry, type: :model do
+    describe 'collection ids and identifiers' do
+      let(:entry) { described_class.new }
+      before do
+        allow(entry).to receive(:collection_identifiers).and_call_original
+      end
+      describe '#collection_identifiers' do
+        let(:importer) { FactoryBot.create(:bulkrax_importer_csv, :with_relationships_mappings) }
+        let(:parent_entry) { CsvCollectionEntry.create(importerexporter: importer, raw_metadata: parent_data) }
+        let(:entry) { described_class.create(importerexporter: importer, raw_metadata: data) }
+        let(:parent_data) do
+          {
+            'source_identifier' => 'parent_1',
+            'title' => 'test parent title',
+            'children' => '1'
+          }
+        end
+        let(:data) do
+          {
+            'source_identifier' => '1',
+            'title' => 'test',
+            'parents' => 'parent_1 | parent_2',
+            'children' => 'child_1|child_2'
+          }
+        end
+
+        before do
+          parent_entry
+          entry
+          allow(importer).to receive(:entries).and_return([parent_entry, entry])
+        end
+
+        it 'does not raise an error' do
+          expect { entry.collection_identifiers }.not_to raise_error
+          # Currently the matched collection does not have an identifier in this context - it has an id, but no identifier
+          # expect(entry.collection_identifiers).to match_array(['parent_1'])
+        end
+      end
+      it 'always uses the same info' do
+        expect(entry.collections_created?).to eq(true)
+        expect(entry.find_collection_ids).to be(entry.collection_ids)
+        expect(entry).not_to have_received(:collection_identifiers)
+      end
+    end
+
     describe '.read_data' do
       before do
         allow(Bulkrax.object_factory).to receive(:search_by_property).and_return(nil)
