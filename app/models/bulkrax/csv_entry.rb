@@ -187,8 +187,12 @@ module Bulkrax
 
     def build_relationship_metadata
       # Includes all relationship methods for all exportable record types (works, Collections, FileSets)
+      # @TODO: this logic assumes that the relationships are all available via a method that can be called
+      #        on the object. With Valkyrie, this is only true for Hyrax-based models which include the
+      #        ArResource module. We need to consider reworking this logic into an object factory method
+      #        that can handle different types of models.
       relationship_methods = {
-        related_parents_parsed_mapping => %i[member_of_collection_ids member_of_work_ids in_work_ids],
+        related_parents_parsed_mapping => %i[member_of_collection_ids member_of_work_ids in_work_ids parent],
         related_children_parsed_mapping => %i[member_collection_ids member_work_ids file_set_ids member_ids]
       }
 
@@ -197,7 +201,9 @@ module Bulkrax
 
         values = []
         methods.each do |m|
-          values << hyrax_record.public_send(m) if hyrax_record.respond_to?(m)
+          value = hyrax_record.public_send(m) if hyrax_record.respond_to?(m)
+          value_id = value.try(:id)&.to_s || value # get the id if it's an object
+          values << value_id if value_id.present?
         end
         values = values.flatten.uniq
         next if values.blank?
