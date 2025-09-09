@@ -46,8 +46,8 @@ module Bulkrax
     end
 
     ##
-    # @input [Fileset or FileMetadata]
-    # @return [File or FileMetadata] the original file.
+    # @input [Fileset]
+    # @return [File] the original file.
     def self.original_file(fileset:)
       fileset.try(:original_file)
     end

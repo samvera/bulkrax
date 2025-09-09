@@ -217,8 +217,7 @@ module Bulkrax
     #
     # @return [String] the name of the model class for the given resource/object.
     def self.model_name(resource:)
-      raise NotImplementedError, "#{self}.#{__method__}" unless defined?(Hyrax)
-      resource.model_name.klass.to_s
+      resource.class.to_s
     end
 
     ##
@@ -235,7 +234,7 @@ module Bulkrax
 
     ##
     # @input [Fileset or FileMetadata]
-    # @return [File or FileMetadata] the original file
+    # @return [FileMetadata] the original file
     def self.original_file(fileset:)
       fileset.try(:original_file) || fileset
     end
