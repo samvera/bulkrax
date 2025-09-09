@@ -29,6 +29,40 @@ module Bulkrax
     end
 
     ##
+    # @return [String] the name of the model class for the given resource/object.
+    def self.model_name(resource:)
+      resource.has_model.first
+    end
+
+    ##
+    # A thumbnail is linked to a work rather than the file set itself.
+    # @return [File or FileMetadata] the thumbnail file for the given resource
+    def self.thumbnail_for(resource:)
+      return nil unless resource.respond_to?(:thumbnail)
+      return resource.thumbnail if resource.thumbnail.present?
+      return nil unless resource.respond_to?(:parent) && resource.parent.present?
+      return nil unless resource.parent.respond_to?(:thumbnail)
+      resource.parent.thumbnail
+    end
+
+    ##
+    # @input [Fileset]
+    # @return [File] the original file.
+    def self.original_file(fileset:)
+      fileset.try(:original_file)
+    end
+
+    ##
+    # #input [Fileset or FileMetadata]
+    # @return [String] the file name for the given fileset
+    def self.filename_for(fileset:)
+      file = original_file(fileset: fileset)
+      file.file_name.first
+    rescue NoMethodError
+      nil
+    end
+
+    ##
     # @see Bulkrax::ObjectFactoryInterface
     def self.export_properties
       # TODO: Consider how this may or may not work for Valkyrie

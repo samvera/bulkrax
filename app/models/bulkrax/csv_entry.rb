@@ -168,7 +168,7 @@ module Bulkrax
       source_id = source_id.to_a if source_id.is_a?(ActiveTriples::Relation)
       source_id = Array.wrap(source_id).first
       self.parsed_metadata[source_identifier] = source_id
-      model_name = hyrax_record.respond_to?(:to_rdf_representation) ? hyrax_record.to_rdf_representation : hyrax_record.has_model.first
+      model_name = Bulkrax.object_factory.model_name(resource: hyrax_record)
       self.parsed_metadata[key_for_export('model')] = model_name
     end
 
@@ -187,9 +187,13 @@ module Bulkrax
 
     def build_relationship_metadata
       # Includes all relationship methods for all exportable record types (works, Collections, FileSets)
+      # @TODO: this logic assumes that the relationships are all available via a method that can be called
+      #        on the object. With Valkyrie, this is only true for Hyrax-based models which include the
+      #        ArResource module. We need to consider reworking this logic into an object factory method
+      #        that can handle different types of models.
       relationship_methods = {
-        related_parents_parsed_mapping => %i[member_of_collection_ids member_of_work_ids in_work_ids],
-        related_children_parsed_mapping => %i[member_collection_ids member_work_ids file_set_ids]
+        related_parents_parsed_mapping => %i[member_of_collection_ids member_of_work_ids in_work_ids parent],
+        related_children_parsed_mapping => %i[member_collection_ids member_work_ids file_set_ids member_ids]
       }
 
       relationship_methods.each do |relationship_key, methods|
@@ -197,7 +201,9 @@ module Bulkrax
 
         values = []
         methods.each do |m|
-          values << hyrax_record.public_send(m) if hyrax_record.respond_to?(m)
+          value = hyrax_record.public_send(m) if hyrax_record.respond_to?(m)
+          value_id = value.try(:id)&.to_s || value # get the id if it's an object
+          values << value_id if value_id.present?
         end
         values = values.flatten.uniq
         next if values.blank?
@@ -324,11 +330,11 @@ module Bulkrax
 
     def build_thumbnail_files
       return unless importerexporter.include_thumbnails
+      thumbnail = Bulkrax.object_factory.thumbnail_for(resource: hyrax_record)
+      return unless thumbnail
 
+      filenames = map_file_sets(Array.wrap(thumbnail))
       thumbnail_mapping = 'thumbnail_file'
-      file_sets = Array.wrap(hyrax_record.thumbnail)
-
-      filenames = map_file_sets(file_sets)
       handle_join_on_export(thumbnail_mapping, filenames, false)
     end
 

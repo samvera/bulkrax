@@ -210,6 +210,32 @@ module Bulkrax
     # rubocop:enable Metrics/ParameterLists
 
     ##
+    # @return [String] the name of the model class for the given resource/object.
+    def self.model_name(resource:)
+      raise NotImplementedError, "#{self}.#{__method__}"
+    end
+
+    ##
+    # @return [File or FileMetadata] the thumbnail file for the given resource
+    def self.thumbnail_for(resource:)
+      raise NotImplementedError, "#{self}.#{__method__}"
+    end
+
+    ##
+    # @input [Fileset or FileMetadata]
+    # @return [File or FileMetadata] the original file
+    def self.original_file(fileset:)
+      raise NotImplementedError, "#{self}.#{__method__}"
+    end
+
+    ##
+    # #input [Fileset or FileMetadata]
+    # @return [String] the file name for the given fileset
+    def self.filename_for(fileset:)
+      raise NotImplementedError, "#{self}.#{__method__}"
+    end
+
+    ##
     # @api private
     #
     # These are the attributes that we assume all "work type" classes (e.g. the

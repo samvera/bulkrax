@@ -26,25 +26,38 @@ module Bulkrax
 
     # Prepend the file_set id to ensure a unique filename and also one that is not longer than 255 characters
     def filename(file_set)
-      return if file_set.original_file.blank?
-      if file_set.original_file.respond_to?(:original_filename) # valkyrie
-        fn = file_set.original_file.original_filename
-        mime = ::Marcel::MimeType.for(file_set.original_file.file.io)
-      else # original non valkyrie version
-        fn = file_set.original_file.file_name.first
-        mime = ::Marcel::MimeType.for(declared_type: file_set.original_file.mime_type)
-      end
-      ext_mime = ::Marcel::MimeType.for(name: fn)
+      # return if there are no files on the fileset
+      return if Bulkrax.object_factory.original_file(fileset: file_set).blank?
+
+      fn = Bulkrax.object_factory.filename_for(fileset: file_set)
+      file = Bulkrax.object_factory.original_file(fileset: file_set)
+      ext = file_extension(file: file, filename: fn)
+
+      # Prepend the file_set id to ensure a unique filename
+      filename = File.basename(fn, ".*")
+      # Skip modification if file already has ID or we're in metadata-only mode
       if fn.include?(file_set.id) || importerexporter.metadata_only?
-        filename = "#{fn}.#{mime.to_sym}"
-        filename = fn if mime.to_s == ext_mime.to_s
+        # keep filename as is
       else
-        filename = "#{file_set.id}_#{fn}.#{mime.to_sym}"
-        filename = "#{file_set.id}_#{fn}" if mime.to_s == ext_mime.to_s
+        filename = "#{file_set.id}_#{filename}"
       end
-      # Remove extention truncate and reattach
-      ext = File.extname(filename)
+      filename = ext.present? ? "#{filename}.#{ext}" : fn
+
+      # Remove extension, truncate and reattach
       "#{File.basename(filename, ext)[0...(220 - ext.length)]}#{ext}"
+    end
+
+    ##
+    # Generate the appropriate file extension based on the mime type of the file
+    # @return [String] the file extension for the given file
+    def file_extension(file:, filename:)
+      declared_mime = ::Marcel::MimeType.for(declared_type: file.mime_type)
+      # validate the declared mime type
+      declared_mime = ::Marcel::MimeType.for(name: filename) if declared_mime.nil? || declared_mime == "application/octet-stream"
+      # convert the mime type to a file extension
+      Mime::Type.lookup(declared_mime).symbol.to_s
+    rescue Mime::Type::InvalidMimeType
+      nil
     end
   end
 end

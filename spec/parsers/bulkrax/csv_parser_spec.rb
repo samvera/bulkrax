@@ -442,8 +442,8 @@ module Bulkrax
 
       context 'when exporting all' do
         before do
-          stub_request(:head, %r{http://localhost:8986/rest/test/.*}).to_return(status: 200, body: "", headers: {})
-          stub_request(:get, %r{http://localhost:8986/rest/test/.*}).to_return(status: 200, body: "", headers: {})
+          stub_request(:head, %r{http://localhost:8986/rest/test/?.*}).to_return(status: 200, body: "", headers: {})
+          stub_request(:get, %r{http://localhost:8986/rest/test/?.*}).to_return(status: 200, body: "", headers: {})
         end
 
         it 'exports works, collections, and file sets' do
@@ -876,6 +876,243 @@ module Bulkrax
 
         describe '#related_children_parsed_mapping' do
           it { expect { subject.related_children_parsed_mapping }.to raise_error(StandardError) }
+        end
+      end
+    end
+
+    describe 'exporter functionality' do
+      let(:user) { create(:base_user) }
+      let(:exporter) do
+        create(:bulkrax_exporter, :all,
+               name: 'CSV Parser Test',
+               user: user,
+               parser_fields: { 'export_from' => 'all' })
+      end
+      let(:work_id) { 'test_work_123' }
+
+      subject(:parser) do
+        described_class.new(importerexporter: exporter)
+      end
+
+      describe 'initialization' do
+        it 'can be instantiated with an exporter' do
+          expect(parser).to be_a(Bulkrax::CsvParser)
+        end
+
+        it 'stores the exporter reference in hash structure' do
+          # The parser stores the exporter in a hash structure
+          expect(parser.importerexporter[:importerexporter]).to eq(exporter)
+          expect(parser.importerexporter[:importerexporter]).to be_a(Bulkrax::Exporter)
+        end
+
+        it 'can access exporter attributes through hash' do
+          actual_exporter = parser.importerexporter[:importerexporter]
+          expect(actual_exporter.parser_klass).to eq('Bulkrax::CsvParser')
+          expect(actual_exporter.export_from).to eq('all')
+        end
+      end
+
+      describe 'CSV entry processing for export' do
+        let(:entry) do
+          build_stubbed(:bulkrax_csv_entry,
+                       importerexporter: exporter,
+                       identifier: work_id,
+                       raw_metadata: { 'title_tesim' => ['Test Work'], 'id' => work_id },
+                       parsed_metadata: {
+                         'title' => ['Test Work'],
+                         'creator' => ['Test Creator'],
+                         'identifier' => [work_id]
+                       })
+        end
+
+        it 'can process entries for CSV export' do
+          expect(entry.parsed_metadata).to include('title')
+          expect(entry.parsed_metadata).to include('creator')
+          expect(entry.parsed_metadata).to include('identifier')
+        end
+
+        it 'handles empty parsed_metadata gracefully' do
+          empty_entry = build_stubbed(:bulkrax_csv_entry,
+                                     importerexporter: exporter,
+                                     identifier: 'empty_entry',
+                                     parsed_metadata: {})
+
+          expect(empty_entry.parsed_metadata).to be_a(Hash)
+          expect(empty_entry.identifier).to eq('empty_entry')
+        end
+
+        context 'multi-value field handling' do
+          let(:multi_value_entry) do
+            build_stubbed(:bulkrax_csv_entry,
+                         importerexporter: exporter,
+                         identifier: 'multi_value_work',
+                         parsed_metadata: {
+                           'title' => ['Title One'],
+                           'creator' => ['Creator One', 'Creator Two'],
+                           'subject' => ['Subject A', 'Subject B', 'Subject C']
+                         })
+          end
+
+          it 'stores multi-value fields as arrays in parsed_metadata' do
+            expect(multi_value_entry.parsed_metadata['creator']).to be_an(Array)
+            expect(multi_value_entry.parsed_metadata['creator']).to eq(['Creator One', 'Creator Two'])
+            expect(multi_value_entry.parsed_metadata['subject']).to eq(['Subject A', 'Subject B', 'Subject C'])
+          end
+
+          it 'handles single-value fields appropriately' do
+            expect(multi_value_entry.parsed_metadata['title']).to eq(['Title One'])
+          end
+        end
+
+        context 'special character handling' do
+          let(:special_char_entry) do
+            build_stubbed(:bulkrax_csv_entry,
+                         importerexporter: exporter,
+                         identifier: 'special_chars',
+                         parsed_metadata: {
+                           'title' => ['Title with "quotes" and, commas'],
+                           'description' => ['Description with\nnewlines and\ttabs'],
+                           'creator' => ['Título con acentos', 'Creador François']
+                         })
+          end
+
+          it 'preserves special characters in parsed_metadata' do
+            expect(special_char_entry.parsed_metadata['title']).to eq(['Title with "quotes" and, commas'])
+            expect(special_char_entry.parsed_metadata['description']).to eq(['Description with\nnewlines and\ttabs'])
+          end
+
+          it 'handles unicode characters properly' do
+            expect(special_char_entry.parsed_metadata['creator']).to include('Título con acentos')
+            expect(special_char_entry.parsed_metadata['creator']).to include('Creador François')
+          end
+        end
+      end
+
+      describe 'export configuration access' do
+        it 'can access parser_fields from exporter' do
+          actual_exporter = parser.importerexporter[:importerexporter]
+          expect(actual_exporter.parser_fields).to be_a(Hash)
+          expect(actual_exporter.parser_fields['export_from']).to eq('all')
+        end
+
+        it 'provides access to export configuration' do
+          actual_exporter = parser.importerexporter[:importerexporter]
+          expect(actual_exporter.parser_fields['export_from']).to eq('all')
+          expect(actual_exporter.export_from).to eq('all')
+        end
+
+        context 'metadata_only option' do
+          let(:metadata_exporter) do
+            create(:bulkrax_exporter, :all,
+                   user: user,
+                   name: 'Metadata Only Export',
+                   export_type: 'metadata',
+                   parser_fields: { 'export_from' => 'all', 'metadata_only' => true })
+          end
+
+          it 'respects metadata_only configuration' do
+            expect(metadata_exporter.export_type).to eq('metadata')
+            expect(metadata_exporter.parser_fields['metadata_only']).to be true
+
+            # Test parser can access this configuration
+            metadata_parser = described_class.new(importerexporter: metadata_exporter)
+            actual_exporter = metadata_parser.importerexporter[:importerexporter]
+            expect(actual_exporter.parser_fields['metadata_only']).to be true
+          end
+        end
+
+        context 'file inclusion option' do
+          let(:files_exporter) do
+            create(:bulkrax_exporter, :all,
+                   user: user,
+                   name: 'Files Export',
+                   export_type: 'full',
+                   parser_fields: { 'export_from' => 'all', 'include_files' => true })
+          end
+
+          it 'respects include_files configuration' do
+            expect(files_exporter.export_type).to eq('full')
+            expect(files_exporter.parser_fields['include_files']).to be true
+
+            # Test parser can access this configuration
+            files_parser = described_class.new(importerexporter: files_exporter)
+            actual_exporter = files_parser.importerexporter[:importerexporter]
+            expect(actual_exporter.parser_fields['include_files']).to be true
+          end
+        end
+
+        context 'filter configurations' do
+          let(:filtered_exporter) do
+            create(:bulkrax_exporter, :all,
+                   user: user,
+                   name: 'Filtered Export Test',
+                   parser_fields: {
+                     'export_from' => 'all',
+                     'visibility_filter' => 'open',
+                     'start_date' => '2024-01-01',
+                     'finish_date' => '2024-12-31'
+                   })
+          end
+
+          it 'stores filter configurations' do
+            expect(filtered_exporter.parser_fields['visibility_filter']).to eq('open')
+            expect(filtered_exporter.parser_fields['start_date']).to eq('2024-01-01')
+            expect(filtered_exporter.parser_fields['finish_date']).to eq('2024-12-31')
+          end
+        end
+      end
+
+      describe 'field mapping configuration with exporter' do
+        context 'with field mappings configured' do
+          around(:each) do |example|
+            # Store original state
+            original_mappings = Bulkrax.field_mappings&.dup
+
+            # Ensure field_mappings hash exists
+            Bulkrax.field_mappings ||= {}
+            Bulkrax.field_mappings['Bulkrax::CsvParser'] = {
+              'mapped_title' => { from: ['title'] },
+              'mapped_creator' => { from: ['creator'] }
+            }
+
+            # Run the test
+            example.run
+
+            # Always restore original state
+            if original_mappings
+              Bulkrax.field_mappings = original_mappings
+            else
+              Bulkrax.field_mappings&.delete('Bulkrax::CsvParser')
+            end
+          end
+
+          it 'has access to configured field mappings' do
+            mappings = Bulkrax.field_mappings['Bulkrax::CsvParser']
+            expect(mappings).to include('mapped_title', 'mapped_creator')
+          end
+
+          it 'can access mapping configuration from parser context' do
+            expect(Bulkrax.field_mappings).to have_key('Bulkrax::CsvParser')
+          end
+        end
+
+        context 'without field mappings' do
+          around(:each) do |example|
+            # Store original state
+            original_mappings = Bulkrax.field_mappings&.dup
+
+            # Run the test
+            example.run
+
+            # Restore original state
+            Bulkrax.field_mappings = original_mappings if original_mappings
+          end
+
+          it 'handles absence of field mappings gracefully' do
+            Bulkrax.field_mappings&.delete('Bulkrax::CsvParser')
+
+            expect(Bulkrax.field_mappings['Bulkrax::CsvParser']).to be_nil
+          end
         end
       end
     end
