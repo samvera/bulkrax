@@ -224,12 +224,11 @@ module Bulkrax
     ##
     # @return [File or FileMetadata] the thumbnail file for the given resource
     def self.thumbnail_for(resource:)
-      if resource.is_a?(Bulkrax.file_model_class)
-        return thumbnail_for(resource: resource&.parent)
-      else
-        return nil unless resource.respond_to?(:thumbnail_id) && resource.thumbnail_id.present?
-        return Bulkrax.object_factory.find(resource.thumbnail_id.to_s)
-      end
+      # recursive call to parent if resource is a fileset - we want the work's thumbnail
+      return thumbnail_for(resource: resource&.parent) if resource.is_a?(Bulkrax.file_model_class)
+
+      return nil unless resource.respond_to?(:thumbnail_id) && resource.thumbnail_id.present?
+      Bulkrax.object_factory.find(resource.thumbnail_id.to_s)
     rescue Bulkrax::ObjectFactoryInterface::ObjectNotFoundError
       nil
     end

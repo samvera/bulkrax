@@ -27,7 +27,7 @@ module Bulkrax
     # Prepend the file_set id to ensure a unique filename and also one that is not longer than 255 characters
     def filename(file_set)
       # return if there are no files on the fileset
-      return unless Bulkrax.object_factory.original_file(fileset: file_set).present?
+      return if Bulkrax.object_factory.original_file(fileset: file_set).blank?
 
       fn = Bulkrax.object_factory.filename_for(fileset: file_set)
       file = Bulkrax.object_factory.original_file(fileset: file_set)
@@ -52,14 +52,12 @@ module Bulkrax
     # @return [String] the file extension for the given file
     def file_extension(file:, filename:)
       declared_mime = ::Marcel::MimeType.for(declared_type: file.mime_type)
-      saved_extension = File.extname(filename).delete('.').downcase
-
       # validate the declared mime type
-      if declared_mime.nil? || declared_mime == "application/octet-stream"
-        declared_mime = ::Marcel::MimeType.for(name: filename)
-      end
-
+      declared_mime = ::Marcel::MimeType.for(name: filename) if declared_mime.nil? || declared_mime == "application/octet-stream"
+      # convert the mime type to a file extension
       Mime::Type.lookup(declared_mime).symbol.to_s
+    rescue Mime::Type::InvalidMimeType
+      nil
     end
   end
 end

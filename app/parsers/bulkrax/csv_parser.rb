@@ -259,7 +259,7 @@ module Bulkrax
         FileUtils.mkdir_p(path) unless File.exist? path
 
         original_file = Bulkrax.object_factory.original_file(fileset: fs)
-        next unless original_file.present?
+        next if original_file.blank?
         file = filename(fs)
 
         io = original_file.respond_to?(:uri) ? open(original_file.uri) : original_file.file.io
