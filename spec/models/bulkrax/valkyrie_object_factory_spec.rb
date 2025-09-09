@@ -33,6 +33,8 @@ module Bulkrax
       it { is_expected.to respond_to(:ordered_file_sets_for) }
       it { is_expected.to respond_to(:model_name) }
       it { is_expected.to respond_to(:thumbnail_for) }
+      it { is_expected.to respond_to(:filename_for) }
+      it { is_expected.to respond_to(:original_file) }
       it { is_expected.to respond_to(:field_multi_value?) }
       it { is_expected.to respond_to(:field_supported?) }
       it { is_expected.to respond_to(:schema_properties) }

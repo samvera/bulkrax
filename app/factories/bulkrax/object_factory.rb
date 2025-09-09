@@ -35,10 +35,31 @@ module Bulkrax
     end
 
     ##
-    # @return [Object] the thumbnail for the resource/object
+    # A thumbnail is linked to a work rather than the file set itself.
+    # @return [File or FileMetadata] the thumbnail file for the given resource
     def self.thumbnail_for(resource:)
       return nil unless resource.respond_to?(:thumbnail)
-      resource.thumbnail
+      return resource.thumbnail if resource.thumbnail.present?
+      return nil unless resource.respond_to?(:parent) && resource.parent.present?
+      return nil unless resource.parent.respond_to?(:thumbnail)
+      resource.parent.thumbnail
+    end
+
+    ##
+    # @input [Fileset or FileMetadata]
+    # @return [File or FileMetadata] the original file.
+    def self.original_file(fileset:)
+      fileset.try(:original_file)
+    end
+
+    ##
+    # #input [Fileset or FileMetadata]
+    # @return [String] the file name for the given fileset
+    def self.filename_for(fileset:)
+      file = original_file(fileset: fileset)
+      file.file_name.first
+    rescue NoMethodError
+      nil
     end
 
     ##

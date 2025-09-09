@@ -103,7 +103,7 @@ module Bulkrax
     end
 
     def good_file_type?(path)
-      %w[.xml .xls .xsd].include?(File.extname(path)) || ::Marcel::MimeType.for(path).include?('application/xml')
+      %w[.xml .xls .xsd].include?(File.extname(path)) || ::Marcel::MimeType.for(path: path).include?('application/xml')
     end
 
     def total

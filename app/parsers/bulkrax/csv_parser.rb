@@ -249,16 +249,21 @@ module Bulkrax
         file_sets = record.respond_to?(:file_sets) ? record.file_sets : record.members&.select(&:file_set?)
       end
 
-      thumbnail = Bulkrax.object_factory.thumbnail_for(resource: record)
-      file_sets << thumbnail if thumbnail.present?
+      if importerexporter.include_thumbnails?
+        thumbnail = Bulkrax.object_factory.thumbnail_for(resource: record)
+        file_sets << thumbnail if thumbnail.present?
+      end
 
       file_sets.each do |fs|
         path = File.join(exporter_export_path, folder_count, 'files')
         FileUtils.mkdir_p(path) unless File.exist? path
-        file = filename(fs)
-        next if file.blank? || fs.original_file.blank?
 
-        io = fs.original_file.respond_to?(:uri) ? open(fs.original_file.uri) : fs.original_file.file.io
+        original_file = Bulkrax.object_factory.original_file(fileset: fs)
+        next unless original_file.present?
+        file = filename(fs)
+
+        io = original_file.respond_to?(:uri) ? open(original_file.uri) : original_file.file.io
+
         File.open(File.join(path, file), 'wb') do |f|
           f.write(io.read)
           f.close
@@ -266,6 +271,8 @@ module Bulkrax
       end
     rescue Ldp::Gone
       return
+    rescue StandardError => e
+      raise StandardError, "Unable to retrieve files for identifier #{identifier} - #{e.message}"
     end
 
     def export_key_allowed(key)

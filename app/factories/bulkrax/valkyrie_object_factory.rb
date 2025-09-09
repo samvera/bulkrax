@@ -222,11 +222,33 @@ module Bulkrax
     end
 
     ##
-    # @return [Object] the thumbnail for the resource/object
+    # @return [File or FileMetadata] the thumbnail file for the given resource
     def self.thumbnail_for(resource:)
-      return nil unless resource.respond_to?(:thumbnail_id) && resource.thumbnail_id.present?
-      Bulkrax.object_factory.find(resource.thumbnail_id.to_s)
+      if resource.is_a?(Bulkrax.file_model_class)
+        return thumbnail_for(resource: resource&.parent)
+      else
+        return nil unless resource.respond_to?(:thumbnail_id) && resource.thumbnail_id.present?
+        return Bulkrax.object_factory.find(resource.thumbnail_id.to_s)
+      end
     rescue Bulkrax::ObjectFactoryInterface::ObjectNotFoundError
+      nil
+    end
+
+    ##
+    # @input [Fileset or FileMetadata]
+    # @return [File or FileMetadata] the original file
+    def self.original_file(fileset:)
+      fileset.try(:original_file) || fileset
+    end
+
+    ##
+    # #input [Fileset or FileMetadata]
+    # @return [String] the file name for the given fileset
+    def self.filename_for(fileset:)
+      file = original_file(fileset: fileset)
+      return nil unless file
+      file.original_filename
+    rescue NoMethodError
       nil
     end
 
