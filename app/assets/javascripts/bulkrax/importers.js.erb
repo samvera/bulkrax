@@ -15,9 +15,11 @@ function prepBulkrax(event) {
   // Initialize the uploader only if hyraxUploader is defined
   if (typeof $.fn.hyraxUploader === 'function') {
     // Initialize the uploader
-    $('.fileupload-bulkrax').hyraxUploader({ 
+    var uploader = $('.fileupload-bulkrax');
+    var maxFileSize = uploader.data('max-file-size');
+    uploader.hyraxUploader({ 
       maxNumberOfFiles: 1,
-      maxFileSize: <%= (defined?(Hyrax) && Hyrax.config.uploader[:maxFileSize]) || 524288000 %>
+      maxFileSize: maxFileSize
     });
 
     // Function to toggle 'required' attribute based on uploaded files
