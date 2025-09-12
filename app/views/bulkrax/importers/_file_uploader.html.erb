@@ -1,4 +1,4 @@
-<div class="fileupload-bulkrax">
+<div class="fileupload-bulkrax" data-max-file-size="<%= (defined?(Hyrax) && Hyrax.config.uploader[:maxFileSize]) || 524288000 %>">
   <noscript><input type="hidden" name="redirect" value="<%= main_app.root_path %>" /></noscript>
   <table role="presentation" class="table table-striped"><tbody class="files"></tbody></table>
   <div class="fileupload-buttonbar">
