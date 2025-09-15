@@ -297,6 +297,9 @@ module Bulkrax
       Hyrax.persister.delete(resource: obj)
       Hyrax.index_adapter.delete(resource: obj)
       Hyrax.publisher.publish('object.deleted', object: obj, user: user)
+      # delete the file sets when we delete a work
+      return unless obj.respond_to?(:file_sets) && obj.file_sets.present?
+      destroy_existing_files if obj.respond_to?(:file_sets) && obj.file_sets.present?
     end
 
     def run!
