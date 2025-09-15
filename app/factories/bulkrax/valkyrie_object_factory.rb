@@ -236,7 +236,8 @@ module Bulkrax
     # @input [Fileset or FileMetadata]
     # @return [FileMetadata] the original file
     def self.original_file(fileset:)
-      fileset.try(:original_file) || fileset
+      return fileset if fileset.is_a?(Hyrax::FileMetadata)
+      fileset.try(:original_file)
     end
 
     ##
