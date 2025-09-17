@@ -28,7 +28,7 @@ module Bulkrax
     def filename(file_set)
       # return if there are no files on the fileset
       file = Bulkrax.object_factory.original_file(fileset: file_set)
-      return if file.blank?
+      return '' if file.blank?
 
       fn = Bulkrax.object_factory.filename_for(fileset: file_set)
       ext = file_extension(file: file, filename: fn)
