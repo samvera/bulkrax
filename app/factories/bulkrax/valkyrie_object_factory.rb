@@ -236,7 +236,8 @@ module Bulkrax
     # @input [Fileset or FileMetadata]
     # @return [FileMetadata] the original file
     def self.original_file(fileset:)
-      fileset.try(:original_file) || fileset
+      return fileset if fileset.is_a?(Hyrax::FileMetadata)
+      fileset.try(:original_file)
     end
 
     ##
@@ -293,6 +294,10 @@ module Bulkrax
     def delete(user)
       obj = find
       raise ObjectFactoryInterface::ObjectNotFoundError, "Object not found to delete" unless obj
+      # delete the file sets when we delete a work
+      # This has to be done before the work is deleted or we can't find them
+      # via the custom query
+      destroy_existing_files(object: obj)
 
       Hyrax.persister.delete(resource: obj)
       Hyrax.index_adapter.delete(resource: obj)
@@ -547,8 +552,9 @@ module Bulkrax
     end
 
     # @Override Destroy existing files with Hyrax::Transactions
-    def destroy_existing_files
+    def destroy_existing_files(object: @object)
       existing_files = Hyrax.custom_queries.find_child_file_sets(resource: object)
+      return if existing_files.empty?
 
       existing_files.each do |fs|
         transactions["file_set.destroy"]
@@ -558,10 +564,10 @@ module Bulkrax
           .value!
       end
 
-      @object.member_ids = @object.member_ids.reject { |m| existing_files.detect { |f| f.id == m } }
-      @object.rendering_ids = []
-      @object.representative_id = nil
-      @object.thumbnail_id = nil
+      object.member_ids = object.member_ids.reject { |m| existing_files.detect { |f| f.id == m } }
+      object.rendering_ids = []
+      object.representative_id = nil
+      object.thumbnail_id = nil
     end
 
     def transform_attributes(update: false)

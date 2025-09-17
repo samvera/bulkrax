@@ -3,7 +3,16 @@
 module Bulkrax
   class DeleteFileSetJob < DeleteJob
     def perform(entry, importer_run)
+      # Ensure the entry has metadata built for delete if it
+      # doesn't already so it can be found for deletion.
+      if entry.respond_to?(:build_metadata_for_delete) &&
+         entry.parsed_metadata.nil? &&
+         entry.raw_metadata.present?
+        entry.build_metadata_for_delete
+        entry.save!
+      end
       file_set = entry.factory.find
+
       if file_set
         parent = file_set.parent
         if parent&.respond_to?(:ordered_members)
