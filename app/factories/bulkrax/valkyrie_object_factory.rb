@@ -335,9 +335,35 @@ module Bulkrax
       nil
     end
 
+    # rubocop:disable Metrics/AbcSize
     def create_file_set(attrs)
-      # TODO: Make it work for Valkyrie
-      raise NotImplementedError, __method__.to_s
+      work = find_record(attributes[related_parents_parsed_mapping].first, importer_run_id).last
+      attrs = clean_attrs(attrs)
+      file_set_attrs = attrs.slice(*object.attributes.keys) || {}
+
+      file = if attrs[:uploaded_files].present?
+               uploaded_file_id = attrs[:uploaded_files].first # currently assuming one file per FileSet
+               Hyrax::UploadedFile.find(uploaded_file_id)
+
+               return Hyrax.query_service.find_by(id: file.file_set_uri) if file.file_set_uri.present?
+             elsif attrs[:remote_files].present?
+               remote_file = attrs[:remote_files].first # currently assuming one file per FileSet
+               file_path = download_file(remote_file["url"])
+
+               raise "Failed to download file from #{remote_file['url']}" unless file_path
+
+               create_uploaded_file(file_path, remote_file["file_name"])
+             end
+
+      file_set = Hyrax.persister.save(resource: object.class.new(file_set_args(file).merge(file_set_attrs)))
+      Hyrax.publisher.publish('object.deposited', object: file_set, user: file.user)
+      file.add_file_set!(file_set)
+
+      attach_to_work(file_set: file_set, work: work, attrs: attrs)
+
+      ValkyrieIngestJob.new(file).perform_now
+
+      file_set
     end
 
     def create_work(attrs)
@@ -498,7 +524,17 @@ module Bulkrax
     end
 
     def update_file_set(attrs)
-      # TODO: Make it work
+      change_set = Hyrax::Forms::ResourceForm.for(resource: object)
+
+      attributes = clean_attrs(attrs)
+
+      result =
+        change_set.validate(attributes) && transactions['change_set.update_file_set']
+        .with_step_args(
+          'file_set.save_acl' => { permissions_params: change_set.input_params["permissions"] }
+        ).call(change_set).value_or { false }
+
+      result if result
     end
 
     def uploaded_local_files(uploaded_files: [])
@@ -577,6 +613,29 @@ module Bulkrax
       attrs[:title] = [''] if attrs[:title].blank?
       attrs[:creator] = [''] if attrs[:creator].blank?
       attrs
+    end
+
+    def file_set_args(file)
+      { depositor: file.user.user_key,
+        creator: file.user.user_key,
+        date_uploaded: file.created_at,
+        date_modified: Hyrax::TimeService.time_in_utc,
+        label: file.uploader.filename,
+        title: file.uploader.filename }
+    end
+
+    def attach_to_work(file_set:, work:, attrs:)
+      Hyrax::AccessControlList.copy_permissions(source: Hyrax::AccessControlList.new(resource: work), target: file_set)
+
+      file_set.visibility = attrs[:visibility] if attrs[:visibility].present?
+      file_set.permission_manager.acl.save if file_set.permission_manager.acl.pending_changes?
+
+      work.member_ids += [file_set.id]
+      work.representative_id = file_set.id if work.respond_to?(:representative_id) && work.representative_id.blank?
+      work.thumbnail_id = file_set.id if work.respond_to?(:thumbnail_id) && work.thumbnail_id.blank?
+      Hyrax.persister.save(resource: work)
+
+      Hyrax.publisher.publish('object.metadata.updated', object: work, user: @user)
     end
   end
   # rubocop:enable Metrics/ClassLength
