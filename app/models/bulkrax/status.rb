@@ -4,7 +4,12 @@ module Bulkrax
   class Status < ApplicationRecord
     belongs_to :statusable, polymorphic: true, denormalize: { fields: %i[status_message error_class], if: :latest? }
     belongs_to :runnable, polymorphic: true
-    serialize :error_backtrace, Array
+
+    if Rails.version < '7.1'
+      serialize :error_backtrace, Array
+    else
+      serialize :error_backtrace, coder: YAML, type: Array
+    end
 
     scope :for_importers, -> { where(statusable_type: 'Bulkrax::Importer') }
     scope :for_exporters, -> { where(statusable_type: 'Bulkrax::Exporter') }
