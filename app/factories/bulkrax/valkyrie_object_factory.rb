@@ -211,6 +211,47 @@ module Bulkrax
     end
 
     ##
+    # If we always want the valkyrized resource name, even for unmigrated objects, we can
+    # simply use resource.model_name.name. At this point, we are differentiating
+    # to help identify items which have been migrated to Valkyrie vs those which have not.
+    #
+    # @return [String] the name of the model class for the given resource/object.
+    def self.model_name(resource:)
+      resource.class.to_s
+    end
+
+    ##
+    # @return [File or FileMetadata] the thumbnail file for the given resource
+    def self.thumbnail_for(resource:)
+      # recursive call to parent if resource is a fileset - we want the work's thumbnail
+      return thumbnail_for(resource: resource&.parent) if resource.is_a?(Bulkrax.file_model_class)
+
+      return nil unless resource.respond_to?(:thumbnail_id) && resource.thumbnail_id.present?
+      Bulkrax.object_factory.find(resource.thumbnail_id.to_s)
+    rescue Bulkrax::ObjectFactoryInterface::ObjectNotFoundError
+      nil
+    end
+
+    ##
+    # @input [Fileset or FileMetadata]
+    # @return [FileMetadata] the original file
+    def self.original_file(fileset:)
+      return fileset if fileset.is_a?(Hyrax::FileMetadata)
+      fileset.try(:original_file)
+    end
+
+    ##
+    # #input [Fileset or FileMetadata]
+    # @return [String] the file name for the given fileset
+    def self.filename_for(fileset:)
+      file = original_file(fileset: fileset)
+      return nil unless file
+      file.original_filename
+    rescue NoMethodError
+      nil
+    end
+
+    ##
     # @param value [String]
     # @param klass [Class, #where]
     # @param field [String, Symbol] A convenience parameter where we pass the
@@ -253,6 +294,10 @@ module Bulkrax
     def delete(user)
       obj = find
       raise ObjectFactoryInterface::ObjectNotFoundError, "Object not found to delete" unless obj
+      # delete the file sets when we delete a work
+      # This has to be done before the work is deleted or we can't find them
+      # via the custom query
+      destroy_existing_files(object: obj)
 
       Hyrax.persister.delete(resource: obj)
       Hyrax.index_adapter.delete(resource: obj)
@@ -507,8 +552,9 @@ module Bulkrax
     end
 
     # @Override Destroy existing files with Hyrax::Transactions
-    def destroy_existing_files
+    def destroy_existing_files(object: @object)
       existing_files = Hyrax.custom_queries.find_child_file_sets(resource: object)
+      return if existing_files.empty?
 
       existing_files.each do |fs|
         transactions["file_set.destroy"]
@@ -518,10 +564,10 @@ module Bulkrax
           .value!
       end
 
-      @object.member_ids = @object.member_ids.reject { |m| existing_files.detect { |f| f.id == m } }
-      @object.rendering_ids = []
-      @object.representative_id = nil
-      @object.thumbnail_id = nil
+      object.member_ids = object.member_ids.reject { |m| existing_files.detect { |f| f.id == m } }
+      object.rendering_ids = []
+      object.representative_id = nil
+      object.thumbnail_id = nil
     end
 
     def transform_attributes(update: false)

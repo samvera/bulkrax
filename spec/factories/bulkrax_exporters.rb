@@ -11,6 +11,7 @@ FactoryBot.define do
     limit { 0 }
     field_mapping { nil }
     generated_metadata { false }
+    parser_fields { {} }
 
     trait :with_relationships_mappings do
       field_mapping do

@@ -9,6 +9,42 @@ module Bulkrax
   # up Fedora and SOLR; something that remains non-desirous due to speed.
 
   RSpec.describe ValkyrieObjectFactory do
+    describe 'instance methods' do
+      subject(:object_factory) { build(:valkyrie_object_factory) }
+
+      it { is_expected.to respond_to(:create) }
+      it { is_expected.to respond_to(:update) }
+      it { is_expected.to respond_to(:delete) }
+      it { is_expected.to respond_to(:run) }
+      it { is_expected.to respond_to(:transactions) }
+    end
+
+    describe 'class methods' do
+      subject(:object_factory) { ValkyrieObjectFactory }
+
+      it { is_expected.to respond_to(:find) }
+      it { is_expected.to respond_to(:find_or_create_default_admin_set) }
+      it { is_expected.to respond_to(:save!) }
+      it { is_expected.to respond_to(:update_index) }
+      it { is_expected.to respond_to(:update_index_for_file_sets_of) }
+      it { is_expected.to respond_to(:add_child_to_parent_work) }
+      it { is_expected.to respond_to(:add_resource_to_collection) }
+      it { is_expected.to respond_to(:file_sets_for) }
+      it { is_expected.to respond_to(:ordered_file_sets_for) }
+      it { is_expected.to respond_to(:model_name) }
+      it { is_expected.to respond_to(:thumbnail_for) }
+      it { is_expected.to respond_to(:filename_for) }
+      it { is_expected.to respond_to(:original_file) }
+      it { is_expected.to respond_to(:field_multi_value?) }
+      it { is_expected.to respond_to(:field_supported?) }
+      it { is_expected.to respond_to(:schema_properties) }
+      it { is_expected.to respond_to(:search_by_property) }
+      it { is_expected.to respond_to(:transactions) }
+      it { is_expected.to respond_to(:solr_name) }
+      it { is_expected.to respond_to(:publish) }
+      it { is_expected.to respond_to(:query) }
+    end
+
     describe '.search_by_property' do
       let(:active_fedora_relation) { ActiveFedora::Relation.new(ActiveFedora::Base) }
       let(:target_work) { FactoryBot.build(:avocado_work) }

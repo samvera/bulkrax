@@ -56,7 +56,7 @@ module Bulkrax
 
       returning_value = false
       File.open(filename) do |file|
-        mime_type = ::Marcel::MimeType.for(file)
+        mime_type = ::Marcel::MimeType.for(name: file)
         returning_value = mime_type.include?('application/zip') || mime_type.include?('application/gzip')
       end
       returning_value
