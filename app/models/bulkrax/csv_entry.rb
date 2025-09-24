@@ -22,7 +22,7 @@ module Bulkrax
         super(message)
       end
     end
-    
+
     if Rails.version < '7.1'
       serialize :raw_metadata, Bulkrax::NormalizedJson
     else
