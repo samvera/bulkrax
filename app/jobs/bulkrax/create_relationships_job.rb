@@ -136,6 +136,7 @@ module Bulkrax
     # When the parent is a collection, we save the relationship on each child.
     # The parent does not need to be saved, as the relationship is stored on the child.
     # but we do reindex the parent after all the children are added.
+    # rubocop:disable Layout/RescueEnsureAlignment
     def process_parent_as_collection(parent_record:, parent_identifier:)
       ActiveRecord::Base.uncached do
         Bulkrax::PendingRelationship.where(parent_id: parent_identifier, importer_run_id: @importer_run_id)
@@ -151,7 +152,6 @@ module Bulkrax
           @errors << e
         end
       end
-
       # if collection members were added, we reindex the collection
       # The collection members have already saved the relationships
       # To index the parent, we want to make sure we have the latest version of the parent,
@@ -161,6 +161,7 @@ module Bulkrax
       Bulkrax.object_factory.update_index(resources: [reloaded_parent])
       Bulkrax.object_factory.publish(event: 'object.membership.updated', object: reloaded_parent, user: @user)
     end
+    # rubocop:enable Layout/RescueEnsureAlignment
 
     # When the parent is a work, we save the relationship on the parent.
     # We prefer to save all of the member relationships and then save the parent once. Concurrent
@@ -168,6 +169,7 @@ module Bulkrax
     # record while we are adding the children to it.
     # However the locking appears to not be working so as a workaround we will save each member as we go,
     # but only index the parent once at the end.
+    # rubocop:disable Layout/RescueEnsureAlignment
     def process_parent_as_work(parent_record:, parent_identifier:)
       conditionally_acquire_lock_for(parent_record.id.to_s) do
         ActiveRecord::Base.uncached do
@@ -193,6 +195,7 @@ module Bulkrax
         end
       end
     end
+    # rubocop:enable Layout/RescueEnsureAlignment
 
     # NOTE: the child changes are saved in the object factory.
     def add_to_collection(relationship:, parent_record:, ability:)
