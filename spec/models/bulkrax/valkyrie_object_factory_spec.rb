@@ -78,66 +78,34 @@ module Bulkrax
       end
     end
     describe '#create_file_set' do
+      let(:parent_id) { "gw-123" }
+      let(:of_attributes) do
+        {
+          "parents" => [parent_id]
+        }
+      end
       let(:valkyrie_object_factory) do
         described_class.new(
-          attributes: { "bulkrax_identifier" => "fs-123",
-                        "model" => "FileSet",
-                        "file" => ["spec/fixtures/csv/files/moon.jpg"],
-                        "parents" => ["gw-123"],
-                        "title" => ["Custom File Set Title"],
-                        "creator" => ["KKW"],
-                        "rights_statement" => [""],
-                        "visibility" => "restricted",
-                        "admin_set_id" => "b75a49fb-e3d6-4ac7-b1c9-c527f7471508",
-                        "uploaded_files" => [22] },
-          source_identifier_value: 'fs-123', work_identifier: :bulkrax_identifier, work_identifier_search_field: "bulkrax_identifier_tesim",
-          klass: Hyrax::FileSet, update_files: true, related_parents_parsed_mapping: "parents", importer_run_id: 123, user: FactoryBot.create(:user)
+          attributes: of_attributes,
+          source_identifier_value: 'fs-123',
+          work_identifier: :bulkrax_identifier,
+          work_identifier_search_field: "bulkrax_identifier_tesim",
+          related_parents_parsed_mapping: "parents",
+          importer_run_id: importer_run.id
         )
       end
-    #   let(:importer_run) { FactoryBot.create(:importer_run) }
-      let(:custom_queries) do
-        [
-          Hyrax::CustomQueries::FindBySourceIdentifier,
-          Hyrax::CustomQueries::FindAccessControl,
-          Hyrax::CustomQueries::Navigators::FindFiles,
-          Hyrax::CustomQueries::FindFileMetadata
-        ]
-      end
-      let(:parent_work) { FactoryBot.build(:work, id: 'gw-123') }
-    #   let(:resource_converter) do
-    #     Valkyrie::Persistence::Postgres::ResourceConverter.new(
-    #       parent_work,
-    #       resource_factory: Valkyrie::Persistence::Postgres::ResourceFactory.new(
-    #         adapter: Valkyrie::Persistence::Postgres::MetadataAdapter.new
-    #       )
-    #     )
-    #   end
-      around do |example|
-        cached_file_model_class = Bulkrax.file_model_class
-        Bulkrax.file_model_class = Hyrax::FileSet
-        example.run
-        Bulkrax.file_model_class = cached_file_model_class
-      end
+      let(:importer_run) { FactoryBot.create(:bulkrax_importer_run) }
       before do
-        Valkyrie::MetadataAdapter.register(Valkyrie::Persistence::Postgres::MetadataAdapter.new, :postgres_adapter)
-        Valkyrie.config.metadata_adapter = :postgres_adapter
-        custom_queries.each do |query|
-          Hyrax.query_service.custom_queries.register_query_handler(query)
-        end
-
-        allow(Hyrax.query_service).to receive(:run_query).with("          SELECT * FROM orm_resources\n          WHERE metadata -> ? ->> 0 = ?\n          LIMIT 1;\n", :bulkrax_identifier, "fs-123").and_return([nil])
-    #     stub_request(:get, "http://localhost:8985/solr/hydra-test/select?fl=id&q=_query_:%22%7B!field%20f=bulkrax_identifier_tesim%7Dfs-123%22&qt=standard&rows=1000&sort=system_create_dtsi%20asc&start=0&wt=json")
-    #       .to_return(status: 200, body: '{}', headers: {})
-    #     stub_request(:head, %r{http://localhost:8986/rest/test.*}).to_return(status: 200, body: "", headers: {})
-    #     stub_request(:get, %r{http://localhost:8986/rest/test.*}).to_return(status: 200, body: "", headers: {})
-        allow_any_instance_of(Bulkrax::DynamicRecordLookup).to receive(:find_record).with("gw-123", 123).and_return([parent_work])
-    #     allow(Valkyrie::Persistence::Postgres::ResourceConverter).to receive(:new).with(parent_work, any_args).and_return(resource_converter)
-    #     allow(resource_converter).to receive(:convert!).and_return("potato")
+        stub_request(:head, %r{http://localhost:8986/rest/test.*}).to_return(status: 200, body: "", headers: {})
+        stub_request(:get, %r{http://localhost:8986/rest/test.*}).to_return(status: 200, body: "", headers: {})
       end
-      it "creates a FileSet" do
-        valkyrie_object_factory.run!
+      it 'creates transactions for the parent object' do
+        expect(valkyrie_object_factory).to receive(:perform_transaction_for).with(object: satisfy { |data| data.id == parent_id }, attrs: of_attributes).once
+
+        valkyrie_object_factory.send(:create_file_set, of_attributes)
       end
     end
+
     describe 'Hyrax-dependent methods' do
       context 'with Hyrax available' do
         describe '#solr_name' do
@@ -166,7 +134,7 @@ module Bulkrax
         describe '#save!' do
           context 'without a returned object' do
             it 'raises an error' do
-              our_mock = double(Object, {id: 123})
+              our_mock = double(Object, { id: 123 })
               allow(Hyrax.persister).to receive(:save).with(resource: our_mock).and_return(nil)
               expect do
                 described_class.save!(resource: our_mock, user: create(:user))

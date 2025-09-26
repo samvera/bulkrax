@@ -338,8 +338,6 @@ module Bulkrax
     def create_file_set(attrs)
       attrs = HashWithIndifferentAccess.new(attrs)
       parent_object = find_record(attributes[related_parents_parsed_mapping].first, importer_run_id).last
-      uploaded_files, file_set_params = prep_fileset_content(attrs)
-
       perform_transaction_for(object: parent_object, attrs: attrs) do
         uploaded_files, file_set_params = prep_fileset_content(attrs)
         transactions['change_set.update_work']
