@@ -100,7 +100,7 @@ module Bulkrax
         stub_request(:get, %r{http://localhost:8986/rest/test.*}).to_return(status: 200, body: "", headers: {})
       end
       it 'creates transactions for the parent object' do
-        expect(valkyrie_object_factory).to receive(:perform_transaction_for).with(object: satisfy { |data| data.id == parent_id }, attrs: of_attributes).once
+        expect(valkyrie_object_factory).to receive(:perform_transaction_for).with(object: satisfy { |data| data.id == parent_id }, attrs: {}).once
 
         valkyrie_object_factory.send(:create_file_set, of_attributes)
       end
