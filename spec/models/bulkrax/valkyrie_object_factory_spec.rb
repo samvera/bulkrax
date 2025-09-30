@@ -77,16 +77,35 @@ module Bulkrax
         expect(ActiveFedora::Base).to have_received(:where).with({ "bulkrax_identifier_tesim" => "BU_Collegian-19481124" })
       end
     end
-    describe '.create_file_set' do
-      let(:valkyrie_object_factory) do
-        described_class.new(attributes: [], source_identifier_value: 'abc123', work_identifier: '123abc', work_identifier_search_field: 'some_field_tesim')
+    describe '#create_file_set' do
+      let(:parent_id) { "gw-123" }
+      let(:of_attributes) do
+        {
+          "parents" => [parent_id]
+        }
       end
-      it "raises a not implemented error, since it's not implemented" do
-        expect do
-          valkyrie_object_factory.send(:create_file_set, {})
-        end.to raise_error(NotImplementedError)
+      let(:valkyrie_object_factory) do
+        described_class.new(
+          attributes: of_attributes,
+          source_identifier_value: 'fs-123',
+          work_identifier: :bulkrax_identifier,
+          work_identifier_search_field: "bulkrax_identifier_tesim",
+          related_parents_parsed_mapping: "parents",
+          importer_run_id: importer_run.id
+        )
+      end
+      let(:importer_run) { FactoryBot.create(:bulkrax_importer_run) }
+      before do
+        stub_request(:head, %r{http://localhost:8986/rest/test.*}).to_return(status: 200, body: "", headers: {})
+        stub_request(:get, %r{http://localhost:8986/rest/test.*}).to_return(status: 200, body: "", headers: {})
+      end
+      it 'creates transactions for the parent object' do
+        expect(valkyrie_object_factory).to receive(:perform_transaction_for).with(object: satisfy { |data| data.id == parent_id }, attrs: {}).once
+
+        valkyrie_object_factory.send(:create_file_set, of_attributes)
       end
     end
+
     describe 'Hyrax-dependent methods' do
       context 'with Hyrax available' do
         describe '#solr_name' do
@@ -115,7 +134,7 @@ module Bulkrax
         describe '#save!' do
           context 'without a returned object' do
             it 'raises an error' do
-              our_mock = double(Object)
+              our_mock = double(Object, { id: 123 })
               allow(Hyrax.persister).to receive(:save).with(resource: our_mock).and_return(nil)
               expect do
                 described_class.save!(resource: our_mock, user: create(:user))

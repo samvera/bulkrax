@@ -335,9 +335,19 @@ module Bulkrax
       nil
     end
 
+    # @note We perform the transaction against the *parent* here, because the FileSets are generated and updated in relationship with their parent, not in isolation
     def create_file_set(attrs)
-      # TODO: Make it work for Valkyrie
-      raise NotImplementedError, __method__.to_s
+      attrs = HashWithIndifferentAccess.new(attrs)
+      parent_object = find_record(attributes[related_parents_parsed_mapping].first, importer_run_id).last
+      perform_transaction_for(object: parent_object, attrs: {}) do
+        fs_attrs = attrs.merge(attributes).symbolize_keys
+        uploaded_files, = prep_fileset_content(attrs)
+        transactions['change_set.update_work']
+          .with_step_args(
+            'work_resource.add_file_sets' => { uploaded_files: uploaded_files, file_set_params: [fs_attrs] },
+            'work_resource.save_acl' => { permissions_params: [attrs.try('visibility') || 'open'].compact }
+          )
+      end
     end
 
     def create_work(attrs)
