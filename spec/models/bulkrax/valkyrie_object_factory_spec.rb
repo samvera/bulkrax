@@ -106,6 +106,27 @@ module Bulkrax
       end
     end
 
+    describe 'work_members_attributes' do
+      let(:valkyrie_object_factory) do
+        described_class.new(
+          attributes: {},
+          source_identifier_value: 'fs-2',
+          work_identifier: :bulkrax_identifier,
+          work_identifier_search_field: "bulkrax_identifier_tesim",
+          related_parents_parsed_mapping: "parents"
+        )
+      end
+      let(:work) { double(Work, members: [fs_1, fs_2]) }
+      let(:fs_1) { double(Hyrax::FileSet, bulkrax_identifier: 'fs-1', id: 'long-hash-1') }
+      let(:fs_2) { double(Hyrax::FileSet, bulkrax_identifier: 'fs-2', id: 'long-hash-2') }
+      let(:current_file_set) { double(Hyrax::FileSet) }
+      it 'creates a hash' do
+        result = valkyrie_object_factory.send(:work_members_attributes, { bulkrax_identifier: "fs-2" }, work)
+        expect(result.keys).to contain_exactly('1', '_destroy')
+        expect(result['1']['id']).to eq('long-hash-2')
+      end
+    end
+
     describe 'Hyrax-dependent methods' do
       context 'with Hyrax available' do
         describe '#solr_name' do
