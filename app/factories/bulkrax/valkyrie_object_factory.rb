@@ -508,7 +508,26 @@ module Bulkrax
     end
 
     def update_file_set(attrs)
-      # TODO: Make it work
+      parent_object = object.parent
+      perform_transaction_for(object: parent_object, attrs: {}) do
+        fs_attrs = attrs.merge(attributes).symbolize_keys
+        uploaded_files, = prep_fileset_content(attrs)
+        transactions['change_set.update_work']
+          .with_step_args(
+            'work_resource.add_file_sets' => { uploaded_files: uploaded_files, file_set_params: [fs_attrs] },
+            'work_resource.update_work_members' => { work_members_attributes: work_members_attributes(fs_attrs, parent_object) },
+            'work_resource.save_acl' => { permissions_params: [attrs.try('visibility') || 'open'].compact }
+          )
+      end
+    end
+
+    #   'work_members_attributes' => {
+    #     '0' => { 'id' => '12312412'},
+    #     '1' => { 'id' => '99981228', '_destroy' => 'true' }
+    #   }
+    def work_members_attributes(fs_attrs, parent_object)
+      target_index = parent_object.members.find_index { |fs| fs.bulkrax_identifier == fs_attrs[:bulkrax_identifier] }
+      { target_index&.to_s => { 'id' => parent_object.members[target_index].id }, '_destroy' => 'true' }
     end
 
     def uploaded_local_files(uploaded_files: [])
