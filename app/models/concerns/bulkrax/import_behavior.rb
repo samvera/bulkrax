@@ -78,6 +78,7 @@ module Bulkrax
     end
 
     def add_rights_statement
+      return nil if parser.parser_fields['rights_statement'].blank?
       self.parsed_metadata['rights_statement'] = [parser.parser_fields['rights_statement']] if override_rights_statement || self.parsed_metadata['rights_statement'].blank?
     end
 
