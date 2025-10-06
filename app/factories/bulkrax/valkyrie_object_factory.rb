@@ -457,6 +457,7 @@ module Bulkrax
     # TODO What do we return when the calculated form fails?
     # @raise [StandardError] when there was a failure calling the translation.
     def perform_transaction_for(object:, attrs:)
+      # byebug
       form = Hyrax::Forms::ResourceForm.for(object).prepopulate!
 
       # TODO: Handle validations
@@ -508,7 +509,17 @@ module Bulkrax
     end
 
     def update_file_set(attrs)
-      # TODO: Make it work
+      attrs = HashWithIndifferentAccess.new(attrs)
+      parent_object = object.parent
+      perform_transaction_for(object: parent_object, attrs: {}) do
+        fs_attrs = attrs.merge(attributes).symbolize_keys
+        uploaded_files, = prep_fileset_content(attrs)
+        transactions['change_set.update_work']
+          .with_step_args(
+            'work_resource.add_file_sets' => { uploaded_files: uploaded_files, file_set_params: [fs_attrs] },
+            'work_resource.save_acl' => { permissions_params: [attrs.try('visibility') || 'open'].compact }
+          )
+      end
     end
 
     def uploaded_local_files(uploaded_files: [])

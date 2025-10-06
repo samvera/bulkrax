@@ -106,6 +106,57 @@ module Bulkrax
       end
     end
 
+    describe '#update_file_set' do
+    # Need - a Work with a known bulkrax_identifier
+    # A FileSet with a known bulkrax_identifier & an existing file
+    # Start with just updating metadata
+      # orig_file_set is what's called `object` in the ValkyrieObjectFactory
+      let(:orig_file_set) do
+        double(FileSet, bulkrax_identifier: 'fs-123', title: ["Custom File Set Title"], parent: parent_work )
+      end
+      let(:parent_id) { "gw-123" }
+      let(:parent_work) do 
+        double(
+                Work, bulkrax_identifier: parent_id, human_readable_type: 'Work', 
+                persisted?: true, internal_resource: 'Work', attributes: { bulkrax_identifier: parent_id }
+              )
+      end
+      let(:importer_run) { FactoryBot.create(:bulkrax_importer_run) }
+      let(:file_set_attributes) do
+        { 
+          "visibility"=>"restricted",
+          "title"=>["New File Set Title"],
+          "creator"=>["KKW"],
+          "rights_statement"=>[],
+          "bulkrax_identifier"=>"fs-123",
+          "alternate_ids"=>["fs-123"]
+        }
+      end
+      let(:valkyrie_object_factory) do
+        described_class.new(
+          attributes: file_set_attributes,
+          source_identifier_value: 'fs-123',
+          work_identifier: :bulkrax_identifier,
+          work_identifier_search_field: "bulkrax_identifier_tesim",
+          related_parents_parsed_mapping: "parents",
+          importer_run_id: importer_run.id
+        )
+      end
+      it 'runs a test' do
+        allow(parent_work).to receive(:[]).with(:id).and_return('some-long-id')
+        
+        allow(Wings::ActiveFedoraConverter).to receive_message_chain(:convert, :etag).and_return('some etag')
+        allow(parent_work).to receive(:date_modified=).and_return(Time.zone.now)
+        allow(parent_work).to receive(:date_uploaded=).and_return(Time.zone.now)
+        allow(parent_work).to receive_message_chain(:embargo, :present?).and_return(false)
+        allow(parent_work).to receive_message_chain(:lease, :blank?).and_return(true)
+        allow(parent_work).to receive(:try)
+        allow(parent_work).to receive(:try).with(:lease).and_return(nil)
+        allow(valkyrie_object_factory).to receive(:object).and_return(orig_file_set)
+        valkyrie_object_factory.send(:update_file_set, file_set_attributes)
+      end
+    end
+
     describe 'Hyrax-dependent methods' do
       context 'with Hyrax available' do
         describe '#solr_name' do
