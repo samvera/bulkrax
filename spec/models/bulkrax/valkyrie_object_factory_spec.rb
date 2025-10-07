@@ -105,6 +105,32 @@ module Bulkrax
         valkyrie_object_factory.send(:create_file_set, of_attributes)
       end
     end
+    describe '#update_file_set' do
+      let(:orig_file_set) do
+        double(FileSet, bulkrax_identifier: 'fs-123', title: ["Custom File Set Title"], id: 'some-long-identifier')
+      end
+      let(:valkyrie_object_factory) do
+        described_class.new(
+          attributes: {},
+          source_identifier_value: 'fs-123',
+          work_identifier: :bulkrax_identifier,
+          work_identifier_search_field: "bulkrax_identifier_tesim",
+          related_parents_parsed_mapping: "parents",
+          importer_run_id: importer_run.id
+        )
+      end
+      let(:importer_run) { FactoryBot.create(:bulkrax_importer_run) }
+      before do
+        stub_request(:head, %r{http://localhost:8986/rest/test.*}).to_return(status: 200, body: "", headers: {})
+        stub_request(:get, %r{http://localhost:8986/rest/test.*}).to_return(status: 200, body: "", headers: {})
+      end
+      it 'creates transactions for the file_set object' do
+        allow(valkyrie_object_factory).to receive(:object).and_return(orig_file_set)
+        expect(valkyrie_object_factory).to receive(:perform_transaction_for).with(object: satisfy { |data| data.id == 'some-long-identifier' }, attrs: {}).once
+
+        valkyrie_object_factory.send(:update_file_set, {})
+      end
+    end
 
     describe 'Hyrax-dependent methods' do
       context 'with Hyrax available' do

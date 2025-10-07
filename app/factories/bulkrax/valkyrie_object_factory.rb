@@ -508,7 +508,12 @@ module Bulkrax
     end
 
     def update_file_set(attrs)
-      # TODO: Make it work
+      attrs = HashWithIndifferentAccess.new(attrs)
+      fs_attrs = attrs.merge(attributes).symbolize_keys
+      perform_transaction_for(object: object, attrs: fs_attrs) do
+        prep_fileset_content(attrs)
+        transactions['change_set.update_file_set']
+      end
     end
 
     def uploaded_local_files(uploaded_files: [])
