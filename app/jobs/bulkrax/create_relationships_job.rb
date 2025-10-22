@@ -189,6 +189,7 @@ module Bulkrax
 
         # save record if members were added
         if @parent_record_members_added
+          Bulkrax.object_factory.save!(resource: parent_record, user: user)
           reloaded_parent = Bulkrax.object_factory.find(parent_record.id)
           Bulkrax.object_factory.update_index(resources: [reloaded_parent])
           Bulkrax.object_factory.publish(event: 'object.membership.updated', object: reloaded_parent, user: @user)
