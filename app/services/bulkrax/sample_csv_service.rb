@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'csv'
 
 ## Adds a service to generate a sample CSV file showing how fields are split
@@ -26,6 +27,8 @@ require 'csv'
 #         type: "text/csv"
 #     end
 #   end
+
+# rubocop:disable Metrics/ClassLength
 module Bulkrax
   class SampleCsvService
     ADDED_BULKRAX_PROPERTIES = [
@@ -40,7 +43,7 @@ module Bulkrax
 
     SPECIAL_PROPERTIES = [
       { 'model OR work_type' => 'Default if not present' },
-      { 'source_identifier' => 'Alternative to id' }
+      { 'source_identifier' => 'Required unique alternative to id' }
     ].freeze
 
     ## Initialize with optional model_name to customize mappings
@@ -51,20 +54,20 @@ module Bulkrax
     # @return [Bulkrax::SampleCsvService] the service instance
     def initialize(model_name: nil)
       # don't include generated metadata fields, except rights_statement
-      @mappings = Bulkrax.field_mappings["Bulkrax::CsvParser"].reject do |key, value| 
+      @mappings = Bulkrax.field_mappings["Bulkrax::CsvParser"].reject do |key, value|
         value["generated"] == true && key != 'rights_statement'
       end
       # load models if 'all' is specified for model_name
       @model_name = model_name
       @all_models = begin
-        if model_name == 'all' && defined?(::Hyrax)
-          Hyrax.config.curation_concerns + [Bulkrax.collection_model_class, Bulkrax.file_model_class]
-        else
-          [Bulkrax.default_work_type, Bulkrax.collection_model_class, Bulkrax.file_model_class]
-        end
-      rescue
-        []
-      end
+                      if model_name == 'all' && defined?(::Hyrax)
+                        Hyrax.config.curation_concerns + [Bulkrax.collection_model_class, Bulkrax.file_model_class]
+                      else
+                        [Bulkrax.default_work_type, Bulkrax.collection_model_class, Bulkrax.file_model_class]
+                      end
+                    rescue
+                      []
+                    end
     end
 
     ## Generate the CSV file or string
@@ -76,7 +79,6 @@ module Bulkrax
     def self.call(model_name: nil, output: 'file', **args)
       new(model_name: model_name).send("to_#{output}", **args)
     end
-
 
     ## create a CSV file on disk
     # @TODO: determine appropriate file path
@@ -108,64 +110,67 @@ module Bulkrax
 
     # @TODO: ensure that bulkrax mappings include all properties for the model
     # even if not mapped in Bulkrax settings
+    # rubocop:disable Metrics/MethodLength
     def breakdown_mappings
       # start with the required Bulkrax properties, then
       # add the bulkrax_mapped properties
-      all_mappings = ADDED_BULKRAX_PROPERTIES +
-      @mappings.map do |_, value|
-        split = value["split"]
-        split =
-          if split.nil?
-            "does not split"
-          elsif split == true
-            mv_split = Bulkrax.multi_value_element_split_on.source
-            if (match = mv_split.match(/\[([^\]]+)\]/))
-              "split on #{match[1]}"
-            elsif (single = mv_split.match(/\\(.)/))
-              "split on #{single[1]}"
-            else
-              "split on #{mv_split}"
-            end
-          elsif split.is_a?(String)
-            if (match = split.match(/\[([^\]]+)\]/))
-              "split on #{match[1]}"
-            elsif (single = split.match(/\\(.)/))
-              "split on #{single[1]}"
-            else
-              "split on #{split}"
-            end
-          else
-            split
-          end
+      mv_split = Bulkrax.multi_value_element_split_on.source
 
-        { value["from"].join(' OR ') => split }
-      end
+      all_mappings = ADDED_BULKRAX_PROPERTIES +
+                     @mappings.map do |_, value|
+                       split = value["split"]
+                       split_text = if split.nil? # term doesn't split
+                                      "does not split"
+                                    elsif split == true # use global setting
+                                      if (match = mv_split.match(/\[([^\]]+)\]/))
+                                        "split on #{match[1]}"
+                                      elsif (single = mv_split.match(/\\(.)/))
+                                        "split on #{single[1]}"
+                                      else
+                                        "split on #{mv_split}"
+                                      end
+                                    elsif split.is_a?(String) # use custom setting
+                                      if (match = split.match(/\[([^\]]+)\]/))
+                                        "split on #{match[1]}"
+                                      elsif (single = split.match(/\\(.)/))
+                                        "split on #{single[1]}"
+                                      else
+                                        "split on #{split}"
+                                      end
+                                    else # does not match identified patterns
+                                      split
+                                    end
+
+                       { value["from"].join(' OR ') => split_text }
+                     end
       # add in special properties
       SPECIAL_PROPERTIES + all_mappings
     end
+    # rubocop:enable Metrics/MethodLength
 
     # Generate rows for the specified model or all models
     def model_rows
-      rows = case @model_name
-             when 'all'
-               @all_models.map { |m| model_breakdown(m.name) }
-             when String
-               [model_breakdown(@model_name)]
-             else
-               []
-             end
+      case @model_name
+      when 'all'
+        @all_models.map { |m| model_breakdown(m.name) }
+      when String
+        [model_breakdown(@model_name)]
+      else
+        []
+      end
     end
 
+    # rubocop:disable Metrics/MethodLength
     def model_breakdown(model_name)
       model_row = []
       klass = determine_klass_for(model_name)
       return model_row if klass.nil?
 
       field_list = if klass.respond_to?(:schema)
-                      Bulkrax::ValkyrieObjectFactory.schema_properties(klass).map(&:to_sym)
-                    else
-                      klass.properties.keys.map(&:to_sym)
-                    end
+                     Bulkrax::ValkyrieObjectFactory.schema_properties(klass).map(&:to_sym)
+                   else
+                     klass.properties.keys.map(&:to_sym)
+                   end
       load_required_terms_for(klass: klass)
 
       @header_row.each do |column_heading|
@@ -173,7 +178,7 @@ module Bulkrax
         value = if field_list.include?(column_heading.to_sym)
                   mark_property(field: column_heading.to_sym)
                 elsif column_heading == 'model' || column_heading == 'work_type' || column_heading == 'model OR work_type'
-                  "#{model_name}"
+                  model_name.to_s
                 elsif column_heading.in?(ADDED_BULKRAX_PROPERTIES.map(&:keys).flatten)
                   'Optional'
                 elsif column_heading == 'source_identifier'
@@ -189,6 +194,7 @@ module Bulkrax
       end
       model_row
     end
+    # rubocop:enable Metrics/MethodLength
 
     # Determine if the property is required or optional for the given class
     def mark_property(field:)
@@ -199,15 +205,15 @@ module Bulkrax
 
     def load_required_terms_for(klass:)
       @required_terms = begin
-        if klass.respond_to?(:schema)
-          schema = klass.new.singleton_class.schema || klass.schema
-          get_required_types(schema)
-        else
-          []
-        end
-      rescue
-        []
-      end
+                          if klass.respond_to?(:schema)
+                            schema = klass.new.singleton_class.schema || klass.schema
+                            get_required_types(schema)
+                          else
+                            []
+                          end
+                        rescue
+                          []
+                        end
     end
 
     def get_required_types(schema)
@@ -227,3 +233,4 @@ module Bulkrax
     end
   end
 end
+# rubocop:enable Metrics/ClassLength
