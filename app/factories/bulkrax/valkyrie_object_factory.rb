@@ -108,7 +108,7 @@ module Bulkrax
     def self.add_child_to_parent_work(parent:, child:)
       parent = self.find(parent.id)
       return true if parent.member_ids.include?(child.id)
-      parent.member_ids << child.id
+      parent.member_ids += [child.id]
       Hyrax.persister.save(resource: parent)
     end
 
@@ -116,7 +116,7 @@ module Bulkrax
     # The resource added to a collection can be either a work or another collection.
     def self.add_resource_to_collection(collection:, resource:, user:)
       resource = self.find(resource.id)
-      resource.member_of_collection_ids << collection.id
+      resource.member_of_collection_ids += [collection.id]
       save!(resource: resource, user: user)
     end
 
