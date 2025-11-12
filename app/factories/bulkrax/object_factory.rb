@@ -228,6 +228,10 @@ module Bulkrax
       actor = ::Hyrax::Actors::FileSetActor.new(object, @user)
       uploaded_file&.update(file_set_uri: actor.file_set.uri)
       actor.file_set.permissions_attributes = work_permissions
+      if remote_file
+        actor.file_set.label = remote_file['file_name']
+        actor.file_set.import_url = remote_file['url']
+      end
       actor.create_metadata(attrs)
       actor.create_content(uploaded_file) if uploaded_file
       actor.attach_to_work(work, attrs)
@@ -244,8 +248,6 @@ module Bulkrax
     end
 
     def handle_remote_file(remote_file:, actor:)
-      actor.file_set.label = remote_file['file_name']
-      actor.file_set.import_url = remote_file['url']
       auth_header = remote_file.fetch('auth_header', {})
 
       ImportUrlJob.perform_now(actor.file_set, file_set_operation_for(user: @user), auth_header)
