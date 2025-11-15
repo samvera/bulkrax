@@ -2,12 +2,13 @@
 
 module Bulkrax
   class Status < ApplicationRecord
-    belongs_to :statusable, polymorphic: true, denormalize: { fields: %i[status_message error_class], if: :latest? }
-    belongs_to :runnable, polymorphic: true
-
     if Rails.version < '7.1'
+      belongs_to :statusable, polymorphic: true, denormalize: { fields: %i[status_message error_class], if: :latest? }
+      belongs_to :runnable, polymorphic: true
       serialize :error_backtrace, Array
     else
+      belongs_to :statusable, polymorphic: true, denormalize: { fields: %i[status_message error_class], if: :latest? }, optional: true
+      belongs_to :runnable, polymorphic: true, optional: true
       serialize :error_backtrace, coder: YAML, type: Array
     end
 
