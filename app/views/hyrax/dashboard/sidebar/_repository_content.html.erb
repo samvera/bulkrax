@@ -1,24 +1,28 @@
-<li class="h5 nav-item"><%= t('hyrax.admin.sidebar.repository_objects') %></li>
+<%# Conditionally override Hyrax's partial if we can't use the sidebar insertion of the menu options %>
+<% use_hyrax_partial = defined?(::Hyrax::DashboardController) && ::Hyrax::DashboardController.respond_to?(:sidebar_partials) %>
+<% hyrax_partial_path = use_hyrax_partial ? Hyrax::Engine.root.join('app/views/hyrax/dashboard/sidebar/_repository_content.html.erb') : nil %>
 
-<%= menu.nav_link(hyrax.my_collections_path,
-                  class: "nav-link",
-                  onclick: "dontChangeAccordion(event);",
-                  also_active_for: hyrax.dashboard_collections_path,
-                  title: t('hyrax.admin.sidebar.collections')) do %>
-  <span class="fa fa-folder-open" aria-hidden="true"></span> <span class="sidebar-action-text"><%= t('hyrax.admin.sidebar.collections') %></span>
-<% end %>
-
-<%= menu.nav_link(hyrax.my_works_path,
-                  class: "nav-link",
-                  onclick: "dontChangeAccordion(event);",
-                  also_active_for: hyrax.dashboard_works_path,
-                  title: t('hyrax.admin.sidebar.works')) do %>
-  <span class="fa fa-file" aria-hidden="true"></span> <span class="sidebar-action-text"><%= t('hyrax.admin.sidebar.works') %></span>
-<% end %>
-
-<% if ::Hyrax::DashboardController&.respond_to?(:sidebar_partials) %>
-  <%= render 'hyrax/dashboard/sidebar/menu_partials', menu: menu, section: :repository_content %>
+<% if use_hyrax_partial && hyrax_partial_path && File.exist?(hyrax_partial_path) %>
+  <%= render inline: File.read(hyrax_partial_path), type: :erb, locals: { menu: menu } %>
 <% else %>
+  <%# Original Bulkrax partial content below %>
+  <li class="h5 nav-item"><%= t('hyrax.admin.sidebar.repository_objects') %></li>
+  <%= menu.nav_link(hyrax.my_collections_path,
+                    class: "nav-link",
+                    onclick: "dontChangeAccordion(event);",
+                    also_active_for: hyrax.dashboard_collections_path,
+                    title: t('hyrax.admin.sidebar.collections')) do %>
+    <span class="fa fa-folder-open" aria-hidden="true"></span> <span class="sidebar-action-text"><%= t('hyrax.admin.sidebar.collections') %></span>
+  <% end %>
+
+  <%= menu.nav_link(hyrax.my_works_path,
+                    class: "nav-link",
+                    onclick: "dontChangeAccordion(event);",
+                    also_active_for: hyrax.dashboard_works_path,
+                    title: t('hyrax.admin.sidebar.works')) do %>
+    <span class="fa fa-file" aria-hidden="true"></span> <span class="sidebar-action-text"><%= t('hyrax.admin.sidebar.works') %></span>
+  <% end %>
+
   <% if current_ability.can_import_works? %>
     <%= menu.nav_link(bulkrax.importers_path) do %>
       <span class="fa fa-cloud-upload" aria-hidden="true"></span> <span class="sidebar-action-text"><%= t('bulkrax.admin.sidebar.importers') %></span>
