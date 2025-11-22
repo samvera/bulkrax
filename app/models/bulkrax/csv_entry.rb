@@ -429,7 +429,9 @@ module Bulkrax
     private
 
     def map_file_sets(file_sets)
+      # rubocop:disable Rails/Presence
       file_sets.map { |fs| filename(fs).to_s if filename(fs).present? }.compact
+      # rubocop:enable Rails/Presence
     end
   end
 end
