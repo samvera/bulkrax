@@ -35,7 +35,7 @@ group :development, :test do
   gem 'pry-byebug'
   gem 'solargraph'
   gem 'solr_wrapper', '>= 0.3'
-  gem 'sqlite3', '~> 1.4'
+  gem 'sqlite3', '>= 1.4'
 end
 
 group :test do
