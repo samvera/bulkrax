@@ -467,7 +467,8 @@ module Bulkrax
     def zip
       FileUtils.mkdir_p(exporter_export_zip_path)
 
-      Dir["#{exporter_export_path}/**"].each do |folder|
+      # Only process immediate child directories to avoid including leftover files from previous exports
+      Dir.glob("#{exporter_export_path}/*").select { |f| File.directory?(f) }.each do |folder|
         zip_path = "#{exporter_export_zip_path.split('/').last}_#{folder.split('/').last}.zip"
         FileUtils.rm_rf("#{exporter_export_zip_path}/#{zip_path}")
 

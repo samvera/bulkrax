@@ -124,7 +124,9 @@ module Bulkrax
     end
 
     def setup_export_path
-      FileUtils.mkdir_p(exporter_export_path) unless File.exist?(exporter_export_path)
+      # a defensive move to ensure that we are not packing old files into the zip
+      FileUtils.rm_rf(exporter_export_path) if File.directory?(exporter_export_path)
+      FileUtils.mkdir_p(exporter_export_path)
     end
 
     def exporter_export_path
