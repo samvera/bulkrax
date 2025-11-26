@@ -4,6 +4,7 @@ coverage/**
 .DS_Store
 .env.*
 Gemfile.lock
+Gemfile.dassie.lock
 log/*.log
 pkg/
 spec/test_app/db/*.sqlite3

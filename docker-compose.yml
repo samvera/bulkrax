@@ -1,0 +1,76 @@
+x-app: &app
+  volumes:
+    - ./vendor/engines/hyrax/bin:/app/samvera
+    - ./vendor/engines/hyrax/.dassie:/app/samvera/hyrax-webapp
+    - ./vendor/engines/hyrax:/app/samvera/hyrax-engine
+    - .:/app/samvera/bulkrax
+    - bundle:/app/bundle
+    - clamav:/var/lib/clamav
+    - hyrax-derivatives:/app/samvera/hyrax-webapp/derivatives
+    - hyrax-uploads:/app/samvera/hyrax-webapp/uploads
+    - rails-public:/app/samvera/hyrax-webapp/public
+    - rails-tmp:/app/samvera/hyrax-webapp/tmp
+
+services:
+  web:
+    <<: *app
+    extends:
+      file: vendor/engines/hyrax/docker-compose-dassie.yml
+      service: web
+
+  worker:
+    <<: *app
+    extends:
+      file: vendor/engines/hyrax/docker-compose-dassie.yml
+      service: worker
+
+  chrome:
+    extends:
+      file: vendor/engines/hyrax/docker-compose-dassie.yml
+      service: chrome
+
+  postgres:
+    extends:
+      file: vendor/engines/hyrax/docker-compose-dassie.yml
+      service: postgres
+
+  fcrepo:
+    extends:
+      file: vendor/engines/hyrax/docker-compose-dassie.yml
+      service: fcrepo
+
+  fits:
+    extends:
+      file: vendor/engines/hyrax/docker-compose-dassie.yml
+      service: fits
+
+  memcached:
+    extends:
+      file: vendor/engines/hyrax/docker-compose-dassie.yml
+      service: memcached
+
+  redis:
+    extends:
+      file: vendor/engines/hyrax/docker-compose-dassie.yml
+      service: redis
+
+  solr:
+    extends:
+      file: vendor/engines/hyrax/docker-compose-dassie.yml
+      service: solr
+volumes:
+  bundle:
+  clamav:
+  db:
+  fcrepo:
+  hyrax-derivatives:
+  hyrax-uploads:
+  rails-public:
+  rails-tmp:
+  redis:
+  solr_home:
+
+networks:
+  hyrax:
+    name: bulkrax_hyrax
+    driver: bridge
