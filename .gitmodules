@@ -1,0 +1,3 @@
+[submodule "vendor/engines/hyrax"]
+	path = vendor/engines/hyrax
+	url = https://github.com/samvera/hyrax.git
