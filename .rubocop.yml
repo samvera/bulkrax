@@ -1,5 +1,4 @@
 # Bixby coding conventions
-require: rubocop-factory_bot
 
 # Added AllCops config for further modification
 AllCops:
