@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 FactoryBot.define do
-  factory :work, class: 'Work' do
+  factory :bulkrax_work, class: 'Work' do
     id { 'work_id' }
     title { ['A Work'] }
   end

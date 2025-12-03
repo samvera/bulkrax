@@ -8,7 +8,13 @@ require 'simplecov'
 SimpleCov.start do
   add_filter 'spec/'
 end
-require File.expand_path("../test_app/config/environment", __FILE__)
+require File.expand_path('../vendor/engines/hyrax/spec/spec_helper.rb', __dir__)
+# Mount Bulkrax in test routes
+Rails.application.routes.prepend do
+  mount Bulkrax::Engine, at: '/', as: 'bulkrax'
+end
+Rails.application.routes.instance_eval { @finalized = false }
+Rails.application.reload_routes!
 ENGINE_RAILS_ROOT = File.join(File.dirname(__FILE__), '../')
 # Prevent database truncation if the environment is production
 abort("The Rails environment is running in production mode!") if Rails.env.production?
@@ -16,9 +22,6 @@ require 'rspec/rails'
 require 'rails-controller-testing'
 Rails::Controller::Testing.install
 # Add additional requires below this line. Rails is not loaded until this point!
-
-FactoryBot.definition_file_paths << File.join(File.dirname(__FILE__), 'factories')
-FactoryBot.find_definitions
 
 Bulkrax.default_work_type = 'Work'
 
@@ -54,6 +57,8 @@ RSpec.configure do |config|
   config.include FactoryBot::Syntax::Methods
 
   config.before(:suite) do
+    FactoryBot.definition_file_paths = [File.join(File.dirname(__FILE__), 'factories')]
+    FactoryBot.find_definitions
     DatabaseCleaner.clean_with :truncation
     DatabaseCleaner.strategy = :transaction
   end

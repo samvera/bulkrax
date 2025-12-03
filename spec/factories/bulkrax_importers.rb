@@ -4,7 +4,7 @@ FactoryBot.define do
   factory :bulkrax_importer, class: 'Bulkrax::Importer' do
     name { "A.N. Import" }
     admin_set_id { "MyString" }
-    user { FactoryBot.build(:base_user) }
+    user { FactoryBot.create(:base_user) }
     frequency { "PT0S" }
     parser_klass { "Bulkrax::OaiDcParser" }
     limit { 10 }
@@ -20,7 +20,7 @@ FactoryBot.define do
   factory :bulkrax_importer_oai, class: 'Bulkrax::Importer' do
     name { 'Oai Collection' }
     admin_set_id { 'MyString' }
-    user { FactoryBot.build(:base_user) }
+    user { FactoryBot.create(:base_user) }
     frequency { 'PT0S' }
     parser_klass { 'Bulkrax::OaiDcParser' }
     limit { 10 }
@@ -36,13 +36,13 @@ FactoryBot.define do
   factory :bulkrax_importer_csv, class: 'Bulkrax::Importer' do
     name { 'CSV Import' }
     admin_set_id { 'MyString' }
-    user { FactoryBot.build(:base_user) }
+    user { FactoryBot.create(:base_user) }
     frequency { 'PT0S' }
     parser_klass { 'Bulkrax::CsvParser' }
     limit { 10 }
     parser_fields { { 'import_file_path' => 'spec/fixtures/csv/good.csv' } }
     field_mapping { {} }
-    after :create, &:current_run
+    after(:create) { |importer| importer.current_run }
 
     trait :with_relationships_mappings do
       field_mapping do
@@ -57,7 +57,7 @@ FactoryBot.define do
   factory :bulkrax_importer_csv_complex, class: 'Bulkrax::Importer' do
     name { 'CSV Import' }
     admin_set_id { 'MyString' }
-    user { FactoryBot.build(:base_user) }
+    user { FactoryBot.create(:base_user) }
     frequency { 'PT0S' }
     parser_klass { 'Bulkrax::CsvParser' }
     limit { 10 }
@@ -73,7 +73,7 @@ FactoryBot.define do
   factory :bulkrax_importer_bagit_rdf, class: 'Bulkrax::Importer' do
     name { 'Bagit Import' }
     admin_set_id { 'MyString' }
-    user { FactoryBot.build(:base_user) }
+    user { FactoryBot.create(:base_user) }
     frequency { 'PT0S' }
     parser_klass { 'Bulkrax::BagitParser' }
     limit { 10 }
@@ -85,13 +85,13 @@ FactoryBot.define do
       }
     end
     field_mapping { { 'source_identifier' => { from: ['source_identifier'], source_identifier: true } } }
-    after :create, &:current_run
+    after(:create) { |importer| importer.current_run }
   end
 
   factory :bulkrax_importer_bagit_csv, class: 'Bulkrax::Importer' do
     name { 'Bagit Import' }
     admin_set_id { 'MyString' }
-    user { FactoryBot.build(:base_user) }
+    user { FactoryBot.create(:base_user) }
     frequency { 'PT0S' }
     parser_klass { 'Bulkrax::BagitParser' }
     limit { 10 }
@@ -103,13 +103,13 @@ FactoryBot.define do
       }
     end
     field_mapping { { 'source_identifier' => { from: ['source_identifier'], source_identifier: true } } }
-    after :create, &:current_run
+    after(:create) { |importer| importer.current_run }
   end
 
   factory :bulkrax_importer_csv_bad, class: 'Bulkrax::Importer' do
     name { 'CSV Import' }
     admin_set_id { 'MyString' }
-    user { FactoryBot.build(:base_user) }
+    user { FactoryBot.create(:base_user) }
     frequency { 'PT0S' }
     parser_klass { 'Bulkrax::CsvParser' }
     limit { 10 }
@@ -120,7 +120,7 @@ FactoryBot.define do
   factory :bulkrax_importer_csv_failed, class: 'Bulkrax::Importer' do
     name { 'CSV Import' }
     admin_set_id { 'MyString' }
-    user { FactoryBot.build(:base_user) }
+    user { FactoryBot.create(:base_user) }
     frequency { 'PT0S' }
     parser_klass { 'Bulkrax::CsvParser' }
     limit { 10 }
@@ -131,7 +131,7 @@ FactoryBot.define do
   factory :bulkrax_importer_xml, class: 'Bulkrax::Importer' do
     name { 'XML Import' }
     admin_set_id { 'MyString' }
-    user { FactoryBot.build(:base_user) }
+    user { FactoryBot.create(:base_user) }
     frequency { 'PT0S' }
     parser_klass { 'Bulkrax::XmlParser' }
     limit { 10 }

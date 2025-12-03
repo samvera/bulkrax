@@ -28,6 +28,7 @@ require 'rails_helper'
 module Bulkrax
   RSpec.describe ImportersController, type: :controller do
     routes { Bulkrax::Engine.routes }
+    let!(:user) { FactoryBot.create(:bulkrax_user) }
 
     before do
       module Bulkrax::Auth
@@ -51,7 +52,7 @@ module Bulkrax
       {
         name: 'Test Importer',
         admin_set_id: 'admin_set/default',
-        user_id: FactoryBot.create(:user).id,
+        user_id: FactoryBot.create(:bulkrax_user).id,
         parser_klass: 'Bulkrax::CsvParser',
         parser_fields: { some_attribute: 'something' }
       }
@@ -132,7 +133,7 @@ module Bulkrax
         end
       end
 
-      let(:user) { FactoryBot.create(:user) }
+      let(:user) { FactoryBot.create(:bulkrax_user) }
       let(:file) { fixture_file_upload('./spec/fixtures/csv/ok.csv') }
       let(:uploaded_file) { Hyrax::UploadedFile.create(file: file, user: user) }
 
@@ -157,7 +158,7 @@ module Bulkrax
           {
             name: 'Test Importer Updated',
             admin_set_id: 'admin_set/default',
-            user_id: FactoryBot.create(:user).id,
+            user_id: FactoryBot.create(:bulkrax_user).id,
             parser_fields: { some_attribute: 'something' }
           }
         end
@@ -184,7 +185,7 @@ module Bulkrax
         end
       end
 
-      let(:user) { FactoryBot.create(:user) }
+      let(:user) { FactoryBot.create(:bulkrax_user) }
       let(:file) { fixture_file_upload('./spec/fixtures/csv/ok.csv') }
       let(:uploaded_file) { Hyrax::UploadedFile.create(file: file, user: user) }
 
@@ -209,7 +210,7 @@ module Bulkrax
         {
           name: 'Test Importer',
           admin_set_id: 'admin_set/default',
-          user_id: FactoryBot.create(:user).id,
+          user_id: FactoryBot.create(:bulkrax_user).id,
           parser_klass: 'Bulkrax::CsvParser',
           parser_fields: { some_attribute: 'something' },
           validate_only: false
@@ -324,7 +325,7 @@ module Bulkrax
       before do
         allow(controller).to receive(:api_request?).and_return(true)
         allow(Bulkrax.object_factory).to receive(:find).with('admin_set/default')
-        allow(User).to receive(:batch_user).and_return(FactoryBot.create(:user))
+        allow(User).to receive(:batch_user).and_return(FactoryBot.create(:bulkrax_user))
         allow(controller).to receive(:valid_parser_fields?).and_return(true)
       end
 
@@ -368,7 +369,7 @@ module Bulkrax
       describe 'PUT #update' do
         before do
           allow(Bulkrax.object_factory).to receive(:find).with('admin_set/default')
-          allow(User).to receive(:batch_user).and_return(FactoryBot.create(:user))
+          allow(User).to receive(:batch_user).and_return(FactoryBot.create(:bulkrax_user))
         end
 
         context 'with valid params' do
@@ -376,7 +377,7 @@ module Bulkrax
             {
               name: 'Test Importer Updated',
               admin_set_id: 'admin_set/default',
-              user_id: FactoryBot.create(:user).id,
+              user_id: FactoryBot.create(:bulkrax_user).id,
               parser_fields: { some_attribute: 'something' }
             }
           end

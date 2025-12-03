@@ -120,7 +120,7 @@ module Bulkrax
     describe '#exporter_export_zip_path' do
       context 'without an exporter run' do
         it 'returns a path to the exported zip files' do
-          expect(exporter.exporter_export_zip_path).to eq('tmp/exports/export_1_0')
+          expect(exporter.exporter_export_zip_path).to eq("tmp/exports/export_#{exporter.id}_0")
         end
       end
 
@@ -132,7 +132,7 @@ module Bulkrax
         end
 
         it 'returns a path to the exported zip files' do
-          expect(exporter.exporter_export_zip_path).to eq('tmp/exports/export_1_1')
+          expect(exporter.exporter_export_zip_path).to eq("tmp/exports/export_#{exporter.id}_#{bulkrax_exporter_run.id}")
         end
       end
     end

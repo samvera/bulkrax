@@ -9,8 +9,8 @@ module Bulkrax
     let(:ability) { instance_double(Ability) }
 
     # create objects
-    let(:collection1) { build(:collection, id: 'collection1_id') }
-    let(:collection2) { build(:collection, id: 'collection2_id') }
+    let(:collection1) { build(:bulkrax_collection, id: 'collection1_id') }
+    let(:collection2) { build(:bulkrax_collection, id: 'collection2_id') }
     let(:work1) { build(:work, id: 'work1_id') }
     let(:work2) { build(:work, id: 'work1_id') }
     let(:updated_parent) { double('updated_parent') }

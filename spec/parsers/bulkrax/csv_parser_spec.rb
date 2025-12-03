@@ -505,7 +505,7 @@ module Bulkrax
       end
 
       it 'creates the csv metadata file' do
-        expect(subject.setup_export_file(2)).to eq('tmp/exports/1/1/2/export_Generic_from_worktype_2.csv')
+        expect(subject.setup_export_file(2)).to match(%r{tmp/exports/\d+/\d+/\d+/export_Generic_from_worktype_2\.csv})
       end
     end
 

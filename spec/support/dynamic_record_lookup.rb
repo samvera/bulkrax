@@ -27,7 +27,7 @@ module Bulkrax
         context 'when an entry is found' do
           let(:entry) { create(:bulkrax_csv_entry_work, importerexporter: importer) }
           let(:factory) { instance_double(ObjectFactory, find: record) }
-          let(:record) { instance_double(::Work, title: ["Found through Entry's factory"]) }
+          let(:record) { instance_double(Work, title: ["Found through Entry's factory"]) }
 
           before do
             allow(Entry).to receive(:find_by).with({ identifier: source_identifier, importerexporter_type: 'Bulkrax::Importer', importerexporter_id: importer_id }).and_return(entry)
@@ -79,7 +79,7 @@ module Bulkrax
         end
 
         context 'when a work is found' do
-          let(:work) { instance_double(::Work) }
+          let(:work) { instance_double(Work) }
 
           before do
             allow(Bulkrax.object_factory).to receive(:find).with(id).and_return(work)

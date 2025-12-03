@@ -240,3 +240,7 @@ Questions can be sent to support@notch8.com. Please make sure to include "Bulkra
 
 ## License
 The gem is available as open source under the terms of the [Apache 2.0 License](https://opensource.org/licenses/Apache-2.0).
+
+```bash
+BUNDLE_GEMFILE=Gemfile RAILS_ROOT=/app/samvera/hyrax-webapp bundle exec rspec --fail-fast --seed 21480
+```

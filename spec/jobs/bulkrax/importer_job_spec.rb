@@ -13,7 +13,7 @@ module Bulkrax
     let(:collections_count) { doc.to_s.scan(/<set>(.*?)<\/set>/m).count }
 
     before do
-      allow(Bulkrax::Importer).to receive(:find).with(1).and_return(importer)
+      allow(Bulkrax::Importer).to receive(:find).with(importer.id).and_return(importer)
     end
 
     describe 'successful job' do

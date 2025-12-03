@@ -22,15 +22,15 @@ gem 'blacklight'
 gem 'bootstrap-sass', '~> 3.4.1'
 gem 'coderay'
 gem 'concurrent-ruby', '1.3.4'
-gem 'factory_bot_rails' unless ENV['CI']
+gem 'factory_bot_rails' unless ENV['RAILS_ROOT']
 
 # Bulkrax supports Hyrax 2.3 through 5.2 only.
-gem 'hyrax', ENV['HYRAX_VERSION'] || '~> 5.0' unless ENV['CI']
+gem 'hyrax', ENV['HYRAX_VERSION'] || '~> 5.0' unless ENV['RAILS_ROOT']
 
 gem 'oai'
-gem 'pg' unless ENV['CI']
-gem 'rails', ENV['RAILS_GEM_VERSION'] || '~> 7.2' unless ENV['CI']
-gem 'rsolr', '>= 1.0' unless ENV['CI']
+gem 'pg' unless ENV['RAILS_ROOT']
+gem 'rails', ENV['RAILS_GEM_VERSION'] || '~> 7.2' unless ENV['RAILS_ROOT']
+gem 'rsolr', '>= 1.0' unless ENV['RAILS_ROOT']
 gem 'twitter-typeahead-rails', '0.11.1.pre.corejavascript'
 
 group :development, :test do
@@ -51,6 +51,6 @@ group :test do
 end
 
 group :lint do
-  gem 'bixby' unless ENV['CI']
-  gem 'rubocop-factory_bot', require: false unless ENV['CI']
+  gem 'bixby' unless ENV['RAILS_ROOT']
+  gem 'rubocop-factory_bot', require: false unless ENV['RAILS_ROOT']
 end

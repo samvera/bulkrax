@@ -18,7 +18,11 @@ RSpec.describe Bulkrax::ImportersController, type: :controller do
     allow(Bulkrax::ImporterJob).to receive(:perform_later).and_return(true)
   end
 
-  controller do
+  controller(Bulkrax::ImportersController) do
+    def index
+      render plain: "OK"
+    end
+
     include Bulkrax::DatatablesBehavior
   end
 

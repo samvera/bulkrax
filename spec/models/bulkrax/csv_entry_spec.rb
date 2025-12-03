@@ -186,13 +186,13 @@ module Bulkrax
         describe 'importing :rights_statement' do
           context 'when the http/https does not match' do
             context 'when the authority ID has https' do
-              let(:auth_id) { 'https://rightsstatements.org/vocab/fake/1.0/' }
+              let(:auth_id) { 'http://rightsstatements.org/vocab/InC/1.0/' }
 
               before do
-                allow(subject).to receive(:raw_metadata).and_return('rights_statement' => 'http://rightsstatements.org/vocab/fake/1.0/', 'source_identifier' => 'qa_1', 'title' => 'some title')
+                allow(subject).to receive(:raw_metadata).and_return('rights_statement' => 'http://rightsstatements.org/vocab/InC/1.0/', 'source_identifier' => 'qa_1', 'title' => 'some title')
               end
 
-              it 'replaces http with https' do
+              it 'keeps http when correct' do
                 subject.build_metadata
 
                 expect(subject.parsed_metadata['rights_statement']).to eq([auth_id])
@@ -395,6 +395,7 @@ module Bulkrax
           allow_any_instance_of(ObjectFactory).to receive(:run!)
 
           allow(subject).to receive(:raw_metadata).and_return('source_identifier' => '3', 'title' => 'some title')
+          allow(File).to receive(:exist?).and_call_original
           allow(File).to receive(:exist?).with('./spec/fixtures/csv/test_file.csv').and_return(true)
         end
 

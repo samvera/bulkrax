@@ -12,7 +12,6 @@ AllCops:
     - 'vendor/**/*'
     - 'node_modules/**/*'
     # Additions by Notch8
-    - 'spec/test_app/**/*'
     - 'bin/*'
 
 inherit_from: .rubocop_todo.yml
@@ -30,10 +29,6 @@ Metrics/BlockLength:
 Metrics/ModuleLength:
   Exclude:
     - 'spec/**/*'
-
-Style/FrozenStringLiteralComment:
-  Exclude:
-    - 'spec/test_app/db/schema.rb'
 
 Style/RedundantReturn:
   Enabled: false
