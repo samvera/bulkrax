@@ -567,6 +567,104 @@ module Bulkrax
       end
     end
 
+    describe '#file_paths' do
+      context 'when metadata_only is true' do
+        before do
+          allow(importer).to receive(:metadata_only?).and_return(true)
+        end
+
+        it 'returns an empty array' do
+          expect(subject.file_paths).to eq([])
+        end
+      end
+
+      context 'when all files exist' do
+        before do
+          allow(subject).to receive(:records).and_return([{ file: 'sun.jpg' }, { file: 'moon.jpg' }])
+        end
+
+        it 'returns the file paths' do
+          expect(subject.file_paths).to contain_exactly(
+            'spec/fixtures/csv/files/sun.jpg',
+            'spec/fixtures/csv/files/moon.jpg'
+          )
+        end
+      end
+
+      context 'when some files are missing' do
+        before do
+          allow(subject).to receive(:records).and_return([
+                                                           { file: 'sun.jpg' },
+                                                           { file: 'missing1.jpg' },
+                                                           { file: 'missing2.jpg' }
+                                                         ])
+        end
+
+        it 'raises an error listing ALL missing files' do
+          expect { subject.file_paths }.to raise_error(
+            StandardError,
+            /2 file\(s\) not found.*missing1\.jpg.*missing2\.jpg/
+          )
+        end
+      end
+
+      context 'when a single file is missing' do
+        before do
+          allow(subject).to receive(:records).and_return([{ file: 'nonexistent.jpg' }])
+        end
+
+        it 'raises an error with the missing file name' do
+          expect { subject.file_paths }.to raise_error(
+            StandardError,
+            /1 file\(s\) not found.*nonexistent\.jpg/
+          )
+        end
+      end
+
+      context 'when records are blank' do
+        before do
+          allow(subject).to receive(:records).and_return([])
+        end
+
+        it 'raises an error' do
+          expect { subject.file_paths }.to raise_error(StandardError, 'No records were found')
+        end
+      end
+
+      context 'with multiple files in a single record' do
+        before do
+          allow(subject).to receive(:records).and_return([{ file: 'sun.jpg|moon.jpg' }])
+        end
+
+        it 'handles pipe-separated files' do
+          expect(subject.file_paths).to contain_exactly(
+            'spec/fixtures/csv/files/sun.jpg',
+            'spec/fixtures/csv/files/moon.jpg'
+          )
+        end
+      end
+
+      context 'with files containing spaces' do
+        before do
+          # Create a temporary file with underscores (the converted filename)
+          # The CSV entry has spaces, but the code converts them to underscores when looking for the file
+          FileUtils.mkdir_p('spec/fixtures/csv/files')
+          FileUtils.touch('spec/fixtures/csv/files/file_with_spaces.jpg')
+          allow(subject).to receive(:records).and_return([{ file: 'file with spaces.jpg' }])
+        end
+
+        after do
+          FileUtils.rm_f('spec/fixtures/csv/files/file_with_spaces.jpg')
+        end
+
+        it 'converts spaces to underscores in filenames' do
+          expect(subject.file_paths).to contain_exactly(
+            'spec/fixtures/csv/files/file_with_spaces.jpg'
+          )
+        end
+      end
+    end
+
     describe '#missing_elements' do
       let(:entry_no_title) { FactoryBot.create(:bulkrax_csv_entry_missing_title, raw_metadata: { title: '', source_identifier: "12345" }) }
 

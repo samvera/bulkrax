@@ -347,28 +347,43 @@ module Bulkrax
       raise StandardError, 'No records were found' if records.blank?
       return [] if importerexporter.metadata_only?
 
-      @file_paths ||= records.map do |r|
-        file_mapping = Bulkrax.field_mappings.dig(self.class.to_s, 'file', :from)&.first&.to_sym || :file
-        next if r[file_mapping].blank?
+      missing_files = []
 
-        split_value = Bulkrax.field_mappings.dig(self.class.to_s, :file, :split)
-        split_pattern = case split_value
-                        when Regexp
-                          split_value
-                        when String
-                          Regexp.new(split_value)
-                        else
-                          Bulkrax.multi_value_element_split_on
-                        end
-        r[file_mapping].split(split_pattern).map do |f|
-          file = File.join(path_to_files, f.tr(' ', '_'))
-          if File.exist?(file) # rubocop:disable Style/GuardClause
-            file
-          else
-            raise "File #{file} does not exist"
-          end
+      @file_paths ||= begin
+        file_mapping = Bulkrax.field_mappings.dig(self.class.to_s, 'file', :from)&.first&.to_sym || :file
+
+        paths = records.map do |r|
+          next if r[file_mapping].blank?
+
+          extract_file_paths_from_record(r, file_mapping, missing_files)
+        end.flatten.compact.uniq
+
+        # Report ALL missing files at once, not just the first one
+        raise StandardError, "#{missing_files.count} file(s) not found in #{path_to_files}: #{missing_files.join(', ')}" if missing_files.any?
+
+        paths
+      end
+    end
+
+    def extract_file_paths_from_record(record, file_mapping, missing_files)
+      split_value = Bulkrax.field_mappings.dig(self.class.to_s, :file, :split)
+      split_pattern = case split_value
+                      when Regexp
+                        split_value
+                      when String
+                        Regexp.new(split_value)
+                      else
+                        Bulkrax.multi_value_element_split_on
+                      end
+      record[file_mapping].split(split_pattern).map do |f|
+        file = File.join(path_to_files, f.tr(' ', '_'))
+        if File.exist?(file)
+          file
+        else
+          missing_files << f.tr(' ', '_')
+          nil
         end
-      end.flatten.compact.uniq
+      end
     end
 
     # Retrieve the path where we expect to find the files
