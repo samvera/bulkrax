@@ -65,6 +65,14 @@ module Bulkrax
       end
     end
 
+    # POST /importers/sample_csv_file
+    def sample_csv_file
+      @importer = Bulkrax::SampleCsvService.call(model_name: 'all')
+
+      redirect_to importer_path(@importer),
+                  notice: "Sample CSV importer has been created successfully."
+    end
+
     # GET /importers/1/edit
     def edit
       if api_request?

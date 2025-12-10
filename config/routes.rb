@@ -17,6 +17,7 @@ Bulkrax::Engine.routes.draw do
     collection do
       get :importer_table
       post :external_sets
+      post :sample_csv_file
     end
     resources :entries, only: %i[show update destroy]
     get :upload_corrected_entries

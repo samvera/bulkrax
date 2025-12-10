@@ -3,6 +3,7 @@ en:
     action:
       importer:
         new: "New"
+        sample: "Generate Sample CSV"
       exporter:
         new: "New"
   bulkrax:

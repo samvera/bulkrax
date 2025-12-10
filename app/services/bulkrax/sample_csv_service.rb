@@ -80,13 +80,13 @@ module Bulkrax
       new(model_name: model_name).send("to_#{output}", **args)
     end
 
-    ## create a CSV file on disk
-    # @TODO: determine appropriate file path
+    ## create a CSV file on disk and create a Bulkrax Importer for it
     def to_file(file_path: nil)
-      file_path ||= Rails.root.join('tmp', 'imports', "bulkrax_template#{'_' + @model_name.downcase}.csv")
+      file_path ||= Rails.root.join('tmp', 'imports', filename)
       CSV.open(file_path, "w") do |csv|
         csv_rows.each { |row| csv << row }
       end
+      to_importer(file_path: file_path)
     end
 
     ## create a CSV string for download via controller action
@@ -97,6 +97,29 @@ module Bulkrax
     end
 
     private
+
+    def filename
+      "bulkrax_template_#{@model_name.downcase}_#{Time.now.utc.strftime('%Y%m%d_%H%M%S')}.csv"
+    end
+
+    ## create a Bulkrax Importer using the generated CSV file
+    def to_importer(file_path:)
+      Bulkrax::Importer.create(
+        name: "Sample CSV #{Time.now.utc.to_date}",
+        admin_set_id: Hyrax::AdminSetCreateService.find_or_create_default_admin_set.id,
+        user_id: User.find_by(email: 'admin@example.com').id,
+        frequency: 'PT0S',
+        parser_klass: 'Bulkrax::CsvParser',
+        parser_fields: {
+          'visibility' => 'open',
+          'rights_statement' => '',
+          'override_rights_statement' => '0',
+          'file_style' => 'Specify a Path on the Server',
+          'import_file_path' => file_path,
+          'update_files' => false
+        }
+      )
+    end
 
     def csv_rows
       @breakdown_mappings ||= breakdown_mappings
@@ -114,39 +137,38 @@ module Bulkrax
     def breakdown_mappings
       # start with the required Bulkrax properties, then
       # add the bulkrax_mapped properties
-      mv_split = Bulkrax.multi_value_element_split_on.source
-
       all_mappings = ADDED_BULKRAX_PROPERTIES +
                      @mappings.map do |_, value|
-                       split = value["split"]
-                       split_text = if split.nil? # term doesn't split
-                                      "does not split"
-                                    elsif split == true # use global setting
-                                      if (match = mv_split.match(/\[([^\]]+)\]/))
-                                        "split on #{match[1]}"
-                                      elsif (single = mv_split.match(/\\(.)/))
-                                        "split on #{single[1]}"
-                                      else
-                                        "split on #{mv_split}"
-                                      end
-                                    elsif split.is_a?(String) # use custom setting
-                                      if (match = split.match(/\[([^\]]+)\]/))
-                                        "split on #{match[1]}"
-                                      elsif (single = split.match(/\\(.)/))
-                                        "split on #{single[1]}"
-                                      else
-                                        "split on #{split}"
-                                      end
-                                    else # does not match identified patterns
-                                      split
-                                    end
-
+                       split_text = format_split_text(value["split"])
                        { value["from"].join(' OR ') => split_text }
                      end
       # add in special properties
       SPECIAL_PROPERTIES + all_mappings
     end
-    # rubocop:enable Metrics/MethodLength
+
+    def format_split_text(split_value)
+      return "does not split" if split_value.nil?
+      if split_value == true
+        # use global setting
+        parse_split_pattern(Bulkrax.multi_value_element_split_on.source)
+      elsif split_value.is_a?(String)
+        # use custom setting
+        parse_split_pattern(split_value)
+      else
+        # does not match identified patterns
+        split_value
+      end
+    end
+
+    def parse_split_pattern(pattern)
+      if (match = pattern.match(/\[([^\]]+)\]/))
+        "split on #{match[1]}"
+      elsif (single = pattern.match(/\\(.)/))
+        "split on #{single[1]}"
+      else
+        "split on #{pattern}"
+      end
+    end
 
     # Generate rows for the specified model or all models
     def model_rows
