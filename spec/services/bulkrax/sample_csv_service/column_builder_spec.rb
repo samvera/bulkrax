@@ -193,11 +193,11 @@ RSpec.describe Bulkrax::SampleCsvService::ColumnBuilder do
           allow(service).to receive(:mappings).and_return(mappings)
           # Stub the constant since it's used directly
           stub_const('Bulkrax::SampleCsvService::ColumnDescriptor::COLUMN_DESCRIPTIONS', {
-            files: [
-              { "file" => "File description" },
-              { "remote_files" => "Remote files description" }
-            ]
-          })
+                       files: [
+                         { "file" => "File description" },
+                         { "remote_files" => "Remote files description" }
+                       ]
+                     })
         end
 
         it 'extracts file columns from mappings' do
@@ -218,11 +218,11 @@ RSpec.describe Bulkrax::SampleCsvService::ColumnBuilder do
         before do
           allow(service).to receive(:mappings).and_return(mappings)
           stub_const('Bulkrax::SampleCsvService::ColumnDescriptor::COLUMN_DESCRIPTIONS', {
-            files: [
-              { "file" => "File description" },
-              { "remote_files" => "Remote files description" }
-            ]
-          })
+                       files: [
+                         { "file" => "File description" },
+                         { "remote_files" => "Remote files description" }
+                       ]
+                     })
         end
 
         it 'only returns columns that have mappings' do
@@ -238,11 +238,11 @@ RSpec.describe Bulkrax::SampleCsvService::ColumnBuilder do
         before do
           allow(service).to receive(:mappings).and_return(mappings)
           stub_const('Bulkrax::SampleCsvService::ColumnDescriptor::COLUMN_DESCRIPTIONS', {
-            files: [
-              { "file" => "File description" },
-              { "remote_files" => "Remote files description" }
-            ]
-          })
+                       files: [
+                         { "file" => "File description" },
+                         { "remote_files" => "Remote files description" }
+                       ]
+                     })
         end
 
         it 'returns empty array when no mappings exist' do
@@ -271,21 +271,21 @@ RSpec.describe Bulkrax::SampleCsvService::ColumnBuilder do
       end
 
       stub_const('Bulkrax::SampleCsvService::ColumnDescriptor::COLUMN_DESCRIPTIONS', {
-        files: [
-          { "file" => "File description" },
-          { "remote_files" => "Remote files description" }
-        ]
-      })
+                   files: [
+                     { "file" => "File description" },
+                     { "remote_files" => "Remote files description" }
+                   ]
+                 })
     end
 
     it 'builds complete column list with no duplicates' do
       result = column_builder.all_columns
 
       # Should have core, relationship, file, and property columns
-      expect(result).to include('work_type', 'source_identifier')  # core
-      expect(result).to include('children', 'parents')  # relationships
-      expect(result).to include('xlocalfiles', 'xrefs')  # files
-      expect(result).to include('xcreator', 'xtitle')  # properties
+      expect(result).to include('work_type', 'source_identifier') # core
+      expect(result).to include('children', 'parents') # relationships
+      expect(result).to include('xlocalfiles', 'xrefs') # files
+      expect(result).to include('xcreator', 'xtitle') # properties
 
       # Should have no duplicates
       expect(result).to eq(result.uniq)

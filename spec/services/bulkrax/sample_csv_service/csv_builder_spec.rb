@@ -25,7 +25,7 @@ RSpec.describe Bulkrax::SampleCsvService::CsvBuilder do
 
   describe '#initialize' do
     it 'creates column and row builders with the service' do
-      builder = described_class.new(service)
+      described_class.new(service)
 
       expect(Bulkrax::SampleCsvService::ColumnBuilder).to have_received(:new).with(service)
       expect(Bulkrax::SampleCsvService::RowBuilder).to have_received(:new).with(service)
@@ -289,7 +289,7 @@ RSpec.describe Bulkrax::SampleCsvService::CsvBuilder do
       result = csv_builder.generate_string
 
       csv = CSV.parse(result)
-      expect(csv[0]).to eq(['work_type', 'title'])  # admin_set_id filtered out
+      expect(csv[0]).to eq(['work_type', 'title']) # admin_set_id filtered out
       expect(csv[1]).to eq(['Type desc', 'Title desc'])
       expect(csv[2]).to eq(['GenericWork', 'Required'])
     end

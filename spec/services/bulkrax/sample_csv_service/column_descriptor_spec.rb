@@ -41,7 +41,7 @@ RSpec.describe Bulkrax::SampleCsvService::ColumnDescriptor do
       result = descriptor.core_columns
 
       expected_count = described_class::COLUMN_DESCRIPTIONS[:highlighted].length +
-                      described_class::COLUMN_DESCRIPTIONS[:visibility].length
+                       described_class::COLUMN_DESCRIPTIONS[:visibility].length
 
       expect(result.length).to eq(expected_count)
       expect(result.uniq).to eq(result)

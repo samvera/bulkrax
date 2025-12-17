@@ -25,7 +25,7 @@ RSpec.describe Bulkrax::SampleCsvService do
         # Mock the file operations
         allow(CSV).to receive(:open).and_return(true)
         allow(FileUtils).to receive(:mkdir_p).and_return(true)
-        
+
         result = described_class.call(output: 'file', model_name: 'MyWork')
         # Result can be either a String or Pathname
         expect(result.to_s).to be_a(String)
@@ -246,6 +246,7 @@ RSpec.describe Bulkrax::SampleCsvService do
 
   private
 
+  # rubocop:disable Metrics/MethodLength
   def stub_models_and_dependencies
     # First, stub ValkyrieObjectFactory to prevent schema access issues
     stub_const('Bulkrax::ValkyrieObjectFactory', Class.new do
@@ -257,44 +258,72 @@ RSpec.describe Bulkrax::SampleCsvService do
 
     # Create simple test models without schema complexity
     my_work_model = Class.new do
-      def self.name; 'MyWork'; end
-      def self.to_s; 'MyWork'; end
+      def self.name
+        'MyWork'
+      end
+
+      def self.to_s
+        'MyWork'
+      end
+
       def self.properties
         { 'title' => {}, 'creator' => {}, 'description' => {} }
       end
+
       def self.respond_to?(method, _include_all = false)
         [:properties, :name, :to_s].include?(method) || super(method)
       end
     end
 
     another_work_model = Class.new do
-      def self.name; 'AnotherWork'; end
-      def self.to_s; 'AnotherWork'; end
+      def self.name
+        'AnotherWork'
+      end
+
+      def self.to_s
+        'AnotherWork'
+      end
+
       def self.properties
         { 'title' => {}, 'description' => {} }
       end
+
       def self.respond_to?(method, _include_all = false)
         [:properties, :name, :to_s].include?(method) || super(method)
       end
     end
 
     collection_model = Class.new do
-      def self.name; 'Collection'; end
-      def self.to_s; 'Collection'; end
+      def self.name
+        'Collection'
+      end
+
+      def self.to_s
+        'Collection'
+      end
+
       def self.properties
         { 'title' => {}, 'description' => {} }
       end
+
       def self.respond_to?(method, _include_all = false)
         [:properties, :name, :to_s].include?(method) || super(method)
       end
     end
 
     fileset_model = Class.new do
-      def self.name; 'Hyrax::FileSet'; end
-      def self.to_s; 'Hyrax::FileSet'; end
+      def self.name
+        'Hyrax::FileSet'
+      end
+
+      def self.to_s
+        'Hyrax::FileSet'
+      end
+
       def self.properties
         { 'title' => {} }
       end
+
       def self.respond_to?(method, _include_all = false)
         [:properties, :name, :to_s].include?(method) || super(method)
       end
@@ -322,6 +351,7 @@ RSpec.describe Bulkrax::SampleCsvService do
     stub_bulkrax_configuration
     stub_qa_authorities
   end
+  # rubocop:enable Metrics/MethodLength
 
   def stub_admin_set_service
     admin_set_service = Class.new do
