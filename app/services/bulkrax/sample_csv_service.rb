@@ -391,9 +391,9 @@ module Bulkrax
     end
 
     def load_required_terms_for(klass:)
-      load_schema_for(klass: klass)
+      schema = load_schema_for(klass: klass)
       begin
-        if @schema.present?
+        if schema.present?
           get_required_types(schema)
         else
           []
@@ -408,8 +408,8 @@ module Bulkrax
     end
 
     def load_controlled_vocab_terms_for(klass:)
-      load_schema_for(klass: klass)
-      controlled_properties = @schema.filter_map do |property|
+      schema = load_schema_for(klass: klass)
+      controlled_properties = schema.filter_map do |property|
                                 next unless property.respond_to?(:meta)
                                 sources = property.meta&.dig('controlled_values', 'sources')
                                 next if sources.nil? || sources == ['null'] || sources == 'null'
