@@ -34,7 +34,7 @@ module Bulkrax
 
     def format_message(chars)
       formatted = chars.chars.then do |c|
-        c.length > 1 ? "#{c[0..-2].join(', ')}, or #{c.last}" : c.first
+        c.length > 1 ? "#{c[0..-2].join(' ')}, or #{c.last}" : c.first
       end
       "Split multiple values with #{formatted}"
     end
