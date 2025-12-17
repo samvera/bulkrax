@@ -15,8 +15,6 @@ require 'nokogiri'
 require 'ostruct'
 require 'zip'
 
-require 'wings/custom_queries/find_by_source_identifier'
-
 def conditional_require(gem_name)
   require gem_name
 rescue LoadError
