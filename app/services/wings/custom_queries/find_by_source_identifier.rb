@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+return unless defined?(Wings)
+
 module Wings
   module CustomQueries
     class FindBySourceIdentifier
