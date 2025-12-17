@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 require 'rails_helper'
-require 'csv'
-require 'ostruct'
 
 RSpec.describe Bulkrax::SampleCsvService do
   # Define only the fake model classes we actually need for testing
@@ -26,15 +24,15 @@ RSpec.describe Bulkrax::SampleCsvService do
         def title_field.respond_to?(method, include_all = false)
           [:meta, :name].include?(method) || super
         end
-        
+
         creator_field = OpenStruct.new(name: :creator, meta: { 'form' => { 'required' => false } })
         def creator_field.respond_to?(method, include_all = false)
           [:meta, :name].include?(method) || super
         end
-        
+
         [title_field, creator_field]
       end
-      
+
       def self.new
         instance = allocate
         # Make singleton_class.schema return nil so it falls back to class.schema
@@ -74,7 +72,7 @@ RSpec.describe Bulkrax::SampleCsvService do
   let(:service) { described_class.new(model_name: model_name) }
   let(:model_name) { nil }
 
-  # Stub ALL constants before any tests run  
+  # Stub ALL constants before any tests run
   before(:each) do
     # Helper to create schema fields with proper respond_to?
     def create_schema_field(name_val, required)
@@ -84,26 +82,32 @@ RSpec.describe Bulkrax::SampleCsvService do
       end
       field
     end
-    
+
     # Create the base schema for models that have schemas
     test_schema = [
       create_schema_field(:title, true),
       create_schema_field(:creator, false)
     ]
-    
+
     # Create variations of the model with different names for proper testing
     generic_work_model = Class.new do
-      schema = test_schema  # Capture schema in closure
-      
-      def self.name; 'GenericWork'; end
-      def self.to_s; 'GenericWork'; end
+      schema = test_schema # Capture schema in closure
+
+      def self.name
+        'GenericWork'
+      end
+
+      def self.to_s
+        'GenericWork'
+      end
+
       def self.properties
         { 'title' => {}, 'creator' => {}, 'description' => {}, 'rights_statement' => {} }
       end
-      
+
       # Define schema as a class method
       define_singleton_method(:schema) { schema }
-      
+
       # Define new to return an instance
       define_singleton_method(:new) do
         instance = allocate
@@ -115,37 +119,62 @@ RSpec.describe Bulkrax::SampleCsvService do
         end
         instance
       end
-      
+
       def self.respond_to?(method, include_all = false)
         [:schema, :new, :properties].include?(method) || super
       end
     end
-    
+
     image_resource_model = Class.new(fake_model_with_schema) do
-      def self.name; 'ImageResource'; end
-      def self.to_s; 'ImageResource'; end
+      def self.name
+        'ImageResource'
+      end
+
+      def self.to_s
+        'ImageResource'
+      end
     end
-    
+
     etd_model = Class.new(fake_model_with_schema) do
-      def self.name; 'Etd'; end
-      def self.to_s; 'Etd'; end
+      def self.name
+        'Etd'
+      end
+
+      def self.to_s
+        'Etd'
+      end
     end
-    
+
     oer_model = Class.new(fake_model_with_schema) do
-      def self.name; 'Oer'; end
-      def self.to_s; 'Oer'; end
+      def self.name
+        'Oer'
+      end
+
+      def self.to_s
+        'Oer'
+      end
     end
-    
+
     collection_model = Class.new(fake_model_without_schema) do
-      def self.name; 'CollectionResource'; end
-      def self.to_s; 'CollectionResource'; end
+      def self.name
+        'CollectionResource'
+      end
+
+      def self.to_s
+        'CollectionResource'
+      end
     end
-    
+
     fileset_model = Class.new(fake_model_without_schema) do
-      def self.name; 'Hyrax::FileSet'; end
-      def self.to_s; 'Hyrax::FileSet'; end
+      def self.name
+        'Hyrax::FileSet'
+      end
+
+      def self.to_s
+        'Hyrax::FileSet'
+      end
     end
-    
+
     # Stub the models with unique names
     stub_const('GenericWorkResource', generic_work_model)
     stub_const('GenericWork', generic_work_model)
@@ -153,7 +182,7 @@ RSpec.describe Bulkrax::SampleCsvService do
     stub_const('Etd', etd_model)
     stub_const('Oer', oer_model)
     stub_const('CollectionResource', collection_model)
-    
+
     # Create Hyrax module with config method
     hyrax_module = Class.new do
       def self.config
@@ -163,10 +192,10 @@ RSpec.describe Bulkrax::SampleCsvService do
       end
     end
     stub_const('Hyrax', hyrax_module)
-    
+
     # Now we can stub Hyrax::FileSet since Hyrax exists
     stub_const('Hyrax::FileSet', fileset_model)
-    
+
     # Mock Hyrax admin set service
     admin_set_service = Class.new do
       def self.find_or_create_default_admin_set
@@ -188,7 +217,7 @@ RSpec.describe Bulkrax::SampleCsvService do
     allow(Bulkrax).to receive(:collection_model_class).and_return(CollectionResource)
     allow(Bulkrax).to receive(:file_model_class).and_return(Hyrax::FileSet)
     allow(Bulkrax).to receive(:config).and_return(OpenStruct.new(object_factory: nil))
-    
+
     # Mock field mappings
     allow(Bulkrax).to receive(:field_mappings).and_return(
       "Bulkrax::CsvParser" => {
@@ -209,7 +238,7 @@ RSpec.describe Bulkrax::SampleCsvService do
         "file_ids" => { "from" => ["file_ids"] }
       }
     )
-    
+
     # Mock multi-value split pattern
     allow(Bulkrax).to receive(:multi_value_element_split_on).and_return(/\s*[|]\s*/)
 
@@ -224,14 +253,13 @@ RSpec.describe Bulkrax::SampleCsvService do
     # Mock Qa registry for controlled vocabularies
     qa_registry_mock = OpenStruct.new
     qa_registry_mock.define_singleton_method(:instance_variable_get) do |var_name|
-      if var_name == '@hash'
-        {
-          'rights_statements' => OpenStruct.new(klass: Class.new),
-          'licenses' => OpenStruct.new(klass: Class.new)
-        }
-      end
+      return unless var_name == '@hash'
+      {
+        'rights_statements' => OpenStruct.new(klass: Class.new),
+        'licenses' => OpenStruct.new(klass: Class.new)
+      }
     end
-    
+
     qa_local = Class.new do
       def self.registry
         qa_registry_mock
@@ -272,7 +300,7 @@ RSpec.describe Bulkrax::SampleCsvService do
 
     context 'with "all" model_name' do
       let(:model_name) { 'all' }
-      
+
       it 'loads all configured models' do
         models = service.instance_variable_get(:@all_models)
         expect(models).to include('GenericWork', 'ImageResource', 'Etd', 'Oer')
@@ -324,19 +352,19 @@ RSpec.describe Bulkrax::SampleCsvService do
 
     it 'creates a CSV file at the specified path' do
       csv_mock = OpenStruct.new
-      csv_mock.define_singleton_method(:<<) { |row| true }
-      
+      csv_mock.define_singleton_method(:<<) { |_row| true }
+
       expect(CSV).to receive(:open).with(file_path, "w").and_yield(csv_mock)
-      
+
       service.to_file(file_path: file_path)
     end
 
     it 'uses default path when none provided' do
       csv_mock = OpenStruct.new
-      csv_mock.define_singleton_method(:<<) { |row| true }
-      
+      csv_mock.define_singleton_method(:<<) { |_row| true }
+
       expect(CSV).to receive(:open).with(anything, "w").and_yield(csv_mock)
-      
+
       service.to_file
     end
   end
@@ -387,16 +415,16 @@ RSpec.describe Bulkrax::SampleCsvService do
       before do
         allow(service).to receive(:fill_header_row).and_return(['work_type', 'xtitle'])
         allow(service).to receive(:property_explanations).and_return([
-          { 'work_type' => 'Type description' },
-          { 'xtitle' => 'Title description' }
-        ])
+                                                                       { 'work_type' => 'Type description' },
+                                                                       { 'xtitle' => 'Title description' }
+                                                                     ])
         allow(service).to receive(:model_breakdown).and_return(['GenericWork', 'Required'])
         allow(service).to receive(:remove_empty_columns) { |rows| rows }
       end
 
       it 'generates header, explanation, and model rows' do
         rows = service.send(:csv_rows)
-        expect(rows.length).to eq(3)  # Changed from have_exactly(3).items
+        expect(rows.length).to eq(3) # Changed from have_exactly(3).items
         expect(rows[0]).to eq(['work_type', 'xtitle'])
         expect(rows[1]).to include('Type description', 'Title description')
       end
@@ -456,13 +484,13 @@ RSpec.describe Bulkrax::SampleCsvService do
         before do
           stub_const('Bulkrax::ValkyrieObjectFactory', Class.new)
           allow(Bulkrax.config).to receive(:object_factory).and_return(Bulkrax::ValkyrieObjectFactory)
-          
+
           # Create a resolver that returns the class when called
           resolver = OpenStruct.new
           resolver.define_singleton_method(:call) do |model_name|
             GenericWork if model_name == 'GenericWork'
           end
-          
+
           valkyrie_module = Class.new do
             def self.config
               resolver = OpenStruct.new
@@ -487,7 +515,7 @@ RSpec.describe Bulkrax::SampleCsvService do
 
       it 'creates and caches field list for a model' do
         result = service.send(:find_or_create_field_list_for, model_name: model_name)
-        
+
         expect(result).to have_key('GenericWork')
         expect(result['GenericWork']).to have_key('properties')
         expect(result['GenericWork']['properties']).to include('title', 'creator')
@@ -496,14 +524,14 @@ RSpec.describe Bulkrax::SampleCsvService do
       it 'returns cached result on second call' do
         first_call = service.send(:find_or_create_field_list_for, model_name: model_name)
         second_call = service.send(:find_or_create_field_list_for, model_name: model_name)
-        
+
         expect(first_call).to eq(second_call)
       end
 
       it 'returns empty hash for nil class' do
         allow(service).to receive(:determine_klass_for).and_return(nil)
         result = service.send(:find_or_create_field_list_for, model_name: 'InvalidModel')
-        
+
         expect(result).to eq({})
       end
     end
@@ -512,22 +540,24 @@ RSpec.describe Bulkrax::SampleCsvService do
       context 'with schema-based model' do
         let(:schema_model) do
           Class.new do
-            def self.name; 'TestModel'; end
-            
+            def self.name
+              'TestModel'
+            end
+
             def self.schema
               title_field = OpenStruct.new(name: :title, meta: { 'form' => { 'required' => true } })
               title_field.define_singleton_method(:respond_to?) do |method, include_all = false|
                 [:meta, :name].include?(method) || super(method, include_all)
               end
-              
+
               creator_field = OpenStruct.new(name: :creator, meta: { 'form' => { 'required' => false } })
               creator_field.define_singleton_method(:respond_to?) do |method, include_all = false|
                 [:meta, :name].include?(method) || super(method, include_all)
               end
-              
+
               [title_field, creator_field]
             end
-            
+
             def self.new
               obj = allocate
               # Make singleton_class.schema return the class schema
@@ -536,13 +566,13 @@ RSpec.describe Bulkrax::SampleCsvService do
               end
               obj
             end
-            
+
             def self.respond_to?(method, include_all = false)
               [:schema, :new].include?(method) || super
             end
           end
         end
-        
+
         it 'returns required fields from schema' do
           result = service.send(:load_required_terms_for, klass: schema_model)
           expect(result).to include('title')
@@ -575,7 +605,7 @@ RSpec.describe Bulkrax::SampleCsvService do
       it 'removes columns with no data' do
         result = service.send(:remove_empty_columns, rows)
         headers = result[0]
-        
+
         expect(headers).to include('col1', 'col3')
         expect(headers).not_to include('col2', 'col4')
       end
@@ -584,7 +614,7 @@ RSpec.describe Bulkrax::SampleCsvService do
         rows[2][0] = nil
         rows[3][0] = nil
         result = service.send(:remove_empty_columns, rows)
-        
+
         expect(result[0]).to include('col1')
       end
     end
@@ -597,8 +627,8 @@ RSpec.describe Bulkrax::SampleCsvService do
       it 'produces valid CSV output' do
         csv_string = service.to_csv_string
         csv = CSV.parse(csv_string)
-        
-        expect(csv.length).to be >= 3  # header + description + at least one model
+
+        expect(csv.length).to be >= 3 # header + description + at least one model
         expect(csv[0]).to include('work_type', 'source_identifier')
       end
     end
@@ -609,10 +639,10 @@ RSpec.describe Bulkrax::SampleCsvService do
       it 'includes only properties for that model' do
         csv_string = service.to_csv_string
         csv = CSV.parse(csv_string)
-        
+
         # Should have exactly 3 rows: header, descriptions, and one model row
         expect(csv.length).to eq(3)
-        expect(csv[2][0]).to eq('GenericWork')  # work_type column
+        expect(csv[2][0]).to eq('GenericWork') # work_type column
       end
     end
   end

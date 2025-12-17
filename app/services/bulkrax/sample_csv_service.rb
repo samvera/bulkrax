@@ -1,5 +1,4 @@
 # frozen_string_literal: true
-require 'csv'
 
 ## Generates sample CSV files showing Bulkrax field mappings for imports
 # Helps users understand how to format their CSV files for Bulkrax imports.
@@ -7,7 +6,7 @@ require 'csv'
 # Example usage:
 #   # Create CSV file on disk
 #   Bulkrax::SampleCsvService.call(output: 'file', model_name: 'all')
-#   
+#
 #   # Get CSV string for download
 #   csv_string = Bulkrax::SampleCsvService.call(output: 'csv_string', model_name: 'GenericWork')
 
@@ -36,13 +35,24 @@ module Bulkrax
       ]
     }.freeze
 
-    # Properties to exclude from CSV output
+    # Properties to exclude from CSV
     IGNORED_PROPERTIES = %w[
-      admin_set_id alternate_ids arkivo_checksum created_at date_modified
-      date_uploaded depositor embargo has_model head internal_resource
-      is_child lease member_ids member_of_collection_ids modified_date
-      new_record on_behalf_of owner proxy_depositor rendering_ids
-      representative_id split_from_pdf_id state tail thumbnail_id updated_at
+      admin_set_id alternate_ids arkivo_checksum
+      bulkrax_identifier
+      collection_type_gid contexts created_at
+      date_modified date_uploaded depositor
+      embargo embargo_id
+      file_ids
+      has_model head
+      internal_resource is_child
+      lease lease_id
+      member_ids member_of_collection_ids modified_date
+      new_record
+      on_behalf_of owner proxy_depositor
+      rendering_ids representative_id
+      schema_version split_from_pdf_id state tail
+      thumbnail_id
+      updated_at
     ].freeze
 
     attr_reader :model_name, :mappings, :all_models
@@ -96,7 +106,7 @@ module Bulkrax
     end
 
     def all_available_models
-      Hyrax.config.curation_concerns.map(&:name) + 
+      Hyrax.config.curation_concerns.map(&:name) +
         [Bulkrax.collection_model_class&.name, Bulkrax.file_model_class&.name].compact
     end
 
@@ -106,7 +116,7 @@ module Bulkrax
     end
 
     def csv_rows
-      @header_row = fill_header_row  # Changed from build_header_row to match spec
+      @header_row = fill_header_row # Changed from build_header_row to match spec
       rows = [
         @header_row,
         build_explanation_row,
@@ -115,14 +125,14 @@ module Bulkrax
       remove_empty_columns(rows)
     end
 
-    def fill_header_row  # Renamed from build_header_row to match original method name
+    def fill_header_row # Renamed from build_header_row to match original method name
       column_groups = extract_column_groups
       @required_headings = column_groups[:core] + column_groups[:relationships] + column_groups[:files]
-      
+
       merged_properties = collect_all_properties
       remaining = (merged_properties - column_groups.values.flatten).sort
-      
-      column_groups[:core] + column_groups[:relationships] + 
+
+      column_groups[:core] + column_groups[:relationships] +
         column_groups[:files] + remaining
     end
 
@@ -131,13 +141,13 @@ module Bulkrax
     end
 
     def build_model_rows
-      @all_models.map { |m| model_breakdown(m) }  # Changed back to use model_breakdown
+      @all_models.map { |m| model_breakdown(m) } # Changed back to use model_breakdown
     end
 
-    def model_breakdown(model_name)  # Renamed from build_model_row to match original
+    def model_breakdown(model_name) # Renamed from build_model_row to match original
       klass = determine_klass_for(model_name)
       return [] if klass.nil?
-      
+
       field_list = find_or_create_field_list_for(model_name: model_name)
       @required_terms = field_list.dig(model_name, 'required_terms')
 
@@ -149,7 +159,7 @@ module Bulkrax
     # Column value determination
     def determine_column_value(column, model_name, field_list)
       key = mapped_to_key(column)
-      
+
       if field_list.dig(model_name, "properties")&.include?(key)
         mark_required_or_optional(field: key)
       elsif special_column?(column, key)
@@ -210,7 +220,7 @@ module Bulkrax
     # Property collection
     def collect_all_properties
       field_lists = @all_models.map { |m| find_or_create_field_list_for(model_name: m) }
-      
+
       field_lists
         .flat_map { |item| item.values.flat_map { |config| config["properties"] || [] } }
         .uniq
@@ -221,7 +231,7 @@ module Bulkrax
     # Property explanations
     def property_explanations
       load_controlled_vocab_terms
-      
+
       @header_row.map do |column|
         { column => build_property_explanation(column) }
       end
@@ -229,13 +239,13 @@ module Bulkrax
 
     def build_property_explanation(column)
       mapping_key = mapped_to_key(column)
-      
+
       components = [
         find_description_for(column),
         controlled_vocab_text(mapping_key),
         split_text_for(mapping_key)
       ].compact
-      
+
       components.join("\n")
     end
 
@@ -244,15 +254,15 @@ module Bulkrax
         prop = group.find { |hash| hash.key?(column) }
         return prop[column] if prop
       end
-      
+
       return 'Contains the id or source_identifier of related objects.' if column.in?(relationship_properties)
-      
+
       if column.in?(file_terms)
         key = mapped_to_key(column)
         file_prop = COLUMN_DESCRIPTIONS[:files].find { |hash| hash.key?(key) }
         return file_prop[key] if file_prop
       end
-      
+
       nil
     end
 
@@ -298,19 +308,15 @@ module Bulkrax
 
     # Schema loading
     def load_schema_for(klass:)
-      @schema = if klass.respond_to?(:schema)
-                  klass.new.singleton_class.schema || klass.schema
-                else
-                  nil
-                end
+      @schema = (klass.new.singleton_class.schema || klass.schema if klass.respond_to?(:schema))
     rescue StandardError
       nil
     end
 
     def load_required_terms_for(klass:)
       schema = load_schema_for(klass: klass)
-      return [] unless schema.present?
-      
+      return [] if schema.blank?
+
       get_required_types(schema)
     rescue StandardError
       []
@@ -334,7 +340,7 @@ module Bulkrax
     def load_controlled_vocab_terms_for(klass:)
       schema = load_schema_for(klass: klass)
       return [] unless schema
-      
+
       controlled_properties = extract_controlled_properties(schema)
       controlled_properties.empty? ? registered_controlled_vocab_fields : controlled_properties
     rescue StandardError
@@ -380,8 +386,8 @@ module Bulkrax
 
     # Split formatting
     def format_split_text(split_value)
-      return "Property does not split." if split_value.nil?  # Added back the original message
-      
+      return "Property does not split." if split_value.nil? # Added back the original message
+
       if split_value == true
         parse_split_pattern(Bulkrax.multi_value_element_split_on.source)
       elsif split_value.is_a?(String)
@@ -416,7 +422,7 @@ module Bulkrax
     # Column filtering
     def remove_empty_columns(rows)
       return rows if rows.empty?
-      
+
       columns = rows.transpose
       non_empty_columns = columns.select { |col| keep_column?(col) }
       non_empty_columns.transpose
@@ -425,7 +431,7 @@ module Bulkrax
     def keep_column?(column)
       heading = column[0]
       return true if @required_headings.include?(heading)
-      
+
       # Check if any data row (after header and description) has content
       column[2..-1].any? { |value| !value.nil? && value != "" && value != "---" }
     end
