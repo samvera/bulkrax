@@ -177,7 +177,9 @@ module Bulkrax
                                       .ordered.find_each do |rel|
             raise "#{rel} needs a child to create relationship" if rel.child_id.nil?
             raise "#{rel} needs a parent to create relationship" if rel.parent_id.nil?
-            add_to_work(relationship: rel, parent_record: parent_record, ability: ability)
+            # depending on the object factory, we may not save the actual parent record, so we update it here
+            # after each relationship to ensure that we don't lose the membership.
+            parent_record = add_to_work(relationship: rel, parent_record: parent_record, ability: ability)
             self.number_of_successes += 1
             @parent_record_members_added = true
           rescue => e
@@ -187,9 +189,11 @@ module Bulkrax
           end
         end
 
-        # save record if members were added
+        # save record if members were added and update the index.
+        # For valkyrie, we should only need to reindex, but for active fedora, both the save
+        # and the reindex are needed to ensure the relationships are properly persisted.
         if @parent_record_members_added
-          Bulkrax.object_factory.save!(resource: parent_record, user: user)
+          Bulkrax.object_factory.save!(resource: parent_record, user: @user)
           reloaded_parent = Bulkrax.object_factory.find(parent_record.id)
           Bulkrax.object_factory.update_index(resources: [reloaded_parent])
           Bulkrax.object_factory.publish(event: 'object.membership.updated', object: reloaded_parent, user: @user)
