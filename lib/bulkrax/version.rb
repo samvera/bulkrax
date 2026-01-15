@@ -1,5 +1,5 @@
 # frozen_string_literal: true
 
 module Bulkrax
-  VERSION = '9.3.3'
+  VERSION = '9.3.4'
 end
