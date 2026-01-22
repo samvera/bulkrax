@@ -42,12 +42,12 @@ RSpec.describe Bulkrax::SampleCsvService::FieldAnalyzer do
         result = analyzer.find_or_create_field_list_for(model_name: model_name)
 
         expect(result).to eq({
-          'Work' => {
-            'properties' => ['title', 'creator', 'date_created', 'rights_statement'],
-            'required_terms' => ['title', 'creator'],
-            'controlled_vocab_terms' => ['rights_statement', 'resource_type']
-          }
-        })
+                               'Work' => {
+                                 'properties' => ['title', 'creator', 'date_created', 'rights_statement'],
+                                 'required_terms' => ['title', 'creator'],
+                                 'controlled_vocab_terms' => ['rights_statement', 'resource_type']
+                               }
+                             })
       end
 
       it 'adds the entry to the field_list' do
@@ -63,23 +63,23 @@ RSpec.describe Bulkrax::SampleCsvService::FieldAnalyzer do
         allow(work_klass).to receive(:respond_to?).and_return(false)
         allow(work_klass).to receive(:respond_to?).with(:schema).and_return(false)
         allow(work_klass).to receive(:properties).and_return({
-          'title' => {},
-          'creator' => {},
-          'subject' => {},
-          'description' => {}
-        })
+                                                               'title' => {},
+                                                               'creator' => {},
+                                                               'subject' => {},
+                                                               'description' => {}
+                                                             })
       end
 
       it 'creates a new field list entry with properties keys' do
         result = analyzer.find_or_create_field_list_for(model_name: model_name)
 
         expect(result).to eq({
-          'Work' => {
-            'properties' => ['title', 'creator', 'subject', 'description'],
-            'required_terms' => ['title', 'creator'],
-            'controlled_vocab_terms' => ['rights_statement', 'resource_type']
-          }
-        })
+                               'Work' => {
+                                 'properties' => ['title', 'creator', 'subject', 'description'],
+                                 'required_terms' => ['title', 'creator'],
+                                 'controlled_vocab_terms' => ['rights_statement', 'resource_type']
+                               }
+                             })
       end
     end
 
@@ -181,14 +181,14 @@ RSpec.describe Bulkrax::SampleCsvService::FieldAnalyzer do
     context 'with one model in field list' do
       before do
         analyzer.instance_variable_set(:@field_list, [
-          {
-            'Work' => {
-              'properties' => ['title', 'creator'],
-              'required_terms' => ['title'],
-              'controlled_vocab_terms' => ['rights_statement', 'resource_type', 'license']
-            }
-          }
-        ])
+                                         {
+                                           'Work' => {
+                                             'properties' => ['title', 'creator'],
+                                             'required_terms' => ['title'],
+                                             'controlled_vocab_terms' => ['rights_statement', 'resource_type', 'license']
+                                           }
+                                         }
+                                       ])
       end
 
       it 'returns controlled vocab terms from that model' do
@@ -201,21 +201,21 @@ RSpec.describe Bulkrax::SampleCsvService::FieldAnalyzer do
     context 'with multiple models in field list' do
       before do
         analyzer.instance_variable_set(:@field_list, [
-          {
-            'Work' => {
-              'properties' => ['title', 'creator'],
-              'required_terms' => ['title'],
-              'controlled_vocab_terms' => ['rights_statement', 'resource_type']
-            }
-          },
-          {
-            'Collection' => {
-              'properties' => ['title', 'description'],
-              'required_terms' => ['title'],
-              'controlled_vocab_terms' => ['visibility', 'rights_statement']
-            }
-          }
-        ])
+                                         {
+                                           'Work' => {
+                                             'properties' => ['title', 'creator'],
+                                             'required_terms' => ['title'],
+                                             'controlled_vocab_terms' => ['rights_statement', 'resource_type']
+                                           }
+                                         },
+                                         {
+                                           'Collection' => {
+                                             'properties' => ['title', 'description'],
+                                             'required_terms' => ['title'],
+                                             'controlled_vocab_terms' => ['visibility', 'rights_statement']
+                                           }
+                                         }
+                                       ])
       end
 
       it 'returns unique controlled vocab terms from all models' do
@@ -228,21 +228,21 @@ RSpec.describe Bulkrax::SampleCsvService::FieldAnalyzer do
     context 'with models having no controlled vocab terms' do
       before do
         analyzer.instance_variable_set(:@field_list, [
-          {
-            'Work' => {
-              'properties' => ['title', 'creator'],
-              'required_terms' => ['title'],
-              'controlled_vocab_terms' => nil  # Could be nil
-            }
-          },
-          {
-            'Collection' => {
-              'properties' => ['title', 'description'],
-              'required_terms' => ['title']
-              # controlled_vocab_terms key might be missing
-            }
-          }
-        ])
+                                         {
+                                           'Work' => {
+                                             'properties' => ['title', 'creator'],
+                                             'required_terms' => ['title'],
+                                             'controlled_vocab_terms' => nil # Could be nil
+                                           }
+                                         },
+                                         {
+                                           'Collection' => {
+                                             'properties' => ['title', 'description'],
+                                             'required_terms' => ['title']
+                                             # controlled_vocab_terms key might be missing
+                                           }
+                                         }
+                                       ])
       end
 
       it 'handles nil and missing controlled_vocab_terms gracefully' do
@@ -253,22 +253,22 @@ RSpec.describe Bulkrax::SampleCsvService::FieldAnalyzer do
     context 'with duplicate controlled vocab terms across models' do
       before do
         analyzer.instance_variable_set(:@field_list, [
-          {
-            'Work' => {
-              'controlled_vocab_terms' => ['rights_statement', 'resource_type', 'audience']
-            }
-          },
-          {
-            'Collection' => {
-              'controlled_vocab_terms' => ['rights_statement', 'audience', 'education_level']
-            }
-          },
-          {
-            'FileSet' => {
-              'controlled_vocab_terms' => ['resource_type', 'education_level', 'license']
-            }
-          }
-        ])
+                                         {
+                                           'Work' => {
+                                             'controlled_vocab_terms' => ['rights_statement', 'resource_type', 'audience']
+                                           }
+                                         },
+                                         {
+                                           'Collection' => {
+                                             'controlled_vocab_terms' => ['rights_statement', 'audience', 'education_level']
+                                           }
+                                         },
+                                         {
+                                           'FileSet' => {
+                                             'controlled_vocab_terms' => ['resource_type', 'education_level', 'license']
+                                           }
+                                         }
+                                       ])
       end
 
       it 'returns unique list without duplicates' do
@@ -277,7 +277,7 @@ RSpec.describe Bulkrax::SampleCsvService::FieldAnalyzer do
         expect(result).to contain_exactly(
           'rights_statement', 'resource_type', 'audience', 'education_level', 'license'
         )
-        expect(result.size).to eq(5)  # Ensure no duplicates
+        expect(result.size).to eq(5) # Ensure no duplicates
       end
     end
   end
@@ -332,7 +332,7 @@ RSpec.describe Bulkrax::SampleCsvService::FieldAnalyzer do
       # Verify repeated calls return existing entries
       work_result = analyzer.find_or_create_field_list_for(model_name: 'Work')
       expect(work_result['Work']['properties']).to eq(['title', 'creator', 'rights_statement'])
-      expect(analyzer.field_list.size).to eq(2)  # Still only 2 entries
+      expect(analyzer.field_list.size).to eq(2) # Still only 2 entries
     end
   end
 end

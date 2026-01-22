@@ -31,11 +31,11 @@ RSpec.describe Bulkrax::SampleCsvService::ExplanationBuilder do
         allow(mapping_manager).to receive(:mapped_to_key).with('creator').and_return('creator')
 
         allow(column_descriptor).to receive(:find_description_for).with('work_type')
-          .and_return("The work types configured in your repository are listed below.\nIf left blank, your default work type, #{Bulkrax.default_work_type}, is used.")
+                                                                  .and_return("The work types configured in your repository are listed below.\nIf left blank, your default work type, #{Bulkrax.default_work_type}, is used.")
         allow(column_descriptor).to receive(:find_description_for).with('title')
-          .and_return(nil) # No description defined for title
+                                                                  .and_return(nil) # No description defined for title
         allow(column_descriptor).to receive(:find_description_for).with('creator')
-          .and_return(nil) # No description defined for creator
+                                                                  .and_return(nil) # No description defined for creator
 
         allow(field_analyzer).to receive(:controlled_vocab_terms).and_return([])
 
@@ -49,8 +49,8 @@ RSpec.describe Bulkrax::SampleCsvService::ExplanationBuilder do
         expect(result).to be_an(Array)
         expect(result.length).to eq(3)
         expect(result[0]).to eq({
-          'work_type' => "The work types configured in your repository are listed below.\nIf left blank, your default work type, #{Bulkrax.default_work_type}, is used."
-        })
+                                  'work_type' => "The work types configured in your repository are listed below.\nIf left blank, your default work type, #{Bulkrax.default_work_type}, is used."
+                                })
         expect(result[1]).to eq({ 'title' => '' })
         expect(result[2]).to eq({ 'creator' => '' })
       end
@@ -65,11 +65,11 @@ RSpec.describe Bulkrax::SampleCsvService::ExplanationBuilder do
         allow(mapping_manager).to receive(:mapped_to_key).with('rights_statement').and_return('rights_statement')
 
         allow(column_descriptor).to receive(:find_description_for).with('source_identifier')
-          .and_return("This must be a unique identifier.\nIt can be alphanumeric with some special charaters (e.g. hyphens, colons), and URLs are also supported.")
+                                                                  .and_return("This must be a unique identifier.\nIt can be alphanumeric with some special charaters (e.g. hyphens, colons), and URLs are also supported.")
         allow(column_descriptor).to receive(:find_description_for).with('id')
-          .and_return("This column would optionally be included only if it is a re-import, i.e. for updating or deleting records.\nThis is a key identifier used by the system, which you wouldn't have for new imports.")
+                                                                  .and_return("This column would optionally be included only if it is a re-import, i.e. for updating or deleting records.\nThis is a key identifier used by the system, which you wouldn't have for new imports.")
         allow(column_descriptor).to receive(:find_description_for).with('rights_statement')
-          .and_return("Rights statement URI for the work.\nIf not included, uses the value specified on the bulk import configuration screen.")
+                                                                  .and_return("Rights statement URI for the work.\nIf not included, uses the value specified on the bulk import configuration screen.")
 
         allow(field_analyzer).to receive(:controlled_vocab_terms).and_return(['rights_statement'])
         allow(mapping_manager).to receive(:split_value_for).and_return(nil)
@@ -98,11 +98,11 @@ RSpec.describe Bulkrax::SampleCsvService::ExplanationBuilder do
         allow(mapping_manager).to receive(:mapped_to_key).with('visibility_during_embargo').and_return('visibility_during_embargo')
 
         allow(column_descriptor).to receive(:find_description_for).with('visibility')
-          .and_return("Uses the value specified on the bulk import configuration screen if not added here.\nValid options: open, institution, restricted, embargo, lease")
+                                                                  .and_return("Uses the value specified on the bulk import configuration screen if not added here.\nValid options: open, institution, restricted, embargo, lease")
         allow(column_descriptor).to receive(:find_description_for).with('embargo_release_date')
-          .and_return("Required for embargo (yyyy-mm-dd)")
+                                                                  .and_return("Required for embargo (yyyy-mm-dd)")
         allow(column_descriptor).to receive(:find_description_for).with('visibility_during_embargo')
-          .and_return("Required for embargo")
+                                                                  .and_return("Required for embargo")
 
         allow(field_analyzer).to receive(:controlled_vocab_terms).and_return(['visibility', 'visibility_during_embargo'])
         allow(mapping_manager).to receive(:split_value_for).and_return(nil)
@@ -129,9 +129,9 @@ RSpec.describe Bulkrax::SampleCsvService::ExplanationBuilder do
         allow(mapping_manager).to receive(:mapped_to_key).with('remote_files').and_return('remote_files')
 
         allow(column_descriptor).to receive(:find_description_for).with('file')
-          .and_return("Use filenames exactly matching those in your files folder.\nZip your CSV and files folder together and attach this to your importer.")
+                                                                  .and_return("Use filenames exactly matching those in your files folder.\nZip your CSV and files folder together and attach this to your importer.")
         allow(column_descriptor).to receive(:find_description_for).with('remote_files')
-          .and_return("Use the URLs to remote files to be attached to the work.")
+                                                                  .and_return("Use the URLs to remote files to be attached to the work.")
 
         allow(field_analyzer).to receive(:controlled_vocab_terms).and_return([])
         allow(mapping_manager).to receive(:split_value_for).with('file').and_return(nil)
@@ -162,11 +162,11 @@ RSpec.describe Bulkrax::SampleCsvService::ExplanationBuilder do
         allow(mapping_manager).to receive(:mapped_to_key).with('title').and_return('title')
 
         allow(column_descriptor).to receive(:find_description_for).with('rights_statement')
-          .and_return("Rights statement URI for the work.\nIf not included, uses the value specified on the bulk import configuration screen.")
+                                                                  .and_return("Rights statement URI for the work.\nIf not included, uses the value specified on the bulk import configuration screen.")
         allow(column_descriptor).to receive(:find_description_for).with('resource_type')
-          .and_return(nil) # resource_type might not have a predefined description
+                                                                  .and_return(nil) # resource_type might not have a predefined description
         allow(column_descriptor).to receive(:find_description_for).with('title')
-          .and_return(nil)
+                                                                  .and_return(nil)
 
         allow(field_analyzer).to receive(:controlled_vocab_terms).and_return(controlled_vocab_terms)
 
@@ -199,9 +199,9 @@ RSpec.describe Bulkrax::SampleCsvService::ExplanationBuilder do
         allow(mapping_manager).to receive(:mapped_to_key).with('contributor').and_return('contributor')
 
         allow(column_descriptor).to receive(:find_description_for).with('keywords')
-          .and_return('Keywords or tags')
+                                                                  .and_return('Keywords or tags')
         allow(column_descriptor).to receive(:find_description_for).with('contributor')
-          .and_return('Additional contributors')
+                                                                  .and_return('Additional contributors')
 
         allow(field_analyzer).to receive(:controlled_vocab_terms).and_return([])
 
@@ -227,7 +227,7 @@ RSpec.describe Bulkrax::SampleCsvService::ExplanationBuilder do
       before do
         allow(mapping_manager).to receive(:mapped_to_key).with('genre').and_return('genre')
         allow(column_descriptor).to receive(:find_description_for).with('genre')
-          .and_return('The genre or type of work')
+                                                                  .and_return('The genre or type of work')
         allow(field_analyzer).to receive(:controlled_vocab_terms).and_return(['genre'])
         # Escaped delimiter from bulkrax mapping split value
         allow(mapping_manager).to receive(:split_value_for).with('genre').and_return('\|\|')
@@ -271,9 +271,9 @@ RSpec.describe Bulkrax::SampleCsvService::ExplanationBuilder do
         allow(mapping_manager).to receive(:mapped_to_key).with('Date Created').and_return('date_created')
 
         allow(column_descriptor).to receive(:find_description_for).with('Title')
-          .and_return('The main title')
+                                                                  .and_return('The main title')
         allow(column_descriptor).to receive(:find_description_for).with('Date Created')
-          .and_return('Creation date')
+                                                                  .and_return('Creation date')
 
         allow(field_analyzer).to receive(:controlled_vocab_terms).and_return([])
         allow(mapping_manager).to receive(:split_value_for).with('title').and_return(nil)
@@ -304,7 +304,7 @@ RSpec.describe Bulkrax::SampleCsvService::ExplanationBuilder do
       before do
         allow(mapping_manager).to receive(:mapped_to_key).with('title').and_return('title')
         allow(column_descriptor).to receive(:find_description_for).with('title')
-          .and_return('The title of the work')
+                                                                  .and_return('The title of the work')
         allow(field_analyzer).to receive(:controlled_vocab_terms).and_return([])
         allow(mapping_manager).to receive(:split_value_for).with('title').and_return(nil)
       end
@@ -403,7 +403,7 @@ RSpec.describe Bulkrax::SampleCsvService::ExplanationBuilder do
       context 'when column_descriptor.find_description_for raises an error' do
         before do
           allow(mapping_manager).to receive(:mapped_to_key).with('problematic_column')
-            .and_return('problematic_column')
+                                                           .and_return('problematic_column')
           allow(column_descriptor).to receive(:find_description_for).and_raise(StandardError, 'Description error')
         end
 
@@ -415,7 +415,7 @@ RSpec.describe Bulkrax::SampleCsvService::ExplanationBuilder do
       context 'when split_formatter.format raises an error' do
         before do
           allow(mapping_manager).to receive(:mapped_to_key).with('problematic_column')
-            .and_return('problematic_column')
+                                                           .and_return('problematic_column')
           allow(column_descriptor).to receive(:find_description_for).with('problematic_column').and_return(nil)
           allow(field_analyzer).to receive(:controlled_vocab_terms).and_return([])
           allow(mapping_manager).to receive(:split_value_for).with('problematic_column').and_return('\|')
