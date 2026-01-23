@@ -29,12 +29,6 @@ module Bulkrax
       @csv_builder.generate_string
     end
 
-    def to_importer(file_path: nil)
-      file_path ||= FilePathGenerator.default_path
-      to_file(file_path: file_path)
-      ImporterCreator.create(file_path)
-    end
-
     # Delegate methods to appropriate components
     attr_reader :field_analyzer
 

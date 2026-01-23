@@ -1,10 +1,5 @@
 <% provide :page_header do %>
   <h1><span class="fa fa-cloud-upload" aria-hidden="true"></span> Importers</h1>
-  <div class="pull-left">
-    <%= link_to sample_csv_file_importers_path, method: :post, class: 'btn btn-secondary' do %>
-      <span class="fa fa-file-csv" aria-hidden="true"></span> <%= t(:'helpers.action.importer.sample') %>
-    <% end %>
-  </div>
   <div class="pull-right">
     <%= link_to new_importer_path, class: 'btn btn-primary' do %>
       <span class="fa fa-edit" aria-hidden="true"></span> <%= t(:'helpers.action.importer.new') %>
