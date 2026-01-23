@@ -56,7 +56,7 @@ RSpec.describe Bulkrax::SampleCsvService::ExplanationBuilder do
       end
     end
 
-    context 'with highlighted columns (special repository columns)' do
+    context 'with include_first columns (special repository columns)' do
       let(:header_row) { ['source_identifier', 'id', 'rights_statement'] }
 
       before do

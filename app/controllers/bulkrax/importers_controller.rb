@@ -67,8 +67,8 @@ module Bulkrax
 
     # POST /importers/sample_csv_file
     def sample_csv_file
-      @importer = Bulkrax::SampleCsvService.call(model_name: 'all', output: 'file')
-      send_file @importer, filename: File.basename(@importer), type: 'text/csv'
+      sample = Bulkrax::SampleCsvService.call(model_name: 'all', output: 'file')
+      send_file sample, filename: File.basename(sample), type: 'text/csv'
     end
 
     # GET /importers/1/edit

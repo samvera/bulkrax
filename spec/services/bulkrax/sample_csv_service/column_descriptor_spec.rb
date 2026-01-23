@@ -18,7 +18,7 @@ RSpec.describe Bulkrax::SampleCsvService::ColumnDescriptor do
   end
 
   describe '#core_columns' do
-    it 'returns highlighted and visibility columns combined' do
+    it 'returns include_first and visibility columns combined' do
       result = descriptor.core_columns
 
       expect(result).to be_an(Array)
@@ -29,9 +29,9 @@ RSpec.describe Bulkrax::SampleCsvService::ColumnDescriptor do
     it 'returns columns in the correct order' do
       result = descriptor.core_columns
 
-      # Highlighted columns should come first
-      highlighted_count = described_class::COLUMN_DESCRIPTIONS[:highlighted].length
-      visibility_start = highlighted_count
+      # Include_first columns should come first
+      include_first_count = described_class::COLUMN_DESCRIPTIONS[:include_first].length
+      visibility_start = include_first_count
 
       expect(result[0]).to eq('work_type')
       expect(result[visibility_start]).to eq('visibility')
@@ -40,7 +40,7 @@ RSpec.describe Bulkrax::SampleCsvService::ColumnDescriptor do
     it 'returns all core columns without duplicates' do
       result = descriptor.core_columns
 
-      expected_count = described_class::COLUMN_DESCRIPTIONS[:highlighted].length +
+      expected_count = described_class::COLUMN_DESCRIPTIONS[:include_first].length +
                        described_class::COLUMN_DESCRIPTIONS[:visibility].length
 
       expect(result.length).to eq(expected_count)
@@ -49,7 +49,7 @@ RSpec.describe Bulkrax::SampleCsvService::ColumnDescriptor do
   end
 
   describe '#find_description_for' do
-    context 'with highlighted columns' do
+    context 'with include_first columns' do
       it 'finds description for work_type' do
         description = descriptor.find_description_for('work_type')
 

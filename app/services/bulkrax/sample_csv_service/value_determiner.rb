@@ -17,7 +17,7 @@ module Bulkrax
       elsif special_column?(column, key)
         special_value(column, key, model_name, required_terms)
       else
-        '---'
+        nil
       end
     end
 

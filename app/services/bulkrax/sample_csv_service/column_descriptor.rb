@@ -4,14 +4,14 @@ module Bulkrax
   # Manages column descriptions and metadata
   class SampleCsvService::ColumnDescriptor
     COLUMN_DESCRIPTIONS = {
-      highlighted: [
+      include_first: [
         { "work_type" => "The work types configured in your repository are listed below.\nIf left blank, your default work type, #{Bulkrax.default_work_type}, is used." },
         { "source_identifier" => "This must be a unique identifier.\nIt can be alphanumeric with some special charaters (e.g. hyphens, colons), and URLs are also supported." },
         { "id" => "This column would optionally be included only if it is a re-import, i.e. for updating or deleting records.\nThis is a key identifier used by the system, which you wouldn't have for new imports." },
         { "rights_statement" => "Rights statement URI for the work.\nIf not included, uses the value specified on the bulk import configuration screen." }
       ],
       visibility: [
-        { "visibility" => "Uses the value specified on the bulk import configuration screen if not added here.\nValid options: open, institution, restricted, embargo, lease" },
+        { "visibility" => "Uses the value specified on the bulk import configuration screen if not added here.\nValid options: open, authenticated, restricted, embargo, lease" },
         { "embargo_release_date" => "Required for embargo (yyyy-mm-dd)" },
         { "visibility_during_embargo" => "Required for embargo" },
         { "visibility_after_embargo" => "Required for embargo" },
@@ -20,13 +20,22 @@ module Bulkrax
         { "visibility_after_lease" => "Required for lease" }
       ],
       files: [
-        { "file" => "Use filenames exactly matching those in your files folder.\nZip your CSV and files folder together and attach this to your importer." },
+        { "file" => "Use filenames exactly matching those in your files folder.\nZip your CSV and files folder together and attach this to your importer.\nDoes not apply to Collections" },
         { "remote_files" => "Use the URLs to remote files to be attached to the work." }
+      ],
+      relationships: [
+        { "parents" => "The source_identifier or id of work or collection to be attached as parent." },
+        { "children" => "The source_identifier or id of work or file to be attached as child." }
+      ],
+      other: [
+        { "show_pdf_download_button" => "Set to true to show a PDF download link on the work's page." },
+        { "show_pdf_viewer" => "Set to true to show a PDF viewer on the work's page." },
+        { "video_embed" => "A valid URL to a hosted video that can appear in an iframe, beginning with 'http://' or 'https://'." }
       ]
     }.freeze
 
     def core_columns
-      extract_column_names(:highlighted) + extract_column_names(:visibility)
+      extract_column_names(:include_first) + extract_column_names(:visibility)
     end
 
     def find_description_for(column)
