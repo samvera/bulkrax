@@ -1,10 +1,5 @@
 .bulkrax-card-footer {
     min-height: 60px;
-    /* Ensure that simple_form config doesn't override primary button styling */
-    .btn-primary {
-        background-color: var(--bs-primary) !important;
-        border-color: var(--bs-primary) !important;
-    }
 }
 
 div.importer_parser_fields_file_style span.radio {
