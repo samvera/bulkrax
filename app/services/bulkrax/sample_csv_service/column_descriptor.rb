@@ -20,7 +20,7 @@ module Bulkrax
         { "visibility_after_lease" => "Required for lease" }
       ],
       files: [
-        { "file" => "Use filenames exactly matching those in your files folder.\nZip your CSV and files folder together and attach this to your importer.\nDoes not apply to Collections" },
+        { "file" => "Use filenames exactly matching those in your files folder.\nZip your CSV and files folder together and attach this to your importer." },
         { "remote_files" => "Use the URLs to remote files to be attached to the work." }
       ],
       relationships: [
