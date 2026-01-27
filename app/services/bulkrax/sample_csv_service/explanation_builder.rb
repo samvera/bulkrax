@@ -20,10 +20,14 @@ module Bulkrax
     def build_explanation(column)
       mapping_key = @service.mapping_manager.mapped_to_key(column)
 
+      column_description = @descriptor.find_description_for(column)
+      controlled_vocab_info = controlled_vocab_text(mapping_key)
+      split_info = split_text(mapping_key, controlled_vocab_info)
+
       components = [
-        @descriptor.find_description_for(column),
-        controlled_vocab_text(mapping_key),
-        split_text(mapping_key)
+        column_description,
+        controlled_vocab_info,
+        split_info
       ].compact
 
       components.join("\n")
@@ -39,7 +43,9 @@ module Bulkrax
       end
     end
 
-    def split_text(mapping_key)
+    def split_text(mapping_key, controlled_vocab_info)
+      # regardless of schema, most controlled vocab fields only accept single values due to form limitations
+      return nil if controlled_vocab_info.present? && !mapping_key.in?(%w[location resource_type])
       split_value = @service.mapping_manager.split_value_for(mapping_key)
       return nil unless split_value
       @split_formatter.format(split_value)
