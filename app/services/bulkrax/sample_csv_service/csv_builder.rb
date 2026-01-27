@@ -4,10 +4,10 @@ module Bulkrax
   # Builds CSV content
   class SampleCsvService::CsvBuilder
     IGNORED_PROPERTIES = %w[
-      admin_set_id alternate_ids arkivo_checksum
+      admin_set_id alternate_ids
       bulkrax_identifier
       collection_type_gid contexts created_at
-      date_modified date_uploaded depositor
+      date date_modified date_uploaded depositor
       embargo embargo_id
       file_ids
       has_model head
