@@ -37,6 +37,8 @@ module Bulkrax
       return SampleCsvService::ModelLoader.determine_klass_for(model_name).to_s if key.in?(['model', 'work_type'])
       return 'Required' if column == 'source_identifier'
       return mark_required_or_optional(key, required_terms) if column == 'rights_statement'
+      # collections do not have files
+      return nil if file_column?(column) &&  model_name.in?([Bulkrax.collection_model_class.to_s])
       'Optional'
     end
 
