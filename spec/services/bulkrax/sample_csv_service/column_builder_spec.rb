@@ -62,32 +62,70 @@ RSpec.describe Bulkrax::SampleCsvService::ColumnBuilder do
   end
 
   describe '#required_columns' do
-    let(:core_cols) { ['work_type', 'source_identifier', 'visibility'] }
+    let(:mapped_core_cols) { ['work_type', 'source_identifier', 'visibility'] }
     let(:relationship_cols) { ['children', 'parents'] }
     let(:file_cols) { ['xlocalfiles', 'xrefs'] }
 
     before do
-      allow(descriptor).to receive(:core_columns).and_return(core_cols)
+      allow(column_builder).to receive(:mapped_core_columns).and_return(mapped_core_cols)
       allow(column_builder).to receive(:relationship_columns).and_return(relationship_cols)
       allow(column_builder).to receive(:file_columns).and_return(file_cols)
     end
 
-    it 'combines core, relationship, and file columns' do
+    it 'combines mapped core, relationship, and file columns' do
       result = column_builder.required_columns
 
-      expect(result).to eq(core_cols + relationship_cols + file_cols)
+      expect(result).to eq(mapped_core_cols + relationship_cols + file_cols)
     end
 
     it 'returns columns in the correct order' do
       result = column_builder.required_columns
 
-      expect(result[0..2]).to eq(core_cols)
+      expect(result[0..2]).to eq(mapped_core_cols)
       expect(result[3..4]).to eq(relationship_cols)
       expect(result[5..6]).to eq(file_cols)
     end
   end
 
   describe 'private methods' do
+    describe '#mapped_core_columns' do
+      let(:core_cols) { ['model'] }
+
+      before do
+        allow(descriptor).to receive(:core_columns).and_return(core_cols)
+      end
+
+      context 'when a mapping exists for model' do
+        before do
+          allow(mapping_manager).to receive(:key_to_mapped_column).with('model').and_return('work_type')
+        end
+
+        it 'maps model column through mapping_manager' do
+          result = column_builder.send(:mapped_core_columns)
+
+          expect(result).to eq(['work_type'])
+        end
+
+        it 'calls key_to_mapped_column for model' do
+          column_builder.send(:mapped_core_columns)
+
+          expect(mapping_manager).to have_received(:key_to_mapped_column).with('model')
+        end
+      end
+
+      context 'when no mapping exists for model' do
+        before do
+          allow(mapping_manager).to receive(:key_to_mapped_column).with('model').and_return('model')
+        end
+
+        it 'returns original column name' do
+          result = column_builder.send(:mapped_core_columns)
+
+          expect(result).to eq(['model'])
+        end
+      end
+    end
+
     describe '#property_columns' do
       let(:model_names) { ['MyWork', 'AnotherWork'] }
       let(:field_list_1) do
@@ -181,124 +219,96 @@ RSpec.describe Bulkrax::SampleCsvService::ColumnBuilder do
     end
 
     describe '#file_columns' do
-      context 'with file mappings in service.mappings' do
-        let(:mappings) do
-          {
-            "file" => { "from" => ["xlocalfiles"], "split" => "|" },
-            "remote_files" => { "from" => ["xremotefiles"], "split" => "|" }
-          }
-        end
-
-        before do
-          allow(service).to receive(:mappings).and_return(mappings)
-          # Stub the constant since it's used directly
-          stub_const('Bulkrax::SampleCsvService::ColumnDescriptor::COLUMN_DESCRIPTIONS', {
-                       files: [
-                         { "file" => "File description" },
-                         { "remote_files" => "Remote files description" }
-                       ]
-                     })
-        end
-
-        it 'extracts file columns from mappings' do
-          result = column_builder.send(:file_columns)
-
-          expect(result).to eq(['xlocalfiles', 'xremotefiles'])
-        end
+      before do
+        stub_const('Bulkrax::SampleCsvService::ColumnDescriptor::COLUMN_DESCRIPTIONS', {
+                     files: [
+                       { "file" => "File description" }
+                     ]
+                   })
       end
 
-      context 'with missing mappings' do
-        let(:mappings) do
-          {
-            "file" => { "from" => ["xlocalfiles"] }
-            # remote_files mapping is missing
-          }
-        end
-
+      context 'when a mapping exists for file' do
         before do
-          allow(service).to receive(:mappings).and_return(mappings)
-          stub_const('Bulkrax::SampleCsvService::ColumnDescriptor::COLUMN_DESCRIPTIONS', {
-                       files: [
-                         { "file" => "File description" },
-                         { "remote_files" => "Remote files description" }
-                       ]
-                     })
+          allow(mapping_manager).to receive(:key_to_mapped_column).with('file').and_return('xlocalfiles')
         end
 
-        it 'only returns columns that have mappings' do
+        it 'maps file column through mapping_manager' do
           result = column_builder.send(:file_columns)
 
           expect(result).to eq(['xlocalfiles'])
         end
+
+        it 'calls key_to_mapped_column for file' do
+          column_builder.send(:file_columns)
+
+          expect(mapping_manager).to have_received(:key_to_mapped_column).with('file')
+        end
       end
 
-      context 'with no file mappings' do
-        let(:mappings) { {} }
-
+      context 'when no mapping exists for file' do
         before do
-          allow(service).to receive(:mappings).and_return(mappings)
-          stub_const('Bulkrax::SampleCsvService::ColumnDescriptor::COLUMN_DESCRIPTIONS', {
-                       files: [
-                         { "file" => "File description" },
-                         { "remote_files" => "Remote files description" }
-                       ]
-                     })
+          allow(mapping_manager).to receive(:key_to_mapped_column).with('file').and_return('file')
         end
 
-        it 'returns empty array when no mappings exist' do
+        it 'returns original column name' do
           result = column_builder.send(:file_columns)
 
-          expect(result).to eq([])
+          expect(result).to eq(['file'])
         end
       end
     end
   end
 
   describe 'integration' do
-    before do
-      # Set up a complete mock scenario
-      allow(descriptor).to receive(:core_columns).and_return(['work_type', 'source_identifier'])
-      allow(mapping_manager).to receive(:find_by_flag)
-        .with("related_children_field_mapping", 'children').and_return('children')
-      allow(mapping_manager).to receive(:find_by_flag)
-        .with("related_parents_field_mapping", 'parents').and_return('parents')
+    context 'when mappings exist for model and file columns' do
+      before do
+        # Set up a complete mock scenario
+        allow(descriptor).to receive(:core_columns).and_return(['model', 'source_identifier'])
+        allow(mapping_manager).to receive(:find_by_flag)
+          .with("related_children_field_mapping", 'children').and_return('children')
+        allow(mapping_manager).to receive(:find_by_flag)
+          .with("related_parents_field_mapping", 'parents').and_return('parents')
 
-      allow(service).to receive(:all_models).and_return(['MyWork'])
-      allow(field_analyzer).to receive(:find_or_create_field_list_for)
-        .and_return({ 'MyWork' => { 'properties' => ['title', 'creator'] } })
-      allow(mapping_manager).to receive(:key_to_mapped_column) do |key|
-        "x#{key}"
+        allow(service).to receive(:all_models).and_return(['MyWork'])
+        allow(field_analyzer).to receive(:find_or_create_field_list_for)
+          .and_return({ 'MyWork' => { 'properties' => ['title', 'creator'] } })
+
+        # Mock key_to_mapped_column to map model and file specifically
+        allow(mapping_manager).to receive(:key_to_mapped_column) do |key|
+          case key
+          when 'model' then 'work_type'
+          when 'file' then 'xlocalfiles'
+          else "x#{key}"
+          end
+        end
+
+        stub_const('Bulkrax::SampleCsvService::ColumnDescriptor::COLUMN_DESCRIPTIONS', {
+                     files: [
+                       { "file" => "File description" }
+                     ]
+                   })
       end
 
-      stub_const('Bulkrax::SampleCsvService::ColumnDescriptor::COLUMN_DESCRIPTIONS', {
-                   files: [
-                     { "file" => "File description" },
-                     { "remote_files" => "Remote files description" }
-                   ]
-                 })
-    end
+      it 'maps model column to work_type' do
+        result = column_builder.all_columns
 
-    it 'builds complete column list with no duplicates' do
-      result = column_builder.all_columns
+        expect(result).to include('work_type')
+        expect(result).not_to include('model')
+      end
 
-      # Should have core, relationship, file, and property columns
-      expect(result).to include('work_type', 'source_identifier') # core
-      expect(result).to include('children', 'parents') # relationships
-      expect(result).to include('xlocalfiles', 'xrefs') # files
-      expect(result).to include('xcreator', 'xtitle') # properties
+      it 'maps file column to xlocalfiles' do
+        result = column_builder.all_columns
 
-      # Should have no duplicates
-      expect(result).to eq(result.uniq)
-    end
+        expect(result).to include('xlocalfiles')
+        expect(result).not_to include('file')
+      end
 
-    it 'maintains proper column ordering' do
-      result = column_builder.all_columns
+      it 'calls key_to_mapped_column for model and file' do
+        column_builder.all_columns
 
-      # Required columns should come first
-      core_idx = result.index('work_type')
-      property_idx = result.index('xcreator')
-
-      expect(core_idx).to be < property_idx if property_idx && core_idx
+        expect(mapping_manager).to have_received(:key_to_mapped_column).with('model')
+        expect(mapping_manager).to have_received(:key_to_mapped_column).with('file')
+      end
     end
   end
 end

@@ -13,12 +13,18 @@ module Bulkrax
     end
 
     def required_columns
-      @descriptor.core_columns +
+      mapped_core_columns +
         relationship_columns +
         file_columns
     end
 
     private
+
+    def mapped_core_columns
+      @descriptor.core_columns.map do |column|
+        @service.mapping_manager.key_to_mapped_column(column)
+      end
+    end
 
     def property_columns
       field_lists = @service.all_models.map do |m|
@@ -43,8 +49,8 @@ module Bulkrax
 
     def file_columns
       SampleCsvService::ColumnDescriptor::COLUMN_DESCRIPTIONS[:files].flat_map do |property_hash|
-        property_hash.keys.filter_map do |key|
-          @service.mappings.dig(key, "from")&.first
+        property_hash.keys.map do |key|
+          @service.mapping_manager.key_to_mapped_column(key)
         end
       end
     end
