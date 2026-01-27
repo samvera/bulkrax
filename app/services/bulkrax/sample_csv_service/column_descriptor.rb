@@ -5,7 +5,7 @@ module Bulkrax
   class SampleCsvService::ColumnDescriptor
     COLUMN_DESCRIPTIONS = {
       include_first: [
-        { "work_type" => "The work types configured in your repository are listed below.\nIf left blank, your default work type, #{Bulkrax.default_work_type}, is used." },
+        { "model" => "The work types configured in your repository are listed below.\nIf left blank, your default work type, #{Bulkrax.default_work_type}, is used." },
         { "source_identifier" => "This must be a unique identifier.\nIt can be alphanumeric with some special charaters (e.g. hyphens, colons), and URLs are also supported." },
         { "id" => "This column would optionally be included only if it is a re-import, i.e. for updating or deleting records.\nThis is a key identifier used by the system, which you wouldn't have for new imports." },
         { "rights_statement" => "Rights statement URI for the work.\nIf not included, uses the value specified on the bulk import configuration screen." }
@@ -28,8 +28,9 @@ module Bulkrax
         { "children" => "The source_identifier or id of work or file to be attached as child." }
       ],
       other: [
-        { "show_pdf_download_button" => "Set to true to show a PDF download link on the work's page." },
-        { "show_pdf_viewer" => "Set to true to show a PDF viewer on the work's page." },
+        { "hide_from_catalog_search" => "Set to 1 to hide the collection from catalog search results." },
+        { "show_pdf_download_button" => "Set to 1 to show a PDF download link on the work's page." },
+        { "show_pdf_viewer" => "Set to 1 to show a PDF viewer on the work's page." },
         { "video_embed" => "A valid URL to a hosted video that can appear in an iframe, beginning with 'http://' or 'https://'." }
       ]
     }.freeze
