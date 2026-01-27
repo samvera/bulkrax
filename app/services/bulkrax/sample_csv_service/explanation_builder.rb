@@ -36,9 +36,8 @@ module Bulkrax
     def controlled_vocab_text(field_name)
       vocab_terms = @service.field_analyzer.controlled_vocab_terms
       # 'location' is handled specially because its controlled vocabulary is implemented differently
-      if vocab_terms.include?(field_name) || field_name == 'based_near'
-        'This property uses a controlled vocabulary.'
-      end
+      return unless vocab_terms.include?(field_name) || field_name == 'based_near'
+      'This property uses a controlled vocabulary.'
     end
 
     def split_text(mapping_key, controlled_vocab_info)
