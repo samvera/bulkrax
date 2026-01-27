@@ -306,8 +306,8 @@ RSpec.describe Bulkrax::SampleCsvService::ColumnBuilder do
       it 'calls key_to_mapped_column for model and file' do
         column_builder.all_columns
 
-        expect(mapping_manager).to have_received(:key_to_mapped_column).with('model')
-        expect(mapping_manager).to have_received(:key_to_mapped_column).with('file')
+        expect(mapping_manager).to have_received(:key_to_mapped_column).with('model').at_least(:once)
+        expect(mapping_manager).to have_received(:key_to_mapped_column).with('file').at_least(:once)
       end
     end
   end

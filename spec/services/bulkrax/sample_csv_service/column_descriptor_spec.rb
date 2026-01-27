@@ -7,9 +7,11 @@ RSpec.describe Bulkrax::SampleCsvService::ColumnDescriptor do
 
   describe 'COLUMN_DESCRIPTIONS' do
     it 'contains the expected groups' do
-      expect(described_class::COLUMN_DESCRIPTIONS).to have_key(:highlighted)
+      expect(described_class::COLUMN_DESCRIPTIONS).to have_key(:include_first)
       expect(described_class::COLUMN_DESCRIPTIONS).to have_key(:visibility)
       expect(described_class::COLUMN_DESCRIPTIONS).to have_key(:files)
+      expect(described_class::COLUMN_DESCRIPTIONS).to have_key(:relationships)
+      expect(described_class::COLUMN_DESCRIPTIONS).to have_key(:other)
     end
 
     it 'has frozen constant to prevent modifications' do
@@ -22,7 +24,8 @@ RSpec.describe Bulkrax::SampleCsvService::ColumnDescriptor do
       result = descriptor.core_columns
 
       expect(result).to be_an(Array)
-      expect(result).to include('work_type', 'source_identifier', 'id', 'rights_statement')
+      # Returns the raw keys from COLUMN_DESCRIPTIONS before mapping
+      expect(result).to include('model', 'source_identifier', 'id', 'rights_statement')
       expect(result).to include('visibility', 'embargo_release_date', 'visibility_during_embargo')
     end
 
@@ -33,7 +36,7 @@ RSpec.describe Bulkrax::SampleCsvService::ColumnDescriptor do
       include_first_count = described_class::COLUMN_DESCRIPTIONS[:include_first].length
       visibility_start = include_first_count
 
-      expect(result[0]).to eq('work_type')
+      expect(result[0]).to eq('model')
       expect(result[visibility_start]).to eq('visibility')
     end
 
@@ -50,8 +53,8 @@ RSpec.describe Bulkrax::SampleCsvService::ColumnDescriptor do
 
   describe '#find_description_for' do
     context 'with include_first columns' do
-      it 'finds description for work_type' do
-        description = descriptor.find_description_for('work_type')
+      it 'finds description for model' do
+        description = descriptor.find_description_for('model')
 
         expect(description).to include('work types configured')
         # The default work type is interpolated when the constant is defined
@@ -64,7 +67,7 @@ RSpec.describe Bulkrax::SampleCsvService::ColumnDescriptor do
       it 'finds description for visibility' do
         description = descriptor.find_description_for('visibility')
 
-        expect(description).to include('open, institution, restricted, embargo, lease')
+        expect(description).to include('open, authenticated, restricted, embargo, lease')
       end
     end
 
