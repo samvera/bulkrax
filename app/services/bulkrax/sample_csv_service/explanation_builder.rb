@@ -38,8 +38,6 @@ module Bulkrax
       # 'location' is handled specially because its controlled vocabulary is implemented differently
       if vocab_terms.include?(field_name) || field_name == 'based_near'
         'This property uses a controlled vocabulary.'
-      else
-        nil
       end
     end
 

@@ -222,15 +222,15 @@ RSpec.describe Bulkrax::SampleCsvService::ExplanationBuilder do
     end
 
     context 'with all explanation components present' do
-      let(:header_row) { ['genre'] }
+      let(:header_row) { ['resource_type'] }
 
       before do
-        allow(mapping_manager).to receive(:mapped_to_key).with('genre').and_return('genre')
-        allow(column_descriptor).to receive(:find_description_for).with('genre')
+        allow(mapping_manager).to receive(:mapped_to_key).with('resource_type').and_return('resource_type')
+        allow(column_descriptor).to receive(:find_description_for).with('resource_type')
                                                                   .and_return('The genre or type of work')
-        allow(field_analyzer).to receive(:controlled_vocab_terms).and_return(['genre'])
+        allow(field_analyzer).to receive(:controlled_vocab_terms).and_return(['resource_type'])
         # Escaped delimiter from bulkrax mapping split value
-        allow(mapping_manager).to receive(:split_value_for).with('genre').and_return('\|\|')
+        allow(mapping_manager).to receive(:split_value_for).with('resource_type').and_return('\|\|')
         allow(split_formatter).to receive(:format).with('\|\|').and_return('Split multiple values with |, or |')
       end
 
@@ -241,7 +241,7 @@ RSpec.describe Bulkrax::SampleCsvService::ExplanationBuilder do
                   "This property uses a controlled vocabulary.\n" \
                   "Split multiple values with |, or |"
 
-        expect(result[0]['genre']).to eq(expected)
+        expect(result[0]['resource_type']).to eq(expected)
       end
     end
 

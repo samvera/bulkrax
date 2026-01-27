@@ -35,7 +35,7 @@ RSpec.describe Bulkrax::SampleCsvService do
       it 'returns a CSV string when output is csv_string' do
         result = described_class.call(output: 'csv_string', model_name: 'MyWork')
         expect(result).to be_a(String)
-        expect(result).to include('work_type')
+        expect(result).to include('model')
       end
     end
   end
@@ -123,7 +123,7 @@ RSpec.describe Bulkrax::SampleCsvService do
 
         # Should have at least header and description rows
         expect(csv.length).to be >= 2
-        expect(csv[0]).to include('work_type', 'source_identifier')
+        expect(csv[0]).to include('model', 'source_identifier')
       end
     end
 
@@ -138,7 +138,7 @@ RSpec.describe Bulkrax::SampleCsvService do
 
         # Should have header, description, and model row
         expect(csv.length).to eq(3)
-        expect(csv[0]).to include('work_type', 'source_identifier')
+        expect(csv[0]).to include('model', 'source_identifier')
         expect(csv[2][0]).to eq('MyWork')
       end
     end
@@ -172,7 +172,7 @@ RSpec.describe Bulkrax::SampleCsvService do
         headers = csv[0]
 
         # Check first few columns are in expected order
-        expect(headers[0]).to eq('work_type')
+        expect(headers[0]).to eq('model')
         expect(headers[1]).to eq('source_identifier')
 
         # Check that important columns exist

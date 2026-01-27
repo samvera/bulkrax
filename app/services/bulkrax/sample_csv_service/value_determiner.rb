@@ -16,8 +16,6 @@ module Bulkrax
         mark_required_or_optional(key, required_terms)
       elsif special_column?(column, key)
         special_value(column, key, model_name, required_terms)
-      else
-        nil
       end
     end
 
