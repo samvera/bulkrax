@@ -1,24 +1,25 @@
 <% provide :page_header do %>
   <h1><span class="fa fa-edit" aria-hidden="true"></span> New Importer</h1>
 <% end %>
-
 <div class="row">
   <div class="col-md-12">
+    <% if defined?(Hyrax) %>
+      <div class="d-flex justify-content-end mr-2 me-2">
+        <%= button_to 'Generate CSV Import Template', sample_csv_file_importers_path, method: :post, class: 'btn btn-default' %>
+      </div>
+    <% end %>
     <div class="panel card panel-default importer-form">
       <%= simple_form_for @importer, html: { multipart: true } do |form| %>
         <%= render 'form', importer: @importer, form: form %>
         <div class="panel-footer card-footer bulkrax-card-footer">
           <div class='pull-right'>
             <% if ENV['SHOW_CREATE_AND_VALIDATE'] == 'true' %>
-              <%= form.button :submit, value: 'Create and Validate', class: 'btn btn-primary' %>
-              |
-            <% end  %>
-            <%= form.button :submit, value: 'Create and Import', class: 'btn btn-primary' %>
-            |
-            <%= form.button :submit, value: 'Create', class: 'btn btn-primary' %>
-            |
+              <%= submit_tag 'Create and Validate', class: 'btn btn-default me-2' %>
+            <% end %>
+            <%= submit_tag 'Create and Import', class: 'btn btn-primary me-2' %>
+            <%= submit_tag 'Create', class: 'btn btn-default' %>
             <% cancel_path = form.object.persisted? ? importer_path(form.object) : importers_path %>
-            <%= link_to t('bulkrax.cancel'), cancel_path, class: 'btn btn-default ' %>
+            <%= link_to t('bulkrax.cancel'), cancel_path, class: 'btn btn-default' %>
           </div>
         </div>
       <% end %>

@@ -180,7 +180,6 @@ module Bulkrax
   alias setup config
 
   def_delegators :@config,
-                 :api_definition,
                  :api_definition=,
                  :collection_model_class,
                  :collection_model_internal_resource,
@@ -207,9 +206,7 @@ module Bulkrax
                  :generated_metadata_mapping=,
                  :import_path,
                  :import_path=,
-                 :multi_value_element_join_on,
                  :multi_value_element_join_on=,
-                 :multi_value_element_split_on,
                  :multi_value_element_split_on=,
                  :object_factory,
                  :object_factory=,

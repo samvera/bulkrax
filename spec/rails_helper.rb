@@ -52,6 +52,7 @@ rescue ActiveRecord::PendingMigrationError => e
 end
 RSpec.configure do |config|
   config.include FactoryBot::Syntax::Methods
+  config.include SchemaTestHelpers, type: :service
 
   config.before(:suite) do
     DatabaseCleaner.clean_with :truncation

@@ -65,6 +65,15 @@ module Bulkrax
       end
     end
 
+    # POST /importers/sample_csv_file
+    def sample_csv_file
+      sample = Bulkrax::SampleCsvService.call(model_name: 'all', output: 'file')
+      send_file sample, filename: File.basename(sample), type: 'text/csv'
+    rescue StandardError => e
+      flash[:error] = "Unable to generate sample CSV file: #{e.message}"
+      redirect_back fallback_location: bulkrax.importers_path
+    end
+
     # GET /importers/1/edit
     def edit
       if api_request?
