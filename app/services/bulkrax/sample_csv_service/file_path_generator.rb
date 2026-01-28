@@ -10,7 +10,7 @@ module Bulkrax
     end
 
     def self.timestamp
-      Time.now.utc.strftime('%Y%m%d_%H%M%S')
+      Time.current.utc.strftime('%Y%m%d_%H%M%S')
     end
   end
 end
