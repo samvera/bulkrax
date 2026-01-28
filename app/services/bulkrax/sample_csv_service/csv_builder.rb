@@ -31,6 +31,7 @@ module Bulkrax
     end
 
     def write_to_file(file_path)
+      FileUtils.mkdir_p(File.dirname(file_path))
       CSV.open(file_path, "w") { |csv| write_rows(csv) }
     end
 
