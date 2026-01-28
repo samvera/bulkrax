@@ -38,7 +38,7 @@ module Bulkrax
       return 'Required' if column == 'source_identifier'
       return mark_required_or_optional(key, required_terms) if column == 'rights_statement'
       # collections do not have files
-      return nil if file_column?(column) && model_name.in?([Bulkrax.collection_model_class.to_s])
+      return nil if file_column?(column) && model_name.in?([Bulkrax.collection_model_class].compact.map(&:to_s))
       'Optional'
     end
 
