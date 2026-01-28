@@ -65,7 +65,7 @@ RSpec.describe Bulkrax::SampleCsvService::ExplanationBuilder do
         allow(mapping_manager).to receive(:mapped_to_key).with('rights_statement').and_return('rights_statement')
 
         allow(column_descriptor).to receive(:find_description_for).with('source_identifier')
-                                                                  .and_return("This must be a unique identifier.\nIt can be alphanumeric with some special charaters (e.g. hyphens, colons), and URLs are also supported.")
+                                                                  .and_return("This must be a unique identifier.\nIt can be alphanumeric with some special characters (e.g. hyphens, colons), and URLs are also supported.")
         allow(column_descriptor).to receive(:find_description_for).with('id')
                                                                   .and_return("This column would optionally be included only if it is a re-import, i.e. for updating or deleting records.\nThis is a key identifier used by the system, which you wouldn't have for new imports.")
         allow(column_descriptor).to receive(:find_description_for).with('rights_statement')
@@ -79,7 +79,7 @@ RSpec.describe Bulkrax::SampleCsvService::ExplanationBuilder do
         result = builder.build_explanations(header_row)
 
         expect(result[0]['source_identifier']).to include("This must be a unique identifier.")
-        expect(result[0]['source_identifier']).to include("alphanumeric with some special charaters")
+        expect(result[0]['source_identifier']).to include("alphanumeric with some special characters")
 
         expect(result[1]['id']).to include("This column would optionally be included")
         expect(result[1]['id']).to include("for updating or deleting records")

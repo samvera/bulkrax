@@ -6,7 +6,7 @@ module Bulkrax
     COLUMN_DESCRIPTIONS = {
       include_first: [
         { "model" => "The work types configured in your repository are listed below.\nIf left blank, your default work type, #{Bulkrax.default_work_type}, is used." },
-        { "source_identifier" => "This must be a unique identifier.\nIt can be alphanumeric with some special charaters (e.g. hyphens, colons), and URLs are also supported." },
+        { "source_identifier" => "This must be a unique identifier.\nIt can be alphanumeric with some special characters (e.g. hyphens, colons), and URLs are also supported." },
         { "id" => "This column would optionally be included only if it is a re-import, i.e. for updating or deleting records.\nThis is a key identifier used by the system, which you wouldn't have for new imports." },
         { "rights_statement" => "Rights statement URI for the work.\nIf not included, uses the value specified on the bulk import configuration screen." }
       ],
