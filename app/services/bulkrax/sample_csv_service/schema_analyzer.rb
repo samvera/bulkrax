@@ -33,6 +33,13 @@ module Bulkrax
 
     def load_schema
       return nil unless @klass.respond_to?(:schema)
+      # Yes, this looks strange. The fallback is intentional.
+      # At the point in time when this service is being created, Hyrax behaves
+      # differently between flexible metadata setting on & off. This may be modified
+      # in the future, and this code can be revisited then.
+      # flexible=true: @klass.new.singleton_class.schema would return the full schema,
+      #                but @klass.schema doesn't get the flexible metadata terms
+      # flexible=false: @klass.new.singleton_class.schema returns nil so it will fallback
       @klass.new.singleton_class.schema || @klass.schema
     rescue StandardError
       nil
