@@ -2,7 +2,7 @@
   <div class="accordion-container">
     <div class="accordion-heading" role="tab" id="field-mapping-show-heading">
       <a class="accordion-title" role="button" data-toggle="collapse" data-target="#field-mapping-show" aria-expanded="true" aria-controls="field-mapping-show">
-        <strong>Field mapping:</strong>
+        <strong><%= t('bulkrax.shared.field_mapping.heading') %></strong>
       </a>
       <a role="button" data-toggle="collapse" data-target="#field-mapping-show" aria-expanded="true" aria-controls="field-mapping-show">
         <div class="accordion-icon fa fa-times-circle" aria-hidden="true"></div>
@@ -13,8 +13,8 @@
         <div class="bulkrax-nav-tab-bottom-margin">
           <!-- Toggle buttons -->
           <div class="btn-group pull-right" role="group" aria-label="...">
-            <button type="button" class="btn btn-default"><a href="#bulkrax-full-toggle-2" aria-controls="bulkrax-full-toggle-2" role="tab" data-toggle="tab">Full</a></button>
-            <button type="button" class="btn btn-default"><a href="#bulkrax-raw-toggle-2" aria-controls="bulkrax-raw-toggle-2" role="tab" data-toggle="tab">Raw</a></button>
+            <button type="button" class="btn btn-default"><a href="#bulkrax-full-toggle-2" aria-controls="bulkrax-full-toggle-2" role="tab" data-toggle="tab"><%= t('bulkrax.shared.field_mapping.full') %></a></button>
+            <button type="button" class="btn btn-default"><a href="#bulkrax-raw-toggle-2" aria-controls="bulkrax-raw-toggle-2" role="tab" data-toggle="tab"><%= t('bulkrax.shared.field_mapping.raw') %></a></button>
           </div>
           <!-- Tab panes -->
           <div class="tab-content">

@@ -1,16 +1,16 @@
 <div class='oai_fields'>
   <%= fi.input :base_url, as: :string, input_html: { value: importer.parser_fields['base_url'] } %>
 
-  <%= fi.input :metadata_prefix, as: :string, hint: 'Such as oai_dc, dcterms or oai_qdc', input_html: { value: importer.parser_fields['metadata_prefix'] } %>
+  <%= fi.input :metadata_prefix, as: :string, hint: t('bulkrax.importer.oai.hints.metadata_prefix'), input_html: { value: importer.parser_fields['metadata_prefix'] } %>
 
-  <%= fi.input :set, collection: [importer.parser_fields['set']], label: 'Set (source)', selected: importer.parser_fields['set'] %>
-  <button type="button" class="btn btn-default refresh-set-source">Refresh Sets</button>
+  <%= fi.input :set, collection: [importer.parser_fields['set']], label: t('bulkrax.importer.oai.labels.set'), selected: importer.parser_fields['set'] %>
+  <button type="button" class="btn btn-default refresh-set-source"><%= t('bulkrax.importer.oai.refresh_sets') %></button>
 
   <%= fi.input :visibility,
     collection: [
-      ['Public', 'open'],
-      ['Private', 'restricted'],
-      ['Institution', 'authenticated']
+      [t('bulkrax.importer.oai.visibility.public'), 'open'],
+      [t('bulkrax.importer.oai.visibility.private'), 'restricted'],
+      [t('bulkrax.importer.oai.visibility.institution'), 'authenticated']
     ],
     selected: importer.parser_fields['visibility'] || 'open',
     input_html: { class: 'form-control' }
@@ -26,20 +26,10 @@
           input_html: { class: 'form-control' },
           required: false
           %>
-    <%= fi.input :override_rights_statement, as: :boolean, hint: 'If checked, always use the selected rights statement. If unchecked, use dc:rights from the record and only use the provided value if dc:rights is blank.', input_html: { checked: (importer.parser_fields['override_rights_statement'] == "1") } %>
+    <%= fi.input :override_rights_statement, as: :boolean, hint: t('bulkrax.importer.oai.hints.override_rights_statement'), input_html: { checked: (importer.parser_fields['override_rights_statement'] == "1") } %>
   <% end %>
   <%= fi.input :thumbnail_url, required: false, as: :string, input_html: { value: importer.parser_fields['thumbnail_url'] } %>
   <div class="help-block well well-sm">
-    <p>
-      The Thumbnail URL allows for basic templating and substitution on any identified information in to the url. For example:
-    </p>
-
-    <p>
-      http://commons.ptsem.edu/?cover=<&#37= identifier.split(':').last &#37>&size=L
-    </p>
-
-    <p>
-      http://commons.ptsem.edu/?cover=<&#37= record.header.identifier.split(':').last &#37>&size=L
-    </p>
+    <%= t('bulkrax.importer.oai.hints.thumbnail_url_html').html_safe %>
   </div>
 </div>

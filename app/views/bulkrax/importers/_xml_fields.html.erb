@@ -7,26 +7,26 @@
     but if the namespaces ARE present, we remove them so we would need title
   %>
   <%= fi.input :record_element,
-    hint: 'Provide the xml element name to use to identify the record, or records, eg. ROW - each record in the attached XML is wrapped in a <ROW> tag.',
+    hint: t('bulkrax.importer.xml.hints.record_element'),
     input_html: { value: importer.parser_fields['record_element'] }
     %>
 
   <%= fi.input :import_type,
 		collection: [
-      ['Single Work per Metadata File', 'single'],
-			['Multiple Works per Metadata File', 'multiple']
+      [t('bulkrax.importer.xml.import_type.single'), 'single'],
+			[t('bulkrax.importer.xml.import_type.multiple'), 'multiple']
 		],
     selected: importer.parser_fields['import_type'],
     input_html: { class: 'form-control' }
     %>
 
-  <h4>Visiblity</h4>
+  <h4><%= t('bulkrax.importer.xml.labels.visibility') %></h4>
 
   <%= fi.input :visibility,
     collection: [
-      ['Public', 'open'],
-      ['Private', 'restricted'],
-      ['Institution', 'authenticated']
+      [t('bulkrax.importer.xml.visibility.public'), 'open'],
+      [t('bulkrax.importer.xml.visibility.private'), 'restricted'],
+      [t('bulkrax.importer.xml.visibility.institution'), 'authenticated']
     ],
     selected: importer.parser_fields['visibility'] || 'open',
     input_html: { class: 'form-control' }
@@ -41,15 +41,15 @@
           item_helper: rights_statements.method(:include_current_value),
           input_html: { class: 'form-control' },
           required: false %>
-    <%= fi.input :override_rights_statement, as: :boolean, hint: 'If checked, always use the selected rights statement. If unchecked, use rights or rights_statement from the record and only use the provided value if dc:rights is blank.', input_html: { checked: (importer.parser_fields['override_rights_statement'] == "1") } %>
+    <%= fi.input :override_rights_statement, as: :boolean, hint: t('bulkrax.importer.xml.hints.override_rights_statement'), input_html: { checked: (importer.parser_fields['override_rights_statement'] == "1") } %>
   <% end %>
-  <h4>XML and files to Import:</h4>
-  <p>File upload and Cloud File upload MUST be a either a single XML file (for metadata only import) OR a Zip file containing the XML files and data files, each in a separate folder.</p>
-  <p>The Server Path can point to a folder containing XML files and data files to import, or direct to the XML file itself.</p>
+  <h4><%= t('bulkrax.importer.xml.labels.xml_and_files') %></h4>
+  <p><%= t('bulkrax.importer.xml.hints.file_upload_hint') %></p>
+  <p><%= t('bulkrax.importer.xml.hints.server_path_hint') %></p>
 
 <%= fi.input :file_style,
-  collection: ['Upload a File', 'Specify a Path on the Server'] +
-              (defined?(::Hyrax) && Hyrax.config.browse_everything? ? ['Add Cloud File'] : []),
+  collection: [t('bulkrax.importer.xml.file_style.upload'), t('bulkrax.importer.xml.file_style.server_path')] +
+              (defined?(::Hyrax) && Hyrax.config.browse_everything? ? [t('bulkrax.importer.xml.file_style.cloud')] : []),
   as: :radio_buttons, label: false %>
   <div id='file_upload'>
     <% if defined?(::Hyrax) %>

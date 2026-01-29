@@ -1,5 +1,5 @@
 <% provide :page_header do %>
-  <h1><span class="fa fa-edit" aria-hidden="true"></span> Edit Importer</h1>
+  <h1><span class="fa fa-edit" aria-hidden="true"></span> <%= t('helpers.action.importer.edit_importer') %></h1>
 <% end %>
 
 <div class="row">
@@ -11,7 +11,7 @@
         <div class="panel-footer card-footer bulkrax-card-footer">
           <div class='pull-right'>
             <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#bulkraxModal">
-              Update Importer
+              <%= t('helpers.action.importer.update') %>
             </button>
             <%= render 'edit_form_buttons', form: form %>
            <% cancel_path = form.object.persisted? ? importer_path(form.object) : importers_path %>

@@ -1,5 +1,5 @@
 <% provide :page_header do %>
-  <h1><span class="fa fa-cloud-upload" aria-hidden="true"></span> Importers</h1>
+  <h1><span class="fa fa-cloud-upload" aria-hidden="true"></span> <%= t('bulkrax.headings.importers') %></h1>
   <div class="pull-right">
     <%= link_to new_importer_path, class: 'btn btn-primary' do %>
       <span class="fa fa-edit" aria-hidden="true"></span> <%= t(:'helpers.action.importer.new') %>
@@ -17,18 +17,18 @@
       <table id='importers-table' class="table table-striped">
         <thead>
           <tr>
-            <th scope="col">Name</th>
-            <th scope="col">Status</th>
-            <th scope="col">Last Run</th>
-            <th scope="col">Next Run</th>
-            <th scope="col">Entries Enqueued</th>
-            <th scope="col">Entries Processed</th>
-            <th scope="col">Entries Failed</th>
-            <th scope="col">Entries Deleted Upstream</th>
-            <th scope="col">Total Collection Entries</th>
-            <th scope="col">Total Work Entries</th>
-            <th scope="col">Total File Set Entries</th>
-            <th scope="col">Actions</th>
+            <th scope="col"><%= t('bulkrax.table_header.labels.name') %></th>
+            <th scope="col"><%= t('bulkrax.table_header.labels.status') %></th>
+            <th scope="col"><%= t('bulkrax.table_header.labels.last_run') %></th>
+            <th scope="col"><%= t('bulkrax.table_header.labels.next_run') %></th>
+            <th scope="col"><%= t('bulkrax.table_header.labels.entries_enqueued') %></th>
+            <th scope="col"><%= t('bulkrax.table_header.labels.entries_processed') %></th>
+            <th scope="col"><%= t('bulkrax.table_header.labels.entries_failed') %></th>
+            <th scope="col"><%= t('bulkrax.table_header.labels.entries_deleted_upstream') %></th>
+            <th scope="col"><%= t('bulkrax.table_header.labels.total_collection_entries') %></th>
+            <th scope="col"><%= t('bulkrax.table_header.labels.total_work_entries') %></th>
+            <th scope="col"><%= t('bulkrax.table_header.labels.total_file_set_entries') %></th>
+            <th scope="col"><%= t('bulkrax.table_header.labels.actions') %></th>
           </tr>
         </thead>
       </table>

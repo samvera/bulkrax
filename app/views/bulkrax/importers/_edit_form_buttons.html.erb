@@ -2,45 +2,45 @@
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-body">
-        <h5>Options for Updating the Importer</h5>
+        <h5><%= t('bulkrax.importer.edit_form.modal_title') %></h5>
         <hr />
 
         <% if @importer.importer_runs.blank? %>
-          <p>Only update the values in the importer form. Do not import metadata or files for any works or collections.</p>
-          <%= form.button :submit, value: 'Update Importer', class: 'btn btn-primary' %>
+          <p><%= t('bulkrax.importer.edit_form.update_only_hint') %></p>
+          <%= form.button :submit, value: t('helpers.action.importer.update'), class: 'btn btn-primary' %>
           <hr />
-          <p>Update the values in the importer form and run the importer for the first time.</p>
-          <%= form.button :submit, value: 'Update and Import', class: 'btn btn-primary' %>
+          <p><%= t('bulkrax.importer.edit_form.update_and_import_hint') %></p>
+          <%= form.button :submit, value: t('helpers.action.importer.update_and_import'), class: 'btn btn-primary' %>
         <% elsif @importer.parser_klass.include?('Oai') %>
-          <p>Only update the values in the importer form. Do not update metadata or files for any works or collections.</p>
-            <%= form.button :submit, value: 'Update Importer', class: 'btn btn-primary' %>
+          <p><%= t('bulkrax.importer.edit_form.update_only_no_update_hint') %></p>
+            <%= form.button :submit, value: t('helpers.action.importer.update'), class: 'btn btn-primary' %>
           <hr />
-          <p>Update the values in the importer form and update items that have changed at the source.</p>
-            <%= form.button :submit, value: 'Update and Harvest Updated Items', class: 'btn btn-primary' %>
+          <p><%= t('bulkrax.importer.edit_form.update_and_harvest_hint') %></p>
+            <%= form.button :submit, value: t('helpers.action.importer.update_and_harvest_updated'), class: 'btn btn-primary' %>
           <hr />
-          <p>Update the values in the importer form and recreate all items from the source.</p>
-            <%= form.button :submit, value: 'Update and Re-Harvest All Items', class: 'btn btn-primary' %>
+          <p><%= t('bulkrax.importer.edit_form.update_and_re_harvest_hint') %></p>
+            <%= form.button :submit, value: t('helpers.action.importer.update_and_re_harvest'), class: 'btn btn-primary' %>
         <% else %>
-          <p>Only update the values in the importer form. Do not update metadata or files for any works or collections.</p>
-            <%= form.button :submit, value: 'Update Importer', class: 'btn btn-primary' %>
+          <p><%= t('bulkrax.importer.edit_form.update_only_no_update_hint') %></p>
+            <%= form.button :submit, value: t('helpers.action.importer.update'), class: 'btn btn-primary' %>
           <hr />
-          <p>Update the values in the importer form and update the metadata for all works. Do not update any files.</p>
-            <%= form.button :submit, value: 'Update Metadata', class: 'btn btn-primary' %>
+          <p><%= t('bulkrax.importer.edit_form.update_metadata_hint') %></p>
+            <%= form.button :submit, value: t('helpers.action.importer.update_metadata'), class: 'btn btn-primary' %>
           <hr />
-          <p>Update the values in the importer form and update the metadata and files for all works. Creates new versions of the files and retains the old versions.</p>
-            <%= form.button :submit, value: 'Update Metadata and Files', class: 'btn btn-primary' %>
+          <p><%= t('bulkrax.importer.edit_form.update_metadata_and_files_hint') %></p>
+            <%= form.button :submit, value: t('helpers.action.importer.update_metadata_and_files'), class: 'btn btn-primary' %>
           <hr />
-          <p>Update the values in the importer form and update the metadata. Completely removes all files attached to works for this importer and recreates the files from scratch.</p>
+          <p><%= t('bulkrax.importer.edit_form.update_and_replace_files_hint') %></p>
           <%= form.button :submit,
-                          value: 'Update and Replace Files',
+                          value: t('helpers.action.importer.update_and_replace_files'),
                           class: 'btn btn-primary',
-                  data: {confirm: "Are you sure? This will remove all files before adding them from the import."} %>
+                  data: {confirm: t('helpers.action.importer.update_and_replace_files_confirm')} %>
           <hr />
-          <p>Remove all works and then run the import again from a clean slate. This will remove all files and associations and any edits made since the last import will be lost.</p>
+          <p><%= t('bulkrax.importer.edit_form.remove_and_rerun_hint') %></p>
           <%= form.button :submit,
-                  value: 'Remove and Rerun',
+                  value: t('helpers.action.importer.remove_and_rerun'),
                   class: 'btn btn-primary',
-                  data: {confirm: "Are you sure? This will delete all the works and any associated files and relationships before re running."} %>
+                  data: {confirm: t('helpers.action.importer.remove_and_rerun_confirm')} %>
 
         <% end %>
         <hr />

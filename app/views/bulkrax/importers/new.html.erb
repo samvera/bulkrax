@@ -5,7 +5,7 @@
   <div class="col-md-12">
     <% if defined?(Hyrax) %>
       <div class="d-flex justify-content-end mr-2 me-2">
-        <%= button_to 'Generate CSV Import Template', sample_csv_file_importers_path, method: :post, class: 'btn btn-default' %>
+        <%= button_to t('helpers.action.importer.generate_csv_template'), sample_csv_file_importers_path, method: :post, class: 'btn btn-default' %>
       </div>
     <% end %>
     <div class="panel card panel-default importer-form">
@@ -14,10 +14,10 @@
         <div class="panel-footer card-footer bulkrax-card-footer">
           <div class='pull-right'>
             <% if ENV['SHOW_CREATE_AND_VALIDATE'] == 'true' %>
-              <%= submit_tag 'Create and Validate', class: 'btn btn-default me-2' %>
+              <%= submit_tag t('helpers.action.importer.create_and_validate'), class: 'btn btn-default me-2' %>
             <% end %>
-            <%= submit_tag 'Create and Import', class: 'btn btn-primary me-2' %>
-            <%= submit_tag 'Create', class: 'btn btn-default' %>
+            <%= submit_tag t('helpers.action.importer.create_and_import'), class: 'btn btn-primary me-2' %>
+            <%= submit_tag t('helpers.action.importer.create'), class: 'btn btn-default' %>
             <% cancel_path = form.object.persisted? ? importer_path(form.object) : importers_path %>
             <%= link_to t('bulkrax.cancel'), cancel_path, class: 'btn btn-default' %>
           </div>

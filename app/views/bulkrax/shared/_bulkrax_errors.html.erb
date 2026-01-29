@@ -2,7 +2,7 @@
   <div class="accordion-container">
     <div class="accordion-heading" role="tab" id="error-trace-heading">
       <a class="accordion-title" role="button" data-toggle="collapse" data-target="#error-trace-show" aria-expanded="true" aria-controls="error-trace-show">
-        Errors:
+        <%= t('bulkrax.shared.errors.errors_heading') %>
       </a>
       <a role="button" data-toggle="collapse" data-target="#error-trace-show" aria-expanded="true" aria-controls="error-trace-show">
         <div class="accordion-icon fa fa-times-circle" aria-hidden="true"></div>
@@ -13,24 +13,24 @@
         <div class="bulkrax-nav-tab-bottom-margin">
           <!-- Toggle buttons -->
           <div class="btn-group pull-right" role="group" aria-label="...">
-            <button id="full-errors-tab" type="button" class="btn btn-default active"><a href="#bulkrax-full-toggle-1" aria-controls="bulkrax-full-toggle-1" role="tab" data-toggle="tab">Full</a></button>
-            <button id="raw-errors-tab" type="button" class="btn btn-default"><a href="#bulkrax-raw-toggle-1" aria-controls="bulkrax-raw-toggle-1" role="tab" data-toggle="tab">Raw</a></button>
+            <button id="full-errors-tab" type="button" class="btn btn-default active"><a href="#bulkrax-full-toggle-1" aria-controls="bulkrax-full-toggle-1" role="tab" data-toggle="tab"><%= t('bulkrax.shared.errors.full') %></a></button>
+            <button id="raw-errors-tab" type="button" class="btn btn-default"><a href="#bulkrax-raw-toggle-1" aria-controls="bulkrax-raw-toggle-1" role="tab" data-toggle="tab"><%= t('bulkrax.shared.errors.raw') %></a></button>
           </div>
           <!-- Tab panes -->
           <div class="tab-content">
             <div role="tabpanel" class="tab-pane active" id="bulkrax-full-toggle-1">
-              <strong>Errored at:</strong> <%= item.status_at %><br /><br />
-              <strong>Error:</strong> <%= item.current_status.error_class %> - <%= item.current_status.error_message %><br /><br />
-              <strong>Error Trace:</strong><br/><br />
+              <strong><%= t('bulkrax.shared.errors.errored_at') %></strong> <%= item.status_at %><br /><br />
+              <strong><%= t('bulkrax.shared.errors.error') %></strong> <%= item.current_status.error_class %> - <%= item.current_status.error_message %><br /><br />
+              <strong><%= t('bulkrax.shared.errors.error_trace') %></strong><br/><br />
               <% item.current_status.error_backtrace.each do |v| %>
                 <%= coderay(v, { wrap: :page, css: :class, tab_width: 200, break_lines: true }) %>
                 <br>
               <% end %>
             </div>
             <div role="tabpanel" class="tab-pane" id="bulkrax-raw-toggle-1">
-              <strong>Errored at:</strong> <%= item.status_at %><br /><br />
-              <strong>Error:</strong> <%= item.current_status.error_class %> - <%= item.current_status.error_message %><br /><br />
-              <strong>Error Trace:</strong><br/><br />
+              <strong><%= t('bulkrax.shared.errors.errored_at') %></strong> <%= item.status_at %><br /><br />
+              <strong><%= t('bulkrax.shared.errors.error') %></strong> <%= item.current_status.error_class %> - <%= item.current_status.error_message %><br /><br />
+              <strong><%= t('bulkrax.shared.errors.error_trace') %></strong><br/><br />
               <% item.current_status.error_backtrace.each do |v| %>
                 <%= coderay(v, { css: :class, tab_width: 0, break_lines: false }) %>
                 <br>
@@ -43,10 +43,10 @@
   </div>
 <% elsif item.succeeded? %>
   <p class='bulkrax-p-align'>
-    <strong>Succeeded At:</strong> <%= item.status_at %>
+    <strong><%= t('bulkrax.shared.errors.succeeded_at') %></strong> <%= item.status_at %>
   </p>
 <% else %>
   <p class='bulkrax-p-align'>
-    <strong>Succeeded At:</strong> Item has not yet been <%= @importer.present? ? 'imported' : 'exported' %> successfully
+    <strong><%= t('bulkrax.shared.errors.succeeded_at') %></strong> <%= @importer.present? ? t('bulkrax.shared.errors.not_yet_imported') : t('bulkrax.shared.errors.not_yet_exported') %>
   </p>
 <% end %>
