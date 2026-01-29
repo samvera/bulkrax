@@ -44,3 +44,11 @@ div#s2id_exporter_export_source_collection {
   margin-left: 10px;
   margin-right: 10px;
 }
+
+// Make form input labels bold
+.simple_form label.control-label,
+.simple_form label.form-label,
+.simple_form .form-group > label,
+.simple_form .input > label {
+  font-weight: bold;
+}

@@ -11,35 +11,31 @@
     </div>
   <% end %>
 
-  <%= form.input :name, label: t('bulkrax.exporter.labels.name'), input_html: { class: 'form-control' } %>
+  <%= form.input :name, input_html: { class: 'form-control' } %>
 
   <%= form.hidden_field :user_id, value: current_user.id %>
 
   <%= form.input :export_type,
-    collection:  form.object.export_type_list,
-    label: t('bulkrax.exporter.labels.export_type'),
+    collection: form.object.export_type_list,
     required: true,
     prompt: t('bulkrax.exporter.prompts.export_type'),
     input_html: { class: 'form-control' } %>
 
   <%= form.input :export_from,
     collection: form.object.export_from_list,
-    label: t('bulkrax.exporter.labels.export_from'),
     required: true,
     prompt: t('bulkrax.exporter.prompts.export_from'),
     input_html: { class: 'form-control' } %>
 
   <%= form.input :export_source_importer,
-    label: t('bulkrax.exporter.labels.importer'),
     required: true,
     prompt: t('bulkrax.exporter.prompts.select_from_list'),
     label_html: { class: 'importer export-source-option d-none hidden' },
     input_html: { class: 'importer export-source-option d-none hidden form-control' },
-    collection:  form.object.importers_list.sort %>
+    collection: form.object.importers_list.sort %>
 
   <%= form.input :export_source_collection,
     prompt: t('bulkrax.exporter.prompts.start_typing'),
-    label: t('bulkrax.exporter.labels.collection'),
     required: true,
     placeholder: @collection&.title&.first,
     label_html: { class: 'collection export-source-option d-none hidden' },
@@ -53,7 +49,6 @@
   %>
 
   <%= form.input :export_source_worktype,
-    label: t('bulkrax.exporter.labels.worktype'),
     required: true,
     prompt: t('bulkrax.exporter.prompts.select_from_list'),
     label_html: { class: 'worktype export-source-option d-none hidden' },
@@ -62,52 +57,33 @@
 
   <%= form.input :limit,
     as: :integer,
-    hint: t('bulkrax.exporter.hints.limit'),
-    label: t('bulkrax.exporter.labels.limit'),
     input_html: { class: 'form-control' } %>
 
-  <%= form.input :generated_metadata?,
-                 as: :boolean,
-                 label: t('bulkrax.exporter.labels.generated_metadata'),
-                 hint: t('bulkrax.exporter.hints.generated_metadata') %>
+  <%= form.input :generated_metadata?, as: :boolean %>
 
-  <%= form.input :include_thumbnails?,
-                 as: :boolean,
-                 label: t('bulkrax.exporter.labels.include_thumbnails'),
-                 hint: t('bulkrax.exporter.hints.include_thumbnails') %>
+  <%= form.input :include_thumbnails?, as: :boolean %>
 
-  <%= form.input :date_filter,
-                 as: :boolean,
-                 label: t('bulkrax.exporter.labels.filter_by_date') %>
+  <%= form.input :date_filter, as: :boolean %>
 
   <div id="date_filter_picker" class="d-none hidden">
-    <%= form.input :start_date,
-                   as: :date,
-                   label: t('bulkrax.exporter.labels.start_date'),
-                   input_html: { class: 'form-control' } %>
+    <%= form.input :start_date, as: :date, input_html: { class: 'form-control' } %>
 
-    <%= form.input :finish_date,
-                   as: :date,
-                   label: t('bulkrax.exporter.labels.finish_date'),
-                   input_html: { class: 'form-control' } %>
+    <%= form.input :finish_date, as: :date, input_html: { class: 'form-control' } %>
   </div>
   <% if defined?(::Hyrax) %>
     <%= form.input :work_visibility,
-                   collection: form.object.work_visibility_list,
-                  label: t('bulkrax.exporter.labels.visibility'),
-                  input_html: { class: 'form-control' } %>
+      collection: form.object.work_visibility_list,
+      input_html: { class: 'form-control' } %>
   <% end %>
 
   <% if defined?(::Hyrax) %>
     <%= form.input :workflow_status,
-                  collection: form.object.workflow_status_list,
-                  label: t('bulkrax.exporter.labels.status'),
-                  input_html: { class: 'form-control' } %>
+      collection: form.object.workflow_status_list,
+      input_html: { class: 'form-control' } %>
   <% end %>
 
   <%= form.input :parser_klass,
     collection: Bulkrax.parsers.map {|p| [p[:name], p[:class_name], {'data-partial' => p[:partial]}] if p[:class_name].constantize.export_supported? }.compact,
-    label: t('bulkrax.exporter.labels.export_format'),
     input_html: { class: 'form-control' } %>
 </div>
 

@@ -19,9 +19,9 @@
 
   <%= form.input :frequency, collection: form.object.class.frequency_enums, input_html: { class: 'form-control' } %>
 
-  <%= form.input :limit, as: :integer, hint: t('bulkrax.importer.hints.limit'), input_html: { class: 'form-control'} %>
+  <%= form.input :limit, as: :integer, input_html: { class: 'form-control'} %>
 
-  <%= form.input :parser_klass, collection: Bulkrax.parsers.map {|p| [p[:name], p[:class_name], {'data-partial' => p[:partial]}]}, label: t('bulkrax.importer.labels.parser_klass'), input_html: { class: 'form-control' } %>
+  <%= form.input :parser_klass, collection: Bulkrax.parsers.map {|p| [p[:name], p[:class_name], {'data-partial' => p[:partial]}]}, input_html: { class: 'form-control' } %>
 
   <%= form.fields_for :parser_fields do |fi| %>
     <div class='parser_fields'>
