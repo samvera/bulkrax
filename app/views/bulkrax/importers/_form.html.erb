@@ -1,7 +1,7 @@
 <div class="panel-body card-body">
   <% if importer.errors.any? %>
     <div id="error_explanation">
-      <h2><%= pluralize(importer.errors.count, "error") %> prohibited this importer from being saved:</h2>
+      <h2><%= t('bulkrax.importer.validations.errors_prohibited', count: importer.errors.count) %></h2>
 
       <ul>
         <% importer.errors.full_messages.each do |message| %>
@@ -19,13 +19,13 @@
 
   <%= form.input :frequency, collection: form.object.class.frequency_enums, input_html: { class: 'form-control' } %>
 
-  <%= form.input :limit, as: :integer, hint: 'leave blank or 0 for all records', input_html: { class: 'form-control'} %>
+  <%= form.input :limit, as: :integer, hint: t('bulkrax.importer.hints.limit'), input_html: { class: 'form-control'} %>
 
-  <%= form.input :parser_klass, collection: Bulkrax.parsers.map {|p| [p[:name], p[:class_name], {'data-partial' => p[:partial]}]}, label: "Parser", input_html: { class: 'form-control' } %>
+  <%= form.input :parser_klass, collection: Bulkrax.parsers.map {|p| [p[:name], p[:class_name], {'data-partial' => p[:partial]}]}, label: t('bulkrax.importer.labels.parser_klass'), input_html: { class: 'form-control' } %>
 
   <%= form.fields_for :parser_fields do |fi| %>
     <div class='parser_fields'>
-      <p>Specific fields for each parser are available only when a parser is selected</p>
+      <p><%= t('bulkrax.importer.hints.parser_fields') %></p>
       <% Bulkrax.parsers.map {|p| p[:partial]}.uniq.each do |partial| %>
         <%= render partial: partial, locals: {form: form, fi: fi, importer: importer} %>
       <% end %>

@@ -17,9 +17,9 @@
 
   <%= fi.input :visibility,
     collection: [
-      ['Public', 'open'],
-      ['Private', 'restricted'],
-      ['Institution', 'authenticated']
+      [t('bulkrax.importer.bagit.visibility.public'), 'open'],
+      [t('bulkrax.importer.bagit.visibility.private'), 'restricted'],
+      [t('bulkrax.importer.bagit.visibility.institution'), 'authenticated']
     ],
     selected: importer.parser_fields['visibility'] || 'open',
     input_html: { class: 'form-control' }
@@ -35,15 +35,15 @@
           input_html: { class: 'form-control' } ,
           required: false
           %>
-    <%= fi.input :override_rights_statement, as: :boolean, hint: 'If checked, always use the selected rights statement. If unchecked, use rights or rights_statement from the record and only use the provided value if dc:rights is blank.', input_html: { checked: (importer.parser_fields['override_rights_statement'] == "1") } %>
+    <%= fi.input :override_rights_statement, as: :boolean, hint: t('bulkrax.importer.hints.override_rights_statement'), input_html: { checked: (importer.parser_fields['override_rights_statement'] == "1") } %>
   <% end %>
-  <h4>Bag or Bags to Import:</h4>
-  <p>File upload and Cloud File upload must be a Zip file containing a single BagIt Bag, or a folder containing multiple BagIt Bags.</p>
-  <p>The Server Path can point to a BagIt Bag, a folder containing BagIt Bags, or a zip file containing either.</p>
+  <h4><%= t('bulkrax.importer.bagit.bags_to_import') %></h4>
+  <p><%= t('bulkrax.importer.bagit.file_upload_hint') %></p>
+  <p><%= t('bulkrax.importer.bagit.server_path_hint') %></p>
 
 <%= fi.input :file_style,
-  collection: ['Upload a File', 'Specify a Path on the Server'] +
-              (defined?(::Hyrax) && Hyrax.config.browse_everything? ? ['Add Cloud File'] : []),
+  collection: [t('bulkrax.importer.bagit.file_style.upload'), t('bulkrax.importer.bagit.file_style.server_path')] +
+              (defined?(::Hyrax) && Hyrax.config.browse_everything? ? [t('bulkrax.importer.bagit.file_style.cloud')] : []),
   as: :radio_buttons, label: false %>
   <div id='file_upload'>
     <% if defined?(::Hyrax) %>

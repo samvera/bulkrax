@@ -1,14 +1,14 @@
 <div class='csv_fields'>
   <%= fi.input :visibility,
-    label: 'Default Visibility',
+    label: t('bulkrax.importer.csv.labels.default_visibility'),
     collection: [
-      ['Public', 'open'],
-      ['Private', 'restricted'],
-      ['Institution', 'authenticated']
+      [t('bulkrax.importer.csv.visibility.public'), 'open'],
+      [t('bulkrax.importer.csv.visibility.private'), 'restricted'],
+      [t('bulkrax.importer.csv.visibility.institution'), 'authenticated']
     ],
     selected: importer.parser_fields['visibility'] || 'open',
     input_html: { class: 'form-control' },
-    hint: 'If your CSV includes the visibility field, it will override the default setting.'
+    hint: t('bulkrax.importer.hints.default_visibility')
   %>
   <% if defined?(::Hyrax) %>
     <% rights_statements = Hyrax.config.rights_statement_service_class.new %>
@@ -20,12 +20,12 @@
           input_html: { class: 'form-control' },
           required: false
           %>
-    <%= fi.input :override_rights_statement, as: :boolean, hint: 'If checked, always use the selected rights statement. If unchecked, use rights or rights_statement from the record and only use the provided value if dc:rights is blank.', input_html: { checked: (importer.parser_fields['override_rights_statement'] == "1") } %>
+    <%= fi.input :override_rights_statement, as: :boolean, hint: t('bulkrax.importer.hints.override_rights_statement'), input_html: { checked: (importer.parser_fields['override_rights_statement'] == "1") } %>
   <% end %>
-  <h4>Add CSV or ZIP File to Import:</h4>
+  <h4><%= t('bulkrax.importer.csv.add_csv_to_import') %></h4>
   <%# accept a single file upload; data files and bags will need to be added another way %>
-  <% file_style_list = ['Upload a File', 'Specify a Path on the Server'] %>
-  <% file_style_list << 'Existing Entries' unless importer.new_record? %>
+  <% file_style_list = [t('bulkrax.importer.csv.file_style.upload'), t('bulkrax.importer.csv.file_style.server_path')] %>
+  <% file_style_list << t('bulkrax.importer.csv.file_style.existing_entries') unless importer.new_record? %>
   <%= fi.input :file_style, collection: file_style_list, as: :radio_buttons, label: false %>
   
   <div id='file_upload'>
@@ -45,8 +45,8 @@
   </div>
   
   <% if defined?(::Hyrax) && Hyrax.config.browse_everything? %>
-    <h4>Add Files to Import:</h4>
-    <p>Choose files to upload. The filenames must be unique, and the filenames must be referenced in a column called 'file' in the accompanying CSV file.</p>
+    <h4><%= t('bulkrax.importer.csv.add_files_to_import') %></h4>
+    <p><%= t('bulkrax.importer.csv.add_files_hint') %></p>
     <%= render 'browse_everything', form: form %>
   <% end %>
   <br />

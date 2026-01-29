@@ -13,7 +13,7 @@
 
     <p class='bulkrax-p-align'>
       <strong><%= t('bulkrax.importer.labels.type') %>:</strong>
-      <%= @entry.factory_class || 'Unknown' %>
+      <%= @entry.factory_class || t('bulkrax.entry.labels.unknown') %>
     </p>
     <%= render partial: 'raw_metadata'%>
 
@@ -39,29 +39,29 @@
           <% if factory_record.present? %>
             <% factory_record_class = factory_record.class %>
             <% factory_record_class_human = factory_record_class.model_name.human %>
-            <strong><%= factory_record_class_human %> Link:</strong>
+            <strong><%= t('bulkrax.entry.labels.record_link', record_type: factory_record_class_human) %>:</strong>
             <% if defined?(Hyrax) && factory_record_class_human == 'Collection' %>
               <%= link_to factory_record_class_human, hyrax.polymorphic_path(factory_record) %>
             <% else %>
               <%= link_to factory_record_class_human, main_app.polymorphic_path(factory_record) %>
             <% end %>
           <% else %>
-            <strong>Item Link:</strong> Item has not yet been imported successfully
+            <strong><%= t('bulkrax.entry.labels.item_link') %>:</strong> <%= t('bulkrax.entry.labels.item_not_imported') %>
           <% end %>
         <% rescue => e %>
-          <strong>Item Link:</strong> Unable to retrieve item (<%= e.message %>)
+          <strong><%= t('bulkrax.entry.labels.item_link') %>:</strong> <%= t('bulkrax.entry.labels.item_link_error', message: e.message) %>
         <% end %>
       <% else %>
         <% record = @entry&.hyrax_record %>
         <% if record.present? && @entry.factory_class %>
-          <strong><%= record.model_name.human %> Link:</strong>
+          <strong><%= t('bulkrax.entry.labels.record_link', record_type: record.model_name.human) %>:</strong>
           <% if defined?(Hyrax) && record.model_name.human == "Collection" %>
             <%= link_to record.model_name.human, hyrax.polymorphic_path(record) %>
           <% else %>
             <%= link_to record.model_name.human, main_app.polymorphic_path(record) %>
           <% end %>
         <% else %>
-          <strong>Item Link:</strong> No item associated with this entry or class unknown
+          <strong><%= t('bulkrax.entry.labels.item_link') %>:</strong> <%= t('bulkrax.entry.labels.item_no_association') %>
         <% end %>
       <% end %>
     </p>

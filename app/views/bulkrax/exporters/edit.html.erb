@@ -9,9 +9,9 @@
         <%= render 'form', exporter: @exporter, form: form %>
         <div class="panel-footer card-footer bulkrax-card-footer">
           <div class='pull-right'>
-            <%= form.button :submit, value: 'Update Exporter', class: 'btn btn-primary' %>
+            <%= form.button :submit, value: t('helpers.action.exporter.update'), class: 'btn btn-primary' %>
             |
-            <%= form.button :submit, value: 'Update and Re-Export All Items', class: 'btn btn-primary' %>
+            <%= form.button :submit, value: t('helpers.action.exporter.update_and_re_export'), class: 'btn btn-primary' %>
             |
             <% cancel_path = form.object.persisted? ? exporter_path(form.object) : exporters_path %>
             <%= link_to t('bulkrax.cancel'), cancel_path, class: 'btn btn-default ' %>

@@ -1,7 +1,7 @@
 <div class="panel-body card-body">
   <% if exporter.errors.any? %>
     <div id="error_explanation">
-      <h2><%= pluralize(exporter.errors.count, "error") %> prohibited this exporter from being saved:</h2>
+      <h2><%= t('bulkrax.exporter.validations.errors_prohibited', count: exporter.errors.count) %></h2>
 
       <ul>
         <% exporter.errors.full_messages.each do |message| %>
@@ -19,26 +19,26 @@
     collection:  form.object.export_type_list,
     label: t('bulkrax.exporter.labels.export_type'),
     required: true,
-    prompt: 'Please select an export type',
+    prompt: t('bulkrax.exporter.prompts.export_type'),
     input_html: { class: 'form-control' } %>
 
   <%= form.input :export_from,
     collection: form.object.export_from_list,
     label: t('bulkrax.exporter.labels.export_from'),
     required: true,
-    prompt: 'Please select an export source',
+    prompt: t('bulkrax.exporter.prompts.export_from'),
     input_html: { class: 'form-control' } %>
 
   <%= form.input :export_source_importer,
     label: t('bulkrax.exporter.labels.importer'),
     required: true,
-    prompt: 'Select from the list',
+    prompt: t('bulkrax.exporter.prompts.select_from_list'),
     label_html: { class: 'importer export-source-option d-none hidden' },
     input_html: { class: 'importer export-source-option d-none hidden form-control' },
     collection:  form.object.importers_list.sort %>
 
   <%= form.input :export_source_collection,
-    prompt: 'Start typing ...',
+    prompt: t('bulkrax.exporter.prompts.start_typing'),
     label: t('bulkrax.exporter.labels.collection'),
     required: true,
     placeholder: @collection&.title&.first,
@@ -55,14 +55,14 @@
   <%= form.input :export_source_worktype,
     label: t('bulkrax.exporter.labels.worktype'),
     required: true,
-    prompt: 'Select from the list',
+    prompt: t('bulkrax.exporter.prompts.select_from_list'),
     label_html: { class: 'worktype export-source-option d-none hidden' },
     input_html: { class: 'worktype export-source-option d-none hidden form-control' },
     collection: Bulkrax.curation_concerns.map { |cc| [cc.to_s, cc.to_s] } %>
 
   <%= form.input :limit,
     as: :integer,
-    hint: 'leave blank or 0 for all records',
+    hint: t('bulkrax.exporter.hints.limit'),
     label: t('bulkrax.exporter.labels.limit'),
     input_html: { class: 'form-control' } %>
 

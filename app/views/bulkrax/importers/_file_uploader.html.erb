@@ -9,12 +9,12 @@
                  accept="<%= accepted_file_types || 'text/csv,application/zip,application/gzip' %>" multiple />
           <button type="button" class="btn btn-success" onclick="document.getElementById('addfiles').click();">
             <span class="fa fa-plus"></span>
-            <span>Add Files</span>
+            <span><%= t('bulkrax.importer.file_uploader.add_files') %></span>
           </button>
         </div>
         <button type="reset" id="file-upload-cancel-btn" class="btn btn-warning cancel">
           <span class="fa fa-ban"></span>
-          <span>Cancel Upload</span>
+          <span><%= t('bulkrax.importer.file_uploader.cancel_upload') %></span>
         </button>
         <span class="fileupload-process"></span>
       </div>
@@ -31,7 +31,7 @@
     </div>
   </div>
   <div class="dropzone">
-    Drop files here to upload
+    <%= t('bulkrax.importer.file_uploader.dropzone') %>
   </div>
   <%= render 'hyrax/uploads/js_templates' %>
 </div>

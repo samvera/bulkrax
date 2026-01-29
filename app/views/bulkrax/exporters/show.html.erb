@@ -11,7 +11,7 @@
       <%= simple_form_for @exporter, method: :get, url: exporter_download_path(@exporter), html: { class: 'form-inline bulkrax-p-align' } do |form| %>
         <strong>Download:</strong>
         <%= render 'downloads', exporter: @exporter, form: form %>
-        <%= form.button :submit, value: 'Download', data: { disable_with: false } %>
+        <%= form.button :submit, value: t('helpers.action.exporter.download'), data: { disable_with: false } %>
       <% end %>
     <% end %>
 
@@ -101,9 +101,9 @@
         <%= render partial: 'bulkrax/shared/entries_tab', locals: { item: @exporter } %>
       </div>
       <br>
-      <%= link_to 'Edit', edit_exporter_path(@exporter) %>
+      <%= link_to t('helpers.action.exporter.edit'), edit_exporter_path(@exporter) %>
       |
-      <%= link_to 'Back', exporters_path %>
+      <%= link_to t('helpers.action.exporter.back'), exporters_path %>
     </div>
   </div>
 </div>
