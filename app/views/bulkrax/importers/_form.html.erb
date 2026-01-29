@@ -25,11 +25,10 @@
 
   <%= form.fields_for :parser_fields do |fi| %>
     <div class='parser_fields'>
-      <p><%= t('bulkrax.importer.hints.parser_fields') %></p>
+      <p><%= t('simple_form.hints.importer.parser_fields') %></p>
       <% Bulkrax.parsers.map {|p| p[:partial]}.uniq.each do |partial| %>
         <%= render partial: partial, locals: {form: form, fi: fi, importer: importer} %>
       <% end %>
     </div>
   <% end %>
-
 </div>

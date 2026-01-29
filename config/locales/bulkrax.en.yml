@@ -38,11 +38,16 @@ en:
         set: "Set (source)"
     hints:
       importer:
-        limit: "leave blank or 0 for all records"
+        admin_set_id: "Select the Administrative Set whose policies (such as workflow and access controls) should apply to these imports. If unsure, select the Default Administrative Set."
+        limit: "Enter any number to run only a subset of records. Leave blank or enter 0 to run all records."
+        name: "Any name to identify this importer"
+        frequency: "The frequency with which to run this importer"
+        parser_fields: "Specific fields for each parser are available only when a parser is selected"
       exporter:
-        limit: "leave blank or 0 for all records"
-        include_thumbnails?: "These exported fields currently cannot be imported."
         generated_metadata?: "These exported fields currently cannot be imported."
+        include_thumbnails?: "These exported fields currently cannot be imported."
+        limit: "Enter any number to run only a subset of records. Leave blank or enter 0 to run all records."
+        name: "Any name to identify this importer"
       defaults:
         override_rights_statement: "If checked, always use the selected rights statement. If unchecked, use rights or rights_statement from the record and only use the provided value if dc:rights is blank."
         default_visibility: "If your CSV includes the visibility field, it will override the default setting."
@@ -152,12 +157,8 @@ en:
         errors_prohibited:
           one: "1 error prohibited this importer from being saved:"
           other: "%{count} errors prohibited this importer from being saved:"
-      hints:
-        limit: "leave blank or 0 for all records"
-        parser_fields: "Specific fields for each parser are available only when a parser is selected"
       labels:
-        parser_klass: Parser
-        admin_set: Admin set
+        admin_set: Administrative set
         collection_entries: Collection Entries
         entry_id: Entry ID
         exporter: Exporter
@@ -167,7 +168,7 @@ en:
         importer: Importer
         limit: Limit
         name: Name
-        parser_klass: Parser klass
+        parser_klass: Parser
         total_collections: Total Collections
         total_file_sets: Total File Sets
         total_work_entries: Total Works
