@@ -44,5 +44,34 @@ module Bulkrax
         expect(exporter_run.deleted_records).to eq(0)
       end
     end
+
+    describe "when entry completes but entry.failed? is true" do
+      before do
+        allow(Bulkrax::Entry).to receive(:find).with(entry.id).and_return(entry)
+        # Use and_wrap_original so reload sees DB updates from increment_counter/decrement_counter (Rails < 7.2)
+        allow(Bulkrax::ExporterRun).to receive(:find).and_wrap_original do |original, id|
+          original.call(id).tap { |run| allow(run).to receive(:exporter).and_return(exporter) }
+        end
+        allow(entry).to receive(:build)
+        allow(entry).to receive(:save).and_return(true)
+        allow(entry).to receive(:failed?).and_return(true)
+        allow(exporter).to receive(:set_status_info)
+      end
+
+      it 'increments failed_records' do
+        export_work_job.perform(entry.id, exporter_run.id)
+        exporter_run.reload
+
+        expect(Bulkrax::ExporterRun.find(exporter_run.id).failed_records).to eq(1)
+      end
+
+      it "sets exporter status to 'Complete (with failures)' when this is the last record" do
+        expect(Bulkrax::ExporterRun.find(exporter_run.id).enqueued_records).to eq(1)
+
+        export_work_job.perform(entry.id, exporter_run.id)
+
+        expect(exporter).to have_received(:set_status_info).with('Complete (with failures)')
+      end
+    end
   end
 end
