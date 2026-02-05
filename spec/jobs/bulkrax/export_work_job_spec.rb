@@ -60,11 +60,11 @@ module Bulkrax
         export_work_job.perform(entry.id, exporter_run.id)
         exporter_run.reload
 
-        expect(exporter_run.failed_records).to eq(1)
+        expect(Bulkrax::ExporterRun.find(exporter_run.id).failed_records).to eq(1)
       end
 
       it "sets exporter status to 'Complete (with failures)' when this is the last record" do
-        expect(exporter_run.enqueued_records).to eq(1)
+        expect(Bulkrax::ExporterRun.find(exporter_run.id).enqueued_records).to eq(1)
 
         export_work_job.perform(entry.id, exporter_run.id)
 
