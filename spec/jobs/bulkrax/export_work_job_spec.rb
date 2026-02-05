@@ -48,12 +48,14 @@ module Bulkrax
     describe "when entry completes but entry.failed? is true" do
       before do
         allow(Bulkrax::Entry).to receive(:find).with(entry.id).and_return(entry)
-        allow(Bulkrax::ExporterRun).to receive(:find).with(exporter_run.id).and_return(exporter_run)
+        # Use and_wrap_original so reload sees DB updates from increment_counter/decrement_counter (Rails < 7.2)
+        allow(Bulkrax::ExporterRun).to receive(:find).and_wrap_original do |original, id|
+          original.call(id).tap { |run| allow(run).to receive(:exporter).and_return(exporter) }
+        end
         allow(entry).to receive(:build)
         allow(entry).to receive(:save).and_return(true)
         allow(entry).to receive(:failed?).and_return(true)
         allow(exporter).to receive(:set_status_info)
-        allow(exporter_run).to receive(:exporter).and_return(exporter)
       end
 
       it 'increments failed_records' do
