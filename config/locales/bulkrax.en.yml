@@ -58,6 +58,7 @@ en:
       importer:
         edit_importer: "Edit Importer"
         new: "New"
+        new_v2: "New (v2)"
         create: "Create"
         create_and_import: "Create and Import"
         create_and_validate: "Create and Validate"

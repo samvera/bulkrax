@@ -27,6 +27,10 @@ module Bulkrax
       end
     end
 
+    def new_v2
+      @importer = Importer.new
+    end
+
     def importer_table
       @importers = Importer.order(table_order).page(table_page).per(table_per_page)
       @importers = @importers.where(importer_table_search) if importer_table_search.present?

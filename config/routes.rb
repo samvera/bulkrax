@@ -15,6 +15,8 @@ Bulkrax::Engine.routes.draw do
     get :entry_table
     get :export_errors
     collection do
+      get 'new/v2', action: :new_v2, as: :new_v2
+      post 'v2', action: :create_v2, as: :v2
       get :importer_table
       post :external_sets
       post :sample_csv_file
