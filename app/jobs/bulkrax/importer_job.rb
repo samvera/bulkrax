@@ -28,6 +28,7 @@ module Bulkrax
 
     def unzip_imported_file(parser)
       return unless parser.file? && parser.zip?
+      return if parser.files_preprocessed?
 
       parser.unzip(parser.parser_fields['import_file_path'])
       parser.remove_spaces_from_filenames

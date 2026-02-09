@@ -8,6 +8,7 @@ module Bulkrax
     include Bulkrax::API
     include Bulkrax::DatatablesBehavior
     include Bulkrax::ValidationHelper
+    include Bulkrax::ImporterV2
 
     protect_from_forgery unless: -> { api_request? }
     before_action :token_authenticate!, if: -> { api_request? }, only: [:create, :update, :delete]
@@ -25,10 +26,6 @@ module Bulkrax
       elsif defined?(::Hyrax)
         add_importer_breadcrumbs
       end
-    end
-
-    def new_v2
-      @importer = Importer.new
     end
 
     def importer_table

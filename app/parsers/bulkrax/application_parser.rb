@@ -485,6 +485,17 @@ module Bulkrax
       @import_file_path ||= real_import_file_path
     end
 
+    def files_preprocessed?
+      # where it came from (currently this is one file... do we need a new field to
+      # identify the directory in v2?)
+      entry = parser_fields['import_file_path']
+      # this is where we are putting the files
+      directory = File.join(importer_unzip_path, entry.name)
+      # return true if directory exists and has files in it
+      return true if Dir.exist?(directory) && Dir.glob("#{directory}/*").any?
+      false
+    end
+
     private
 
     # @return [String]
