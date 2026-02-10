@@ -1,3 +1,387 @@
 <% provide :page_header do %>
-  <h1><span class="fa fa-edit" aria-hidden="true"></span>V2 Import</h1>
+  <h1><span class="fa fa-cloud-upload" aria-hidden="true"></span> Start a Bulk Import</h1>
+  <p class="text-muted">Import collections, works, and files via CSV</p>
 <% end %>
+
+<% content_for(:head) do %>
+  <meta name="turbolinks-cache-control" content="no-cache">
+<% end %>
+
+<div class="bulk-import-stepper-container">
+  <div class="stepper-wrapper">
+
+    <!-- Stepper Header -->
+    <div class="stepper-header">
+      <div class="step-item" data-step="1">
+        <div class="step-circle">
+          <span class="fa fa-cloud-upload"></span>
+          <span class="step-check fa fa-check"></span>
+        </div>
+        <span class="step-label">Upload & Validate</span>
+      </div>
+      <div class="step-connector"></div>
+      <div class="step-item" data-step="2">
+        <div class="step-circle">
+          <span class="fa fa-cog"></span>
+          <span class="step-check fa fa-check"></span>
+        </div>
+        <span class="step-label">Configure Settings</span>
+      </div>
+      <div class="step-connector"></div>
+      <div class="step-item" data-step="3">
+        <div class="step-circle">
+          <span class="fa fa-play"></span>
+          <span class="step-check fa fa-check"></span>
+        </div>
+        <span class="step-label">Review & Start</span>
+      </div>
+    </div>
+
+    <!-- Success State (Hidden by default) -->
+    <div class="import-success-state" style="display: none;">
+      <div class="success-card text-center">
+        <div class="success-icon">
+          <span class="fa fa-check-circle"></span>
+        </div>
+        <h2>Import Started</h2>
+        <p>Your import is now processing in the background. You'll be notified when it's complete.</p>
+        <div class="success-actions">
+          <a href="<%= importers_path %>" class="btn btn-secondary">View Import Queue</a>
+          <button type="button" class="btn btn-primary" id="start-another-import">Start Another Import</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Form -->
+    <div class="stepper-content-wrapper">
+      <%= form_for [:bulkrax, Bulkrax::Importer.new], url: v2_importers_path, method: :post, html: { id: 'bulk-import-stepper-form', multipart: true } do |f| %>
+
+        <!-- ====== STEP 1: Upload & Validate ====== -->
+        <div class="step-content" data-step="1">
+          <div class="step-title">
+            <h2>Upload your import files</h2>
+            <p class="text-muted">Upload a CSV, a ZIP with files, or a single ZIP containing both your CSV and files</p>
+          </div>
+
+          <!-- Upload Area -->
+          <div class="upload-zone-wrapper">
+            <!-- Empty State -->
+            <div class="upload-zone-empty">
+              <div class="upload-dropzone">
+                <div class="upload-icon">
+                  <span class="fa fa-cloud-upload"></span>
+                </div>
+                <p>Drag & drop your files here, or <strong class="text-primary">browse</strong></p>
+                <p class="text-muted small">Accepts .csv or .zip files (you can upload multiple files)</p>
+                <input type="file" id="file-input" name="importer[parser_fields][files][]" accept=".csv,.zip" multiple style="display: none;">
+              </div>
+
+              <!-- Demo Scenarios (for testing) -->
+              <div class="demo-scenarios" style="display: none;">
+                <p class="small text-primary"><strong>Demo: Pick an upload scenario</strong></p>
+                <button type="button" class="btn btn-sm btn-outline-secondary btn-block scenario-btn" data-scenario="csv_only">CSV only</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary btn-block scenario-btn" data-scenario="zip_files_only">ZIP (files only, no CSV)</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary btn-block scenario-btn" data-scenario="zip_with_csv">ZIP with CSV inside</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary btn-block scenario-btn" data-scenario="csv_and_zip">CSV + ZIP (separate)</button>
+              </div>
+            </div>
+
+            <!-- Files Uploaded State (hidden initially) -->
+            <div class="uploaded-files-container" style="display: none;">
+              <div class="uploaded-files-header">
+                <strong>Uploaded Files</strong>
+                <button type="button" class="btn btn-sm btn-link text-danger" id="start-over-btn">Start over</button>
+              </div>
+              <div class="uploaded-files-list">
+                <!-- File rows will be dynamically added here -->
+              </div>
+              <div class="upload-info-message">
+                <!-- Info messages will be added here based on upload state -->
+              </div>
+            </div>
+
+            <!-- Add another file dropzone (shown when 1 file uploaded) -->
+            <div class="add-another-dropzone" style="display: none;">
+              <div class="upload-dropzone-small">
+                <div class="upload-icon-small">
+                  <span class="fa fa-plus-circle"></span>
+                </div>
+                <p><strong>Add another file</strong></p>
+                <p class="text-muted small">Drop a CSV or ZIP file here, or click to browse</p>
+              </div>
+            </div>
+
+            <!-- Start over link -->
+            <div class="start-over-link" style="display: none;">
+              <a href="#" id="upload-different-btn" class="text-danger">
+                <span class="fa fa-refresh"></span> <strong>Start over</strong>
+              </a>
+            </div>
+          </div>
+
+          <!-- Download Template Link -->
+          <div class="download-template-link">
+            <span class="fa fa-download text-primary"></span>
+            <%= link_to 'Download CSV template for your tenant', sample_csv_file_importers_path, method: :post, class: 'text-primary' %>
+          </div>
+
+          <!-- Validate Button -->
+          <button type="button" id="validate-btn" class="btn btn-primary btn-block btn-lg" disabled>
+            <span class="fa fa-file-text"></span> Validate Files
+          </button>
+
+          <!-- Validation Results (hidden initially) -->
+          <div class="validation-results" style="display: none;">
+
+            <!-- Import Size Gauge -->
+            <div class="import-size-gauge">
+              <!-- Will be populated by JS -->
+            </div>
+
+            <!-- Validation Status Accordion -->
+            <div class="accordion-wrapper">
+              <!-- Validation accordions will be added by JS -->
+            </div>
+
+            <!-- Import Summary -->
+            <div class="import-summary">
+              <h3>Import Summary</h3>
+              <div class="row">
+                <div class="col-sm-4">
+                  <div class="summary-card summary-card-collections">
+                    <div class="summary-number">0</div>
+                    <div class="summary-label">Collections</div>
+                  </div>
+                </div>
+                <div class="col-sm-4">
+                  <div class="summary-card summary-card-works">
+                    <div class="summary-number">0</div>
+                    <div class="summary-label">Works</div>
+                  </div>
+                </div>
+                <div class="col-sm-4">
+                  <div class="summary-card summary-card-filesets">
+                    <div class="summary-number">0</div>
+                    <div class="summary-label">File Sets</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Collection/Work Trees -->
+              <div class="hierarchy-accordions">
+                <!-- Will be populated by JS -->
+              </div>
+            </div>
+
+            <!-- Warning Acknowledgment -->
+            <div class="warning-acknowledgment" style="display: none;">
+              <label class="acknowledgment-checkbox">
+                <input type="checkbox" id="warnings-acked">
+                <span>I acknowledge these warnings and want to proceed with the import.</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Step Navigation -->
+          <div class="step-navigation">
+            <button type="button" class="btn btn-secondary" disabled>
+              <span class="fa fa-arrow-left"></span> Back
+            </button>
+            <button type="button" class="btn btn-primary step-next-btn" data-next-step="2" disabled>
+              Next <span class="fa fa-arrow-right"></span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ====== STEP 2: Configure Settings ====== -->
+        <div class="step-content" data-step="2" style="display: none;">
+          <div class="step-title">
+            <h2>Configure Import Settings</h2>
+            <p class="text-muted">Set parameters that apply to all records in this import.</p>
+          </div>
+
+          <div class="settings-form">
+            <!-- Import Name -->
+            <div class="form-group">
+              <%= f.label :name, 'Import Name', class: 'control-label' do %>
+                Import Name <span class="text-danger">*</span>
+              <% end %>
+              <%= f.text_field :name, class: 'form-control', value: "CSV Import - #{Date.today.strftime('%m/%d/%Y')}", required: true %>
+            </div>
+
+            <!-- Admin Set -->
+            <div class="form-group">
+              <%= f.label :admin_set_id, 'Admin Set', class: 'control-label' do %>
+                Admin Set <span class="text-danger">*</span>
+              <% end %>
+              <% admin_sets = defined?(AdminSet) ? AdminSet.all.map { |as| [as.title.first, as.id] } : [] %>
+              <%= f.select :admin_set_id,
+                  options_for_select([['Select an admin set...', '']] + admin_sets),
+                  {},
+                  { class: 'form-control', required: true } %>
+            </div>
+
+            <!-- Default Visibility -->
+            <div class="form-group">
+              <label class="control-label">Default Visibility</label>
+              <div class="visibility-options row">
+                <div class="col-sm-4">
+                  <div class="visibility-card" data-visibility="open">
+                    <span class="fa fa-globe visibility-icon"></span>
+                    <div class="visibility-label">Public</div>
+                    <div class="visibility-desc">Visible to everyone</div>
+                    <input type="radio" name="importer[parser_fields][visibility]" value="open" checked style="display: none;">
+                  </div>
+                </div>
+                <div class="col-sm-4">
+                  <div class="visibility-card" data-visibility="authenticated">
+                    <span class="fa fa-users visibility-icon"></span>
+                    <div class="visibility-label">Institution</div>
+                    <div class="visibility-desc">Logged-in users</div>
+                    <input type="radio" name="importer[parser_fields][visibility]" value="authenticated" style="display: none;">
+                  </div>
+                </div>
+                <div class="col-sm-4">
+                  <div class="visibility-card" data-visibility="restricted">
+                    <span class="fa fa-lock visibility-icon"></span>
+                    <div class="visibility-label">Private</div>
+                    <div class="visibility-desc">Administrators only</div>
+                    <input type="radio" name="importer[parser_fields][visibility]" value="restricted" style="display: none;">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Optional Settings Accordion -->
+            <div class="optional-settings-accordion">
+              <div class="card">
+                <div class="card-header" data-toggle="collapse" data-target="#optional-settings">
+                  <h4 class="mb-0">
+                    <button class="btn btn-link text-left w-100 d-flex justify-content-between align-items-center" type="button">
+                      <span>
+                        <span class="fa fa-cog"></span>
+                        Optional Settings
+                      </span>
+                      <span class="fa fa-chevron-down"></span>
+                    </button>
+                  </h4>
+                </div>
+                <div id="optional-settings" class="collapse">
+                  <div class="card-body">
+                    <!-- Rights Statement -->
+                    <div class="form-group">
+                      <label class="control-label">Default Rights Statement</label>
+                      <%= select_tag 'importer[parser_fields][rights_statement]',
+                          options_for_select([
+                            ['None', ''],
+                            ['In Copyright', 'in-copyright'],
+                            ['CC0 (Public Domain)', 'cc0'],
+                            ['CC BY 4.0', 'cc-by'],
+                            ['CC BY-SA 4.0', 'cc-by-sa']
+                          ]),
+                          class: 'form-control' %>
+                    </div>
+
+                    <!-- Limit (for testing) -->
+                    <div class="form-group">
+                      <%= f.label :limit, 'Limit (for testing)', class: 'control-label' %>
+                      <%= f.number_field :limit, class: 'form-control', placeholder: 'Import only first N records' %>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step Navigation -->
+          <div class="step-navigation">
+            <button type="button" class="btn btn-secondary step-prev-btn" data-prev-step="1">
+              <span class="fa fa-arrow-left"></span> Back
+            </button>
+            <button type="button" class="btn btn-primary step-next-btn" data-next-step="3" disabled>
+              Next <span class="fa fa-arrow-right"></span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ====== STEP 3: Review & Start ====== -->
+        <div class="step-content" data-step="3" style="display: none;">
+          <div class="step-title">
+            <h2>Review & Start Import</h2>
+            <p class="text-muted">Confirm your import details before starting.</p>
+          </div>
+
+          <!-- Large Import Warning -->
+          <div class="large-import-warning" style="display: none;">
+            <div class="alert alert-danger">
+              <span class="fa fa-exclamation-triangle"></span>
+              <strong>Large Import Warning</strong>
+              <p>You're about to import <span class="total-items-count">0</span> items. Large imports take longer and are harder to troubleshoot. Consider splitting into smaller batches.</p>
+            </div>
+          </div>
+
+          <!-- Review Summary -->
+          <div class="review-summary">
+            <div class="alert alert-success">
+              <div class="review-header">
+                <span class="fa fa-check-circle"></span>
+                <h3>Ready to Import</h3>
+              </div>
+
+              <div class="review-section">
+                <h4>Files</h4>
+                <div class="review-files">
+                  <!-- Will be populated by JS -->
+                </div>
+              </div>
+
+              <div class="review-section">
+                <h4>Records</h4>
+                <div class="review-records">
+                  <!-- Will be populated by JS -->
+                </div>
+              </div>
+
+              <div class="review-section">
+                <h4>Settings</h4>
+                <div class="review-settings">
+                  <!-- Will be populated by JS -->
+                </div>
+              </div>
+
+              <div class="review-section review-warnings" style="display: none;">
+                <h4>Warnings</h4>
+                <div class="review-warnings-list">
+                  <!-- Will be populated by JS -->
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <p class="text-center text-muted small">This process will run in the background. You can monitor progress in the Import Queue.</p>
+
+          <!-- Step Navigation -->
+          <div class="step-navigation">
+            <button type="button" class="btn btn-secondary step-prev-btn" data-prev-step="2">
+              <span class="fa fa-arrow-left"></span> Back
+            </button>
+            <button type="submit" class="btn btn-success btn-lg" id="start-import-btn">
+              Start Import
+            </button>
+          </div>
+        </div>
+
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden fields for storing state -->
+<div id="stepper-state" style="display: none;"
+     data-current-step="1"
+     data-validated="false"
+     data-has-warnings="false"
+     data-warnings-acked="false"
+     data-upload-state="empty"
+     data-validation-data="">
+</div>
