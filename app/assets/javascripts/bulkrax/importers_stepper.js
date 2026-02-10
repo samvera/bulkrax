@@ -209,13 +209,15 @@
       StepperState.uploadedFiles = [];
     }
 
-    // Calculate how many files we can add
-    var currentCount = StepperState.uploadedFiles.length;
-    var remainingSlots = 2 - currentCount;
-    var filesToAdd = Math.min(files.length, remainingSlots);
+    // Count existing file types
+    var existingCsvCount = StepperState.uploadedFiles.filter(function(f) { return f.fileType === 'csv' && !f.fromZip; }).length;
+    var existingZipCount = StepperState.uploadedFiles.filter(function(f) { return f.fileType === 'zip'; }).length;
 
-    // Process selected files
-    for (var i = 0; i < filesToAdd; i++) {
+    var addedFiles = [];
+    var rejectedFiles = [];
+
+    // Process selected files with validation
+    for (var i = 0; i < files.length && StepperState.uploadedFiles.length < 2; i++) {
       var file = files[i];
       var fileName = file.name;
       var fileSize = formatFileSize(file.size);
@@ -226,21 +228,62 @@
         return f.name === fileName;
       });
 
-      if (!isDuplicate) {
-        StepperState.uploadedFiles.push({
-          id: currentCount + i + 1,
-          name: fileName,
-          size: fileSize,
-          fileType: fileType,
-          fromZip: false,
-          file: file
-        });
+      if (isDuplicate) {
+        rejectedFiles.push({ name: fileName, reason: 'duplicate' });
+        continue;
       }
+
+      // Validate file type constraints (max 1 CSV, max 1 ZIP)
+      if (fileType === 'csv' && existingCsvCount >= 1) {
+        rejectedFiles.push({ name: fileName, reason: 'duplicate CSV' });
+        continue;
+      }
+
+      if (fileType === 'zip' && existingZipCount >= 1) {
+        rejectedFiles.push({ name: fileName, reason: 'duplicate ZIP' });
+        continue;
+      }
+
+      // Add the file
+      StepperState.uploadedFiles.push({
+        id: Date.now() + i,
+        name: fileName,
+        size: fileSize,
+        fileType: fileType,
+        fromZip: false,
+        file: file
+      });
+
+      addedFiles.push(fileName);
+
+      // Update counts
+      if (fileType === 'csv') existingCsvCount++;
+      if (fileType === 'zip') existingZipCount++;
     }
 
-    // Show warning if trying to add more than 2 files
-    if (currentCount + files.length > 2) {
-      alert('You can only upload up to 2 files (1 CSV and 1 ZIP). Only the first ' + filesToAdd + ' file(s) were added.');
+    // Show appropriate warnings
+    if (rejectedFiles.length > 0) {
+      var messages = [];
+      var duplicateCsv = rejectedFiles.filter(function(f) { return f.reason === 'duplicate CSV'; });
+      var duplicateZip = rejectedFiles.filter(function(f) { return f.reason === 'duplicate ZIP'; });
+      var duplicates = rejectedFiles.filter(function(f) { return f.reason === 'duplicate'; });
+
+      if (duplicateCsv.length > 0) {
+        messages.push('Only 1 CSV file allowed. The following files were not added:\n• ' + duplicateCsv.map(function(f) { return f.name; }).join('\n• '));
+      }
+      if (duplicateZip.length > 0) {
+        messages.push('Only 1 ZIP file allowed. The following files were not added:\n• ' + duplicateZip.map(function(f) { return f.name; }).join('\n• '));
+      }
+      if (duplicates.length > 0) {
+        messages.push('The following files were already uploaded:\n• ' + duplicates.map(function(f) { return f.name; }).join('\n• '));
+      }
+      if (StepperState.uploadedFiles.length >= 2 && files.length > addedFiles.length + rejectedFiles.length) {
+        messages.push('Maximum of 2 files reached (1 CSV and 1 ZIP).');
+      }
+
+      alert(messages.join('\n\n'));
+    } else if (files.length > addedFiles.length) {
+      alert('Maximum of 2 files allowed (1 CSV and 1 ZIP). Only the first ' + addedFiles.length + ' file(s) were added.');
     }
 
     updateUploadState();
@@ -323,6 +366,7 @@
     $list.empty();
 
     var hasCsv = files.some(function(f) { return f.fileType === 'csv'; });
+    var hasZip = files.some(function(f) { return f.fileType === 'zip'; });
 
     // Render all uploaded files
     files.forEach(function(file) {
@@ -363,7 +407,8 @@
       $('.start-over-link').hide();
     }
 
-    $('#validate-btn').prop('disabled', !hasCsv || StepperState.validated);
+    // Enable validate button if we have a CSV OR a ZIP file (which might contain a CSV)
+    $('#validate-btn').prop('disabled', !(hasCsv || hasZip) || StepperState.validated);
   }
 
   // Render a single file row

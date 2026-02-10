@@ -5,7 +5,7 @@
   <div class="col-md-12">
     <% if defined?(Hyrax) %>
       <div class="d-flex justify-content-end mr-2 me-2">
-        <%= button_to t('helpers.action.importer.generate_csv_template'), sample_csv_file_importers_path, method: :post, class: 'btn btn-default' %>
+        <%= button_to t('helpers.action.importer.generate_csv_template'), sample_csv_file_importers_path, method: :get, class: 'btn btn-default' %>
       </div>
     <% end %>
     <div class="panel card panel-default importer-form">

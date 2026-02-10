@@ -20,7 +20,7 @@ Bulkrax::Engine.routes.draw do
       post 'v2/validate', action: :validate_v2, as: :validate_v2
       get :importer_table
       post :external_sets
-      post :sample_csv_file
+      get :sample_csv_file
     end
     resources :entries, only: %i[show update destroy]
     get :upload_corrected_entries

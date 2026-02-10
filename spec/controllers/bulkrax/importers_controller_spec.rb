@@ -243,7 +243,7 @@ module Bulkrax
       end
     end
 
-    describe 'POST #sample_csv_file', clean_downloads: true do
+    describe 'GET #sample_csv_file', clean_downloads: true do
       context 'when CSV generation succeeds' do
         let(:sample_csv_path) { Rails.root.join('tmp', 'sample_csv_import_template.csv').to_s }
 
@@ -259,7 +259,7 @@ module Bulkrax
         it 'sends a CSV file' do
           allow(Bulkrax::SampleCsvService).to receive(:call).and_return(sample_csv_path)
 
-          post :sample_csv_file, session: valid_session
+          get :sample_csv_file, session: valid_session
 
           expect(response.headers['Content-Type']).to include('text/csv')
         end
@@ -271,7 +271,7 @@ module Bulkrax
         end
 
         it 'redirects back with an error message' do
-          post :sample_csv_file, session: valid_session
+          get :sample_csv_file, session: valid_session
 
           expect(response).to redirect_to(importers_path)
           expect(flash[:error]).to include('Unable to generate sample CSV file')

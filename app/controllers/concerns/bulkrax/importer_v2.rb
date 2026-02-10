@@ -29,9 +29,13 @@ module Bulkrax
       # If no CSV in uploaded files, check if ZIP contains CSV
       unless csv_file
         if zip_file
-          # For now, return error - we could extract and check ZIP contents in the future
-          render json: { error: 'No CSV file found. Please upload a CSV file.' }, status: :unprocessable_entity
-          return
+          csv_exists = Zip::File.open(zip_file.path) do |zip|
+            zip.any? { |entry| entry.name.end_with?('.csv') }
+          end
+          unless csv_exists
+            render json: { error: 'No CSV file found. Please upload a CSV file.' }, status: :unprocessable_entity
+            return
+          end
         else
           render json: { error: 'No CSV file uploaded' }, status: :unprocessable_entity
           return
@@ -40,8 +44,8 @@ module Bulkrax
 
       # Mock validation response for testing
       # TODO: Replace with actual CsvValidationService call
-      mock_response = generate_mock_validation_response(csv_file, zip_file)
-      render json: mock_response, status: :ok
+      response = generate_validation_response(csv_file, zip_file)
+      render json: response, status: :ok
     end
 
     def create_v2
@@ -49,7 +53,7 @@ module Bulkrax
 
     private
 
-    def generate_mock_validation_response(csv_file, zip_file)
+    def generate_validation_response(csv_file, zip_file)
       # Generate mock collections
       collections = [
         { id: 'col-1', title: 'Historical Photographs Collection', type: 'collection', parentId: nil },
