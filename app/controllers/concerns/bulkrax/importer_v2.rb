@@ -95,24 +95,112 @@ module Bulkrax
       # Mock headers with one unrecognized field
       headers = ['source_identifier', 'title', 'creator', 'model', 'parents', 'file', 'description', 'date_created', 'legacy_id', 'subject']
       unrecognized = ['legacy_id']
+      missing_required = []
+      missing_files = ['photo_087.tiff', 'letter_scan_12.pdf', 'recording_03.wav']
+      zip_included = zip_file.present?
 
       {
         headers: headers,
-        missingRequired: [], # Empty = validation passes
+        missingRequired: missing_required,
         unrecognized: unrecognized,
         rowCount: 247,
         isValid: true,
-        hasWarnings: true, # Due to unrecognized field
+        hasWarnings: true,
         collections: collections,
         works: works,
         fileSets: file_sets,
         allItems: collections + works,
         totalItems: collections.length + works.length + file_sets.length,
         fileReferences: 55,
-        missingFiles: ['photo_087.tiff', 'letter_scan_12.pdf', 'recording_03.wav'],
+        missingFiles: missing_files,
         foundFiles: 52,
-        zipIncluded: zip_file.present?
+        zipIncluded: zip_included,
+        messages: build_validation_messages(
+          headers: headers,
+          unrecognized: unrecognized,
+          missing_required: missing_required,
+          missing_files: missing_files,
+          zip_included: zip_included,
+          row_count: 247,
+          is_valid: true,
+          has_warnings: true,
+          file_references: 55
+        )
       }
+    end
+
+    def build_validation_messages(headers:, unrecognized:, missing_required:, missing_files:, zip_included:, row_count:, is_valid:, has_warnings:, file_references: 0)
+      recognized_fields = headers - unrecognized
+      
+      messages = {
+        validationStatus: {
+          severity: is_valid ? (has_warnings ? 'warning' : 'success') : 'error',
+          icon: is_valid ? (has_warnings ? 'fa-exclamation-triangle' : 'fa-check-circle') : 'fa-times-circle',
+          title: is_valid ? (has_warnings ? 'Validation Passed with Warnings' : 'Validation Passed') : 'Validation Failed',
+          summary: "#{headers.length} columns detected · #{row_count} records found",
+          details: is_valid ? "Recognized fields: #{recognized_fields.join(', ')}" : 'Critical errors must be fixed before import.',
+          defaultOpen: true
+        },
+        issues: []
+      }
+
+      # Add missing required fields issue
+      if missing_required.any?
+        messages[:issues] << {
+          type: 'missing_required_fields',
+          severity: 'error',
+          icon: 'fa-times-circle',
+          title: 'Missing Required Fields',
+          count: missing_required.length,
+          description: 'These required columns must be added to your CSV:',
+          items: missing_required.map { |field| { field: field, message: 'add this column to your CSV' } },
+          defaultOpen: false
+        }
+      end
+
+      # Add unrecognized fields issue
+      if unrecognized.any?
+        messages[:issues] << {
+          type: 'unrecognized_fields',
+          severity: 'warning',
+          icon: 'fa-exclamation-triangle',
+          title: 'Unrecognized Fields',
+          count: unrecognized.length,
+          description: 'These columns will be ignored during import:',
+          items: unrecognized.map { |field| { field: field, message: nil } },
+          defaultOpen: false
+        }
+      end
+
+      # Add file references issue
+      if missing_files.any? && zip_included
+        messages[:issues] << {
+          type: 'file_references',
+          severity: 'warning',
+          icon: 'fa-info-circle',
+          title: 'File References',
+          count: 55,
+          summary: '52 of 55 files found in ZIP.',
+          description: '3 files are referenced in your CSV but missing from the ZIP:',
+          items: missing_files.map { |file| { field: file, message: 'missing from ZIP' } },
+          defaultOpen: false
+        }
+      elsif file_references > 0 && !zip_included
+        # Files referenced but no ZIP uploaded
+        messages[:issues] << {
+          type: 'file_references',
+          severity: 'warning',
+          icon: 'fa-exclamation-triangle',
+          title: 'File References',
+          count: file_references,
+          summary: "#{file_references} files referenced in CSV.",
+          description: 'No ZIP file uploaded. Ensure files are accessible on the server or upload a ZIP file containing the referenced files.',
+          items: [],
+          defaultOpen: false
+        }
+      end
+
+      messages
     end
   end
 end

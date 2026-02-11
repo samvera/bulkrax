@@ -78,11 +78,24 @@
 
               <!-- Demo Scenarios (for testing) -->
               <div class="demo-scenarios" style="display: none;">
-                <p class="small text-primary"><strong>Demo: Pick an upload scenario</strong></p>
-                <button type="button" class="btn btn-sm btn-outline-secondary btn-block scenario-btn" data-scenario="csv_only">CSV only</button>
-                <button type="button" class="btn btn-sm btn-outline-secondary btn-block scenario-btn" data-scenario="zip_files_only">ZIP (files only, no CSV)</button>
-                <button type="button" class="btn btn-sm btn-outline-secondary btn-block scenario-btn" data-scenario="zip_with_csv">ZIP with CSV inside</button>
-                <button type="button" class="btn btn-sm btn-outline-secondary btn-block scenario-btn" data-scenario="csv_and_zip">CSV + ZIP (separate)</button>
+                <p class="small text-primary"><strong>Demo: Pick a validation scenario</strong></p>
+                <div style="margin-bottom: 10px;">
+                  <p class="small text-muted mb-1"><strong>✓ Success</strong></p>
+                  <button type="button" class="btn btn-sm btn-outline-success btn-block scenario-btn" data-scenario="success_no_issues">Perfect - No issues</button>
+                  <button type="button" class="btn btn-sm btn-outline-success btn-block scenario-btn" data-scenario="success_with_files">All files found in ZIP</button>
+                </div>
+                <div style="margin-bottom: 10px;">
+                  <p class="small text-muted mb-1"><strong>⚠ Warnings</strong></p>
+                  <button type="button" class="btn btn-sm btn-outline-warning btn-block scenario-btn" data-scenario="warning_unrecognized">Unrecognized fields</button>
+                  <button type="button" class="btn btn-sm btn-outline-warning btn-block scenario-btn" data-scenario="warning_missing_files">Missing files from ZIP</button>
+                  <button type="button" class="btn btn-sm btn-outline-warning btn-block scenario-btn" data-scenario="warning_no_zip">Files referenced, no ZIP</button>
+                  <button type="button" class="btn btn-sm btn-outline-warning btn-block scenario-btn" data-scenario="warning_combined">Combined warnings</button>
+                </div>
+                <div>
+                  <p class="small text-muted mb-1"><strong>✗ Errors</strong></p>
+                  <button type="button" class="btn btn-sm btn-outline-danger btn-block scenario-btn" data-scenario="error_missing_required">Missing required fields</button>
+                  <button type="button" class="btn btn-sm btn-outline-danger btn-block scenario-btn" data-scenario="error_combined">Errors + warnings</button>
+                </div>
               </div>
             </div>
 
@@ -133,14 +146,14 @@
           <!-- Validation Results (hidden initially) -->
           <div class="validation-results" style="display: none;">
 
-            <!-- Import Size Gauge -->
-            <div class="import-size-gauge">
-              <!-- Will be populated by JS -->
-            </div>
-
             <!-- Validation Status Accordion -->
             <div class="accordion-wrapper">
               <!-- Validation accordions will be added by JS -->
+            </div>
+
+            <!-- Import Size Gauge -->
+            <div class="import-size-gauge">
+              <!-- Will be populated by JS -->
             </div>
 
             <!-- Import Summary -->
