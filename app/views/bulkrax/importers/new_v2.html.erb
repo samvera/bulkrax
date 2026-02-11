@@ -132,10 +132,27 @@
             </div>
           </div>
 
+          <div class="upload-notifications" id="upload-notifications">
+            <!-- Notifications will be added here dynamically -->
+          </div>
+
           <!-- Download Template Link -->
           <div class="download-template-link">
             <span class="fa fa-download text-primary"></span>
             <a href="<%= sample_csv_file_importers_path %>" class="text-primary" download>Download CSV template for your tenant</a>
+          </div>
+
+          <!-- Admin Set -->
+          <div class="form-group">
+            <%= f.label :admin_set_id, 'Admin Set', class: 'control-label' do %>
+              Admin Set <span class="text-danger">*</span>
+            <% end %>
+            <% admin_sets = available_admin_sets %>
+            <% default_admin_set = admin_sets.find { |name, id| name.include?('Default') }&.last %>
+            <%= f.select :admin_set_id,
+                options_for_select([['Select an admin set...', '']] + admin_sets, default_admin_set),
+                {},
+                { class: 'form-control', required: true } %>
           </div>
 
           <!-- Validate Button -->
@@ -200,9 +217,15 @@
             <button type="button" class="btn btn-secondary" disabled>
               <span class="fa fa-arrow-left"></span> Back
             </button>
-            <button type="button" class="btn btn-primary step-next-btn" data-next-step="2" disabled>
-              Next <span class="fa fa-arrow-right"></span>
-            </button>
+            <div>
+              <label class="skip-validation-label">
+                <input type="checkbox" id="skip-validation-checkbox" disabled>
+                <span>Skip validation</span>
+              </label>
+              <button type="button" class="btn btn-primary step-next-btn" data-next-step="2" disabled>
+                Next <span class="fa fa-arrow-right"></span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -220,18 +243,6 @@
                 Import Name <span class="text-danger">*</span>
               <% end %>
               <%= f.text_field :name, class: 'form-control', value: "CSV Import - #{Date.today.strftime('%m/%d/%Y')}", required: true %>
-            </div>
-
-            <!-- Admin Set -->
-            <div class="form-group">
-              <%= f.label :admin_set_id, 'Admin Set', class: 'control-label' do %>
-                Admin Set <span class="text-danger">*</span>
-              <% end %>
-              <% admin_sets = defined?(AdminSet) ? AdminSet.all.map { |as| [as.title.first, as.id] } : [] %>
-              <%= f.select :admin_set_id,
-                  options_for_select([['Select an admin set...', '']] + admin_sets),
-                  {},
-                  { class: 'form-control', required: true } %>
             </div>
 
             <!-- Default Visibility -->

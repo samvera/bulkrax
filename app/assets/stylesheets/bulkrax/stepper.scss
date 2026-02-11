@@ -315,6 +315,18 @@
   margin-bottom: 0;
 }
 
+.file-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.file-remove-btn {
+  border: 0;
+  color: #d33a35;
+  background: unset;
+}
+
 .file-info {
   display: flex;
   align-items: center;
@@ -1054,6 +1066,91 @@
 
 .step-navigation .fa {
   font-size: 14px;
+}
+
+.upload-notifications {
+  margin-top: 15px;
+}
+
+.upload-notification {
+  padding: 12px 16px;
+  margin-bottom: 10px;
+  border-radius: 4px;
+  border-left: 4px solid;
+  display: flex;
+  align-items: flex-start;
+  animation: slideIn 0.3s ease-out;
+  align-items: center;
+}
+
+.upload-notification.notification-error {
+  background-color: #f8d7da;
+  border-color: #dc3545;
+  color: #721c24;
+}
+
+.upload-notification.notification-warning {
+  background-color: #fff3cd;
+  border-color: #ffc107;
+  color: #856404;
+}
+
+.upload-notification.notification-info {
+  background-color: #d1ecf1;
+  border-color: #17a2b8;
+  color: #0c5460;
+}
+
+.upload-notification-icon {
+  margin-right: 12px;
+  font-size: 18px;
+}
+
+.upload-notification-content {
+  flex: 1;
+}
+
+.upload-notification-close {
+  margin-left: 12px;
+  cursor: pointer;
+  opacity: 0.5;
+}
+
+.upload-notification-close:hover {
+  opacity: 1;
+}
+
+.step-navigation {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 15px;
+}
+
+.skip-validation-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 8px 0;
+  font-weight: normal;
+  cursor: pointer;
+  user-select: none;
+  font-size: 14px;
+}
+
+.skip-validation-label input[type="checkbox"] {
+  cursor: pointer;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* ====== Responsive ====== */

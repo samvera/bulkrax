@@ -38,7 +38,9 @@
   // Bind all event handlers
   function bindEvents() {
     // File upload - main dropzone
-    $('.upload-dropzone').on('click', function () {
+    $('.upload-dropzone').on('click', function (e) {
+      if (e.target.id === 'file-input') return
+
       StepperState.isAddingFiles = false
       $('#file-input').trigger('click')
     })
@@ -89,7 +91,7 @@
 
         // Show warning if more than 2 files were dropped
         if (droppedFiles.length > 2) {
-          alert(
+          showNotification(
             'Only the first 2 files have been uploaded. You can upload up to 2 files (1 CSV and 1 ZIP).'
           )
         }
@@ -126,7 +128,7 @@
 
         // Show warning if more than 1 file was dropped
         if (droppedFiles.length > 1) {
-          alert(
+          showNotification(
             'Only 1 additional file can be added. The first file has been added.'
           )
         }
@@ -134,7 +136,7 @@
     })
 
     // Demo scenarios (for testing)
-    $('.upload-dropzone').on('dblclick', function () {
+    $('.step-circle').on('dblclick', function () {
       $('.demo-scenarios').toggle()
     })
 
@@ -201,6 +203,45 @@
 
     $('#bulkrax_importer_limit').on('input', function () {
       StepperState.settings.limit = $(this).val()
+    })
+
+    // Remove file button (using event delegation since rows are dynamic)
+    $(document).on('click', '.file-remove-btn', function() {
+      var $row = $(this).closest('.file-row')
+      var fileName = $row.find('.file-name').text()
+
+      // Remove from uploadedFiles array
+      StepperState.uploadedFiles = StepperState.uploadedFiles.filter(
+        file => file.name !== fileName
+      )
+
+      // Remove the row
+      $row.remove()
+      $('#file-input').val('')
+
+      // If no files left, reset to empty state
+      if (StepperState.uploadedFiles.length === 0) {
+        StepperState.validated = false
+        StepperState.validationData = null
+        StepperState.skipValidation = false
+        $('.validation-results').hide()
+        $('.warning-acknowledgment').hide()
+        $('#validate-btn')
+          .prop('disabled', true)
+          .html('<span class="fa fa-file-text"></span> Validate Files')
+        $('#skip-validation-checkbox').prop('checked', false)
+      }
+
+      // Update upload state and re-render
+      updateUploadState()
+      renderUploadedFiles()
+      updateStepNavigation()
+    })
+
+    // Skip validation checkbox
+    $('#skip-validation-checkbox').on('change', function() {
+      StepperState.skipValidation = $(this).is(':checked')
+      updateStepNavigation()
     })
   }
 
@@ -324,9 +365,9 @@
         messages.push('Maximum of 2 files reached (1 CSV and 1 ZIP).')
       }
 
-      alert(messages.join('\n\n'))
+      showNotification(messages.join('\n\n'))
     } else if (files.length > addedFiles.length) {
-      alert(
+      showNotification(
         'Maximum of 2 files allowed (1 CSV and 1 ZIP). Only the first ' +
           addedFiles.length +
           ' file(s) were added.'
@@ -469,6 +510,7 @@
       $('.add-another-dropzone').hide()
       $('.start-over-link').hide()
       $('#validate-btn').prop('disabled', true)
+      $('#skip-validation-checkbox').prop('disabled', true) // Disable checkbox when empty
       return
     }
 
@@ -535,6 +577,9 @@
       'disabled',
       !(hasCsv || hasZip) || StepperState.validated
     )
+
+    // Enable skip validation checkbox only if we have a CSV or ZIP
+    $('#skip-validation-checkbox').prop('disabled', !(hasCsv || hasZip))
   }
 
   // Render a single file row
@@ -562,7 +607,12 @@
       '</div>' +
       '</div>' +
       '</div>' +
+      '<div class="file-actions">' +
       checkmark +
+      '<button type="button" class="file-remove-btn" aria-label="Remove file">' +
+      '<span class="fa fa-times"></span>' +
+      '</button>' +
+      '</div>' +
       '</div>'
     )
   }
@@ -574,10 +624,17 @@
     StepperState.validated = false
     StepperState.validationData = null
     StepperState.warningsAcked = false
+    StepperState.skipValidation = false
     StepperState.demoScenario = null
     $('#file-input').val('')
     $('.validation-results').hide()
     $('.warning-acknowledgment').hide()
+
+    // Clear all notifications
+    $('#upload-notifications').empty()
+
+    // Reset skip validation checkbox
+    $('#skip-validation-checkbox').prop('checked', false)
 
     // Reset validate button to original state
     $('#validate-btn')
@@ -633,7 +690,7 @@
           if (xhr.responseJSON && xhr.responseJSON.error) {
             errorMsg = xhr.responseJSON.error
           }
-          alert(errorMsg)
+          showNotification(errorMsg)
           $btn
             .prop('disabled', false)
             .html('<span class="fa fa-file-text"></span> Validate Files')
@@ -1051,15 +1108,12 @@
     var step = StepperState.currentStep
 
     if (step === 1) {
-      var canProceed =
-        StepperState.validated &&
+      var canProceed = StepperState.skipValidation ||
+        (StepperState.validated &&
         StepperState.validationData.isValid &&
-        (!StepperState.validationData.hasWarnings || StepperState.warningsAcked)
+        (!StepperState.validationData.hasWarnings || StepperState.warningsAcked))
 
-      $('.step-content[data-step="1"] .step-next-btn').prop(
-        'disabled',
-        !canProceed
-      )
+      $('.step-content[data-step="1"] .step-next-btn').prop('disabled', !canProceed)
     } else if (step === 2) {
       var canProceed =
         StepperState.settings.name && StepperState.settings.adminSetId
@@ -1698,6 +1752,33 @@
     var sizes = ['Bytes', 'KB', 'MB', 'GB']
     var i = Math.floor(Math.log(bytes) / Math.log(k))
     return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i]
+  }
+
+  function showNotification(message, type) {
+    type = type || 'info' // 'error', 'warning', 'info'
+
+    var icons = {
+      error: 'fa-times-circle',
+      warning: 'fa-exclamation-triangle',
+      info: 'fa-info-circle'
+    }
+
+    var $notification = $(
+      '<div class="upload-notification notification-' + type + '">' +
+      '<span class="fa ' + icons[type] + ' upload-notification-icon"></span>' +
+      '<div class="upload-notification-content">' + message + '</div>' +
+      '<span class="fa fa-times upload-notification-close"></span>' +
+      '</div>'
+    )
+
+    $('#upload-notifications').append($notification)
+
+    // Click to dismiss
+    $notification.find('.upload-notification-close').on('click', function() {
+      $notification.fadeOut(300, function() {
+        $(this).remove()
+      })
+    })
   }
 
   // Initialize on document ready and turbolinks load
