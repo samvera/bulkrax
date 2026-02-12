@@ -121,6 +121,30 @@
             "title": "The Librarian",
             "type": "work",
             "parentId": "col-1b"
+          },
+          {
+            "id": "work-13",
+            "title": "Parent Work",
+            "type": "work",
+            "parentId": null
+          },
+          {
+            "id": "work-14",
+            "title": "Child Work",
+            "type": "work",
+            "parentId": "work-13"
+          },
+          {
+            "id": "work-15",
+            "title": "Parent Work with Collection Parent",
+            "type": "work",
+            "parentId": "col-1"
+          },
+          {
+            "id": "work-16",
+            "title": "Child Work of Work with Collection Parent",
+            "type": "work",
+            "parentId": "work-15"
           }
         ],
         "fileSets": [
