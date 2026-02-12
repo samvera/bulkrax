@@ -139,7 +139,10 @@ module Bulkrax
 
       after do
         after_filenames.each do |file_path|
-          File.delete(file_path)
+          File.delete(file_path) if File.exist?(file_path)
+        end
+        before_filenames.each do |file_path|
+          File.delete(file_path) if File.exist?(file_path)
         end
       end
 
@@ -159,6 +162,45 @@ module Bulkrax
         parser.remove_spaces_from_filenames
 
         expect(File.exist?('spec/fixtures/csv/files/no_space.jpg')).to eq(true)
+      end
+
+      context 'when files are nested inside an extra parent directory' do
+        let(:tmp_dir) { Dir.mktmpdir }
+        let(:nested_files_dir) { File.join(tmp_dir, 'subdir', 'files') }
+        let(:file_with_spaces) { File.join(nested_files_dir, 'doc with spaces.pdf') }
+        let(:file_without_spaces) { File.join(nested_files_dir, 'plain.pdf') }
+
+        before do
+          FileUtils.mkdir_p(nested_files_dir)
+          File.write(file_with_spaces, 'w')
+          File.write(file_without_spaces, 'w')
+
+          allow(parser).to receive(:importer_unzip_path).and_return(tmp_dir)
+          # Let Dir.glob run for real in this context
+          allow(Dir).to receive(:glob).and_call_original
+        end
+
+        after do
+          FileUtils.remove_entry(tmp_dir)
+        end
+
+        it 'renames files in the nested files directory' do
+          expect(File.exist?(file_with_spaces)).to eq(true)
+          expect(File.exist?(File.join(nested_files_dir, 'doc_with_spaces.pdf'))).to eq(false)
+
+          parser.remove_spaces_from_filenames
+
+          expect(File.exist?(file_with_spaces)).to eq(false)
+          expect(File.exist?(File.join(nested_files_dir, 'doc_with_spaces.pdf'))).to eq(true)
+        end
+
+        it 'does not alter files without spaces in their name' do
+          expect(File.exist?(file_without_spaces)).to eq(true)
+
+          parser.remove_spaces_from_filenames
+
+          expect(File.exist?(file_without_spaces)).to eq(true)
+        end
       end
     end
   end

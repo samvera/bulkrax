@@ -565,6 +565,36 @@ module Bulkrax
           expect(subject.path_to_files).to eq('spec/fixtures/csv/files/')
         end
       end
+
+      context 'when the zip contains an extra parent directory' do
+        let(:tmp_dir) { Dir.mktmpdir }
+        let(:nested_dir) { File.join(tmp_dir, 'sub_dir') }
+        let(:files_dir) { File.join(nested_dir, 'files') }
+        let(:csv_path) { File.join(nested_dir, 'export.csv') }
+
+        before do
+          FileUtils.mkdir_p(files_dir)
+          FileUtils.touch(csv_path)
+          FileUtils.touch(File.join(files_dir, 'test_video.mp4'))
+
+          allow(subject).to receive(:zip?).and_return(true)
+          allow(subject).to receive(:file?).and_return(true)
+          allow(subject).to receive(:importer_unzip_path).and_return(tmp_dir)
+          allow(subject).to receive(:import_file_path).and_return(csv_path)
+        end
+
+        after do
+          FileUtils.remove_entry(tmp_dir)
+        end
+
+        it 'finds the files directory as a sibling of the CSV' do
+          expect(subject.path_to_files).to eq(File.join(files_dir, ''))
+        end
+
+        it 'finds a specific file in the nested files directory' do
+          expect(subject.path_to_files(filename: 'test_video.mp4')).to eq(File.join(files_dir, 'test_video.mp4'))
+        end
+      end
     end
 
     describe '#missing_elements' do
