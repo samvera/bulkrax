@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-RSpec.describe Bulkrax::SampleCsvService::SplitFormatter do
+RSpec.describe Bulkrax::CsvValidationService::SplitFormatter do
   let(:formatter) { described_class.new }
 
   describe '#format' do

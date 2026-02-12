@@ -2,12 +2,12 @@
 
 require 'rails_helper'
 
-RSpec.describe Bulkrax::SampleCsvService::ColumnBuilder do
-  let(:service) { instance_double(Bulkrax::SampleCsvService) }
+RSpec.describe Bulkrax::CsvValidationService::ColumnBuilder do
+  let(:service) { instance_double(Bulkrax::CsvValidationService) }
   let(:column_builder) { described_class.new(service) }
-  let(:mapping_manager) { instance_double(Bulkrax::SampleCsvService::MappingManager) }
-  let(:field_analyzer) { instance_double(Bulkrax::SampleCsvService::FieldAnalyzer) }
-  let(:descriptor) { instance_double(Bulkrax::SampleCsvService::ColumnDescriptor) }
+  let(:mapping_manager) { instance_double(Bulkrax::CsvValidationService::MappingManager) }
+  let(:field_analyzer) { instance_double(Bulkrax::CsvValidationService::FieldAnalyzer) }
+  let(:descriptor) { instance_double(Bulkrax::CsvValidationService::ColumnDescriptor) }
 
   let(:mappings) do
     {
@@ -17,7 +17,7 @@ RSpec.describe Bulkrax::SampleCsvService::ColumnBuilder do
   end
 
   before do
-    allow(Bulkrax::SampleCsvService::ColumnDescriptor).to receive(:new).and_return(descriptor)
+    allow(Bulkrax::CsvValidationService::ColumnDescriptor).to receive(:new).and_return(descriptor)
     allow(service).to receive(:mapping_manager).and_return(mapping_manager)
     allow(service).to receive(:field_analyzer).and_return(field_analyzer)
     allow(service).to receive(:mappings).and_return(mappings)
@@ -28,7 +28,7 @@ RSpec.describe Bulkrax::SampleCsvService::ColumnBuilder do
     it 'creates a ColumnDescriptor' do
       described_class.new(service)
 
-      expect(Bulkrax::SampleCsvService::ColumnDescriptor).to have_received(:new)
+      expect(Bulkrax::CsvValidationService::ColumnDescriptor).to have_received(:new)
     end
 
     it 'stores the service reference' do
@@ -220,7 +220,7 @@ RSpec.describe Bulkrax::SampleCsvService::ColumnBuilder do
 
     describe '#file_columns' do
       before do
-        stub_const('Bulkrax::SampleCsvService::ColumnDescriptor::COLUMN_DESCRIPTIONS', {
+        stub_const('Bulkrax::CsvValidationService::ColumnDescriptor::COLUMN_DESCRIPTIONS', {
                      files: [
                        { "file" => "File description" }
                      ]
@@ -282,7 +282,7 @@ RSpec.describe Bulkrax::SampleCsvService::ColumnBuilder do
           end
         end
 
-        stub_const('Bulkrax::SampleCsvService::ColumnDescriptor::COLUMN_DESCRIPTIONS', {
+        stub_const('Bulkrax::CsvValidationService::ColumnDescriptor::COLUMN_DESCRIPTIONS', {
                      files: [
                        { "file" => "File description" }
                      ]

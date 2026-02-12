@@ -2,7 +2,7 @@
 
 module Bulkrax
   # Handles loading and filtering of Bulkrax field mappings
-  class SampleCsvService::MappingManager
+  class CsvValidationService::MappingManager
     attr_reader :mappings
 
     def initialize

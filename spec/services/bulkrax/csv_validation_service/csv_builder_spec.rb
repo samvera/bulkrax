@@ -3,16 +3,16 @@
 require 'rails_helper'
 require 'csv'
 
-RSpec.describe Bulkrax::SampleCsvService::CsvBuilder do
-  let(:service) { instance_double(Bulkrax::SampleCsvService) }
+RSpec.describe Bulkrax::CsvValidationService::CsvBuilder do
+  let(:service) { instance_double(Bulkrax::CsvValidationService) }
   let(:csv_builder) { described_class.new(service) }
-  let(:column_builder) { instance_double(Bulkrax::SampleCsvService::ColumnBuilder) }
-  let(:row_builder) { instance_double(Bulkrax::SampleCsvService::RowBuilder) }
+  let(:column_builder) { instance_double(Bulkrax::CsvValidationService::ColumnBuilder) }
+  let(:row_builder) { instance_double(Bulkrax::CsvValidationService::RowBuilder) }
 
   before do
     # Allow the builder instances to be created
-    allow(Bulkrax::SampleCsvService::ColumnBuilder).to receive(:new).with(service).and_return(column_builder)
-    allow(Bulkrax::SampleCsvService::RowBuilder).to receive(:new).with(service).and_return(row_builder)
+    allow(Bulkrax::CsvValidationService::ColumnBuilder).to receive(:new).with(service).and_return(column_builder)
+    allow(Bulkrax::CsvValidationService::RowBuilder).to receive(:new).with(service).and_return(row_builder)
   end
 
   describe 'IGNORED_PROPERTIES' do
@@ -27,8 +27,8 @@ RSpec.describe Bulkrax::SampleCsvService::CsvBuilder do
     it 'creates column and row builders with the service' do
       described_class.new(service)
 
-      expect(Bulkrax::SampleCsvService::ColumnBuilder).to have_received(:new).with(service)
-      expect(Bulkrax::SampleCsvService::RowBuilder).to have_received(:new).with(service)
+      expect(Bulkrax::CsvValidationService::ColumnBuilder).to have_received(:new).with(service)
+      expect(Bulkrax::CsvValidationService::RowBuilder).to have_received(:new).with(service)
     end
 
     it 'initializes header_row and required_headings as empty' do

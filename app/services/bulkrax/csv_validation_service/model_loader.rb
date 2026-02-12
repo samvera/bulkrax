@@ -2,7 +2,7 @@
 
 module Bulkrax
   # Handles model loading based on configuration
-  class SampleCsvService::ModelLoader
+  class CsvValidationService::ModelLoader
     attr_reader :models
 
     def initialize(models)

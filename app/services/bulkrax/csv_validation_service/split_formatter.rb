@@ -2,7 +2,7 @@
 
 module Bulkrax
   # Formats split pattern descriptions
-  class SampleCsvService::SplitFormatter
+  class CsvValidationService::SplitFormatter
     def format(split_value)
       return "Property does not split." if split_value.nil?
 

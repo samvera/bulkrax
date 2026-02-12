@@ -13,7 +13,7 @@ RSpec.describe Bulkrax::CsvValidationService::ColumnResolver do
                                                               'parents' => { 'from' => ['parents'], 'related_parents_field_mapping' => true }
                                                             }
                                                           })
-    Bulkrax::SampleCsvService::MappingManager.new
+    Bulkrax::CsvValidationService::MappingManager.new
   end
 
   let(:custom_mapping_manager) do
@@ -26,7 +26,7 @@ RSpec.describe Bulkrax::CsvValidationService::ColumnResolver do
                                                               'parents' => { 'from' => ['parent_collection'], 'related_parents_field_mapping' => true }
                                                             }
                                                           })
-    Bulkrax::SampleCsvService::MappingManager.new
+    Bulkrax::CsvValidationService::MappingManager.new
   end
 
   describe '#model_column_name' do
@@ -58,7 +58,7 @@ RSpec.describe Bulkrax::CsvValidationService::ColumnResolver do
                                                                 'title' => { 'from' => ['title'] }
                                                               }
                                                             })
-      mapping_manager = Bulkrax::SampleCsvService::MappingManager.new
+      mapping_manager = Bulkrax::CsvValidationService::MappingManager.new
       resolver = described_class.new(mapping_manager)
       csv_headers = ['identifier', 'title']
 
@@ -67,7 +67,7 @@ RSpec.describe Bulkrax::CsvValidationService::ColumnResolver do
 
     it 'defaults to source_identifier when nothing found' do
       allow(Bulkrax).to receive(:field_mappings).and_return({ 'Bulkrax::CsvParser' => {} })
-      mapping_manager = Bulkrax::SampleCsvService::MappingManager.new
+      mapping_manager = Bulkrax::CsvValidationService::MappingManager.new
       resolver = described_class.new(mapping_manager)
       expect(resolver.source_identifier_column_name([])).to eq('source_identifier')
     end
@@ -90,7 +90,7 @@ RSpec.describe Bulkrax::CsvValidationService::ColumnResolver do
                                                                 'title' => { 'from' => ['title'] }
                                                               }
                                                             })
-      mapping_manager = Bulkrax::SampleCsvService::MappingManager.new
+      mapping_manager = Bulkrax::CsvValidationService::MappingManager.new
       resolver = described_class.new(mapping_manager)
       csv_headers = ['parent', 'title']
 
@@ -99,7 +99,7 @@ RSpec.describe Bulkrax::CsvValidationService::ColumnResolver do
 
     it 'defaults to parents when nothing found' do
       allow(Bulkrax).to receive(:field_mappings).and_return({ 'Bulkrax::CsvParser' => {} })
-      mapping_manager = Bulkrax::SampleCsvService::MappingManager.new
+      mapping_manager = Bulkrax::CsvValidationService::MappingManager.new
       resolver = described_class.new(mapping_manager)
       expect(resolver.parent_column_name([])).to eq('parents')
     end
@@ -122,7 +122,7 @@ RSpec.describe Bulkrax::CsvValidationService::ColumnResolver do
                                                                 'title' => { 'from' => ['title'] }
                                                               }
                                                             })
-      mapping_manager = Bulkrax::SampleCsvService::MappingManager.new
+      mapping_manager = Bulkrax::CsvValidationService::MappingManager.new
       resolver = described_class.new(mapping_manager)
       csv_headers = ['remote_files', 'title']
 
@@ -131,7 +131,7 @@ RSpec.describe Bulkrax::CsvValidationService::ColumnResolver do
 
     it 'defaults to file when nothing found' do
       allow(Bulkrax).to receive(:field_mappings).and_return({ 'Bulkrax::CsvParser' => {} })
-      mapping_manager = Bulkrax::SampleCsvService::MappingManager.new
+      mapping_manager = Bulkrax::CsvValidationService::MappingManager.new
       resolver = described_class.new(mapping_manager)
       expect(resolver.file_column_name([])).to eq('file')
     end

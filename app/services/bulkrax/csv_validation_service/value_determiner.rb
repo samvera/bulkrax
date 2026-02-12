@@ -2,10 +2,10 @@
 
 module Bulkrax
   # Determines values for CSV cells
-  class SampleCsvService::ValueDeterminer
+  class CsvValidationService::ValueDeterminer
     def initialize(service)
       @service = service
-      @column_builder = SampleCsvService::ColumnBuilder.new(service)
+      @column_builder = CsvValidationService::ColumnBuilder.new(service)
     end
 
     def determine_value(column, model_name, field_list)
@@ -22,7 +22,7 @@ module Bulkrax
     private
 
     def special_column?(column, key)
-      descriptor = SampleCsvService::ColumnDescriptor.new
+      descriptor = CsvValidationService::ColumnDescriptor.new
       visibility_cols = descriptor.send(:extract_column_names, :visibility)
 
       key.in?(['model', 'work_type']) ||
@@ -34,7 +34,7 @@ module Bulkrax
     end
 
     def special_value(column, key, model_name, required_terms)
-      return SampleCsvService::ModelLoader.determine_klass_for(model_name).to_s if key.in?(['model', 'work_type'])
+      return CsvValidationService::ModelLoader.determine_klass_for(model_name).to_s if key.in?(['model', 'work_type'])
       return 'Required' if column == 'source_identifier'
       return mark_required_or_optional(key, required_terms) if column == 'rights_statement'
       # collections do not have files
@@ -56,7 +56,7 @@ module Bulkrax
     end
 
     def file_column?(column)
-      file_cols = SampleCsvService::ColumnDescriptor::COLUMN_DESCRIPTIONS[:files].flat_map do |property_hash|
+      file_cols = CsvValidationService::ColumnDescriptor::COLUMN_DESCRIPTIONS[:files].flat_map do |property_hash|
         property_hash.keys.filter_map do |key|
           @service.mappings.dig(key, "from")&.first
         end

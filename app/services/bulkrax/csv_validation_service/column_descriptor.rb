@@ -2,7 +2,7 @@
 
 module Bulkrax
   # Manages column descriptions and metadata
-  class SampleCsvService::ColumnDescriptor
+  class CsvValidationService::ColumnDescriptor
     COLUMN_DESCRIPTIONS = {
       include_first: [
         { "model" => "The work types configured in your repository are listed below.\nIf left blank, your default work type, #{Bulkrax.default_work_type}, is used." },

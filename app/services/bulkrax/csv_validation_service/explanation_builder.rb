@@ -2,11 +2,11 @@
 
 module Bulkrax
   # Builds explanations for CSV columns
-  class SampleCsvService::ExplanationBuilder
+  class CsvValidationService::ExplanationBuilder
     def initialize(service)
       @service = service
-      @descriptor = SampleCsvService::ColumnDescriptor.new
-      @split_formatter = SampleCsvService::SplitFormatter.new
+      @descriptor = CsvValidationService::ColumnDescriptor.new
+      @split_formatter = CsvValidationService::SplitFormatter.new
     end
 
     def build_explanations(header_row)

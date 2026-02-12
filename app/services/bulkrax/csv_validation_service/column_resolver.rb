@@ -18,7 +18,7 @@ module Bulkrax
     #   'source_identifier' => { from: ['source_id'] }
     #
     # @example
-    #   mapping_manager = SampleCsvService::MappingManager.new
+    #   mapping_manager = CsvValidationService::MappingManager.new
     #   resolver = ColumnResolver.new(mapping_manager)
     #   resolver.model_column_name(['work_type', 'title'])      # => 'work_type'
     #   resolver.source_identifier_column_name(['source_id', 'title']) # => 'source_id'
@@ -26,7 +26,7 @@ module Bulkrax
     class ColumnResolver
       # Initialize the column resolver
       #
-      # @param mapping_manager [SampleCsvService::MappingManager] Mapping manager instance
+      # @param mapping_manager [CsvValidationService::MappingManager] Mapping manager instance
       def initialize(mapping_manager)
         @mapping_manager = mapping_manager
       end

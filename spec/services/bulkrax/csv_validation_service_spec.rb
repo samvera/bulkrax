@@ -142,11 +142,11 @@ RSpec.describe Bulkrax::CsvValidationService do
       end
 
       it 'initializes field analyzer' do
-        expect(service.field_analyzer).to be_a(Bulkrax::SampleCsvService::FieldAnalyzer)
+        expect(service.field_analyzer).to be_a(Bulkrax::CsvValidationService::FieldAnalyzer)
       end
 
       it 'provides mapping_manager accessor' do
-        expect(service.mapping_manager).to be_a(Bulkrax::SampleCsvService::MappingManager)
+        expect(service.mapping_manager).to be_a(Bulkrax::CsvValidationService::MappingManager)
       end
     end
 
@@ -162,7 +162,7 @@ RSpec.describe Bulkrax::CsvValidationService do
       end
 
       it 'provides access to field analyzer' do
-        expect(service.field_analyzer).to be_a(Bulkrax::SampleCsvService::FieldAnalyzer)
+        expect(service.field_analyzer).to be_a(Bulkrax::CsvValidationService::FieldAnalyzer)
       end
     end
   end

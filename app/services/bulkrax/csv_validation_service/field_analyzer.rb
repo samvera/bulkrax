@@ -2,7 +2,7 @@
 
 module Bulkrax
   # Analyzes model fields and schemas
-  class SampleCsvService::FieldAnalyzer
+  class CsvValidationService::FieldAnalyzer
     attr_reader :field_list
 
     def initialize(mappings)
@@ -15,7 +15,7 @@ module Bulkrax
       existing = @field_list.find { |entry| entry.key?(model_name) }
       return existing if existing.present?
 
-      klass = SampleCsvService::ModelLoader.determine_klass_for(model_name)
+      klass = CsvValidationService::ModelLoader.determine_klass_for(model_name)
       return {} if klass.nil?
 
       model_entry = build_field_list_entry(model_name, klass)
@@ -32,7 +32,7 @@ module Bulkrax
     private
 
     def build_field_list_entry(model_name, klass)
-      schema_analyzer = SampleCsvService::SchemaAnalyzer.new(klass)
+      schema_analyzer = CsvValidationService::SchemaAnalyzer.new(klass)
 
       {
         model_name => {

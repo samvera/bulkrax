@@ -2,7 +2,7 @@
 
 module Bulkrax
   # Builds CSV content
-  class SampleCsvService::CsvBuilder
+  class CsvValidationService::CsvBuilder
     IGNORED_PROPERTIES = %w[
       admin_set_id alternate_ids
       bulkrax_identifier
@@ -24,8 +24,8 @@ module Bulkrax
 
     def initialize(service)
       @service = service
-      @column_builder = SampleCsvService::ColumnBuilder.new(service)
-      @row_builder = SampleCsvService::RowBuilder.new(service)
+      @column_builder = CsvValidationService::ColumnBuilder.new(service)
+      @row_builder = CsvValidationService::RowBuilder.new(service)
       @header_row = nil
       @required_headings = []
     end

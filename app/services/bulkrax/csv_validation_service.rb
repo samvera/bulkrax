@@ -58,13 +58,6 @@ module Bulkrax
   class CsvValidationService
     attr_reader :mappings, :all_models
 
-    # Subclasses for validation mode
-    autoload :CsvParser, 'bulkrax/csv_validation_service/csv_parser'
-    autoload :ColumnResolver, 'bulkrax/csv_validation_service/column_resolver'
-    autoload :Validator, 'bulkrax/csv_validation_service/validator'
-    autoload :FileValidator, 'bulkrax/csv_validation_service/file_validator'
-    autoload :ItemExtractor, 'bulkrax/csv_validation_service/item_extractor'
-
     # ============================================================================
     # CLASS METHODS - Primary entry points
     # ============================================================================
@@ -100,30 +93,30 @@ module Bulkrax
     # @param zip_file [File, nil] Zip archive for validation mode
     def initialize(models: nil, csv_file: nil, zip_file: nil)
       # Common initialization - load field mappings
-      @mapping_manager = SampleCsvService::MappingManager.new
+      @mapping_manager = CsvValidationService::MappingManager.new
       @mappings = @mapping_manager.mappings
 
       # Determine mode and load models accordingly
       if csv_file
         # Validation mode: initialize specialized components
-        @column_resolver = ColumnResolver.new(@mapping_manager)
-        @csv_parser = CsvParser.new(csv_file, @column_resolver)
+        @column_resolver = CsvValidationService::ColumnResolver.new(@mapping_manager)
+        @csv_parser = CsvValidationService::CsvParser.new(csv_file, @column_resolver)
         @all_models = @csv_parser.extract_models
         @csv_data = @csv_parser.parse_data
-        @file_validator = FileValidator.new(@csv_data, zip_file)
-        @item_extractor = ItemExtractor.new(@csv_data)
+        @file_validator = CsvValidationService::FileValidator.new(@csv_data, zip_file)
+        @item_extractor = CsvValidationService::ItemExtractor.new(@csv_data)
       else
         # Generation mode: use provided models
-        @all_models = SampleCsvService::ModelLoader.new(Array.wrap(models)).models
-        @csv_builder = SampleCsvService::CsvBuilder.new(self)
+        @all_models = CsvValidationService::ModelLoader.new(Array.wrap(models)).models
+        @csv_builder = CsvValidationService::CsvBuilder.new(self)
       end
 
       # Common components used by both modes
-      @field_analyzer = SampleCsvService::FieldAnalyzer.new(@mappings)
+      @field_analyzer = CsvValidationService::FieldAnalyzer.new(@mappings)
     end
 
     # ============================================================================
-    # TEMPLATE GENERATION METHODS (from SampleCsvService)
+    # TEMPLATE GENERATION METHODS (from CsvValidationService)
     # ============================================================================
 
     # Generate template as a file
@@ -132,7 +125,7 @@ module Bulkrax
     # @return [String] Path to written file
     def to_file(file_path: nil)
       ensure_csv_builder
-      file_path ||= SampleCsvService::FilePathGenerator.default_path
+      file_path ||= CsvValidationService::FilePathGenerator.default_path
       @csv_builder.write_to_file(file_path)
       file_path
     end
@@ -224,11 +217,11 @@ module Bulkrax
     def valid_headers_for_models
       @valid_headers ||= begin
         # Use ColumnBuilder to get all valid columns (it expects a service object)
-        column_builder = SampleCsvService::ColumnBuilder.new(self)
+        column_builder = CsvValidationService::ColumnBuilder.new(self)
         all_columns = column_builder.all_columns
 
         # Filter out ignored properties
-        filtered = all_columns - SampleCsvService::CsvBuilder::IGNORED_PROPERTIES
+        filtered = all_columns - CsvValidationService::CsvBuilder::IGNORED_PROPERTIES
         filtered
                          rescue StandardError => e
                            Rails.logger.error("Error building valid headers: #{e.message}")
@@ -246,7 +239,7 @@ module Bulkrax
 
     # Ensure CSV builder is initialized (for generation mode)
     def ensure_csv_builder
-      @csv_builder ||= SampleCsvService::CsvBuilder.new(self)
+      @csv_builder ||= CsvValidationService::CsvBuilder.new(self)
     end
   end
 end

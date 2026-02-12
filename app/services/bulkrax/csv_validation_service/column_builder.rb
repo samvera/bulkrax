@@ -2,10 +2,10 @@
 
 module Bulkrax
   # Builds column headers for CSV
-  class SampleCsvService::ColumnBuilder
+  class CsvValidationService::ColumnBuilder
     def initialize(service)
       @service = service
-      @descriptor = SampleCsvService::ColumnDescriptor.new
+      @descriptor = CsvValidationService::ColumnDescriptor.new
     end
 
     def all_columns
@@ -48,7 +48,7 @@ module Bulkrax
     end
 
     def file_columns
-      SampleCsvService::ColumnDescriptor::COLUMN_DESCRIPTIONS[:files].flat_map do |property_hash|
+      CsvValidationService::ColumnDescriptor::COLUMN_DESCRIPTIONS[:files].flat_map do |property_hash|
         property_hash.keys.map do |key|
           @service.mapping_manager.key_to_mapped_column(key)
         end

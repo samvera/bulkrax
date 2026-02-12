@@ -23,8 +23,8 @@ module Bulkrax
       # @param csv_headers [Array<String>] Headers from the CSV file
       # @param valid_headers [Array<String>] Valid headers for the models
       # @param field_metadata [Hash] Metadata about fields for each model
-      # @param mapping_manager [SampleCsvService::MappingManager] Field mapping manager
-      # @param file_validator [FileValidator] Optional file validator for warnings
+      # @param mapping_manager [CsvValidationService::MappingManager] Field mapping manager
+      # @param file_validator [CsvValidationService::FileValidator] Optional file validator for warnings
       def initialize(csv_headers, valid_headers, field_metadata, mapping_manager, file_validator = nil)
         @csv_headers = csv_headers || []
         @valid_headers = valid_headers || []

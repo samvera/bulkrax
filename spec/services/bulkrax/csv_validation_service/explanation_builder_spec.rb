@@ -2,12 +2,12 @@
 
 require 'rails_helper'
 
-RSpec.describe Bulkrax::SampleCsvService::ExplanationBuilder do
-  let(:service) { instance_double('SampleCsvService') }
+RSpec.describe Bulkrax::CsvValidationService::ExplanationBuilder do
+  let(:service) { instance_double('CsvValidationService') }
   let(:mapping_manager) { instance_double('MappingManager') }
   let(:field_analyzer) { instance_double('FieldAnalyzer') }
-  let(:column_descriptor) { instance_double(Bulkrax::SampleCsvService::ColumnDescriptor) }
-  let(:split_formatter) { instance_double(Bulkrax::SampleCsvService::SplitFormatter) }
+  let(:column_descriptor) { instance_double(Bulkrax::CsvValidationService::ColumnDescriptor) }
+  let(:split_formatter) { instance_double(Bulkrax::CsvValidationService::SplitFormatter) }
 
   subject(:builder) { described_class.new(service) }
 
@@ -16,8 +16,8 @@ RSpec.describe Bulkrax::SampleCsvService::ExplanationBuilder do
     allow(service).to receive(:field_analyzer).and_return(field_analyzer)
 
     # Stub the dependencies that are instantiated in initialize
-    allow(Bulkrax::SampleCsvService::ColumnDescriptor).to receive(:new).and_return(column_descriptor)
-    allow(Bulkrax::SampleCsvService::SplitFormatter).to receive(:new).and_return(split_formatter)
+    allow(Bulkrax::CsvValidationService::ColumnDescriptor).to receive(:new).and_return(column_descriptor)
+    allow(Bulkrax::CsvValidationService::SplitFormatter).to receive(:new).and_return(split_formatter)
   end
 
   describe '#build_explanations' do

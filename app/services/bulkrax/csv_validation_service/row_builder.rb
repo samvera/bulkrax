@@ -2,11 +2,11 @@
 
 module Bulkrax
   # Builds CSV rows (explanations and model data)
-  class SampleCsvService::RowBuilder
+  class CsvValidationService::RowBuilder
     def initialize(service)
       @service = service
-      @explanation_builder = SampleCsvService::ExplanationBuilder.new(service)
-      @value_determiner = SampleCsvService::ValueDeterminer.new(service)
+      @explanation_builder = CsvValidationService::ExplanationBuilder.new(service)
+      @value_determiner = CsvValidationService::ValueDeterminer.new(service)
     end
 
     def build_explanation_row(header_row)
@@ -20,7 +20,7 @@ module Bulkrax
     private
 
     def model_breakdown(model_name, header_row)
-      klass = SampleCsvService::ModelLoader.determine_klass_for(model_name)
+      klass = CsvValidationService::ModelLoader.determine_klass_for(model_name)
       return [] if klass.nil?
 
       field_list = @service.field_analyzer.find_or_create_field_list_for(model_name: model_name)

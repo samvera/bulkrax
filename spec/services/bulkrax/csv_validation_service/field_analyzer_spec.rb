@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-RSpec.describe Bulkrax::SampleCsvService::FieldAnalyzer do
+RSpec.describe Bulkrax::CsvValidationService::FieldAnalyzer do
   let(:mappings) { { 'title' => { 'from' => ['title'], 'split' => nil } } }
   subject(:analyzer) { described_class.new(mappings) }
 
@@ -19,12 +19,12 @@ RSpec.describe Bulkrax::SampleCsvService::FieldAnalyzer do
   describe '#find_or_create_field_list_for' do
     let(:model_name) { 'Work' }
     let(:work_klass) { double('Work') }
-    let(:schema_analyzer) { instance_double(Bulkrax::SampleCsvService::SchemaAnalyzer) }
+    let(:schema_analyzer) { instance_double(Bulkrax::CsvValidationService::SchemaAnalyzer) }
 
     before do
-      allow(Bulkrax::SampleCsvService::ModelLoader).to receive(:determine_klass_for)
+      allow(Bulkrax::CsvValidationService::ModelLoader).to receive(:determine_klass_for)
         .with('Work').and_return(work_klass)
-      allow(Bulkrax::SampleCsvService::SchemaAnalyzer).to receive(:new)
+      allow(Bulkrax::CsvValidationService::SchemaAnalyzer).to receive(:new)
         .with(work_klass).and_return(schema_analyzer)
       allow(schema_analyzer).to receive(:required_terms).and_return(['title', 'creator'])
       allow(schema_analyzer).to receive(:controlled_vocab_terms).and_return(['rights_statement', 'resource_type'])
@@ -106,8 +106,8 @@ RSpec.describe Bulkrax::SampleCsvService::FieldAnalyzer do
       end
 
       it 'does not call ModelLoader or SchemaAnalyzer' do
-        expect(Bulkrax::SampleCsvService::ModelLoader).not_to receive(:determine_klass_for)
-        expect(Bulkrax::SampleCsvService::SchemaAnalyzer).not_to receive(:new)
+        expect(Bulkrax::CsvValidationService::ModelLoader).not_to receive(:determine_klass_for)
+        expect(Bulkrax::CsvValidationService::SchemaAnalyzer).not_to receive(:new)
 
         analyzer.find_or_create_field_list_for(model_name: model_name)
       end
@@ -115,7 +115,7 @@ RSpec.describe Bulkrax::SampleCsvService::FieldAnalyzer do
 
     context 'when model class cannot be determined' do
       before do
-        allow(Bulkrax::SampleCsvService::ModelLoader).to receive(:determine_klass_for)
+        allow(Bulkrax::CsvValidationService::ModelLoader).to receive(:determine_klass_for)
           .with('UnknownModel').and_return(nil)
       end
 
@@ -134,7 +134,7 @@ RSpec.describe Bulkrax::SampleCsvService::FieldAnalyzer do
 
     context 'with multiple different models' do
       let(:collection_klass) { double('Collection') }
-      let(:collection_schema_analyzer) { instance_double(Bulkrax::SampleCsvService::SchemaAnalyzer) }
+      let(:collection_schema_analyzer) { instance_double(Bulkrax::CsvValidationService::SchemaAnalyzer) }
 
       before do
         # Setup for Work
@@ -144,14 +144,14 @@ RSpec.describe Bulkrax::SampleCsvService::FieldAnalyzer do
           .with(work_klass).and_return([:title, :creator])
 
         # Setup for Collection
-        allow(Bulkrax::SampleCsvService::ModelLoader).to receive(:determine_klass_for)
+        allow(Bulkrax::CsvValidationService::ModelLoader).to receive(:determine_klass_for)
           .with('Collection').and_return(collection_klass)
         allow(collection_klass).to receive(:respond_to?).and_return(false)
         allow(collection_klass).to receive(:respond_to?).with(:schema).and_return(true)
         allow(Bulkrax::ValkyrieObjectFactory).to receive(:schema_properties)
           .with(collection_klass).and_return([:title, :description])
 
-        allow(Bulkrax::SampleCsvService::SchemaAnalyzer).to receive(:new)
+        allow(Bulkrax::CsvValidationService::SchemaAnalyzer).to receive(:new)
           .with(collection_klass).and_return(collection_schema_analyzer)
         allow(collection_schema_analyzer).to receive(:required_terms).and_return(['title'])
         allow(collection_schema_analyzer).to receive(:controlled_vocab_terms).and_return(['visibility'])
@@ -285,31 +285,31 @@ RSpec.describe Bulkrax::SampleCsvService::FieldAnalyzer do
   describe 'integration scenario' do
     let(:work_klass) { double('Work') }
     let(:collection_klass) { double('Collection') }
-    let(:work_schema_analyzer) { instance_double(Bulkrax::SampleCsvService::SchemaAnalyzer) }
-    let(:collection_schema_analyzer) { instance_double(Bulkrax::SampleCsvService::SchemaAnalyzer) }
+    let(:work_schema_analyzer) { instance_double(Bulkrax::CsvValidationService::SchemaAnalyzer) }
+    let(:collection_schema_analyzer) { instance_double(Bulkrax::CsvValidationService::SchemaAnalyzer) }
 
     before do
       # Setup Work
-      allow(Bulkrax::SampleCsvService::ModelLoader).to receive(:determine_klass_for)
+      allow(Bulkrax::CsvValidationService::ModelLoader).to receive(:determine_klass_for)
         .with('Work').and_return(work_klass)
       allow(work_klass).to receive(:respond_to?).and_return(false)
       allow(work_klass).to receive(:respond_to?).with(:schema).and_return(true)
       allow(Bulkrax::ValkyrieObjectFactory).to receive(:schema_properties)
         .with(work_klass).and_return([:title, :creator, :rights_statement])
-      allow(Bulkrax::SampleCsvService::SchemaAnalyzer).to receive(:new)
+      allow(Bulkrax::CsvValidationService::SchemaAnalyzer).to receive(:new)
         .with(work_klass).and_return(work_schema_analyzer)
       allow(work_schema_analyzer).to receive(:required_terms).and_return(['title', 'creator'])
       allow(work_schema_analyzer).to receive(:controlled_vocab_terms)
         .and_return(['rights_statement', 'resource_type'])
 
       # Setup Collection
-      allow(Bulkrax::SampleCsvService::ModelLoader).to receive(:determine_klass_for)
+      allow(Bulkrax::CsvValidationService::ModelLoader).to receive(:determine_klass_for)
         .with('Collection').and_return(collection_klass)
       allow(collection_klass).to receive(:respond_to?).and_return(false)
       allow(collection_klass).to receive(:respond_to?).with(:schema).and_return(false)
       allow(collection_klass).to receive(:properties)
         .and_return({ 'title' => {}, 'description' => {} })
-      allow(Bulkrax::SampleCsvService::SchemaAnalyzer).to receive(:new)
+      allow(Bulkrax::CsvValidationService::SchemaAnalyzer).to receive(:new)
         .with(collection_klass).and_return(collection_schema_analyzer)
       allow(collection_schema_analyzer).to receive(:required_terms).and_return(['title'])
       allow(collection_schema_analyzer).to receive(:controlled_vocab_terms)

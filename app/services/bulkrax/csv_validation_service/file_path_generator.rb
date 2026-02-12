@@ -2,7 +2,7 @@
 
 module Bulkrax
   # Utility classes
-  class SampleCsvService::FilePathGenerator
+  class CsvValidationService::FilePathGenerator
     def self.default_path
       path = Rails.root.join('tmp', 'imports', "bulkrax_template_#{timestamp}.csv")
       FileUtils.mkdir_p(path.dirname.to_s)

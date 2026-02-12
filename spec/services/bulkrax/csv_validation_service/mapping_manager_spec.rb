@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-RSpec.describe Bulkrax::SampleCsvService::MappingManager do
+RSpec.describe Bulkrax::CsvValidationService::MappingManager do
   let(:manager) { described_class.new }
 
   before do
