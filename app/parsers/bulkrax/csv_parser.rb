@@ -382,12 +382,11 @@ module Bulkrax
 
       return @path_to_files if File.exist?(@path_to_files)
 
-      if file? && zip?
-        csv_sibling_path = File.join(File.dirname(import_file_path), 'files', filename)
-        return csv_sibling_path if File.exist?(csv_sibling_path)
+      return unless file? && zip?
+      csv_sibling_path = File.join(File.dirname(import_file_path), 'files', filename)
+      return csv_sibling_path if File.exist?(csv_sibling_path)
 
-        File.join(importer_unzip_path, 'files', filename)
-      end
+      File.join(importer_unzip_path, 'files', filename)
     end
 
     private
