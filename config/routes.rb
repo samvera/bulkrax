@@ -18,6 +18,7 @@ Bulkrax::Engine.routes.draw do
       get 'new/v2', action: :new_v2, as: :new_v2
       post 'v2', action: :create_v2, as: :v2
       post 'v2/validate', action: :validate_v2, as: :validate_v2
+      get 'v2/demo_scenarios', action: :demo_scenarios_v2, as: :demo_scenarios_v2
       get :importer_table
       post :external_sets
       get :sample_csv_file

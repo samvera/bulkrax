@@ -78,11 +78,24 @@
 
               <!-- Demo Scenarios (for testing) -->
               <div class="demo-scenarios" style="display: none;">
-                <p class="small text-primary"><strong>Demo: Pick an upload scenario</strong></p>
-                <button type="button" class="btn btn-sm btn-outline-secondary btn-block scenario-btn" data-scenario="csv_only">CSV only</button>
-                <button type="button" class="btn btn-sm btn-outline-secondary btn-block scenario-btn" data-scenario="zip_files_only">ZIP (files only, no CSV)</button>
-                <button type="button" class="btn btn-sm btn-outline-secondary btn-block scenario-btn" data-scenario="zip_with_csv">ZIP with CSV inside</button>
-                <button type="button" class="btn btn-sm btn-outline-secondary btn-block scenario-btn" data-scenario="csv_and_zip">CSV + ZIP (separate)</button>
+                <p class="small text-primary"><strong>Demo: Pick a validation scenario</strong></p>
+                <div style="margin-bottom: 10px;">
+                  <p class="small text-muted mb-1"><strong>✓ Success</strong></p>
+                  <button type="button" class="btn btn-sm btn-outline-success btn-block scenario-btn" data-scenario="success_no_issues">Perfect - No issues</button>
+                  <button type="button" class="btn btn-sm btn-outline-success btn-block scenario-btn" data-scenario="success_with_files">All files found in ZIP</button>
+                </div>
+                <div style="margin-bottom: 10px;">
+                  <p class="small text-muted mb-1"><strong>⚠ Warnings</strong></p>
+                  <button type="button" class="btn btn-sm btn-outline-warning btn-block scenario-btn" data-scenario="warning_unrecognized">Unrecognized fields</button>
+                  <button type="button" class="btn btn-sm btn-outline-warning btn-block scenario-btn" data-scenario="warning_missing_files">Missing files from ZIP</button>
+                  <button type="button" class="btn btn-sm btn-outline-warning btn-block scenario-btn" data-scenario="warning_no_zip">Files referenced, no ZIP</button>
+                  <button type="button" class="btn btn-sm btn-outline-warning btn-block scenario-btn" data-scenario="warning_combined">Combined warnings</button>
+                </div>
+                <div>
+                  <p class="small text-muted mb-1"><strong>✗ Errors</strong></p>
+                  <button type="button" class="btn btn-sm btn-outline-danger btn-block scenario-btn" data-scenario="error_missing_required">Missing required fields</button>
+                  <button type="button" class="btn btn-sm btn-outline-danger btn-block scenario-btn" data-scenario="error_combined">Errors + warnings</button>
+                </div>
               </div>
             </div>
 
@@ -119,10 +132,26 @@
             </div>
           </div>
 
+          <!-- File Upload Error Messages -->
+          <div id="file-upload-errors" class="file-upload-errors" style="display: none;"></div>
+
           <!-- Download Template Link -->
           <div class="download-template-link">
             <span class="fa fa-download text-primary"></span>
             <a href="<%= sample_csv_file_importers_path %>" class="text-primary" download>Download CSV template for your tenant</a>
+          </div>
+
+          <!-- Admin Set -->
+          <div class="form-group">
+            <%= f.label :admin_set_id, 'Admin Set', class: 'control-label' do %>
+              Admin Set <span class="text-danger">*</span>
+            <% end %>
+            <% admin_sets = available_admin_sets %>
+            <% default_admin_set = admin_sets.find { |name, id| name.include?('Default') }&.last %>
+            <%= f.select :admin_set_id,
+                options_for_select([['Select an admin set...', '']] + admin_sets, default_admin_set),
+                {},
+                { class: 'form-control', required: true } %>
           </div>
 
           <!-- Validate Button -->
@@ -133,14 +162,14 @@
           <!-- Validation Results (hidden initially) -->
           <div class="validation-results" style="display: none;">
 
-            <!-- Import Size Gauge -->
-            <div class="import-size-gauge">
-              <!-- Will be populated by JS -->
-            </div>
-
             <!-- Validation Status Accordion -->
             <div class="accordion-wrapper">
               <!-- Validation accordions will be added by JS -->
+            </div>
+
+            <!-- Import Size Gauge -->
+            <div class="import-size-gauge">
+              <!-- Will be populated by JS -->
             </div>
 
             <!-- Import Summary -->
@@ -187,9 +216,15 @@
             <button type="button" class="btn btn-secondary" disabled>
               <span class="fa fa-arrow-left"></span> Back
             </button>
-            <button type="button" class="btn btn-primary step-next-btn" data-next-step="2" disabled>
-              Next <span class="fa fa-arrow-right"></span>
-            </button>
+            <div>
+              <label class="skip-validation-label">
+                <input type="checkbox" id="skip-validation-checkbox" disabled>
+                <span>Skip validation</span>
+              </label>
+              <button type="button" class="btn btn-primary step-next-btn" data-next-step="2" disabled>
+                Next <span class="fa fa-arrow-right"></span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -207,18 +242,6 @@
                 Import Name <span class="text-danger">*</span>
               <% end %>
               <%= f.text_field :name, class: 'form-control', value: "CSV Import - #{Date.today.strftime('%m/%d/%Y')}", required: true %>
-            </div>
-
-            <!-- Admin Set -->
-            <div class="form-group">
-              <%= f.label :admin_set_id, 'Admin Set', class: 'control-label' do %>
-                Admin Set <span class="text-danger">*</span>
-              <% end %>
-              <% admin_sets = defined?(AdminSet) ? AdminSet.all.map { |as| [as.title.first, as.id] } : [] %>
-              <%= f.select :admin_set_id,
-                  options_for_select([['Select an admin set...', '']] + admin_sets),
-                  {},
-                  { class: 'form-control', required: true } %>
             </div>
 
             <!-- Default Visibility -->
