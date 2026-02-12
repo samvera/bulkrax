@@ -5,8 +5,8 @@ module Bulkrax
   class SampleCsvService::ModelLoader
     attr_reader :models
 
-    def initialize(model_name)
-      @models = load_models(model_name)
+    def initialize(models)
+      @models = load_models(models)
     end
 
     def self.determine_klass_for(model_name)
@@ -21,12 +21,14 @@ module Bulkrax
 
     private
 
-    def load_models(model_name)
-      case model_name
-      when nil then []
-      when 'all' then all_available_models
+    def load_models(models)
+      case models
+      when Array
+        return all_available_models if models.empty?
+        return all_available_models if models.include?('all')
+        models.map { |model| model.constantize ? model : nil }.compact
       else
-        model_name.constantize ? [model_name] : []
+        all_available_models
       end
     rescue StandardError
       []

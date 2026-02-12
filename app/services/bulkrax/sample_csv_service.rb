@@ -41,23 +41,24 @@ module Bulkrax
   # Uses Ruby's CSV library for proper formatting and escaping
 
   ## Sample Usage:
-  #   Bulkrax::SampleCsvService.call(model_name: 'GenericWork', output: 'file', file_path: 'path/to/output.csv')
-  #   Bulkrax::SampleCsvService.call(model_name: nil, output: 'csv_string')
+  #   Bulkrax::SampleCsvService.call(models: ['GenericWork'], output: 'file', file_path: 'path/to/output.csv')
+  #   Bulkrax::SampleCsvService.call(models: [], output: 'csv_string')
+  #   Bulkrax::SampleCsvService.call(models: ['Collection', 'GenericWork'], output: 'file')
+  #   Bulkrax::SampleCsvService.call(models: 'all', output: 'csv_string')
   class SampleCsvService
-    attr_reader :model_name, :mappings, :all_models
+    attr_reader :mappings, :all_models
 
-    def initialize(model_name: nil)
-      @model_name = model_name
+    def initialize(models: [])
       @mapping_manager = MappingManager.new
       @mappings = @mapping_manager.mappings
-      @all_models = ModelLoader.new(model_name).models
+      @all_models = ModelLoader.new(Array.wrap(models)).models
       @field_analyzer = FieldAnalyzer.new(@mappings)
       @csv_builder = CsvBuilder.new(self)
     end
 
-    def self.call(model_name: nil, output: 'file', **args)
+    def self.call(models: [], output: 'file', **args)
       raise NameError, "Hyrax is not defined" unless defined?(::Hyrax)
-      new(model_name: model_name).send("to_#{output}", **args)
+      new(models: models).send("to_#{output}", **args)
     end
 
     def to_file(file_path: nil)

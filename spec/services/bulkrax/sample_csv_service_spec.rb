@@ -3,8 +3,8 @@
 require 'rails_helper'
 
 RSpec.describe Bulkrax::SampleCsvService do
-  let(:service) { described_class.new(model_name: model_name) }
-  let(:model_name) { nil }
+  let(:service) { described_class.new(models: models) }
+  let(:models) { [] }
 
   # Shared test setup
   before(:each) do
@@ -26,14 +26,14 @@ RSpec.describe Bulkrax::SampleCsvService do
         allow(CSV).to receive(:open).and_return(true)
         allow(FileUtils).to receive(:mkdir_p).and_return(true)
 
-        result = described_class.call(output: 'file', model_name: 'MyWork')
+        result = described_class.call(output: 'file', models: ['MyWork'])
         # Result can be either a String or Pathname
         expect(result.to_s).to be_a(String)
         expect(result.to_s).to include('bulkrax_template')
       end
 
       it 'returns a CSV string when output is csv_string' do
-        result = described_class.call(output: 'csv_string', model_name: 'MyWork')
+        result = described_class.call(output: 'csv_string', models: ['MyWork'])
         expect(result).to be_a(String)
         expect(result).to include('model')
       end
@@ -41,9 +41,9 @@ RSpec.describe Bulkrax::SampleCsvService do
   end
 
   describe '#initialize' do
-    context 'with nil model_name' do
+    context 'with nil models' do
       it 'initializes with empty models' do
-        expect(service.all_models).to eq([])
+        expect(service.all_models).to include("MyWork", "AnotherWork", "Collection", "Hyrax::FileSet")
       end
 
       it 'initializes mapping manager' do
@@ -52,8 +52,8 @@ RSpec.describe Bulkrax::SampleCsvService do
       end
     end
 
-    context 'with "all" model_name' do
-      let(:model_name) { 'all' }
+    context 'with "all" models' do
+      let(:models) { 'all' }
 
       it 'loads all configured models' do
         expect(service.all_models).to include('MyWork', 'AnotherWork')
@@ -61,16 +61,16 @@ RSpec.describe Bulkrax::SampleCsvService do
       end
     end
 
-    context 'with specific model_name' do
-      let(:model_name) { 'MyWork' }
+    context 'with specific models' do
+      let(:models) { ['MyWork'] }
 
       it 'loads only the specified model' do
         expect(service.all_models).to eq(['MyWork'])
       end
     end
 
-    context 'with invalid model_name' do
-      let(:model_name) { 'NonExistentModel' }
+    context 'with invalid models' do
+      let(:models) { ['NonExistentModel'] }
 
       it 'handles invalid model gracefully' do
         expect(service.all_models).to eq([])
@@ -79,7 +79,7 @@ RSpec.describe Bulkrax::SampleCsvService do
   end
 
   describe '#to_file' do
-    let(:model_name) { 'MyWork' }
+    let(:models) { ['MyWork'] }
 
     it 'creates a CSV file at the specified path' do
       file_path = Rails.root.join('tmp', 'test.csv')
@@ -128,7 +128,7 @@ RSpec.describe Bulkrax::SampleCsvService do
     end
 
     context 'with a specific model' do
-      let(:model_name) { 'MyWork' }
+      let(:models) { ['MyWork'] }
 
       it 'returns CSV with model data' do
         result = service.to_csv_string
@@ -144,7 +144,7 @@ RSpec.describe Bulkrax::SampleCsvService do
     end
 
     context 'with all models' do
-      let(:model_name) { 'all' }
+      let(:models) { 'all' }
 
       it 'returns CSV with all model data' do
         result = service.to_csv_string
@@ -156,15 +156,15 @@ RSpec.describe Bulkrax::SampleCsvService do
         expect(csv.length).to be >= 4 # header + description + 2+ models
 
         # Check that different models are present
-        model_names = csv[2..-1].map { |row| row[0] }
-        expect(model_names).to include('MyWork', 'AnotherWork')
+        models_present = csv[2..-1].map { |row| row[0] }
+        expect(models_present).to include('MyWork', 'AnotherWork')
       end
     end
   end
 
   describe 'integration tests' do
     describe 'CSV structure validation' do
-      let(:model_name) { 'MyWork' }
+      let(:models) { ['MyWork'] }
 
       it 'includes required columns in correct order' do
         csv_string = service.to_csv_string
@@ -206,7 +206,7 @@ RSpec.describe Bulkrax::SampleCsvService do
     end
 
     describe 'empty column removal' do
-      let(:model_name) { 'MyWork' }
+      let(:models) { ['MyWork'] }
 
       it 'removes columns with no data' do
         csv_string = service.to_csv_string
@@ -223,7 +223,7 @@ RSpec.describe Bulkrax::SampleCsvService do
     end
 
     describe 'multiple model handling' do
-      let(:model_name) { 'all' }
+      let(:models) { 'all' }
 
       it 'generates appropriate rows for each model' do
         csv_string = service.to_csv_string
