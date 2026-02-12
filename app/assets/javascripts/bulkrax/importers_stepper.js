@@ -896,10 +896,10 @@
       openClass +
       '">' +
       '<div class="accordion-header">' +
-      '<div class="accordion-title">' +
+      '<div class="accordion-title-bar">' +
       '<span class="fa ' +
       icon +
-      ' accordion-icon"></span>' +
+      ' accordion-status-icon"></span>' +
       '<span>' +
       title +
       '</span>' +
