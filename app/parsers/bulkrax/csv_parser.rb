@@ -382,8 +382,12 @@ module Bulkrax
 
       return @path_to_files if File.exist?(@path_to_files)
 
-      # TODO: This method silently returns nil if there is no file & no zip file
-      File.join(importer_unzip_path, 'files', filename) if file? && zip?
+      if file? && zip?
+        csv_sibling_path = File.join(File.dirname(import_file_path), 'files', filename)
+        return csv_sibling_path if File.exist?(csv_sibling_path)
+
+        File.join(importer_unzip_path, 'files', filename)
+      end
     end
 
     private
