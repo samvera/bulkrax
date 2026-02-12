@@ -1,14 +1,16 @@
+# frozen_string_literal: true
+
 module Bulkrax
+  # rubocop:disable Metrics/ModuleLength
   module ImporterV2
     extend ActiveSupport::Concern
 
     # trigger form to allow upload
     def new_v2
       @importer = Importer.new
-      if defined?(::Hyrax)
-        add_importer_breadcrumbs
-        add_breadcrumb 'New Import (V2)'
-      end
+      return unless defined?(::Hyrax)
+      add_importer_breadcrumbs
+      add_breadcrumb 'New Import (V2)'
     end
 
     # AJAX endpoint to validate uploaded files
@@ -49,8 +51,7 @@ module Bulkrax
       render json: response, status: :ok
     end
 
-    def create_v2
-    end
+    def create_v2; end
 
     # Serve demo scenario fixtures for frontend testing
     def demo_scenarios_v2
@@ -64,7 +65,8 @@ module Bulkrax
 
     private
 
-    def generate_validation_response(csv_file, zip_file)
+    # rubocop:disable Metrics/MethodLength
+    def generate_validation_response(_csv_file, zip_file)
       # Generate mock collections
       collections = [
         { id: 'col-1', title: 'Historical Photographs Collection', type: 'collection', parentId: nil },
@@ -81,8 +83,6 @@ module Bulkrax
                       'col-2'
                     elsif i < 189
                       'col-3'
-                    else
-                      nil
                     end
 
         works << {
@@ -126,91 +126,111 @@ module Bulkrax
         foundFiles: 52,
         zipIncluded: zip_included,
         messages: build_validation_messages(
-          headers: headers,
-          unrecognized: unrecognized,
-          missing_required: missing_required,
-          missing_files: missing_files,
-          zip_included: zip_included,
-          row_count: 247,
-          is_valid: true,
-          has_warnings: true,
-          file_references: 55
+          headers: headers, unrecognized: unrecognized, missing_required: missing_required,
+          missing_files: missing_files, zip_included: zip_included, row_count: 247,
+          is_valid: true, has_warnings: true, file_references: 55
         )
       }
     end
+    # rubocop:enable Metrics/MethodLength
 
-    def build_validation_messages(headers:, unrecognized:, missing_required:, missing_files:, zip_included:, row_count:, is_valid:, has_warnings:, file_references: 0)
-      recognized_fields = headers - unrecognized
-      
-      messages = {
-        validationStatus: {
-          severity: is_valid ? (has_warnings ? 'warning' : 'success') : 'error',
-          icon: is_valid ? (has_warnings ? 'fa-exclamation-triangle' : 'fa-check-circle') : 'fa-times-circle',
-          title: is_valid ? (has_warnings ? 'Validation Passed with Warnings' : 'Validation Passed') : 'Validation Failed',
-          summary: "#{headers.length} columns detected · #{row_count} records found",
-          details: is_valid ? "Recognized fields: #{recognized_fields.join(', ')}" : 'Critical errors must be fixed before import.',
-          defaultOpen: true
-        },
-        issues: []
+    # Builds the structured messages hash from validation results.
+    # @param results [Hash] with keys: headers, unrecognized, missing_required,
+    #   missing_files, zip_included, row_count, is_valid, has_warnings, file_references
+    def build_validation_messages(results)
+      issues = []
+      issues << missing_required_issue(results[:missing_required]) if results[:missing_required]&.any?
+      issues << unrecognized_fields_issue(results[:unrecognized]) if results[:unrecognized]&.any?
+      issues << file_references_issue(results) if results[:file_references]&.positive?
+
+      {
+        validationStatus: validation_status(results),
+        issues: issues.compact
       }
+    end
 
-      # Add missing required fields issue
-      if missing_required.any?
-        messages[:issues] << {
-          type: 'missing_required_fields',
-          severity: 'error',
-          icon: 'fa-times-circle',
-          title: 'Missing Required Fields',
-          count: missing_required.length,
-          description: 'These required columns must be added to your CSV:',
-          items: missing_required.map { |field| { field: field, message: 'add this column to your CSV' } },
-          defaultOpen: false
-        }
+    def validation_status(results)
+      severity, icon, title = validation_status_level(results[:is_valid], results[:has_warnings])
+      recognized = results[:headers] - (results[:unrecognized] || [])
+
+      {
+        severity: severity,
+        icon: icon,
+        title: title,
+        summary: "#{results[:headers].length} columns detected · #{results[:row_count]} records found",
+        details: results[:is_valid] ? "Recognized fields: #{recognized.join(', ')}" : 'Critical errors must be fixed before import.',
+        defaultOpen: true
+      }
+    end
+
+    def validation_status_level(is_valid, has_warnings)
+      if !is_valid
+        ['error', 'fa-times-circle', 'Validation Failed']
+      elsif has_warnings
+        ['warning', 'fa-exclamation-triangle', 'Validation Passed with Warnings']
+      else
+        ['success', 'fa-check-circle', 'Validation Passed']
       end
+    end
 
-      # Add unrecognized fields issue
-      if unrecognized.any?
-        messages[:issues] << {
-          type: 'unrecognized_fields',
-          severity: 'warning',
-          icon: 'fa-exclamation-triangle',
-          title: 'Unrecognized Fields',
-          count: unrecognized.length,
-          description: 'These columns will be ignored during import:',
-          items: unrecognized.map { |field| { field: field, message: nil } },
-          defaultOpen: false
-        }
-      end
+    def missing_required_issue(missing_required)
+      {
+        type: 'missing_required_fields',
+        severity: 'error',
+        icon: 'fa-times-circle',
+        title: 'Missing Required Fields',
+        count: missing_required.length,
+        description: 'These required columns must be added to your CSV:',
+        items: missing_required.map { |field| { field: field, message: 'add this column to your CSV' } },
+        defaultOpen: false
+      }
+    end
 
-      # Add file references issue
-      if missing_files.any? && zip_included
-        messages[:issues] << {
+    def unrecognized_fields_issue(unrecognized)
+      {
+        type: 'unrecognized_fields',
+        severity: 'warning',
+        icon: 'fa-exclamation-triangle',
+        title: 'Unrecognized Fields',
+        count: unrecognized.length,
+        description: 'These columns will be ignored during import:',
+        items: unrecognized.map { |field| { field: field, message: nil } },
+        defaultOpen: false
+      }
+    end
+
+    # rubocop:disable Metrics/MethodLength
+    def file_references_issue(results)
+      file_references = results[:file_references]
+      missing_files = results[:missing_files] || []
+      found_files = file_references - missing_files.length
+
+      if missing_files.any? && results[:zip_included]
+        {
           type: 'file_references',
           severity: 'warning',
           icon: 'fa-info-circle',
           title: 'File References',
-          count: 55,
-          summary: '52 of 55 files found in ZIP.',
-          description: '3 files are referenced in your CSV but missing from the ZIP:',
+          count: file_references,
+          summary: "#{found_files} of #{file_references} files found in ZIP.",
+          description: "#{missing_files.length} #{'file'.pluralize(missing_files.length)} referenced in your CSV but missing from the ZIP:",
           items: missing_files.map { |file| { field: file, message: 'missing from ZIP' } },
           defaultOpen: false
         }
-      elsif file_references > 0 && !zip_included
-        # Files referenced but no ZIP uploaded
-        messages[:issues] << {
+      elsif !results[:zip_included]
+        {
           type: 'file_references',
           severity: 'warning',
           icon: 'fa-exclamation-triangle',
           title: 'File References',
           count: file_references,
           summary: "#{file_references} files referenced in CSV.",
-          description: 'No ZIP file uploaded. Ensure files are accessible on the server or upload a ZIP file containing the referenced files.',
+          description: 'No ZIP file uploaded. Ensure files are accessible on the server or upload a ZIP.',
           items: [],
           defaultOpen: false
         }
       end
-
-      messages
-    end
+    end # rubocop:enable Metrics/MethodLength
   end
+  # rubocop:enable Metrics/ModuleLength
 end
