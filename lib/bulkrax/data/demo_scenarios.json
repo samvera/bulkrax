@@ -1,0 +1,1588 @@
+{
+  "_meta": {
+    "description": "Demo validation scenarios for the Bulkrax v2 import stepper",
+    "schemaRef": "docs/VALIDATION_RESPONSE_QUICK_REF.json"
+  },
+  "scenarios": {
+    "success_no_issues": {
+      "label": "Perfect - No issues",
+      "category": "success",
+      "files": [
+        {
+          "id": 1,
+          "name": "metadata.csv",
+          "size": "142 KB",
+          "fileType": "csv",
+          "fromZip": false
+        }
+      ],
+      "response": {
+        "collections": [
+          {
+            "id": "col-1",
+            "title": "Historical Photographs Collection",
+            "type": "collection",
+            "parentId": null
+          },
+          {
+            "id": "col-2",
+            "title": "Manuscripts & Letters",
+            "type": "collection",
+            "parentId": null
+          },
+          {
+            "id": "col-3",
+            "title": "Audio Recordings",
+            "type": "collection",
+            "parentId": null
+          },
+          {
+            "id": "col-1a",
+            "title": "Landscapes",
+            "type": "collection",
+            "parentId": "col-1"
+          },
+          {
+            "id": "col-1b",
+            "title": "Portraits",
+            "type": "collection",
+            "parentId": "col-1"
+          }
+        ],
+        "works": [
+          {
+            "id": "work-1",
+            "title": "Sunset Over the Valley",
+            "type": "work",
+            "parentId": "col-1"
+          },
+          {
+            "id": "work-2",
+            "title": "Portrait of a Scholar",
+            "type": "work",
+            "parentId": "col-1"
+          },
+          {
+            "id": "work-3",
+            "title": "City Streets, 1920",
+            "type": "work",
+            "parentId": "col-1"
+          },
+          {
+            "id": "work-4",
+            "title": "Letter from John Adams",
+            "type": "work",
+            "parentId": "col-2"
+          },
+          {
+            "id": "work-5",
+            "title": "Medieval Manuscript Fragment",
+            "type": "work",
+            "parentId": "col-2"
+          },
+          {
+            "id": "work-6",
+            "title": "Interview with Jane Doe",
+            "type": "work",
+            "parentId": "col-3"
+          },
+          {
+            "id": "work-7",
+            "title": "Field Recording, Summer 1985",
+            "type": "work",
+            "parentId": "col-3"
+          },
+          {
+            "id": "work-8",
+            "title": "Untitled Photograph",
+            "type": "work",
+            "parentId": null
+          },
+          {
+            "id": "work-9",
+            "title": "Miscellaneous Notes",
+            "type": "work",
+            "parentId": null
+          },
+          {
+            "id": "work-10",
+            "title": "Mountain Vista at Dawn",
+            "type": "work",
+            "parentId": "col-1a"
+          },
+          {
+            "id": "work-11",
+            "title": "Coastal Sunset",
+            "type": "work",
+            "parentId": "col-1a"
+          },
+          {
+            "id": "work-12",
+            "title": "The Librarian",
+            "type": "work",
+            "parentId": "col-1b"
+          },
+          {
+            "id": "work-13",
+            "title": "Parent Work",
+            "type": "work",
+            "parentId": null
+          },
+          {
+            "id": "work-14",
+            "title": "Child Work",
+            "type": "work",
+            "parentId": "work-13"
+          },
+          {
+            "id": "work-15",
+            "title": "Parent Work with Collection Parent",
+            "type": "work",
+            "parentId": "col-1"
+          },
+          {
+            "id": "work-16",
+            "title": "Child Work of Work with Collection Parent",
+            "type": "work",
+            "parentId": "work-15"
+          }
+        ],
+        "fileSets": [
+          {
+            "id": "fs-1",
+            "title": "sunset_valley.tiff",
+            "type": "file_set"
+          },
+          {
+            "id": "fs-2",
+            "title": "portrait_scholar.jpg",
+            "type": "file_set"
+          },
+          {
+            "id": "fs-3",
+            "title": "city_streets.png",
+            "type": "file_set"
+          }
+        ],
+        "totalItems": 20,
+        "headers": [
+          "source_identifier",
+          "title",
+          "creator",
+          "model",
+          "parents",
+          "file"
+        ],
+        "missingRequired": [],
+        "unrecognized": [],
+        "rowCount": 50,
+        "isValid": true,
+        "hasWarnings": false,
+        "fileReferences": 0,
+        "missingFiles": [],
+        "foundFiles": 0,
+        "zipIncluded": false,
+        "messages": {
+          "validationStatus": {
+            "severity": "success",
+            "icon": "fa-check-circle",
+            "title": "Validation Passed",
+            "summary": "6 columns detected · 50 records found",
+            "details": "Recognized fields: source_identifier, title, creator, model, parents, file",
+            "defaultOpen": true
+          },
+          "issues": []
+        }
+      }
+    },
+    "success_with_files": {
+      "label": "All files found in ZIP",
+      "category": "success",
+      "files": [
+        {
+          "id": 2,
+          "name": "metadata.csv",
+          "size": "142 KB",
+          "fileType": "csv",
+          "fromZip": false
+        },
+        {
+          "id": 3,
+          "name": "files_package.zip",
+          "size": "1.2 GB",
+          "fileType": "zip",
+          "fromZip": false,
+          "subtitle": "contains files"
+        }
+      ],
+      "response": {
+        "collections": [
+          {
+            "id": "col-1",
+            "title": "Historical Photographs Collection",
+            "type": "collection",
+            "parentId": null
+          },
+          {
+            "id": "col-2",
+            "title": "Manuscripts & Letters",
+            "type": "collection",
+            "parentId": null
+          },
+          {
+            "id": "col-3",
+            "title": "Audio Recordings",
+            "type": "collection",
+            "parentId": null
+          },
+          {
+            "id": "col-1a",
+            "title": "Landscapes",
+            "type": "collection",
+            "parentId": "col-1"
+          },
+          {
+            "id": "col-1b",
+            "title": "Portraits",
+            "type": "collection",
+            "parentId": "col-1"
+          }
+        ],
+        "works": [
+          {
+            "id": "work-1",
+            "title": "Sunset Over the Valley",
+            "type": "work",
+            "parentId": "col-1"
+          },
+          {
+            "id": "work-2",
+            "title": "Portrait of a Scholar",
+            "type": "work",
+            "parentId": "col-1"
+          },
+          {
+            "id": "work-3",
+            "title": "City Streets, 1920",
+            "type": "work",
+            "parentId": "col-1"
+          },
+          {
+            "id": "work-4",
+            "title": "Letter from John Adams",
+            "type": "work",
+            "parentId": "col-2"
+          },
+          {
+            "id": "work-5",
+            "title": "Medieval Manuscript Fragment",
+            "type": "work",
+            "parentId": "col-2"
+          },
+          {
+            "id": "work-6",
+            "title": "Interview with Jane Doe",
+            "type": "work",
+            "parentId": "col-3"
+          },
+          {
+            "id": "work-7",
+            "title": "Field Recording, Summer 1985",
+            "type": "work",
+            "parentId": "col-3"
+          },
+          {
+            "id": "work-8",
+            "title": "Untitled Photograph",
+            "type": "work",
+            "parentId": null
+          },
+          {
+            "id": "work-9",
+            "title": "Miscellaneous Notes",
+            "type": "work",
+            "parentId": null
+          },
+          {
+            "id": "work-10",
+            "title": "Mountain Vista at Dawn",
+            "type": "work",
+            "parentId": "col-1a"
+          },
+          {
+            "id": "work-11",
+            "title": "Coastal Sunset",
+            "type": "work",
+            "parentId": "col-1a"
+          },
+          {
+            "id": "work-12",
+            "title": "The Librarian",
+            "type": "work",
+            "parentId": "col-1b"
+          }
+        ],
+        "fileSets": [
+          {
+            "id": "fs-1",
+            "title": "sunset_valley.tiff",
+            "type": "file_set"
+          },
+          {
+            "id": "fs-2",
+            "title": "portrait_scholar.jpg",
+            "type": "file_set"
+          },
+          {
+            "id": "fs-3",
+            "title": "city_streets.png",
+            "type": "file_set"
+          }
+        ],
+        "totalItems": 20,
+        "headers": [
+          "source_identifier",
+          "title",
+          "creator",
+          "model",
+          "file"
+        ],
+        "missingRequired": [],
+        "unrecognized": [],
+        "rowCount": 25,
+        "isValid": true,
+        "hasWarnings": false,
+        "fileReferences": 25,
+        "missingFiles": [],
+        "foundFiles": 25,
+        "zipIncluded": true,
+        "messages": {
+          "validationStatus": {
+            "severity": "success",
+            "icon": "fa-check-circle",
+            "title": "Validation Passed",
+            "summary": "5 columns detected · 25 records found",
+            "details": "Recognized fields: source_identifier, title, creator, model, file",
+            "defaultOpen": true
+          },
+          "issues": [
+            {
+              "type": "file_references",
+              "severity": "info",
+              "icon": "fa-info-circle",
+              "title": "File References",
+              "count": 25,
+              "summary": "25 of 25 files found in ZIP.",
+              "description": null,
+              "items": [],
+              "defaultOpen": false
+            }
+          ]
+        }
+      }
+    },
+    "warning_unrecognized": {
+      "label": "Unrecognized fields",
+      "category": "warning",
+      "files": [
+        {
+          "id": 4,
+          "name": "metadata.csv",
+          "size": "142 KB",
+          "fileType": "csv",
+          "fromZip": false
+        },
+        {
+          "id": 5,
+          "name": "Archive.zip",
+          "size": "7.58 MB",
+          "fileType": "zip",
+          "fromZip": false,
+          "subtitle": "contains files"
+        }
+      ],
+      "response": {
+        "collections": [
+          {
+            "id": "col-1",
+            "title": "Historical Photographs Collection",
+            "type": "collection",
+            "parentId": null
+          },
+          {
+            "id": "col-2",
+            "title": "Manuscripts & Letters",
+            "type": "collection",
+            "parentId": null
+          },
+          {
+            "id": "col-3",
+            "title": "Audio Recordings",
+            "type": "collection",
+            "parentId": null
+          },
+          {
+            "id": "col-1a",
+            "title": "Landscapes",
+            "type": "collection",
+            "parentId": "col-1"
+          },
+          {
+            "id": "col-1b",
+            "title": "Portraits",
+            "type": "collection",
+            "parentId": "col-1"
+          }
+        ],
+        "works": [
+          {
+            "id": "work-1",
+            "title": "Sunset Over the Valley",
+            "type": "work",
+            "parentId": "col-1"
+          },
+          {
+            "id": "work-2",
+            "title": "Portrait of a Scholar",
+            "type": "work",
+            "parentId": "col-1"
+          },
+          {
+            "id": "work-3",
+            "title": "City Streets, 1920",
+            "type": "work",
+            "parentId": "col-1"
+          },
+          {
+            "id": "work-4",
+            "title": "Letter from John Adams",
+            "type": "work",
+            "parentId": "col-2"
+          },
+          {
+            "id": "work-5",
+            "title": "Medieval Manuscript Fragment",
+            "type": "work",
+            "parentId": "col-2"
+          },
+          {
+            "id": "work-6",
+            "title": "Interview with Jane Doe",
+            "type": "work",
+            "parentId": "col-3"
+          },
+          {
+            "id": "work-7",
+            "title": "Field Recording, Summer 1985",
+            "type": "work",
+            "parentId": "col-3"
+          },
+          {
+            "id": "work-8",
+            "title": "Untitled Photograph",
+            "type": "work",
+            "parentId": null
+          },
+          {
+            "id": "work-9",
+            "title": "Miscellaneous Notes",
+            "type": "work",
+            "parentId": null
+          },
+          {
+            "id": "work-10",
+            "title": "Mountain Vista at Dawn",
+            "type": "work",
+            "parentId": "col-1a"
+          },
+          {
+            "id": "work-11",
+            "title": "Coastal Sunset",
+            "type": "work",
+            "parentId": "col-1a"
+          },
+          {
+            "id": "work-12",
+            "title": "The Librarian",
+            "type": "work",
+            "parentId": "col-1b"
+          }
+        ],
+        "fileSets": [
+          {
+            "id": "fs-1",
+            "title": "sunset_valley.tiff",
+            "type": "file_set"
+          },
+          {
+            "id": "fs-2",
+            "title": "portrait_scholar.jpg",
+            "type": "file_set"
+          },
+          {
+            "id": "fs-3",
+            "title": "city_streets.png",
+            "type": "file_set"
+          }
+        ],
+        "totalItems": 20,
+        "headers": [
+          "source_identifier",
+          "title",
+          "creator",
+          "model",
+          "parents",
+          "file",
+          "description",
+          "date_created",
+          "legacy_id",
+          "internal_notes",
+          "subject"
+        ],
+        "missingRequired": [],
+        "unrecognized": [
+          "legacy_id",
+          "internal_notes"
+        ],
+        "rowCount": 247,
+        "isValid": true,
+        "hasWarnings": true,
+        "fileReferences": 0,
+        "missingFiles": [],
+        "foundFiles": 0,
+        "zipIncluded": false,
+        "messages": {
+          "validationStatus": {
+            "severity": "warning",
+            "icon": "fa-exclamation-triangle",
+            "title": "Validation Passed with Warnings",
+            "summary": "11 columns detected · 247 records found",
+            "details": "Recognized fields: source_identifier, title, creator, model, parents, file, description, date_created, subject",
+            "defaultOpen": true
+          },
+          "issues": [
+            {
+              "type": "unrecognized_fields",
+              "severity": "warning",
+              "icon": "fa-exclamation-triangle",
+              "title": "Unrecognized Fields",
+              "count": 2,
+              "description": "These columns will be ignored during import:",
+              "items": [
+                {
+                  "field": "legacy_id",
+                  "message": null
+                },
+                {
+                  "field": "internal_notes",
+                  "message": null
+                }
+              ],
+              "defaultOpen": false
+            }
+          ]
+        }
+      }
+    },
+    "warning_missing_files": {
+      "label": "Missing files from ZIP",
+      "category": "warning",
+      "files": [
+        {
+          "id": 4,
+          "name": "metadata.csv",
+          "size": "142 KB",
+          "fileType": "csv",
+          "fromZip": false
+        },
+        {
+          "id": 5,
+          "name": "Archive.zip",
+          "size": "7.58 MB",
+          "fileType": "zip",
+          "fromZip": false,
+          "subtitle": "contains files"
+        }
+      ],
+      "response": {
+        "collections": [
+          {
+            "id": "col-1",
+            "title": "Historical Photographs Collection",
+            "type": "collection",
+            "parentId": null
+          },
+          {
+            "id": "col-2",
+            "title": "Manuscripts & Letters",
+            "type": "collection",
+            "parentId": null
+          },
+          {
+            "id": "col-3",
+            "title": "Audio Recordings",
+            "type": "collection",
+            "parentId": null
+          },
+          {
+            "id": "col-1a",
+            "title": "Landscapes",
+            "type": "collection",
+            "parentId": "col-1"
+          },
+          {
+            "id": "col-1b",
+            "title": "Portraits",
+            "type": "collection",
+            "parentId": "col-1"
+          }
+        ],
+        "works": [
+          {
+            "id": "work-1",
+            "title": "Sunset Over the Valley",
+            "type": "work",
+            "parentId": "col-1"
+          },
+          {
+            "id": "work-2",
+            "title": "Portrait of a Scholar",
+            "type": "work",
+            "parentId": "col-1"
+          },
+          {
+            "id": "work-3",
+            "title": "City Streets, 1920",
+            "type": "work",
+            "parentId": "col-1"
+          },
+          {
+            "id": "work-4",
+            "title": "Letter from John Adams",
+            "type": "work",
+            "parentId": "col-2"
+          },
+          {
+            "id": "work-5",
+            "title": "Medieval Manuscript Fragment",
+            "type": "work",
+            "parentId": "col-2"
+          },
+          {
+            "id": "work-6",
+            "title": "Interview with Jane Doe",
+            "type": "work",
+            "parentId": "col-3"
+          },
+          {
+            "id": "work-7",
+            "title": "Field Recording, Summer 1985",
+            "type": "work",
+            "parentId": "col-3"
+          },
+          {
+            "id": "work-8",
+            "title": "Untitled Photograph",
+            "type": "work",
+            "parentId": null
+          },
+          {
+            "id": "work-9",
+            "title": "Miscellaneous Notes",
+            "type": "work",
+            "parentId": null
+          },
+          {
+            "id": "work-10",
+            "title": "Mountain Vista at Dawn",
+            "type": "work",
+            "parentId": "col-1a"
+          },
+          {
+            "id": "work-11",
+            "title": "Coastal Sunset",
+            "type": "work",
+            "parentId": "col-1a"
+          },
+          {
+            "id": "work-12",
+            "title": "The Librarian",
+            "type": "work",
+            "parentId": "col-1b"
+          }
+        ],
+        "fileSets": [
+          {
+            "id": "fs-1",
+            "title": "sunset_valley.tiff",
+            "type": "file_set"
+          },
+          {
+            "id": "fs-2",
+            "title": "portrait_scholar.jpg",
+            "type": "file_set"
+          },
+          {
+            "id": "fs-3",
+            "title": "city_streets.png",
+            "type": "file_set"
+          }
+        ],
+        "totalItems": 20,
+        "headers": [
+          "source_identifier",
+          "title",
+          "creator",
+          "model",
+          "parents",
+          "file"
+        ],
+        "missingRequired": [],
+        "unrecognized": [],
+        "rowCount": 55,
+        "isValid": true,
+        "hasWarnings": true,
+        "fileReferences": 55,
+        "foundFiles": 52,
+        "zipIncluded": true,
+        "missingFiles": [
+          "photo_087.tiff",
+          "letter_scan_12.pdf",
+          "recording_03.wav"
+        ],
+        "messages": {
+          "validationStatus": {
+            "severity": "warning",
+            "icon": "fa-exclamation-triangle",
+            "title": "Validation Passed with Warnings",
+            "summary": "6 columns detected · 55 records found",
+            "details": "Recognized fields: source_identifier, title, creator, model, parents, file",
+            "defaultOpen": true
+          },
+          "issues": [
+            {
+              "type": "file_references",
+              "severity": "warning",
+              "icon": "fa-info-circle",
+              "title": "File References",
+              "count": 55,
+              "summary": "52 of 55 files found in ZIP.",
+              "description": "3 files are referenced in your CSV but missing from the ZIP:",
+              "items": [
+                {
+                  "field": "photo_087.tiff",
+                  "message": "missing from ZIP"
+                },
+                {
+                  "field": "letter_scan_12.pdf",
+                  "message": "missing from ZIP"
+                },
+                {
+                  "field": "recording_03.wav",
+                  "message": "missing from ZIP"
+                }
+              ],
+              "defaultOpen": false
+            }
+          ]
+        }
+      }
+    },
+    "warning_no_zip": {
+      "label": "Files referenced, no ZIP",
+      "category": "warning",
+      "files": [
+        {
+          "id": 6,
+          "name": "metadata.csv",
+          "size": "142 KB",
+          "fileType": "csv",
+          "fromZip": false
+        }
+      ],
+      "response": {
+        "collections": [
+          {
+            "id": "col-1",
+            "title": "Historical Photographs Collection",
+            "type": "collection",
+            "parentId": null
+          },
+          {
+            "id": "col-2",
+            "title": "Manuscripts & Letters",
+            "type": "collection",
+            "parentId": null
+          },
+          {
+            "id": "col-3",
+            "title": "Audio Recordings",
+            "type": "collection",
+            "parentId": null
+          },
+          {
+            "id": "col-1a",
+            "title": "Landscapes",
+            "type": "collection",
+            "parentId": "col-1"
+          },
+          {
+            "id": "col-1b",
+            "title": "Portraits",
+            "type": "collection",
+            "parentId": "col-1"
+          }
+        ],
+        "works": [
+          {
+            "id": "work-1",
+            "title": "Sunset Over the Valley",
+            "type": "work",
+            "parentId": "col-1"
+          },
+          {
+            "id": "work-2",
+            "title": "Portrait of a Scholar",
+            "type": "work",
+            "parentId": "col-1"
+          },
+          {
+            "id": "work-3",
+            "title": "City Streets, 1920",
+            "type": "work",
+            "parentId": "col-1"
+          },
+          {
+            "id": "work-4",
+            "title": "Letter from John Adams",
+            "type": "work",
+            "parentId": "col-2"
+          },
+          {
+            "id": "work-5",
+            "title": "Medieval Manuscript Fragment",
+            "type": "work",
+            "parentId": "col-2"
+          },
+          {
+            "id": "work-6",
+            "title": "Interview with Jane Doe",
+            "type": "work",
+            "parentId": "col-3"
+          },
+          {
+            "id": "work-7",
+            "title": "Field Recording, Summer 1985",
+            "type": "work",
+            "parentId": "col-3"
+          },
+          {
+            "id": "work-8",
+            "title": "Untitled Photograph",
+            "type": "work",
+            "parentId": null
+          },
+          {
+            "id": "work-9",
+            "title": "Miscellaneous Notes",
+            "type": "work",
+            "parentId": null
+          },
+          {
+            "id": "work-10",
+            "title": "Mountain Vista at Dawn",
+            "type": "work",
+            "parentId": "col-1a"
+          },
+          {
+            "id": "work-11",
+            "title": "Coastal Sunset",
+            "type": "work",
+            "parentId": "col-1a"
+          },
+          {
+            "id": "work-12",
+            "title": "The Librarian",
+            "type": "work",
+            "parentId": "col-1b"
+          }
+        ],
+        "fileSets": [
+          {
+            "id": "fs-1",
+            "title": "sunset_valley.tiff",
+            "type": "file_set"
+          },
+          {
+            "id": "fs-2",
+            "title": "portrait_scholar.jpg",
+            "type": "file_set"
+          },
+          {
+            "id": "fs-3",
+            "title": "city_streets.png",
+            "type": "file_set"
+          }
+        ],
+        "totalItems": 20,
+        "headers": [
+          "source_identifier",
+          "title",
+          "creator",
+          "model",
+          "file"
+        ],
+        "missingRequired": [],
+        "unrecognized": [],
+        "rowCount": 30,
+        "isValid": true,
+        "hasWarnings": true,
+        "fileReferences": 30,
+        "missingFiles": [],
+        "foundFiles": 0,
+        "zipIncluded": false,
+        "messages": {
+          "validationStatus": {
+            "severity": "warning",
+            "icon": "fa-exclamation-triangle",
+            "title": "Validation Passed with Warnings",
+            "summary": "5 columns detected · 30 records found",
+            "details": "Recognized fields: source_identifier, title, creator, model, file",
+            "defaultOpen": true
+          },
+          "issues": [
+            {
+              "type": "file_references",
+              "severity": "warning",
+              "icon": "fa-exclamation-triangle",
+              "title": "File References",
+              "count": 30,
+              "summary": "30 files referenced in CSV.",
+              "description": "No ZIP file uploaded. Ensure files are accessible on the server or upload a ZIP file containing the referenced files.",
+              "items": [],
+              "defaultOpen": false
+            }
+          ]
+        }
+      }
+    },
+    "warning_combined": {
+      "label": "Combined warnings",
+      "category": "warning",
+      "files": [
+        {
+          "id": 4,
+          "name": "metadata.csv",
+          "size": "142 KB",
+          "fileType": "csv",
+          "fromZip": false
+        },
+        {
+          "id": 5,
+          "name": "Archive.zip",
+          "size": "7.58 MB",
+          "fileType": "zip",
+          "fromZip": false,
+          "subtitle": "contains files"
+        }
+      ],
+      "response": {
+        "collections": [
+          {
+            "id": "col-1",
+            "title": "Historical Photographs Collection",
+            "type": "collection",
+            "parentId": null
+          },
+          {
+            "id": "col-2",
+            "title": "Manuscripts & Letters",
+            "type": "collection",
+            "parentId": null
+          },
+          {
+            "id": "col-3",
+            "title": "Audio Recordings",
+            "type": "collection",
+            "parentId": null
+          },
+          {
+            "id": "col-1a",
+            "title": "Landscapes",
+            "type": "collection",
+            "parentId": "col-1"
+          },
+          {
+            "id": "col-1b",
+            "title": "Portraits",
+            "type": "collection",
+            "parentId": "col-1"
+          }
+        ],
+        "works": [
+          {
+            "id": "work-1",
+            "title": "Sunset Over the Valley",
+            "type": "work",
+            "parentId": "col-1"
+          },
+          {
+            "id": "work-2",
+            "title": "Portrait of a Scholar",
+            "type": "work",
+            "parentId": "col-1"
+          },
+          {
+            "id": "work-3",
+            "title": "City Streets, 1920",
+            "type": "work",
+            "parentId": "col-1"
+          },
+          {
+            "id": "work-4",
+            "title": "Letter from John Adams",
+            "type": "work",
+            "parentId": "col-2"
+          },
+          {
+            "id": "work-5",
+            "title": "Medieval Manuscript Fragment",
+            "type": "work",
+            "parentId": "col-2"
+          },
+          {
+            "id": "work-6",
+            "title": "Interview with Jane Doe",
+            "type": "work",
+            "parentId": "col-3"
+          },
+          {
+            "id": "work-7",
+            "title": "Field Recording, Summer 1985",
+            "type": "work",
+            "parentId": "col-3"
+          },
+          {
+            "id": "work-8",
+            "title": "Untitled Photograph",
+            "type": "work",
+            "parentId": null
+          },
+          {
+            "id": "work-9",
+            "title": "Miscellaneous Notes",
+            "type": "work",
+            "parentId": null
+          },
+          {
+            "id": "work-10",
+            "title": "Mountain Vista at Dawn",
+            "type": "work",
+            "parentId": "col-1a"
+          },
+          {
+            "id": "work-11",
+            "title": "Coastal Sunset",
+            "type": "work",
+            "parentId": "col-1a"
+          },
+          {
+            "id": "work-12",
+            "title": "The Librarian",
+            "type": "work",
+            "parentId": "col-1b"
+          }
+        ],
+        "fileSets": [
+          {
+            "id": "fs-1",
+            "title": "sunset_valley.tiff",
+            "type": "file_set"
+          },
+          {
+            "id": "fs-2",
+            "title": "portrait_scholar.jpg",
+            "type": "file_set"
+          },
+          {
+            "id": "fs-3",
+            "title": "city_streets.png",
+            "type": "file_set"
+          }
+        ],
+        "totalItems": 20,
+        "headers": [
+          "source_identifier",
+          "title",
+          "creator",
+          "model",
+          "parents",
+          "file",
+          "description",
+          "date_created",
+          "legacy_id",
+          "subject"
+        ],
+        "missingRequired": [],
+        "unrecognized": [
+          "legacy_id"
+        ],
+        "rowCount": 247,
+        "isValid": true,
+        "hasWarnings": true,
+        "fileReferences": 55,
+        "foundFiles": 52,
+        "zipIncluded": true,
+        "missingFiles": [
+          "photo_087.tiff",
+          "letter_scan_12.pdf",
+          "recording_03.wav"
+        ],
+        "messages": {
+          "validationStatus": {
+            "severity": "warning",
+            "icon": "fa-exclamation-triangle",
+            "title": "Validation Passed with Warnings",
+            "summary": "10 columns detected · 247 records found",
+            "details": "Recognized fields: source_identifier, title, creator, model, parents, file, description, date_created, subject",
+            "defaultOpen": true
+          },
+          "issues": [
+            {
+              "type": "unrecognized_fields",
+              "severity": "warning",
+              "icon": "fa-exclamation-triangle",
+              "title": "Unrecognized Fields",
+              "count": 1,
+              "description": "These columns will be ignored during import:",
+              "items": [
+                {
+                  "field": "legacy_id",
+                  "message": null
+                }
+              ],
+              "defaultOpen": false
+            },
+            {
+              "type": "file_references",
+              "severity": "warning",
+              "icon": "fa-info-circle",
+              "title": "File References",
+              "count": 55,
+              "summary": "52 of 55 files found in ZIP.",
+              "description": "3 files are referenced in your CSV but missing from the ZIP:",
+              "items": [
+                {
+                  "field": "photo_087.tiff",
+                  "message": "missing from ZIP"
+                },
+                {
+                  "field": "letter_scan_12.pdf",
+                  "message": "missing from ZIP"
+                },
+                {
+                  "field": "recording_03.wav",
+                  "message": "missing from ZIP"
+                }
+              ],
+              "defaultOpen": false
+            }
+          ]
+        }
+      }
+    },
+    "error_missing_required": {
+      "label": "Missing required fields",
+      "category": "error",
+      "files": [
+        {
+          "id": 7,
+          "name": "incomplete.csv",
+          "size": "42 KB",
+          "fileType": "csv",
+          "fromZip": false
+        }
+      ],
+      "response": {
+        "collections": [
+          {
+            "id": "col-1",
+            "title": "Historical Photographs Collection",
+            "type": "collection",
+            "parentId": null
+          },
+          {
+            "id": "col-2",
+            "title": "Manuscripts & Letters",
+            "type": "collection",
+            "parentId": null
+          },
+          {
+            "id": "col-3",
+            "title": "Audio Recordings",
+            "type": "collection",
+            "parentId": null
+          },
+          {
+            "id": "col-1a",
+            "title": "Landscapes",
+            "type": "collection",
+            "parentId": "col-1"
+          },
+          {
+            "id": "col-1b",
+            "title": "Portraits",
+            "type": "collection",
+            "parentId": "col-1"
+          }
+        ],
+        "works": [
+          {
+            "id": "work-1",
+            "title": "Sunset Over the Valley",
+            "type": "work",
+            "parentId": "col-1"
+          },
+          {
+            "id": "work-2",
+            "title": "Portrait of a Scholar",
+            "type": "work",
+            "parentId": "col-1"
+          },
+          {
+            "id": "work-3",
+            "title": "City Streets, 1920",
+            "type": "work",
+            "parentId": "col-1"
+          },
+          {
+            "id": "work-4",
+            "title": "Letter from John Adams",
+            "type": "work",
+            "parentId": "col-2"
+          },
+          {
+            "id": "work-5",
+            "title": "Medieval Manuscript Fragment",
+            "type": "work",
+            "parentId": "col-2"
+          },
+          {
+            "id": "work-6",
+            "title": "Interview with Jane Doe",
+            "type": "work",
+            "parentId": "col-3"
+          },
+          {
+            "id": "work-7",
+            "title": "Field Recording, Summer 1985",
+            "type": "work",
+            "parentId": "col-3"
+          },
+          {
+            "id": "work-8",
+            "title": "Untitled Photograph",
+            "type": "work",
+            "parentId": null
+          },
+          {
+            "id": "work-9",
+            "title": "Miscellaneous Notes",
+            "type": "work",
+            "parentId": null
+          },
+          {
+            "id": "work-10",
+            "title": "Mountain Vista at Dawn",
+            "type": "work",
+            "parentId": "col-1a"
+          },
+          {
+            "id": "work-11",
+            "title": "Coastal Sunset",
+            "type": "work",
+            "parentId": "col-1a"
+          },
+          {
+            "id": "work-12",
+            "title": "The Librarian",
+            "type": "work",
+            "parentId": "col-1b"
+          }
+        ],
+        "fileSets": [
+          {
+            "id": "fs-1",
+            "title": "sunset_valley.tiff",
+            "type": "file_set"
+          },
+          {
+            "id": "fs-2",
+            "title": "portrait_scholar.jpg",
+            "type": "file_set"
+          },
+          {
+            "id": "fs-3",
+            "title": "city_streets.png",
+            "type": "file_set"
+          }
+        ],
+        "totalItems": 20,
+        "headers": [
+          "title",
+          "creator",
+          "description",
+          "date_created"
+        ],
+        "missingRequired": [
+          "source_identifier",
+          "model"
+        ],
+        "unrecognized": [],
+        "rowCount": 100,
+        "isValid": false,
+        "hasWarnings": false,
+        "fileReferences": 0,
+        "missingFiles": [],
+        "foundFiles": 0,
+        "zipIncluded": false,
+        "messages": {
+          "validationStatus": {
+            "severity": "error",
+            "icon": "fa-times-circle",
+            "title": "Validation Failed",
+            "summary": "4 columns detected · 100 records found",
+            "details": "Critical errors must be fixed before import.",
+            "defaultOpen": true
+          },
+          "issues": [
+            {
+              "type": "missing_required_fields",
+              "severity": "error",
+              "icon": "fa-times-circle",
+              "title": "Missing Required Fields",
+              "count": 2,
+              "description": "These required columns must be added to your CSV:",
+              "items": [
+                {
+                  "field": "source_identifier",
+                  "message": "add this column to your CSV"
+                },
+                {
+                  "field": "model",
+                  "message": "add this column to your CSV"
+                }
+              ],
+              "defaultOpen": false
+            }
+          ]
+        }
+      }
+    },
+    "error_combined": {
+      "label": "Errors + warnings",
+      "category": "error",
+      "files": [
+        {
+          "id": 7,
+          "name": "incomplete.csv",
+          "size": "42 KB",
+          "fileType": "csv",
+          "fromZip": false
+        }
+      ],
+      "response": {
+        "collections": [
+          {
+            "id": "col-1",
+            "title": "Historical Photographs Collection",
+            "type": "collection",
+            "parentId": null
+          },
+          {
+            "id": "col-2",
+            "title": "Manuscripts & Letters",
+            "type": "collection",
+            "parentId": null
+          },
+          {
+            "id": "col-3",
+            "title": "Audio Recordings",
+            "type": "collection",
+            "parentId": null
+          },
+          {
+            "id": "col-1a",
+            "title": "Landscapes",
+            "type": "collection",
+            "parentId": "col-1"
+          },
+          {
+            "id": "col-1b",
+            "title": "Portraits",
+            "type": "collection",
+            "parentId": "col-1"
+          }
+        ],
+        "works": [
+          {
+            "id": "work-1",
+            "title": "Sunset Over the Valley",
+            "type": "work",
+            "parentId": "col-1"
+          },
+          {
+            "id": "work-2",
+            "title": "Portrait of a Scholar",
+            "type": "work",
+            "parentId": "col-1"
+          },
+          {
+            "id": "work-3",
+            "title": "City Streets, 1920",
+            "type": "work",
+            "parentId": "col-1"
+          },
+          {
+            "id": "work-4",
+            "title": "Letter from John Adams",
+            "type": "work",
+            "parentId": "col-2"
+          },
+          {
+            "id": "work-5",
+            "title": "Medieval Manuscript Fragment",
+            "type": "work",
+            "parentId": "col-2"
+          },
+          {
+            "id": "work-6",
+            "title": "Interview with Jane Doe",
+            "type": "work",
+            "parentId": "col-3"
+          },
+          {
+            "id": "work-7",
+            "title": "Field Recording, Summer 1985",
+            "type": "work",
+            "parentId": "col-3"
+          },
+          {
+            "id": "work-8",
+            "title": "Untitled Photograph",
+            "type": "work",
+            "parentId": null
+          },
+          {
+            "id": "work-9",
+            "title": "Miscellaneous Notes",
+            "type": "work",
+            "parentId": null
+          },
+          {
+            "id": "work-10",
+            "title": "Mountain Vista at Dawn",
+            "type": "work",
+            "parentId": "col-1a"
+          },
+          {
+            "id": "work-11",
+            "title": "Coastal Sunset",
+            "type": "work",
+            "parentId": "col-1a"
+          },
+          {
+            "id": "work-12",
+            "title": "The Librarian",
+            "type": "work",
+            "parentId": "col-1b"
+          }
+        ],
+        "fileSets": [
+          {
+            "id": "fs-1",
+            "title": "sunset_valley.tiff",
+            "type": "file_set"
+          },
+          {
+            "id": "fs-2",
+            "title": "portrait_scholar.jpg",
+            "type": "file_set"
+          },
+          {
+            "id": "fs-3",
+            "title": "city_streets.png",
+            "type": "file_set"
+          }
+        ],
+        "totalItems": 20,
+        "headers": [
+          "title",
+          "creator",
+          "description",
+          "legacy_id"
+        ],
+        "missingRequired": [
+          "source_identifier",
+          "model"
+        ],
+        "unrecognized": [
+          "legacy_id"
+        ],
+        "rowCount": 75,
+        "isValid": false,
+        "hasWarnings": true,
+        "fileReferences": 0,
+        "missingFiles": [],
+        "foundFiles": 0,
+        "zipIncluded": false,
+        "messages": {
+          "validationStatus": {
+            "severity": "error",
+            "icon": "fa-times-circle",
+            "title": "Validation Failed",
+            "summary": "4 columns detected · 75 records found",
+            "details": "Critical errors must be fixed before import.",
+            "defaultOpen": true
+          },
+          "issues": [
+            {
+              "type": "missing_required_fields",
+              "severity": "error",
+              "icon": "fa-times-circle",
+              "title": "Missing Required Fields",
+              "count": 2,
+              "description": "These required columns must be added to your CSV:",
+              "items": [
+                {
+                  "field": "source_identifier",
+                  "message": "add this column to your CSV"
+                },
+                {
+                  "field": "model",
+                  "message": "add this column to your CSV"
+                }
+              ],
+              "defaultOpen": false
+            },
+            {
+              "type": "unrecognized_fields",
+              "severity": "warning",
+              "icon": "fa-exclamation-triangle",
+              "title": "Unrecognized Fields",
+              "count": 1,
+              "description": "These columns will be ignored during import:",
+              "items": [
+                {
+                  "field": "legacy_id",
+                  "message": null
+                }
+              ],
+              "defaultOpen": false
+            }
+          ]
+        }
+      }
+    }
+  }
+}
