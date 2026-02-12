@@ -72,6 +72,28 @@ $color-remove:          #d33a35;
       gap: 8px;
       position: relative;
       z-index: 2;
+
+      &.active {
+        .step-circle {
+          background: $color-primary;
+          border-color: $color-primary;
+          color: #fff;
+          box-shadow: 0 4px 8px rgba($color-primary, 0.3);
+        }
+        .step-label { color: $color-primary; font-weight: 600; }
+      }
+
+      &.completed {
+        .step-circle {
+          background: $color-success;
+          border-color: $color-success;
+          color: #fff;
+
+          .fa:not(.step-check) { display: none; }
+          .step-check { display: inline; }
+        }
+        .step-label { color: $color-success; }
+      }
     }
 
     .step-circle {
@@ -87,31 +109,8 @@ $color-remove:          #d33a35;
       font-size: 18px;
       transition: all 0.3s ease;
       position: relative;
-    }
 
-    .step-item.active .step-circle {
-      background: $color-primary;
-      border-color: $color-primary;
-      color: #fff;
-      box-shadow: 0 4px 8px rgba($color-primary, 0.3);
-    }
-
-    .step-item.completed .step-circle {
-      background: $color-success;
-      border-color: $color-success;
-      color: #fff;
-    }
-
-    .step-circle .step-check {
-      display: none;
-    }
-
-    .step-item.completed .step-circle .fa:not(.step-check) {
-      display: none;
-    }
-
-    .step-item.completed .step-circle .step-check {
-      display: inline;
+      .step-check { display: none; }
     }
 
     .step-label {
@@ -122,15 +121,6 @@ $color-remove:          #d33a35;
       transition: color 0.3s ease;
     }
 
-    .step-item.active .step-label {
-      color: $color-primary;
-      font-weight: 600;
-    }
-
-    .step-item.completed .step-label {
-      color: $color-success;
-    }
-
     .step-connector {
       flex: 1;
       height: 2px;
@@ -139,10 +129,8 @@ $color-remove:          #d33a35;
       margin-bottom: 25px;
       max-width: 120px;
       transition: background 0.3s ease;
-    }
 
-    .step-connector.completed {
-      background: $color-success;
+      &.completed { background: $color-success; }
     }
 
     /* ====== Success State ====== */
@@ -153,6 +141,9 @@ $color-remove:          #d33a35;
     .success-card {
       max-width: 500px;
       margin: 0 auto;
+
+      h2 { font-size: 24px; font-weight: bold; color: $color-text-dark; margin-bottom: 10px; }
+      p { color: $color-text-muted; margin-bottom: 30px; }
     }
 
     .success-icon {
@@ -168,18 +159,6 @@ $color-remove:          #d33a35;
       font-size: 40px;
     }
 
-    .success-card h2 {
-      font-size: 24px;
-      font-weight: bold;
-      color: $color-text-dark;
-      margin-bottom: 10px;
-    }
-
-    .success-card p {
-      color: $color-text-muted;
-      margin-bottom: 30px;
-    }
-
     .success-actions {
       display: flex;
       gap: 15px;
@@ -191,16 +170,9 @@ $color-remove:          #d33a35;
       min-height: 400px;
     }
 
-    .step-title h2 {
-      font-size: 20px;
-      font-weight: 600;
-      color: $color-text-dark;
-      margin-bottom: 5px;
-    }
-
-    .step-title .text-muted {
-      font-size: 14px;
-      margin-bottom: 20px;
+    .step-title {
+      h2 { font-size: 20px; font-weight: 600; color: $color-text-dark; margin-bottom: 5px; }
+      .text-muted { font-size: 14px; margin-bottom: 20px; }
     }
 
     /* ====== Upload Zone ====== */
@@ -215,16 +187,20 @@ $color-remove:          #d33a35;
       text-align: center;
       cursor: pointer;
       transition: all 0.3s ease;
-    }
 
-    .upload-dropzone:hover {
-      border-color: $color-primary;
-      background: rgba($color-primary, 0.02);
-    }
+      &:hover {
+        border-color: $color-primary;
+        background: rgba($color-primary, 0.02);
 
-    .upload-dropzone.dragover {
-      border-color: $color-primary;
-      background: rgba($color-primary, 0.05);
+        .upload-icon { background: $bg-primary-hover; }
+      }
+
+      &.dragover {
+        border-color: $color-primary;
+        background: rgba($color-primary, 0.05);
+      }
+
+      p { margin: 5px 0; }
     }
 
     .upload-icon {
@@ -241,14 +217,6 @@ $color-remove:          #d33a35;
       transition: all 0.3s ease;
     }
 
-    .upload-dropzone:hover .upload-icon {
-      background: $bg-primary-hover;
-    }
-
-    .upload-dropzone p {
-      margin: 5px 0;
-    }
-
     /* Add Another File Dropzone (Smaller) */
     .add-another-dropzone {
       margin-top: 20px;
@@ -262,16 +230,21 @@ $color-remove:          #d33a35;
       cursor: pointer;
       transition: all 0.3s ease;
       background: #fafbfc;
-    }
 
-    .upload-dropzone-small:hover {
-      border-color: $color-success;
-      background: rgba($color-success, 0.02);
-    }
+      &:hover {
+        border-color: $color-success;
+        background: rgba($color-success, 0.02);
 
-    .upload-dropzone-small.dragover {
-      border-color: $color-success;
-      background: rgba($color-success, 0.05);
+        .upload-icon-small { background: $bg-success-hover; }
+      }
+
+      &.dragover {
+        border-color: $color-success;
+        background: rgba($color-success, 0.05);
+      }
+
+      p { margin: 3px 0; font-size: 13px; }
+      strong { color: $color-text-dark; }
     }
 
     .upload-icon-small {
@@ -288,33 +261,15 @@ $color-remove:          #d33a35;
       transition: all 0.3s ease;
     }
 
-    .upload-dropzone-small:hover .upload-icon-small {
-      background: $bg-success-hover;
-    }
-
-    .upload-dropzone-small p {
-      margin: 3px 0;
-      font-size: 13px;
-    }
-
-    .upload-dropzone-small strong {
-      color: $color-text-dark;
-    }
-
     .demo-scenarios {
       margin-top: 15px;
       padding: 15px;
       background: $bg-primary-light;
       border: 1px solid $border-info;
       border-radius: 6px;
-    }
 
-    .demo-scenarios p {
-      margin-bottom: 10px;
-    }
-
-    .demo-scenarios .btn {
-      margin-bottom: 8px;
+      p { margin-bottom: 10px; }
+      .btn { margin-bottom: 8px; }
     }
 
     /* ====== Uploaded Files ====== */
@@ -331,11 +286,8 @@ $color-remove:          #d33a35;
       padding: 12px 20px;
       background: $bg-light;
       border-bottom: 1px solid $border-color;
-    }
 
-    .uploaded-files-header strong {
-      font-size: 14px;
-      color: $color-text-dark;
+      strong { font-size: 14px; color: $color-text-dark; }
     }
 
     .uploaded-files-list {
@@ -351,10 +303,8 @@ $color-remove:          #d33a35;
       border: 1px solid $border-color;
       border-radius: 8px;
       background: $bg-light;
-    }
 
-    .file-row:last-child {
-      margin-bottom: 0;
+      &:last-child { margin-bottom: 0; }
     }
 
     .file-actions {
@@ -426,23 +376,16 @@ $color-remove:          #d33a35;
       font-size: 13px;
       color: $color-text-muted;
       padding: 8px 0;
-    }
 
-    .upload-info .fa {
-      color: $color-text-muted;
+      .fa { color: $color-text-muted; }
     }
 
     /* Start Over Link */
     .start-over-link {
       margin-top: 15px;
       text-align: center;
-    }
 
-    .start-over-link a {
-      font-size: 13px;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
+      a { font-size: 13px; display: inline-flex; align-items: center; gap: 6px; }
     }
 
     /* ====== File Upload Errors ====== */
@@ -485,20 +428,16 @@ $color-remove:          #d33a35;
       gap: 8px;
       margin: 20px 0;
       font-size: 14px;
-    }
 
-    .download-template-link .fa {
-      font-size: 15px;
+      .fa { font-size: 15px; }
     }
 
     /* ====== Validate Button ====== */
     #validate-btn {
       margin: 25px 0;
       font-weight: 600;
-    }
 
-    #validate-btn .fa {
-      margin-right: 8px;
+      .fa { margin-right: 8px; }
     }
 
     /* ====== Validation Results ====== */
@@ -517,19 +456,27 @@ $color-remove:          #d33a35;
       border: 1px solid;
     }
 
-    .gauge-card-optimal {
-      background: $bg-success;
-      border-color: $border-success;
-    }
+    // Gauge severity variants
+    $gauge-variants: (
+      optimal:  (bg: $bg-success, border: $border-success, text: $color-success-dark, segment: $border-success, marker: $color-success-bright, radius: 6px 0 0 6px),
+      moderate: (bg: $bg-warning, border: $border-warning, text: $color-warning-dark, segment: $border-warning, marker: $color-warning,       radius: 0),
+      large:    (bg: $bg-error,   border: $border-error,   text: $color-error-dark,   segment: $border-error,   marker: $color-error,         radius: 0 6px 6px 0),
+    );
 
-    .gauge-card-moderate {
-      background: $bg-warning;
-      border-color: $border-warning;
-    }
+    @each $name, $colors in $gauge-variants {
+      .gauge-card-#{$name} {
+        background: map-get($colors, bg);
+        border-color: map-get($colors, border);
 
-    .gauge-card-large {
-      background: $bg-error;
-      border-color: $border-error;
+        .gauge-zone, .gauge-message { color: map-get($colors, text); }
+      }
+
+      .gauge-segment-#{$name} {
+        background: map-get($colors, segment);
+        @if map-get($colors, radius) != 0 { border-radius: map-get($colors, radius); }
+      }
+
+      .gauge-marker-#{$name} { background: map-get($colors, marker); }
     }
 
     .gauge-header {
@@ -546,18 +493,6 @@ $color-remove:          #d33a35;
       font-weight: 600;
     }
 
-    .gauge-card-optimal .gauge-zone {
-      color: $color-success-dark;
-    }
-
-    .gauge-card-moderate .gauge-zone {
-      color: $color-warning-dark;
-    }
-
-    .gauge-card-large .gauge-zone {
-      color: $color-error-dark;
-    }
-
     .gauge-track {
       height: 12px;
       border-radius: 6px;
@@ -567,57 +502,19 @@ $color-remove:          #d33a35;
       margin-bottom: 8px;
     }
 
-    .gauge-segment {
-      flex: 1;
-    }
-
-    .gauge-segment-optimal {
-      background: $border-success;
-      border-radius: 6px 0 0 6px;
-      /* Round left side */
-    }
-
-    .gauge-segment-moderate {
-      background: $border-warning;
-    }
-
-    .gauge-segment-large {
-      background: $border-error;
-      border-radius: 0 6px 6px 0;
-      /* Round right side */
-    }
+    .gauge-segment { flex: 1; }
 
     .gauge-marker {
       position: absolute;
       top: 50%;
-      /* Center vertically */
       transform: translateY(-50%);
-      /* Center the marker on the track */
       width: 20px;
-      /* Increased from 16px */
       height: 20px;
-      /* Increased from 16px */
       border-radius: 50%;
       border: 3px solid #fff;
-      /* Increased from 2px for better visibility */
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
-      /* Stronger shadow */
       margin-left: -10px;
-      /* Half of width to center horizontally */
       z-index: 10;
-      /* Ensure it overlays the track */
-    }
-
-    .gauge-marker-optimal {
-      background: $color-success-bright;
-    }
-
-    .gauge-marker-moderate {
-      background: $color-warning;
-    }
-
-    .gauge-marker-large {
-      background: $color-error;
     }
 
     .gauge-labels {
@@ -633,18 +530,6 @@ $color-remove:          #d33a35;
       margin: 0;
     }
 
-    .gauge-card-optimal .gauge-message {
-      color: $color-success-dark;
-    }
-
-    .gauge-card-moderate .gauge-message {
-      color: $color-warning-dark;
-    }
-
-    .gauge-card-large .gauge-message {
-      color: $color-error-dark;
-    }
-
     /* ====== Accordion ====== */
     .accordion-wrapper {
       margin-bottom: 25px;
@@ -655,35 +540,28 @@ $color-remove:          #d33a35;
       border-radius: 8px;
       margin-bottom: 12px;
       overflow: hidden;
+
+      &:last-child { margin-bottom: 0; }
     }
 
-    .accordion-item:last-child {
-      margin-bottom: 0;
-    }
+    // Accordion severity variants
+    $accordion-variants: (
+      success: (bg: $bg-success, border: $border-success, icon: $color-success-bright, count-bg: $border-success, count-text: $color-success-dark),
+      warning: (bg: $bg-warning, border: $border-warning, icon: $color-warning,       count-bg: $border-warning, count-text: $color-warning-dark),
+      error:   (bg: $bg-error,   border: $border-error,   icon: $color-error,         count-bg: $border-error,   count-text: $color-error-dark),
+      info:    (bg: $bg-info,    border: $border-info,     icon: $color-info,          count-bg: $border-info,    count-text: $color-info-darker),
+      default: (bg: #fff,        border: $border-color,    icon: $color-text-muted,    count-bg: $bg-muted,       count-text: $color-text-default),
+    );
 
-    .accordion-success {
-      border-color: $border-success;
-      background: $bg-success;
-    }
+    @each $name, $colors in $accordion-variants {
+      .accordion-#{$name} {
+        border-color: map-get($colors, border);
+        background: map-get($colors, bg);
 
-    .accordion-warning {
-      border-color: $border-warning;
-      background: $bg-warning;
-    }
-
-    .accordion-error {
-      border-color: $border-error;
-      background: $bg-error;
-    }
-
-    .accordion-info {
-      border-color: $border-info;
-      background: $bg-info;
-    }
-
-    .accordion-default {
-      border-color: $border-color;
-      background: #fff;
+        .accordion-icon { color: map-get($colors, icon); }
+        .accordion-count { background: map-get($colors, count-bg); color: map-get($colors, count-text); }
+        .accordion-content { background: rgba(255, 255, 255, 0.5); }
+      }
     }
 
     .accordion-header {
@@ -693,10 +571,8 @@ $color-remove:          #d33a35;
       padding: 12px 16px;
       cursor: pointer;
       transition: opacity 0.2s ease;
-    }
 
-    .accordion-header:hover {
-      opacity: 0.85;
+      &:hover { opacity: 0.85; }
     }
 
     .accordion-title {
@@ -712,57 +588,12 @@ $color-remove:          #d33a35;
       transform: unset;
     }
 
-    .accordion-success .accordion-icon {
-      color: $color-success-bright;
-    }
-
-    .accordion-warning .accordion-icon {
-      color: $color-warning;
-    }
-
-    .accordion-error .accordion-icon {
-      color: $color-error;
-    }
-
-    .accordion-info .accordion-icon {
-      color: $color-info;
-    }
-
-    .accordion-default .accordion-icon {
-      color: $color-text-muted;
-    }
-
     .accordion-count {
       font-size: 11px;
       font-weight: 600;
       padding: 2px 8px;
       border-radius: 12px;
       margin-left: 4px;
-    }
-
-    .accordion-success .accordion-count {
-      background: $border-success;
-      color: $color-success-dark;
-    }
-
-    .accordion-warning .accordion-count {
-      background: $border-warning;
-      color: $color-warning-dark;
-    }
-
-    .accordion-error .accordion-count {
-      background: $border-error;
-      color: $color-error-dark;
-    }
-
-    .accordion-info .accordion-count {
-      background: $border-info;
-      color: $color-info-darker;
-    }
-
-    .accordion-default .accordion-count {
-      background: $bg-muted;
-      color: $color-text-default;
     }
 
     .accordion-chevron {
@@ -775,44 +606,21 @@ $color-remove:          #d33a35;
       padding: 12px 16px;
       border-top: 1px solid rgba(0, 0, 0, 0.08);
       font-size: 13px;
-    }
 
-    .accordion-success .accordion-content {
-      background: rgba(255, 255, 255, 0.5);
-    }
+      ul {
+        margin: 5px 0;
+        padding-left: 0;
+        list-style: none;
+      }
 
-    .accordion-warning .accordion-content {
-      background: rgba(255, 255, 255, 0.5);
-    }
-
-    .accordion-error .accordion-content {
-      background: rgba(255, 255, 255, 0.5);
-    }
-
-    .accordion-info .accordion-content {
-      background: rgba(255, 255, 255, 0.5);
-    }
-
-    .accordion-content ul {
-      margin: 5px 0;
-      padding-left: 0;
-      list-style: none;
-    }
-
-    .accordion-content li {
-      margin-bottom: 4px;
+      li { margin-bottom: 4px; }
     }
 
     /* ====== Import Summary ====== */
     .import-summary {
       margin-top: 30px;
-    }
 
-    .import-summary h3 {
-      font-size: 14px;
-      font-weight: 600;
-      color: $color-text-dark;
-      margin-bottom: 15px;
+      h3 { font-size: 14px; font-weight: 600; color: $color-text-dark; margin-bottom: 15px; }
     }
 
     .summary-card {
@@ -822,19 +630,21 @@ $color-remove:          #d33a35;
       border: 1px solid;
     }
 
-    .summary-card-collections {
-      background: $bg-info;
-      border-color: $border-info-light;
-    }
+    // Summary card variants
+    $summary-variants: (
+      collections: (bg: $bg-info,    border: $border-info-light, number: $color-info-dark,    label: $color-info-dark),
+      works:       (bg: $bg-success, border: $border-success,    number: $color-success-dark, label: $color-success-dark),
+      filesets:    (bg: $bg-light,   border: $border-color,      number: $color-text-default, label: $color-text-muted),
+    );
 
-    .summary-card-works {
-      background: $bg-success;
-      border-color: $border-success;
-    }
+    @each $name, $colors in $summary-variants {
+      .summary-card-#{$name} {
+        background: map-get($colors, bg);
+        border-color: map-get($colors, border);
 
-    .summary-card-filesets {
-      background: $bg-light;
-      border-color: $border-color;
+        .summary-number { color: map-get($colors, number); }
+        .summary-label { color: map-get($colors, label); }
+      }
     }
 
     .summary-number {
@@ -843,33 +653,9 @@ $color-remove:          #d33a35;
       margin-bottom: 5px;
     }
 
-    .summary-card-collections .summary-number {
-      color: $color-info-dark;
-    }
-
-    .summary-card-works .summary-number {
-      color: $color-success-dark;
-    }
-
-    .summary-card-filesets .summary-number {
-      color: $color-text-default;
-    }
-
     .summary-label {
       font-size: 12px;
       font-weight: 500;
-    }
-
-    .summary-card-collections .summary-label {
-      color: $color-info-dark;
-    }
-
-    .summary-card-works .summary-label {
-      color: $color-success-dark;
-    }
-
-    .summary-card-filesets .summary-label {
-      color: $color-text-muted;
     }
 
     .hierarchy-accordions {
@@ -889,10 +675,8 @@ $color-remove:          #d33a35;
       cursor: pointer;
       border-radius: 4px;
       transition: background 0.2s ease;
-    }
 
-    .tree-item:hover {
-      background: rgba(0, 0, 0, 0.03);
+      &:hover { background: rgba(0, 0, 0, 0.03); }
     }
 
     .tree-chevron {
@@ -931,32 +715,17 @@ $color-remove:          #d33a35;
       font-size: 14px;
       color: $color-warning-dark;
       margin: 0;
-    }
 
-    .acknowledgment-checkbox input[type='checkbox'] {
-      margin-top: 2px;
-      cursor: pointer;
-      accent-color: $color-warning;
+      input[type='checkbox'] { margin-top: 2px; cursor: pointer; accent-color: $color-warning; }
     }
 
     /* ====== Settings Form ====== */
     .settings-form {
       margin: 25px 0;
-    }
 
-    .settings-form .form-group {
-      margin-bottom: 25px;
-    }
-
-    .settings-form .control-label {
-      font-size: 14px;
-      font-weight: 500;
-      color: $color-text-dark;
-      margin-bottom: 8px;
-    }
-
-    .settings-form .text-danger {
-      color: $color-error;
+      .form-group { margin-bottom: 25px; }
+      .control-label { font-size: 14px; font-weight: 500; color: $color-text-dark; margin-bottom: 8px; }
+      .text-danger { color: $color-error; }
     }
 
     /* ====== Visibility Options ====== */
@@ -971,16 +740,16 @@ $color-remove:          #d33a35;
       text-align: center;
       cursor: pointer;
       transition: all 0.3s ease;
-    }
 
-    .visibility-card:hover {
-      border-color: $color-text-disabled;
-    }
+      &:hover { border-color: $color-text-disabled; }
 
-    .visibility-card.active {
-      border-color: $color-primary;
-      background: $bg-primary-light;
-      box-shadow: 0 2px 4px rgba($color-primary, 0.1);
+      &.active {
+        border-color: $color-primary;
+        background: $bg-primary-light;
+        box-shadow: 0 2px 4px rgba($color-primary, 0.1);
+
+        .visibility-icon, .visibility-label { color: $color-primary; }
+      }
     }
 
     .visibility-icon {
@@ -990,19 +759,11 @@ $color-remove:          #d33a35;
       transition: color 0.3s ease;
     }
 
-    .visibility-card.active .visibility-icon {
-      color: $color-primary;
-    }
-
     .visibility-label {
       font-size: 14px;
       font-weight: 600;
       color: $color-text-dark;
       margin-bottom: 4px;
-    }
-
-    .visibility-card.active .visibility-label {
-      color: $color-primary;
     }
 
     .visibility-desc {
@@ -1011,36 +772,26 @@ $color-remove:          #d33a35;
     }
 
     /* ====== Optional Settings (Bootstrap 4 Card) ====== */
-    .optional-settings-accordion .card {
-      margin-bottom: 0;
-      border: 1px solid $border-color;
-    }
+    .optional-settings-accordion {
+      .card { margin-bottom: 0; border: 1px solid $border-color; }
+      .card-body { padding: 20px; }
+      .fa-cog { margin-right: 8px; }
 
-    .optional-settings-accordion .card-header {
-      cursor: pointer;
-      padding: 0;
-      background: $bg-light;
-    }
+      .card-header {
+        cursor: pointer;
+        padding: 0;
+        background: $bg-light;
 
-    .optional-settings-accordion .card-header .btn-link {
-      text-decoration: none;
-      color: $color-text-dark;
-      font-size: 14px;
-      font-weight: 500;
-      padding: 12px 16px;
-    }
+        .btn-link {
+          text-decoration: none;
+          color: $color-text-dark;
+          font-size: 14px;
+          font-weight: 500;
+          padding: 12px 16px;
 
-    .optional-settings-accordion .card-header .btn-link:hover {
-      text-decoration: none;
-      background: $bg-muted;
-    }
-
-    .optional-settings-accordion .fa-cog {
-      margin-right: 8px;
-    }
-
-    .optional-settings-accordion .card-body {
-      padding: 20px;
+          &:hover { text-decoration: none; background: $bg-muted; }
+        }
+      }
     }
 
     /* ====== Review Summary ====== */
@@ -1053,86 +804,42 @@ $color-remove:          #d33a35;
       align-items: center;
       gap: 10px;
       margin-bottom: 20px;
-    }
 
-    .review-header .fa {
-      font-size: 24px;
-      color: $color-success;
-    }
-
-    .review-header h3 {
-      font-size: 16px;
-      font-weight: 600;
-      color: $color-success-dark;
-      margin: 0;
+      .fa { font-size: 24px; color: $color-success; }
+      h3 { font-size: 16px; font-weight: 600; color: $color-success-dark; margin: 0; }
     }
 
     .review-section {
       margin-bottom: 20px;
       padding-bottom: 15px;
       border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-    }
 
-    .review-section:last-child {
-      border-bottom: none;
-      padding-bottom: 0;
-    }
-
-    .review-section h4 {
-      font-size: 14px;
-      font-weight: 600;
-      color: $color-success-dark;
-      margin-bottom: 8px;
-    }
-
-    .review-section p {
-      font-size: 13px;
-      color: $color-success-dark;
-      margin: 3px 0;
+      &:last-child { border-bottom: none; padding-bottom: 0; }
+      h4 { font-size: 14px; font-weight: 600; color: $color-success-dark; margin-bottom: 8px; }
+      p { font-size: 13px; color: $color-success-dark; margin: 3px 0; }
     }
 
     .review-warnings {
       border-top: 1px solid rgba(0, 0, 0, 0.08);
       padding-top: 15px;
-    }
 
-    .review-warnings h4 {
-      color: $color-warning-dark;
+      h4 { color: $color-warning-dark; }
     }
 
     .review-warnings-list {
       font-size: 12px;
       color: $color-warning-dark;
-    }
 
-    .review-warnings-list ul {
-      margin: 0;
-      padding-left: 0;
-      list-style: none;
+      ul { margin: 0; padding-left: 0; list-style: none; }
     }
 
     .large-import-warning {
       margin-bottom: 20px;
-    }
 
-    .large-import-warning .alert {
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
-    }
-
-    .large-import-warning .fa {
-      font-size: 20px;
-      margin-top: 2px;
-    }
-
-    .large-import-warning strong {
-      display: block;
-      margin-bottom: 5px;
-    }
-
-    .large-import-warning p {
-      margin: 0;
+      .alert { display: flex; align-items: flex-start; gap: 12px; }
+      .fa { font-size: 20px; margin-top: 2px; }
+      strong { display: block; margin-bottom: 5px; }
+      p { margin: 0; }
     }
 
     /* ====== Step Navigation ====== */
@@ -1144,15 +851,9 @@ $color-remove:          #d33a35;
       margin-top: 30px;
       padding-top: 20px;
       border-top: 1px solid #f0f0f0;
-    }
 
-    .step-navigation .btn {
-      min-width: 120px;
-      font-weight: 600;
-    }
-
-    .step-navigation .fa {
-      font-size: 14px;
+      .btn { min-width: 120px; font-weight: 600; }
+      .fa { font-size: 14px; }
     }
 
     .upload-notifications {
@@ -1167,24 +868,21 @@ $color-remove:          #d33a35;
       display: flex;
       align-items: center;
       animation: slideIn 0.3s ease-out;
-    }
 
-    .upload-notification.notification-error {
-      background-color: $bg-error;
-      border-color: $color-error;
-      color: $color-error-dark;
-    }
+      // Notification severity variants
+      $notification-variants: (
+        error:   (bg: $bg-error,   border: $color-error,   text: $color-error-dark),
+        warning: (bg: $bg-warning, border: $color-warning, text: $color-warning-dark),
+        info:    (bg: $bg-info,    border: $color-info,    text: $color-info-dark),
+      );
 
-    .upload-notification.notification-warning {
-      background-color: $bg-warning;
-      border-color: $color-warning;
-      color: $color-warning-dark;
-    }
-
-    .upload-notification.notification-info {
-      background-color: $bg-info;
-      border-color: $color-info;
-      color: $color-info-dark;
+      @each $name, $colors in $notification-variants {
+        &.notification-#{$name} {
+          background-color: map-get($colors, bg);
+          border-color: map-get($colors, border);
+          color: map-get($colors, text);
+        }
+      }
     }
 
     .upload-notification-icon {
@@ -1200,10 +898,8 @@ $color-remove:          #d33a35;
       margin-left: 12px;
       cursor: pointer;
       opacity: 0.5;
-    }
 
-    .upload-notification-close:hover {
-      opacity: 1;
+      &:hover { opacity: 1; }
     }
 
     .skip-validation-label {
@@ -1215,10 +911,8 @@ $color-remove:          #d33a35;
       cursor: pointer;
       user-select: none;
       font-size: 14px;
-    }
 
-    .skip-validation-label input[type="checkbox"] {
-      cursor: pointer;
+      input[type="checkbox"] { cursor: pointer; }
     }
 
     @keyframes slideIn {
