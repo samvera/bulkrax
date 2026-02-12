@@ -33,7 +33,6 @@
         "type": "file_set"
       }
     ],
-    "allItems*": ["collections + works combined"],
     "totalItems*": "integer - collections + works + fileSets count",
     "fileReferences*": "integer - Files referenced in CSV",
     "missingFiles*": ["string - Filenames missing from ZIP"],
@@ -111,7 +110,6 @@
     "collections": [],
     "works": [],
     "fileSets": [],
-    "allItems": [],
     "totalItems": 0,
     "fileReferences": 0,
     "missingFiles": [],
@@ -140,7 +138,6 @@
     "collections": [],
     "works": [],
     "fileSets": [],
-    "allItems": [],
     "totalItems": 0,
     "fileReferences": 0,
     "missingFiles": [],
@@ -187,7 +184,6 @@
     "collections": [],
     "works": [],
     "fileSets": [],
-    "allItems": [],
     "totalItems": 0,
     "fileReferences": 0,
     "missingFiles": [],

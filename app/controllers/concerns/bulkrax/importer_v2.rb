@@ -44,11 +44,22 @@ module Bulkrax
 
       # Mock validation response for testing
       # TODO: Replace with actual CsvValidationService call
+      # NOTE: Frontend demo scenarios are in lib/bulkrax/data/demo_scenarios.json
       response = generate_validation_response(csv_file, zip_file)
       render json: response, status: :ok
     end
 
     def create_v2
+    end
+
+    # Serve demo scenario fixtures for frontend testing
+    def demo_scenarios_v2
+      file_path = Bulkrax::Engine.root.join('lib', 'bulkrax', 'data', 'demo_scenarios.json')
+      if File.exist?(file_path)
+        render json: File.read(file_path), status: :ok
+      else
+        render json: { error: 'Demo scenarios not available' }, status: :not_found
+      end
     end
 
     private
@@ -109,7 +120,6 @@ module Bulkrax
         collections: collections,
         works: works,
         fileSets: file_sets,
-        allItems: collections + works,
         totalItems: collections.length + works.length + file_sets.length,
         fileReferences: 55,
         missingFiles: missing_files,

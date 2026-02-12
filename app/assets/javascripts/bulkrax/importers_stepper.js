@@ -14,6 +14,7 @@
     warningsAcked: false,
     isAddingFiles: false, // Flag to track if we're adding files vs replacing
     demoScenario: null, // Track which demo scenario is loaded
+    demoScenariosData: null, // Cached demo scenarios JSON from server
     settings: {
       name: '',
       adminSetId: '',
@@ -137,7 +138,11 @@
 
     // Demo scenarios (for testing)
     $('.step-circle').on('dblclick', function () {
-      $('.demo-scenarios').toggle()
+      var $panel = $('.demo-scenarios')
+      $panel.toggle()
+      if ($panel.is(':visible')) {
+        loadDemoScenariosData(function () {}) // Prefetch
+      }
     })
 
     $('.scenario-btn').on('click', function () {
@@ -446,94 +451,43 @@
     renderUploadedFiles()
   }
 
-  // Load demo scenario
-  function loadDemoScenario(scenario) {
-    // Reset state
-    resetUploadState()
-
-    // Set up files based on scenario
-    switch (scenario) {
-      case 'success_no_issues':
-        StepperState.uploadedFiles = [
-          {
-            id: 1,
-            name: 'metadata.csv',
-            size: '142 KB',
-            fileType: 'csv',
-            fromZip: false
-          }
-        ]
-        break
-      case 'success_with_files':
-        StepperState.uploadedFiles = [
-          {
-            id: 2,
-            name: 'metadata.csv',
-            size: '142 KB',
-            fileType: 'csv',
-            fromZip: false
-          },
-          {
-            id: 3,
-            name: 'files_package.zip',
-            size: '1.2 GB',
-            fileType: 'zip',
-            fromZip: false,
-            subtitle: 'contains files'
-          }
-        ]
-        break
-      case 'warning_unrecognized':
-      case 'warning_missing_files':
-      case 'warning_combined':
-        StepperState.uploadedFiles = [
-          {
-            id: 4,
-            name: 'metadata.csv',
-            size: '142 KB',
-            fileType: 'csv',
-            fromZip: false
-          },
-          {
-            id: 5,
-            name: 'Archive.zip',
-            size: '7.58 MB',
-            fileType: 'zip',
-            fromZip: false,
-            subtitle: 'contains files'
-          }
-        ]
-        break
-      case 'warning_no_zip':
-        StepperState.uploadedFiles = [
-          {
-            id: 6,
-            name: 'metadata.csv',
-            size: '142 KB',
-            fileType: 'csv',
-            fromZip: false
-          }
-        ]
-        break
-      case 'error_missing_required':
-      case 'error_combined':
-        StepperState.uploadedFiles = [
-          {
-            id: 7,
-            name: 'incomplete.csv',
-            size: '42 KB',
-            fileType: 'csv',
-            fromZip: false
-          }
-        ]
-        break
+  // Fetch and cache demo scenarios JSON from server
+  function loadDemoScenariosData(callback) {
+    if (StepperState.demoScenariosData) {
+      callback(StepperState.demoScenariosData)
+      return
     }
 
-    updateUploadState()
-    renderUploadedFiles()
+    $.ajax({
+      url: '/importers/v2/demo_scenarios',
+      method: 'GET',
+      dataType: 'json',
+      success: function (data) {
+        StepperState.demoScenariosData = data
+        callback(data)
+      },
+      error: function () {
+        console.warn('Failed to load demo scenarios')
+        callback(null)
+      }
+    })
+  }
 
-    // Store the scenario for validation
-    StepperState.demoScenario = scenario
+  // Load demo scenario from cached JSON
+  function loadDemoScenario(scenario) {
+    resetUploadState()
+
+    loadDemoScenariosData(function (data) {
+      if (!data || !data.scenarios || !data.scenarios[scenario]) {
+        console.warn('Demo scenario not found:', scenario)
+        return
+      }
+
+      StepperState.uploadedFiles = data.scenarios[scenario].files
+      StepperState.demoScenario = scenario
+      updateUploadState()
+      renderUploadedFiles()
+    })
   }
 
   // Update upload state based on files
@@ -730,6 +684,13 @@
       // Use mock data for demo scenarios
       setTimeout(function () {
         var mockData = getMockValidationData()
+        if (!mockData) {
+          showNotification('Demo data not loaded. Try selecting a scenario again.', 'error')
+          $btn
+            .prop('disabled', false)
+            .html('<span class="fa fa-file-text"></span> Validate Files')
+          return
+        }
         StepperState.validated = true
         StepperState.validationData = mockData
 
@@ -988,42 +949,36 @@
     var $container = $('.hierarchy-accordions')
     $container.empty()
 
-    // Collections
-    var collectionsContent =
-      '<div class="hierarchy-tree">' +
-      data.collections
-        .map(function (c) {
-          return renderTreeItem(c, data.allItems)
-        })
-        .join('') +
-      '</div>'
-    $container.append(
-      createAccordion(
-        'Collections',
-        'fa-folder',
-        'info',
-        data.collections.length,
-        false,
-        collectionsContent
-      )
-    )
-
-    // Works not in collections
+    // Import hierarchy — collections, nested items, and standalone works in one tree
+    var allItems = data.collections.concat(data.works)
+    var topLevelCollections = data.collections.filter(function (c) {
+      return !c.parentId
+    })
     var orphanWorks = data.works.filter(function (w) {
       return !w.parentId
     })
-    var worksContent =
-      orphanWorks.length === 0
-        ? '<p class="text-muted">All works are assigned to a collection.</p>'
-        : '<p>Showing works without a parent collection.</p>'
+    var hierarchyContent =
+      '<div class="hierarchy-tree">' +
+      topLevelCollections
+        .map(function (c) {
+          return renderTreeItem(c, allItems)
+        })
+        .join('') +
+      orphanWorks
+        .map(function (w) {
+          return renderTreeItem(w, allItems)
+        })
+        .join('') +
+      '</div>'
+    var itemCount = data.collections.length + data.works.length
     $container.append(
       createAccordion(
-        'Works not in collections',
-        'fa-file',
-        'default',
-        orphanWorks.length,
+        'Import Hierarchy',
+        'fa-sitemap',
+        'info',
+        itemCount,
         false,
-        worksContent
+        hierarchyContent
       )
     )
 
@@ -1086,7 +1041,7 @@
       .off('click')
       .on('click', function (e) {
         e.stopPropagation()
-        var $children = $(this).siblings('.tree-children')
+        var $children = $(this).next('.tree-children')
         var $chevron = $(this).find('.tree-chevron')
 
         if ($children.length > 0) {
@@ -1306,512 +1261,12 @@
     $('.import-success-state').show()
   }
 
-  // Mock validation data (replace with real backend response)
+  // Look up mock validation data from cached demo scenarios JSON
   function getMockValidationData() {
     var scenario = StepperState.demoScenario || 'warning_combined'
-    var zipIncluded = StepperState.uploadedFiles.some(function (f) {
-      return f.fileType === 'zip'
-    })
-
-    // Base data structures
-    var collections = [
-      {
-        id: 'col-1',
-        title: 'Historical Photographs Collection',
-        type: 'collection',
-        parentId: null
-      },
-      {
-        id: 'col-2',
-        title: 'Manuscripts & Letters',
-        type: 'collection',
-        parentId: null
-      }
-    ]
-
-    var works = []
-    for (var i = 0; i < 48; i++) {
-      works.push({
-        id: 'work-' + (i + 1),
-        title: 'Work ' + (i + 1),
-        type: 'work',
-        parentId: i < 25 ? 'col-1' : 'col-2'
-      })
-    }
-
-    var fileSets = []
-    for (var i = 0; i < 25; i++) {
-      fileSets.push({
-        id: 'fs-' + (i + 1),
-        title: 'FileSet ' + (i + 1),
-        type: 'file_set'
-      })
-    }
-
-    var baseData = {
-      collections: collections,
-      works: works,
-      fileSets: fileSets,
-      allItems: collections.concat(works),
-      totalItems: collections.length + works.length + fileSets.length,
-      zipIncluded: zipIncluded
-    }
-
-    // Return scenario-specific data
-    switch (scenario) {
-      case 'success_no_issues':
-        return getMockSuccess(baseData)
-      case 'success_with_files':
-        return getMockSuccessWithFiles(baseData)
-      case 'warning_unrecognized':
-        return getMockWarningUnrecognized(baseData)
-      case 'warning_missing_files':
-        return getMockWarningMissingFiles(baseData)
-      case 'warning_no_zip':
-        return getMockWarningNoZip(baseData)
-      case 'warning_combined':
-        return getMockWarningCombined(baseData)
-      case 'error_missing_required':
-        return getMockErrorMissingRequired(baseData)
-      case 'error_combined':
-        return getMockErrorCombined(baseData)
-      default:
-        return getMockWarningCombined(baseData)
-    }
-  }
-
-  // Success - No issues
-  function getMockSuccess(baseData) {
-    return {
-      headers: [
-        'source_identifier',
-        'title',
-        'creator',
-        'model',
-        'parents',
-        'file'
-      ],
-      missingRequired: [],
-      unrecognized: [],
-      rowCount: 50,
-      isValid: true,
-      hasWarnings: false,
-      collections: baseData.collections,
-      works: baseData.works,
-      fileSets: baseData.fileSets,
-      allItems: baseData.allItems,
-      totalItems: baseData.totalItems,
-      fileReferences: 0,
-      missingFiles: [],
-      foundFiles: 0,
-      zipIncluded: false,
-      messages: {
-        validationStatus: {
-          severity: 'success',
-          icon: 'fa-check-circle',
-          title: 'Validation Passed',
-          summary: '6 columns detected · 50 records found',
-          details:
-            'Recognized fields: source_identifier, title, creator, model, parents, file',
-          defaultOpen: true
-        },
-        issues: []
-      }
-    }
-  }
-
-  // Success - All files found in ZIP
-  function getMockSuccessWithFiles(baseData) {
-    return {
-      headers: ['source_identifier', 'title', 'creator', 'model', 'file'],
-      missingRequired: [],
-      unrecognized: [],
-      rowCount: 25,
-      isValid: true,
-      hasWarnings: false,
-      collections: [],
-      works: baseData.works.slice(0, 2),
-      fileSets: baseData.fileSets,
-      allItems: baseData.works.slice(0, 2),
-      totalItems: 27,
-      fileReferences: 25,
-      missingFiles: [],
-      foundFiles: 25,
-      zipIncluded: true,
-      messages: {
-        validationStatus: {
-          severity: 'success',
-          icon: 'fa-check-circle',
-          title: 'Validation Passed',
-          summary: '5 columns detected · 25 records found',
-          details:
-            'Recognized fields: source_identifier, title, creator, model, file',
-          defaultOpen: true
-        },
-        issues: [
-          {
-            type: 'file_references',
-            severity: 'info',
-            icon: 'fa-info-circle',
-            title: 'File References',
-            count: 25,
-            summary: '25 of 25 files found in ZIP.',
-            description: null,
-            items: [],
-            defaultOpen: false
-          }
-        ]
-      }
-    }
-  }
-
-  // Warning - Unrecognized fields
-  function getMockWarningUnrecognized(baseData) {
-    return {
-      headers: [
-        'source_identifier',
-        'title',
-        'creator',
-        'model',
-        'parents',
-        'file',
-        'description',
-        'date_created',
-        'legacy_id',
-        'internal_notes',
-        'subject'
-      ],
-      missingRequired: [],
-      unrecognized: ['legacy_id', 'internal_notes'],
-      rowCount: 247,
-      isValid: true,
-      hasWarnings: true,
-      collections: baseData.collections,
-      works: baseData.works,
-      fileSets: baseData.fileSets,
-      allItems: baseData.allItems,
-      totalItems: baseData.totalItems,
-      fileReferences: 0,
-      missingFiles: [],
-      foundFiles: 0,
-      zipIncluded: false,
-      messages: {
-        validationStatus: {
-          severity: 'warning',
-          icon: 'fa-exclamation-triangle',
-          title: 'Validation Passed with Warnings',
-          summary: '11 columns detected · 247 records found',
-          details:
-            'Recognized fields: source_identifier, title, creator, model, parents, file, description, date_created, subject',
-          defaultOpen: true
-        },
-        issues: [
-          {
-            type: 'unrecognized_fields',
-            severity: 'warning',
-            icon: 'fa-exclamation-triangle',
-            title: 'Unrecognized Fields',
-            count: 2,
-            description: 'These columns will be ignored during import:',
-            items: [
-              { field: 'legacy_id', message: null },
-              { field: 'internal_notes', message: null }
-            ],
-            defaultOpen: false
-          }
-        ]
-      }
-    }
-  }
-
-  // Warning - Missing files from ZIP
-  function getMockWarningMissingFiles(baseData) {
-    return {
-      headers: [
-        'source_identifier',
-        'title',
-        'creator',
-        'model',
-        'parents',
-        'file'
-      ],
-      missingRequired: [],
-      unrecognized: [],
-      rowCount: 55,
-      isValid: true,
-      hasWarnings: true,
-      collections: [baseData.collections[0]],
-      works: [baseData.works[0]],
-      fileSets: baseData.fileSets,
-      allItems: [baseData.collections[0], baseData.works[0]],
-      totalItems: 27,
-      fileReferences: 55,
-      missingFiles: [
-        'photo_087.tiff',
-        'letter_scan_12.pdf',
-        'recording_03.wav'
-      ],
-      foundFiles: 52,
-      zipIncluded: true,
-      messages: {
-        validationStatus: {
-          severity: 'warning',
-          icon: 'fa-exclamation-triangle',
-          title: 'Validation Passed with Warnings',
-          summary: '6 columns detected · 55 records found',
-          details:
-            'Recognized fields: source_identifier, title, creator, model, parents, file',
-          defaultOpen: true
-        },
-        issues: [
-          {
-            type: 'file_references',
-            severity: 'warning',
-            icon: 'fa-info-circle',
-            title: 'File References',
-            count: 55,
-            summary: '52 of 55 files found in ZIP.',
-            description:
-              '3 files are referenced in your CSV but missing from the ZIP:',
-            items: [
-              { field: 'photo_087.tiff', message: 'missing from ZIP' },
-              { field: 'letter_scan_12.pdf', message: 'missing from ZIP' },
-              { field: 'recording_03.wav', message: 'missing from ZIP' }
-            ],
-            defaultOpen: false
-          }
-        ]
-      }
-    }
-  }
-
-  // Warning - Files referenced but no ZIP uploaded
-  function getMockWarningNoZip(baseData) {
-    return {
-      headers: ['source_identifier', 'title', 'creator', 'model', 'file'],
-      missingRequired: [],
-      unrecognized: [],
-      rowCount: 30,
-      isValid: true,
-      hasWarnings: true,
-      collections: [],
-      works: [baseData.works[0]],
-      fileSets: [baseData.fileSets[0]],
-      allItems: [baseData.works[0]],
-      totalItems: 2,
-      fileReferences: 30,
-      missingFiles: [],
-      foundFiles: 0,
-      zipIncluded: false,
-      messages: {
-        validationStatus: {
-          severity: 'warning',
-          icon: 'fa-exclamation-triangle',
-          title: 'Validation Passed with Warnings',
-          summary: '5 columns detected · 30 records found',
-          details:
-            'Recognized fields: source_identifier, title, creator, model, file',
-          defaultOpen: true
-        },
-        issues: [
-          {
-            type: 'file_references',
-            severity: 'warning',
-            icon: 'fa-exclamation-triangle',
-            title: 'File References',
-            count: 30,
-            summary: '30 files referenced in CSV.',
-            description:
-              'No ZIP file uploaded. Ensure files are accessible on the server or upload a ZIP file containing the referenced files.',
-            items: [],
-            defaultOpen: false
-          }
-        ]
-      }
-    }
-  }
-
-  // Warning - Combined issues
-  function getMockWarningCombined(baseData) {
-    return {
-      headers: [
-        'source_identifier',
-        'title',
-        'creator',
-        'model',
-        'parents',
-        'file',
-        'description',
-        'date_created',
-        'legacy_id',
-        'subject'
-      ],
-      missingRequired: [],
-      unrecognized: ['legacy_id'],
-      rowCount: 247,
-      isValid: true,
-      hasWarnings: true,
-      collections: baseData.collections,
-      works: baseData.works,
-      fileSets: baseData.fileSets,
-      allItems: baseData.allItems,
-      totalItems: baseData.totalItems,
-      fileReferences: 55,
-      missingFiles: [
-        'photo_087.tiff',
-        'letter_scan_12.pdf',
-        'recording_03.wav'
-      ],
-      foundFiles: 52,
-      zipIncluded: true,
-      messages: {
-        validationStatus: {
-          severity: 'warning',
-          icon: 'fa-exclamation-triangle',
-          title: 'Validation Passed with Warnings',
-          summary: '10 columns detected · 247 records found',
-          details:
-            'Recognized fields: source_identifier, title, creator, model, parents, file, description, date_created, subject',
-          defaultOpen: true
-        },
-        issues: [
-          {
-            type: 'unrecognized_fields',
-            severity: 'warning',
-            icon: 'fa-exclamation-triangle',
-            title: 'Unrecognized Fields',
-            count: 1,
-            description: 'These columns will be ignored during import:',
-            items: [{ field: 'legacy_id', message: null }],
-            defaultOpen: false
-          },
-          {
-            type: 'file_references',
-            severity: 'warning',
-            icon: 'fa-info-circle',
-            title: 'File References',
-            count: 55,
-            summary: '52 of 55 files found in ZIP.',
-            description:
-              '3 files are referenced in your CSV but missing from the ZIP:',
-            items: [
-              { field: 'photo_087.tiff', message: 'missing from ZIP' },
-              { field: 'letter_scan_12.pdf', message: 'missing from ZIP' },
-              { field: 'recording_03.wav', message: 'missing from ZIP' }
-            ],
-            defaultOpen: false
-          }
-        ]
-      }
-    }
-  }
-
-  // Error - Missing required fields
-  function getMockErrorMissingRequired(baseData) {
-    return {
-      headers: ['title', 'creator', 'description', 'date_created'],
-      missingRequired: ['source_identifier', 'model'],
-      unrecognized: [],
-      rowCount: 100,
-      isValid: false,
-      hasWarnings: false,
-      collections: [],
-      works: [],
-      fileSets: [],
-      allItems: [],
-      totalItems: 0,
-      fileReferences: 0,
-      missingFiles: [],
-      foundFiles: 0,
-      zipIncluded: false,
-      messages: {
-        validationStatus: {
-          severity: 'error',
-          icon: 'fa-times-circle',
-          title: 'Validation Failed',
-          summary: '4 columns detected · 100 records found',
-          details: 'Critical errors must be fixed before import.',
-          defaultOpen: true
-        },
-        issues: [
-          {
-            type: 'missing_required_fields',
-            severity: 'error',
-            icon: 'fa-times-circle',
-            title: 'Missing Required Fields',
-            count: 2,
-            description: 'These required columns must be added to your CSV:',
-            items: [
-              {
-                field: 'source_identifier',
-                message: 'add this column to your CSV'
-              },
-              { field: 'model', message: 'add this column to your CSV' }
-            ],
-            defaultOpen: false
-          }
-        ]
-      }
-    }
-  }
-
-  // Error - Missing required fields + warnings
-  function getMockErrorCombined(baseData) {
-    return {
-      headers: ['title', 'creator', 'description', 'legacy_id'],
-      missingRequired: ['source_identifier', 'model'],
-      unrecognized: ['legacy_id'],
-      rowCount: 75,
-      isValid: false,
-      hasWarnings: true,
-      collections: [],
-      works: [],
-      fileSets: [],
-      allItems: [],
-      totalItems: 0,
-      fileReferences: 0,
-      missingFiles: [],
-      foundFiles: 0,
-      zipIncluded: false,
-      messages: {
-        validationStatus: {
-          severity: 'error',
-          icon: 'fa-times-circle',
-          title: 'Validation Failed',
-          summary: '4 columns detected · 75 records found',
-          details: 'Critical errors must be fixed before import.',
-          defaultOpen: true
-        },
-        issues: [
-          {
-            type: 'missing_required_fields',
-            severity: 'error',
-            icon: 'fa-times-circle',
-            title: 'Missing Required Fields',
-            count: 2,
-            description: 'These required columns must be added to your CSV:',
-            items: [
-              {
-                field: 'source_identifier',
-                message: 'add this column to your CSV'
-              },
-              { field: 'model', message: 'add this column to your CSV' }
-            ],
-            defaultOpen: false
-          },
-          {
-            type: 'unrecognized_fields',
-            severity: 'warning',
-            icon: 'fa-exclamation-triangle',
-            title: 'Unrecognized Fields',
-            count: 1,
-            description: 'These columns will be ignored during import:',
-            items: [{ field: 'legacy_id', message: null }],
-            defaultOpen: false
-          }
-        ]
-      }
-    }
+    var data = StepperState.demoScenariosData
+    if (!data || !data.scenarios || !data.scenarios[scenario]) return null
+    return data.scenarios[scenario].response
   }
 
   // Utility: format file size
