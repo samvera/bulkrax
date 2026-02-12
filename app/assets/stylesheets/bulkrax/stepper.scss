@@ -1,5 +1,49 @@
 /* Bulk Import Stepper Styles */
 
+// ---- Brand / Theme Colors ----
+$color-primary:         #337ab7;
+$color-success:         #5cb85c;
+$color-success-bright:  #28a745;
+$color-warning:         #ffc107;
+$color-error:           #dc3545;
+$color-info:            #17a2b8;
+
+// ---- Text Colors ----
+$color-text-dark:       #333;
+$color-text-muted:      #6c757d;
+$color-text-disabled:   #adb5bd;
+$color-text-default:    #495057;
+
+// ---- Severity Dark Text ----
+$color-success-dark:    #155724;
+$color-warning-dark:    #856404;
+$color-error-dark:      #721c24;
+$color-info-dark:       #0c5460;
+$color-info-darker:     #004085;
+
+// ---- Severity Backgrounds ----
+$bg-success:            #d4edda;
+$bg-warning:            #fff3cd;
+$bg-error:              #f8d7da;
+$bg-info:               #d1ecf1;
+
+// ---- Severity Borders ----
+$border-success:        #c3e6cb;
+$border-warning:        #ffeaa7;
+$border-error:          #f5c6cb;
+$border-info:           #b8daff;
+$border-info-light:     #bee5eb;
+
+// ---- Neutral Colors ----
+$bg-light:              #f8f9fa;
+$border-color:          #dee2e6;
+$bg-muted:              #e9ecef;
+$bg-primary-light:      #e7f3ff;
+$bg-primary-hover:      #d4e9ff;
+$bg-success-light:      #e8f5e9;
+$bg-success-hover:      #c8e6c9;
+$color-remove:          #d33a35;
+
 .bulk-import-stepper-container {
   max-width: 900px;
   margin: 0 auto;
@@ -37,24 +81,24 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      background: #f8f9fa;
-      border: 2px solid #dee2e6;
-      color: #adb5bd;
+      background: $bg-light;
+      border: 2px solid $border-color;
+      color: $color-text-disabled;
       font-size: 18px;
       transition: all 0.3s ease;
       position: relative;
     }
 
     .step-item.active .step-circle {
-      background: #337ab7;
-      border-color: #337ab7;
+      background: $color-primary;
+      border-color: $color-primary;
       color: #fff;
-      box-shadow: 0 4px 8px rgba(51, 122, 183, 0.3);
+      box-shadow: 0 4px 8px rgba($color-primary, 0.3);
     }
 
     .step-item.completed .step-circle {
-      background: #5cb85c;
-      border-color: #5cb85c;
+      background: $color-success;
+      border-color: $color-success;
       color: #fff;
     }
 
@@ -73,24 +117,24 @@
     .step-label {
       font-size: 12px;
       font-weight: 500;
-      color: #adb5bd;
+      color: $color-text-disabled;
       text-align: center;
       transition: color 0.3s ease;
     }
 
     .step-item.active .step-label {
-      color: #337ab7;
+      color: $color-primary;
       font-weight: 600;
     }
 
     .step-item.completed .step-label {
-      color: #5cb85c;
+      color: $color-success;
     }
 
     .step-connector {
       flex: 1;
       height: 2px;
-      background: #dee2e6;
+      background: $border-color;
       margin: 0 10px;
       margin-bottom: 25px;
       max-width: 120px;
@@ -98,7 +142,7 @@
     }
 
     .step-connector.completed {
-      background: #5cb85c;
+      background: $color-success;
     }
 
     /* ====== Success State ====== */
@@ -115,24 +159,24 @@
       width: 80px;
       height: 80px;
       margin: 0 auto 20px;
-      background: #d4edda;
+      background: $bg-success;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #5cb85c;
+      color: $color-success;
       font-size: 40px;
     }
 
     .success-card h2 {
       font-size: 24px;
       font-weight: bold;
-      color: #333;
+      color: $color-text-dark;
       margin-bottom: 10px;
     }
 
     .success-card p {
-      color: #6c757d;
+      color: $color-text-muted;
       margin-bottom: 30px;
     }
 
@@ -150,7 +194,7 @@
     .step-title h2 {
       font-size: 20px;
       font-weight: 600;
-      color: #333;
+      color: $color-text-dark;
       margin-bottom: 5px;
     }
 
@@ -165,7 +209,7 @@
     }
 
     .upload-dropzone {
-      border: 2px dashed #dee2e6;
+      border: 2px dashed $border-color;
       border-radius: 8px;
       padding: 60px 20px;
       text-align: center;
@@ -174,31 +218,31 @@
     }
 
     .upload-dropzone:hover {
-      border-color: #337ab7;
-      background: rgba(51, 122, 183, 0.02);
+      border-color: $color-primary;
+      background: rgba($color-primary, 0.02);
     }
 
     .upload-dropzone.dragover {
-      border-color: #337ab7;
-      background: rgba(51, 122, 183, 0.05);
+      border-color: $color-primary;
+      background: rgba($color-primary, 0.05);
     }
 
     .upload-icon {
       width: 60px;
       height: 60px;
       margin: 0 auto 15px;
-      background: #e7f3ff;
+      background: $bg-primary-light;
       border-radius: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #337ab7;
+      color: $color-primary;
       font-size: 28px;
       transition: all 0.3s ease;
     }
 
     .upload-dropzone:hover .upload-icon {
-      background: #d4e9ff;
+      background: $bg-primary-hover;
     }
 
     .upload-dropzone p {
@@ -211,7 +255,7 @@
     }
 
     .upload-dropzone-small {
-      border: 2px dashed #dee2e6;
+      border: 2px dashed $border-color;
       border-radius: 8px;
       padding: 30px 20px;
       text-align: center;
@@ -221,31 +265,31 @@
     }
 
     .upload-dropzone-small:hover {
-      border-color: #5cb85c;
-      background: rgba(92, 184, 92, 0.02);
+      border-color: $color-success;
+      background: rgba($color-success, 0.02);
     }
 
     .upload-dropzone-small.dragover {
-      border-color: #5cb85c;
-      background: rgba(92, 184, 92, 0.05);
+      border-color: $color-success;
+      background: rgba($color-success, 0.05);
     }
 
     .upload-icon-small {
       width: 40px;
       height: 40px;
       margin: 0 auto 10px;
-      background: #e8f5e9;
+      background: $bg-success-light;
       border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #5cb85c;
+      color: $color-success;
       font-size: 20px;
       transition: all 0.3s ease;
     }
 
     .upload-dropzone-small:hover .upload-icon-small {
-      background: #c8e6c9;
+      background: $bg-success-hover;
     }
 
     .upload-dropzone-small p {
@@ -254,14 +298,14 @@
     }
 
     .upload-dropzone-small strong {
-      color: #333;
+      color: $color-text-dark;
     }
 
     .demo-scenarios {
       margin-top: 15px;
       padding: 15px;
-      background: #e7f3ff;
-      border: 1px solid #b8daff;
+      background: $bg-primary-light;
+      border: 1px solid $border-info;
       border-radius: 6px;
     }
 
@@ -275,7 +319,7 @@
 
     /* ====== Uploaded Files ====== */
     .uploaded-files-container {
-      border: 1px solid #dee2e6;
+      border: 1px solid $border-color;
       border-radius: 8px;
       overflow: hidden;
     }
@@ -285,13 +329,13 @@
       justify-content: space-between;
       align-items: center;
       padding: 12px 20px;
-      background: #f8f9fa;
-      border-bottom: 1px solid #dee2e6;
+      background: $bg-light;
+      border-bottom: 1px solid $border-color;
     }
 
     .uploaded-files-header strong {
       font-size: 14px;
-      color: #333;
+      color: $color-text-dark;
     }
 
     .uploaded-files-list {
@@ -304,9 +348,9 @@
       align-items: center;
       padding: 15px;
       margin-bottom: 12px;
-      border: 1px solid #dee2e6;
+      border: 1px solid $border-color;
       border-radius: 8px;
-      background: #f8f9fa;
+      background: $bg-light;
     }
 
     .file-row:last-child {
@@ -321,7 +365,7 @@
 
     .file-remove-btn {
       border: 0;
-      color: #d33a35;
+      color: $color-remove;
       background: unset;
     }
 
@@ -343,11 +387,11 @@
     }
 
     .file-icon-csv {
-      background: #5cb85c;
+      background: $color-success;
     }
 
     .file-icon-zip {
-      background: #337ab7;
+      background: $color-primary;
     }
 
     .file-details {
@@ -357,17 +401,17 @@
     .file-name {
       font-size: 14px;
       font-weight: 500;
-      color: #333;
+      color: $color-text-dark;
       margin-bottom: 3px;
     }
 
     .file-subtitle {
       font-size: 12px;
-      color: #5cb85c;
+      color: $color-success;
     }
 
     .file-verified {
-      color: #5cb85c;
+      color: $color-success;
       font-size: 20px;
     }
 
@@ -380,12 +424,12 @@
       align-items: center;
       gap: 8px;
       font-size: 13px;
-      color: #6c757d;
+      color: $color-text-muted;
       padding: 8px 0;
     }
 
     .upload-info .fa {
-      color: #6c757d;
+      color: $color-text-muted;
     }
 
     /* Start Over Link */
@@ -474,18 +518,18 @@
     }
 
     .gauge-card-optimal {
-      background: #d4edda;
-      border-color: #c3e6cb;
+      background: $bg-success;
+      border-color: $border-success;
     }
 
     .gauge-card-moderate {
-      background: #fff3cd;
-      border-color: #ffeaa7;
+      background: $bg-warning;
+      border-color: $border-warning;
     }
 
     .gauge-card-large {
-      background: #f8d7da;
-      border-color: #f5c6cb;
+      background: $bg-error;
+      border-color: $border-error;
     }
 
     .gauge-header {
@@ -503,15 +547,15 @@
     }
 
     .gauge-card-optimal .gauge-zone {
-      color: #155724;
+      color: $color-success-dark;
     }
 
     .gauge-card-moderate .gauge-zone {
-      color: #856404;
+      color: $color-warning-dark;
     }
 
     .gauge-card-large .gauge-zone {
-      color: #721c24;
+      color: $color-error-dark;
     }
 
     .gauge-track {
@@ -528,17 +572,17 @@
     }
 
     .gauge-segment-optimal {
-      background: #c3e6cb;
+      background: $border-success;
       border-radius: 6px 0 0 6px;
       /* Round left side */
     }
 
     .gauge-segment-moderate {
-      background: #ffeaa7;
+      background: $border-warning;
     }
 
     .gauge-segment-large {
-      background: #f5c6cb;
+      background: $border-error;
       border-radius: 0 6px 6px 0;
       /* Round right side */
     }
@@ -565,22 +609,22 @@
     }
 
     .gauge-marker-optimal {
-      background: #28a745;
+      background: $color-success-bright;
     }
 
     .gauge-marker-moderate {
-      background: #ffc107;
+      background: $color-warning;
     }
 
     .gauge-marker-large {
-      background: #dc3545;
+      background: $color-error;
     }
 
     .gauge-labels {
       display: flex;
       justify-content: space-between;
       font-size: 11px;
-      color: #6c757d;
+      color: $color-text-muted;
       margin-bottom: 10px;
     }
 
@@ -590,15 +634,15 @@
     }
 
     .gauge-card-optimal .gauge-message {
-      color: #155724;
+      color: $color-success-dark;
     }
 
     .gauge-card-moderate .gauge-message {
-      color: #856404;
+      color: $color-warning-dark;
     }
 
     .gauge-card-large .gauge-message {
-      color: #721c24;
+      color: $color-error-dark;
     }
 
     /* ====== Accordion ====== */
@@ -618,27 +662,27 @@
     }
 
     .accordion-success {
-      border-color: #c3e6cb;
-      background: #d4edda;
+      border-color: $border-success;
+      background: $bg-success;
     }
 
     .accordion-warning {
-      border-color: #ffeaa7;
-      background: #fff3cd;
+      border-color: $border-warning;
+      background: $bg-warning;
     }
 
     .accordion-error {
-      border-color: #f5c6cb;
-      background: #f8d7da;
+      border-color: $border-error;
+      background: $bg-error;
     }
 
     .accordion-info {
-      border-color: #b8daff;
-      background: #d1ecf1;
+      border-color: $border-info;
+      background: $bg-info;
     }
 
     .accordion-default {
-      border-color: #dee2e6;
+      border-color: $border-color;
       background: #fff;
     }
 
@@ -669,23 +713,23 @@
     }
 
     .accordion-success .accordion-icon {
-      color: #28a745;
+      color: $color-success-bright;
     }
 
     .accordion-warning .accordion-icon {
-      color: #ffc107;
+      color: $color-warning;
     }
 
     .accordion-error .accordion-icon {
-      color: #dc3545;
+      color: $color-error;
     }
 
     .accordion-info .accordion-icon {
-      color: #17a2b8;
+      color: $color-info;
     }
 
     .accordion-default .accordion-icon {
-      color: #6c757d;
+      color: $color-text-muted;
     }
 
     .accordion-count {
@@ -697,32 +741,32 @@
     }
 
     .accordion-success .accordion-count {
-      background: #c3e6cb;
-      color: #155724;
+      background: $border-success;
+      color: $color-success-dark;
     }
 
     .accordion-warning .accordion-count {
-      background: #ffeaa7;
-      color: #856404;
+      background: $border-warning;
+      color: $color-warning-dark;
     }
 
     .accordion-error .accordion-count {
-      background: #f5c6cb;
-      color: #721c24;
+      background: $border-error;
+      color: $color-error-dark;
     }
 
     .accordion-info .accordion-count {
-      background: #b8daff;
-      color: #004085;
+      background: $border-info;
+      color: $color-info-darker;
     }
 
     .accordion-default .accordion-count {
-      background: #e9ecef;
-      color: #495057;
+      background: $bg-muted;
+      color: $color-text-default;
     }
 
     .accordion-chevron {
-      color: #6c757d;
+      color: $color-text-muted;
       font-size: 14px;
       transition: transform 0.2s ease;
     }
@@ -767,7 +811,7 @@
     .import-summary h3 {
       font-size: 14px;
       font-weight: 600;
-      color: #333;
+      color: $color-text-dark;
       margin-bottom: 15px;
     }
 
@@ -779,18 +823,18 @@
     }
 
     .summary-card-collections {
-      background: #d1ecf1;
-      border-color: #bee5eb;
+      background: $bg-info;
+      border-color: $border-info-light;
     }
 
     .summary-card-works {
-      background: #d4edda;
-      border-color: #c3e6cb;
+      background: $bg-success;
+      border-color: $border-success;
     }
 
     .summary-card-filesets {
-      background: #f8f9fa;
-      border-color: #dee2e6;
+      background: $bg-light;
+      border-color: $border-color;
     }
 
     .summary-number {
@@ -800,15 +844,15 @@
     }
 
     .summary-card-collections .summary-number {
-      color: #0c5460;
+      color: $color-info-dark;
     }
 
     .summary-card-works .summary-number {
-      color: #155724;
+      color: $color-success-dark;
     }
 
     .summary-card-filesets .summary-number {
-      color: #495057;
+      color: $color-text-default;
     }
 
     .summary-label {
@@ -817,15 +861,15 @@
     }
 
     .summary-card-collections .summary-label {
-      color: #0c5460;
+      color: $color-info-dark;
     }
 
     .summary-card-works .summary-label {
-      color: #155724;
+      color: $color-success-dark;
     }
 
     .summary-card-filesets .summary-label {
-      color: #6c757d;
+      color: $color-text-muted;
     }
 
     .hierarchy-accordions {
@@ -853,7 +897,7 @@
 
     .tree-chevron {
       font-size: 12px;
-      color: #6c757d;
+      color: $color-text-muted;
       transition: transform 0.2s ease;
     }
 
@@ -863,7 +907,7 @@
     }
 
     .tree-label {
-      color: #333;
+      color: $color-text-dark;
     }
 
     .tree-children {
@@ -880,19 +924,19 @@
       align-items: flex-start;
       gap: 12px;
       padding: 15px;
-      background: #fff3cd;
-      border: 1px solid #ffeaa7;
+      background: $bg-warning;
+      border: 1px solid $border-warning;
       border-radius: 8px;
       cursor: pointer;
       font-size: 14px;
-      color: #856404;
+      color: $color-warning-dark;
       margin: 0;
     }
 
     .acknowledgment-checkbox input[type='checkbox'] {
       margin-top: 2px;
       cursor: pointer;
-      accent-color: #ffc107;
+      accent-color: $color-warning;
     }
 
     /* ====== Settings Form ====== */
@@ -907,12 +951,12 @@
     .settings-form .control-label {
       font-size: 14px;
       font-weight: 500;
-      color: #333;
+      color: $color-text-dark;
       margin-bottom: 8px;
     }
 
     .settings-form .text-danger {
-      color: #dc3545;
+      color: $color-error;
     }
 
     /* ====== Visibility Options ====== */
@@ -922,7 +966,7 @@
 
     .visibility-card {
       padding: 20px 15px;
-      border: 2px solid #dee2e6;
+      border: 2px solid $border-color;
       border-radius: 8px;
       text-align: center;
       cursor: pointer;
@@ -930,57 +974,57 @@
     }
 
     .visibility-card:hover {
-      border-color: #adb5bd;
+      border-color: $color-text-disabled;
     }
 
     .visibility-card.active {
-      border-color: #337ab7;
-      background: #e7f3ff;
-      box-shadow: 0 2px 4px rgba(51, 122, 183, 0.1);
+      border-color: $color-primary;
+      background: $bg-primary-light;
+      box-shadow: 0 2px 4px rgba($color-primary, 0.1);
     }
 
     .visibility-icon {
       font-size: 22px;
-      color: #adb5bd;
+      color: $color-text-disabled;
       margin-bottom: 10px;
       transition: color 0.3s ease;
     }
 
     .visibility-card.active .visibility-icon {
-      color: #337ab7;
+      color: $color-primary;
     }
 
     .visibility-label {
       font-size: 14px;
       font-weight: 600;
-      color: #333;
+      color: $color-text-dark;
       margin-bottom: 4px;
     }
 
     .visibility-card.active .visibility-label {
-      color: #337ab7;
+      color: $color-primary;
     }
 
     .visibility-desc {
       font-size: 12px;
-      color: #6c757d;
+      color: $color-text-muted;
     }
 
     /* ====== Optional Settings (Bootstrap 4 Card) ====== */
     .optional-settings-accordion .card {
       margin-bottom: 0;
-      border: 1px solid #dee2e6;
+      border: 1px solid $border-color;
     }
 
     .optional-settings-accordion .card-header {
       cursor: pointer;
       padding: 0;
-      background: #f8f9fa;
+      background: $bg-light;
     }
 
     .optional-settings-accordion .card-header .btn-link {
       text-decoration: none;
-      color: #333;
+      color: $color-text-dark;
       font-size: 14px;
       font-weight: 500;
       padding: 12px 16px;
@@ -988,7 +1032,7 @@
 
     .optional-settings-accordion .card-header .btn-link:hover {
       text-decoration: none;
-      background: #e9ecef;
+      background: $bg-muted;
     }
 
     .optional-settings-accordion .fa-cog {
@@ -1013,13 +1057,13 @@
 
     .review-header .fa {
       font-size: 24px;
-      color: #5cb85c;
+      color: $color-success;
     }
 
     .review-header h3 {
       font-size: 16px;
       font-weight: 600;
-      color: #155724;
+      color: $color-success-dark;
       margin: 0;
     }
 
@@ -1037,13 +1081,13 @@
     .review-section h4 {
       font-size: 14px;
       font-weight: 600;
-      color: #155724;
+      color: $color-success-dark;
       margin-bottom: 8px;
     }
 
     .review-section p {
       font-size: 13px;
-      color: #155724;
+      color: $color-success-dark;
       margin: 3px 0;
     }
 
@@ -1053,12 +1097,12 @@
     }
 
     .review-warnings h4 {
-      color: #856404;
+      color: $color-warning-dark;
     }
 
     .review-warnings-list {
       font-size: 12px;
-      color: #856404;
+      color: $color-warning-dark;
     }
 
     .review-warnings-list ul {
@@ -1095,7 +1139,8 @@
     .step-navigation {
       display: flex;
       justify-content: space-between;
-      align-items: center;
+      align-items: flex-end;
+      gap: 15px;
       margin-top: 30px;
       padding-top: 20px;
       border-top: 1px solid #f0f0f0;
@@ -1120,27 +1165,26 @@
       border-radius: 4px;
       border-left: 4px solid;
       display: flex;
-      align-items: flex-start;
-      animation: slideIn 0.3s ease-out;
       align-items: center;
+      animation: slideIn 0.3s ease-out;
     }
 
     .upload-notification.notification-error {
-      background-color: #f8d7da;
-      border-color: #dc3545;
-      color: #721c24;
+      background-color: $bg-error;
+      border-color: $color-error;
+      color: $color-error-dark;
     }
 
     .upload-notification.notification-warning {
-      background-color: #fff3cd;
-      border-color: #ffc107;
-      color: #856404;
+      background-color: $bg-warning;
+      border-color: $color-warning;
+      color: $color-warning-dark;
     }
 
     .upload-notification.notification-info {
-      background-color: #d1ecf1;
-      border-color: #17a2b8;
-      color: #0c5460;
+      background-color: $bg-info;
+      border-color: $color-info;
+      color: $color-info-dark;
     }
 
     .upload-notification-icon {
@@ -1160,13 +1204,6 @@
 
     .upload-notification-close:hover {
       opacity: 1;
-    }
-
-    .step-navigation {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      gap: 15px;
     }
 
     .skip-validation-label {
