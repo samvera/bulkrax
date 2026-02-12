@@ -245,6 +245,45 @@
     })
   }
 
+  // Get file extension (lowercase)
+  function getFileExtension(filename) {
+    var lastDot = filename.lastIndexOf('.')
+    if (lastDot === -1) return ''
+    return filename.substring(lastDot).toLowerCase()
+  }
+
+  // Validate file extension
+  function isValidFileType(filename) {
+    var ext = getFileExtension(filename)
+    return ext === '.csv' || ext === '.zip'
+  }
+
+  // Show inline error messages
+  function showFileUploadError(messages) {
+    var errorContainer = $('#file-upload-errors')
+    if (messages && messages.length > 0) {
+      var html = '<div class="alert alert-danger alert-dismissible" role="alert">'
+      html += '<button type="button" class="close" data-dismiss="alert" aria-label="Close">'
+      html += '<span aria-hidden="true">&times;</span>'
+      html += '</button>'
+      html += '<strong><span class="fa fa-exclamation-circle"></span> File Upload Error</strong>'
+      html += '<ul class="mb-0 mt-2">'
+      messages.forEach(function(msg) {
+        html += '<li>' + msg.replace(/\n/g, '<br>') + '</li>'
+      })
+      html += '</ul>'
+      html += '</div>'
+      errorContainer.html(html).show()
+    } else {
+      errorContainer.hide().html('')
+    }
+  }
+
+  // Clear file upload errors
+  function clearFileUploadError() {
+    $('#file-upload-errors').hide().html('')
+  }
+
   // Handle file selection
   function handleFileSelect(isAddingMore) {
     var files = $('#file-input')[0].files
@@ -275,6 +314,17 @@
       var file = files[i]
       var fileName = file.name
       var fileSize = formatFileSize(file.size)
+
+      // Validate file extension first
+      if (!isValidFileType(fileName)) {
+        rejectedFiles.push({
+          name: fileName,
+          reason: 'invalid_type',
+          extension: getFileExtension(fileName)
+        })
+        continue
+      }
+
       var fileType = fileName.endsWith('.csv') ? 'csv' : 'zip'
 
       // Check for duplicates
@@ -318,6 +368,22 @@
     // Show appropriate warnings
     if (rejectedFiles.length > 0) {
       var messages = []
+
+      // Handle invalid file types FIRST
+      var invalidTypes = rejectedFiles.filter(function (f) {
+        return f.reason === 'invalid_type'
+      })
+
+      if (invalidTypes.length > 0) {
+        messages.push(
+          'Invalid file format. Only .csv and .zip files are allowed.\n' +
+          'The following files were rejected:\n• ' +
+          invalidTypes.map(function (f) {
+            return f.name + ' (' + (f.extension || 'no extension') + ')'
+          }).join('\n• ')
+        )
+      }
+
       var duplicateCsv = rejectedFiles.filter(function (f) {
         return f.reason === 'duplicate CSV'
       })
@@ -365,13 +431,15 @@
         messages.push('Maximum of 2 files reached (1 CSV and 1 ZIP).')
       }
 
-      showNotification(messages.join('\n\n'))
+      showFileUploadError(messages)
     } else if (files.length > addedFiles.length) {
-      showNotification(
+      showFileUploadError([
         'Maximum of 2 files allowed (1 CSV and 1 ZIP). Only the first ' +
           addedFiles.length +
           ' file(s) were added.'
-      )
+      ])
+    } else {
+      clearFileUploadError()
     }
 
     updateUploadState()
@@ -629,6 +697,7 @@
     $('#file-input').val('')
     $('.validation-results').hide()
     $('.warning-acknowledgment').hide()
+    clearFileUploadError()
 
     // Clear all notifications
     $('#upload-notifications').empty()

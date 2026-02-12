@@ -403,6 +403,39 @@
   gap: 6px;
 }
 
+/* ====== File Upload Errors ====== */
+.file-upload-errors {
+  margin: 20px 0;
+
+  .alert {
+    border-radius: 6px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+
+    strong {
+      display: block;
+      margin-bottom: 8px;
+
+      .fa {
+        margin-right: 6px;
+      }
+    }
+
+    ul {
+      padding-left: 20px;
+      margin-bottom: 0;
+
+      li {
+        margin-bottom: 4px;
+        line-height: 1.6;
+
+        &:last-child {
+          margin-bottom: 0;
+        }
+      }
+    }
+  }
+}
+
 /* ====== Download Template ====== */
 .download-template-link {
   display: flex;
