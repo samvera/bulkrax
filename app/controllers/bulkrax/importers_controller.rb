@@ -29,7 +29,8 @@ module Bulkrax
     end
 
     def importer_table
-      @importers = Importer.order(table_order).page(table_page).per(table_per_page)
+      order = table_order.presence || Arel.sql('last_imported_at DESC NULLS LAST')
+      @importers = Importer.order(order).page(table_page).per(table_per_page)
       @importers = @importers.where(importer_table_search) if importer_table_search.present?
       respond_to do |format|
         format.json { render json: format_importers(@importers) }
