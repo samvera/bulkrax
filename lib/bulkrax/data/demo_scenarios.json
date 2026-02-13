@@ -5,7 +5,7 @@
   },
   "scenarios": {
     "success_no_issues": {
-      "label": "Perfect - No issues",
+      "label": "CSV with Nested Collections and Works",
       "category": "success",
       "files": [
         {
@@ -22,31 +22,35 @@
             "id": "col-1",
             "title": "Historical Photographs Collection",
             "type": "collection",
-            "parentId": null
+            "parentIds": []
           },
           {
             "id": "col-2",
             "title": "Manuscripts & Letters",
             "type": "collection",
-            "parentId": null
+            "parentIds": []
           },
           {
             "id": "col-3",
             "title": "Audio Recordings",
             "type": "collection",
-            "parentId": null
+            "parentIds": []
           },
           {
             "id": "col-1a",
             "title": "Landscapes",
             "type": "collection",
-            "parentId": "col-1"
+            "parentIds": [
+              "col-1"
+            ]
           },
           {
             "id": "col-1b",
             "title": "Portraits",
             "type": "collection",
-            "parentId": "col-1"
+            "parentIds": [
+              "col-1"
+            ]
           }
         ],
         "works": [
@@ -54,97 +58,140 @@
             "id": "work-1",
             "title": "Sunset Over the Valley",
             "type": "work",
-            "parentId": "col-1"
+            "parentIds": [
+              "col-1"
+            ]
           },
           {
             "id": "work-2",
             "title": "Portrait of a Scholar",
             "type": "work",
-            "parentId": "col-1"
+            "parentIds": [
+              "col-1"
+            ]
           },
           {
             "id": "work-3",
             "title": "City Streets, 1920",
             "type": "work",
-            "parentId": "col-1"
+            "parentIds": [
+              "col-1"
+            ]
           },
           {
             "id": "work-4",
             "title": "Letter from John Adams",
             "type": "work",
-            "parentId": "col-2"
+            "parentIds": [
+              "col-2"
+            ]
           },
           {
             "id": "work-5",
             "title": "Medieval Manuscript Fragment",
             "type": "work",
-            "parentId": "col-2"
+            "parentIds": [
+              "col-2"
+            ]
           },
           {
             "id": "work-6",
             "title": "Interview with Jane Doe",
             "type": "work",
-            "parentId": "col-3"
+            "parentIds": [
+              "col-3"
+            ]
           },
           {
             "id": "work-7",
             "title": "Field Recording, Summer 1985",
             "type": "work",
-            "parentId": "col-3"
+            "parentIds": [
+              "col-3"
+            ]
           },
           {
             "id": "work-8",
             "title": "Untitled Photograph",
             "type": "work",
-            "parentId": null
+            "parentIds": []
           },
           {
             "id": "work-9",
             "title": "Miscellaneous Notes",
             "type": "work",
-            "parentId": null
+            "parentIds": []
           },
           {
             "id": "work-10",
             "title": "Mountain Vista at Dawn",
             "type": "work",
-            "parentId": "col-1a"
+            "parentIds": [
+              "col-1a"
+            ]
           },
           {
             "id": "work-11",
             "title": "Coastal Sunset",
             "type": "work",
-            "parentId": "col-1a"
+            "parentIds": [
+              "col-1a"
+            ]
           },
           {
             "id": "work-12",
             "title": "The Librarian",
             "type": "work",
-            "parentId": "col-1b"
+            "parentIds": [
+              "col-1b"
+            ]
           },
           {
             "id": "work-13",
             "title": "Parent Work",
             "type": "work",
-            "parentId": null
+            "parentIds": []
           },
           {
             "id": "work-14",
             "title": "Child Work",
             "type": "work",
-            "parentId": "work-13"
+            "parentIds": [
+              "work-13"
+            ]
           },
           {
             "id": "work-15",
             "title": "Parent Work with Collection Parent",
             "type": "work",
-            "parentId": "col-1"
+            "parentIds": [
+              "col-1"
+            ]
           },
           {
             "id": "work-16",
             "title": "Child Work of Work with Collection Parent",
             "type": "work",
-            "parentId": "work-15"
+            "parentIds": [
+              "work-15"
+            ]
+          },
+          {
+            "id": "work-17",
+            "title": "Work Shared by a Collection and another Work",
+            "type": "work",
+            "parentIds": [
+              "col-1",
+              "work-13"
+            ]
+          },
+          {
+            "id": "work-18",
+            "title": "Child Work of a Child Work",
+            "type": "work",
+            "parentIds": [
+              "work-16"
+            ]
           }
         ],
         "fileSets": [
@@ -196,7 +243,7 @@
       }
     },
     "success_with_files": {
-      "label": "All files found in ZIP",
+      "label": "CSV and ZIP",
       "category": "success",
       "files": [
         {
@@ -221,31 +268,35 @@
             "id": "col-1",
             "title": "Historical Photographs Collection",
             "type": "collection",
-            "parentId": null
+            "parentIds": []
           },
           {
             "id": "col-2",
             "title": "Manuscripts & Letters",
             "type": "collection",
-            "parentId": null
+            "parentIds": []
           },
           {
             "id": "col-3",
             "title": "Audio Recordings",
             "type": "collection",
-            "parentId": null
+            "parentIds": []
           },
           {
             "id": "col-1a",
             "title": "Landscapes",
             "type": "collection",
-            "parentId": "col-1"
+            "parentIds": [
+              "col-1"
+            ]
           },
           {
             "id": "col-1b",
             "title": "Portraits",
             "type": "collection",
-            "parentId": "col-1"
+            "parentIds": [
+              "col-1"
+            ]
           }
         ],
         "works": [
@@ -253,73 +304,93 @@
             "id": "work-1",
             "title": "Sunset Over the Valley",
             "type": "work",
-            "parentId": "col-1"
+            "parentIds": [
+              "col-1"
+            ]
           },
           {
             "id": "work-2",
             "title": "Portrait of a Scholar",
             "type": "work",
-            "parentId": "col-1"
+            "parentIds": [
+              "col-1"
+            ]
           },
           {
             "id": "work-3",
             "title": "City Streets, 1920",
             "type": "work",
-            "parentId": "col-1"
+            "parentIds": [
+              "col-1"
+            ]
           },
           {
             "id": "work-4",
             "title": "Letter from John Adams",
             "type": "work",
-            "parentId": "col-2"
+            "parentIds": [
+              "col-2"
+            ]
           },
           {
             "id": "work-5",
             "title": "Medieval Manuscript Fragment",
             "type": "work",
-            "parentId": "col-2"
+            "parentIds": [
+              "col-2"
+            ]
           },
           {
             "id": "work-6",
             "title": "Interview with Jane Doe",
             "type": "work",
-            "parentId": "col-3"
+            "parentIds": [
+              "col-3"
+            ]
           },
           {
             "id": "work-7",
             "title": "Field Recording, Summer 1985",
             "type": "work",
-            "parentId": "col-3"
+            "parentIds": [
+              "col-3"
+            ]
           },
           {
             "id": "work-8",
             "title": "Untitled Photograph",
             "type": "work",
-            "parentId": null
+            "parentIds": []
           },
           {
             "id": "work-9",
             "title": "Miscellaneous Notes",
             "type": "work",
-            "parentId": null
+            "parentIds": []
           },
           {
             "id": "work-10",
             "title": "Mountain Vista at Dawn",
             "type": "work",
-            "parentId": "col-1a"
+            "parentIds": [
+              "col-1a"
+            ]
           },
           {
             "id": "work-11",
             "title": "Coastal Sunset",
             "type": "work",
-            "parentId": "col-1a"
+            "parentIds": [
+              "col-1a"
+            ]
           },
           {
             "id": "work-12",
             "title": "The Librarian",
             "type": "work",
-            "parentId": "col-1b"
+            "parentIds": [
+              "col-1b"
+            ]
           }
         ],
         "fileSets": [
@@ -381,6 +452,417 @@
         }
       }
     },
+    "success_multi_parent": {
+      "label": "Success with multi-parent works",
+      "category": "success",
+      "files": [
+        {
+          "id": 10,
+          "name": "metadata.csv",
+          "size": "142 KB",
+          "fileType": "csv",
+          "fromZip": false
+        }
+      ],
+      "response": {
+        "collections": [
+          {
+            "id": "col-1",
+            "title": "Historical Photographs Collection",
+            "type": "collection",
+            "parentIds": []
+          },
+          {
+            "id": "col-2",
+            "title": "Manuscripts & Letters",
+            "type": "collection",
+            "parentIds": []
+          },
+          {
+            "id": "col-3",
+            "title": "Audio Recordings",
+            "type": "collection",
+            "parentIds": []
+          }
+        ],
+        "works": [
+          {
+            "id": "work-1",
+            "title": "Sunset Over the Valley",
+            "type": "work",
+            "parentIds": [
+              "col-1"
+            ]
+          },
+          {
+            "id": "work-2",
+            "title": "Portrait of a Scholar",
+            "type": "work",
+            "parentIds": [
+              "col-1"
+            ]
+          },
+          {
+            "id": "work-3",
+            "title": "Letter from John Adams",
+            "type": "work",
+            "parentIds": [
+              "col-2"
+            ]
+          },
+          {
+            "id": "work-4",
+            "title": "Interview with Jane Doe",
+            "type": "work",
+            "parentIds": [
+              "col-3"
+            ]
+          },
+          {
+            "id": "work-5",
+            "title": "Cross-Collection Photograph",
+            "type": "work",
+            "parentIds": [
+              "col-1",
+              "col-2"
+            ]
+          },
+          {
+            "id": "work-6",
+            "title": "Interdisciplinary Recording",
+            "type": "work",
+            "parentIds": [
+              "col-2",
+              "col-3"
+            ]
+          },
+          {
+            "id": "work-7",
+            "title": "Universal Archive Item",
+            "type": "work",
+            "parentIds": [
+              "col-1",
+              "col-2",
+              "col-3"
+            ]
+          },
+          {
+            "id": "work-8",
+            "title": "Orphan Document",
+            "type": "work",
+            "parentIds": []
+          }
+        ],
+        "fileSets": [
+          {
+            "id": "fs-1",
+            "title": "sunset_valley.tiff",
+            "type": "file_set"
+          },
+          {
+            "id": "fs-2",
+            "title": "portrait_scholar.jpg",
+            "type": "file_set"
+          }
+        ],
+        "totalItems": 13,
+        "headers": [
+          "source_identifier",
+          "title",
+          "creator",
+          "model",
+          "parents",
+          "file"
+        ],
+        "missingRequired": [],
+        "unrecognized": [],
+        "rowCount": 30,
+        "isValid": true,
+        "hasWarnings": false,
+        "fileReferences": 0,
+        "missingFiles": [],
+        "foundFiles": 0,
+        "zipIncluded": false,
+        "messages": {
+          "validationStatus": {
+            "severity": "success",
+            "icon": "fa-check-circle",
+            "title": "Validation Passed",
+            "summary": "6 columns detected · 30 records found",
+            "details": "Recognized fields: source_identifier, title, creator, model, parents, file",
+            "defaultOpen": true
+          },
+          "issues": []
+        }
+      }
+    },
+    "success_children_ids": {
+      "label": "Children IDs define hierarchy",
+      "category": "success",
+      "files": [
+        {
+          "id": 11,
+          "name": "metadata.csv",
+          "size": "98 KB",
+          "fileType": "csv",
+          "fromZip": false
+        }
+      ],
+      "response": {
+        "collections": [
+          {
+            "id": "col-1",
+            "title": "Photographs (uses childrenIds)",
+            "type": "collection",
+            "parentIds": [],
+            "childrenIds": [
+              "work-1",
+              "work-2",
+              "work-3"
+            ]
+          },
+          {
+            "id": "col-2",
+            "title": "Manuscripts (uses parentIds on children)",
+            "type": "collection",
+            "parentIds": [],
+            "childrenIds": []
+          },
+          {
+            "id": "col-3",
+            "title": "Mixed Collection (both approaches)",
+            "type": "collection",
+            "parentIds": [],
+            "childrenIds": [
+              "work-6"
+            ]
+          }
+        ],
+        "works": [
+          {
+            "id": "work-1",
+            "title": "Sunset Over the Valley",
+            "type": "work",
+            "parentIds": [],
+            "childrenIds": []
+          },
+          {
+            "id": "work-2",
+            "title": "City Streets, 1920",
+            "type": "work",
+            "parentIds": [],
+            "childrenIds": []
+          },
+          {
+            "id": "work-3",
+            "title": "Portrait of a Scholar",
+            "type": "work",
+            "parentIds": [],
+            "childrenIds": []
+          },
+          {
+            "id": "work-4",
+            "title": "Letter from John Adams",
+            "type": "work",
+            "parentIds": [
+              "col-2"
+            ],
+            "childrenIds": []
+          },
+          {
+            "id": "work-5",
+            "title": "Medieval Manuscript Fragment",
+            "type": "work",
+            "parentIds": [
+              "col-2"
+            ],
+            "childrenIds": []
+          },
+          {
+            "id": "work-6",
+            "title": "Cross-Referenced Recording",
+            "type": "work",
+            "parentIds": [
+              "col-2"
+            ],
+            "childrenIds": []
+          },
+          {
+            "id": "work-7",
+            "title": "Orphan Document",
+            "type": "work",
+            "parentIds": [],
+            "childrenIds": []
+          }
+        ],
+        "fileSets": [
+          {
+            "id": "fs-1",
+            "title": "sunset.tiff",
+            "type": "file_set"
+          }
+        ],
+        "totalItems": 11,
+        "headers": [
+          "source_identifier",
+          "title",
+          "creator",
+          "model",
+          "parents",
+          "children",
+          "file"
+        ],
+        "missingRequired": [],
+        "unrecognized": [],
+        "rowCount": 20,
+        "isValid": true,
+        "hasWarnings": false,
+        "fileReferences": 0,
+        "missingFiles": [],
+        "foundFiles": 0,
+        "zipIncluded": false,
+        "messages": {
+          "validationStatus": {
+            "severity": "success",
+            "icon": "fa-check-circle",
+            "title": "Validation Passed",
+            "summary": "7 columns detected · 20 records found",
+            "details": "Recognized fields: source_identifier, title, creator, model, parents, children, file",
+            "defaultOpen": true
+          },
+          "issues": []
+        }
+      }
+    },
+    "success_with_mixed_hierarchy": {
+      "label": "Each collection defines hierarchy differently",
+      "category": "success",
+      "files": [
+        {
+          "id": 11,
+          "name": "metadata.csv",
+          "size": "98 KB",
+          "fileType": "csv",
+          "fromZip": false
+        }
+      ],
+      "response": {
+        "collections": [
+          {
+            "id": "col-1",
+            "title": "Photographs (uses childrenIds)",
+            "type": "collection",
+            "parentIds": [],
+            "childrenIds": [
+              "work-1",
+              "work-2",
+              "work-3"
+            ]
+          },
+          {
+            "id": "col-2",
+            "title": "Manuscripts (uses parentIds on children)",
+            "type": "collection",
+            "parentIds": [],
+            "childrenIds": []
+          }
+        ],
+        "works": [
+          {
+            "id": "work-1",
+            "title": "Sunset Over the Valley",
+            "type": "work",
+            "parentIds": [],
+            "childrenIds": []
+          },
+          {
+            "id": "work-2",
+            "title": "City Streets, 1920",
+            "type": "work",
+            "parentIds": [],
+            "childrenIds": []
+          },
+          {
+            "id": "work-3",
+            "title": "Portrait of a Scholar",
+            "type": "work",
+            "parentIds": [],
+            "childrenIds": []
+          },
+          {
+            "id": "work-4",
+            "title": "Letter from John Adams",
+            "type": "work",
+            "parentIds": [
+              "col-2"
+            ],
+            "childrenIds": []
+          },
+          {
+            "id": "work-5",
+            "title": "Medieval Manuscript Fragment",
+            "type": "work",
+            "parentIds": [
+              "col-2"
+            ],
+            "childrenIds": []
+          },
+          {
+            "id": "work-6",
+            "title": "Cross-Referenced Recording",
+            "type": "work",
+            "parentIds": [
+              "col-2"
+            ],
+            "childrenIds": []
+          },
+          {
+            "id": "work-7",
+            "title": "Orphan Document",
+            "type": "work",
+            "parentIds": [],
+            "childrenIds": []
+          }
+        ],
+        "fileSets": [
+          {
+            "id": "fs-1",
+            "title": "sunset.tiff",
+            "type": "file_set"
+          }
+        ],
+        "totalItems": 11,
+        "headers": [
+          "source_identifier",
+          "title",
+          "creator",
+          "model",
+          "parents",
+          "children",
+          "file"
+        ],
+        "missingRequired": [],
+        "unrecognized": [],
+        "rowCount": 20,
+        "isValid": true,
+        "hasWarnings": false,
+        "fileReferences": 0,
+        "missingFiles": [],
+        "foundFiles": 0,
+        "zipIncluded": false,
+        "messages": {
+          "validationStatus": {
+            "severity": "success",
+            "icon": "fa-check-circle",
+            "title": "Validation Passed",
+            "summary": "7 columns detected · 20 records found",
+            "details": "Recognized fields: source_identifier, title, creator, model, parents, children, file",
+            "defaultOpen": true
+          },
+          "issues": []
+        }
+      }
+    },
     "warning_unrecognized": {
       "label": "Unrecognized fields",
       "category": "warning",
@@ -407,31 +889,35 @@
             "id": "col-1",
             "title": "Historical Photographs Collection",
             "type": "collection",
-            "parentId": null
+            "parentIds": []
           },
           {
             "id": "col-2",
             "title": "Manuscripts & Letters",
             "type": "collection",
-            "parentId": null
+            "parentIds": []
           },
           {
             "id": "col-3",
             "title": "Audio Recordings",
             "type": "collection",
-            "parentId": null
+            "parentIds": []
           },
           {
             "id": "col-1a",
             "title": "Landscapes",
             "type": "collection",
-            "parentId": "col-1"
+            "parentIds": [
+              "col-1"
+            ]
           },
           {
             "id": "col-1b",
             "title": "Portraits",
             "type": "collection",
-            "parentId": "col-1"
+            "parentIds": [
+              "col-1"
+            ]
           }
         ],
         "works": [
@@ -439,73 +925,93 @@
             "id": "work-1",
             "title": "Sunset Over the Valley",
             "type": "work",
-            "parentId": "col-1"
+            "parentIds": [
+              "col-1"
+            ]
           },
           {
             "id": "work-2",
             "title": "Portrait of a Scholar",
             "type": "work",
-            "parentId": "col-1"
+            "parentIds": [
+              "col-1"
+            ]
           },
           {
             "id": "work-3",
             "title": "City Streets, 1920",
             "type": "work",
-            "parentId": "col-1"
+            "parentIds": [
+              "col-1"
+            ]
           },
           {
             "id": "work-4",
             "title": "Letter from John Adams",
             "type": "work",
-            "parentId": "col-2"
+            "parentIds": [
+              "col-2"
+            ]
           },
           {
             "id": "work-5",
             "title": "Medieval Manuscript Fragment",
             "type": "work",
-            "parentId": "col-2"
+            "parentIds": [
+              "col-2"
+            ]
           },
           {
             "id": "work-6",
             "title": "Interview with Jane Doe",
             "type": "work",
-            "parentId": "col-3"
+            "parentIds": [
+              "col-3"
+            ]
           },
           {
             "id": "work-7",
             "title": "Field Recording, Summer 1985",
             "type": "work",
-            "parentId": "col-3"
+            "parentIds": [
+              "col-3"
+            ]
           },
           {
             "id": "work-8",
             "title": "Untitled Photograph",
             "type": "work",
-            "parentId": null
+            "parentIds": []
           },
           {
             "id": "work-9",
             "title": "Miscellaneous Notes",
             "type": "work",
-            "parentId": null
+            "parentIds": []
           },
           {
             "id": "work-10",
             "title": "Mountain Vista at Dawn",
             "type": "work",
-            "parentId": "col-1a"
+            "parentIds": [
+              "col-1a"
+            ]
           },
           {
             "id": "work-11",
             "title": "Coastal Sunset",
             "type": "work",
-            "parentId": "col-1a"
+            "parentIds": [
+              "col-1a"
+            ]
           },
           {
             "id": "work-12",
             "title": "The Librarian",
             "type": "work",
-            "parentId": "col-1b"
+            "parentIds": [
+              "col-1b"
+            ]
           }
         ],
         "fileSets": [
@@ -610,31 +1116,35 @@
             "id": "col-1",
             "title": "Historical Photographs Collection",
             "type": "collection",
-            "parentId": null
+            "parentIds": []
           },
           {
             "id": "col-2",
             "title": "Manuscripts & Letters",
             "type": "collection",
-            "parentId": null
+            "parentIds": []
           },
           {
             "id": "col-3",
             "title": "Audio Recordings",
             "type": "collection",
-            "parentId": null
+            "parentIds": []
           },
           {
             "id": "col-1a",
             "title": "Landscapes",
             "type": "collection",
-            "parentId": "col-1"
+            "parentIds": [
+              "col-1"
+            ]
           },
           {
             "id": "col-1b",
             "title": "Portraits",
             "type": "collection",
-            "parentId": "col-1"
+            "parentIds": [
+              "col-1"
+            ]
           }
         ],
         "works": [
@@ -642,73 +1152,93 @@
             "id": "work-1",
             "title": "Sunset Over the Valley",
             "type": "work",
-            "parentId": "col-1"
+            "parentIds": [
+              "col-1"
+            ]
           },
           {
             "id": "work-2",
             "title": "Portrait of a Scholar",
             "type": "work",
-            "parentId": "col-1"
+            "parentIds": [
+              "col-1"
+            ]
           },
           {
             "id": "work-3",
             "title": "City Streets, 1920",
             "type": "work",
-            "parentId": "col-1"
+            "parentIds": [
+              "col-1"
+            ]
           },
           {
             "id": "work-4",
             "title": "Letter from John Adams",
             "type": "work",
-            "parentId": "col-2"
+            "parentIds": [
+              "col-2"
+            ]
           },
           {
             "id": "work-5",
             "title": "Medieval Manuscript Fragment",
             "type": "work",
-            "parentId": "col-2"
+            "parentIds": [
+              "col-2"
+            ]
           },
           {
             "id": "work-6",
             "title": "Interview with Jane Doe",
             "type": "work",
-            "parentId": "col-3"
+            "parentIds": [
+              "col-3"
+            ]
           },
           {
             "id": "work-7",
             "title": "Field Recording, Summer 1985",
             "type": "work",
-            "parentId": "col-3"
+            "parentIds": [
+              "col-3"
+            ]
           },
           {
             "id": "work-8",
             "title": "Untitled Photograph",
             "type": "work",
-            "parentId": null
+            "parentIds": []
           },
           {
             "id": "work-9",
             "title": "Miscellaneous Notes",
             "type": "work",
-            "parentId": null
+            "parentIds": []
           },
           {
             "id": "work-10",
             "title": "Mountain Vista at Dawn",
             "type": "work",
-            "parentId": "col-1a"
+            "parentIds": [
+              "col-1a"
+            ]
           },
           {
             "id": "work-11",
             "title": "Coastal Sunset",
             "type": "work",
-            "parentId": "col-1a"
+            "parentIds": [
+              "col-1a"
+            ]
           },
           {
             "id": "work-12",
             "title": "The Librarian",
             "type": "work",
-            "parentId": "col-1b"
+            "parentIds": [
+              "col-1b"
+            ]
           }
         ],
         "fileSets": [
@@ -806,31 +1336,35 @@
             "id": "col-1",
             "title": "Historical Photographs Collection",
             "type": "collection",
-            "parentId": null
+            "parentIds": []
           },
           {
             "id": "col-2",
             "title": "Manuscripts & Letters",
             "type": "collection",
-            "parentId": null
+            "parentIds": []
           },
           {
             "id": "col-3",
             "title": "Audio Recordings",
             "type": "collection",
-            "parentId": null
+            "parentIds": []
           },
           {
             "id": "col-1a",
             "title": "Landscapes",
             "type": "collection",
-            "parentId": "col-1"
+            "parentIds": [
+              "col-1"
+            ]
           },
           {
             "id": "col-1b",
             "title": "Portraits",
             "type": "collection",
-            "parentId": "col-1"
+            "parentIds": [
+              "col-1"
+            ]
           }
         ],
         "works": [
@@ -838,73 +1372,93 @@
             "id": "work-1",
             "title": "Sunset Over the Valley",
             "type": "work",
-            "parentId": "col-1"
+            "parentIds": [
+              "col-1"
+            ]
           },
           {
             "id": "work-2",
             "title": "Portrait of a Scholar",
             "type": "work",
-            "parentId": "col-1"
+            "parentIds": [
+              "col-1"
+            ]
           },
           {
             "id": "work-3",
             "title": "City Streets, 1920",
             "type": "work",
-            "parentId": "col-1"
+            "parentIds": [
+              "col-1"
+            ]
           },
           {
             "id": "work-4",
             "title": "Letter from John Adams",
             "type": "work",
-            "parentId": "col-2"
+            "parentIds": [
+              "col-2"
+            ]
           },
           {
             "id": "work-5",
             "title": "Medieval Manuscript Fragment",
             "type": "work",
-            "parentId": "col-2"
+            "parentIds": [
+              "col-2"
+            ]
           },
           {
             "id": "work-6",
             "title": "Interview with Jane Doe",
             "type": "work",
-            "parentId": "col-3"
+            "parentIds": [
+              "col-3"
+            ]
           },
           {
             "id": "work-7",
             "title": "Field Recording, Summer 1985",
             "type": "work",
-            "parentId": "col-3"
+            "parentIds": [
+              "col-3"
+            ]
           },
           {
             "id": "work-8",
             "title": "Untitled Photograph",
             "type": "work",
-            "parentId": null
+            "parentIds": []
           },
           {
             "id": "work-9",
             "title": "Miscellaneous Notes",
             "type": "work",
-            "parentId": null
+            "parentIds": []
           },
           {
             "id": "work-10",
             "title": "Mountain Vista at Dawn",
             "type": "work",
-            "parentId": "col-1a"
+            "parentIds": [
+              "col-1a"
+            ]
           },
           {
             "id": "work-11",
             "title": "Coastal Sunset",
             "type": "work",
-            "parentId": "col-1a"
+            "parentIds": [
+              "col-1a"
+            ]
           },
           {
             "id": "work-12",
             "title": "The Librarian",
             "type": "work",
-            "parentId": "col-1b"
+            "parentIds": [
+              "col-1b"
+            ]
           }
         ],
         "fileSets": [
@@ -992,31 +1546,35 @@
             "id": "col-1",
             "title": "Historical Photographs Collection",
             "type": "collection",
-            "parentId": null
+            "parentIds": []
           },
           {
             "id": "col-2",
             "title": "Manuscripts & Letters",
             "type": "collection",
-            "parentId": null
+            "parentIds": []
           },
           {
             "id": "col-3",
             "title": "Audio Recordings",
             "type": "collection",
-            "parentId": null
+            "parentIds": []
           },
           {
             "id": "col-1a",
             "title": "Landscapes",
             "type": "collection",
-            "parentId": "col-1"
+            "parentIds": [
+              "col-1"
+            ]
           },
           {
             "id": "col-1b",
             "title": "Portraits",
             "type": "collection",
-            "parentId": "col-1"
+            "parentIds": [
+              "col-1"
+            ]
           }
         ],
         "works": [
@@ -1024,73 +1582,93 @@
             "id": "work-1",
             "title": "Sunset Over the Valley",
             "type": "work",
-            "parentId": "col-1"
+            "parentIds": [
+              "col-1"
+            ]
           },
           {
             "id": "work-2",
             "title": "Portrait of a Scholar",
             "type": "work",
-            "parentId": "col-1"
+            "parentIds": [
+              "col-1"
+            ]
           },
           {
             "id": "work-3",
             "title": "City Streets, 1920",
             "type": "work",
-            "parentId": "col-1"
+            "parentIds": [
+              "col-1"
+            ]
           },
           {
             "id": "work-4",
             "title": "Letter from John Adams",
             "type": "work",
-            "parentId": "col-2"
+            "parentIds": [
+              "col-2"
+            ]
           },
           {
             "id": "work-5",
             "title": "Medieval Manuscript Fragment",
             "type": "work",
-            "parentId": "col-2"
+            "parentIds": [
+              "col-2"
+            ]
           },
           {
             "id": "work-6",
             "title": "Interview with Jane Doe",
             "type": "work",
-            "parentId": "col-3"
+            "parentIds": [
+              "col-3"
+            ]
           },
           {
             "id": "work-7",
             "title": "Field Recording, Summer 1985",
             "type": "work",
-            "parentId": "col-3"
+            "parentIds": [
+              "col-3"
+            ]
           },
           {
             "id": "work-8",
             "title": "Untitled Photograph",
             "type": "work",
-            "parentId": null
+            "parentIds": []
           },
           {
             "id": "work-9",
             "title": "Miscellaneous Notes",
             "type": "work",
-            "parentId": null
+            "parentIds": []
           },
           {
             "id": "work-10",
             "title": "Mountain Vista at Dawn",
             "type": "work",
-            "parentId": "col-1a"
+            "parentIds": [
+              "col-1a"
+            ]
           },
           {
             "id": "work-11",
             "title": "Coastal Sunset",
             "type": "work",
-            "parentId": "col-1a"
+            "parentIds": [
+              "col-1a"
+            ]
           },
           {
             "id": "work-12",
             "title": "The Librarian",
             "type": "work",
-            "parentId": "col-1b"
+            "parentIds": [
+              "col-1b"
+            ]
           }
         ],
         "fileSets": [
@@ -1209,31 +1787,35 @@
             "id": "col-1",
             "title": "Historical Photographs Collection",
             "type": "collection",
-            "parentId": null
+            "parentIds": []
           },
           {
             "id": "col-2",
             "title": "Manuscripts & Letters",
             "type": "collection",
-            "parentId": null
+            "parentIds": []
           },
           {
             "id": "col-3",
             "title": "Audio Recordings",
             "type": "collection",
-            "parentId": null
+            "parentIds": []
           },
           {
             "id": "col-1a",
             "title": "Landscapes",
             "type": "collection",
-            "parentId": "col-1"
+            "parentIds": [
+              "col-1"
+            ]
           },
           {
             "id": "col-1b",
             "title": "Portraits",
             "type": "collection",
-            "parentId": "col-1"
+            "parentIds": [
+              "col-1"
+            ]
           }
         ],
         "works": [
@@ -1241,73 +1823,93 @@
             "id": "work-1",
             "title": "Sunset Over the Valley",
             "type": "work",
-            "parentId": "col-1"
+            "parentIds": [
+              "col-1"
+            ]
           },
           {
             "id": "work-2",
             "title": "Portrait of a Scholar",
             "type": "work",
-            "parentId": "col-1"
+            "parentIds": [
+              "col-1"
+            ]
           },
           {
             "id": "work-3",
             "title": "City Streets, 1920",
             "type": "work",
-            "parentId": "col-1"
+            "parentIds": [
+              "col-1"
+            ]
           },
           {
             "id": "work-4",
             "title": "Letter from John Adams",
             "type": "work",
-            "parentId": "col-2"
+            "parentIds": [
+              "col-2"
+            ]
           },
           {
             "id": "work-5",
             "title": "Medieval Manuscript Fragment",
             "type": "work",
-            "parentId": "col-2"
+            "parentIds": [
+              "col-2"
+            ]
           },
           {
             "id": "work-6",
             "title": "Interview with Jane Doe",
             "type": "work",
-            "parentId": "col-3"
+            "parentIds": [
+              "col-3"
+            ]
           },
           {
             "id": "work-7",
             "title": "Field Recording, Summer 1985",
             "type": "work",
-            "parentId": "col-3"
+            "parentIds": [
+              "col-3"
+            ]
           },
           {
             "id": "work-8",
             "title": "Untitled Photograph",
             "type": "work",
-            "parentId": null
+            "parentIds": []
           },
           {
             "id": "work-9",
             "title": "Miscellaneous Notes",
             "type": "work",
-            "parentId": null
+            "parentIds": []
           },
           {
             "id": "work-10",
             "title": "Mountain Vista at Dawn",
             "type": "work",
-            "parentId": "col-1a"
+            "parentIds": [
+              "col-1a"
+            ]
           },
           {
             "id": "work-11",
             "title": "Coastal Sunset",
             "type": "work",
-            "parentId": "col-1a"
+            "parentIds": [
+              "col-1a"
+            ]
           },
           {
             "id": "work-12",
             "title": "The Librarian",
             "type": "work",
-            "parentId": "col-1b"
+            "parentIds": [
+              "col-1b"
+            ]
           }
         ],
         "fileSets": [
@@ -1397,31 +1999,35 @@
             "id": "col-1",
             "title": "Historical Photographs Collection",
             "type": "collection",
-            "parentId": null
+            "parentIds": []
           },
           {
             "id": "col-2",
             "title": "Manuscripts & Letters",
             "type": "collection",
-            "parentId": null
+            "parentIds": []
           },
           {
             "id": "col-3",
             "title": "Audio Recordings",
             "type": "collection",
-            "parentId": null
+            "parentIds": []
           },
           {
             "id": "col-1a",
             "title": "Landscapes",
             "type": "collection",
-            "parentId": "col-1"
+            "parentIds": [
+              "col-1"
+            ]
           },
           {
             "id": "col-1b",
             "title": "Portraits",
             "type": "collection",
-            "parentId": "col-1"
+            "parentIds": [
+              "col-1"
+            ]
           }
         ],
         "works": [
@@ -1429,73 +2035,93 @@
             "id": "work-1",
             "title": "Sunset Over the Valley",
             "type": "work",
-            "parentId": "col-1"
+            "parentIds": [
+              "col-1"
+            ]
           },
           {
             "id": "work-2",
             "title": "Portrait of a Scholar",
             "type": "work",
-            "parentId": "col-1"
+            "parentIds": [
+              "col-1"
+            ]
           },
           {
             "id": "work-3",
             "title": "City Streets, 1920",
             "type": "work",
-            "parentId": "col-1"
+            "parentIds": [
+              "col-1"
+            ]
           },
           {
             "id": "work-4",
             "title": "Letter from John Adams",
             "type": "work",
-            "parentId": "col-2"
+            "parentIds": [
+              "col-2"
+            ]
           },
           {
             "id": "work-5",
             "title": "Medieval Manuscript Fragment",
             "type": "work",
-            "parentId": "col-2"
+            "parentIds": [
+              "col-2"
+            ]
           },
           {
             "id": "work-6",
             "title": "Interview with Jane Doe",
             "type": "work",
-            "parentId": "col-3"
+            "parentIds": [
+              "col-3"
+            ]
           },
           {
             "id": "work-7",
             "title": "Field Recording, Summer 1985",
             "type": "work",
-            "parentId": "col-3"
+            "parentIds": [
+              "col-3"
+            ]
           },
           {
             "id": "work-8",
             "title": "Untitled Photograph",
             "type": "work",
-            "parentId": null
+            "parentIds": []
           },
           {
             "id": "work-9",
             "title": "Miscellaneous Notes",
             "type": "work",
-            "parentId": null
+            "parentIds": []
           },
           {
             "id": "work-10",
             "title": "Mountain Vista at Dawn",
             "type": "work",
-            "parentId": "col-1a"
+            "parentIds": [
+              "col-1a"
+            ]
           },
           {
             "id": "work-11",
             "title": "Coastal Sunset",
             "type": "work",
-            "parentId": "col-1a"
+            "parentIds": [
+              "col-1a"
+            ]
           },
           {
             "id": "work-12",
             "title": "The Librarian",
             "type": "work",
-            "parentId": "col-1b"
+            "parentIds": [
+              "col-1b"
+            ]
           }
         ],
         "fileSets": [
