@@ -81,8 +81,11 @@
                 <p class="small text-primary"><strong>Demo: Pick a validation scenario</strong></p>
                 <div style="margin-bottom: 10px;">
                   <p class="small text-muted mb-1"><strong>✓ Success</strong></p>
-                  <button type="button" class="btn btn-sm btn-outline-success btn-block scenario-btn" data-scenario="success_no_issues">Perfect - No issues</button>
-                  <button type="button" class="btn btn-sm btn-outline-success btn-block scenario-btn" data-scenario="success_with_files">All files found in ZIP</button>
+                  <button type="button" class="btn btn-sm btn-outline-success btn-block scenario-btn" data-scenario="success_no_issues">CSV with Nested Collections and Works</button>
+                  <button type="button" class="btn btn-sm btn-outline-success btn-block scenario-btn" data-scenario="success_with_files">CSV and ZIP</button>
+                  <button type="button" class="btn btn-sm btn-outline-success btn-block scenario-btn" data-scenario="success_multi_parent">Multi-parent works</button>
+                  <button type="button" class="btn btn-sm btn-outline-success btn-block scenario-btn" data-scenario="success_children_ids">Children IDs define hierarchy</button>
+                  <button type="button" class="btn btn-sm btn-outline-success btn-block scenario-btn" data-scenario="success_with_mixed_hierarchy">Each collection defines hierarchy differently</button>
                 </div>
                 <div style="margin-bottom: 10px;">
                   <p class="small text-muted mb-1"><strong>⚠ Warnings</strong></p>
@@ -155,7 +158,7 @@
           </div>
 
           <!-- Validate Button -->
-          <button type="button" id="validate-btn" class="btn btn-primary btn-block btn-lg" disabled>
+          <button type="button" id="validate-btn" class="validate-btn btn btn-primary btn-block btn-lg" disabled>
             <span class="fa fa-file-text"></span> Validate Files
           </button>
 

@@ -1,0 +1,29 @@
+/* ====== Success State ====== */
+.import-success-state {
+  padding: 60px 20px;
+}
+
+.success-card {
+  max-width: 500px;
+  margin: 0 auto;
+
+  h2 { font-size: 24px; font-weight: bold; color: $color-text-dark; margin-bottom: 10px; }
+  p { color: $color-text-muted; margin-bottom: 30px; }
+}
+
+.success-icon {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 20px;
+  background: $bg-success;
+  border-radius: 50%;
+  @include flex-center;
+  color: $color-success;
+  font-size: 40px;
+}
+
+.success-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+}

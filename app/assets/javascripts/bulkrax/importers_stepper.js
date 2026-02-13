@@ -1,7 +1,7 @@
 // Bulk Import Stepper - Multi-step wizard for CSV/ZIP imports
 // Handles file uploads, validation, settings, and review steps
 
-;(function ($) {
+; (function ($) {
   'use strict'
 
   // State management
@@ -141,7 +141,7 @@
       var $panel = $('.demo-scenarios')
       $panel.toggle()
       if ($panel.is(':visible')) {
-        loadDemoScenariosData(function () {}) // Prefetch
+        loadDemoScenariosData(function () { }) // Prefetch
       }
     })
 
@@ -211,7 +211,7 @@
     })
 
     // Remove file button (using event delegation since rows are dynamic)
-    $(document).on('click', '.file-remove-btn', function() {
+    $(document).on('click', '.file-remove-btn', function () {
       var $row = $(this).closest('.file-row')
       var fileName = $row.find('.file-name').text()
 
@@ -244,7 +244,7 @@
     })
 
     // Skip validation checkbox
-    $('#skip-validation-checkbox').on('change', function() {
+    $('#skip-validation-checkbox').on('change', function () {
       StepperState.skipValidation = $(this).is(':checked')
       updateStepNavigation()
     })
@@ -273,7 +273,7 @@
       html += '</button>'
       html += '<strong><span class="fa fa-exclamation-circle"></span> File Upload Error</strong>'
       html += '<ul class="mb-0 mt-2">'
-      messages.forEach(function(msg) {
+      messages.forEach(function (msg) {
         html += '<li>' + msg.replace(/\n/g, '<br>') + '</li>'
       })
       html += '</ul>'
@@ -402,31 +402,31 @@
       if (duplicateCsv.length > 0) {
         messages.push(
           'Only 1 CSV file allowed. The following files were not added:\n• ' +
-            duplicateCsv
-              .map(function (f) {
-                return f.name
-              })
-              .join('\n• ')
+          duplicateCsv
+            .map(function (f) {
+              return f.name
+            })
+            .join('\n• ')
         )
       }
       if (duplicateZip.length > 0) {
         messages.push(
           'Only 1 ZIP file allowed. The following files were not added:\n• ' +
-            duplicateZip
-              .map(function (f) {
-                return f.name
-              })
-              .join('\n• ')
+          duplicateZip
+            .map(function (f) {
+              return f.name
+            })
+            .join('\n• ')
         )
       }
       if (duplicates.length > 0) {
         messages.push(
           'The following files were already uploaded:\n• ' +
-            duplicates
-              .map(function (f) {
-                return f.name
-              })
-              .join('\n• ')
+          duplicates
+            .map(function (f) {
+              return f.name
+            })
+            .join('\n• ')
         )
       }
       if (
@@ -440,8 +440,8 @@
     } else if (files.length > addedFiles.length) {
       showFileUploadError([
         'Maximum of 2 files allowed (1 CSV and 1 ZIP). Only the first ' +
-          addedFiles.length +
-          ' file(s) were added.'
+        addedFiles.length +
+        ' file(s) were added.'
       ])
     } else {
       clearFileUploadError()
@@ -733,9 +733,49 @@
     }
   }
 
+  // Normalize childrenIds into parentIds and build a hierarchy lookup map.
+  // This converts parent-declares-children relationships into the canonical
+  // child-declares-parent form, then pre-computes a map for O(1) hierarchy lookups.
+  function normalizeRelationships(data) {
+    var allItems = data.collections.concat(data.works)
+
+    // Build id -> item lookup
+    var itemMap = {}
+    allItems.forEach(function (item) {
+      if (!item.parentIds) { item.parentIds = [] }
+      itemMap[item.id] = item
+    })
+
+    // Convert childrenIds into parentIds on each referenced child item
+    allItems.forEach(function (item) {
+      if (item.childrenIds && item.childrenIds.length > 0) {
+        item.childrenIds.forEach(function (childId) {
+          var child = itemMap[childId]
+          if (child && child.parentIds.indexOf(item.id) === -1) {
+            child.parentIds.push(item.id)
+          }
+        })
+      }
+    })
+
+    // Build hierarchy lookup map from normalized parentIds
+    var hierarchyMap = {}
+    allItems.forEach(function (item) {
+      item.parentIds.forEach(function (parentId) {
+        if (!hierarchyMap[parentId]) { hierarchyMap[parentId] = [] }
+        hierarchyMap[parentId].push(item)
+      })
+    })
+
+    return hierarchyMap
+  }
+
   // Render validation results
   function renderValidationResults(data) {
     $('.validation-results').show()
+
+    // Normalize childrenIds -> parentIds and build hierarchy lookup map
+    var hierarchyMap = normalizeRelationships(data)
 
     // Import size gauge
     renderImportSizeGauge(data.totalItems)
@@ -744,7 +784,7 @@
     renderValidationAccordions(data)
 
     // Import summary
-    renderImportSummary(data)
+    renderImportSummary(data, hierarchyMap)
 
     // Warning acknowledgment
     if (data.hasWarnings) {
@@ -841,7 +881,7 @@
     )
 
     // Render all issues - FROM BACKEND
-    // Use main status severity for all issue accordions to maintain consistent coloring
+    // Each issue uses its own severity for independent coloring
     if (data.messages.issues && data.messages.issues.length > 0) {
       data.messages.issues.forEach(function (issue) {
         var content = ''
@@ -872,7 +912,7 @@
           createAccordion(
             issue.title,
             issue.icon,
-            status.severity,
+            issue.severity,
             issue.count,
             issue.defaultOpen,
             content
@@ -900,10 +940,10 @@
       openClass +
       '">' +
       '<div class="accordion-header">' +
-      '<div class="accordion-title">' +
+      '<div class="accordion-title-bar">' +
       '<span class="fa ' +
       icon +
-      ' accordion-icon"></span>' +
+      ' accordion-status-icon"></span>' +
       '<span>' +
       title +
       '</span>' +
@@ -944,7 +984,7 @@
   }
 
   // Render import summary
-  function renderImportSummary(data) {
+  function renderImportSummary(data, hierarchyMap) {
     $('.summary-card-collections .summary-number').text(data.collections.length)
     $('.summary-card-works .summary-number').text(data.works.length)
     $('.summary-card-filesets .summary-number').text(data.fileSets.length)
@@ -954,23 +994,22 @@
     $container.empty()
 
     // Import hierarchy — collections, nested items, and standalone works in one tree
-    var allItems = data.collections.concat(data.works)
     var topLevelCollections = data.collections.filter(function (c) {
-      return !c.parentId
+      return !c.parentIds || c.parentIds.length === 0
     })
     var orphanWorks = data.works.filter(function (w) {
-      return !w.parentId
+      return !w.parentIds || w.parentIds.length === 0
     })
     var hierarchyContent =
       '<div class="hierarchy-tree">' +
       topLevelCollections
         .map(function (c) {
-          return renderTreeItem(c, allItems)
+          return renderTreeItem(c, hierarchyMap)
         })
         .join('') +
       orphanWorks
         .map(function (w) {
-          return renderTreeItem(w, allItems)
+          return renderTreeItem(w, hierarchyMap)
         })
         .join('') +
       '</div>'
@@ -990,12 +1029,10 @@
     bindTreeEvents()
   }
 
-  // Render tree item
-  function renderTreeItem(item, allItems, depth) {
+  // Render tree item using pre-computed hierarchyMap for O(1) lookups
+  function renderTreeItem(item, hierarchyMap, depth) {
     depth = depth || 0
-    var children = allItems.filter(function (i) {
-      return i.parentId === item.id
-    })
+    var children = hierarchyMap[item.id] || []
     var hasChildren = children.length > 0
     var icon = item.type === 'collection' ? 'fa-folder' : 'fa-file-o'
     var iconColor = item.type === 'collection' ? 'text-primary' : 'text-muted'
@@ -1022,6 +1059,11 @@
       '<span class="tree-label">' +
       item.title +
       '</span>' +
+      (item.parentIds && item.parentIds.length > 1
+        ? '<span class="tree-shared-badge" title="Appears in ' +
+        item.parentIds.length + ' collections">' +
+        '<span class="fa fa-link"></span> shared</span>'
+        : '') +
       count +
       '</div>'
 
@@ -1030,7 +1072,7 @@
         '<div class="tree-children" style="display: none;">' +
         children
           .map(function (c) {
-            return renderTreeItem(c, allItems, depth + 1)
+            return renderTreeItem(c, hierarchyMap, depth + 1)
           })
           .join('') +
         '</div>'
@@ -1321,8 +1363,8 @@
     $('#upload-notifications').append($notification)
 
     // Click to dismiss
-    $notification.find('.upload-notification-close').on('click', function() {
-      $notification.fadeOut(300, function() {
+    $notification.find('.upload-notification-close').on('click', function () {
+      $notification.fadeOut(300, function () {
         $(this).remove()
       })
     })

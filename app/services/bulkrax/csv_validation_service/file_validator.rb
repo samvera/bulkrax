@@ -61,6 +61,16 @@ module Bulkrax
         @zip_file.present?
       end
 
+      # Check whether we have file references that are potentially missing (referenced but no zip)
+      #
+      # @return [Boolean] True if we need to warn about possible missing files
+      def possible_missing_files?
+        return false unless referenced_files.any?
+        return true if @zip_file.blank?
+
+        false
+      end
+
       private
 
       # Get all file references from CSV data

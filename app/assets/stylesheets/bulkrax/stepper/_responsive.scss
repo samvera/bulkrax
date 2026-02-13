@@ -1,0 +1,46 @@
+/* ====== Responsive ====== */
+@media (max-width: 768px) {
+  .stepper-wrapper {
+    padding: 20px 15px;
+  }
+
+  .stepper-header {
+    margin-bottom: 30px;
+  }
+
+  .step-circle {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
+  }
+
+  .step-label {
+    font-size: 11px;
+  }
+
+  .step-connector {
+    max-width: 60px;
+    margin: 0 5px;
+  }
+
+  .visibility-card {
+    margin-bottom: 10px;
+  }
+
+  .step-navigation {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .step-navigation .btn {
+    width: 100%;
+  }
+
+  .success-actions {
+    flex-direction: column;
+  }
+
+  .success-actions .btn {
+    width: 100%;
+  }
+}

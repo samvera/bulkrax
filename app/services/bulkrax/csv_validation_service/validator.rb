@@ -70,14 +70,18 @@ module Bulkrax
       #
       # @return [Boolean] True if valid
       def valid?
-        missing_required_fields.empty? && @csv_headers.present?
+        !errors?
       end
 
       # Check if CSV has warnings (unrecognized headers or missing files)
       #
       # @return [Boolean] True if there are warnings
       def warnings?
-        unrecognized_headers.any? || (@file_validator&.missing_files&.any? || false)
+        unrecognized_headers.any? || (@file_validator&.possible_missing_files? || false)
+      end
+
+      def errors?
+        missing_required_fields.any? || @csv_headers.blank? || (@file_validator&.missing_files&.any? || false)
       end
 
       private

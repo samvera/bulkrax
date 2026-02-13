@@ -170,4 +170,108 @@ RSpec.describe Bulkrax::CsvValidationService::FileValidator do
       expect(validator.zip_included?).to be false
     end
   end
+
+  describe '#possible_missing_files?' do
+    it 'returns false when no file references in CSV' do
+      empty_data = [{ file: nil }, { file: '' }]
+      validator = described_class.new(empty_data, zip_file)
+
+      expect(validator.possible_missing_files?).to be false
+    end
+
+    it 'returns true when files referenced but no zip provided' do
+      validator = described_class.new(csv_data, nil)
+
+      expect(validator.possible_missing_files?).to be true
+    end
+
+    it 'returns false when zip provided even if some files missing from zip' do
+      data_with_missing = csv_data + [{ file: 'missing.jpg' }]
+      validator = described_class.new(data_with_missing, zip_file)
+
+      expect(validator.possible_missing_files?).to be false
+    end
+
+    it 'returns false when all referenced files are found in zip' do
+      validator = described_class.new(csv_data, zip_file)
+
+      expect(validator.possible_missing_files?).to be false
+    end
+
+    context 'with no files referenced' do
+      let(:no_files_data) do
+        [
+          { source_identifier: 'work1' },
+          { source_identifier: 'work2' }
+        ]
+      end
+
+      it 'returns false even when zip is provided' do
+        validator = described_class.new(no_files_data, zip_file)
+
+        expect(validator.possible_missing_files?).to be false
+      end
+
+      it 'returns false when no zip provided' do
+        validator = described_class.new(no_files_data, nil)
+
+        expect(validator.possible_missing_files?).to be false
+      end
+    end
+
+    context 'with paths in file references' do
+      let(:csv_data_with_paths) do
+        [
+          { file: 'images/photo.jpg', source_identifier: 'work1' },
+          { file: 'documents/report.pdf', source_identifier: 'work2' }
+        ]
+      end
+
+      let(:zip_with_matching_files) do
+        zip = Tempfile.new(['test', '.zip'])
+        Zip::File.open(zip.path, create: true) do |zipfile|
+          zipfile.get_output_stream('photo.jpg') { |f| f.write('fake image') }
+          zipfile.get_output_stream('report.pdf') { |f| f.write('fake pdf') }
+        end
+        zip.rewind
+        zip
+      end
+
+      after do
+        zip_with_matching_files&.close
+        zip_with_matching_files&.unlink
+      end
+
+      it 'returns false when all files found (basename matching)' do
+        validator = described_class.new(csv_data_with_paths, zip_with_matching_files)
+
+        expect(validator.possible_missing_files?).to be false
+      end
+
+      it 'returns true when files referenced but no zip' do
+        validator = described_class.new(csv_data_with_paths, nil)
+
+        expect(validator.possible_missing_files?).to be true
+      end
+    end
+
+    context 'edge cases' do
+      it 'returns false for empty CSV data array' do
+        validator = described_class.new([], zip_file)
+
+        expect(validator.possible_missing_files?).to be false
+      end
+
+      it 'handles mix of present and absent file references' do
+        mixed_data = [
+          { file: 'image1.jpg', source_identifier: 'work1' },
+          { file: nil, source_identifier: 'work2' },
+          { file: '', source_identifier: 'work3' }
+        ]
+        validator = described_class.new(mixed_data, zip_file)
+
+        expect(validator.possible_missing_files?).to be false
+      end
+    end
+  end
 end
