@@ -65,7 +65,7 @@ module Bulkrax
       formatted_response = StepperResponseFormatter.format(validation_data)
       render json: formatted_response, status: :ok
     end
-    # rubocop:disable Metrics/MethodLength
+    # rubocop:enable Metrics/MethodLength
 
     def create_v2; end
 
@@ -84,30 +84,36 @@ module Bulkrax
     # Finds CSV file in ZIP by traversing directory levels
     # Returns CSV entry object on success, or StepperResponseFormatter.error hash on error
     def find_csv_in_zip(zip)
-      # Group entries by directory level
-      csv_entries = zip.select { |entry| entry.name.end_with?('.csv') && !entry.directory? }
+      csv_entries = group_entries_by_directory_level(zip)
 
       return StepperResponseFormatter.error(message: 'No CSV files found in ZIP') if csv_entries.empty?
 
-      # Get directory depth for each CSV (count slashes)
-      csv_by_depth = csv_entries.group_by { |entry| entry.name.count('/') }
+      csv_by_depth = get_directory_depth_for_each_csv(csv_entries)
+      csvs_at_level = determine_csvs_at_shallowest_level(csv_by_depth)
 
-      # Start from shallowest level (fewest slashes)
-      shallowest_depth = csv_by_depth.keys.min
-      csvs_at_level = csv_by_depth[shallowest_depth]
+      # There should be exactly one CSV at the shallowest level
+      return StepperResponseFormatter.error(message: 'Multiple CSV files found at the same level within ZIP') if csvs_at_level.count > 1
 
-      # Get directory path for entries at this level (everything before the filename)
-      csvs_by_directory = csvs_at_level.group_by { |entry| File.dirname(entry.name) }
-
-      # Check each directory at this level for multiple CSVs
-      csvs_by_directory.each do |_dir, csvs|
-        return StepperResponseFormatter.error(message: 'Multiple CSV files found in the same directory within ZIP') if csvs.count > 1
-      end
-
-      # Return the first (and should be only) CSV at the shallowest level
+      # Return the single CSV at the shallowest level
       csvs_at_level.first
     end
 
+    def group_entries_by_directory_level(zip)
+      zip.select { |entry| entry.name.end_with?('.csv') && !entry.directory? }
+    end
+
+    # Count slashes to get directory depth for each CSV
+    def get_directory_depth_for_each_csv(entries)
+      entries.group_by { |entry| entry.name.count('/') }
+    end
+
+    # Start from shallowest level (fewest slashes) and return CSVs at that level
+    def determine_csvs_at_shallowest_level(csv_by_depth)
+      shallowest_depth = csv_by_depth.keys.min
+      csv_by_depth[shallowest_depth]
+    end
+
+    ## The following methods deal with generating mock validation responses for demo mode.
     # rubocop:disable Metrics/MethodLength
     def generate_validation_response(_csv_file, zip_file)
       # Generate mock collections

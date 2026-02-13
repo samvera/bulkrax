@@ -128,7 +128,7 @@ module ModelStubbingHelpers
                                                             }
                                                           })
   end
-  # rubocop:disable Metrics/MethodLength
+  # rubocop:enable Metrics/MethodLength
 end
 
 RSpec.configure do |config|

@@ -14,14 +14,15 @@ module Bulkrax
     # providing a focused interface for CSV column name resolution.
     #
     # The service handles cases where users may have configured custom mappings like:
-    #   'model' => { from: ['work_type'] }
+    #   'model' => { from: ['work_type', 'model'] }
     #   'source_identifier' => { from: ['source_id'] }
+    # The service will return the first matching column from the CSV headers.
     #
     # @example
     #   mapping_manager = CsvValidationService::MappingManager.new
     #   resolver = ColumnResolver.new(mapping_manager)
-    #   resolver.model_column_name(['work_type', 'title'])      # => 'work_type'
-    #   resolver.source_identifier_column_name(['source_id', 'title']) # => 'source_id'
+    #   resolver.model_column_name(['work_type', 'model'])      # => 'work_type'
+    #   resolver.source_identifier_column_name(['source_id', 'source']) # => 'source_id'
     #
     class ColumnResolver
       # Initialize the column resolver

@@ -106,7 +106,6 @@ result = CsvValidationService.validate(csv_file: csv_file, zip_file: zip_file)
   collections: [...],          # Collection items
   works: [...],                # Work items
   fileSets: [...],             # File set items
-  allItems: [...],             # Collections + works
   totalItems: 247,             # Total count
   fileReferences: 55,          # File refs in CSV
   missingFiles: [...],         # Files not in zip
@@ -195,13 +194,13 @@ parser.parse_data       # => [{source_identifier: 'work1', model: 'GenericWork',
 - `parent_column_name(csv_headers)` - Finds the parent relationships column
 - `file_column_name(csv_headers)` - Finds the file reference column
 
-**Why It's Needed:** Bulkrax allows custom field mappings, so the CSV might use `work_type` instead of `model`, or `id` instead of `source_identifier`. This class handles those variations.
+**Why It's Needed:** Bulkrax allows custom field mappings, so the CSV might use `work_type` instead of `model`, or `source_id` instead of `source_identifier`. This class handles those variations by querying the MappingManager to get possible column name variations, then checking which one actually exists in the CSV headers.
 
 **Example:**
 ```ruby
 resolver = ColumnResolver.new(mappings)
-resolver.model_column_name(['work_type', 'title'])      # => 'work_type'
-resolver.source_identifier_column_name(['id', 'title']) # => 'id'
+resolver.model_column_name(['work_type', 'model'])      # => 'work_type'
+resolver.source_identifier_column_name(['source_id', 'title']) # => 'source_id'
 ```
 
 ### 3. Validator

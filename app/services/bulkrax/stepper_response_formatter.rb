@@ -266,4 +266,4 @@ module Bulkrax
     end
   end
 end
-# rubocop:disable Metrics/ClassLength
+# rubocop:enable Metrics/ClassLength

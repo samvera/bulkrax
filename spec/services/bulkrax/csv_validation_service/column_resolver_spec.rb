@@ -7,7 +7,6 @@ RSpec.describe Bulkrax::CsvValidationService::ColumnResolver do
     allow(Bulkrax).to receive(:field_mappings).and_return({
                                                             'Bulkrax::CsvParser' => {
                                                               'title' => { 'from' => ['title'], 'split' => false },
-                                                              'model' => { 'from' => ['model'], 'split' => false },
                                                               'file' => { 'from' => ['file'], 'split' => false },
                                                               'source_identifier' => { 'from' => ['source_identifier'], 'source_identifier' => true },
                                                               'parents' => { 'from' => ['parents'], 'related_parents_field_mapping' => true }
@@ -20,9 +19,9 @@ RSpec.describe Bulkrax::CsvValidationService::ColumnResolver do
     allow(Bulkrax).to receive(:field_mappings).and_return({
                                                             'Bulkrax::CsvParser' => {
                                                               'title' => { 'from' => ['title'], 'split' => false },
-                                                              'model' => { 'from' => ['work_type'], 'split' => false },
-                                                              'file' => { 'from' => ['files'], 'split' => false },
-                                                              'source_identifier' => { 'from' => ['id'], 'source_identifier' => true },
+                                                              'model' => { 'from' => ['work_type', 'model'], 'split' => false },
+                                                              'file' => { 'from' => ['files', 'items'], 'split' => false },
+                                                              'source_identifier' => { 'from' => ['source_id'], 'source_identifier' => true },
                                                               'parents' => { 'from' => ['parent_collection'], 'related_parents_field_mapping' => true }
                                                             }
                                                           })
@@ -49,7 +48,7 @@ RSpec.describe Bulkrax::CsvValidationService::ColumnResolver do
 
     it 'returns custom column name from mappings' do
       resolver = described_class.new(custom_mapping_manager)
-      expect(resolver.source_identifier_column_name).to eq('id')
+      expect(resolver.source_identifier_column_name).to eq('source_id')
     end
 
     it 'defaults to source_identifier when flag not found' do
