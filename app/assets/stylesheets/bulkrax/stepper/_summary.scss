@@ -2,7 +2,12 @@
 .import-summary {
   margin-top: 30px;
 
-  h3 { font-size: 14px; font-weight: 600; color: $color-text-dark; margin-bottom: 15px; }
+  h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: $color-text-dark;
+    margin-bottom: 15px;
+  }
 }
 
 .summary-card {
@@ -14,9 +19,9 @@
 
 // Summary card variants
 $summary-variants: (
-  collections: (bg: $bg-info,    border: $border-info-light, number: $color-info-dark,    label: $color-info-dark),
-  works:       (bg: $bg-success, border: $border-success,    number: $color-success-dark, label: $color-success-dark),
-  filesets:    (bg: $bg-light,   border: $border-color,      number: $color-text-default, label: $color-text-muted),
+  collections: (bg: $bg-info, border: $border-info-light, number: $color-info-dark, label: $color-info-dark),
+  works: (bg: $bg-success, border: $border-success, number: $color-success-dark, label: $color-success-dark),
+  filesets: (bg: $bg-light, border: $border-color, number: $color-text-default, label: $color-text-muted),
 );
 
 @each $name, $colors in $summary-variants {
@@ -24,8 +29,13 @@ $summary-variants: (
     background: map-get($colors, bg);
     border-color: map-get($colors, border);
 
-    .summary-number { color: map-get($colors, number); }
-    .summary-label { color: map-get($colors, label); }
+    .summary-number {
+      color: map-get($colors, number);
+    }
+
+    .summary-label {
+      color: map-get($colors, label);
+    }
   }
 }
 
@@ -58,7 +68,9 @@ $summary-variants: (
   border-radius: 4px;
   transition: background 0.2s ease;
 
-  &:hover { background: rgba(0, 0, 0, 0.03); }
+  &:hover {
+    background: rgba(0, 0, 0, 0.03);
+  }
 }
 
 .tree-chevron {
@@ -74,6 +86,25 @@ $summary-variants: (
 
 .tree-label {
   color: $color-text-dark;
+}
+
+.tree-shared-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  color: $color-info-dark;
+  background: $bg-info;
+  border: 1px solid $border-info-light;
+  border-radius: 10px;
+  padding: 1px 7px;
+  margin-left: 6px;
+  white-space: nowrap;
+
+  .fa {
+    font-size: 9px;
+  }
 }
 
 .tree-children {
@@ -98,5 +129,9 @@ $summary-variants: (
   color: $color-warning-dark;
   margin: 0;
 
-  input[type='checkbox'] { margin-top: 2px; cursor: pointer; accent-color: $color-warning; }
+  input[type='checkbox'] {
+    margin-top: 2px;
+    cursor: pointer;
+    accent-color: $color-warning;
+  }
 }

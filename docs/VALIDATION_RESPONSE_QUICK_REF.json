@@ -15,7 +15,7 @@
         "id": "string",
         "title": "string",
         "type": "collection",
-        "parentId": "string|null"
+        "parentIds": ["string - Parent IDs (empty array if top-level)"]
       }
     ],
     "works*": [
@@ -23,7 +23,7 @@
         "id": "string",
         "title": "string",
         "type": "work",
-        "parentId": "string|null"
+        "parentIds": ["string - Parent IDs (empty array if standalone)"]
       }
     ],
     "fileSets*": [
