@@ -106,13 +106,12 @@ module Bulkrax
     # Finds CSV file in ZIP by traversing directory levels
     # Returns CSV entry object on success, or StepperResponseFormatter.error hash on error
     def find_csv_in_zip(zip)
-      csv_entries = zip.select { |entry| entry.name.end_with?('.csv') && !entry.directory? }
+      csv_entries = group_entries_by_directory_level(zip)
 
       return StepperResponseFormatter.error(message: 'No CSV files found in ZIP') if csv_entries.empty?
 
-      csv_by_depth = csv_entries.group_by { |entry| entry.name.count('/') }
-      shallowest_depth = csv_by_depth.keys.min
-      csvs_at_level = csv_by_depth[shallowest_depth]
+      csv_by_depth = get_directory_depth_for_each_csv(csv_entries)
+      csvs_at_level = determine_csvs_at_shallowest_level(csv_by_depth)
 
       csvs_by_directory = csvs_at_level.group_by { |entry| File.dirname(entry.name) }
       csvs_by_directory.each do |_dir, csvs|
@@ -120,6 +119,19 @@ module Bulkrax
       end
 
       csvs_at_level.first
+    end
+
+    def group_entries_by_directory_level(zip)
+      zip.select { |entry| entry.name.end_with?('.csv') && !entry.directory? }
+    end
+
+    def get_directory_depth_for_each_csv(entries)
+      entries.group_by { |entry| entry.name.count('/') }
+    end
+
+    def determine_csvs_at_shallowest_level(csv_by_depth)
+      shallowest_depth = csv_by_depth.keys.min
+      csv_by_depth[shallowest_depth]
     end
 
     def extract_uploaded_files
