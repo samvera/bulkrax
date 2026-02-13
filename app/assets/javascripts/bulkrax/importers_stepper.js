@@ -750,7 +750,7 @@
       missingRequired: data.missingRequired || data.missing_required,
       unrecognized: data.unrecognized,
       rowCount: data.rowCount != null ? data.rowCount : data.row_count,
-      isValid: !!(data.isValid === true || data.isValid === 'true' || data.is_valid === true || data.is_valid === 'true' || ((data.rowCount != null || data.row_count != null) && data.isValid !== false && data.isValid !== 'false' && data.is_valid !== false && data.is_valid !== 'false')),
+      isValid: !!(data.isValid === true || data.isValid === 'true' || data.is_valid === true || data.is_valid === 'true'),
       hasWarnings: !!(data.hasWarnings === true || data.hasWarnings === 'true' || (data.has_warnings === true || data.has_warnings === 'true')),
       fileReferences: data.fileReferences != null ? data.fileReferences : data.file_references,
       missingFiles: data.missingFiles || data.missing_files,
