@@ -237,8 +237,8 @@ module Bulkrax
 
       {
         type: 'file_references',
-        severity: 'error',
-        icon: 'fa-times-circle',
+        severity: 'warning',
+        icon: 'fa-info-circle',
         title: 'File References',
         count: @data[:fileReferences],
         summary: "#{@data[:foundFiles]} of #{@data[:fileReferences]} files found in ZIP.",
