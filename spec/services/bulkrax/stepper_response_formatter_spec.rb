@@ -279,7 +279,7 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
     end
 
     context 'issues generation' do
-      it 'generates missing required fields issue' do
+      it 'generates missing required fields issue from array of strings' do
         data = {
           headers: ['title'],
           rowCount: 5,
@@ -298,6 +298,34 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
         expect(issue[:title]).to eq('Missing Required Fields')
         expect(issue[:count]).to eq(2)
         expect(issue[:description]).to eq('These required columns must be added to your CSV:')
+        expect(issue[:items]).to contain_exactly(
+          { field: 'source_identifier', message: 'add this column to your CSV' },
+          { field: 'model', message: 'add this column to your CSV' }
+        )
+      end
+
+      it 'generates missing required fields issue from array of hashes (backend format)' do
+        data = {
+          headers: ['title'],
+          rowCount: 5,
+          isValid: false,
+          hasWarnings: false,
+          missingRequired: [
+            { model: 'Work', field: 'source_identifier' },
+            { model: 'Work', field: 'model' }
+          ],
+          unrecognized: [],
+          fileReferences: 0
+        }
+
+        result = described_class.new(data).format
+
+        # Check that missingRequired is normalized to array of strings
+        expect(result[:missingRequired]).to contain_exactly('source_identifier', 'model')
+
+        # Check that issue is properly formatted
+        issue = result[:messages][:issues].find { |i| i[:type] == 'missing_required_fields' }
+        expect(issue[:count]).to eq(2)
         expect(issue[:items]).to contain_exactly(
           { field: 'source_identifier', message: 'add this column to your CSV' },
           { field: 'model', message: 'add this column to your CSV' }
@@ -434,6 +462,32 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
         result = described_class.format(input_data)
 
         expect(result[:totalItems]).to eq(20)
+      end
+
+      it 'normalizes missingRequired from hashes to strings' do
+        data = {
+          headers: ['title'],
+          rowCount: 5,
+          isValid: false,
+          hasWarnings: false,
+          missingRequired: [
+            { model: 'Work', field: 'source_identifier' },
+            { model: 'Collection', field: 'model' }
+          ],
+          unrecognized: [],
+          fileReferences: 0,
+          collections: [],
+          works: [],
+          fileSets: [],
+          totalItems: 0
+        }
+
+        result = described_class.format(data)
+
+        # Should normalize to array of strings
+        expect(result[:missingRequired]).to be_an(Array)
+        expect(result[:missingRequired]).to contain_exactly('source_identifier', 'model')
+        expect(result[:missingRequired].first).to be_a(String)
       end
     end
   end

@@ -84,7 +84,7 @@ module Bulkrax
       # Build formatted response with messages structure
       {
         headers: @data[:headers],
-        missingRequired: @data[:missingRequired],
+        missingRequired: normalize_missing_required(@data[:missingRequired]),
         unrecognized: @data[:unrecognized],
         rowCount: @data[:rowCount],
         isValid: @data[:isValid],
@@ -110,6 +110,19 @@ module Bulkrax
       @data.key?(:messages) &&
         @data[:messages].is_a?(Hash) &&
         @data[:messages].key?(:validationStatus)
+    end
+
+    # Normalize missingRequired to array of strings
+    # Converts [{model: 'Work', field: 'title'}] to ['title']
+    #
+    # @param missing_required [Array] Array of hashes or strings
+    # @return [Array<String>] Array of field names only
+    def normalize_missing_required(missing_required)
+      return [] unless missing_required
+
+      missing_required.map do |item|
+        item.is_a?(Hash) ? item[:field] : item
+      end
     end
 
     # Build the messages structure with validationStatus and issues
@@ -173,14 +186,16 @@ module Bulkrax
     #
     # @return [Hash] Missing required fields issue structure
     def missing_required_issue
+      normalized = normalize_missing_required(@data[:missingRequired])
+
       {
         type: 'missing_required_fields',
         severity: 'error',
         icon: 'fa-times-circle',
         title: 'Missing Required Fields',
-        count: @data[:missingRequired].length,
+        count: normalized.length,
         description: 'These required columns must be added to your CSV:',
-        items: @data[:missingRequired].map { |field| { field: field, message: 'add this column to your CSV' } },
+        items: normalized.map { |field| { field: field, message: 'add this column to your CSV' } },
         defaultOpen: false
       }
     end

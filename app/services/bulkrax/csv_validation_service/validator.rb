@@ -34,11 +34,14 @@ module Bulkrax
       end
 
       # Find required fields that are missing from the CSV
+      # Headers with numeric suffixes (_1, _2, etc.) are normalized before checking
+      # (e.g., 'title_1' satisfies the 'title' requirement)
       #
       # @return [Array<Hash>] Array of hashes with :model and :field keys
       def missing_required_fields
         @missing_required_fields ||= begin
-          csv_hdrs = @csv_headers.map { |h| @mapping_manager.mapped_to_key(h) }
+          # Map headers through field mappings and normalize suffixes
+          csv_hdrs = @csv_headers.map { |h| normalize_header(@mapping_manager.mapped_to_key(h)) }.uniq
 
           missing = []
           @field_metadata.each do |model, metadata|
@@ -52,10 +55,17 @@ module Bulkrax
       end
 
       # Find headers in CSV that are not recognized as valid fields
+      # Headers with numeric suffixes (_1, _2, etc.) are normalized to their base form
+      # before comparison (e.g., 'creator_1' is treated as 'creator')
       #
       # @return [Array<String>] Array of unrecognized header names
       def unrecognized_headers
-        @unrecognized_headers ||= @csv_headers - @valid_headers
+        @unrecognized_headers ||= begin
+          @csv_headers.reject do |header|
+            normalized = normalize_header(header)
+            @valid_headers.include?(header) || @valid_headers.include?(normalized)
+          end
+        end
       end
 
       # Check if CSV is valid (no missing required fields and has headers)
@@ -70,6 +80,23 @@ module Bulkrax
       # @return [Boolean] True if there are warnings
       def warnings?
         unrecognized_headers.any? || (@file_validator&.missing_files&.any? || false)
+      end
+
+      private
+
+      # Normalize a header by stripping numeric suffixes
+      # Handles multi-valued fields where CSV columns like 'creator_1', 'creator_2'
+      # should be recognized as valid if 'creator' is a valid field
+      #
+      # @param header [String] The header to normalize
+      # @return [String] The normalized header (without numeric suffix)
+      #
+      # @example
+      #   normalize_header('creator_1')   # => 'creator'
+      #   normalize_header('title_2')     # => 'title'
+      #   normalize_header('source_identifier') # => 'source_identifier'
+      def normalize_header(header)
+        header.sub(/_\d+\z/, '')
       end
     end
   end
