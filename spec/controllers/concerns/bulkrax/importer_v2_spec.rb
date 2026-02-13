@@ -99,7 +99,7 @@ RSpec.describe Bulkrax::ImporterV2, type: :controller do
           result = controller.send(:find_csv_in_zip, zip)
           expect(result).to be_a(Hash)
           expect(result[:messages][:validationStatus][:severity]).to eq('error')
-          expect(result[:messages][:validationStatus][:summary]).to include('Multiple CSV files found at the same level')
+          expect(result[:messages][:validationStatus][:summary]).to include('Multiple CSV files found in the same directory within ZIP')
         end
       end
     end
@@ -146,7 +146,7 @@ RSpec.describe Bulkrax::ImporterV2, type: :controller do
           result = controller.send(:find_csv_in_zip, zip)
           expect(result).to be_a(Hash)
           expect(result[:messages][:validationStatus][:severity]).to eq('error')
-          expect(result[:messages][:validationStatus][:summary]).to include('Multiple CSV files found at the same level')
+          expect(result[:messages][:validationStatus][:summary]).to include('Multiple CSV files found in the same directory within ZIP')
         end
       end
     end
@@ -219,6 +219,27 @@ RSpec.describe Bulkrax::ImporterV2, type: :controller do
           expect(result.name).to eq('data/metadata.csv')
         end
       end
+    end
+  end
+
+  describe '#importer_params_v2' do
+    it 'permits override_rights_statement in parser_fields' do
+      params = ActionController::Parameters.new(
+        importer: {
+          name: 'Test Import',
+          admin_set_id: 'admin_set/default',
+          parser_fields: {
+            rights_statement: 'http://rightsstatements.org/vocab/NOC/1.0/',
+            override_rights_statement: '1'
+          }
+        }
+      )
+      allow(controller).to receive(:params).and_return(params)
+
+      permitted = controller.send(:importer_params_v2)
+      parser_fields = permitted[:parser_fields] || permitted['parser_fields']
+      expect(parser_fields).to be_present
+      expect(parser_fields['override_rights_statement'] || parser_fields[:override_rights_statement]).to eq('1')
     end
   end
 end
