@@ -1,0 +1,230 @@
+/* ====== Step Content ====== */
+.step-content {
+  min-height: 400px;
+}
+
+.step-title {
+  h2 { font-size: 20px; font-weight: 600; color: $color-text-dark; margin-bottom: 5px; }
+  .text-muted { font-size: 14px; margin-bottom: 20px; }
+}
+
+/* ====== Upload Zone ====== */
+.upload-zone-wrapper {
+  margin: 25px 0;
+}
+
+.upload-dropzone {
+  @include dropzone-base($color-primary);
+  padding: 60px 20px;
+
+  &:hover .upload-icon { background: $bg-primary-hover; }
+  p { margin: 5px 0; }
+}
+
+.upload-icon {
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 15px;
+  background: $bg-primary-light;
+  border-radius: 12px;
+  @include flex-center;
+  color: $color-primary;
+  font-size: 28px;
+  transition: background-color 0.3s ease;
+}
+
+/* Add Another File Dropzone (Smaller) */
+.add-another-dropzone {
+  margin-top: 20px;
+}
+
+.upload-dropzone-small {
+  @include dropzone-base($color-success);
+  padding: 30px 20px;
+  background: #fafbfc;
+
+  &:hover .upload-icon-small { background: $bg-success-hover; }
+  p { margin: 3px 0; font-size: 13px; }
+  strong { color: $color-text-dark; }
+}
+
+.upload-icon-small {
+  width: 40px;
+  height: 40px;
+  margin: 0 auto 10px;
+  background: $bg-success-light;
+  border-radius: $border-radius;
+  @include flex-center;
+  color: $color-success;
+  font-size: 20px;
+  transition: background-color 0.3s ease;
+}
+
+.demo-scenarios {
+  margin-top: 15px;
+  padding: 15px;
+  background: $bg-primary-light;
+  border: 1px solid $border-info;
+  border-radius: 6px;
+
+  p { margin-bottom: 10px; }
+  .btn { margin-bottom: 8px; }
+}
+
+/* ====== Uploaded Files ====== */
+.uploaded-files-container {
+  border: 1px solid $border-color;
+  border-radius: $border-radius;
+  overflow: hidden;
+}
+
+.uploaded-files-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  background: $bg-light;
+  border-bottom: 1px solid $border-color;
+
+  strong { font-size: 14px; color: $color-text-dark; }
+}
+
+.uploaded-files-list {
+  padding: 15px;
+}
+
+.file-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  margin-bottom: 12px;
+  border: 1px solid $border-color;
+  border-radius: $border-radius;
+  background: $bg-light;
+
+  &:last-child { margin-bottom: 0; }
+}
+
+.file-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.file-remove-btn {
+  border: 0;
+  color: $color-remove;
+  background: unset;
+}
+
+.file-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.file-icon {
+  width: 45px;
+  height: 45px;
+  border-radius: $border-radius;
+  @include flex-center;
+  color: #fff;
+  font-size: 18px;
+}
+
+.file-icon-csv {
+  background: $color-success;
+}
+
+.file-icon-zip {
+  background: $color-primary;
+}
+
+.file-details {
+  flex: 1;
+}
+
+.file-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: $color-text-dark;
+  margin-bottom: 3px;
+}
+
+.file-subtitle {
+  font-size: 12px;
+  color: $color-success;
+}
+
+.file-verified {
+  color: $color-success;
+  font-size: 20px;
+}
+
+.upload-info-message {
+  padding: 0 15px 15px;
+}
+
+.upload-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: $color-text-muted;
+  padding: 8px 0;
+
+  .fa { color: $color-text-muted; }
+}
+
+/* Start Over Link */
+.start-over-link {
+  margin-top: 15px;
+  text-align: center;
+
+  a { font-size: 13px; display: inline-flex; align-items: center; gap: 6px; }
+}
+
+/* ====== File Upload Errors ====== */
+.file-upload-errors {
+  margin: 20px 0;
+
+  .alert {
+    border-radius: 6px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+
+    strong {
+      display: block;
+      margin-bottom: 8px;
+
+      .fa {
+        margin-right: 6px;
+      }
+    }
+
+    ul {
+      padding-left: 20px;
+      margin-bottom: 0;
+
+      li {
+        margin-bottom: 4px;
+        line-height: 1.6;
+
+        &:last-child {
+          margin-bottom: 0;
+        }
+      }
+    }
+  }
+}
+
+/* ====== Download Template ====== */
+.download-template-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 20px 0;
+  font-size: 14px;
+
+  .fa { font-size: 15px; }
+}

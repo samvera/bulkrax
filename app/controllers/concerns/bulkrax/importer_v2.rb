@@ -118,29 +118,33 @@ module Bulkrax
     def generate_validation_response(_csv_file, zip_file)
       # Generate mock collections
       collections = [
-        { id: 'col-1', title: 'Historical Photographs Collection', type: 'collection', parentId: nil },
-        { id: 'col-2', title: 'Manuscripts & Letters', type: 'collection', parentId: nil },
-        { id: 'col-3', title: 'Audio Recordings', type: 'collection', parentId: nil }
+        { id: 'col-1', title: 'Historical Photographs Collection', type: 'collection', parentIds: [], childrenIds: ['work-shared-1'] },
+        { id: 'col-2', title: 'Manuscripts & Letters', type: 'collection', parentIds: [], childrenIds: [] },
+        { id: 'col-3', title: 'Audio Recordings', type: 'collection', parentIds: [], childrenIds: ['work-shared-2'] }
       ]
 
       # Generate mock works
       works = []
       189.times do |i|
-        parent_id = if i < 75
-                      'col-1'
-                    elsif i < 140
-                      'col-2'
-                    elsif i < 189
-                      'col-3'
-                    end
+        parent_ids = if i < 75
+                       ['col-1']
+                     elsif i < 140
+                       ['col-2']
+                     elsif i < 189
+                       ['col-3']
+                     end
 
         works << {
           id: "work-#{i + 1}",
           title: "Work #{i + 1}",
           type: 'work',
-          parentId: parent_id
+          parentIds: parent_ids
         }
       end
+
+      # Multi-parent examples
+      works << { id: 'work-shared-1', title: 'Cross-Collection Photograph', type: 'work', parentIds: ['col-1', 'col-2'] }
+      works << { id: 'work-shared-2', title: 'Interdisciplinary Recording', type: 'work', parentIds: ['col-2', 'col-3'] }
 
       # Generate mock file sets
       file_sets = []
@@ -153,7 +157,7 @@ module Bulkrax
       end
 
       # Mock headers with one unrecognized field
-      headers = ['source_identifier', 'title', 'creator', 'model', 'parents', 'file', 'description', 'date_created', 'legacy_id', 'subject']
+      headers = ['source_identifier', 'title', 'creator', 'model', 'parents', 'children', 'file', 'description', 'date_created', 'legacy_id', 'subject']
       unrecognized = ['legacy_id']
       missing_required = []
       missing_files = ['photo_087.tiff', 'letter_scan_12.pdf', 'recording_03.wav']

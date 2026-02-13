@@ -15,7 +15,8 @@
         "id": "string",
         "title": "string",
         "type": "collection",
-        "parentId": "string|null"
+        "parentIds": ["string - Parent IDs (empty array if top-level)"],
+        "childrenIds": ["string - (Optional) Child IDs defined on this parent"]
       }
     ],
     "works*": [
@@ -23,7 +24,8 @@
         "id": "string",
         "title": "string",
         "type": "work",
-        "parentId": "string|null"
+        "parentIds": ["string - Parent IDs (empty array if standalone)"],
+        "childrenIds": ["string - (Optional) Child IDs defined on this parent"]
       }
     ],
     "fileSets*": [
