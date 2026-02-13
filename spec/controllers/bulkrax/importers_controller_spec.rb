@@ -257,7 +257,7 @@ module Bulkrax
         end
 
         it 'sends a CSV file' do
-          allow(Bulkrax::SampleCsvService).to receive(:call).and_return(sample_csv_path)
+          allow(Bulkrax::CsvValidationService).to receive(:generate_template).and_return(sample_csv_path)
 
           get :sample_csv_file, session: valid_session
 
@@ -267,7 +267,7 @@ module Bulkrax
 
       context 'when CSV generation fails' do
         before do
-          allow(Bulkrax::SampleCsvService).to receive(:call).and_raise(StandardError, 'Test error')
+          allow(Bulkrax::CsvValidationService).to receive(:generate_template).and_raise(StandardError, 'Test error')
         end
 
         it 'redirects back with an error message' do

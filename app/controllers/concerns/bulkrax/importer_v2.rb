@@ -14,13 +14,14 @@ module Bulkrax
     end
 
     # AJAX endpoint to validate uploaded files
+    # rubocop:disable Metrics/MethodLength
     def validate_v2
       files = params[:importer]&.[](:parser_fields)&.[](:files) || []
       files = [files] unless files.is_a?(Array)
       files = files.compact
 
       unless files.any?
-        render json: { error: 'No file uploaded' }, status: :unprocessable_entity
+        render json: StepperResponseFormatter.error(message: 'No files uploaded'), status: :ok
         return
       end
 
@@ -30,26 +31,41 @@ module Bulkrax
 
       # If no CSV in uploaded files, check if ZIP contains CSV
       unless csv_file
-        if zip_file
-          csv_exists = Zip::File.open(zip_file.path) do |zip|
-            zip.any? { |entry| entry.name.end_with?('.csv') }
+        unless zip_file
+          render json: StepperResponseFormatter.error(message: 'No CSV metadata file uploaded'), status: :ok
+          return
+        end
+
+        error_response = nil
+        Zip::File.open(zip_file.path) do |zip|
+          result = find_csv_in_zip(zip)
+
+          if result.is_a?(Hash) && result[:messages]
+            error_response = result
+          elsif result
+            # Read the CSV content while the zip file is still open
+            csv_file = StringIO.new(result.get_input_stream.read)
           end
-          unless csv_exists
-            render json: { error: 'No CSV file found. Please upload a CSV file.' }, status: :unprocessable_entity
-            return
-          end
-        else
-          render json: { error: 'No CSV file uploaded' }, status: :unprocessable_entity
+        end
+
+        if error_response
+          render json: error_response, status: :ok
           return
         end
       end
 
-      # Mock validation response for testing
-      # TODO: Replace with actual CsvValidationService call
-      # NOTE: Frontend demo scenarios are in lib/bulkrax/data/demo_scenarios.json
-      response = generate_validation_response(csv_file, zip_file)
-      render json: response, status: :ok
+      # Use demo mode if DEMO_MODE environment variable is set
+      # Start server with: DEMO_MODE=true bin/web
+      validation_data = if ENV['DEMO_MODE'] == 'true'
+                          generate_validation_response(csv_file, zip_file)
+                        else
+                          CsvValidationService.validate(csv_file: csv_file, zip_file: zip_file)
+                        end
+
+      formatted_response = StepperResponseFormatter.format(validation_data)
+      render json: formatted_response, status: :ok
     end
+    # rubocop:enable Metrics/MethodLength
 
     def create_v2; end
 
@@ -65,6 +81,39 @@ module Bulkrax
 
     private
 
+    # Finds CSV file in ZIP by traversing directory levels
+    # Returns CSV entry object on success, or StepperResponseFormatter.error hash on error
+    def find_csv_in_zip(zip)
+      csv_entries = group_entries_by_directory_level(zip)
+
+      return StepperResponseFormatter.error(message: 'No CSV files found in ZIP') if csv_entries.empty?
+
+      csv_by_depth = get_directory_depth_for_each_csv(csv_entries)
+      csvs_at_level = determine_csvs_at_shallowest_level(csv_by_depth)
+
+      # There should be exactly one CSV at the shallowest level
+      return StepperResponseFormatter.error(message: 'Multiple CSV files found at the same level within ZIP') if csvs_at_level.count > 1
+
+      # Return the single CSV at the shallowest level
+      csvs_at_level.first
+    end
+
+    def group_entries_by_directory_level(zip)
+      zip.select { |entry| entry.name.end_with?('.csv') && !entry.directory? }
+    end
+
+    # Count slashes to get directory depth for each CSV
+    def get_directory_depth_for_each_csv(entries)
+      entries.group_by { |entry| entry.name.count('/') }
+    end
+
+    # Start from shallowest level (fewest slashes) and return CSVs at that level
+    def determine_csvs_at_shallowest_level(csv_by_depth)
+      shallowest_depth = csv_by_depth.keys.min
+      csv_by_depth[shallowest_depth]
+    end
+
+    ## The following methods deal with generating mock validation responses for demo mode.
     # rubocop:disable Metrics/MethodLength
     def generate_validation_response(_csv_file, zip_file)
       # Generate mock collections
