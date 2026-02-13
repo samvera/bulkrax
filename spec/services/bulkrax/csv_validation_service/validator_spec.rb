@@ -172,20 +172,54 @@ RSpec.describe Bulkrax::CsvValidationService::Validator do
     end
   end
 
+  describe '#errors?' do
+    before do
+      allow(mapping_manager).to receive(:mapped_to_key) { |h| h }
+    end
+
+    it 'returns false when all required fields are present' do
+      csv_headers = %w[title source_identifier model]
+      validator = described_class.new(csv_headers, valid_headers, field_metadata, mapping_manager)
+
+      expect(validator.errors?).to be false
+    end
+
+    it 'returns true when required fields are missing' do
+      csv_headers = %w[description creator]
+      validator = described_class.new(csv_headers, valid_headers, field_metadata, mapping_manager)
+
+      expect(validator.errors?).to be true
+    end
+
+    it 'returns true when CSV has no headers' do
+      csv_headers = []
+      validator = described_class.new(csv_headers, valid_headers, field_metadata, mapping_manager)
+
+      expect(validator.errors?).to be true
+    end
+  end
+
   describe '#valid?' do
     before do
       allow(mapping_manager).to receive(:mapped_to_key) { |h| h }
     end
 
-    it 'returns true when all required fields are present' do
+    it 'returns true when no errors and no warnings' do
       csv_headers = %w[title source_identifier model]
       validator = described_class.new(csv_headers, valid_headers, field_metadata, mapping_manager)
 
       expect(validator).to be_valid
     end
 
-    it 'returns false when required fields are missing' do
+    it 'returns false when there are errors (missing required fields)' do
       csv_headers = %w[description creator]
+      validator = described_class.new(csv_headers, valid_headers, field_metadata, mapping_manager)
+
+      expect(validator).not_to be_valid
+    end
+
+    it 'returns false when there are warnings (unrecognized headers)' do
+      csv_headers = %w[title source_identifier model invalid_field]
       validator = described_class.new(csv_headers, valid_headers, field_metadata, mapping_manager)
 
       expect(validator).not_to be_valid
