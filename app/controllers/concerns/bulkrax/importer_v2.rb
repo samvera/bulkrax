@@ -20,7 +20,7 @@ module Bulkrax
       files = files.compact
 
       unless files.any?
-        render json: { error: 'No file uploaded' }, status: :unprocessable_entity
+        render json: StepperResponseFormatter.error(message: 'No files uploaded'), status: :ok
         return
       end
 
@@ -31,24 +31,33 @@ module Bulkrax
       # If no CSV in uploaded files, check if ZIP contains CSV
       unless csv_file
         if zip_file
-          csv_exists = Zip::File.open(zip_file.path) do |zip|
-            zip.any? { |entry| entry.name.end_with?('.csv') }
-          end
-          unless csv_exists
-            render json: { error: 'No CSV file found. Please upload a CSV file.' }, status: :unprocessable_entity
-            return
+          Zip::File.open(zip_file.path) do |zip|
+            result = find_csv_in_zip(zip)
+
+            if result.is_a?(Hash) && result[:messages]
+              render json: result, status: :ok
+              return
+            end
+
+            # Read the CSV content while the zip file is still open
+            csv_file = StringIO.new(result.get_input_stream.read) if result
           end
         else
-          render json: { error: 'No CSV file uploaded' }, status: :unprocessable_entity
+          render json: StepperResponseFormatter.error(message: 'No CSV metadata file uploaded'), status: :ok
           return
         end
       end
 
-      # Mock validation response for testing
-      # TODO: Replace with actual CsvValidationService call
-      # NOTE: Frontend demo scenarios are in lib/bulkrax/data/demo_scenarios.json
-      response = generate_validation_response(csv_file, zip_file)
-      render json: response, status: :ok
+      # Use demo mode if DEMO_MODE environment variable is set
+      # Start server with: DEMO_MODE=true bin/web
+      validation_data = if ENV['DEMO_MODE'] == 'true'
+                          generate_validation_response(csv_file, zip_file)
+                        else
+                          CsvValidationService.validate(csv_file: csv_file, zip_file: zip_file)
+                        end
+
+      formatted_response = StepperResponseFormatter.format(validation_data)
+      render json: formatted_response, status: :ok
     end
 
     def create_v2; end
@@ -64,6 +73,33 @@ module Bulkrax
     end
 
     private
+
+    # Finds CSV file in ZIP by traversing directory levels
+    # Returns CSV entry object on success, or StepperResponseFormatter.error hash on error
+    def find_csv_in_zip(zip)
+      # Group entries by directory level
+      csv_entries = zip.select { |entry| entry.name.end_with?('.csv') && !entry.directory? }
+
+      return StepperResponseFormatter.error(message: 'No CSV files found in ZIP') if csv_entries.empty?
+
+      # Get directory depth for each CSV (count slashes)
+      csv_by_depth = csv_entries.group_by { |entry| entry.name.count('/') }
+
+      # Start from shallowest level (fewest slashes)
+      shallowest_depth = csv_by_depth.keys.min
+      csvs_at_level = csv_by_depth[shallowest_depth]
+
+      # Get directory path for entries at this level (everything before the filename)
+      csvs_by_directory = csvs_at_level.group_by { |entry| File.dirname(entry.name) }
+
+      # Check each directory at this level for multiple CSVs
+      csvs_by_directory.each do |dir, csvs|
+        return StepperResponseFormatter.error(message: 'Multiple CSV files found in the same directory within ZIP') if csvs.count > 1
+      end
+
+      # Return the first (and should be only) CSV at the shallowest level
+      csvs_at_level.first
+    end
 
     # rubocop:disable Metrics/MethodLength
     def generate_validation_response(_csv_file, zip_file)

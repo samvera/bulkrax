@@ -155,7 +155,6 @@ module Bulkrax
     #   - collections: Array of collection items
     #   - works: Array of work items
     #   - fileSets: Array of file set items
-    #   - allItems: Combined collections and works
     #   - totalItems: Total count of items
     #   - fileReferences: Count of file references in CSV
     #   - missingFiles: Array of referenced files not found in zip
@@ -181,7 +180,6 @@ module Bulkrax
         collections: @item_extractor.collections,
         works: @item_extractor.works,
         fileSets: @item_extractor.file_sets,
-        allItems: @item_extractor.all_items,
         totalItems: @item_extractor.total_count,
         fileReferences: @file_validator.count_references,
         missingFiles: @file_validator.missing_files,
