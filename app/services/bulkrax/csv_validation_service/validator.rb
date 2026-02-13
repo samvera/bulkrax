@@ -60,11 +60,9 @@ module Bulkrax
       #
       # @return [Array<String>] Array of unrecognized header names
       def unrecognized_headers
-        @unrecognized_headers ||= begin
-          @csv_headers.reject do |header|
-            normalized = normalize_header(header)
-            @valid_headers.include?(header) || @valid_headers.include?(normalized)
-          end
+        @unrecognized_headers ||= @csv_headers.reject do |header|
+          normalized = normalize_header(header)
+          @valid_headers.include?(header) || @valid_headers.include?(normalized)
         end
       end
 
