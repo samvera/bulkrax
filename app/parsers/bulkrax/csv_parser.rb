@@ -14,12 +14,12 @@ module Bulkrax
       return @records if @records.present?
 
       file_for_import = only_updates ? parser_fields['partial_import_file_path'] : import_file_path
-      # data for entry does not need source_identifier for csv, because csvs are read sequentially and mapped after raw data is read.
       csv_data = entry_class.read_data(file_for_import)
       importer.parser_fields['total'] = csv_data.count
       importer.save
 
       @records = csv_data.map { |record_data| entry_class.data_for_entry(record_data, nil, self) }
+      @records
     end
 
     # rubocop:disable Metrics/AbcSize
@@ -95,11 +95,11 @@ module Bulkrax
     def missing_elements(record)
       keys_from_record = keys_without_numbers(record.reject { |_, v| v.blank? }.keys.compact.uniq.map(&:to_s))
       keys = []
-      # Because we're persisting the mapping in the database, these are likely string keys.
-      # However, there's no guarantee.  So, we need to ensure that by running stringify.
-      importerexporter.mapping.stringify_keys.map do |k, v|
-        Array.wrap(v['from']).each do |vf|
-          keys << k if keys_from_record.include?(vf)
+      mapping_values = importerexporter.mapping.stringify_keys
+      mapping_values.each do |k, v|
+        from_values = Array.wrap(v.is_a?(Hash) ? (v['from'] || v[:from]) : nil)
+        from_values.each do |vf|
+          keys << k if vf.present? && keys_from_record.include?(vf.to_s.strip)
         end
       end
       required_elements.map(&:to_s) - keys.uniq.map(&:to_s)
@@ -382,8 +382,14 @@ module Bulkrax
 
       return @path_to_files if File.exist?(@path_to_files)
 
-      # TODO: This method silently returns nil if there is no file & no zip file
-      File.join(importer_unzip_path, 'files', filename) if file? && zip?
+      return unless file? && zip?
+      # If the zip was created from a parent folder, files/ will be a sibling
+      # of the CSV rather than directly under the unzip root. Use the CSV's
+      # location to find it.
+      csv_sibling_path = File.join(File.dirname(import_file_path), 'files', filename)
+      return csv_sibling_path if File.exist?(csv_sibling_path)
+
+      File.join(importer_unzip_path, 'files', filename)
     end
 
     private
