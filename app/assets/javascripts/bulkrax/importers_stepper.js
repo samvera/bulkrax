@@ -692,9 +692,9 @@
           return
         }
         StepperState.validated = true
-        StepperState.validationData = mockData
+        StepperState.validationData = normalizeValidationData(mockData)
 
-        renderValidationResults(mockData)
+        renderValidationResults(StepperState.validationData)
         $btn.html('<span class="fa fa-check-circle"></span> Validated')
         updateStepNavigation()
       }, 2000)
@@ -709,12 +709,18 @@
         processData: false,
         contentType: false,
         success: function (data) {
+          var normalized = normalizeValidationData(data)
           StepperState.validated = true
-          StepperState.validationData = data
+          StepperState.validationData = normalized
           try {
-            renderValidationResults(data)
+            renderValidationResults(normalized)
           } catch (e) {
             console.warn('Validation results render issue:', e)
+            StepperState.validated = false
+            StepperState.validationData = null
+            showNotification('Validation completed but results could not be displayed. Please try again.', 'error')
+            $btn.prop('disabled', false).html('<span class="fa fa-file-text"></span> Validate Files')
+            return
           }
           $btn.html('<span class="fa fa-check-circle"></span> Validated')
           updateStepNavigation()
@@ -730,6 +736,27 @@
             .html('<span class="fa fa-file-text"></span> Validate Files')
         }
       })
+    }
+  }
+
+  function normalizeValidationData(data) {
+    if (!data) return data
+    return {
+      collections: data.collections,
+      works: data.works,
+      fileSets: data.fileSets || data.file_sets,
+      totalItems: data.totalItems != null ? data.totalItems : data.total_items,
+      headers: data.headers,
+      missingRequired: data.missingRequired || data.missing_required,
+      unrecognized: data.unrecognized,
+      rowCount: data.rowCount != null ? data.rowCount : data.row_count,
+      isValid: !!(data.isValid === true || data.isValid === 'true' || data.is_valid === true || data.is_valid === 'true' || ((data.rowCount != null || data.row_count != null) && data.isValid !== false && data.isValid !== 'false' && data.is_valid !== false && data.is_valid !== 'false')),
+      hasWarnings: !!(data.hasWarnings === true || data.hasWarnings === 'true' || (data.has_warnings === true || data.has_warnings === 'true')),
+      fileReferences: data.fileReferences != null ? data.fileReferences : data.file_references,
+      missingFiles: data.missingFiles || data.missing_files,
+      foundFiles: data.foundFiles != null ? data.foundFiles : data.found_files,
+      zipIncluded: data.zipIncluded != null ? data.zipIncluded : data.zip_included,
+      messages: data.messages
     }
   }
 
@@ -1179,21 +1206,8 @@
 
     if (step === 1) {
       var data = StepperState.validationData
-      // Accept both camelCase and snake_case (backend may send either).
-      // If validation ran and we have data but no explicit invalid flag, treat as valid.
-      var explicitlyValid = data && (
-        data.isValid === true || data.isValid === 'true' ||
-        data.is_valid === true || data.is_valid === 'true'
-      )
-      var explicitlyInvalid = data && (
-        data.isValid === false || data.isValid === 'false' ||
-        data.is_valid === false || data.is_valid === 'false'
-      )
-      var isValid = explicitlyValid || (data && data.rowCount != null && !explicitlyInvalid)
-      var hasWarnings = data && (
-        data.hasWarnings === true || data.hasWarnings === 'true' ||
-        data.has_warnings === true || data.has_warnings === 'true'
-      )
+      var isValid = data && data.isValid
+      var hasWarnings = data && data.hasWarnings
       var canProceed = StepperState.skipValidation ||
         (StepperState.validated &&
         isValid &&
@@ -1201,15 +1215,10 @@
 
       $('.step-content[data-step="1"] .step-next-btn').prop('disabled', !canProceed)
     } else if (step === 2) {
-      // Read directly from form (works regardless of DOM id prefix in host app)
-      var $nameInput = $('input[name="importer[name]"]').length
-        ? $('input[name="importer[name]"]')
-        : $('#bulkrax_importer_name')
-      var $adminSetSelect = $('select[name="importer[admin_set_id]"]').length
-        ? $('select[name="importer[admin_set_id]"]')
-        : $('#bulkrax_importer_admin_set_id')
-      var name = ($nameInput.val() || '').trim()
-      var adminSetId = ($adminSetSelect.val() || '').trim()
+      var $nameInput = $('input[name$="[name]"][name*="importer"]').first()
+      var $adminSetSelect = $('select[name$="[admin_set_id]"][name*="importer"]').first()
+      var name = ($nameInput.length ? $nameInput.val() : '').trim()
+      var adminSetId = ($adminSetSelect.length ? $adminSetSelect.val() : '').trim()
       var canProceed = name.length > 0 && adminSetId.length > 0
       StepperState.settings.name = name || StepperState.settings.name
       StepperState.settings.adminSetId = adminSetId || StepperState.settings.adminSetId

@@ -105,7 +105,7 @@ RSpec.describe Bulkrax::ImporterV2, type: :controller do
     end
 
     context 'with multiple CSVs in different directories at the same depth' do
-      it 'returns first CSV when CSVs exist in multiple directories at same level' do
+      it 'returns error when CSVs exist in multiple directories at same level' do
         Zip::File.open(zip_file.path, create: true) do |zipfile|
           zipfile.get_output_stream('dir1/data.csv') { |f| f.write('csv 1') }
           zipfile.get_output_stream('dir2/metadata.csv') { |f| f.write('csv 2') }
@@ -113,12 +113,13 @@ RSpec.describe Bulkrax::ImporterV2, type: :controller do
 
         Zip::File.open(zip_file.path) do |zip|
           result = controller.send(:find_csv_in_zip, zip)
-          expect(result).to be_a(Zip::Entry)
-          expect(%w[dir1/data.csv dir2/metadata.csv]).to include(result.name)
+          expect(result).to be_a(Hash)
+          expect(result[:messages][:validationStatus][:severity]).to eq('error')
+          expect(result[:messages][:validationStatus][:summary]).to include('Multiple CSV files found at the same level')
         end
       end
 
-      it 'returns first CSV with three CSVs across different directories at same depth' do
+      it 'returns error with three CSVs across different directories at same depth' do
         Zip::File.open(zip_file.path, create: true) do |zipfile|
           zipfile.get_output_stream('dir1/data.csv') { |f| f.write('csv 1') }
           zipfile.get_output_stream('dir2/metadata.csv') { |f| f.write('csv 2') }
@@ -127,8 +128,9 @@ RSpec.describe Bulkrax::ImporterV2, type: :controller do
 
         Zip::File.open(zip_file.path) do |zip|
           result = controller.send(:find_csv_in_zip, zip)
-          expect(result).to be_a(Zip::Entry)
-          expect(%w[dir1/data.csv dir2/metadata.csv dir3/info.csv]).to include(result.name)
+          expect(result).to be_a(Hash)
+          expect(result[:messages][:validationStatus][:severity]).to eq('error')
+          expect(result[:messages][:validationStatus][:summary]).to include('Multiple CSV files found at the same level')
         end
       end
     end

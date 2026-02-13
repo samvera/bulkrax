@@ -241,7 +241,6 @@ module Bulkrax
     #   [['Single Metadata File for all works', 'single'], ['Multiple Files, one per Work', 'multi']]
     # end
 
-    # If the import data is zipped, unzip it to this path
     def importer_unzip_path(mkdir: false)
       entry = parser_fields&.[]('import_file_path')
       if entry.is_a?(String) && entry.end_with?('.zip') && File.file?(entry)

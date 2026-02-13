@@ -426,14 +426,14 @@ module Bulkrax
         base = File.dirname(importerexporter.parser.import_file_path)
         candidate = File.join(base, file)
         return candidate if File.exist?(candidate)
-        raise "File #{candidate} does not exist"
+        raise "File not found: #{candidate}. Check the file path in your CSV and ensure the file exists in the import package or directory."
       end
 
       # Bare filename: use legacy files/ directory for backward compatibility and round-tripping
       path = importerexporter.parser.path_to_files
       f = File.join(path, file)
       return f if File.exist?(f)
-      raise "File #{f} does not exist"
+      raise "File not found: #{f}. Check the file column in your CSV and ensure the file exists in the import package or path_to_files directory."
     end
 
     private

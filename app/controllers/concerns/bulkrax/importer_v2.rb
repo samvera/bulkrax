@@ -118,6 +118,8 @@ module Bulkrax
         return StepperResponseFormatter.error(message: 'Multiple CSV files found in the same directory within ZIP') if csvs.count > 1
       end
 
+      return StepperResponseFormatter.error(message: 'Multiple CSV files found at the same level within ZIP') if csvs_at_level.size > 1
+
       csvs_at_level.first
     end
 
@@ -158,21 +160,25 @@ module Bulkrax
       csv_file = files.find { |f| f.original_filename&.end_with?('.csv') }
       zip_file = files.find { |f| f.original_filename&.end_with?('.zip') }
 
+      csv_path = nil
+      zip_path = nil
       if csv_file && zip_file
         csv_path = @importer.parser.write_import_file(csv_file)
         zip_path = @importer.parser.write_import_file(zip_file)
         @importer.parser_fields['import_file_path'] = csv_path
         @importer.parser_fields['attachments_zip_path'] = zip_path
-        @importer.save
       elsif zip_file && !csv_file
         zip_path = @importer.parser.write_import_file(zip_file)
         @importer.parser_fields['import_file_path'] = zip_path
-        @importer.save
       elsif csv_file && !zip_file
         csv_path = @importer.parser.write_import_file(csv_file)
         @importer.parser_fields['import_file_path'] = csv_path
-        @importer.save
       end
+
+      @importer.save if csv_path || zip_path
+    rescue StandardError => e
+      Rails.logger.error("Bulkrax::ImporterV2#write_files_v2 failed: #{e.message}")
+      raise
     end
 
     # rubocop:disable Metrics/MethodLength
