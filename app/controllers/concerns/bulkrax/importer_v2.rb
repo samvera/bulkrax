@@ -67,7 +67,29 @@ module Bulkrax
     end
     # rubocop:enable Metrics/MethodLength
 
-    def create_v2; end
+    def create_v2
+      files = extract_uploaded_files
+
+      @importer = Importer.new(importer_params_v2)
+      @importer.parser_klass = 'Bulkrax::CsvParser'
+      @importer.user = current_user if respond_to?(:current_user) && current_user.present?
+      apply_field_mapping_v2
+
+      if @importer.save
+        write_files_v2(files)
+        Bulkrax::ImporterJob.perform_later(@importer.id)
+
+        respond_to do |format|
+          format.html { redirect_to bulkrax.importers_path, notice: 'Import started successfully.' }
+          format.json { render json: { success: true, importer_id: @importer.id }, status: :created }
+        end
+      else
+        respond_to do |format|
+          format.html { render :new_v2, status: :unprocessable_entity }
+          format.json { render json: { errors: @importer.errors.full_messages }, status: :unprocessable_entity }
+        end
+      end
+    end
 
     # Serve demo scenario fixtures for frontend testing
     def demo_scenarios_v2
@@ -84,36 +106,71 @@ module Bulkrax
     # Finds CSV file in ZIP by traversing directory levels
     # Returns CSV entry object on success, or StepperResponseFormatter.error hash on error
     def find_csv_in_zip(zip)
-      csv_entries = group_entries_by_directory_level(zip)
+      # Group entries by directory level
+      csv_entries = zip.select { |entry| entry.name.end_with?('.csv') && !entry.directory? }
 
       return StepperResponseFormatter.error(message: 'No CSV files found in ZIP') if csv_entries.empty?
 
-      csv_by_depth = get_directory_depth_for_each_csv(csv_entries)
-      csvs_at_level = determine_csvs_at_shallowest_level(csv_by_depth)
+      # Get directory depth for each CSV (count slashes)
+      csv_by_depth = csv_entries.group_by { |entry| entry.name.count('/') }
 
-      # There should be exactly one CSV at the shallowest level
-      return StepperResponseFormatter.error(message: 'Multiple CSV files found at the same level within ZIP') if csvs_at_level.count > 1
+      # Start from shallowest level (fewest slashes)
+      shallowest_depth = csv_by_depth.keys.min
+      csvs_at_level = csv_by_depth[shallowest_depth]
 
-      # Return the single CSV at the shallowest level
+      # Get directory path for entries at this level (everything before the filename)
+      csvs_by_directory = csvs_at_level.group_by { |entry| File.dirname(entry.name) }
+
+      # Check each directory at this level for multiple CSVs
+      csvs_by_directory.each do |_dir, csvs|
+        return StepperResponseFormatter.error(message: 'Multiple CSV files found in the same directory within ZIP') if csvs.count > 1
+      end
+
+      # Return the first (and should be only) CSV at the shallowest level
       csvs_at_level.first
     end
 
-    def group_entries_by_directory_level(zip)
-      zip.select { |entry| entry.name.end_with?('.csv') && !entry.directory? }
+    def extract_uploaded_files
+      files_param = params[:importer]&.[](:parser_fields)&.[](:files)
+      return [] if files_param.blank?
+
+      files_param.is_a?(Array) ? files_param.compact : [files_param].compact
     end
 
-    # Count slashes to get directory depth for each CSV
-    def get_directory_depth_for_each_csv(entries)
-      entries.group_by { |entry| entry.name.count('/') }
+    def importer_params_v2
+      params.require(:importer).permit(
+        :name,
+        :admin_set_id,
+        :limit,
+        parser_fields: [:visibility, :rights_statement, :override_rights_statement]
+      )
     end
 
-    # Start from shallowest level (fewest slashes) and return CSVs at that level
-    def determine_csvs_at_shallowest_level(csv_by_depth)
-      shallowest_depth = csv_by_depth.keys.min
-      csv_by_depth[shallowest_depth]
+    def apply_field_mapping_v2
+      @importer.field_mapping = Bulkrax.field_mappings['Bulkrax::CsvParser']
     end
 
-    ## The following methods deal with generating mock validation responses for demo mode.
+    def write_files_v2(files)
+      csv_file = files.find { |f| f.original_filename&.end_with?('.csv') }
+      zip_file = files.find { |f| f.original_filename&.end_with?('.zip') }
+
+      if csv_file && zip_file
+        csv_path = @importer.parser.write_import_file(csv_file)
+        zip_path = @importer.parser.write_import_file(zip_file)
+        @importer.parser_fields['import_file_path'] = csv_path
+        @importer.parser_fields['attachments_zip_path'] = zip_path
+        @importer.save
+      elsif zip_file && !csv_file
+        zip_path = @importer.parser.write_import_file(zip_file)
+        @importer.parser_fields['import_file_path'] = zip_path
+        @importer.save
+      elsif csv_file && !zip_file
+        csv_path = @importer.parser.write_import_file(csv_file)
+        @importer.parser_fields['import_file_path'] = csv_path
+        @importer.save
+      end
+    end
+
     # rubocop:disable Metrics/MethodLength
     def generate_validation_response(_csv_file, zip_file)
       # Generate mock collections

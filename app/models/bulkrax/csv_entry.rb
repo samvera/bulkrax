@@ -416,10 +416,20 @@ module Bulkrax
       self.collection_ids
     end
 
-    # If only filename is given, construct the path (/files/my_file)
+    # If only filename is given, construct the path (/files/my_file).
+    # If file contains a path separator (e.g. attachments/cat_scan.jpg), resolve relative to the CSV's directory.
     def path_to_file(file)
-      # return if we already have the full file path
       return file if File.exist?(file)
+
+      # Relative path: resolve from CSV's directory (allows arbitrary subdirectory names, not just "files")
+      if file.include?('/')
+        base = File.dirname(importerexporter.parser.import_file_path)
+        candidate = File.join(base, file)
+        return candidate if File.exist?(candidate)
+        raise "File #{candidate} does not exist"
+      end
+
+      # Bare filename: use legacy files/ directory for backward compatibility and round-tripping
       path = importerexporter.parser.path_to_files
       f = File.join(path, file)
       return f if File.exist?(f)

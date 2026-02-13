@@ -711,7 +711,11 @@
         success: function (data) {
           StepperState.validated = true
           StepperState.validationData = data
-          renderValidationResults(data)
+          try {
+            renderValidationResults(data)
+          } catch (e) {
+            console.warn('Validation results render issue:', e)
+          }
           $btn.html('<span class="fa fa-check-circle"></span> Validated')
           updateStepNavigation()
         },
@@ -1132,19 +1136,42 @@
     var step = StepperState.currentStep
 
     if (step === 1) {
+      var data = StepperState.validationData
+      // Accept both camelCase and snake_case (backend may send either).
+      // If validation ran and we have data but no explicit invalid flag, treat as valid.
+      var explicitlyValid = data && (
+        data.isValid === true || data.isValid === 'true' ||
+        data.is_valid === true || data.is_valid === 'true'
+      )
+      var explicitlyInvalid = data && (
+        data.isValid === false || data.isValid === 'false' ||
+        data.is_valid === false || data.is_valid === 'false'
+      )
+      var isValid = explicitlyValid || (data && data.rowCount != null && !explicitlyInvalid)
+      var hasWarnings = data && (
+        data.hasWarnings === true || data.hasWarnings === 'true' ||
+        data.has_warnings === true || data.has_warnings === 'true'
+      )
       var canProceed = StepperState.skipValidation ||
         (StepperState.validated &&
-        StepperState.validationData.isValid &&
-        (!StepperState.validationData.hasWarnings || StepperState.warningsAcked))
+        isValid &&
+        (!hasWarnings || StepperState.warningsAcked))
 
       $('.step-content[data-step="1"] .step-next-btn').prop('disabled', !canProceed)
     } else if (step === 2) {
-      var canProceed =
-        StepperState.settings.name && StepperState.settings.adminSetId
-      $('.step-content[data-step="2"] .step-next-btn').prop(
-        'disabled',
-        !canProceed
-      )
+      // Read directly from form (works regardless of DOM id prefix in host app)
+      var $nameInput = $('input[name="importer[name]"]').length
+        ? $('input[name="importer[name]"]')
+        : $('#bulkrax_importer_name')
+      var $adminSetSelect = $('select[name="importer[admin_set_id]"]').length
+        ? $('select[name="importer[admin_set_id]"]')
+        : $('#bulkrax_importer_admin_set_id')
+      var name = ($nameInput.val() || '').trim()
+      var adminSetId = ($adminSetSelect.val() || '').trim()
+      var canProceed = name.length > 0 && adminSetId.length > 0
+      StepperState.settings.name = name || StepperState.settings.name
+      StepperState.settings.adminSetId = adminSetId || StepperState.settings.adminSetId
+      $('.step-content[data-step="2"] .step-next-btn').prop('disabled', !canProceed)
     }
   }
 
@@ -1241,17 +1268,13 @@
   // Handle import submission
   function handleImportSubmit() {
     var $btn = $('#start-import-btn')
+    var $form = $('#bulk-import-stepper-form')
     $btn
       .prop('disabled', true)
       .html('<span class="fa fa-spinner fa-spin"></span> Starting...')
 
-    // Simulate submission (replace with real form submit)
-    setTimeout(function () {
-      showSuccessState()
-    }, 2500)
-
-    // For real submission, just let the form submit normally or use AJAX
-    // $('#bulk-import-stepper-form')[0].submit();
+    // Submit the form so the request hits create_v2 and creates the importer / enqueues job
+    $form[0].submit()
   }
 
   // Show success state

@@ -452,7 +452,7 @@ module Bulkrax
     # File names referenced in CSVs have spaces replaced with underscores
     # @see Bulkrax::CsvParser#file_paths
     def remove_spaces_from_filenames
-      files = Dir.glob(File.join(importer_unzip_path, 'files', '*'))
+      files = Dir.glob(File.join(importer_unzip_path, '**', 'files', '*'))
       files_with_spaces = files.select { |f| f.split('/').last.match?(' ') }
       return if files_with_spaces.blank?
 
@@ -486,12 +486,16 @@ module Bulkrax
     end
 
     def files_preprocessed?
-      # where it came from (currently this is one file... do we need a new field to
-      # identify the directory in v2?)
       entry = parser_fields['import_file_path']
-      # this is where we are putting the files
-      directory = File.join(importer_unzip_path, entry.name)
-      # return true if directory exists and has files in it
+      if entry.is_a?(String) && entry.end_with?('.zip')
+        unzip_dir = importer_unzip_path
+        return Dir.glob("#{unzip_dir}/**/*.csv").any?
+      end
+      directory = if entry.respond_to?(:name)
+                    File.join(importer_unzip_path, entry.name)
+                  else
+                    File.dirname(entry.to_s)
+                  end
       return true if Dir.exist?(directory) && Dir.glob("#{directory}/*").any?
       false
     end
