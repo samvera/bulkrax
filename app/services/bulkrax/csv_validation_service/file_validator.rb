@@ -25,7 +25,7 @@ module Bulkrax
       # @param csv_data [Array<Hash>] Array of parsed CSV rows with :file key
       # @param zip_file [File, ActionDispatch::Http::UploadedFile, nil] Optional zip archive
       def initialize(csv_data, zip_file = nil)
-        @csv_data = csv_data || []
+        @csv_data = csv_data
         @zip_file = zip_file
       end
 
@@ -65,21 +65,21 @@ module Bulkrax
 
       # Get all file references from CSV data
       #
-      # @return [Array<String>] Array of referenced file names
+      # @return [Array<String>] Array of referenced file names (basename only, no paths)
       def referenced_files
-        @referenced_files ||= @csv_data.map { |item| item[:file] }.compact
+        @referenced_files ||= @csv_data.map { |item| File.basename(item[:file]) if item[:file].present? }.compact
       end
 
       # Get list of files in the zip archive
       #
-      # @return [Array<String>] Array of file names in zip
+      # @return [Array<String>] Array of file names in zip (basename only, no paths)
       def zip_file_list
         @zip_file_list ||= begin
           return [] unless @zip_file
 
           zip_path = @zip_file.respond_to?(:path) ? @zip_file.path : @zip_file
           Zip::File.open(zip_path) do |zip|
-            zip.entries.select(&:file?).map(&:name)
+            zip.entries.select(&:file?).map { |entry| File.basename(entry.name) }
           end
                            rescue StandardError => e
                              Rails.logger.error("Error reading zip file: #{e.message}")

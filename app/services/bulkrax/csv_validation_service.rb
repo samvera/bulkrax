@@ -52,7 +52,7 @@ module Bulkrax
   #   Bulkrax::CsvValidationService.generate_template(models: 'all', output: 'csv_string')
   #
   # CSV Validation:
-  #   result = Bulkrax::CsvValidationService.validate(csv_file, zip_file)
+  #   result = Bulkrax::CsvValidationService.validate(csv_file: csv_file, zip_file: zip_file)
   #   # Returns hash with: headers, missingRequired, unrecognized, rowCount, isValid, etc.
   #
   class CsvValidationService

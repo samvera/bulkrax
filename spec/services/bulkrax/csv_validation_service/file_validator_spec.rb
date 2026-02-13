@@ -55,6 +55,41 @@ RSpec.describe Bulkrax::CsvValidationService::FileValidator do
       validator = described_class.new(csv_data, nil)
       expect(validator.missing_files).to be_empty
     end
+
+    context 'with paths in file references' do
+      let(:csv_data_with_paths) do
+        [
+          { file: 'images/photo.jpg', source_identifier: 'work1' },
+          { file: 'documents/report.pdf', source_identifier: 'work2' }
+        ]
+      end
+
+      let(:zip_with_paths) do
+        zip = Tempfile.new(['test', '.zip'])
+        Zip::File.open(zip.path, create: true) do |zipfile|
+          zipfile.get_output_stream('subfolder/photo.jpg') { |f| f.write('fake image') }
+          zipfile.get_output_stream('other/report.pdf') { |f| f.write('fake pdf') }
+        end
+        zip.rewind
+        zip
+      end
+
+      after do
+        zip_with_paths&.close
+        zip_with_paths&.unlink
+      end
+
+      it 'strips paths from CSV file references and matches by basename' do
+        validator = described_class.new(csv_data_with_paths, zip_with_paths)
+        expect(validator.missing_files).to be_empty
+      end
+
+      it 'identifies missing files when basenames do not match' do
+        data_with_missing = csv_data_with_paths + [{ file: 'path/to/missing.jpg' }]
+        validator = described_class.new(data_with_missing, zip_with_paths)
+        expect(validator.missing_files).to eq(['missing.jpg'])
+      end
+    end
   end
 
   describe '#found_files_count' do
@@ -72,6 +107,55 @@ RSpec.describe Bulkrax::CsvValidationService::FileValidator do
       data_with_missing = csv_data + [{ file: 'missing.jpg' }]
       validator = described_class.new(data_with_missing, zip_file)
       expect(validator.found_files_count).to eq(2)
+    end
+
+    context 'with paths in file references and zip entries' do
+      let(:csv_data_with_paths) do
+        [
+          { file: 'images/photo.jpg', source_identifier: 'work1' },
+          { file: 'documents/report.pdf', source_identifier: 'work2' },
+          { file: 'nested/path/to/file.txt', source_identifier: 'work3' }
+        ]
+      end
+
+      let(:zip_with_nested_paths) do
+        zip = Tempfile.new(['test', '.zip'])
+        Zip::File.open(zip.path, create: true) do |zipfile|
+          zipfile.get_output_stream('different/path/photo.jpg') { |f| f.write('image') }
+          zipfile.get_output_stream('report.pdf') { |f| f.write('pdf') }
+          zipfile.get_output_stream('deeply/nested/file.txt') { |f| f.write('text') }
+        end
+        zip.rewind
+        zip
+      end
+
+      after do
+        zip_with_nested_paths&.close
+        zip_with_nested_paths&.unlink
+      end
+
+      it 'matches files by basename regardless of paths' do
+        validator = described_class.new(csv_data_with_paths, zip_with_nested_paths)
+        expect(validator.found_files_count).to eq(3)
+      end
+
+      it 'counts only matching basenames even with different paths' do
+        mixed_data = [
+          { file: 'path1/found.jpg', source_identifier: 'work1' },
+          { file: 'path2/notfound.jpg', source_identifier: 'work2' }
+        ]
+        mixed_zip = Tempfile.new(['test', '.zip'])
+        Zip::File.open(mixed_zip.path, create: true) do |zipfile|
+          zipfile.get_output_stream('otherpath/found.jpg') { |f| f.write('image') }
+        end
+        mixed_zip.rewind
+
+        validator = described_class.new(mixed_data, mixed_zip)
+        expect(validator.found_files_count).to eq(1)
+
+        mixed_zip.close
+        mixed_zip.unlink
+      end
     end
   end
 
