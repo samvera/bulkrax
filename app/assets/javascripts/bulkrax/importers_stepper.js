@@ -877,7 +877,7 @@
     )
 
     // Render all issues - FROM BACKEND
-    // Use main status severity for all issue accordions to maintain consistent coloring
+    // Each issue uses its own severity for independent coloring
     if (data.messages.issues && data.messages.issues.length > 0) {
       data.messages.issues.forEach(function (issue) {
         var content = ''
@@ -908,7 +908,7 @@
           createAccordion(
             issue.title,
             issue.icon,
-            status.severity,
+            issue.severity,
             issue.count,
             issue.defaultOpen,
             content
