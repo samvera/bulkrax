@@ -81,7 +81,7 @@ module Bulkrax
       end
 
       def errors?
-        missing_required_fields.any? || !@csv_headers.present?
+        missing_required_fields.any? || @csv_headers.blank? || (@file_validator&.missing_files&.any? || false)
       end
 
       private

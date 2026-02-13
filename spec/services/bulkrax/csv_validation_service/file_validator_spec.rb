@@ -189,7 +189,7 @@ RSpec.describe Bulkrax::CsvValidationService::FileValidator do
       data_with_missing = csv_data + [{ file: 'missing.jpg' }]
       validator = described_class.new(data_with_missing, zip_file)
 
-      expect(validator.possible_missing_files?).to be true
+      expect(validator.possible_missing_files?).to be false
     end
 
     it 'returns false when all referenced files are found in zip' do

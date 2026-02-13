@@ -218,11 +218,20 @@ RSpec.describe Bulkrax::CsvValidationService::Validator do
       expect(validator).not_to be_valid
     end
 
-    it 'returns false when there are warnings (unrecognized headers)' do
+    it 'returns true with warnings only (unrecognized headers)' do
       csv_headers = %w[title source_identifier model invalid_field]
       validator = described_class.new(csv_headers, valid_headers, field_metadata, mapping_manager)
 
+      expect(validator).to be_valid
+    end
+
+    it 'returns false when there are both errors and warnings' do
+      csv_headers = %w[description invalid_field]
+      validator = described_class.new(csv_headers, valid_headers, field_metadata, mapping_manager)
+
       expect(validator).not_to be_valid
+      expect(validator.errors?).to be true
+      expect(validator.warnings?).to be true
     end
 
     it 'returns false when CSV has no headers' do
@@ -256,12 +265,12 @@ RSpec.describe Bulkrax::CsvValidationService::Validator do
       let(:file_validator) do
         instance_double(
           Bulkrax::CsvValidationService::FileValidator,
-          missing_files: missing_files
+          possible_missing_files?: has_possible_missing_files
         )
       end
 
       context 'when files are missing' do
-        let(:missing_files) { ['image1.jpg', 'doc.pdf'] }
+        let(:has_possible_missing_files) { true }
 
         it 'returns true' do
           csv_headers = %w[title creator]
@@ -272,7 +281,7 @@ RSpec.describe Bulkrax::CsvValidationService::Validator do
       end
 
       context 'when no files are missing' do
-        let(:missing_files) { [] }
+        let(:has_possible_missing_files) { false }
 
         it 'returns false when headers are also valid' do
           csv_headers = %w[title creator]
