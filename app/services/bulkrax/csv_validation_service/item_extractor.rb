@@ -54,13 +54,6 @@ module Bulkrax
         items_by_model_type('FileSet')
       end
 
-      # Get all items (collections and works, excluding file sets)
-      #
-      # @return [Array<Hash>] Combined array of collections and works
-      def all_items
-        collections + works
-      end
-
       # Get total count of all items
       #
       # @return [Integer] Total number of items in CSV

@@ -82,7 +82,6 @@ RSpec.describe Bulkrax::CsvValidationService do
       expect(result).to have_key(:collections)
       expect(result).to have_key(:works)
       expect(result).to have_key(:fileSets)
-      expect(result).to have_key(:allItems)
       expect(result).to have_key(:totalItems)
       expect(result).to have_key(:fileReferences)
       expect(result).to have_key(:missingFiles)
@@ -213,7 +212,7 @@ RSpec.describe Bulkrax::CsvValidationService do
       result = service.validate
 
       expected_keys = [:headers, :missingRequired, :unrecognized, :rowCount, :isValid, :hasWarnings,
-                       :collections, :works, :fileSets, :allItems, :totalItems,
+                       :collections, :works, :fileSets, :totalItems,
                        :fileReferences, :missingFiles, :foundFiles, :zipIncluded]
 
       expected_keys.each do |key|

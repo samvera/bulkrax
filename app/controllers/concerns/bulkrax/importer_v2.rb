@@ -14,6 +14,7 @@ module Bulkrax
     end
 
     # AJAX endpoint to validate uploaded files
+    # rubocop:disable Metrics/MethodLength
     def validate_v2
       files = params[:importer]&.[](:parser_fields)&.[](:files) || []
       files = [files] unless files.is_a?(Array)
@@ -30,20 +31,25 @@ module Bulkrax
 
       # If no CSV in uploaded files, check if ZIP contains CSV
       unless csv_file
-        if zip_file
-          Zip::File.open(zip_file.path) do |zip|
-            result = find_csv_in_zip(zip)
-
-            if result.is_a?(Hash) && result[:messages]
-              render json: result, status: :ok
-              return
-            end
-
-            # Read the CSV content while the zip file is still open
-            csv_file = StringIO.new(result.get_input_stream.read) if result
-          end
-        else
+        unless zip_file
           render json: StepperResponseFormatter.error(message: 'No CSV metadata file uploaded'), status: :ok
+          return
+        end
+
+        error_response = nil
+        Zip::File.open(zip_file.path) do |zip|
+          result = find_csv_in_zip(zip)
+
+          if result.is_a?(Hash) && result[:messages]
+            error_response = result
+          elsif result
+            # Read the CSV content while the zip file is still open
+            csv_file = StringIO.new(result.get_input_stream.read)
+          end
+        end
+
+        if error_response
+          render json: error_response, status: :ok
           return
         end
       end
@@ -59,6 +65,7 @@ module Bulkrax
       formatted_response = StepperResponseFormatter.format(validation_data)
       render json: formatted_response, status: :ok
     end
+    # rubocop:disable Metrics/MethodLength
 
     def create_v2; end
 
@@ -93,7 +100,7 @@ module Bulkrax
       csvs_by_directory = csvs_at_level.group_by { |entry| File.dirname(entry.name) }
 
       # Check each directory at this level for multiple CSVs
-      csvs_by_directory.each do |dir, csvs|
+      csvs_by_directory.each do |_dir, csvs|
         return StepperResponseFormatter.error(message: 'Multiple CSV files found in the same directory within ZIP') if csvs.count > 1
       end
 

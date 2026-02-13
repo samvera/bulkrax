@@ -102,18 +102,6 @@ RSpec.describe Bulkrax::CsvValidationService::ItemExtractor do
     end
   end
 
-  describe '#all_items' do
-    it 'returns collections and works but not file sets' do
-      extractor = described_class.new(csv_data)
-      all_items = extractor.all_items
-
-      expect(all_items.length).to eq(3) # 1 collection + 2 works
-      types = all_items.map { |item| item[:type] }
-      expect(types).to include('collection', 'work')
-      expect(types).not_to include('file_set')
-    end
-  end
-
   describe '#total_count' do
     it 'returns total number of items' do
       extractor = described_class.new(csv_data)

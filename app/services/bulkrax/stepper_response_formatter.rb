@@ -18,6 +18,7 @@ module Bulkrax
   #   error_response = StepperResponseFormatter.error(message: "Unable to process files")
   #   render json: error_response, status: :ok
   #
+  # rubocop:disable Metrics/ClassLength
   class StepperResponseFormatter
     # Format validation data for the stepper frontend
     #
@@ -250,3 +251,4 @@ module Bulkrax
     end
   end
 end
+# rubocop:disable Metrics/ClassLength

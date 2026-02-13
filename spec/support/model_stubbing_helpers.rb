@@ -29,8 +29,8 @@ module ModelStubbingHelpers
   #   end
   #
   # @return [void]
+  # rubocop:disable Metrics/MethodLength
   def stub_bulkrax_models
-    # rubocop:disable Metrics/MethodLength
     # First, stub ValkyrieObjectFactory to prevent schema access issues
     stub_const('Bulkrax::ValkyrieObjectFactory', Class.new do
       def self.schema_properties(klass)

@@ -4,7 +4,7 @@ require 'rails_helper'
 
 RSpec.describe Bulkrax::StepperResponseFormatter do
   # Load demo scenarios from the fixtures
-  let(:demo_scenarios_path) { File.join(fixture_path, 'demo_scenarios.json') }
+  let(:demo_scenarios_path) { File.expand_path('../../fixtures/demo_scenarios.json', __dir__) }
   let(:demo_scenarios) { JSON.parse(File.read(demo_scenarios_path), symbolize_names: true) }
 
   describe '.format' do

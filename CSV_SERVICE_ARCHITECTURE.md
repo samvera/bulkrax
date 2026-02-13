@@ -251,7 +251,6 @@ validator.found_files_count      # => 8
 - `collections` - Returns array of collection items
 - `works` - Returns array of work items (excluding collections and file sets)
 - `file_sets` - Returns array of file set items
-- `all_items` - Returns combined collections and works
 - `total_count` - Returns total number of items
 
 **Example:**
