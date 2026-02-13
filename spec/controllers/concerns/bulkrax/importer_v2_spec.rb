@@ -99,13 +99,13 @@ RSpec.describe Bulkrax::ImporterV2, type: :controller do
           result = controller.send(:find_csv_in_zip, zip)
           expect(result).to be_a(Hash)
           expect(result[:messages][:validationStatus][:severity]).to eq('error')
-          expect(result[:messages][:validationStatus][:summary]).to include('Multiple CSV files found at the same level')
+          expect(result[:messages][:validationStatus][:summary]).to include('Multiple CSV files found in the same directory within ZIP')
         end
       end
     end
 
     context 'with multiple CSVs in different directories at the same depth' do
-      it 'returns error when CSVs exist in multiple directories at same level' do
+      it 'returns first CSV when CSVs exist in multiple directories at same level' do
         Zip::File.open(zip_file.path, create: true) do |zipfile|
           zipfile.get_output_stream('dir1/data.csv') { |f| f.write('csv 1') }
           zipfile.get_output_stream('dir2/metadata.csv') { |f| f.write('csv 2') }
@@ -113,13 +113,12 @@ RSpec.describe Bulkrax::ImporterV2, type: :controller do
 
         Zip::File.open(zip_file.path) do |zip|
           result = controller.send(:find_csv_in_zip, zip)
-          expect(result).to be_a(Hash)
-          expect(result[:messages][:validationStatus][:severity]).to eq('error')
-          expect(result[:messages][:validationStatus][:summary]).to include('Multiple CSV files found at the same level')
+          expect(result).to be_a(Zip::Entry)
+          expect(%w[dir1/data.csv dir2/metadata.csv]).to include(result.name)
         end
       end
 
-      it 'returns error with three CSVs across different directories at same depth' do
+      it 'returns first CSV with three CSVs across different directories at same depth' do
         Zip::File.open(zip_file.path, create: true) do |zipfile|
           zipfile.get_output_stream('dir1/data.csv') { |f| f.write('csv 1') }
           zipfile.get_output_stream('dir2/metadata.csv') { |f| f.write('csv 2') }
@@ -128,9 +127,8 @@ RSpec.describe Bulkrax::ImporterV2, type: :controller do
 
         Zip::File.open(zip_file.path) do |zip|
           result = controller.send(:find_csv_in_zip, zip)
-          expect(result).to be_a(Hash)
-          expect(result[:messages][:validationStatus][:severity]).to eq('error')
-          expect(result[:messages][:validationStatus][:summary]).to include('Multiple CSV files found at the same level')
+          expect(result).to be_a(Zip::Entry)
+          expect(%w[dir1/data.csv dir2/metadata.csv dir3/info.csv]).to include(result.name)
         end
       end
     end
@@ -146,7 +144,7 @@ RSpec.describe Bulkrax::ImporterV2, type: :controller do
           result = controller.send(:find_csv_in_zip, zip)
           expect(result).to be_a(Hash)
           expect(result[:messages][:validationStatus][:severity]).to eq('error')
-          expect(result[:messages][:validationStatus][:summary]).to include('Multiple CSV files found at the same level')
+          expect(result[:messages][:validationStatus][:summary]).to include('Multiple CSV files found in the same directory within ZIP')
         end
       end
     end
@@ -219,6 +217,27 @@ RSpec.describe Bulkrax::ImporterV2, type: :controller do
           expect(result.name).to eq('data/metadata.csv')
         end
       end
+    end
+  end
+
+  describe '#importer_params_v2' do
+    it 'permits override_rights_statement in parser_fields' do
+      params = ActionController::Parameters.new(
+        importer: {
+          name: 'Test Import',
+          admin_set_id: 'admin_set/default',
+          parser_fields: {
+            rights_statement: 'http://rightsstatements.org/vocab/NOC/1.0/',
+            override_rights_statement: '1'
+          }
+        }
+      )
+      allow(controller).to receive(:params).and_return(params)
+
+      permitted = controller.send(:importer_params_v2)
+      parser_fields = permitted[:parser_fields] || permitted['parser_fields']
+      expect(parser_fields).to be_present
+      expect(parser_fields['override_rights_statement'] || parser_fields[:override_rights_statement]).to eq('1')
     end
   end
 end

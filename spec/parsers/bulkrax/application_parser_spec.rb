@@ -124,6 +124,34 @@ module Bulkrax
       end
     end
 
+    describe '#files_preprocessed?' do
+      context 'when import_file_path is a string path to a zip file' do
+        it 'returns false when no CSV files exist in the unzip directory' do
+          Dir.mktmpdir do |tmpdir|
+            zip_path = File.join(tmpdir, 'import.zip')
+            Zip::File.open(zip_path, create: true) { |z| z.get_output_stream('readme.txt') { |f| f.write('text') } }
+
+            csv_importer = FactoryBot.build(:bulkrax_importer_csv, parser_fields: { 'import_file_path' => zip_path })
+            parser = Bulkrax::CsvParser.new(csv_importer)
+            expect(parser.files_preprocessed?).to eq(false)
+          end
+        end
+
+        it 'returns true when at least one CSV exists in the unzip directory' do
+          Dir.mktmpdir do |tmpdir|
+            zip_path = File.join(tmpdir, 'import.zip')
+            Zip::File.open(zip_path, create: true) { |z| z.get_output_stream('data.csv') { |f| f.write('a,b') } }
+            csv_path = File.join(tmpdir, "bulkrax_spec_#{File.basename(zip_path, '.zip')}_data.csv")
+            File.write(csv_path, 'a,b')
+
+            csv_importer = FactoryBot.build(:bulkrax_importer_csv, parser_fields: { 'import_file_path' => zip_path })
+            parser = Bulkrax::CsvParser.new(csv_importer)
+            expect(parser.files_preprocessed?).to eq(true)
+          end
+        end
+      end
+    end
+
     describe '#remove_spaces_from_filenames' do
       let(:parser) { described_class.new(importer) }
       let(:before_filenames) { ['spec/fixtures/csv/files/no_space.jpg', 'spec/fixtures/csv/files/has space.jpg'] }
