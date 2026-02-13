@@ -69,9 +69,9 @@ module Bulkrax
     def generate_validation_response(_csv_file, zip_file)
       # Generate mock collections
       collections = [
-        { id: 'col-1', title: 'Historical Photographs Collection', type: 'collection', parentIds: [] },
-        { id: 'col-2', title: 'Manuscripts & Letters', type: 'collection', parentIds: [] },
-        { id: 'col-3', title: 'Audio Recordings', type: 'collection', parentIds: [] }
+        { id: 'col-1', title: 'Historical Photographs Collection', type: 'collection', parentIds: [], childrenIds: ['work-shared-1'] },
+        { id: 'col-2', title: 'Manuscripts & Letters', type: 'collection', parentIds: [], childrenIds: [] },
+        { id: 'col-3', title: 'Audio Recordings', type: 'collection', parentIds: [], childrenIds: ['work-shared-2'] }
       ]
 
       # Generate mock works
@@ -108,7 +108,7 @@ module Bulkrax
       end
 
       # Mock headers with one unrecognized field
-      headers = ['source_identifier', 'title', 'creator', 'model', 'parents', 'file', 'description', 'date_created', 'legacy_id', 'subject']
+      headers = ['source_identifier', 'title', 'creator', 'model', 'parents', 'children', 'file', 'description', 'date_created', 'legacy_id', 'subject']
       unrecognized = ['legacy_id']
       missing_required = []
       missing_files = ['photo_087.tiff', 'letter_scan_12.pdf', 'recording_03.wav']

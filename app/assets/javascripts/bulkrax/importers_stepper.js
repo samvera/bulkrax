@@ -729,9 +729,49 @@
     }
   }
 
+  // Normalize childrenIds into parentIds and build a hierarchy lookup map.
+  // This converts parent-declares-children relationships into the canonical
+  // child-declares-parent form, then pre-computes a map for O(1) hierarchy lookups.
+  function normalizeRelationships(data) {
+    var allItems = data.collections.concat(data.works)
+
+    // Build id -> item lookup
+    var itemMap = {}
+    allItems.forEach(function (item) {
+      if (!item.parentIds) { item.parentIds = [] }
+      itemMap[item.id] = item
+    })
+
+    // Convert childrenIds into parentIds on each referenced child item
+    allItems.forEach(function (item) {
+      if (item.childrenIds && item.childrenIds.length > 0) {
+        item.childrenIds.forEach(function (childId) {
+          var child = itemMap[childId]
+          if (child && child.parentIds.indexOf(item.id) === -1) {
+            child.parentIds.push(item.id)
+          }
+        })
+      }
+    })
+
+    // Build hierarchy lookup map from normalized parentIds
+    var hierarchyMap = {}
+    allItems.forEach(function (item) {
+      item.parentIds.forEach(function (parentId) {
+        if (!hierarchyMap[parentId]) { hierarchyMap[parentId] = [] }
+        hierarchyMap[parentId].push(item)
+      })
+    })
+
+    return hierarchyMap
+  }
+
   // Render validation results
   function renderValidationResults(data) {
     $('.validation-results').show()
+
+    // Normalize childrenIds -> parentIds and build hierarchy lookup map
+    var hierarchyMap = normalizeRelationships(data)
 
     // Import size gauge
     renderImportSizeGauge(data.totalItems)
@@ -740,7 +780,7 @@
     renderValidationAccordions(data)
 
     // Import summary
-    renderImportSummary(data)
+    renderImportSummary(data, hierarchyMap)
 
     // Warning acknowledgment
     if (data.hasWarnings) {
@@ -940,7 +980,7 @@
   }
 
   // Render import summary
-  function renderImportSummary(data) {
+  function renderImportSummary(data, hierarchyMap) {
     $('.summary-card-collections .summary-number').text(data.collections.length)
     $('.summary-card-works .summary-number').text(data.works.length)
     $('.summary-card-filesets .summary-number').text(data.fileSets.length)
@@ -950,7 +990,6 @@
     $container.empty()
 
     // Import hierarchy — collections, nested items, and standalone works in one tree
-    var allItems = data.collections.concat(data.works)
     var topLevelCollections = data.collections.filter(function (c) {
       return !c.parentIds || c.parentIds.length === 0
     })
@@ -961,12 +1000,12 @@
       '<div class="hierarchy-tree">' +
       topLevelCollections
         .map(function (c) {
-          return renderTreeItem(c, allItems)
+          return renderTreeItem(c, hierarchyMap)
         })
         .join('') +
       orphanWorks
         .map(function (w) {
-          return renderTreeItem(w, allItems)
+          return renderTreeItem(w, hierarchyMap)
         })
         .join('') +
       '</div>'
@@ -986,12 +1025,10 @@
     bindTreeEvents()
   }
 
-  // Render tree item
-  function renderTreeItem(item, allItems, depth) {
+  // Render tree item using pre-computed hierarchyMap for O(1) lookups
+  function renderTreeItem(item, hierarchyMap, depth) {
     depth = depth || 0
-    var children = allItems.filter(function (i) {
-      return i.parentIds && i.parentIds.indexOf(item.id) !== -1
-    })
+    var children = hierarchyMap[item.id] || []
     var hasChildren = children.length > 0
     var icon = item.type === 'collection' ? 'fa-folder' : 'fa-file-o'
     var iconColor = item.type === 'collection' ? 'text-primary' : 'text-muted'
@@ -1031,7 +1068,7 @@
         '<div class="tree-children" style="display: none;">' +
         children
           .map(function (c) {
-            return renderTreeItem(c, allItems, depth + 1)
+            return renderTreeItem(c, hierarchyMap, depth + 1)
           })
           .join('') +
         '</div>'
