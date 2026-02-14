@@ -446,7 +446,7 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
         result = described_class.format(input_data)
 
         expect(result[:works]).to eq(input_data[:works])
-        expect(result[:works].length).to eq(16)
+        expect(result[:works].length).to eq(18)
       end
 
       it 'preserves fileSets data' do
