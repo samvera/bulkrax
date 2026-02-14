@@ -48,8 +48,6 @@ RSpec.describe Bulkrax::CsvValidationService::ItemExtractor do
         collection_class
       when 'FileSet'
         file_set_class
-      else
-        nil
       end
     end
 
