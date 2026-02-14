@@ -2,11 +2,16 @@
   "_comment": "Quick Reference - JSON Response Structure for POST /importers/v2/validate",
   "_version": "1.0",
   "_required_fields": "All fields marked with * are required",
-  
   "structure": {
-    "headers*": ["string - CSV column names"],
-    "missingRequired*": ["string - Missing required columns"],
-    "unrecognized*": ["string - Unrecognized column names"],
+    "headers*": [
+      "string - CSV column names"
+    ],
+    "missingRequired*": [
+      "string|object - Missing required columns (legacy: strings, new: {model, field})"
+    ],
+    "unrecognized*": [
+      "string - Unrecognized column names"
+    ],
     "rowCount*": "integer - Number of data rows",
     "isValid*": "boolean - Validation passed?",
     "hasWarnings*": "boolean - Non-critical warnings exist?",
@@ -15,8 +20,12 @@
         "id": "string",
         "title": "string",
         "type": "collection",
-        "parentIds": ["string - Parent IDs (empty array if top-level)"],
-        "childrenIds": ["string - (Optional) Child IDs defined on this parent"]
+        "parentIds": [
+          "string - Parent IDs (empty array if top-level)"
+        ],
+        "childrenIds": [
+          "string - (Optional) Child IDs defined on this parent"
+        ]
       }
     ],
     "works*": [
@@ -24,8 +33,12 @@
         "id": "string",
         "title": "string",
         "type": "work",
-        "parentIds": ["string - Parent IDs (empty array if standalone)"],
-        "childrenIds": ["string - (Optional) Child IDs defined on this parent"]
+        "parentIds": [
+          "string - Parent IDs (empty array if standalone)"
+        ],
+        "childrenIds": [
+          "string - (Optional) Child IDs defined on this parent"
+        ]
       }
     ],
     "fileSets*": [
@@ -37,7 +50,9 @@
     ],
     "totalItems*": "integer - collections + works + fileSets count",
     "fileReferences*": "integer - Files referenced in CSV",
-    "missingFiles*": ["string - Filenames missing from ZIP"],
+    "missingFiles*": [
+      "string - Filenames missing from ZIP"
+    ],
     "foundFiles*": "integer - Files found in ZIP",
     "zipIncluded*": "boolean - ZIP file uploaded?",
     "messages*": {
@@ -61,7 +76,8 @@
           "items*": [
             {
               "field*": "string - Field/file name",
-              "message": "string|null - Additional message (optional)"
+              "model": "string - Model name (for missing_required_fields type, used for grouping)",
+              "message": "string|null - Additional message (optional, used for non-grouped issue types)"
             }
           ],
           "details": "string|null - Additional details (optional)",
@@ -70,25 +86,40 @@
       ]
     }
   },
-  
   "severity_options": {
-    "validationStatus": ["success", "warning", "error"],
-    "issues": ["error", "warning", "info"]
+    "validationStatus": [
+      "success",
+      "warning",
+      "error"
+    ],
+    "issues": [
+      "error",
+      "warning",
+      "info"
+    ]
   },
-  
   "common_icons": {
     "success": "fa-check-circle",
     "warning": "fa-exclamation-triangle",
     "error": "fa-times-circle",
     "info": "fa-info-circle"
   },
-  
   "issue_types": {
-    "missing_required_fields": "Required columns missing from CSV",
+    "missing_required_fields": "Required columns missing from CSV (each item includes model name to show which models need which fields)",
     "unrecognized_fields": "CSV columns not mapped to properties",
     "file_references": "File validation results"
   },
-  
+  "missing_required_fields_notes": {
+    "description": "Missing required fields are grouped by model for better readability",
+    "display_format": "Fields are displayed under model name headings (e.g., 'GenericWork:', 'Collection:')",
+    "example": "If GenericWork needs 'title' and 'rights_statement', both appear under 'GenericWork:' heading",
+    "benefits": [
+      "Clear visual grouping by model eliminates redundant model names",
+      "Users can quickly scan which models need which fields",
+      "Supports multi-model CSV files with different requirements per model",
+      "Cleaner, more compact display than listing model name with each field"
+    ]
+  },
   "validation_rules": {
     "isValid_false_when": [
       "Required fields are missing",
@@ -101,9 +132,12 @@
       "Files referenced but no ZIP uploaded"
     ]
   },
-  
   "minimal_success_example": {
-    "headers": ["source_identifier", "title", "model"],
+    "headers": [
+      "source_identifier",
+      "title",
+      "model"
+    ],
     "missingRequired": [],
     "unrecognized": [],
     "rowCount": 10,
@@ -129,11 +163,17 @@
       "issues": []
     }
   },
-  
   "minimal_warning_example": {
-    "headers": ["source_identifier", "title", "model", "legacy_id"],
+    "headers": [
+      "source_identifier",
+      "title",
+      "model",
+      "legacy_id"
+    ],
     "missingRequired": [],
-    "unrecognized": ["legacy_id"],
+    "unrecognized": [
+      "legacy_id"
+    ],
     "rowCount": 25,
     "isValid": true,
     "hasWarnings": true,
@@ -175,10 +215,15 @@
       ]
     }
   },
-  
   "minimal_error_example": {
-    "headers": ["title", "description"],
-    "missingRequired": ["source_identifier", "model"],
+    "headers": [
+      "title",
+      "description"
+    ],
+    "missingRequired": [
+      "source_identifier",
+      "rights_statement"
+    ],
     "unrecognized": [],
     "rowCount": 15,
     "isValid": false,
@@ -206,17 +251,25 @@
           "severity": "error",
           "icon": "fa-times-circle",
           "title": "Missing Required Fields",
-          "count": 2,
+          "count": 4,
           "description": "These required columns must be added to your CSV:",
           "summary": null,
           "items": [
             {
-              "field": "source_identifier",
-              "message": "add this column to your CSV"
+              "model": "GenericWork",
+              "field": "source_identifier"
             },
             {
-              "field": "model",
-              "message": "add this column to your CSV"
+              "model": "GenericWork",
+              "field": "rights_statement"
+            },
+            {
+              "model": "Collection",
+              "field": "source_identifier"
+            },
+            {
+              "model": "Collection",
+              "field": "rights_statement"
             }
           ],
           "details": null,

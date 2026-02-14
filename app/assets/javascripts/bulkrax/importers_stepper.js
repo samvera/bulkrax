@@ -847,6 +847,60 @@
     $('.import-size-gauge').html(html)
   }
 
+  // Group items by model for missing required fields
+  function groupItemsByModel(items) {
+    var grouped = {}
+    items.forEach(function (item) {
+      var modelName = item.model || 'Unknown'
+      if (!grouped[modelName]) {
+        grouped[modelName] = []
+      }
+      grouped[modelName].push(item.field)
+    })
+    return grouped
+  }
+
+  // Render missing required fields grouped by model
+  function renderMissingRequiredFields(items) {
+    var html = ''
+    var groupedByModel = groupItemsByModel(items)
+
+    Object.keys(groupedByModel).forEach(function (modelName) {
+      html += '<div class="missing-field-group">'
+      html += '<strong class="missing-field-model">' + modelName + '</strong>'
+      html += '<ul>'
+      groupedByModel[modelName].forEach(function (field) {
+        html += '<li>• ' + field + '</li>'
+      })
+      html += '</ul>'
+      html += '</div>'
+    })
+
+    return html
+  }
+
+  // Render default issue items (unrecognized fields, file references, etc.)
+  function renderDefaultIssueItems(items) {
+    var html = '<ul>'
+    items.forEach(function (item) {
+      var msg = item.message ? ' — ' + item.message : ''
+      html += '<li>• ' + item.field + msg + '</li>'
+    })
+    html += '</ul>'
+    return html
+  }
+
+  // Render issue items based on issue type
+  function renderIssueItems(issue) {
+    var hasModelField = issue.items.some(function (item) { return item.model })
+
+    if (issue.type === 'missing_required_fields' && hasModelField) {
+      return renderMissingRequiredFields(issue.items)
+    } else {
+      return renderDefaultIssueItems(issue.items)
+    }
+  }
+
   // Render validation accordions
   function renderValidationAccordions(data) {
     var $wrapper = $('.accordion-wrapper')
@@ -891,13 +945,7 @@
         }
 
         if (issue.items && issue.items.length > 0) {
-          content += '<ul>'
-          issue.items.forEach(function (item) {
-            var msg = item.message ? ' — ' + item.message : ''
-            content +=
-              '<li>• <strong>' + item.field + '</strong>' + msg + '</li>'
-          })
-          content += '</ul>'
+          content += renderIssueItems(issue)
         }
 
         if (issue.details) {
