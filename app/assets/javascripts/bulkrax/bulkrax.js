@@ -1,7 +1,6 @@
 // Global JS file for Bulkrax
 
 function setupGlobalListeners() {
-  console.log("setting up global listeners");
   // Apply to Importer and Exporter views
   $('button#err_toggle').click(function() {
     $('#error_trace').toggle();
