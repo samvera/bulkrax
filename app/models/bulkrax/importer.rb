@@ -243,7 +243,7 @@ module Bulkrax
 
     def importer_unzip_path(mkdir: false)
       entry = parser_fields&.[]('import_file_path')
-      if entry.is_a?(String) && entry.end_with?('.zip') && File.file?(entry)
+      if entry.is_a?(String) && entry.end_with?('.zip') && File.file?(entry) && parser_fields["file_style"] != I18n.t('bulkrax.importer.xml.file_style.server_path')
         unzip_dir = File.dirname(entry)
         FileUtils.mkdir_p(unzip_dir) if mkdir
         return unzip_dir
