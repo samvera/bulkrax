@@ -327,8 +327,8 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
         issue = result[:messages][:issues].find { |i| i[:type] == 'missing_required_fields' }
         expect(issue[:count]).to eq(2)
         expect(issue[:items]).to contain_exactly(
-          { field: 'source_identifier', message: 'add this column to your CSV' },
-          { field: 'model', message: 'add this column to your CSV' }
+          { model: 'Work', field: 'source_identifier' },
+          { model: 'Work', field: 'model' }
         )
       end
 
