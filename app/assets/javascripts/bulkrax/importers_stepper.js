@@ -692,9 +692,9 @@
           return
         }
         StepperState.validated = true
-        StepperState.validationData = mockData
+        StepperState.validationData = normalizeValidationData(mockData)
 
-        renderValidationResults(mockData)
+        renderValidationResults(StepperState.validationData)
         $btn.html('<span class="fa fa-check-circle"></span> Validated')
         updateStepNavigation()
       }, 2000)
@@ -709,9 +709,19 @@
         processData: false,
         contentType: false,
         success: function (data) {
+          var normalized = normalizeValidationData(data)
           StepperState.validated = true
-          StepperState.validationData = data
-          renderValidationResults(data)
+          StepperState.validationData = normalized
+          try {
+            renderValidationResults(normalized)
+          } catch (e) {
+            console.warn('Validation results render issue:', e)
+            StepperState.validated = false
+            StepperState.validationData = null
+            showNotification('Validation completed but results could not be displayed. Please try again.', 'error')
+            $btn.prop('disabled', false).html('<span class="fa fa-file-text"></span> Validate Files')
+            return
+          }
           $btn.html('<span class="fa fa-check-circle"></span> Validated')
           updateStepNavigation()
         },
@@ -726,6 +736,27 @@
             .html('<span class="fa fa-file-text"></span> Validate Files')
         }
       })
+    }
+  }
+
+  function normalizeValidationData(data) {
+    if (!data) return data
+    return {
+      collections: data.collections,
+      works: data.works,
+      fileSets: data.fileSets || data.file_sets,
+      totalItems: data.totalItems != null ? data.totalItems : data.total_items,
+      headers: data.headers,
+      missingRequired: data.missingRequired || data.missing_required,
+      unrecognized: data.unrecognized,
+      rowCount: data.rowCount != null ? data.rowCount : data.row_count,
+      isValid: !!(data.isValid === true || data.isValid === 'true' || data.is_valid === true || data.is_valid === 'true' || ((data.rowCount != null || data.row_count != null) && data.isValid !== false && data.isValid !== 'false' && data.is_valid !== false && data.is_valid !== 'false')),
+      hasWarnings: !!(data.hasWarnings === true || data.hasWarnings === 'true' || (data.has_warnings === true || data.has_warnings === 'true')),
+      fileReferences: data.fileReferences != null ? data.fileReferences : data.file_references,
+      missingFiles: data.missingFiles || data.missing_files,
+      foundFiles: data.foundFiles != null ? data.foundFiles : data.found_files,
+      zipIncluded: data.zipIncluded != null ? data.zipIncluded : data.zip_included,
+      messages: data.messages
     }
   }
 
@@ -1174,19 +1205,24 @@
     var step = StepperState.currentStep
 
     if (step === 1) {
+      var data = StepperState.validationData
+      var isValid = data && data.isValid
+      var hasWarnings = data && data.hasWarnings
       var canProceed = StepperState.skipValidation ||
         (StepperState.validated &&
-          StepperState.validationData.isValid &&
-          (!StepperState.validationData.hasWarnings || StepperState.warningsAcked))
+        isValid &&
+        (!hasWarnings || StepperState.warningsAcked))
 
       $('.step-content[data-step="1"] .step-next-btn').prop('disabled', !canProceed)
     } else if (step === 2) {
-      var canProceed =
-        StepperState.settings.name && StepperState.settings.adminSetId
-      $('.step-content[data-step="2"] .step-next-btn').prop(
-        'disabled',
-        !canProceed
-      )
+      var $nameInput = $('input[name$="[name]"][name*="importer"]').first()
+      var $adminSetSelect = $('select[name$="[admin_set_id]"][name*="importer"]').first()
+      var name = ($nameInput.length ? $nameInput.val() : '').trim()
+      var adminSetId = ($adminSetSelect.length ? $adminSetSelect.val() : '').trim()
+      var canProceed = name.length > 0 && adminSetId.length > 0
+      StepperState.settings.name = name || StepperState.settings.name
+      StepperState.settings.adminSetId = adminSetId || StepperState.settings.adminSetId
+      $('.step-content[data-step="2"] .step-next-btn').prop('disabled', !canProceed)
     }
   }
 
@@ -1283,17 +1319,13 @@
   // Handle import submission
   function handleImportSubmit() {
     var $btn = $('#start-import-btn')
+    var $form = $('#bulk-import-stepper-form')
     $btn
       .prop('disabled', true)
       .html('<span class="fa fa-spinner fa-spin"></span> Starting...')
 
-    // Simulate submission (replace with real form submit)
-    setTimeout(function () {
-      showSuccessState()
-    }, 2500)
-
-    // For real submission, just let the form submit normally or use AJAX
-    // $('#bulk-import-stepper-form')[0].submit();
+    // Submit the form so the request hits create_v2 and creates the importer / enqueues job
+    $form[0].submit()
   }
 
   // Show success state

@@ -573,6 +573,17 @@ module Bulkrax
       it 'returns required keys that are missing from the record' do
         expect(subject.missing_elements(entry_no_title.raw_metadata)).to eq(['title'])
       end
+
+      it 'recognizes required elements when mapping uses symbol keys (e.g. :from)' do
+        allow(importer).to receive(:mapping).and_return(
+          'title' => { from: ['title'] },
+          'source_identifier' => { from: ['source_identifier'], source_identifier: true }
+        )
+        record_with_both = { 'title' => 'A Title', 'source_identifier' => 'id1' }
+        record_missing_title = { 'title' => '', 'source_identifier' => 'id2' }
+        expect(subject.missing_elements(record_with_both)).to eq([])
+        expect(subject.missing_elements(record_missing_title)).to include('title')
+      end
     end
 
     describe '#write_errored_entries_file', clean_downloads: true do
