@@ -24,7 +24,7 @@ module Bulkrax
     #
     # @param data [Hash] Raw validation data from CsvValidationService containing:
     #   - headers: Array of CSV column names
-    #   - missingRequired: Array of missing required fields
+    #   - missingRequired: Array of hashes of missing required fields by model (e.g. {model: 'GenericWork', field: 'source_identifier'})
     #   - unrecognized: Array of unrecognized column names
     #   - rowCount: Total number of data rows
     #   - isValid: Boolean indicating validation success
