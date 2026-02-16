@@ -77,7 +77,7 @@ module Bulkrax
     #
     # @param csv_file [File, ActionDispatch::Http::UploadedFile] CSV file to validate
     # @param zip_file [File, ActionDispatch::Http::UploadedFile, nil] Optional zip archive with referenced files
-    # @return [Hash] Validation results with keys: headers, missingRequired, unrecognized, isValid, etc.
+    # @param admin_set_id [String, nil] Optional admin set ID for context
     def self.validate(csv_file: nil, zip_file: nil)
       new(csv_file: csv_file, zip_file: zip_file).validate
     end
@@ -91,7 +91,8 @@ module Bulkrax
     # @param models [Array<String>, String, nil] Models for template generation
     # @param csv_file [File, nil] CSV file for validation mode
     # @param zip_file [File, nil] Zip archive for validation mode
-    def initialize(models: nil, csv_file: nil, zip_file: nil)
+    # @param admin_set_id [String, nil] Optional admin set ID for context
+    def initialize(models: nil, csv_file: nil, zip_file: nil, admin_set_id: nil)
       # Common initialization - load field mappings
       @mapping_manager = CsvValidationService::MappingManager.new
       @mappings = @mapping_manager.mappings
@@ -103,7 +104,7 @@ module Bulkrax
         @csv_parser = CsvValidationService::CsvParser.new(csv_file, @column_resolver)
         @all_models = @csv_parser.extract_models
         @csv_data = @csv_parser.parse_data
-        @file_validator = CsvValidationService::FileValidator.new(@csv_data, zip_file)
+        @file_validator = CsvValidationService::FileValidator.new(@csv_data, zip_file, admin_set_id)
         @item_extractor = CsvValidationService::ItemExtractor.new(@csv_data)
       else
         # Generation mode: use provided models
@@ -112,7 +113,7 @@ module Bulkrax
       end
 
       # Common components used by both modes
-      @field_analyzer = CsvValidationService::FieldAnalyzer.new(@mappings)
+      @field_analyzer = CsvValidationService::FieldAnalyzer.new(@mappings, admin_set_id)
     end
 
     # ============================================================================
