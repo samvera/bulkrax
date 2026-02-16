@@ -123,8 +123,14 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
         missing_issue = result[:messages][:issues].find { |i| i[:type] == 'missing_required_fields' }
         expect(missing_issue).to be_present
         expect(missing_issue[:severity]).to eq('error')
-        expect(missing_issue[:count]).to eq(2)
-        expect(missing_issue[:items].map { |i| i[:field] }).to contain_exactly('source_identifier', 'model')
+        expect(missing_issue[:count]).to eq(5)
+        expect(missing_issue[:items]).to contain_exactly(
+          { model: "GenericWork", field: "source_identifier" },
+          { model: "GenericWork", field: "rights_statement" },
+          { model: "Collection", field: "title" },
+          { model: "Collection", field: "rights_statement" },
+          { model: "FileSet", field: "source_identifier" }
+        )
       end
 
       it 'formats validation with combined errors and warnings' do
@@ -138,7 +144,7 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
 
         missing_issue = result[:messages][:issues].find { |i| i[:type] == 'missing_required_fields' }
         expect(missing_issue[:severity]).to eq('error')
-        expect(missing_issue[:count]).to eq(2)
+        expect(missing_issue[:count]).to eq(4)
 
         unrecognized_issue = result[:messages][:issues].find { |i| i[:type] == 'unrecognized_fields' }
         expect(unrecognized_issue[:severity]).to eq('warning')
@@ -267,7 +273,7 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
           rowCount: 5,
           isValid: false,
           hasWarnings: false,
-          missingRequired: ['source_identifier', 'model'],
+          missingRequired: [{ model: 'Work', field: 'source_identifier' }, { model: 'Work', field: 'model' }],
           unrecognized: [],
           fileReferences: 0
         }
@@ -285,7 +291,7 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
           rowCount: 5,
           isValid: false,
           hasWarnings: false,
-          missingRequired: ['source_identifier', 'model'],
+          missingRequired: [{ model: 'Work', field: 'source_identifier' }, { model: 'Work', field: 'model' }],
           unrecognized: [],
           fileReferences: 0
         }
@@ -299,8 +305,8 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
         expect(issue[:count]).to eq(2)
         expect(issue[:description]).to eq('These required columns must be added to your CSV:')
         expect(issue[:items]).to contain_exactly(
-          { field: 'source_identifier', message: 'add this column to your CSV' },
-          { field: 'model', message: 'add this column to your CSV' }
+          { model: 'Work', field: 'source_identifier' },
+          { model: 'Work', field: 'model' }
         )
       end
 
@@ -321,14 +327,14 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
         result = described_class.new(data).format
 
         # Check that missingRequired is normalized to array of strings
-        expect(result[:missingRequired]).to contain_exactly('source_identifier', 'model')
+        expect(result[:missingRequired]).to contain_exactly({ model: 'Work', field: 'source_identifier' }, { model: 'Work', field: 'model' })
 
         # Check that issue is properly formatted
         issue = result[:messages][:issues].find { |i| i[:type] == 'missing_required_fields' }
         expect(issue[:count]).to eq(2)
         expect(issue[:items]).to contain_exactly(
-          { field: 'source_identifier', message: 'add this column to your CSV' },
-          { field: 'model', message: 'add this column to your CSV' }
+          { model: 'Work', field: 'source_identifier' },
+          { model: 'Work', field: 'model' }
         )
       end
 
@@ -462,32 +468,6 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
         result = described_class.format(input_data)
 
         expect(result[:totalItems]).to eq(20)
-      end
-
-      it 'normalizes missingRequired from hashes to strings' do
-        data = {
-          headers: ['title'],
-          rowCount: 5,
-          isValid: false,
-          hasWarnings: false,
-          missingRequired: [
-            { model: 'Work', field: 'source_identifier' },
-            { model: 'Collection', field: 'model' }
-          ],
-          unrecognized: [],
-          fileReferences: 0,
-          collections: [],
-          works: [],
-          fileSets: [],
-          totalItems: 0
-        }
-
-        result = described_class.format(data)
-
-        # Should normalize to array of strings
-        expect(result[:missingRequired]).to be_an(Array)
-        expect(result[:missingRequired]).to contain_exactly('source_identifier', 'model')
-        expect(result[:missingRequired].first).to be_a(String)
       end
     end
   end

@@ -3,7 +3,9 @@
   margin: 25px 0;
   font-weight: 600;
 
-  .fa { margin-right: 8px; }
+  .fa {
+    margin-right: 8px;
+  }
 }
 
 /* ====== Validation Results ====== */
@@ -24,9 +26,9 @@
 
 // Gauge severity variants
 $gauge-variants: (
-  optimal:  (bg: $bg-success, border: $border-success, text: $color-success-dark, segment: $border-success, marker: $color-success-bright, radius: 6px 0 0 6px),
-  moderate: (bg: $bg-warning, border: $border-warning, text: $color-warning-dark, segment: $border-warning, marker: $color-warning,       radius: 0),
-  large:    (bg: $bg-error,   border: $border-error,   text: $color-error-dark,   segment: $border-error,   marker: $color-error,         radius: 0 6px 6px 0),
+  optimal: (bg: $bg-success, border: $border-success, text: $color-success-dark, segment: $border-success, marker: $color-success-bright, radius: 6px 0 0 6px),
+  moderate: (bg: $bg-warning, border: $border-warning, text: $color-warning-dark, segment: $border-warning, marker: $color-warning, radius: 0),
+  large: (bg: $bg-error, border: $border-error, text: $color-error-dark, segment: $border-error, marker: $color-error, radius: 0 6px 6px 0),
 );
 
 @each $name, $colors in $gauge-variants {
@@ -34,15 +36,23 @@ $gauge-variants: (
     background: map-get($colors, bg);
     border-color: map-get($colors, border);
 
-    .gauge-zone, .gauge-message { color: map-get($colors, text); }
+    .gauge-zone,
+    .gauge-message {
+      color: map-get($colors, text);
+    }
   }
 
   .gauge-segment-#{$name} {
     background: map-get($colors, segment);
-    @if map-get($colors, radius) != 0 { border-radius: map-get($colors, radius); }
+
+    @if map-get($colors, radius) !=0 {
+      border-radius: map-get($colors, radius);
+    }
   }
 
-  .gauge-marker-#{$name} { background: map-get($colors, marker); }
+  .gauge-marker-#{$name} {
+    background: map-get($colors, marker);
+  }
 }
 
 .gauge-header {
@@ -68,7 +78,9 @@ $gauge-variants: (
   margin-bottom: 8px;
 }
 
-.gauge-segment { flex: 1; }
+.gauge-segment {
+  flex: 1;
+}
 
 .gauge-marker {
   position: absolute;
@@ -107,16 +119,18 @@ $gauge-variants: (
   margin-bottom: 12px;
   overflow: hidden;
 
-  &:last-child { margin-bottom: 0; }
+  &:last-child {
+    margin-bottom: 0;
+  }
 }
 
 // Accordion severity variants
 $accordion-variants: (
   success: (bg: $bg-success, border: $border-success, icon: $color-success-bright, count-bg: $border-success, count-text: $color-success-dark),
-  warning: (bg: $bg-warning, border: $border-warning, icon: $color-warning,       count-bg: $border-warning, count-text: $color-warning-dark),
-  error:   (bg: $bg-error,   border: $border-error,   icon: $color-error,         count-bg: $border-error,   count-text: $color-error-dark),
-  info:    (bg: $bg-info,    border: $border-info,     icon: $color-info,          count-bg: $border-info,    count-text: $color-info-darker),
-  default: (bg: #fff,        border: $border-color,    icon: $color-text-muted,    count-bg: $bg-muted,       count-text: $color-text-default),
+  warning: (bg: $bg-warning, border: $border-warning, icon: $color-warning, count-bg: $border-warning, count-text: $color-warning-dark),
+  error: (bg: $bg-error, border: $border-error, icon: $color-error, count-bg: $border-error, count-text: $color-error-dark),
+  info: (bg: $bg-info, border: $border-info, icon: $color-info, count-bg: $border-info, count-text: $color-info-darker),
+  default: (bg: #fff, border: $border-color, icon: $color-text-muted, count-bg: $bg-muted, count-text: $color-text-default),
 );
 
 @each $name, $colors in $accordion-variants {
@@ -124,9 +138,18 @@ $accordion-variants: (
     border-color: map-get($colors, border);
     background: map-get($colors, bg);
 
-    .accordion-status-icon { color: map-get($colors, icon); }
-    .accordion-count { background: map-get($colors, count-bg); color: map-get($colors, count-text); }
-    .accordion-content { background: rgba(255, 255, 255, 0.5); }
+    .accordion-status-icon {
+      color: map-get($colors, icon);
+    }
+
+    .accordion-count {
+      background: map-get($colors, count-bg);
+      color: map-get($colors, count-text);
+    }
+
+    .accordion-content {
+      background: rgba(255, 255, 255, 0.5);
+    }
   }
 }
 
@@ -138,7 +161,9 @@ $accordion-variants: (
   cursor: pointer;
   transition: opacity 0.2s ease;
 
-  &:hover { opacity: 0.85; }
+  &:hover {
+    opacity: 0.85;
+  }
 }
 
 .accordion-title-bar {
@@ -178,5 +203,24 @@ $accordion-variants: (
     list-style: none;
   }
 
-  li { margin-bottom: 4px; }
+  li {
+    margin-bottom: 4px;
+  }
+}
+
+/* ====== Missing Required Fields ====== */
+.missing-field-group {
+  margin-bottom: 16px;
+  background-color: $bg-error;
+  padding: 12px 16px;
+  border-radius: $border-radius;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  ul {
+    margin: 4px 0 0 0;
+    padding-left: 20px;
+  }
 }

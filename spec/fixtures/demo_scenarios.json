@@ -1938,7 +1938,8 @@
         ],
         "missingRequired": [
           "source_identifier",
-          "model"
+          "rights_statement",
+          "title"
         ],
         "unrecognized": [],
         "rowCount": 100,
@@ -1963,16 +1964,28 @@
               "severity": "error",
               "icon": "fa-times-circle",
               "title": "Missing Required Fields",
-              "count": 2,
+              "count": 5,
               "description": "These required columns must be added to your CSV:",
               "items": [
                 {
-                  "field": "source_identifier",
-                  "message": "add this column to your CSV"
+                  "model": "GenericWork",
+                  "field": "source_identifier"
                 },
                 {
-                  "field": "model",
-                  "message": "add this column to your CSV"
+                  "model": "GenericWork",
+                  "field": "rights_statement"
+                },
+                {
+                  "model": "Collection",
+                  "field": "title"
+                },
+                {
+                  "model": "Collection",
+                  "field": "rights_statement"
+                },
+                {
+                  "model": "FileSet",
+                  "field": "source_identifier"
                 }
               ],
               "defaultOpen": false
@@ -2177,16 +2190,24 @@
               "severity": "error",
               "icon": "fa-times-circle",
               "title": "Missing Required Fields",
-              "count": 2,
+              "count": 4,
               "description": "These required columns must be added to your CSV:",
               "items": [
                 {
-                  "field": "source_identifier",
-                  "message": "add this column to your CSV"
+                  "model": "GenericWork",
+                  "field": "source_identifier"
                 },
                 {
-                  "field": "model",
-                  "message": "add this column to your CSV"
+                  "model": "GenericWork",
+                  "field": "model"
+                },
+                {
+                  "model": "Collection",
+                  "field": "source_identifier"
+                },
+                {
+                  "model": "Collection",
+                  "field": "model"
                 }
               ],
               "defaultOpen": false
