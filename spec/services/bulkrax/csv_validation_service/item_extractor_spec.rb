@@ -3,6 +3,10 @@
 require 'rails_helper'
 
 RSpec.describe Bulkrax::CsvValidationService::ItemExtractor do
+  let(:generic_work_class) { class_double('GenericWork') }
+  let(:collection_class) { class_double('Collection') }
+  let(:file_set_class) { class_double('FileSet') }
+
   let(:csv_data) do
     [
       {
@@ -32,6 +36,26 @@ RSpec.describe Bulkrax::CsvValidationService::ItemExtractor do
     ]
   end
 
+  before do
+    allow(Bulkrax).to receive(:collection_model_class).and_return(collection_class)
+    allow(Bulkrax).to receive(:file_model_class).and_return(file_set_class)
+
+    allow(Bulkrax::CsvValidationService::ModelLoader).to receive(:determine_klass_for) do |model_name|
+      case model_name
+      when 'GenericWork'
+        generic_work_class
+      when 'Collection'
+        collection_class
+      when 'FileSet'
+        file_set_class
+      end
+    end
+
+    allow(generic_work_class).to receive(:name).and_return('GenericWork')
+    allow(collection_class).to receive(:name).and_return('Collection')
+    allow(file_set_class).to receive(:name).and_return('FileSet')
+  end
+
   describe '#collections' do
     it 'extracts collection items' do
       extractor = described_class.new(csv_data)
@@ -41,6 +65,7 @@ RSpec.describe Bulkrax::CsvValidationService::ItemExtractor do
       expect(collections.first[:id]).to eq('col1')
       expect(collections.first[:title]).to eq('Collection 1')
       expect(collections.first[:type]).to eq('collection')
+      expect(collections.first[:parentIds]).to eq([])
     end
 
     it 'returns empty array when no collections' do
@@ -60,12 +85,12 @@ RSpec.describe Bulkrax::CsvValidationService::ItemExtractor do
       expect(works.first[:type]).to eq('work')
     end
 
-    it 'includes parent IDs' do
+    it 'includes parentIds as array' do
       extractor = described_class.new(csv_data)
       works = extractor.works
       work_with_parent = works.find { |w| w[:id] == 'work2' }
 
-      expect(work_with_parent[:parentId]).to eq('col1')
+      expect(work_with_parent[:parentIds]).to eq(['col1'])
     end
 
     it 'uses source_identifier as title fallback' do
@@ -81,18 +106,19 @@ RSpec.describe Bulkrax::CsvValidationService::ItemExtractor do
       works = extractor.works
 
       expect(works.first[:title]).to eq('work3')
+      expect(works.first[:parentIds]).to eq([])
     end
   end
 
   describe '#file_sets' do
-    it 'extracts file set items' do
+    it 'extracts file set items without parentIds' do
       extractor = described_class.new(csv_data)
       file_sets = extractor.file_sets
 
       expect(file_sets.length).to eq(1)
       expect(file_sets.first[:id]).to eq('fs1')
       expect(file_sets.first[:type]).to eq('file_set')
-      expect(file_sets.first[:parentId]).to eq('work1')
+      expect(file_sets.first).not_to have_key(:parentIds)
     end
 
     it 'returns empty array when no file sets' do

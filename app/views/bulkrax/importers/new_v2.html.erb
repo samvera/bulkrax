@@ -278,7 +278,6 @@
               </div>
             </div>
 
-            <!-- Optional Settings Accordion -->
             <div class="optional-settings-accordion">
               <div class="card">
                 <div class="card-header" data-toggle="collapse" data-target="#optional-settings">
@@ -294,21 +293,29 @@
                 </div>
                 <div id="optional-settings" class="collapse">
                   <div class="card-body">
-                    <!-- Rights Statement -->
                     <div class="form-group">
                       <label class="control-label">Default Rights Statement</label>
-                      <%= select_tag 'importer[parser_fields][rights_statement]',
-                          options_for_select([
-                            ['None', ''],
-                            ['In Copyright', 'in-copyright'],
-                            ['CC0 (Public Domain)', 'cc0'],
-                            ['CC BY 4.0', 'cc-by'],
-                            ['CC BY-SA 4.0', 'cc-by-sa']
-                          ]),
-                          class: 'form-control' %>
+                      <% if defined?(::Hyrax) %>
+                        <% rights_statements = Hyrax.config.rights_statement_service_class.new %>
+                        <%= select_tag 'importer[parser_fields][rights_statement]',
+                            options_for_select([['None', '']] + rights_statements.select_active_options),
+                            class: 'form-control' %>
+                      <% else %>
+                        <%= select_tag 'importer[parser_fields][rights_statement]',
+                            options_for_select([['None', '']]),
+                            class: 'form-control' %>
+                      <% end %>
+                    </div>
+                    <div class="form-group">
+                      <div class="form-check">
+                        <%= check_box_tag 'importer[parser_fields][override_rights_statement]', '1', false, class: 'form-check-input', id: 'importer_parser_fields_override_rights_statement' %>
+                        <label class="form-check-label" for="importer_parser_fields_override_rights_statement">
+                          <%= t('simple_form.labels.defaults.override_rights_statement') %>
+                        </label>
+                      </div>
+                      <small class="form-text text-muted"><%= t('bulkrax.importer.hints.override_rights_statement') %></small>
                     </div>
 
-                    <!-- Limit (for testing) -->
                     <div class="form-group">
                       <%= f.label :limit, 'Limit (for testing)', class: 'control-label' %>
                       <%= f.number_field :limit, class: 'form-control', placeholder: 'Import only first N records' %>

@@ -373,8 +373,8 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
         result = described_class.new(data).format
         issue = result[:messages][:issues].find { |i| i[:type] == 'file_references' }
 
-        expect(issue[:severity]).to eq('error')
-        expect(issue[:icon]).to eq('fa-times-circle')
+        expect(issue[:severity]).to eq('warning')
+        expect(issue[:icon]).to eq('fa-info-circle')
         expect(issue[:title]).to eq('File References')
         expect(issue[:count]).to eq(10)
         expect(issue[:summary]).to eq('8 of 10 files found in ZIP.')
@@ -446,7 +446,7 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
         result = described_class.format(input_data)
 
         expect(result[:works]).to eq(input_data[:works])
-        expect(result[:works].length).to eq(16)
+        expect(result[:works].length).to eq(18)
       end
 
       it 'preserves fileSets data' do
