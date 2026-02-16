@@ -489,7 +489,7 @@ module Bulkrax
     def files_preprocessed?
       entry = parser_fields['import_file_path']
       if entry.is_a?(String) && entry.end_with?('.zip')
-        unzip_dir = importer_unzip_path
+        unzip_dir = importer_unzip_path(mkdir: true)
         return Dir.glob("#{unzip_dir}/**/*.csv").any?
       end
       directory = if entry.respond_to?(:name)
