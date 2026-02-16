@@ -67,10 +67,11 @@ module Bulkrax
     # @param models [Array<String>, String] Model names or 'all' for all available models
     # @param output [String] Output format: 'file' or 'csv_string'
     # @param args [Hash] Additional arguments passed to output method (e.g., file_path)
+    # @param admin_set_id [String, nil] Optional admin set ID for context
     # @return [String] File path (for 'file' output) or CSV string (for 'csv_string' output)
-    def self.generate_template(models: [], output: 'file', **args)
+    def self.generate_template(models: [], output: 'file', admin_set_id: nil, **args)
       raise NameError, "Hyrax is not defined" unless defined?(::Hyrax)
-      new(models: models).send("to_#{output}", **args)
+      new(models: models, admin_set_id: admin_set_id).send("to_#{output}", **args)
     end
 
     # Validate a CSV file and optional zip archive
@@ -78,8 +79,8 @@ module Bulkrax
     # @param csv_file [File, ActionDispatch::Http::UploadedFile] CSV file to validate
     # @param zip_file [File, ActionDispatch::Http::UploadedFile, nil] Optional zip archive with referenced files
     # @param admin_set_id [String, nil] Optional admin set ID for context
-    def self.validate(csv_file: nil, zip_file: nil)
-      new(csv_file: csv_file, zip_file: zip_file).validate
+    def self.validate(csv_file: nil, zip_file: nil, admin_set_id: nil)
+      new(csv_file: csv_file, zip_file: zip_file, admin_set_id: admin_set_id).validate
     end
 
     # ============================================================================
