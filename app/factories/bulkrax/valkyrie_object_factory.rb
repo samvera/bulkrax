@@ -275,7 +275,7 @@ module Bulkrax
     # Retrieve properties from M3 model
     # @param klass the model
     # @return [Array<String>]
-    def self.schema_properties(klass, admin_set_id = nil)
+    def self.schema_properties(klass, _admin_set_id = nil)
       @schema_properties_map ||= {}
 
       klass_key = klass.name
