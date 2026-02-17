@@ -14,58 +14,19 @@ module Bulkrax
     end
 
     # AJAX endpoint to validate uploaded files
-    # rubocop:disable Metrics/MethodLength
     def validate_v2
-      files = params[:importer]&.[](:parser_fields)&.[](:files) || []
-      files = [files] unless files.is_a?(Array)
-      files = files.compact
+      files = extract_uploaded_files
+      return render_no_files_error unless files.any?
 
-      unless files.any?
-        render json: StepperResponseFormatter.error(message: 'No files uploaded'), status: :ok
-        return
-      end
+      csv_file = find_csv_file(files)
+      zip_file = find_zip_file(files)
 
-      # Find CSV file for validation
-      csv_file = files.find { |f| f.original_filename&.end_with?('.csv') }
-      zip_file = files.find { |f| f.original_filename&.end_with?('.zip') }
+      csv_file = extract_csv_from_zip(zip_file) unless csv_file
+      return if performed? # If error was already rendered
 
-      # If no CSV in uploaded files, check if ZIP contains CSV
-      unless csv_file
-        unless zip_file
-          render json: StepperResponseFormatter.error(message: 'No CSV metadata file uploaded'), status: :ok
-          return
-        end
-
-        error_response = nil
-        Zip::File.open(zip_file.path) do |zip|
-          result = find_csv_in_zip(zip)
-
-          if result.is_a?(Hash) && result[:messages]
-            error_response = result
-          elsif result
-            # Read the CSV content while the zip file is still open
-            csv_file = StringIO.new(result.get_input_stream.read)
-          end
-        end
-
-        if error_response
-          render json: error_response, status: :ok
-          return
-        end
-      end
-
-      # Use demo mode if DEMO_MODE environment variable is set
-      # Start server with: DEMO_MODE=true bin/web
-      validation_data = if ENV['DEMO_MODE'] == 'true'
-                          generate_validation_response(csv_file, zip_file)
-                        else
-                          CsvValidationService.validate(csv_file: csv_file, zip_file: zip_file)
-                        end
-
-      formatted_response = StepperResponseFormatter.format(validation_data)
-      render json: formatted_response, status: :ok
+      validation_data = perform_validation(csv_file, zip_file)
+      render json: StepperResponseFormatter.format(validation_data), status: :ok
     end
-    # rubocop:enable Metrics/MethodLength
 
     def create_v2
       files = extract_uploaded_files
@@ -102,6 +63,50 @@ module Bulkrax
     end
 
     private
+
+    def render_no_files_error
+      render json: StepperResponseFormatter.error(message: 'No files uploaded'), status: :ok
+    end
+
+    def find_csv_file(files)
+      files.find { |f| f.original_filename&.end_with?('.csv') }
+    end
+
+    def find_zip_file(files)
+      files.find { |f| f.original_filename&.end_with?('.zip') }
+    end
+
+    def extract_csv_from_zip(zip_file)
+      unless zip_file
+        render json: StepperResponseFormatter.error(message: 'No CSV metadata file uploaded'), status: :ok
+        return nil
+      end
+
+      csv_file = nil
+      Zip::File.open(zip_file.path) do |zip|
+        result = find_csv_in_zip(zip)
+
+        if result.is_a?(Hash) && result[:messages]
+          render json: result, status: :ok
+          return nil
+        elsif result
+          # Read the CSV content while the zip file is still open
+          csv_file = StringIO.new(result.get_input_stream.read)
+        end
+      end
+
+      csv_file
+    end
+
+    def perform_validation(csv_file, zip_file)
+      # Use demo mode if DEMO_MODE environment variable is set
+      # Start server with: DEMO_MODE=true bin/web
+      if ENV['DEMO_MODE'] == 'true'
+        generate_validation_response(csv_file, zip_file)
+      else
+        CsvValidationService.validate(csv_file: csv_file, zip_file: zip_file)
+      end
+    end
 
     # Finds CSV file in ZIP by traversing directory levels
     # Returns CSV entry object on success, or StepperResponseFormatter.error hash on error
@@ -157,28 +162,27 @@ module Bulkrax
     end
 
     def write_files_v2(files)
-      csv_file = files.find { |f| f.original_filename&.end_with?('.csv') }
-      zip_file = files.find { |f| f.original_filename&.end_with?('.zip') }
+      csv_file = find_csv_file(files)
+      zip_file = find_zip_file(files)
 
-      csv_path = nil
-      zip_path = nil
-      if csv_file && zip_file
-        csv_path = @importer.parser.write_import_file(csv_file)
-        zip_path = @importer.parser.write_import_file(zip_file)
-        @importer.parser_fields['import_file_path'] = csv_path
-        @importer.parser_fields['attachments_zip_path'] = zip_path
-      elsif zip_file && !csv_file
-        zip_path = @importer.parser.write_import_file(zip_file)
-        @importer.parser_fields['import_file_path'] = zip_path
-      elsif csv_file && !zip_file
-        csv_path = @importer.parser.write_import_file(csv_file)
-        @importer.parser_fields['import_file_path'] = csv_path
-      end
+      csv_path = write_file_if_present(csv_file)
+      zip_path = write_file_if_present(zip_file)
 
-      @importer.save if csv_path || zip_path
+      return unless csv_path || zip_path
+
+      # Determine import_file_path: prefer CSV, fallback to ZIP
+      @importer.parser_fields['import_file_path'] = csv_path || zip_path
+      @importer.parser_fields['attachments_zip_path'] = zip_path if zip_path && csv_path
+
+      @importer.save
     rescue StandardError => e
       Rails.logger.error("Bulkrax::ImporterV2#write_files_v2 failed: #{e.message}")
       raise
+    end
+
+    def write_file_if_present(file)
+      return nil unless file
+      @importer.parser.write_import_file(file)
     end
 
     # rubocop:disable Metrics/MethodLength
