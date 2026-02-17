@@ -24,9 +24,11 @@ module Bulkrax
       #
       # @param csv_data [Array<Hash>] Array of parsed CSV rows with :file key
       # @param zip_file [File, ActionDispatch::Http::UploadedFile, nil] Optional zip archive
-      def initialize(csv_data, zip_file = nil)
+      # @param admin_set_id [String, nil] Optional admin set ID (for context, not currently used)
+      def initialize(csv_data, zip_file = nil, admin_set_id = nil)
         @csv_data = csv_data
         @zip_file = zip_file
+        @admin_set_id = admin_set_id
       end
 
       # Count total file references in CSV

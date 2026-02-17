@@ -3,8 +3,9 @@
 module Bulkrax
   # Analyzes model schemas for required and controlled vocabulary fields
   class CsvValidationService::SchemaAnalyzer
-    def initialize(klass)
+    def initialize(klass, admin_set_id = nil)
       @klass = klass
+      @admin_set_id = admin_set_id
       @schema = load_schema
     end
 
