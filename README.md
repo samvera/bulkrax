@@ -234,6 +234,11 @@ bundle exec rspec
 bundle exec rubocop
 ```
 
+- Javascript code is tested with Jest
+```bash
+yarn test
+```
+
 ## Questions
 Questions can be sent to support@notch8.com. Please make sure to include "Bulkrax" in the subject line of your email.
 

@@ -18,3 +18,4 @@ tmp/**
 .tool-versions
 .ruby-version
 .claude/*
+node_modules/
