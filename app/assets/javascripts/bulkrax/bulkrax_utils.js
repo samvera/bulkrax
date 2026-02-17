@@ -1,0 +1,72 @@
+// Bulkrax Utilities - Reusable helper functions
+// Used across Bulkrax JavaScript modules
+
+; (function () {
+  'use strict'
+
+  // Create namespace
+  window.BulkraxUtils = window.BulkraxUtils || {}
+
+  // ============================================================================
+  // HTML & STRING UTILITIES
+  // ============================================================================
+
+  /**
+   * Escape HTML to prevent XSS attacks
+   * @param {string} unsafe - Untrusted user input
+   * @returns {string} HTML-safe string
+   */
+  function escapeHtml(unsafe) {
+    if (!unsafe) return ''
+    return unsafe
+      .toString()
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;')
+  }
+
+  // ============================================================================
+  // FILE UTILITIES
+  // ============================================================================
+
+  /**
+   * Format file size in human-readable format
+   * @param {number} bytes - File size in bytes
+   * @returns {string} Formatted size (e.g., "1.5 MB")
+   */
+  function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes'
+    var k = 1024
+    var sizes = ['Bytes', 'KB', 'MB', 'GB']
+    var i = Math.floor(Math.log(bytes) / Math.log(k))
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i]
+  }
+
+  // ============================================================================
+  // DATA NORMALIZATION
+  // ============================================================================
+
+  /**
+   * Normalize boolean or string boolean to actual boolean
+   * Handles both boolean types and string representations
+   * @param {boolean|string} value - Value to normalize
+   * @returns {boolean|null} true, false, or null if indeterminate
+   */
+  function normalizeBoolean(value) {
+    if (value === true || value === 'true') return true
+    if (value === false || value === 'false') return false
+    return null
+  }
+
+  // ============================================================================
+  // PUBLIC API
+  // ============================================================================
+
+  window.BulkraxUtils = {
+    escapeHtml: escapeHtml,
+    formatFileSize: formatFileSize,
+    normalizeBoolean: normalizeBoolean
+  }
+})()

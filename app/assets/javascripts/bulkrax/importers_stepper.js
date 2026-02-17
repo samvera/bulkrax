@@ -1,23 +1,34 @@
 // Bulk Import Stepper - Multi-step wizard for CSV/ZIP imports
 // Handles file uploads, validation, settings, and review steps
 //
+// DEPENDENCIES:
+// - jQuery (global)
+// - BulkraxUtils (from bulkrax_utils.js - must load first)
+//
 // TABLE OF CONTENTS:
-// - Constants & Configuration (lines 10-45)
-// - State Management (lines 47-68)
-// - Initialization (lines 70-110)
-// - Event Binding (lines 112-380)
-// - File Validation & Utilities (lines 382-420)
-// - File Upload Handlers (lines 422-580)
-// - Demo Scenarios (lines 582-620)
-// - Upload State Management (lines 622-750)
-// - Validation (lines 752-900)
-// - Validation Results Rendering (lines 902-1150)
-// - Import Summary & Hierarchy (lines 1152-1270)
-// - Settings & Navigation (lines 1272-1380)
-// - Form Submission (lines 1382-1500)
+// - Imports from BulkraxUtils (lines 22-25)
+// - Constants & Configuration (lines 27-64)
+// - State Management (lines 66-87)
+// - Initialization (lines 89-104)
+// - Event Binding (lines 106-328)
+// - File Validation & Utilities (lines 329-373)
+// - File Upload Handlers (lines 374-539)
+// - Demo Scenarios (lines 540-582)
+// - Upload State Management (lines 583-778)
+// - Validation (lines 779-935)
+// - Validation Results Rendering (lines 936-1200)
+// - Import Summary & Hierarchy (lines 1201-1327)
+// - Settings & Navigation (lines 1328-1539)
+// - Form Submission & Success State (lines 1540-1570)
+// - Utility Functions (lines 1571-1603)
 
-; (function ($) {
+; (function ($, Utils) {
   'use strict'
+
+  // Import utilities from BulkraxUtils
+  var escapeHtml = Utils.escapeHtml
+  var formatFileSize = Utils.formatFileSize
+  var normalizeBoolean = Utils.normalizeBoolean
 
   // ============================================================================
   // CONSTANTS & CONFIGURATION
@@ -336,18 +347,6 @@
   function isValidFileType(filename) {
     var ext = getFileExtension(filename)
     return CONSTANTS.ALLOWED_EXTENSIONS.indexOf(ext) !== -1
-  }
-
-  // Utility: Escape HTML to prevent XSS
-  function escapeHtml(unsafe) {
-    if (!unsafe) return ''
-    return unsafe
-      .toString()
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;')
   }
 
   // Show inline error messages
@@ -856,13 +855,6 @@
         }
       })
     }
-  }
-
-  // Helper: Normalize boolean or string boolean to actual boolean
-  function normalizeBoolean(value) {
-    if (value === true || value === 'true') return true
-    if (value === false || value === 'false') return false
-    return null
   }
 
   // Helper: Determine if validation data indicates valid state
@@ -1436,8 +1428,8 @@
       var hasWarnings = data && data.hasWarnings
       var canProceed = StepperState.skipValidation ||
         (StepperState.validated &&
-        isValid &&
-        (!hasWarnings || StepperState.warningsAcked))
+          isValid &&
+          (!hasWarnings || StepperState.warningsAcked))
 
       $('.step-content[data-step="1"] .step-next-btn').prop('disabled', !canProceed)
     } else if (step === 2) {
@@ -1586,15 +1578,6 @@
   // UTILITY FUNCTIONS
   // ============================================================================
 
-  // Utility: format file size
-  function formatFileSize(bytes) {
-    if (bytes === 0) return '0 Bytes'
-    var k = CONSTANTS.MAX_FILE_SIZE_DISPLAY_THRESHOLD
-    var sizes = ['Bytes', 'KB', 'MB', 'GB']
-    var i = Math.floor(Math.log(bytes) / Math.log(k))
-    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i]
-  }
-
   function showNotification(message, type) {
     type = type || 'info' // 'error', 'warning', 'info'
 
@@ -1627,4 +1610,4 @@
 
   // Initialize on document ready and turbolinks load
   $(document).on('ready turbolinks:load', initBulkImportStepper)
-})(jQuery)
+})(jQuery, window.BulkraxUtils || {})
