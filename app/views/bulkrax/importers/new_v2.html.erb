@@ -65,6 +65,16 @@
 
           <!-- Upload Area -->
           <div class="upload-zone-wrapper">
+            <!-- Upload Mode Tabs -->
+            <div class="upload-mode-tabs">
+              <button type="button" class="upload-mode-tab active" data-upload-mode="upload">
+                <span class="fa fa-cloud-upload"></span> Upload Files
+              </button>
+              <button type="button" class="upload-mode-tab" data-upload-mode="file_path">
+                <span class="fa fa-folder-open"></span> Server Path
+              </button>
+            </div>
+
             <!-- Empty State -->
             <div class="upload-zone-empty">
               <div class="upload-dropzone">
@@ -132,6 +142,20 @@
               <a href="#" id="upload-different-btn" class="text-danger">
                 <span class="fa fa-refresh"></span> <strong>Start over</strong>
               </a>
+            </div>
+
+            <!-- File Path Input (hidden by default) -->
+            <div class="file-path-panel" style="display: none;">
+              <div class="file-path-input-wrapper">
+                <label for="import-file-path" class="control-label">
+                  Server file path <span class="text-danger">*</span>
+                </label>
+                <p class="text-muted small">Enter the full path to a CSV or ZIP file on the server</p>
+                <input type="text" id="import-file-path"
+                       name="importer[parser_fields][import_file_path]"
+                       class="form-control"
+                       placeholder="/path/to/import.csv">
+              </div>
             </div>
           </div>
 

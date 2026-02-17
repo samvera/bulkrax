@@ -4,8 +4,83 @@
 }
 
 .step-title {
-  h2 { font-size: 20px; font-weight: 600; color: $color-text-dark; margin-bottom: 5px; }
-  .text-muted { font-size: 14px; margin-bottom: 20px; }
+  h2 {
+    font-size: 20px;
+    font-weight: 600;
+    color: $color-text-dark;
+    margin-bottom: 5px;
+  }
+
+  .text-muted {
+    font-size: 14px;
+    margin-bottom: 20px;
+  }
+}
+
+/* ====== Upload Mode Tabs ====== */
+.upload-mode-tabs {
+  display: flex;
+  border: 1px solid $border-color;
+  border-radius: $border-radius;
+  background: $bg-light;
+  overflow: hidden;
+}
+
+.upload-mode-tab {
+  flex: 1;
+  padding: 12px 20px;
+  background: none;
+  border: none;
+  font-size: 14px;
+  font-weight: 500;
+  color: $color-text-muted;
+  cursor: pointer;
+  transition: color 0.3s ease, background-color 0.3s ease;
+
+  .fa {
+    margin-right: 6px;
+  }
+
+  &:hover {
+    color: $color-text-dark;
+  }
+
+  & + & {
+    border-left: 1px solid $border-color;
+  }
+
+  &.active {
+    color: $color-primary;
+    background: #fff;
+  }
+}
+
+/* ====== File Path Panel ====== */
+.file-path-panel {
+  margin: 25px 0;
+}
+
+.file-path-input-wrapper {
+  padding: 30px;
+  border: 1px solid $border-color;
+  border-radius: $border-radius;
+  background: $bg-light;
+
+  .control-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: $color-text-dark;
+    margin-bottom: 4px;
+  }
+
+  .text-muted {
+    margin-bottom: 12px;
+  }
+
+  .form-control {
+    font-size: 14px;
+    padding: 10px 12px;
+  }
 }
 
 /* ====== Upload Zone ====== */
@@ -16,9 +91,15 @@
 .upload-dropzone {
   @include dropzone-base($color-primary);
   padding: 60px 20px;
+  margin: 25px 0;
 
-  &:hover .upload-icon { background: $bg-primary-hover; }
-  p { margin: 5px 0; }
+  &:hover .upload-icon {
+    background: $bg-primary-hover;
+  }
+
+  p {
+    margin: 5px 0;
+  }
 }
 
 .upload-icon {
@@ -43,9 +124,18 @@
   padding: 30px 20px;
   background: #fafbfc;
 
-  &:hover .upload-icon-small { background: $bg-success-hover; }
-  p { margin: 3px 0; font-size: 13px; }
-  strong { color: $color-text-dark; }
+  &:hover .upload-icon-small {
+    background: $bg-success-hover;
+  }
+
+  p {
+    margin: 3px 0;
+    font-size: 13px;
+  }
+
+  strong {
+    color: $color-text-dark;
+  }
 }
 
 .upload-icon-small {
@@ -67,8 +157,13 @@
   border: 1px solid $border-info;
   border-radius: 6px;
 
-  p { margin-bottom: 10px; }
-  .btn { margin-bottom: 8px; }
+  p {
+    margin-bottom: 10px;
+  }
+
+  .btn {
+    margin-bottom: 8px;
+  }
 }
 
 /* ====== Uploaded Files ====== */
@@ -86,7 +181,10 @@
   background: $bg-light;
   border-bottom: 1px solid $border-color;
 
-  strong { font-size: 14px; color: $color-text-dark; }
+  strong {
+    font-size: 14px;
+    color: $color-text-dark;
+  }
 }
 
 .uploaded-files-list {
@@ -103,7 +201,9 @@
   border-radius: $border-radius;
   background: $bg-light;
 
-  &:last-child { margin-bottom: 0; }
+  &:last-child {
+    margin-bottom: 0;
+  }
 }
 
 .file-actions {
@@ -174,7 +274,9 @@
   color: $color-text-muted;
   padding: 8px 0;
 
-  .fa { color: $color-text-muted; }
+  .fa {
+    color: $color-text-muted;
+  }
 }
 
 /* Start Over Link */
@@ -182,7 +284,12 @@
   margin-top: 15px;
   text-align: center;
 
-  a { font-size: 13px; display: inline-flex; align-items: center; gap: 6px; }
+  a {
+    font-size: 13px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
 }
 
 /* ====== File Upload Errors ====== */
@@ -226,5 +333,7 @@
   margin: 20px 0;
   font-size: 14px;
 
-  .fa { font-size: 15px; }
+  .fa {
+    font-size: 15px;
+  }
 }

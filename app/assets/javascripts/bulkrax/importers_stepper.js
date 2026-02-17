@@ -77,6 +77,7 @@
     SCROLL_SPEED: 300,
     VALIDATION_DELAY: 2000,
     NOTIFICATION_FADE_SPEED: 300,
+    DEBOUNCE_DELAY: 300,
 
     // AJAX timeouts (in milliseconds)
     AJAX_TIMEOUT_SHORT: 10000, // 10 seconds for simple requests
@@ -100,6 +101,7 @@
     currentStep: 1,
     uploadedFiles: [],
     uploadState: CONSTANTS.UPLOAD_STATES.EMPTY,
+    uploadMode: 'upload', // 'upload' or 'file_path'
     validated: false,
     validationData: null,
     warningsAcked: false,
@@ -247,6 +249,17 @@
       }
     })
 
+    // Upload mode tabs
+    $('.upload-mode-tab').on('click', function () {
+      var mode = $(this).data('upload-mode')
+      switchUploadMode(mode)
+    })
+
+    // File path input
+    $('#import-file-path').on('input', debounce(function () {
+      updateValidateButtonState()
+    }, CONSTANTS.DEBOUNCE_DELAY))
+
     // Demo scenarios (for testing)
     $('.step-circle').on('dblclick', function () {
       var $panel = $('.demo-scenarios')
@@ -313,7 +326,7 @@
     $('#bulkrax_importer_name').on('input', debounce(function () {
       StepperState.settings.name = $(this).val()
       updateStepNavigation()
-    }, 300))
+    }, CONSTANTS.DEBOUNCE_DELAY))
 
     // Admin set selection change
     $('#importer-admin-set').on('change', function () {
@@ -321,8 +334,8 @@
       StepperState.settings.adminSetName = $(this).find('option:selected').text()
       updateStepNavigation()
       // Update validate button state since admin set is required for validation
-      if (StepperState.uploadedFiles.length > 0) {
-        renderUploadedFiles()
+      if (StepperState.uploadMode === 'file_path' || StepperState.uploadedFiles.length > 0) {
+        updateValidateButtonState()
       }
     })
 
@@ -337,7 +350,7 @@
 
     $('#bulkrax_importer_limit').on('input', debounce(function () {
       StepperState.settings.limit = $(this).val()
-    }, 300))
+    }, CONSTANTS.DEBOUNCE_DELAY))
 
     // Remove file button (delegated to parent since rows are dynamic)
     $('.uploaded-files-container').on('click', '.file-remove-btn', function () {
@@ -772,6 +785,56 @@
     }
   }
 
+  // Switch between upload and file path modes
+  function switchUploadMode(mode) {
+    if (mode === StepperState.uploadMode) return
+
+    StepperState.uploadMode = mode
+
+    // Toggle active tab
+    $('.upload-mode-tab').removeClass('active')
+    $('.upload-mode-tab[data-upload-mode="' + mode + '"]').addClass('active')
+
+    if (mode === 'file_path') {
+      // Hide upload-related elements, show file path panel
+      $('.upload-zone-empty').hide()
+      $('.uploaded-files-container').hide()
+      $('.add-another-dropzone').hide()
+      $('.start-over-link').hide()
+      $('.file-path-panel').show()
+    } else {
+      // Hide file path panel, restore upload state
+      $('.file-path-panel').hide()
+      renderUploadedFiles()
+    }
+
+    updateValidateButtonState()
+  }
+
+  // Update validate button enabled state based on current upload mode
+  function updateValidateButtonState() {
+    var $adminSetSelect = $('#importer-admin-set')
+    var adminSetValue = $adminSetSelect.val() || StepperState.settings.adminSetId
+    var hasAdminSet = adminSetValue && adminSetValue.length > 0
+
+    var canValidate = false
+
+    if (StepperState.uploadMode === 'file_path') {
+      var filePath = $('#import-file-path').val() || ''
+      canValidate = filePath.trim().length > 0 && hasAdminSet
+    } else {
+      var fileCheck = StepperState.uploadedFiles.reduce(function (check, f) {
+        if (f.fileType === 'csv') check.hasCsv = true
+        if (f.fileType === 'zip') check.hasZip = true
+        return check
+      }, { hasCsv: false, hasZip: false })
+      canValidate = (fileCheck.hasCsv || fileCheck.hasZip) && hasAdminSet && !StepperState.validated
+    }
+
+    $('#validate-btn').prop('disabled', !canValidate)
+    $('#skip-validation-checkbox').prop('disabled', !canValidate && !StepperState.skipValidation)
+  }
+
   // Render uploaded files
   function renderUploadedFiles() {
     // Ensure admin set state is captured (handles timing issues)
@@ -785,13 +848,15 @@
     var state = StepperState.uploadState
     var files = StepperState.uploadedFiles
 
+    // Don't manipulate upload DOM elements when in file path mode
+    if (StepperState.uploadMode === 'file_path') return
+
     if (state === CONSTANTS.UPLOAD_STATES.EMPTY) {
       $('.upload-zone-empty').show()
       $('.uploaded-files-container').hide()
       $('.add-another-dropzone').hide()
       $('.start-over-link').hide()
-      $('#validate-btn').prop('disabled', true)
-      $('#skip-validation-checkbox').prop('disabled', true) // Disable checkbox when empty
+      updateValidateButtonState()
       return
     }
 
@@ -800,14 +865,6 @@
 
     var $list = $('.uploaded-files-list')
     $list.empty()
-
-    var fileCheck = files.reduce(function (check, f) {
-      if (f.fileType === 'csv') check.hasCsv = true
-      if (f.fileType === 'zip') check.hasZip = true
-      return check
-    }, { hasCsv: false, hasZip: false })
-    var hasCsv = fileCheck.hasCsv
-    var hasZip = fileCheck.hasZip
 
     // Render all uploaded files
     var fileRows = files.map(function (file) {
@@ -852,16 +909,7 @@
       $('.start-over-link').show()
     }
 
-    // Enable validate button if we have a CSV OR a ZIP file (which might contain a CSV) AND an admin set is selected
-    var adminSetValue = $adminSetSelect.val() || StepperState.settings.adminSetId
-    var hasAdminSet = adminSetValue && adminSetValue.length > 0
-    $('#validate-btn').prop(
-      'disabled',
-      !(hasCsv || hasZip) || !hasAdminSet || StepperState.validated
-    )
-
-    // Enable skip validation checkbox only if we have a CSV or ZIP
-    $('#skip-validation-checkbox').prop('disabled', !(hasCsv || hasZip))
+    updateValidateButtonState()
   }
 
   // Render a single file row
@@ -913,6 +961,7 @@
     StepperState.skipValidation = false
     StepperState.demoScenario = null
     $('#file-input').val('')
+    $('#import-file-path').val('')
     $('.validation-results').hide()
     $('.warning-acknowledgment').hide()
     clearFileUploadError()
