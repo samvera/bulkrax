@@ -31,6 +31,7 @@
     }
 
     bindEvents()
+    initAdminSetState()
     updateStepperUI()
     initVisibilityCards()
     setDefaultImportName()
@@ -201,9 +202,14 @@
       updateStepNavigation()
     })
 
-    $('#bulkrax_importer_admin_set_id').on('change', function () {
+    $('#importer_admin_set_id').on('change', function () {
       StepperState.settings.adminSetId = $(this).val()
+      StepperState.settings.adminSetName = $(this).find('option:selected').text()
       updateStepNavigation()
+      // Update validate button state since admin set is required for validation
+      if (StepperState.uploadedFiles.length > 0) {
+        renderUploadedFiles()
+      }
     })
 
     $('#bulkrax_importer_limit').on('input', function () {
@@ -523,6 +529,14 @@
 
   // Render uploaded files
   function renderUploadedFiles() {
+    // Ensure admin set state is captured (handles timing issues)
+    // Always refresh from DOM to ensure we have the current value
+    var $adminSetSelect = $('#importer_admin_set_id')
+    if ($adminSetSelect.length && $adminSetSelect.val()) {
+      StepperState.settings.adminSetId = $adminSetSelect.val()
+      StepperState.settings.adminSetName = $adminSetSelect.find('option:selected').text()
+    }
+
     var state = StepperState.uploadState
     var files = StepperState.uploadedFiles
 
@@ -594,10 +608,12 @@
       $('.start-over-link').hide()
     }
 
-    // Enable validate button if we have a CSV OR a ZIP file (which might contain a CSV)
+    // Enable validate button if we have a CSV OR a ZIP file (which might contain a CSV) AND an admin set is selected
+    var adminSetValue = $('#importer_admin_set_id').val() || StepperState.settings.adminSetId
+    var hasAdminSet = adminSetValue && adminSetValue.length > 0
     $('#validate-btn').prop(
       'disabled',
-      !(hasCsv || hasZip) || StepperState.validated
+      !(hasCsv || hasZip) || !hasAdminSet || StepperState.validated
     )
 
     // Enable skip validation checkbox only if we have a CSV or ZIP
@@ -1201,6 +1217,18 @@
     StepperState.settings.name = defaultName
   }
 
+  // Initialize admin set state with pre-selected value
+  function initAdminSetState() {
+    var $adminSetSelect = $('#importer_admin_set_id')
+    if ($adminSetSelect.length) {
+      var currentVal = $adminSetSelect.val()
+      if (currentVal && currentVal.trim() !== '') {
+        StepperState.settings.adminSetId = currentVal.trim()
+        StepperState.settings.adminSetName = $adminSetSelect.find('option:selected').text().trim()
+      }
+    }
+  }
+
   // Navigate to step
   function goToStep(stepNum) {
     StepperState.currentStep = stepNum
@@ -1306,10 +1334,19 @@
       ' file sets</p>'
     $('.review-records').html(recordsHtml)
 
-    // Settings
-    var adminSetName = $(
-      '#bulkrax_importer_admin_set_id option:selected'
-    ).text()
+    // Settings - get admin set name from DOM first, then fallback to state
+    var $currentAdminSet = $('#importer_admin_set_id')
+    var adminSetName = 'Not selected'
+    if ($currentAdminSet.length) {
+      var selectedText = $currentAdminSet.find('option:selected').text().trim()
+      var selectedValue = $currentAdminSet.val()
+      if (selectedValue && selectedValue !== '' && selectedText !== 'Select an admin set...') {
+        adminSetName = selectedText
+      }
+    }
+    if (adminSetName === 'Not selected' && settings.adminSetName) {
+      adminSetName = settings.adminSetName
+    }
     var visibilityLabels = {
       open: 'Public',
       authenticated: 'Institution',
