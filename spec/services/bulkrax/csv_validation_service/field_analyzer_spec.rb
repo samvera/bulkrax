@@ -25,7 +25,7 @@ RSpec.describe Bulkrax::CsvValidationService::FieldAnalyzer do
       allow(Bulkrax::CsvValidationService::ModelLoader).to receive(:determine_klass_for)
         .with('Work').and_return(work_klass)
       allow(Bulkrax::CsvValidationService::SchemaAnalyzer).to receive(:new)
-        .with(work_klass).and_return(schema_analyzer)
+        .with(work_klass, nil).and_return(schema_analyzer)
       allow(schema_analyzer).to receive(:required_terms).and_return(['title', 'creator'])
       allow(schema_analyzer).to receive(:controlled_vocab_terms).and_return(['rights_statement', 'resource_type'])
     end
@@ -142,6 +142,10 @@ RSpec.describe Bulkrax::CsvValidationService::FieldAnalyzer do
         allow(work_klass).to receive(:respond_to?).with(:schema).and_return(true)
         allow(Bulkrax::ValkyrieObjectFactory).to receive(:schema_properties)
           .with(work_klass, nil).and_return([:title, :creator])
+
+        # Setup SchemaAnalyzer for Work - must be before Collection setup
+        allow(Bulkrax::CsvValidationService::SchemaAnalyzer).to receive(:new)
+          .with(work_klass, nil).and_return(schema_analyzer)
 
         # Setup for Collection
         allow(Bulkrax::CsvValidationService::ModelLoader).to receive(:determine_klass_for)
