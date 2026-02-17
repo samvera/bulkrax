@@ -5,10 +5,11 @@ module Bulkrax
   class CsvValidationService::FieldAnalyzer
     attr_reader :field_list
 
-    def initialize(mappings)
+    def initialize(mappings, admin_set_id = nil)
       @mappings = mappings
       @field_list = []
       @schema = nil
+      @admin_set_id = admin_set_id
     end
 
     def find_or_create_field_list_for(model_name:)
@@ -32,8 +33,7 @@ module Bulkrax
     private
 
     def build_field_list_entry(model_name, klass)
-      schema_analyzer = CsvValidationService::SchemaAnalyzer.new(klass)
-
+      schema_analyzer = CsvValidationService::SchemaAnalyzer.new(klass, @admin_set_id)
       {
         model_name => {
           'properties' => extract_properties(klass),
@@ -45,7 +45,7 @@ module Bulkrax
 
     def extract_properties(klass)
       if klass.respond_to?(:schema)
-        Bulkrax::ValkyrieObjectFactory.schema_properties(klass).map(&:to_s)
+        Bulkrax::ValkyrieObjectFactory.schema_properties(klass, @admin_set_id).map(&:to_s)
       else
         klass.properties.keys.map(&:to_s)
       end
