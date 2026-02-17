@@ -154,7 +154,7 @@
             <%= f.select :admin_set_id,
                 options_for_select([['Select an admin set...', '']] + admin_sets, default_admin_set),
                 {},
-                { class: 'form-control', required: true } %>
+                { id: 'importer-admin-set', class: 'form-control', required: true } %>
           </div>
 
           <!-- Validate Button -->

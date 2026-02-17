@@ -1,17 +1,109 @@
 // Bulk Import Stepper - Multi-step wizard for CSV/ZIP imports
 // Handles file uploads, validation, settings, and review steps
+//
+// DEPENDENCIES:
+// - jQuery (global)
+// - BulkraxUtils (from bulkrax_utils.js - must load first)
+//
+// TABLE OF CONTENTS:
+// - Utility Functions
+// - Constants & Configuration
+// - State Management
+// - Initialization
+// - Event Binding
+// - File Validation & Utilities
+// - File Upload Handlers
+// - Demo Scenarios
+// - Upload State Management
+// - Validation
+// - Validation Results Rendering
+// - Import Summary & Hierarchy
+// - Settings & Navigation
+// - Form Submission & Success State
+// - Notification Functions
 
-; (function ($) {
+; (function ($, Utils) {
   'use strict'
 
-  // State management
+  // Import utilities from BulkraxUtils
+  var escapeHtml = Utils.escapeHtml
+  var formatFileSize = Utils.formatFileSize
+  var normalizeBoolean = Utils.normalizeBoolean
+
+  // ============================================================================
+  // UTILITY FUNCTIONS
+  // ============================================================================
+
+  // Delays function execution until after 'wait' milliseconds have passed
+  // since the last time it was invoked
+  function debounce(func, wait) {
+    var timeout
+    return function debounced() {
+      var context = this
+      var args = arguments
+      clearTimeout(timeout)
+      timeout = setTimeout(function () {
+        func.apply(context, args)
+      }, wait)
+    }
+  }
+
+  // ============================================================================
+  // CONSTANTS & CONFIGURATION
+  // ============================================================================
+
+  var CONSTANTS = {
+    // File upload limits
+    MAX_FILES: 2,
+    // Import size thresholds
+    IMPORT_SIZE_OPTIMAL: 100,
+    IMPORT_SIZE_MODERATE: 500,
+    IMPORT_SIZE_LARGE: 1000,
+
+    // File types
+    ALLOWED_EXTENSIONS: ['.csv', '.zip'],
+
+    // Upload states
+    UPLOAD_STATES: {
+      EMPTY: 'empty',
+      CSV_ONLY: 'csv_only',
+      ZIP_FILES_ONLY: 'zip_files_only',
+      ZIP_WITH_CSV: 'zip_with_csv',
+      CSV_AND_ZIP: 'csv_and_zip'
+    },
+
+    // Animation timings
+    ANIMATION_SPEED: 200,
+    SCROLL_SPEED: 300,
+    VALIDATION_DELAY: 2000,
+    NOTIFICATION_FADE_SPEED: 300,
+
+    // AJAX timeouts (in milliseconds)
+    AJAX_TIMEOUT_SHORT: 10000, // 10 seconds for simple requests
+    AJAX_TIMEOUT_LONG: 60000, // 60 seconds for file uploads/validation
+
+    // Hierarchy rendering limits
+    MAX_TREE_DEPTH: 50, // Prevent stack overflow on deeply nested hierarchies
+
+    // API endpoints
+    ENDPOINTS: {
+      DEMO_SCENARIOS: '/importers/v2/demo_scenarios',
+      VALIDATE: '/importers/v2/validate'
+    }
+  }
+
+  // ============================================================================
+  // STATE MANAGEMENT
+  // ============================================================================
+
   var StepperState = {
     currentStep: 1,
     uploadedFiles: [],
-    uploadState: 'empty', // 'empty' | 'csv_only' | 'zip_files_only' | 'zip_with_csv' | 'csv_and_zip'
+    uploadState: CONSTANTS.UPLOAD_STATES.EMPTY,
     validated: false,
     validationData: null,
     warningsAcked: false,
+    skipValidation: false, // Flag to skip validation step
     isAddingFiles: false, // Flag to track if we're adding files vs replacing
     demoScenario: null, // Track which demo scenario is loaded
     demoScenariosData: null, // Cached demo scenarios JSON from server
@@ -23,6 +115,13 @@
       limit: ''
     }
   }
+
+  // Guard flag to prevent rebinding events on every page load (Turbolinks)
+  var eventsInitialized = false
+
+  // ============================================================================
+  // INITIALIZATION
+  // ============================================================================
 
   // Initialize on page load
   function initBulkImportStepper() {
@@ -37,8 +136,17 @@
     setDefaultImportName()
   }
 
+  // ============================================================================
+  // EVENT BINDING
+  // ============================================================================
+
   // Bind all event handlers
   function bindEvents() {
+    // Only bind events once, even if initBulkImportStepper runs multiple times
+    if (eventsInitialized) {
+      return // Events already bound, skip rebinding
+    }
+
     // File upload - main dropzone
     $('.upload-dropzone').on('click', function (e) {
       if (e.target.id === 'file-input') return
@@ -46,6 +154,10 @@
       StepperState.isAddingFiles = false
       $('#file-input').trigger('click')
     })
+
+    // Delegated event handlers for dynamic content
+    // These only need to be bound once since they listen on stable parent containers
+    bindDelegatedEvents()
 
     // File upload - add another dropzone
     $('.upload-dropzone-small').on('click', function () {
@@ -74,27 +186,25 @@
       $(this).removeClass('dragover')
       var droppedFiles = e.originalEvent.dataTransfer.files
       if (droppedFiles.length > 0) {
-        // Create a new DataTransfer to hold the files
-        var dataTransfer = new DataTransfer()
-
-        // Add dropped files (up to 2 total)
-        var maxFiles = Math.min(droppedFiles.length, 2)
+        // Prepare files array (up to MAX_FILES total)
+        var maxFiles = Math.min(droppedFiles.length, CONSTANTS.MAX_FILES)
+        var filesToAdd = []
         for (var i = 0; i < maxFiles; i++) {
-          dataTransfer.items.add(droppedFiles[i])
+          filesToAdd.push(droppedFiles[i])
         }
 
-        $('#file-input')[0].files = dataTransfer.files
+        // Try to set files on input element (with browser compatibility fallback)
+        setInputFiles($('#file-input')[0], filesToAdd)
 
         // Set flag based on whether we already have files
         StepperState.isAddingFiles = false // Drag and drop replaces files
 
         handleFileSelect(StepperState.isAddingFiles)
-        StepperState.isAddingFiles = false
 
-        // Show warning if more than 2 files were dropped
-        if (droppedFiles.length > 2) {
+        // Show warning if more than MAX_FILES were dropped
+        if (droppedFiles.length > CONSTANTS.MAX_FILES) {
           showNotification(
-            'Only the first 2 files have been uploaded. You can upload up to 2 files (1 CSV and 1 ZIP).'
+            'Only the first ' + CONSTANTS.MAX_FILES + ' files have been uploaded. You can upload up to ' + CONSTANTS.MAX_FILES + ' files (1 CSV and 1 ZIP).'
           )
         }
       }
@@ -117,10 +227,10 @@
       var droppedFiles = e.originalEvent.dataTransfer.files
       if (droppedFiles.length > 0) {
         // Add only 1 file since we're adding to existing
-        var dataTransfer = new DataTransfer()
-        dataTransfer.items.add(droppedFiles[0])
+        var filesToAdd = [droppedFiles[0]]
 
-        $('#file-input')[0].files = dataTransfer.files
+        // Try to set files on input element (with browser compatibility fallback)
+        setInputFiles($('#file-input')[0], filesToAdd)
 
         // Set flag to indicate we're adding files
         StepperState.isAddingFiles = true
@@ -142,7 +252,10 @@
       var $panel = $('.demo-scenarios')
       $panel.toggle()
       if ($panel.is(':visible')) {
-        loadDemoScenariosData(function () { }) // Prefetch
+        // Prefetch scenarios data
+        loadDemoScenariosData().catch(function () {
+          // Error already handled in loadDemoScenariosData
+        })
       }
     })
 
@@ -197,12 +310,13 @@
     })
 
     // Settings form changes
-    $('#bulkrax_importer_name').on('input', function () {
+    $('#bulkrax_importer_name').on('input', debounce(function () {
       StepperState.settings.name = $(this).val()
       updateStepNavigation()
-    })
+    }, 300))
 
-    $('#importer_admin_set_id').on('change', function () {
+    // Admin set selection change
+    $('#importer-admin-set').on('change', function () {
       StepperState.settings.adminSetId = $(this).val()
       StepperState.settings.adminSetName = $(this).find('option:selected').text()
       updateStepNavigation()
@@ -212,18 +326,27 @@
       }
     })
 
-    $('#bulkrax_importer_limit').on('input', function () {
-      StepperState.settings.limit = $(this).val()
+    // Rights statement selection change
+    $('select[name="importer[parser_fields][rights_statement]"]').on('change', function () {
+      StepperState.settings.rightsStatement = $(this).find('option:selected').text().trim()
+      // Clear if "None" was selected
+      if (!$(this).val()) {
+        StepperState.settings.rightsStatement = ''
+      }
     })
 
-    // Remove file button (using event delegation since rows are dynamic)
-    $(document).on('click', '.file-remove-btn', function () {
+    $('#bulkrax_importer_limit').on('input', debounce(function () {
+      StepperState.settings.limit = $(this).val()
+    }, 300))
+
+    // Remove file button (delegated to parent since rows are dynamic)
+    $('.uploaded-files-container').on('click', '.file-remove-btn', function () {
       var $row = $(this).closest('.file-row')
       var fileName = $row.find('.file-name').text()
 
       // Remove from uploadedFiles array
       StepperState.uploadedFiles = StepperState.uploadedFiles.filter(
-        file => file.name !== fileName
+        function (file) { return file.name !== fileName }
       )
 
       // Remove the row
@@ -254,6 +377,79 @@
       StepperState.skipValidation = $(this).is(':checked')
       updateStepNavigation()
     })
+
+    // Mark events as initialized to prevent rebinding on subsequent page loads
+    eventsInitialized = true
+  }
+
+  // Bind delegated event handlers for dynamically rendered content
+  // These handlers are attached to stable parent containers and use event delegation
+  // to handle clicks on child elements. This is more efficient than rebinding handlers
+  // every time content is re-rendered.
+  function bindDelegatedEvents() {
+    // Accordion toggle events - delegated to validation results container
+    $('.validation-results').on('click.accordion', '.accordion-header', function () {
+      var $item = $(this).closest('.accordion-item')
+      var $content = $item.find('.accordion-content')
+      var $chevron = $item.find('.accordion-chevron')
+
+      if ($item.hasClass('accordion-open')) {
+        $content.slideUp(CONSTANTS.ANIMATION_SPEED)
+        $chevron.removeClass('fa-chevron-down').addClass('fa-chevron-right')
+        $item.removeClass('accordion-open')
+      } else {
+        $content.slideDown(CONSTANTS.ANIMATION_SPEED)
+        $chevron.removeClass('fa-chevron-right').addClass('fa-chevron-down')
+        $item.addClass('accordion-open')
+      }
+    })
+
+    // Tree toggle events - delegated to import summary container
+    $('.import-summary').on('click.tree', '.tree-item', function (e) {
+      e.stopPropagation()
+      var $children = $(this).next('.tree-children')
+      var $chevron = $(this).find('.tree-chevron')
+
+      if ($children.length > 0) {
+        if ($children.is(':visible')) {
+          $children.slideUp(CONSTANTS.ANIMATION_SPEED)
+          $chevron.removeClass('fa-chevron-down').addClass('fa-chevron-right')
+        } else {
+          $children.slideDown(CONSTANTS.ANIMATION_SPEED)
+          $chevron.removeClass('fa-chevron-right').addClass('fa-chevron-down')
+        }
+      }
+    })
+  }
+
+  // ============================================================================
+  // FILE VALIDATION & UTILITIES
+  // ============================================================================
+
+  // Check if DataTransfer constructor is available
+  function isDataTransferSupported() {
+    try {
+      return typeof DataTransfer !== 'undefined' && typeof DataTransfer === 'function'
+    } catch (e) {
+      return false
+    }
+  }
+
+  // Helper to set files on input element with browser compatibility
+  function setInputFiles(inputElement, files) {
+    if (isDataTransferSupported()) {
+      var dataTransfer = new DataTransfer()
+      for (var i = 0; i < files.length; i++) {
+        dataTransfer.items.add(files[i])
+      }
+      inputElement.files = dataTransfer.files
+      return true
+    } else {
+      // Fallback for older browsers: can't set files property
+      // Return false to indicate files weren't set on input
+      console.warn('DataTransfer not supported - files will be processed from memory')
+      return false
+    }
   }
 
   // Get file extension (lowercase)
@@ -266,25 +462,30 @@
   // Validate file extension
   function isValidFileType(filename) {
     var ext = getFileExtension(filename)
-    return ext === '.csv' || ext === '.zip'
+    return CONSTANTS.ALLOWED_EXTENSIONS.indexOf(ext) !== -1
   }
 
   // Show inline error messages
   function showFileUploadError(messages) {
     var errorContainer = $('#file-upload-errors')
     if (messages && messages.length > 0) {
-      var html = '<div class="alert alert-danger alert-dismissible" role="alert">'
-      html += '<button type="button" class="close" data-dismiss="alert" aria-label="Close">'
-      html += '<span aria-hidden="true">&times;</span>'
-      html += '</button>'
-      html += '<strong><span class="fa fa-exclamation-circle"></span> File Upload Error</strong>'
-      html += '<ul class="mb-0 mt-2">'
+      var parts = [
+        '<div class="alert alert-danger alert-dismissible" role="alert">',
+        '<button type="button" class="close" data-dismiss="alert" aria-label="Close">',
+        '<span aria-hidden="true">&times;</span>',
+        '</button>',
+        '<strong><span class="fa fa-exclamation-circle"></span> File Upload Error</strong>',
+        '<ul class="mb-0 mt-2">'
+      ]
+
       messages.forEach(function (msg) {
-        html += '<li>' + msg.replace(/\n/g, '<br>') + '</li>'
+        // Escape the message but allow intentional <br> tags for newlines
+        var escapedMsg = escapeHtml(msg).replace(/\n/g, '<br>')
+        parts.push('<li>' + escapedMsg + '</li>')
       })
-      html += '</ul>'
-      html += '</div>'
-      errorContainer.html(html).show()
+
+      parts.push('</ul>', '</div>')
+      errorContainer.html(parts.join('')).show()
     } else {
       errorContainer.hide().html('')
     }
@@ -294,6 +495,10 @@
   function clearFileUploadError() {
     $('#file-upload-errors').hide().html('')
   }
+
+  // ============================================================================
+  // FILE UPLOAD HANDLERS
+  // ============================================================================
 
   // Handle file selection
   function handleFileSelect(isAddingMore) {
@@ -306,12 +511,13 @@
     }
 
     // Count existing file types
-    var existingCsvCount = StepperState.uploadedFiles.filter(function (f) {
-      return f.fileType === 'csv' && !f.fromZip
-    }).length
-    var existingZipCount = StepperState.uploadedFiles.filter(function (f) {
-      return f.fileType === 'zip'
-    }).length
+    var existingCounts = StepperState.uploadedFiles.reduce(function (counts, f) {
+      if (f.fileType === 'csv' && !f.fromZip) counts.csv++
+      if (f.fileType === 'zip') counts.zip++
+      return counts
+    }, { csv: 0, zip: 0 })
+    var existingCsvCount = existingCounts.csv
+    var existingZipCount = existingCounts.zip
 
     var addedFiles = []
     var rejectedFiles = []
@@ -319,7 +525,7 @@
     // Process selected files with validation
     for (
       var i = 0;
-      i < files.length && StepperState.uploadedFiles.length < 2;
+      i < files.length && StepperState.uploadedFiles.length < CONSTANTS.MAX_FILES;
       i++
     ) {
       var file = files[i]
@@ -380,55 +586,49 @@
     if (rejectedFiles.length > 0) {
       var messages = []
 
-      // Handle invalid file types FIRST
-      var invalidTypes = rejectedFiles.filter(function (f) {
-        return f.reason === 'invalid_type'
-      })
+      var categorized = rejectedFiles.reduce(function (acc, f) {
+        if (f.reason === 'invalid_type') acc.invalidTypes.push(f)
+        else if (f.reason === 'duplicate CSV') acc.duplicateCsv.push(f)
+        else if (f.reason === 'duplicate ZIP') acc.duplicateZip.push(f)
+        else if (f.reason === 'duplicate') acc.duplicates.push(f)
+        return acc
+      }, { invalidTypes: [], duplicateCsv: [], duplicateZip: [], duplicates: [] })
 
-      if (invalidTypes.length > 0) {
+      // Handle invalid file types FIRST
+      if (categorized.invalidTypes.length > 0) {
         messages.push(
           'Invalid file format. Only .csv and .zip files are allowed.\n' +
           'The following files were rejected:\n• ' +
-          invalidTypes.map(function (f) {
+          categorized.invalidTypes.map(function (f) {
             return f.name + ' (' + (f.extension || 'no extension') + ')'
           }).join('\n• ')
         )
       }
 
-      var duplicateCsv = rejectedFiles.filter(function (f) {
-        return f.reason === 'duplicate CSV'
-      })
-      var duplicateZip = rejectedFiles.filter(function (f) {
-        return f.reason === 'duplicate ZIP'
-      })
-      var duplicates = rejectedFiles.filter(function (f) {
-        return f.reason === 'duplicate'
-      })
-
-      if (duplicateCsv.length > 0) {
+      if (categorized.duplicateCsv.length > 0) {
         messages.push(
           'Only 1 CSV file allowed. The following files were not added:\n• ' +
-          duplicateCsv
+          categorized.duplicateCsv
             .map(function (f) {
               return f.name
             })
             .join('\n• ')
         )
       }
-      if (duplicateZip.length > 0) {
+      if (categorized.duplicateZip.length > 0) {
         messages.push(
           'Only 1 ZIP file allowed. The following files were not added:\n• ' +
-          duplicateZip
+          categorized.duplicateZip
             .map(function (f) {
               return f.name
             })
             .join('\n• ')
         )
       }
-      if (duplicates.length > 0) {
+      if (categorized.duplicates.length > 0) {
         messages.push(
           'The following files were already uploaded:\n• ' +
-          duplicates
+          categorized.duplicates
             .map(function (f) {
               return f.name
             })
@@ -436,16 +636,16 @@
         )
       }
       if (
-        StepperState.uploadedFiles.length >= 2 &&
+        StepperState.uploadedFiles.length >= CONSTANTS.MAX_FILES &&
         files.length > addedFiles.length + rejectedFiles.length
       ) {
-        messages.push('Maximum of 2 files reached (1 CSV and 1 ZIP).')
+        messages.push('Maximum of ' + CONSTANTS.MAX_FILES + ' files reached (1 CSV and 1 ZIP).')
       }
 
       showFileUploadError(messages)
     } else if (files.length > addedFiles.length) {
       showFileUploadError([
-        'Maximum of 2 files allowed (1 CSV and 1 ZIP). Only the first ' +
+        'Maximum of ' + CONSTANTS.MAX_FILES + ' files allowed (1 CSV and 1 ZIP). Only the first ' +
         addedFiles.length +
         ' file(s) were added.'
       ])
@@ -457,73 +657,118 @@
     renderUploadedFiles()
   }
 
+  // ============================================================================
+  // DEMO SCENARIOS
+  // ============================================================================
+
+  var demoScenariosRequest = null
+
   // Fetch and cache demo scenarios JSON from server
-  function loadDemoScenariosData(callback) {
+  function loadDemoScenariosData() {
+    // Return cached data as resolved promise
     if (StepperState.demoScenariosData) {
-      callback(StepperState.demoScenariosData)
-      return
+      return Promise.resolve(StepperState.demoScenariosData)
     }
 
-    $.ajax({
-      url: '/importers/v2/demo_scenarios',
+    // Return existing promise if request is already in-flight
+    if (demoScenariosRequest) {
+      return demoScenariosRequest
+    }
+
+    demoScenariosRequest = $.ajax({
+      url: CONSTANTS.ENDPOINTS.DEMO_SCENARIOS,
       method: 'GET',
       dataType: 'json',
-      success: function (data) {
-        StepperState.demoScenariosData = data
-        callback(data)
-      },
-      error: function () {
-        console.warn('Failed to load demo scenarios')
-        callback(null)
-      }
+      timeout: CONSTANTS.AJAX_TIMEOUT_SHORT
     })
+      .then(function (data) {
+        StepperState.demoScenariosData = data
+        demoScenariosRequest = null // Clear in-flight tracker
+        return data
+      })
+      .catch(function (xhr) {
+        demoScenariosRequest = null // Clear in-flight tracker on error
+
+        var status = xhr.statusText || 'error'
+        var errorMsg = 'Failed to load demo scenarios'
+
+        if (status === 'timeout') {
+          errorMsg = 'Request timed out while loading demo scenarios'
+        } else if (xhr.status === 0) {
+          errorMsg = 'Network error - please check your connection'
+        } else if (xhr.status >= 500) {
+          errorMsg = 'Server error while loading demo scenarios'
+        }
+
+        console.warn(errorMsg, {
+          status: status,
+          error: xhr.statusText,
+          statusCode: xhr.status
+        })
+        showNotification(errorMsg, 'error')
+
+        // Re-throw to allow caller to handle
+        throw new Error(errorMsg)
+      })
+
+    return demoScenariosRequest
   }
 
   // Load demo scenario from cached JSON
   function loadDemoScenario(scenario) {
     resetUploadState()
 
-    loadDemoScenariosData(function (data) {
-      if (!data || !data.scenarios || !data.scenarios[scenario]) {
-        console.warn('Demo scenario not found:', scenario)
-        return
-      }
+    loadDemoScenariosData()
+      .then(function (data) {
+        if (!data || !data.scenarios || !data.scenarios[scenario]) {
+          console.warn('Demo scenario not found:', scenario)
+          return
+        }
 
-      StepperState.uploadedFiles = data.scenarios[scenario].files
-      StepperState.demoScenario = scenario
-      updateUploadState()
-      renderUploadedFiles()
-    })
+        StepperState.uploadedFiles = data.scenarios[scenario].files
+        StepperState.demoScenario = scenario
+        updateUploadState()
+        renderUploadedFiles()
+      })
+      .catch(function (error) {
+        // Error already handled and displayed in loadDemoScenariosData
+        console.error('Failed to load demo scenario:', error)
+      })
   }
+
+  // ============================================================================
+  // UPLOAD STATE MANAGEMENT
+  // ============================================================================
 
   // Update upload state based on files
   function updateUploadState() {
     var files = StepperState.uploadedFiles
     if (files.length === 0) {
-      StepperState.uploadState = 'empty'
+      StepperState.uploadState = CONSTANTS.UPLOAD_STATES.EMPTY
       return
     }
 
-    var hasStandaloneCsv = files.some(function (f) {
-      return f.fileType === 'csv' && !f.fromZip
-    })
-    var hasZip = files.some(function (f) {
-      return f.fileType === 'zip'
-    })
-    var hasCsvInZip = files.some(function (f) {
-      return f.fileType === 'csv' && f.fromZip
-    })
+    var fileFlags = files.reduce(function (flags, f) {
+      if (f.fileType === 'csv' && !f.fromZip) flags.hasStandaloneCsv = true
+      if (f.fileType === 'zip') flags.hasZip = true
+      if (f.fileType === 'csv' && f.fromZip) flags.hasCsvInZip = true
+      return flags
+    }, { hasStandaloneCsv: false, hasZip: false, hasCsvInZip: false })
+
+    var hasStandaloneCsv = fileFlags.hasStandaloneCsv
+    var hasZip = fileFlags.hasZip
+    var hasCsvInZip = fileFlags.hasCsvInZip
 
     if (hasZip && hasCsvInZip && !hasStandaloneCsv) {
-      StepperState.uploadState = 'zip_with_csv'
+      StepperState.uploadState = CONSTANTS.UPLOAD_STATES.ZIP_WITH_CSV
     } else if (hasZip && !hasCsvInZip && !hasStandaloneCsv) {
-      StepperState.uploadState = 'zip_files_only'
+      StepperState.uploadState = CONSTANTS.UPLOAD_STATES.ZIP_FILES_ONLY
     } else if (hasStandaloneCsv && hasZip) {
-      StepperState.uploadState = 'csv_and_zip'
+      StepperState.uploadState = CONSTANTS.UPLOAD_STATES.CSV_AND_ZIP
     } else if (hasStandaloneCsv && !hasZip) {
-      StepperState.uploadState = 'csv_only'
+      StepperState.uploadState = CONSTANTS.UPLOAD_STATES.CSV_ONLY
     } else {
-      StepperState.uploadState = 'empty'
+      StepperState.uploadState = CONSTANTS.UPLOAD_STATES.EMPTY
     }
   }
 
@@ -531,7 +776,7 @@
   function renderUploadedFiles() {
     // Ensure admin set state is captured (handles timing issues)
     // Always refresh from DOM to ensure we have the current value
-    var $adminSetSelect = $('#importer_admin_set_id')
+    var $adminSetSelect = $('#importer-admin-set')
     if ($adminSetSelect.length && $adminSetSelect.val()) {
       StepperState.settings.adminSetId = $adminSetSelect.val()
       StepperState.settings.adminSetName = $adminSetSelect.find('option:selected').text()
@@ -540,7 +785,7 @@
     var state = StepperState.uploadState
     var files = StepperState.uploadedFiles
 
-    if (state === 'empty') {
+    if (state === CONSTANTS.UPLOAD_STATES.EMPTY) {
       $('.upload-zone-empty').show()
       $('.uploaded-files-container').hide()
       $('.add-another-dropzone').hide()
@@ -556,31 +801,33 @@
     var $list = $('.uploaded-files-list')
     $list.empty()
 
-    var hasCsv = files.some(function (f) {
-      return f.fileType === 'csv'
-    })
-    var hasZip = files.some(function (f) {
-      return f.fileType === 'zip'
-    })
+    var fileCheck = files.reduce(function (check, f) {
+      if (f.fileType === 'csv') check.hasCsv = true
+      if (f.fileType === 'zip') check.hasZip = true
+      return check
+    }, { hasCsv: false, hasZip: false })
+    var hasCsv = fileCheck.hasCsv
+    var hasZip = fileCheck.hasZip
 
     // Render all uploaded files
-    files.forEach(function (file) {
+    var fileRows = files.map(function (file) {
       var subtitle = file.subtitle || file.size
-      $list.append(renderFileRow(file.fileType, file.name, subtitle, true))
+      return renderFileRow(file.fileType, file.name, subtitle, true)
     })
+    $list.append(fileRows.join(''))
 
     // Show appropriate info message based on state
     var infoMessage = ''
-    if (state === 'zip_with_csv') {
+    if (state === CONSTANTS.UPLOAD_STATES.ZIP_WITH_CSV) {
       infoMessage =
         '<div class="upload-info"><span class="fa fa-info-circle"></span> Single package with CSV and files</div>'
-    } else if (state === 'csv_only') {
+    } else if (state === CONSTANTS.UPLOAD_STATES.CSV_ONLY) {
       infoMessage =
         '<div class="upload-info"><span class="fa fa-info-circle"></span> No ZIP uploaded — files will be matched from server paths or you can add more files</div>'
-    } else if (state === 'zip_files_only') {
+    } else if (state === CONSTANTS.UPLOAD_STATES.ZIP_FILES_ONLY) {
       infoMessage =
         '<div class="upload-info"><span class="fa fa-info-circle"></span> ZIP file uploaded — validation will check for CSV content</div>'
-    } else if (state === 'csv_and_zip') {
+    } else if (state === CONSTANTS.UPLOAD_STATES.CSV_AND_ZIP) {
       infoMessage =
         '<div class="upload-info"><span class="fa fa-info-circle"></span> CSV + files uploaded separately</div>'
     }
@@ -600,16 +847,13 @@
     if (files.length === 1) {
       $('.add-another-dropzone').show()
       $('.start-over-link').show()
-    } else if (files.length >= 2) {
-      $('.add-another-dropzone').hide()
-      $('.start-over-link').show()
     } else {
       $('.add-another-dropzone').hide()
-      $('.start-over-link').hide()
+      $('.start-over-link').show()
     }
 
     // Enable validate button if we have a CSV OR a ZIP file (which might contain a CSV) AND an admin set is selected
-    var adminSetValue = $('#importer_admin_set_id').val() || StepperState.settings.adminSetId
+    var adminSetValue = $adminSetSelect.val() || StepperState.settings.adminSetId
     var hasAdminSet = adminSetValue && adminSetValue.length > 0
     $('#validate-btn').prop(
       'disabled',
@@ -628,6 +872,10 @@
       ? '<span class="fa fa-check-circle file-verified"></span>'
       : ''
 
+    // Escape user-provided data (file name and subtitle)
+    var safeName = escapeHtml(name)
+    var safeSubtitle = escapeHtml(subtitle)
+
     return (
       '<div class="file-row">' +
       '<div class="file-info">' +
@@ -638,10 +886,10 @@
       '"></span></div>' +
       '<div class="file-details">' +
       '<div class="file-name">' +
-      name +
+      safeName +
       '</div>' +
       '<div class="file-subtitle">' +
-      subtitle +
+      safeSubtitle +
       '</div>' +
       '</div>' +
       '</div>' +
@@ -658,7 +906,7 @@
   // Reset upload state
   function resetUploadState() {
     StepperState.uploadedFiles = []
-    StepperState.uploadState = 'empty'
+    StepperState.uploadState = CONSTANTS.UPLOAD_STATES.EMPTY
     StepperState.validated = false
     StepperState.validationData = null
     StepperState.warningsAcked = false
@@ -684,6 +932,94 @@
     updateStepNavigation()
   }
 
+  // ============================================================================
+  // VALIDATION
+  // ============================================================================
+
+  // Perform validation API call
+  function performValidation(formData) {
+    return $.ajax({
+      url: CONSTANTS.ENDPOINTS.VALIDATE,
+      method: 'POST',
+      data: formData,
+      processData: false,
+      contentType: false,
+      timeout: CONSTANTS.AJAX_TIMEOUT_LONG
+    })
+  }
+
+  // Simulate validation for demo scenarios
+  function performMockValidation() {
+    return new Promise(function (resolve, reject) {
+      setTimeout(function () {
+        var mockData = getMockValidationData()
+        if (!mockData) {
+          reject(new Error('Demo data not loaded. Try selecting a scenario again.'))
+          return
+        }
+        resolve(mockData)
+      }, CONSTANTS.VALIDATION_DELAY)
+    })
+  }
+
+  // Update UI after successful validation
+  function handleValidationSuccess(data, $btn) {
+    var normalized = normalizeValidationData(data)
+    StepperState.validated = true
+    StepperState.validationData = normalized
+
+    try {
+      renderValidationResults(normalized)
+      $btn.html('<span class="fa fa-check-circle"></span> Validated')
+      updateStepNavigation()
+    } catch (e) {
+      console.error('Validation results render issue:', e)
+      throw new Error('Validation completed but results could not be displayed. Please try again.')
+    }
+  }
+
+  // Update UI after validation error
+  function handleValidationError(error, $btn) {
+    var xhr = error
+    var status = xhr.statusText || 'error'
+    var errorMsg = 'Validation failed. Please try again.'
+
+    // Handle specific error cases
+    if (status === 'timeout') {
+      errorMsg = 'Validation timed out. Your files may be too large. Please try with smaller files or contact support.'
+    } else if (xhr.status === 0) {
+      errorMsg = 'Network error - please check your connection and try again.'
+    } else if (xhr.status === 413) {
+      errorMsg = 'Files are too large. Please reduce file size and try again.'
+    } else if (xhr.status === 422) {
+      errorMsg = xhr.responseJSON && xhr.responseJSON.error
+        ? xhr.responseJSON.error
+        : 'Invalid file format. Please check your files and try again.'
+    } else if (xhr.status >= 500) {
+      errorMsg = 'Server error during validation. Please try again or contact support.'
+    } else if (xhr.responseJSON && xhr.responseJSON.error) {
+      errorMsg = xhr.responseJSON.error
+    }
+
+    console.error('Validation error:', {
+      status: status,
+      error: xhr.statusText,
+      statusCode: xhr.status,
+      response: xhr.responseJSON
+    })
+
+    showNotification(errorMsg, 'error')
+
+    // Reset button state
+    $btn
+      .prop('disabled', false)
+      .html('<span class="fa fa-file-text"></span> Validate Files')
+
+    // Reset validation state on error
+    StepperState.validated = false
+    StepperState.validationData = null
+  }
+
   // Validate files (AJAX call to backend)
   function validateFiles() {
     var $btn = $('#validate-btn')
@@ -691,68 +1027,63 @@
       .prop('disabled', true)
       .html('<span class="fa fa-spinner fa-spin"></span> Validating...')
 
-    // Check if we're in demo mode (no real file selected)
-    var fileInput = $('#file-input')[0]
-    var useMockData =
-      !fileInput || !fileInput.files || fileInput.files.length === 0
+    // Check if we're in demo mode (no real files in state)
+    var hasRealFiles = StepperState.uploadedFiles.some(function (f) { return f.file })
+    var useMockData = !hasRealFiles
 
-    if (useMockData) {
-      // Use mock data for demo scenarios
-      setTimeout(function () {
-        var mockData = getMockValidationData()
-        if (!mockData) {
-          showNotification('Demo data not loaded. Try selecting a scenario again.', 'error')
-          $btn
-            .prop('disabled', false)
-            .html('<span class="fa fa-file-text"></span> Validate Files')
-          return
-        }
-        StepperState.validated = true
-        StepperState.validationData = normalizeValidationData(mockData)
-
-        renderValidationResults(StepperState.validationData)
-        $btn.html('<span class="fa fa-check-circle"></span> Validated')
-        updateStepNavigation()
-      }, 2000)
-    } else {
-      // Real AJAX call for actual file uploads
-      var formData = new FormData($('#bulk-import-stepper-form')[0])
-
-      $.ajax({
-        url: '/importers/v2/validate',
-        method: 'POST',
-        data: formData,
-        processData: false,
-        contentType: false,
-        success: function (data) {
-          var normalized = normalizeValidationData(data)
-          StepperState.validated = true
-          StepperState.validationData = normalized
-          try {
-            renderValidationResults(normalized)
-          } catch (e) {
-            console.warn('Validation results render issue:', e)
-            StepperState.validated = false
-            StepperState.validationData = null
-            showNotification('Validation completed but results could not be displayed. Please try again.', 'error')
-            $btn.prop('disabled', false).html('<span class="fa fa-file-text"></span> Validate Files')
-            return
-          }
-          $btn.html('<span class="fa fa-check-circle"></span> Validated')
-          updateStepNavigation()
-        },
-        error: function (xhr) {
-          var errorMsg = 'Validation failed. Please try again.'
-          if (xhr.responseJSON && xhr.responseJSON.error) {
-            errorMsg = xhr.responseJSON.error
-          }
-          showNotification(errorMsg)
-          $btn
-            .prop('disabled', false)
-            .html('<span class="fa fa-file-text"></span> Validate Files')
+    // Build FormData manually so ALL files from state are included.
+    // The file input only holds the last-selected file, so uploading
+    // a ZIP then adding a CSV would lose the ZIP from the form.
+    var formData
+    if (!useMockData) {
+      formData = new FormData($('#bulk-import-stepper-form')[0])
+      // Remove the file input's entries (only has the last-selected file)
+      formData.delete('importer[parser_fields][files][]')
+      // Re-add all files from state
+      StepperState.uploadedFiles.forEach(function (f) {
+        if (f.file) {
+          formData.append('importer[parser_fields][files][]', f.file)
         }
       })
     }
+
+    // Choose validation method based on mode
+    var validationPromise = useMockData
+      ? performMockValidation()
+      : performValidation(formData)
+
+    // Handle validation result
+    validationPromise
+      .then(function (data) {
+        handleValidationSuccess(data, $btn)
+      })
+      .catch(function (error) {
+        handleValidationError(error, $btn)
+      })
+  }
+
+  // Helper: Determine if validation data indicates valid state
+  function determineIsValid(data) {
+    // Check both camelCase and snake_case property names
+    var isValidValue = normalizeBoolean(data.isValid != null ? data.isValid : data.is_valid)
+
+    // If explicitly set to true or false, use that value
+    if (isValidValue !== null) {
+      return isValidValue
+    }
+
+    // Fallback: If we have row data but no explicit validity flag,
+    // assume valid (backend processed without marking as invalid)
+    var hasRowData = data.rowCount != null || data.row_count != null
+    return hasRowData
+  }
+
+  // Helper: Determine if validation has warnings
+  function determineHasWarnings(data) {
+    var hasWarningsValue = normalizeBoolean(
+      data.hasWarnings != null ? data.hasWarnings : data.has_warnings
+    )
+    return hasWarningsValue === true
   }
 
   function normalizeValidationData(data) {
@@ -766,8 +1097,8 @@
       missingRequired: data.missingRequired || data.missing_required,
       unrecognized: data.unrecognized,
       rowCount: data.rowCount != null ? data.rowCount : data.row_count,
-      isValid: !!(data.isValid === true || data.isValid === 'true' || data.is_valid === true || data.is_valid === 'true' || ((data.rowCount != null || data.row_count != null) && data.isValid !== false && data.isValid !== 'false' && data.is_valid !== false && data.is_valid !== 'false')),
-      hasWarnings: !!(data.hasWarnings === true || data.hasWarnings === 'true' || (data.has_warnings === true || data.has_warnings === 'true')),
+      isValid: determineIsValid(data),
+      hasWarnings: determineHasWarnings(data),
       fileReferences: data.fileReferences != null ? data.fileReferences : data.file_references,
       missingFiles: data.missingFiles || data.missing_files,
       foundFiles: data.foundFiles != null ? data.foundFiles : data.found_files,
@@ -779,6 +1110,7 @@
   // Normalize childrenIds into parentIds and build a hierarchy lookup map.
   // This converts parent-declares-children relationships into the canonical
   // child-declares-parent form, then pre-computes a map for O(1) hierarchy lookups.
+
   function normalizeRelationships(data) {
     var allItems = data.collections.concat(data.works)
 
@@ -789,13 +1121,14 @@
       itemMap[item.id] = item
     })
 
-    // Convert childrenIds into parentIds on each referenced child item
     allItems.forEach(function (item) {
       if (item.childrenIds && item.childrenIds.length > 0) {
         item.childrenIds.forEach(function (childId) {
           var child = itemMap[childId]
-          if (child && child.parentIds.indexOf(item.id) === -1) {
-            child.parentIds.push(item.id)
+          if (child) {
+            if (child.parentIds.indexOf(item.id) === -1) {
+              child.parentIds.push(item.id)
+            }
           }
         })
       }
@@ -812,6 +1145,10 @@
 
     return hierarchyMap
   }
+
+  // ============================================================================
+  // VALIDATION RESULTS RENDERING
+  // ============================================================================
 
   // Render validation results
   function renderValidationResults(data) {
@@ -839,25 +1176,25 @@
   function renderImportSizeGauge(count) {
     var pct, color, zone, msg, cardClass
 
-    if (count <= 100) {
-      pct = (count / 100) * 33
+    if (count <= CONSTANTS.IMPORT_SIZE_OPTIMAL) {
+      pct = (count / CONSTANTS.IMPORT_SIZE_OPTIMAL) * 33
       color = 'gauge-marker-optimal'
       zone = 'Optimal'
       msg = 'Great! Smaller imports are easier to validate and troubleshoot.'
       cardClass = 'gauge-card-optimal'
-    } else if (count <= 500) {
-      pct = 33 + ((count - 100) / 400) * 33
+    } else if (count <= CONSTANTS.IMPORT_SIZE_MODERATE) {
+      pct = 33 + ((count - CONSTANTS.IMPORT_SIZE_OPTIMAL) / (CONSTANTS.IMPORT_SIZE_MODERATE - CONSTANTS.IMPORT_SIZE_OPTIMAL)) * 33
       color = 'gauge-marker-moderate'
       zone = 'Moderate'
       msg =
         'Consider splitting into smaller batches for easier error resolution.'
       cardClass = 'gauge-card-moderate'
     } else {
-      pct = Math.min(66 + ((count - 500) / 500) * 34, 100)
+      pct = Math.min(66 + ((count - CONSTANTS.IMPORT_SIZE_MODERATE) / CONSTANTS.IMPORT_SIZE_MODERATE) * 34, 100)
       color = 'gauge-marker-large'
       zone = 'Large'
       msg =
-        'Large imports take longer and are harder to debug. We strongly recommend splitting into batches of 100 or fewer.'
+        'Large imports take longer and are harder to debug. We strongly recommend splitting into batches of ' + CONSTANTS.IMPORT_SIZE_OPTIMAL + ' or fewer.'
       cardClass = 'gauge-card-large'
     }
 
@@ -884,7 +1221,7 @@
       '%"></div>' +
       '</div>' +
       '<div class="gauge-labels">' +
-      '<span>0</span><span>100</span><span>500</span><span>1000+</span>' +
+      '<span>0</span><span>' + CONSTANTS.IMPORT_SIZE_OPTIMAL + '</span><span>' + CONSTANTS.IMPORT_SIZE_MODERATE + '</span><span>' + CONSTANTS.IMPORT_SIZE_LARGE + '+</span>' +
       '</div>' +
       '<p class="gauge-message">' +
       msg +
@@ -909,32 +1246,35 @@
 
   // Render missing required fields grouped by model
   function renderMissingRequiredFields(items) {
-    var html = ''
     var groupedByModel = groupItemsByModel(items)
+    var parts = []
 
     Object.keys(groupedByModel).forEach(function (modelName) {
-      html += '<div class="missing-field-group">'
-      html += '<strong class="missing-field-model">' + modelName + '</strong>'
-      html += '<ul>'
-      groupedByModel[modelName].forEach(function (field) {
-        html += '<li>• ' + field + '</li>'
+      parts.push('<div class="missing-field-group">')
+      parts.push('<strong class="missing-field-model">' + modelName + '</strong>')
+      parts.push('<ul>')
+
+      // Map fields to list items, then join once
+      var fieldItems = groupedByModel[modelName].map(function (field) {
+        return '<li>• ' + field + '</li>'
       })
-      html += '</ul>'
-      html += '</div>'
+      parts.push(fieldItems.join(''))
+
+      parts.push('</ul>')
+      parts.push('</div>')
     })
 
-    return html
+    return parts.join('')
   }
 
   // Render default issue items (unrecognized fields, file references, etc.)
   function renderDefaultIssueItems(items) {
-    var html = '<ul>'
-    items.forEach(function (item) {
+    var listItems = items.map(function (item) {
       var msg = item.message ? ' — ' + item.message : ''
-      html += '<li>• ' + item.field + msg + '</li>'
+      return '<li>• ' + item.field + msg + '</li>'
     })
-    html += '</ul>'
-    return html
+
+    return '<ul>' + listItems.join('') + '</ul>'
   }
 
   // Render issue items based on issue type
@@ -981,22 +1321,22 @@
     // Each issue uses its own severity for independent coloring
     if (data.messages.issues && data.messages.issues.length > 0) {
       data.messages.issues.forEach(function (issue) {
-        var content = ''
+        var issueContent = ''
 
         if (issue.description) {
-          content += '<p>' + issue.description + '</p>'
+          issueContent += '<p>' + issue.description + '</p>'
         }
 
         if (issue.summary) {
-          content += '<p>' + issue.summary + '</p>'
+          issueContent += '<p>' + issue.summary + '</p>'
         }
 
         if (issue.items && issue.items.length > 0) {
-          content += renderIssueItems(issue)
+          issueContent += renderIssueItems(issue)
         }
 
         if (issue.details) {
-          content += '<p class="small">' + issue.details + '</p>'
+          issueContent += '<p class="small">' + issue.details + '</p>'
         }
 
         $wrapper.append(
@@ -1006,13 +1346,12 @@
             issue.severity,
             issue.count,
             issue.defaultOpen,
-            content
+            issueContent
           )
         )
       })
     }
 
-    bindAccordionEvents()
   }
 
   // Create accordion HTML
@@ -1053,26 +1392,11 @@
     )
   }
 
-  // Bind accordion toggle events
-  function bindAccordionEvents() {
-    $('.accordion-header')
-      .off('click')
-      .on('click', function () {
-        var $item = $(this).closest('.accordion-item')
-        var $content = $item.find('.accordion-content')
-        var $chevron = $item.find('.accordion-chevron')
+  // Note: Accordion toggle events are handled via event delegation in bindDelegatedEvents()
 
-        if ($item.hasClass('accordion-open')) {
-          $content.slideUp(200)
-          $chevron.removeClass('fa-chevron-down').addClass('fa-chevron-right')
-          $item.removeClass('accordion-open')
-        } else {
-          $content.slideDown(200)
-          $chevron.removeClass('fa-chevron-right').addClass('fa-chevron-down')
-          $item.addClass('accordion-open')
-        }
-      })
-  }
+  // ============================================================================
+  // IMPORT SUMMARY & HIERARCHY
+  // ============================================================================
 
   // Render import summary
   function renderImportSummary(data, hierarchyMap) {
@@ -1091,16 +1415,17 @@
     var orphanWorks = data.works.filter(function (w) {
       return !w.parentIds || w.parentIds.length === 0
     })
+    var visited = new Set()
     var hierarchyContent =
       '<div class="hierarchy-tree">' +
       topLevelCollections
         .map(function (c) {
-          return renderTreeItem(c, hierarchyMap)
+          return renderTreeItem(c, hierarchyMap, 0, visited)
         })
         .join('') +
       orphanWorks
         .map(function (w) {
-          return renderTreeItem(w, hierarchyMap)
+          return renderTreeItem(w, hierarchyMap, 0, visited)
         })
         .join('') +
       '</div>'
@@ -1116,28 +1441,52 @@
       )
     )
 
-    bindAccordionEvents()
-    bindTreeEvents()
   }
 
-  // Render tree item using pre-computed hierarchyMap for O(1) lookups
-  function renderTreeItem(item, hierarchyMap, depth) {
+  // Render tree item recursively using pre-computed hierarchyMap
+  // Guarded with depth limit and circular reference detection
+  function renderTreeItem(item, hierarchyMap, depth, visited) {
     depth = depth || 0
+
+    // Limit tree depth to prevent stack overflow
+    if (depth >= CONSTANTS.MAX_TREE_DEPTH) {
+      console.warn('Max tree depth reached for item:', item.id)
+      return '<div class="tree-item tree-truncated" style="padding-left: ' + (depth * 20) + 'px">' +
+        '<span class="fa fa-ellipsis-h text-muted"></span>' +
+        '<span class="tree-label text-muted"><em>Hierarchy too deep (max ' + CONSTANTS.MAX_TREE_DEPTH + ' levels)</em></span>' +
+        '</div>'
+    }
+
+    // Detect circular references
+    if (visited.has(item.id)) {
+      console.error('Circular reference detected for item:', item.id)
+      return '<div class="tree-item tree-error" style="padding-left: ' + (depth * 20) + 'px">' +
+        '<span class="fa fa-exclamation-triangle text-danger"></span>' +
+        '<span class="tree-label text-danger"><em>Circular reference detected</em></span>' +
+        '</div>'
+    }
+
+    visited.add(item.id)
+
     var children = hierarchyMap[item.id] || []
     var hasChildren = children.length > 0
     var icon = item.type === 'collection' ? 'fa-folder' : 'fa-file-o'
     var iconColor = item.type === 'collection' ? 'text-primary' : 'text-muted'
-    var chevron = hasChildren
-      ? '<span class="fa fa-chevron-right tree-chevron"></span>'
-      : '<span class="tree-spacer"></span>'
+    // Hidden chevron still takes up space (via fixed width in CSS) to prevent icon shifting
+    var chevronClass = hasChildren ? 'tree-chevron' : 'tree-chevron tree-chevron-hidden'
+    var chevron = '<span class="fa fa-chevron-right ' + chevronClass + '"></span>'
     var count = hasChildren
       ? ' <span class="text-muted small">(' + children.length + ')</span>'
       : ''
     var paddingLeft = depth * 20
 
+    // Escape user-provided data
+    var safeId = escapeHtml(item.id)
+    var safeTitle = escapeHtml(item.title)
+
     var html =
       '<div class="tree-item" data-item-id="' +
-      item.id +
+      safeId +
       '" style="padding-left: ' +
       paddingLeft +
       'px">' +
@@ -1148,7 +1497,7 @@
       iconColor +
       '"></span>' +
       '<span class="tree-label">' +
-      item.title +
+      safeTitle +
       '</span>' +
       (item.parentIds && item.parentIds.length > 1
         ? '<span class="tree-shared-badge" title="Appears in ' +
@@ -1163,7 +1512,7 @@
         '<div class="tree-children" style="display: none;">' +
         children
           .map(function (c) {
-            return renderTreeItem(c, hierarchyMap, depth + 1)
+            return renderTreeItem(c, hierarchyMap, depth + 1, visited)
           })
           .join('') +
         '</div>'
@@ -1172,26 +1521,11 @@
     return html
   }
 
-  // Bind tree toggle events
-  function bindTreeEvents() {
-    $('.tree-item')
-      .off('click')
-      .on('click', function (e) {
-        e.stopPropagation()
-        var $children = $(this).next('.tree-children')
-        var $chevron = $(this).find('.tree-chevron')
+  // Note: Tree toggle events are handled via event delegation in bindDelegatedEvents()
 
-        if ($children.length > 0) {
-          if ($children.is(':visible')) {
-            $children.slideUp(200)
-            $chevron.removeClass('fa-chevron-down').addClass('fa-chevron-right')
-          } else {
-            $children.slideDown(200)
-            $chevron.removeClass('fa-chevron-right').addClass('fa-chevron-down')
-          }
-        }
-      })
-  }
+  // ============================================================================
+  // SETTINGS & NAVIGATION
+  // ============================================================================
 
   // Initialize visibility cards
   function initVisibilityCards() {
@@ -1219,7 +1553,7 @@
 
   // Initialize admin set state with pre-selected value
   function initAdminSetState() {
-    var $adminSetSelect = $('#importer_admin_set_id')
+    var $adminSetSelect = $('#importer-admin-set')
     if ($adminSetSelect.length) {
       var currentVal = $adminSetSelect.val()
       if (currentVal && currentVal.trim() !== '') {
@@ -1235,7 +1569,7 @@
     updateStepperUI()
 
     // Scroll to top
-    $('html, body').animate({ scrollTop: 0 }, 300)
+    $('html, body').animate({ scrollTop: 0 }, CONSTANTS.SCROLL_SPEED)
 
     // Update review summary if going to step 3
     if (stepNum === 3) {
@@ -1276,6 +1610,21 @@
     updateStepNavigation()
   }
 
+  // Cached DOM selectors for updateStepNavigation
+  var cachedSelectors = {
+    nameInput: null,
+    adminSetSelect: null,
+    initialized: false
+  }
+
+  function initCachedSelectors() {
+    if (!cachedSelectors.initialized) {
+      cachedSelectors.nameInput = $('input[name$="[name]"][name*="importer"]').first()
+      cachedSelectors.adminSetSelect = $('#importer-admin-set')
+      cachedSelectors.initialized = true
+    }
+  }
+
   // Update step navigation button states
   function updateStepNavigation() {
     var step = StepperState.currentStep
@@ -1286,16 +1635,15 @@
       var hasWarnings = data && data.hasWarnings
       var canProceed = StepperState.skipValidation ||
         (StepperState.validated &&
-        isValid &&
-        (!hasWarnings || StepperState.warningsAcked))
+          isValid &&
+          (!hasWarnings || StepperState.warningsAcked))
 
       $('.step-content[data-step="1"] .step-next-btn').prop('disabled', !canProceed)
     } else if (step === 2) {
-      var $nameInput = $('input[name$="[name]"][name*="importer"]').first()
-      var $adminSetSelect = $('select[name$="[admin_set_id]"][name*="importer"]').first()
-      var name = ($nameInput.length ? $nameInput.val() : '').trim()
-      var adminSetId = ($adminSetSelect.length ? $adminSetSelect.val() : '').trim()
-      var canProceed = name.length > 0 && adminSetId.length > 0
+      initCachedSelectors()
+      var name = (cachedSelectors.nameInput.length ? cachedSelectors.nameInput.val() : '').trim()
+      var adminSetId = (cachedSelectors.adminSetSelect.length ? cachedSelectors.adminSetSelect.val() : '').trim()
+      canProceed = name.length > 0 && adminSetId.length > 0
       StepperState.settings.name = name || StepperState.settings.name
       StepperState.settings.adminSetId = adminSetId || StepperState.settings.adminSetId
       $('.step-content[data-step="2"] .step-next-btn').prop('disabled', !canProceed)
@@ -1313,7 +1661,7 @@
         var type = f.fileType === 'csv' ? 'CSV' : 'ZIP'
         var fromZip = f.fromZip ? ' — detected in ZIP' : ''
         return (
-          '<p>' + type + ': ' + f.name + ' (' + f.size + ')' + fromZip + '</p>'
+          '<p>' + type + ': ' + escapeHtml(f.name) + ' (' + escapeHtml(f.size) + ')' + fromZip + '</p>'
         )
       })
       .join('')
@@ -1335,7 +1683,7 @@
     $('.review-records').html(recordsHtml)
 
     // Settings - get admin set name from DOM first, then fallback to state
-    var $currentAdminSet = $('#importer_admin_set_id')
+    var $currentAdminSet = $('#importer-admin-set')
     var adminSetName = 'Not selected'
     if ($currentAdminSet.length) {
       var selectedText = $currentAdminSet.find('option:selected').text().trim()
@@ -1356,10 +1704,10 @@
 
     var settingsHtml =
       '<p>Name: ' +
-      settings.name +
+      escapeHtml(settings.name) +
       '</p>' +
       '<p>Admin Set: ' +
-      adminSetName +
+      escapeHtml(adminSetName) +
       '</p>' +
       '<p>Visibility: ' +
       visibilityName +
@@ -1394,12 +1742,16 @@
 
     // Large import warning
     $('.total-items-count').text(totalItems)
-    if (totalItems > 500) {
+    if (totalItems > CONSTANTS.IMPORT_SIZE_MODERATE) {
       $('.large-import-warning').show()
     } else {
       $('.large-import-warning').hide()
     }
   }
+
+  // ============================================================================
+  // FORM SUBMISSION & SUCCESS STATE
+  // ============================================================================
 
   // Handle import submission
   function handleImportSubmit() {
@@ -1409,15 +1761,27 @@
       .prop('disabled', true)
       .html('<span class="fa fa-spinner fa-spin"></span> Starting...')
 
+    // Sync all files from state into the file input before submitting.
+    // The input only holds the last-selected file, so multi-step uploads
+    // (e.g. ZIP first, then CSV) would lose the earlier file.
+    syncFilesToInput()
+
     // Submit the form so the request hits create_v2 and creates the importer / enqueues job
     $form[0].submit()
   }
 
-  // Show success state
-  function showSuccessState() {
-    $('.stepper-content-wrapper').hide()
-    $('.stepper-header').hide()
-    $('.import-success-state').show()
+  // Sync all files from StepperState into the file input element
+  function syncFilesToInput() {
+    var inputElement = $('#file-input')[0]
+    if (!inputElement) return
+
+    var realFiles = StepperState.uploadedFiles
+      .filter(function (f) { return f.file })
+      .map(function (f) { return f.file })
+
+    if (realFiles.length > 0) {
+      setInputFiles(inputElement, realFiles)
+    }
   }
 
   // Look up mock validation data from cached demo scenarios JSON
@@ -1428,14 +1792,9 @@
     return data.scenarios[scenario].response
   }
 
-  // Utility: format file size
-  function formatFileSize(bytes) {
-    if (bytes === 0) return '0 Bytes'
-    var k = 1024
-    var sizes = ['Bytes', 'KB', 'MB', 'GB']
-    var i = Math.floor(Math.log(bytes) / Math.log(k))
-    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i]
-  }
+  // ============================================================================
+  // NOTIFICATION FUNCTIONS
+  // ============================================================================
 
   function showNotification(message, type) {
     type = type || 'info' // 'error', 'warning', 'info'
@@ -1446,10 +1805,13 @@
       info: 'fa-info-circle'
     }
 
+    // Escape the message to prevent XSS
+    var safeMessage = escapeHtml(message)
+
     var $notification = $(
       '<div class="upload-notification notification-' + type + '">' +
       '<span class="fa ' + icons[type] + ' upload-notification-icon"></span>' +
-      '<div class="upload-notification-content">' + message + '</div>' +
+      '<div class="upload-notification-content">' + safeMessage + '</div>' +
       '<span class="fa fa-times upload-notification-close"></span>' +
       '</div>'
     )
@@ -1458,7 +1820,7 @@
 
     // Click to dismiss
     $notification.find('.upload-notification-close').on('click', function () {
-      $notification.fadeOut(300, function () {
+      $notification.fadeOut(CONSTANTS.NOTIFICATION_FADE_SPEED, function () {
         $(this).remove()
       })
     })
@@ -1466,4 +1828,4 @@
 
   // Initialize on document ready and turbolinks load
   $(document).on('ready turbolinks:load', initBulkImportStepper)
-})(jQuery)
+})(jQuery, window.BulkraxUtils || {})
