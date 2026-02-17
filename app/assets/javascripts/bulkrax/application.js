@@ -11,5 +11,5 @@
 // about supported directives.
 //
 // IMPORTANT: bulkrax_utils must load first as other files depend on it
-//= require bulkrax_utils
+//= require bulkrax/bulkrax_utils
 //= require_tree .

@@ -62,6 +62,10 @@
     VALIDATION_DELAY: 2000,
     NOTIFICATION_FADE_SPEED: 300,
 
+    // AJAX timeouts (in milliseconds)
+    AJAX_TIMEOUT_SHORT: 10000, // 10 seconds for simple requests
+    AJAX_TIMEOUT_LONG: 60000, // 60 seconds for file uploads/validation
+
     // API endpoints
     ENDPOINTS: {
       DEMO_SCENARIOS: '/importers/v2/demo_scenarios',
@@ -80,6 +84,7 @@
     validated: false,
     validationData: null,
     warningsAcked: false,
+    skipValidation: false, // Flag to skip validation step
     isAddingFiles: false, // Flag to track if we're adding files vs replacing
     demoScenario: null, // Track which demo scenario is loaded
     demoScenariosData: null, // Cached demo scenarios JSON from server
@@ -115,8 +120,11 @@
 
   // Bind all event handlers
   function bindEvents() {
+    // Unbind all events first to prevent memory leaks and duplicate handlers
+    // This is critical since initBulkImportStepper runs on both 'ready' and 'turbolinks:load'
+
     // File upload - main dropzone
-    $('.upload-dropzone').on('click', function (e) {
+    $('.upload-dropzone').off('click').on('click', function (e) {
       if (e.target.id === 'file-input') return
 
       StepperState.isAddingFiles = false
@@ -124,42 +132,41 @@
     })
 
     // File upload - add another dropzone
-    $('.upload-dropzone-small').on('click', function () {
+    $('.upload-dropzone-small').off('click').on('click', function () {
       StepperState.isAddingFiles = true
       $('#file-input').trigger('click')
     })
 
-    $('#file-input').on('change', function () {
+    $('#file-input').off('change').on('change', function () {
       handleFileSelect(StepperState.isAddingFiles)
       StepperState.isAddingFiles = false // Reset flag after handling
     })
 
     // Drag and drop - main dropzone
-    $('.upload-dropzone').on('dragover', function (e) {
+    $('.upload-dropzone').off('dragover').on('dragover', function (e) {
       e.preventDefault()
       $(this).addClass('dragover')
     })
 
-    $('.upload-dropzone').on('dragleave', function (e) {
+    $('.upload-dropzone').off('dragleave').on('dragleave', function (e) {
       e.preventDefault()
       $(this).removeClass('dragover')
     })
 
-    $('.upload-dropzone').on('drop', function (e) {
+    $('.upload-dropzone').off('drop').on('drop', function (e) {
       e.preventDefault()
       $(this).removeClass('dragover')
       var droppedFiles = e.originalEvent.dataTransfer.files
       if (droppedFiles.length > 0) {
-        // Create a new DataTransfer to hold the files
-        var dataTransfer = new DataTransfer()
-
-        // Add dropped files (up to MAX_FILES total)
+        // Prepare files array (up to MAX_FILES total)
         var maxFiles = Math.min(droppedFiles.length, CONSTANTS.MAX_FILES)
+        var filesToAdd = []
         for (var i = 0; i < maxFiles; i++) {
-          dataTransfer.items.add(droppedFiles[i])
+          filesToAdd.push(droppedFiles[i])
         }
 
-        $('#file-input')[0].files = dataTransfer.files
+        // Try to set files on input element (with browser compatibility fallback)
+        setInputFiles($('#file-input')[0], filesToAdd)
 
         // Set flag based on whether we already have files
         StepperState.isAddingFiles = false // Drag and drop replaces files
@@ -177,26 +184,26 @@
     })
 
     // Drag and drop - small "add another" dropzone
-    $('.upload-dropzone-small').on('dragover', function (e) {
+    $('.upload-dropzone-small').off('dragover').on('dragover', function (e) {
       e.preventDefault()
       $(this).addClass('dragover')
     })
 
-    $('.upload-dropzone-small').on('dragleave', function (e) {
+    $('.upload-dropzone-small').off('dragleave').on('dragleave', function (e) {
       e.preventDefault()
       $(this).removeClass('dragover')
     })
 
-    $('.upload-dropzone-small').on('drop', function (e) {
+    $('.upload-dropzone-small').off('drop').on('drop', function (e) {
       e.preventDefault()
       $(this).removeClass('dragover')
       var droppedFiles = e.originalEvent.dataTransfer.files
       if (droppedFiles.length > 0) {
         // Add only 1 file since we're adding to existing
-        var dataTransfer = new DataTransfer()
-        dataTransfer.items.add(droppedFiles[0])
+        var filesToAdd = [droppedFiles[0]]
 
-        $('#file-input')[0].files = dataTransfer.files
+        // Try to set files on input element (with browser compatibility fallback)
+        setInputFiles($('#file-input')[0], filesToAdd)
 
         // Set flag to indicate we're adding files
         StepperState.isAddingFiles = true
@@ -214,7 +221,7 @@
     })
 
     // Demo scenarios (for testing)
-    $('.step-circle').on('dblclick', function () {
+    $('.step-circle').off('dblclick').on('dblclick', function () {
       var $panel = $('.demo-scenarios')
       $panel.toggle()
       if ($panel.is(':visible')) {
@@ -222,63 +229,63 @@
       }
     })
 
-    $('.scenario-btn').on('click', function () {
+    $('.scenario-btn').off('click').on('click', function () {
       var scenario = $(this).data('scenario')
       loadDemoScenario(scenario)
       $('.demo-scenarios').hide()
     })
 
     // Start over
-    $('#start-over-btn').on('click', function () {
+    $('#start-over-btn').off('click').on('click', function () {
       resetUploadState()
     })
 
     // Start over
-    $('#upload-different-btn').on('click', function (e) {
+    $('#upload-different-btn').off('click').on('click', function (e) {
       e.preventDefault()
       resetUploadState()
     })
 
     // Validate button
-    $('#validate-btn').on('click', function () {
+    $('#validate-btn').off('click').on('click', function () {
       validateFiles()
     })
 
     // Warnings acknowledgment
-    $('#warnings-acked').on('change', function () {
+    $('#warnings-acked').off('change').on('change', function () {
       StepperState.warningsAcked = $(this).is(':checked')
       updateStepNavigation()
     })
 
     // Step navigation
-    $('.step-next-btn').on('click', function () {
+    $('.step-next-btn').off('click').on('click', function () {
       var nextStep = parseInt($(this).data('next-step'))
       goToStep(nextStep)
     })
 
-    $('.step-prev-btn').on('click', function () {
+    $('.step-prev-btn').off('click').on('click', function () {
       var prevStep = parseInt($(this).data('prev-step'))
       goToStep(prevStep)
     })
 
     // Form submission
-    $('#bulk-import-stepper-form').on('submit', function (e) {
+    $('#bulk-import-stepper-form').off('submit').on('submit', function (e) {
       e.preventDefault()
       handleImportSubmit()
     })
 
     // Start another import
-    $('#start-another-import').on('click', function () {
+    $('#start-another-import').off('click').on('click', function () {
       location.reload()
     })
 
     // Settings form changes
-    $('#bulkrax_importer_name').on('input', function () {
+    $('#bulkrax_importer_name').off('input').on('input', function () {
       StepperState.settings.name = $(this).val()
       updateStepNavigation()
     })
 
-    $('#importer_admin_set_id').on('change', function () {
+    $('#importer_admin_set_id').off('change').on('change', function () {
       StepperState.settings.adminSetId = $(this).val()
       StepperState.settings.adminSetName = $(this).find('option:selected').text()
       updateStepNavigation()
@@ -288,12 +295,12 @@
       }
     })
 
-    $('#bulkrax_importer_limit').on('input', function () {
+    $('#bulkrax_importer_limit').off('input').on('input', function () {
       StepperState.settings.limit = $(this).val()
     })
 
     // Remove file button (using event delegation since rows are dynamic)
-    $(document).on('click', '.file-remove-btn', function () {
+    $(document).off('click', '.file-remove-btn').on('click', '.file-remove-btn', function () {
       var $row = $(this).closest('.file-row')
       var fileName = $row.find('.file-name').text()
 
@@ -326,7 +333,7 @@
     })
 
     // Skip validation checkbox
-    $('#skip-validation-checkbox').on('change', function () {
+    $('#skip-validation-checkbox').off('change').on('change', function () {
       StepperState.skipValidation = $(this).is(':checked')
       updateStepNavigation()
     })
@@ -335,6 +342,32 @@
   // ============================================================================
   // FILE VALIDATION & UTILITIES
   // ============================================================================
+
+  // Check if DataTransfer is supported (not available in older Safari)
+  function isDataTransferSupported() {
+    try {
+      return typeof DataTransfer !== 'undefined' && typeof DataTransfer === 'function'
+    } catch (e) {
+      return false
+    }
+  }
+
+  // Helper to set files on input element with browser compatibility
+  function setInputFiles(inputElement, files) {
+    if (isDataTransferSupported()) {
+      var dataTransfer = new DataTransfer()
+      for (var i = 0; i < files.length; i++) {
+        dataTransfer.items.add(files[i])
+      }
+      inputElement.files = dataTransfer.files
+      return true
+    } else {
+      // Fallback for older browsers: can't set files property
+      // Return false to indicate files weren't set on input
+      console.warn('DataTransfer not supported - files will be processed from memory')
+      return false
+    }
+  }
 
   // Get file extension (lowercase)
   function getFileExtension(filename) {
@@ -558,12 +591,22 @@
       url: CONSTANTS.ENDPOINTS.DEMO_SCENARIOS,
       method: 'GET',
       dataType: 'json',
+      timeout: CONSTANTS.AJAX_TIMEOUT_SHORT,
       success: function (data) {
         StepperState.demoScenariosData = data
         callback(data)
       },
-      error: function () {
-        console.warn('Failed to load demo scenarios')
+      error: function (xhr, status, error) {
+        var errorMsg = 'Failed to load demo scenarios'
+        if (status === 'timeout') {
+          errorMsg = 'Request timed out while loading demo scenarios'
+        } else if (status === 'error' && xhr.status === 0) {
+          errorMsg = 'Network error - please check your connection'
+        } else if (xhr.status >= 500) {
+          errorMsg = 'Server error while loading demo scenarios'
+        }
+        console.warn(errorMsg, { status: status, error: error, statusCode: xhr.status })
+        showNotification(errorMsg, 'error')
         callback(null)
       }
     })
@@ -826,6 +869,7 @@
         data: formData,
         processData: false,
         contentType: false,
+        timeout: CONSTANTS.AJAX_TIMEOUT_LONG,
         success: function (data) {
           var normalized = normalizeValidationData(data)
           StepperState.validated = true
@@ -833,7 +877,7 @@
           try {
             renderValidationResults(normalized)
           } catch (e) {
-            console.warn('Validation results render issue:', e)
+            console.error('Validation results render issue:', e)
             StepperState.validated = false
             StepperState.validationData = null
             showNotification('Validation completed but results could not be displayed. Please try again.', 'error')
@@ -843,15 +887,43 @@
           $btn.html('<span class="fa fa-check-circle"></span> Validated')
           updateStepNavigation()
         },
-        error: function (xhr) {
+        error: function (xhr, status, error) {
           var errorMsg = 'Validation failed. Please try again.'
-          if (xhr.responseJSON && xhr.responseJSON.error) {
+
+          // Handle specific error cases
+          if (status === 'timeout') {
+            errorMsg = 'Validation timed out. Your files may be too large. Please try with smaller files or contact support.'
+          } else if (status === 'error' && xhr.status === 0) {
+            errorMsg = 'Network error - please check your connection and try again.'
+          } else if (xhr.status === 413) {
+            errorMsg = 'Files are too large. Please reduce file size and try again.'
+          } else if (xhr.status === 422) {
+            errorMsg = xhr.responseJSON && xhr.responseJSON.error
+              ? xhr.responseJSON.error
+              : 'Invalid file format. Please check your files and try again.'
+          } else if (xhr.status >= 500) {
+            errorMsg = 'Server error during validation. Please try again or contact support.'
+          } else if (xhr.responseJSON && xhr.responseJSON.error) {
             errorMsg = xhr.responseJSON.error
           }
-          showNotification(errorMsg)
+
+          console.error('Validation error:', {
+            status: status,
+            error: error,
+            statusCode: xhr.status,
+            response: xhr.responseJSON
+          })
+
+          showNotification(errorMsg, 'error')
+
+          // Reset button state
           $btn
             .prop('disabled', false)
             .html('<span class="fa fa-file-text"></span> Validate Files')
+
+          // Reset validation state on error
+          StepperState.validated = false
+          StepperState.validationData = null
         }
       })
     }
@@ -1337,7 +1409,7 @@
 
   // Initialize visibility cards
   function initVisibilityCards() {
-    $('.visibility-card').on('click', function () {
+    $('.visibility-card').off('click').on('click', function () {
       var visibility = $(this).data('visibility')
       $('.visibility-card').removeClass('active')
       $(this).addClass('active')
