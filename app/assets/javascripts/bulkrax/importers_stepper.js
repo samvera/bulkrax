@@ -21,10 +21,11 @@
 // - Settings & Navigation
 // - Form Submission & Success State
 // - Notification Functions
+// - Exposed Utilities for Testing
 
 ; (function ($, Utils) {
-  'use strict'
 
+  'use strict'
   // Import utilities from BulkraxUtils
   var escapeHtml = Utils.escapeHtml
   var formatFileSize = Utils.formatFileSize
@@ -1828,4 +1829,23 @@
 
   // Initialize on document ready and turbolinks load
   $(document).on('ready turbolinks:load', initBulkImportStepper)
+
+  // ============================================================================
+  // EXPOSED UTILITIES FOR TESTING
+  // ============================================================================
+
+  // Node.js/Jest only — no-operation in browsers
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+      CONSTANTS: CONSTANTS,
+      debounce: debounce,
+      getFileExtension: getFileExtension,
+      isValidFileType: isValidFileType,
+      determineIsValid: determineIsValid,
+      determineHasWarnings: determineHasWarnings,
+      normalizeValidationData: normalizeValidationData,
+      normalizeRelationships: normalizeRelationships,
+      groupItemsByModel: groupItemsByModel
+    }
+  }
 })(jQuery, window.BulkraxUtils || {})
