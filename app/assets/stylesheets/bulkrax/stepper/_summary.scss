@@ -77,6 +77,13 @@ $summary-variants: (
   font-size: 12px;
   color: $color-text-muted;
   transition: transform 0.2s ease;
+  width: 12px;
+  display: inline-block;
+  text-align: center;
+
+  &.tree-chevron-hidden {
+    visibility: hidden;
+  }
 }
 
 .tree-spacer {
