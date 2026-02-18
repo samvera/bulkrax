@@ -283,10 +283,14 @@ module Bulkrax
       @schema_properties_map ||= {}
 
       contexts = contexts_for_admin_set(admin_set_id)
-      klass_key = [klass.name, *Array(contexts).sort].join('|')
+      # Only pass contexts when the model supports flexible metadata (HYRAX_FLEXIBLE=true).
+      # Non-flexible models do not accept :contexts and would raise.
+      use_contexts = contexts.present? && (klass.new.flexible? rescue false)
+      klass_key = [klass.name, *Array(use_contexts ? contexts : []).sort].join('|')
 
       unless @schema_properties_map.key?(klass_key)
-        schema = klass.new(contexts: contexts).singleton_class.schema || klass.schema
+        instance = use_contexts ? klass.new(contexts: contexts) : klass.new
+        schema = instance.singleton_class.schema || klass.schema
         @schema_properties_map[klass_key] = schema.map { |k| k.name.to_s }
       end
 

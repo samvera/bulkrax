@@ -38,11 +38,67 @@ module Bulkrax
       it { is_expected.to respond_to(:field_multi_value?) }
       it { is_expected.to respond_to(:field_supported?) }
       it { is_expected.to respond_to(:schema_properties) }
+      it { is_expected.to respond_to(:contexts_for_admin_set) }
       it { is_expected.to respond_to(:search_by_property) }
       it { is_expected.to respond_to(:transactions) }
       it { is_expected.to respond_to(:solr_name) }
       it { is_expected.to respond_to(:publish) }
       it { is_expected.to respond_to(:query) }
+    end
+
+    describe '.contexts_for_admin_set' do
+      it 'returns an empty array when admin_set_id is nil' do
+        expect(described_class.contexts_for_admin_set(nil)).to eq([])
+      end
+
+      it 'returns an empty array when admin_set_id is blank' do
+        expect(described_class.contexts_for_admin_set('')).to eq([])
+      end
+
+      context 'when Hyrax is defined' do
+        it 'returns an empty array when the admin set is not found' do
+          allow(Hyrax.query_service).to receive(:find_by).with(id: 'missing').and_return(nil)
+          expect(described_class.contexts_for_admin_set('missing')).to eq([])
+        end
+
+        it 'returns the admin set contexts when the admin set has contexts' do
+          admin_set = double('AdministrativeSet', contexts: ['special_context'])
+          allow(Hyrax.query_service).to receive(:find_by).with(id: 'set-123').and_return(admin_set)
+          expect(described_class.contexts_for_admin_set('set-123')).to eq(['special_context'])
+        end
+
+        it 'returns an empty array when the admin set has no contexts' do
+          admin_set = double('AdministrativeSet', contexts: nil)
+          allow(Hyrax.query_service).to receive(:find_by).with(id: 'set-456').and_return(admin_set)
+          expect(described_class.contexts_for_admin_set('set-456')).to eq([])
+        end
+      end
+    end
+
+    describe '.schema_properties' do
+      it 'does not pass contexts to new when the model is not flexible (HYRAX_FLEXIBLE=false)' do
+        field = double('Field', name: :title)
+        non_flexible_klass = Class.new do
+          def self.name
+            'NonFlexibleWork'
+          end
+        end
+        non_flexible_klass.define_singleton_method(:schema) { [field] }
+        expect { described_class.schema_properties(non_flexible_klass, nil) }.not_to raise_error
+        expect(described_class.schema_properties(non_flexible_klass, nil)).to eq(['title'])
+      end
+
+      it 'accepts admin_set_id as second argument without raising' do
+        field = double('Field', name: :title)
+        non_flexible_klass = Class.new do
+          def self.name
+            'OtherWork'
+          end
+        end
+        non_flexible_klass.define_singleton_method(:schema) { [field] }
+        allow(Hyrax.query_service).to receive(:find_by).with(id: 'any-set').and_return(nil)
+        expect(described_class.schema_properties(non_flexible_klass, 'any-set')).to eq(['title'])
+      end
     end
 
     describe '.search_by_property' do

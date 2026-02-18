@@ -102,6 +102,16 @@ RSpec.describe Bulkrax::CsvValidationService::SchemaAnalyzer, type: :service do
       end
     end
 
+    context 'when admin_set_id is passed and klass is not flexible (HYRAX_FLEXIBLE=false)' do
+      it 'does not pass contexts to new and does not raise' do
+        allow(Hyrax.query_service).to receive(:find_by).with(id: 'admin-set-123').and_return(nil)
+        field = build_field(name: :title, meta: { 'form' => { 'required' => true } })
+        klass = build_schema_class(schema: [field])
+        analyzer = described_class.new(klass, 'admin-set-123')
+        expect(analyzer.required_terms).to eq(['title'])
+      end
+    end
+
     context 'when singleton_class schema is nil, falls back to klass schema' do
       it 'uses the klass schema' do
         field = build_field(name: :title, meta: { 'form' => { 'required' => true } })

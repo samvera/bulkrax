@@ -44,9 +44,13 @@ module Bulkrax
       #
       # When the admin set has contexts defined, pass them so that context-restricted
       # fields (e.g. M3 `available_on.context`) appear in required_terms and
-      # controlled_vocab_terms for that admin set.
+      # controlled_vocab_terms for that admin set. Only pass contexts when the model
+      # supports flexible metadata (HYRAX_FLEXIBLE=true); non-flexible models do not
+      # accept :contexts and would raise.
       contexts = Bulkrax::ValkyrieObjectFactory.contexts_for_admin_set(@admin_set_id)
-      @klass.new(contexts: contexts).singleton_class.schema || @klass.schema
+      use_contexts = contexts.present? && (@klass.new.flexible? rescue false)
+      instance = use_contexts ? @klass.new(contexts: contexts) : @klass.new
+      instance.singleton_class.schema || @klass.schema
     rescue StandardError
       nil
     end
