@@ -308,11 +308,11 @@ module Bulkrax
     # @param klass [Class]
     # @return [Boolean]
     def self.use_contexts?(contexts, klass)
-      contexts.present? && begin
-                             klass.new.flexible?
-                           rescue
-                             false
-                           end
+      return false if contexts.blank?
+
+      klass.new.flexible?
+    rescue StandardError
+      false
     end
 
     ##
