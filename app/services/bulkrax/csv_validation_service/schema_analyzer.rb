@@ -48,7 +48,7 @@ module Bulkrax
       # supports flexible metadata (HYRAX_FLEXIBLE=true); non-flexible models do not
       # accept :contexts and would raise.
       contexts = Bulkrax::ValkyrieObjectFactory.contexts_for_admin_set(@admin_set_id)
-      use_contexts = contexts.present? && (@klass.new.flexible? rescue false)
+      use_contexts = Bulkrax::ValkyrieObjectFactory.use_contexts?(contexts, @klass)
       instance = use_contexts ? @klass.new(contexts: contexts) : @klass.new
       instance.singleton_class.schema || @klass.schema
     rescue StandardError

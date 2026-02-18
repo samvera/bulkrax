@@ -52,6 +52,7 @@ RSpec.describe Bulkrax::EntrySpecHelper do
 
             before do
               allow(Bulkrax).to receive(:object_factory).and_return(Bulkrax::ValkyrieObjectFactory)
+              allow(Hyrax.query_service).to receive(:find_by).and_return(nil)
             end
 
             it { is_expected.to be_a(Bulkrax::CsvEntry) }
