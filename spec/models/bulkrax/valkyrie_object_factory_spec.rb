@@ -38,7 +38,7 @@ module Bulkrax
       it { is_expected.to respond_to(:field_multi_value?) }
       it { is_expected.to respond_to(:field_supported?) }
       it { is_expected.to respond_to(:schema_properties) }
-      it { is_expected.to respond_to(:contexts_for_admin_set) }
+      it { is_expected.to respond_to(:cached_schema_for) }
       it { is_expected.to respond_to(:search_by_property) }
       it { is_expected.to respond_to(:transactions) }
       it { is_expected.to respond_to(:solr_name) }
@@ -46,74 +46,81 @@ module Bulkrax
       it { is_expected.to respond_to(:query) }
     end
 
-    describe '.contexts_for_admin_set' do
+    describe '.cached_schema_for' do
+      let(:field) { double('Field', name: :title) }
+      let(:test_klass) do
+        schema_fields = [field]
+        klass = Class.new do
+          def self.name
+            'TestWork'
+          end
+
+          def self.schema
+            nil
+          end
+        end
+        klass.define_singleton_method(:schema) { schema_fields }
+        klass
+      end
+
       before do
-        described_class.instance_variable_set(:@contexts_for_admin_set_map, nil)
+        described_class.instance_variable_set(:@cached_schema_map, nil)
+        # Allow stubbing schema_for when running against a Hyrax that may not define it yet
+        unless Hyrax.respond_to?(:schema_for)
+          Hyrax.define_singleton_method(:schema_for) { |k, admin_set_id: nil| k.new.singleton_class.schema || k.schema } # rubocop:disable Lint/UnusedBlockArgument
+        end
       end
 
-      it 'returns an empty array when admin_set_id is nil' do
-        expect(described_class.contexts_for_admin_set(nil)).to eq([])
+      it 'returns the schema without admin_set_id' do
+        expect(described_class.cached_schema_for(test_klass)).to eq([field])
       end
 
-      it 'returns an empty array when admin_set_id is blank' do
-        expect(described_class.contexts_for_admin_set('')).to eq([])
+      it 'delegates to Hyrax.schema_for when admin_set_id is present' do
+        schema = double('schema')
+        allow(Hyrax).to receive(:schema_for).with(test_klass, admin_set_id: 'set-1').and_return(schema)
+        expect(described_class.cached_schema_for(test_klass, 'set-1')).to eq(schema)
       end
 
-      context 'when Hyrax is defined' do
-        it 'returns an empty array when the admin set is not found' do
-          allow(Hyrax.query_service).to receive(:find_by).with(id: 'missing').and_return(nil)
-          expect(described_class.contexts_for_admin_set('missing')).to eq([])
-        end
-
-        it 'returns the admin set contexts when the admin set has contexts' do
-          admin_set = double('AdministrativeSet', contexts: ['special_context'])
-          allow(Hyrax.query_service).to receive(:find_by).with(id: 'set-123').and_return(admin_set)
-          expect(described_class.contexts_for_admin_set('set-123')).to eq(['special_context'])
-        end
-
-        it 'returns an empty array when the admin set has no contexts' do
-          admin_set = double('AdministrativeSet', contexts: nil)
-          allow(Hyrax.query_service).to receive(:find_by).with(id: 'set-456').and_return(admin_set)
-          expect(described_class.contexts_for_admin_set('set-456')).to eq([])
-        end
-
-        it 'memoizes the result and only queries once per admin_set_id' do
-          admin_set = double('AdministrativeSet', contexts: ['special_context'])
-          allow(Hyrax.query_service).to receive(:find_by).with(id: 'set-memo').and_return(admin_set)
-          described_class.contexts_for_admin_set('set-memo')
-          described_class.contexts_for_admin_set('set-memo')
-          expect(Hyrax.query_service).to have_received(:find_by).with(id: 'set-memo').once
-        end
+      it 'memoizes the result and only calls Hyrax.schema_for once per (klass, admin_set_id)' do
+        schema = double('schema')
+        allow(Hyrax).to receive(:schema_for).with(test_klass, admin_set_id: 'set-memo').and_return(schema)
+        described_class.cached_schema_for(test_klass, 'set-memo')
+        described_class.cached_schema_for(test_klass, 'set-memo')
+        expect(Hyrax).to have_received(:schema_for).once
       end
     end
 
     describe '.schema_properties' do
+      let(:field) { double('Field', name: :title) }
+      let(:test_klass) do
+        schema_fields = [field]
+        klass = Class.new do
+          def self.name
+            'PropWork'
+          end
+        end
+        klass.define_singleton_method(:schema) { schema_fields }
+        klass
+      end
+
       before do
-        described_class.instance_variable_set(:@schema_properties_map, nil)
+        described_class.instance_variable_set(:@cached_schema_map, nil)
+        unless Hyrax.respond_to?(:schema_for)
+          Hyrax.define_singleton_method(:schema_for) { |k, admin_set_id: nil| k.new.singleton_class.schema || k.schema } # rubocop:disable Lint/UnusedBlockArgument
+        end
       end
 
-      it 'does not pass contexts to new when the model is not flexible (HYRAX_FLEXIBLE=false)' do
-        field = double('Field', name: :title)
-        non_flexible_klass = Class.new do
-          def self.name
-            'NonFlexibleWork'
-          end
-        end
-        non_flexible_klass.define_singleton_method(:schema) { [field] }
-        expect { described_class.schema_properties(non_flexible_klass, nil) }.not_to raise_error
-        expect(described_class.schema_properties(non_flexible_klass, nil)).to eq(['title'])
+      it 'returns field names from the schema' do
+        expect(described_class.schema_properties(test_klass)).to eq(['title'])
       end
 
-      it 'accepts admin_set_id as second argument without raising' do
-        field = double('Field', name: :title)
-        non_flexible_klass = Class.new do
-          def self.name
-            'OtherWork'
-          end
-        end
-        non_flexible_klass.define_singleton_method(:schema) { [field] }
-        allow(Hyrax.query_service).to receive(:find_by).with(id: 'any-set').and_return(nil)
-        expect(described_class.schema_properties(non_flexible_klass, 'any-set')).to eq(['title'])
+      it 'includes context-specific fields when admin_set_id is provided' do
+        context_field = double('Field', name: :dimensions)
+        schema = double('schema')
+        allow(schema).to receive(:map) { |&block| [field, context_field].map(&block) }
+        allow(Hyrax).to receive(:schema_for).with(test_klass, admin_set_id: 'set-ctx').and_return(schema)
+        result = described_class.schema_properties(test_klass, 'set-ctx')
+        expect(result).to include('title', 'dimensions')
       end
     end
 

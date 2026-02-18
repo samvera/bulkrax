@@ -124,10 +124,7 @@ module Bulkrax
       return false unless field_supported?(field: field, model: model, admin_set_id: admin_set_id)
 
       if model.respond_to?(:schema)
-        contexts = contexts_for_admin_set(admin_set_id)
-        use_contexts = use_contexts?(contexts, model)
-        instance = use_contexts ? model.new(contexts: contexts) : model.new
-        schema = instance.singleton_class.schema || model.schema
+        schema = cached_schema_for(model, admin_set_id)
         dry_type = schema.key(field.to_sym)
         return true if dry_type.respond_to?(:primitive) && dry_type.primitive == Array
 
@@ -275,64 +272,34 @@ module Bulkrax
     # rubocop:enable Metrics/ParameterLists
 
     ##
-    # Retrieve properties from M3 model, taking admin set contexts into account
-    # so that context-restricted properties (e.g. those gated behind a M3
-    # `available_on.context`) are included when the admin set defines them.
+    # Retrieve schema property names for a model, respecting admin set contexts
+    # when using flexible metadata. Delegates context resolution to Hyrax so
+    # Bulkrax does not need to know about HYRAX_FLEXIBLE or contexts.
     #
-    # @param klass the model class
-    # @param admin_set_id [String, nil] the admin set to resolve contexts from
+    # @param klass [Class] the model class
+    # @param admin_set_id [String, nil] admin set used to resolve contexts
     # @return [Array<String>]
     def self.schema_properties(klass, admin_set_id = nil)
-      @schema_properties_map ||= {}
-
-      contexts = contexts_for_admin_set(admin_set_id)
-      # Only pass contexts when the model supports flexible metadata (HYRAX_FLEXIBLE=true).
-      # Non-flexible models do not accept :contexts and would raise.
-      use_contexts = use_contexts?(contexts, klass)
-      klass_key = [klass.name, *Array(use_contexts ? contexts : []).sort].join('|')
-
-      unless @schema_properties_map.key?(klass_key)
-        instance = use_contexts ? klass.new(contexts: contexts) : klass.new
-        schema = instance.singleton_class.schema || klass.schema
-        @schema_properties_map[klass_key] = schema.map { |k| k.name.to_s }
-      end
-
-      @schema_properties_map[klass_key]
+      cached_schema_for(klass, admin_set_id).map { |k| k.name.to_s }
     end
 
     ##
-    # Whether to pass contexts when instantiating the given class.
-    # Only true when contexts are present and the model supports flexible metadata (HYRAX_FLEXIBLE=true).
+    # Returns the schema for a model, memoized per (klass, admin_set_id) pair.
+    # Delegates to +Hyrax.schema_for+ when available so that context-gated
+    # properties are included without Bulkrax knowing about flexibility internals.
     #
-    # @param contexts [Array<String>]
     # @param klass [Class]
-    # @return [Boolean]
-    def self.use_contexts?(contexts, klass)
-      return false if contexts.blank?
-
-      klass.new.flexible?
-    rescue NoMethodError, ArgumentError
-      false
-    end
-
-    ##
-    # Resolve the contexts assigned to the given admin set.
-    # Results are memoized by admin_set_id to avoid repeated queries during import.
-    #
     # @param admin_set_id [String, nil]
-    # @return [Array<String>]
-    def self.contexts_for_admin_set(admin_set_id)
-      return [] if admin_set_id.blank? || !defined?(Hyrax)
-
-      @contexts_for_admin_set_map ||= {}
-      return @contexts_for_admin_set_map[admin_set_id] if @contexts_for_admin_set_map.key?(admin_set_id)
-
-      @contexts_for_admin_set_map[admin_set_id] = Array(Hyrax.query_service.find_by(id: admin_set_id)&.contexts)
-    rescue Valkyrie::Persistence::ObjectNotFoundError
-      @contexts_for_admin_set_map[admin_set_id] = []
-    rescue StandardError => e
-      Rails.logger.warn("[Bulkrax] contexts_for_admin_set(#{admin_set_id}): #{e.class}: #{e.message}")
-      []
+    # @return [Dry::Types::Hash]
+    def self.cached_schema_for(klass, admin_set_id = nil)
+      @cached_schema_map ||= {}
+      key = [klass.name, admin_set_id].compact.join('|')
+      @cached_schema_map[key] ||=
+        if admin_set_id.present? && defined?(Hyrax) && Hyrax.respond_to?(:schema_for)
+          Hyrax.schema_for(klass, admin_set_id: admin_set_id)
+        else
+          klass.new.singleton_class.schema || klass.schema
+        end
     end
 
     def self.ordered_file_sets_for(object)
@@ -507,14 +474,9 @@ module Bulkrax
     # TODO What do we return when the calculated form fails?
     # @raise [StandardError] when there was a failure calling the translation.
     def perform_transaction_for(object:, attrs:)
-      if object.respond_to?(:flexible?) && object.flexible?
-        admin_set_id = attrs[:admin_set_id] || attrs['admin_set_id'] ||
-                       attributes[:admin_set_id] || attributes['admin_set_id']
-        contexts = self.class.contexts_for_admin_set(admin_set_id)
-        object.contexts = contexts if contexts.present?
-      end
-
-      form = Hyrax::Forms::ResourceForm.for(object).prepopulate!
+      admin_set_id = attrs[:admin_set_id] || attrs['admin_set_id'] ||
+                     attributes[:admin_set_id] || attributes['admin_set_id']
+      form = Hyrax::Forms::ResourceForm.for(resource: object, admin_set_id: admin_set_id).prepopulate!
 
       # TODO: Handle validations
       form.validate(attrs)
@@ -531,9 +493,8 @@ module Bulkrax
     end
 
     ##
-    # We accept attributes based on the model schema. When using flexible
-    # metadata, pass the admin set ID so that context-restricted properties
-    # (e.g. M3 `available_on.context`) are included in the permitted list.
+    # We accept attributes based on the model schema. Passes the admin set ID
+    # so that context-restricted properties are included in the permitted list.
     #
     # @return [Array<Symbols>]
     def permitted_attributes

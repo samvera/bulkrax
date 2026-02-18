@@ -102,22 +102,39 @@ RSpec.describe Bulkrax::CsvValidationService::SchemaAnalyzer, type: :service do
       end
     end
 
-    context 'when admin_set_id is passed and klass is not flexible (HYRAX_FLEXIBLE=false)' do
-      it 'does not pass contexts to new and does not raise' do
-        allow(Hyrax.query_service).to receive(:find_by).with(id: 'admin-set-123').and_return(nil)
-        field = build_field(name: :title, meta: { 'form' => { 'required' => true } })
-        klass = build_schema_class(schema: [field])
-        analyzer = described_class.new(klass, 'admin-set-123')
-        expect(analyzer.required_terms).to eq(['title'])
-      end
-    end
-
     context 'when singleton_class schema is nil, falls back to klass schema' do
       it 'uses the klass schema' do
         field = build_field(name: :title, meta: { 'form' => { 'required' => true } })
         klass = build_schema_class(schema: [field], singleton_returns_nil: true)
         analyzer = described_class.new(klass)
         expect(analyzer.required_terms).to eq(['title'])
+      end
+    end
+
+    context 'when admin_set_id is provided' do
+      before do
+        unless Hyrax.respond_to?(:schema_for)
+          Hyrax.define_singleton_method(:schema_for) { |k, admin_set_id: nil| k.new.singleton_class.schema || k.schema } # rubocop:disable Lint/UnusedBlockArgument
+        end
+      end
+
+      it 'delegates to Hyrax.schema_for and includes context-specific fields' do
+        base_field = build_field(name: :title, meta: { 'form' => { 'required' => true } })
+        ctx_field  = build_field(name: :dimensions, meta: { 'form' => { 'required' => false } })
+        schema = [base_field, ctx_field]
+        klass = build_schema_class(schema: [base_field])
+        allow(Hyrax).to receive(:schema_for).with(klass, admin_set_id: 'set-123').and_return(schema)
+        analyzer = described_class.new(klass, 'set-123')
+        expect(analyzer.required_terms).to eq(['title'])
+        expect(Hyrax).to have_received(:schema_for).with(klass, admin_set_id: 'set-123')
+      end
+
+      it 'falls back gracefully when Hyrax.schema_for raises' do
+        field = build_field(name: :title, meta: { 'form' => { 'required' => true } })
+        klass = build_schema_class(schema: [field])
+        allow(Hyrax).to receive(:schema_for).and_raise(StandardError, 'boom')
+        analyzer = described_class.new(klass, 'bad-set')
+        expect(analyzer.required_terms).to eq([])
       end
     end
   end

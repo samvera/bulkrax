@@ -70,8 +70,8 @@ module Bulkrax
       properties.reject { |prop| Bulkrax.reserved_properties.include?(prop) }
     end
 
-    def self.field_multi_value?(field:, model:, admin_set_id: nil)
-      return false unless field_supported?(field: field, model: model, admin_set_id: admin_set_id)
+    def self.field_multi_value?(field:, model:, admin_set_id: nil) # rubocop:disable Lint/UnusedMethodArgument
+      return false unless field_supported?(field: field, model: model)
       return false unless model.singleton_methods.include?(:properties)
 
       model&.properties&.[](field)&.[]("multiple")
