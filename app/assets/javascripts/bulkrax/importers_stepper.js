@@ -997,6 +997,22 @@
     })
   }
 
+  function performFilePathValidation(filePath) {
+    return $.ajax({
+      url: CONSTANTS.ENDPOINTS.VALIDATE,
+      method: 'POST',
+      data: {
+        importer: {
+          parser_fields: {
+            file_path: filePath
+          },
+          admin_set_id: StepperState.settings.adminSetId
+        }
+      },
+      timeout: CONSTANTS.AJAX_TIMEOUT_LONG
+    })
+  }
+
   // Simulate validation for demo scenarios
   function performMockValidation() {
     return new Promise(function (resolve, reject) {
@@ -1078,7 +1094,9 @@
 
     // Check if we're in demo mode (no real files in state)
     var hasRealFiles = StepperState.uploadedFiles.some(function (f) { return f.file })
-    var useMockData = !hasRealFiles
+    var filePathValue = $('#import-file-path').val().trim()
+    var hasFilePath = filePathValue.length > 0
+    var useMockData = !hasRealFiles && !hasFilePath
 
     // Build FormData manually so ALL files from state are included.
     // The file input only holds the last-selected file, so uploading
@@ -1097,9 +1115,14 @@
     }
 
     // Choose validation method based on mode
-    var validationPromise = useMockData
-      ? performMockValidation()
-      : performValidation(formData)
+    var validationPromise
+    if (hasFilePath) {
+      validationPromise = performFilePathValidation(filePathValue)
+    } else if (useMockData) {
+      validationPromise = performMockValidation()
+    } else {
+      validationPromise = performValidation(formData)
+    }
 
     // Handle validation result
     validationPromise

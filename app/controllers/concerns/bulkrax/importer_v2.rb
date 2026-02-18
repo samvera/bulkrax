@@ -16,9 +16,16 @@ module Bulkrax
     # AJAX endpoint to validate uploaded files
     # rubocop:disable Metrics/MethodLength
     def validate_v2
-      files = params[:importer]&.[](:parser_fields)&.[](:files) || []
-      files = [files] unless files.is_a?(Array)
-      files = files.compact
+      if file_path_import?
+        files = [File.open(@file_path)]
+        return render json: StepperResponseFormatter.error(message: 'File path does not exist'), status: :ok if !File.exist?(@file_path)
+      end
+
+      if files.blank?
+        files = params[:importer]&.[](:parser_fields)&.[](:files) || []
+        files = [files] unless files.is_a?(Array)
+        files = files.compact
+      end
 
       unless files.any?
         render json: StepperResponseFormatter.error(message: 'No files uploaded'), status: :ok
@@ -26,8 +33,9 @@ module Bulkrax
       end
 
       # Find CSV file for validation
-      csv_file = files.find { |f| f.original_filename&.end_with?('.csv') }
-      zip_file = files.find { |f| f.original_filename&.end_with?('.zip') }
+      method = file_path_import? ? :path : :original_filename
+      csv_file = files.find { |f| f.public_send(method)&.end_with?('.csv') }
+      zip_file = files.find { |f| f.public_send(method)&.end_with?('.zip') }
 
       # If no CSV in uploaded files, check if ZIP contains CSV
       unless csv_file
@@ -148,7 +156,7 @@ module Bulkrax
         :name,
         :admin_set_id,
         :limit,
-        parser_fields: [:visibility, :rights_statement, :override_rights_statement]
+        parser_fields: [:visibility, :rights_statement, :override_rights_statement, :file_path]
       )
     end
 
@@ -351,6 +359,11 @@ module Bulkrax
         }
       end
     end # rubocop:enable Metrics/MethodLength
+
+    def file_path_import?
+      @file_path = params[:importer]&.[](:parser_fields)&.[](:file_path)
+      @file_path.present?
+    end
   end
   # rubocop:enable Metrics/ModuleLength
 end
