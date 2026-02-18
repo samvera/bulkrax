@@ -47,6 +47,10 @@ module Bulkrax
     end
 
     describe '.contexts_for_admin_set' do
+      before do
+        described_class.instance_variable_set(:@contexts_for_admin_set_map, nil)
+      end
+
       it 'returns an empty array when admin_set_id is nil' do
         expect(described_class.contexts_for_admin_set(nil)).to eq([])
       end
@@ -72,10 +76,22 @@ module Bulkrax
           allow(Hyrax.query_service).to receive(:find_by).with(id: 'set-456').and_return(admin_set)
           expect(described_class.contexts_for_admin_set('set-456')).to eq([])
         end
+
+        it 'memoizes the result and only queries once per admin_set_id' do
+          admin_set = double('AdministrativeSet', contexts: ['special_context'])
+          allow(Hyrax.query_service).to receive(:find_by).with(id: 'set-memo').and_return(admin_set)
+          described_class.contexts_for_admin_set('set-memo')
+          described_class.contexts_for_admin_set('set-memo')
+          expect(Hyrax.query_service).to have_received(:find_by).with(id: 'set-memo').once
+        end
       end
     end
 
     describe '.schema_properties' do
+      before do
+        described_class.instance_variable_set(:@schema_properties_map, nil)
+      end
+
       it 'does not pass contexts to new when the model is not flexible (HYRAX_FLEXIBLE=false)' do
         field = double('Field', name: :title)
         non_flexible_klass = Class.new do

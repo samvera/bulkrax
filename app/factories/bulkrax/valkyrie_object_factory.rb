@@ -311,20 +311,27 @@ module Bulkrax
       return false if contexts.blank?
 
       klass.new.flexible?
-    rescue StandardError
+    rescue NoMethodError, ArgumentError
       false
     end
 
     ##
     # Resolve the contexts assigned to the given admin set.
+    # Results are memoized by admin_set_id to avoid repeated queries during import.
     #
     # @param admin_set_id [String, nil]
     # @return [Array<String>]
     def self.contexts_for_admin_set(admin_set_id)
       return [] if admin_set_id.blank? || !defined?(Hyrax)
 
-      Array(Hyrax.query_service.find_by(id: admin_set_id)&.contexts)
-    rescue StandardError
+      @contexts_for_admin_set_map ||= {}
+      return @contexts_for_admin_set_map[admin_set_id] if @contexts_for_admin_set_map.key?(admin_set_id)
+
+      @contexts_for_admin_set_map[admin_set_id] = Array(Hyrax.query_service.find_by(id: admin_set_id)&.contexts)
+    rescue Valkyrie::Persistence::ObjectNotFoundError
+      @contexts_for_admin_set_map[admin_set_id] = []
+    rescue StandardError => e
+      Rails.logger.warn("[Bulkrax] contexts_for_admin_set(#{admin_set_id}): #{e.class}: #{e.message}")
       []
     end
 
