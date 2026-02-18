@@ -155,6 +155,8 @@
                        name="importer[parser_fields][import_file_path]"
                        class="form-control"
                        placeholder="/path/to/import.csv">
+                <!-- Params require file_style attribute -->
+                <%= hidden_field_tag 'importer[parser_fields][file_style]', I18n.t('bulkrax.importer.xml.file_style.server_path') %>
               </div>
             </div>
           </div>

@@ -1004,7 +1004,7 @@
       data: {
         importer: {
           parser_fields: {
-            file_path: filePath
+            import_file_path: filePath
           },
           admin_set_id: StepperState.settings.adminSetId
         }
