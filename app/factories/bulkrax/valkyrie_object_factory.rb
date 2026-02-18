@@ -120,11 +120,14 @@ module Bulkrax
       save!(resource: resource, user: user)
     end
 
-    def self.field_multi_value?(field:, model:)
-      return false unless field_supported?(field: field, model: model)
+    def self.field_multi_value?(field:, model:, admin_set_id: nil)
+      return false unless field_supported?(field: field, model: model, admin_set_id: admin_set_id)
 
       if model.respond_to?(:schema)
-        schema = model.new.singleton_class.schema || model.schema
+        contexts = contexts_for_admin_set(admin_set_id)
+        use_contexts = contexts.present? && (model.new.flexible? rescue false)
+        instance = use_contexts ? model.new(contexts: contexts) : model.new
+        schema = instance.singleton_class.schema || model.schema
         dry_type = schema.key(field.to_sym)
         return true if dry_type.respond_to?(:primitive) && dry_type.primitive == Array
 
@@ -134,9 +137,9 @@ module Bulkrax
       end
     end
 
-    def self.field_supported?(field:, model:)
+    def self.field_supported?(field:, model:, admin_set_id: nil)
       if model.respond_to?(:schema)
-        schema_properties(model).include?(field)
+        schema_properties(model, admin_set_id).include?(field)
       else
         # We *might* have a Fedora object, so we need to consider that approach as
         # well.
