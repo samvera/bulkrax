@@ -54,12 +54,14 @@ module Bulkrax
         end
       end
 
+      admin_set_id = params[:importer]&.[](:admin_set_id)
+
       # Use demo mode if DEMO_MODE environment variable is set
       # Start server with: DEMO_MODE=true bin/web
       validation_data = if ENV['DEMO_MODE'] == 'true'
                           generate_validation_response(csv_file, zip_file)
                         else
-                          CsvValidationService.validate(csv_file: csv_file, zip_file: zip_file)
+                          CsvValidationService.validate(csv_file: csv_file, zip_file: zip_file, admin_set_id: admin_set_id)
                         end
 
       formatted_response = StepperResponseFormatter.format(validation_data)
