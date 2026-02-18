@@ -41,7 +41,12 @@ module Bulkrax
       # flexible=true: @klass.new.singleton_class.schema would return the full schema,
       #                but @klass.schema doesn't get the flexible metadata terms
       # flexible=false: @klass.new.singleton_class.schema returns nil so it will fallback
-      @klass.new.singleton_class.schema || @klass.schema
+      #
+      # When the admin set has contexts defined, pass them so that context-restricted
+      # fields (e.g. M3 `available_on.context`) appear in required_terms and
+      # controlled_vocab_terms for that admin set.
+      contexts = Bulkrax::ValkyrieObjectFactory.contexts_for_admin_set(@admin_set_id)
+      @klass.new(contexts: contexts).singleton_class.schema || @klass.schema
     rescue StandardError
       nil
     end
