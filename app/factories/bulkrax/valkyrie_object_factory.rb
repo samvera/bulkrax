@@ -125,7 +125,7 @@ module Bulkrax
 
       if model.respond_to?(:schema)
         contexts = contexts_for_admin_set(admin_set_id)
-        use_contexts = contexts.present? && (model.new.flexible? rescue false)
+        use_contexts = use_contexts?(contexts, model)
         instance = use_contexts ? model.new(contexts: contexts) : model.new
         schema = instance.singleton_class.schema || model.schema
         dry_type = schema.key(field.to_sym)
@@ -288,7 +288,7 @@ module Bulkrax
       contexts = contexts_for_admin_set(admin_set_id)
       # Only pass contexts when the model supports flexible metadata (HYRAX_FLEXIBLE=true).
       # Non-flexible models do not accept :contexts and would raise.
-      use_contexts = contexts.present? && (klass.new.flexible? rescue false)
+      use_contexts = use_contexts?(contexts, klass)
       klass_key = [klass.name, *Array(use_contexts ? contexts : []).sort].join('|')
 
       unless @schema_properties_map.key?(klass_key)
@@ -298,6 +298,21 @@ module Bulkrax
       end
 
       @schema_properties_map[klass_key]
+    end
+
+    ##
+    # Whether to pass contexts when instantiating the given class.
+    # Only true when contexts are present and the model supports flexible metadata (HYRAX_FLEXIBLE=true).
+    #
+    # @param contexts [Array<String>]
+    # @param klass [Class]
+    # @return [Boolean]
+    def self.use_contexts?(contexts, klass)
+      contexts.present? && begin
+                             klass.new.flexible?
+                           rescue
+                             false
+                           end
     end
 
     ##
