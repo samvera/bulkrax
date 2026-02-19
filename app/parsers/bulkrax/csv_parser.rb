@@ -376,20 +376,17 @@ module Bulkrax
       filename = args.fetch(:filename, '')
 
       return @path_to_files if @path_to_files.present? && filename.blank?
+      # The zip file could be either the main import file, or a separate attachments zip file.
+      # We want to check for both of those before we determine the path to the files.
+      have_zip_file = zip? || (parser_fields['attachments_zip_path'] && zip_file?(parser_fields['attachments_zip_path']))
       @path_to_files = File.join(
-          zip? ? importer_unzip_path : File.dirname(import_file_path), 'files', filename
+          have_zip_file ? importer_unzip_path : File.dirname(import_file_path), 'files', filename
         )
 
       return @path_to_files if File.exist?(@path_to_files)
 
-      return unless file? && zip?
-      # If the zip was created from a parent folder, files/ will be a sibling
-      # of the CSV rather than directly under the unzip root. Use the CSV's
-      # location to find it.
-      csv_sibling_path = File.join(File.dirname(import_file_path), 'files', filename)
-      return csv_sibling_path if File.exist?(csv_sibling_path)
-
-      File.join(importer_unzip_path, 'files', filename)
+      # TODO: This method silently returns nil if there is no file & no zip file
+      File.join(importer_unzip_path, 'files', filename) if file? && zip?
     end
 
     private
