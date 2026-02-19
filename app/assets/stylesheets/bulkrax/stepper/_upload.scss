@@ -4,21 +4,86 @@
 }
 
 .step-title {
-  h2 { font-size: 20px; font-weight: 600; color: $color-text-dark; margin-bottom: 5px; }
-  .text-muted { font-size: 14px; margin-bottom: 20px; }
+
+  h2,
+  .h2 {
+    font-size: 20px;
+    font-weight: 600;
+    color: $color-text-dark;
+    margin-bottom: 5px;
+  }
+
+  .text-muted {
+    font-size: 14px;
+    margin-bottom: 20px;
+  }
 }
 
-/* ====== Upload Zone ====== */
+/* ====== Upload Mode Tabs ====== */
+.upload-mode-tabs {
+  display: flex;
+  border: 1px solid $border-color;
+  border-radius: $border-radius;
+  background: none;
+  overflow: hidden;
+}
+
+.upload-mode-tab {
+  flex: 1;
+  padding: 12px 20px;
+  background: #fff;
+  border: none;
+  font-size: 14px;
+  font-weight: 500;
+  color: $color-text-muted;
+  transition: color 0.3s ease, background-color 0.3s ease;
+
+  .fa {
+    margin-right: 6px;
+  }
+
+  &:hover {
+    color: $color-text-dark;
+  }
+
+  &+& {
+    border-left: 1px solid $border-color;
+  }
+
+  &.active {
+    color: $color-primary;
+    background: $bg-primary-light;
+    border-bottom: 2px solid $color-primary;
+  }
+}
+
+/* ====== Upload Files Zone ====== */
 .upload-zone-wrapper {
   margin: 25px 0;
 }
 
 .upload-dropzone {
-  @include dropzone-base($color-primary);
-  padding: 60px 20px;
+  @include dropzone-base(dashed, 60px, 40px);
 
-  &:hover .upload-icon { background: $bg-primary-hover; }
-  p { margin: 5px 0; }
+  &:hover .upload-icon {
+    background: $bg-primary-hover;
+  }
+
+  p {
+    margin: 5px 0;
+  }
+}
+
+.upload-dropzone-small {
+  @include dropzone-base(dashed, 20px, 20px);
+
+  &:hover .upload-icon-small {
+    background: $bg-primary-hover;
+  }
+
+  p {
+    margin: 5px 0;
+  }
 }
 
 .upload-icon {
@@ -33,31 +98,16 @@
   transition: background-color 0.3s ease;
 }
 
-/* Add Another File Dropzone (Smaller) */
-.add-another-dropzone {
-  margin-top: 20px;
-}
-
-.upload-dropzone-small {
-  @include dropzone-base($color-success);
-  padding: 30px 20px;
-  background: #fafbfc;
-
-  &:hover .upload-icon-small { background: $bg-success-hover; }
-  p { margin: 3px 0; font-size: 13px; }
-  strong { color: $color-text-dark; }
-}
-
-.upload-icon-small {
-  width: 40px;
-  height: 40px;
-  margin: 0 auto 10px;
-  background: $bg-success-light;
-  border-radius: $border-radius;
+.upload-accepted-types {
   @include flex-center;
-  color: $color-success;
-  font-size: 20px;
-  transition: background-color 0.3s ease;
+  gap: 30px;
+  margin: 25px 0 0;
+
+  .fa {
+    font-size: 18px;
+    color: $color-text-muted;
+    margin: 0 6px;
+  }
 }
 
 .demo-scenarios {
@@ -67,8 +117,33 @@
   border: 1px solid $border-info;
   border-radius: 6px;
 
-  p { margin-bottom: 10px; }
-  .btn { margin-bottom: 8px; }
+  p {
+    margin-bottom: 10px;
+  }
+
+  .btn {
+    margin-bottom: 8px;
+  }
+}
+
+/* ====== Server Path Panel ====== */
+.file-path-input-wrapper {
+  @include dropzone-base(solid, 60px, 40px);
+
+  .control-label {
+    font-size: 16px;
+    margin-bottom: 4px;
+  }
+
+  .text-muted {
+    margin-bottom: 12px;
+  }
+
+  .form-control {
+    font-size: 14px;
+    padding: 10px 12px;
+    margin: 25px 0 0;
+  }
 }
 
 /* ====== Uploaded Files ====== */
@@ -76,17 +151,7 @@
   border: 1px solid $border-color;
   border-radius: $border-radius;
   overflow: hidden;
-}
-
-.uploaded-files-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 20px;
-  background: $bg-light;
-  border-bottom: 1px solid $border-color;
-
-  strong { font-size: 14px; color: $color-text-dark; }
+  margin: 25px 0;
 }
 
 .uploaded-files-list {
@@ -103,7 +168,9 @@
   border-radius: $border-radius;
   background: $bg-light;
 
-  &:last-child { margin-bottom: 0; }
+  &:last-child {
+    margin-bottom: 0;
+  }
 }
 
 .file-actions {
@@ -174,7 +241,9 @@
   color: $color-text-muted;
   padding: 8px 0;
 
-  .fa { color: $color-text-muted; }
+  .fa {
+    color: $color-text-muted;
+  }
 }
 
 /* Start Over Link */
@@ -182,7 +251,12 @@
   margin-top: 15px;
   text-align: center;
 
-  a { font-size: 13px; display: inline-flex; align-items: center; gap: 6px; }
+  a {
+    font-size: 15px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
 }
 
 /* ====== File Upload Errors ====== */
@@ -226,5 +300,7 @@
   margin: 20px 0;
   font-size: 14px;
 
-  .fa { font-size: 15px; }
+  .fa {
+    font-size: 15px;
+  }
 }
