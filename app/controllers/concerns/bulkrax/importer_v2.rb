@@ -25,41 +25,20 @@ module Bulkrax
         return
       end
 
-      # Find CSV file for validation
-      csv_file = files.find { |f| f.original_filename&.end_with?('.csv') }
-      zip_file = files.find { |f| f.original_filename&.end_with?('.zip') }
-
-      # If no CSV in uploaded files, check if ZIP contains CSV
-      unless csv_file
-        unless zip_file
-          render json: StepperResponseFormatter.error(message: 'No CSV metadata file uploaded'), status: :ok
-          return
-        end
-
-        error_response = nil
-        Zip::File.open(zip_file.path) do |zip|
-          result = find_csv_in_zip(zip)
-
-          if result.is_a?(Hash) && result[:messages]
-            error_response = result
-          elsif result
-            # Read the CSV content while the zip file is still open
-            csv_file = StringIO.new(result.get_input_stream.read)
-          end
-        end
-
-        if error_response
-          render json: error_response, status: :ok
-          return
-        end
+      csv_file, zip_file, error_response = csv_file_for_validation(files)
+      if error_response
+        render json: error_response, status: :ok
+        return
       end
+
+      admin_set_id = params[:importer]&.[](:admin_set_id)
 
       # Use demo mode if DEMO_MODE environment variable is set
       # Start server with: DEMO_MODE=true bin/web
       validation_data = if ENV['DEMO_MODE'] == 'true'
                           generate_validation_response(csv_file, zip_file)
                         else
-                          CsvValidationService.validate(csv_file: csv_file, zip_file: zip_file)
+                          CsvValidationService.validate(csv_file: csv_file, zip_file: zip_file, admin_set_id: admin_set_id)
                         end
 
       formatted_response = StepperResponseFormatter.format(validation_data)
@@ -102,6 +81,29 @@ module Bulkrax
     end
 
     private
+
+    # Returns [csv_file, zip_file, error_response]. error_response is nil on success.
+    def csv_file_for_validation(files)
+      csv_file = files.find { |f| f.original_filename&.end_with?('.csv') }
+      zip_file = files.find { |f| f.original_filename&.end_with?('.zip') }
+
+      unless csv_file
+        return [nil, nil, StepperResponseFormatter.error(message: 'No CSV metadata file uploaded')] unless zip_file
+
+        error_response = nil
+        Zip::File.open(zip_file.path) do |zip|
+          result = find_csv_in_zip(zip)
+          if result.is_a?(Hash) && result[:messages]
+            error_response = result
+          elsif result
+            csv_file = StringIO.new(result.get_input_stream.read)
+          end
+        end
+        return [csv_file, zip_file, error_response] if error_response
+      end
+
+      [csv_file, zip_file, nil]
+    end
 
     # Finds CSV file in ZIP by traversing directory levels
     # Returns CSV entry object on success, or StepperResponseFormatter.error hash on error

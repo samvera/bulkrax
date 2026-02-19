@@ -25,7 +25,7 @@ RSpec.describe Bulkrax::CsvValidationService::FieldAnalyzer do
       allow(Bulkrax::CsvValidationService::ModelLoader).to receive(:determine_klass_for)
         .with('Work').and_return(work_klass)
       allow(Bulkrax::CsvValidationService::SchemaAnalyzer).to receive(:new)
-        .with(work_klass, nil).and_return(schema_analyzer)
+        .with(klass: work_klass, admin_set_id: nil).and_return(schema_analyzer)
       allow(schema_analyzer).to receive(:required_terms).and_return(['title', 'creator'])
       allow(schema_analyzer).to receive(:controlled_vocab_terms).and_return(['rights_statement', 'resource_type'])
     end
@@ -35,7 +35,7 @@ RSpec.describe Bulkrax::CsvValidationService::FieldAnalyzer do
         allow(work_klass).to receive(:respond_to?).and_return(false)
         allow(work_klass).to receive(:respond_to?).with(:schema).and_return(true)
         allow(Bulkrax::ValkyrieObjectFactory).to receive(:schema_properties)
-          .with(work_klass, nil).and_return([:title, :creator, :date_created, :rights_statement])
+          .with(klass: work_klass, admin_set_id: nil).and_return([:title, :creator, :date_created, :rights_statement])
       end
 
       it 'creates a new field list entry with schema properties' do
@@ -141,11 +141,11 @@ RSpec.describe Bulkrax::CsvValidationService::FieldAnalyzer do
         allow(work_klass).to receive(:respond_to?).and_return(false)
         allow(work_klass).to receive(:respond_to?).with(:schema).and_return(true)
         allow(Bulkrax::ValkyrieObjectFactory).to receive(:schema_properties)
-          .with(work_klass, nil).and_return([:title, :creator])
+          .with(klass: work_klass, admin_set_id: nil).and_return([:title, :creator])
 
         # Setup SchemaAnalyzer for Work - must be before Collection setup
         allow(Bulkrax::CsvValidationService::SchemaAnalyzer).to receive(:new)
-          .with(work_klass, nil).and_return(schema_analyzer)
+          .with(klass: work_klass, admin_set_id: nil).and_return(schema_analyzer)
 
         # Setup for Collection
         allow(Bulkrax::CsvValidationService::ModelLoader).to receive(:determine_klass_for)
@@ -153,10 +153,10 @@ RSpec.describe Bulkrax::CsvValidationService::FieldAnalyzer do
         allow(collection_klass).to receive(:respond_to?).and_return(false)
         allow(collection_klass).to receive(:respond_to?).with(:schema).and_return(true)
         allow(Bulkrax::ValkyrieObjectFactory).to receive(:schema_properties)
-          .with(collection_klass, nil).and_return([:title, :description])
+          .with(klass: collection_klass, admin_set_id: nil).and_return([:title, :description])
 
         allow(Bulkrax::CsvValidationService::SchemaAnalyzer).to receive(:new)
-          .with(collection_klass, nil).and_return(collection_schema_analyzer)
+          .with(klass: collection_klass, admin_set_id: nil).and_return(collection_schema_analyzer)
         allow(collection_schema_analyzer).to receive(:required_terms).and_return(['title'])
         allow(collection_schema_analyzer).to receive(:controlled_vocab_terms).and_return(['visibility'])
       end
@@ -299,9 +299,9 @@ RSpec.describe Bulkrax::CsvValidationService::FieldAnalyzer do
       allow(work_klass).to receive(:respond_to?).and_return(false)
       allow(work_klass).to receive(:respond_to?).with(:schema).and_return(true)
       allow(Bulkrax::ValkyrieObjectFactory).to receive(:schema_properties)
-        .with(work_klass, nil).and_return([:title, :creator, :rights_statement])
+        .with(klass: work_klass, admin_set_id: nil).and_return([:title, :creator, :rights_statement])
       allow(Bulkrax::CsvValidationService::SchemaAnalyzer).to receive(:new)
-        .with(work_klass, nil).and_return(work_schema_analyzer)
+        .with(klass: work_klass, admin_set_id: nil).and_return(work_schema_analyzer)
       allow(work_schema_analyzer).to receive(:required_terms).and_return(['title', 'creator'])
       allow(work_schema_analyzer).to receive(:controlled_vocab_terms)
         .and_return(['rights_statement', 'resource_type'])
@@ -314,7 +314,7 @@ RSpec.describe Bulkrax::CsvValidationService::FieldAnalyzer do
       allow(collection_klass).to receive(:properties)
         .and_return({ 'title' => {}, 'description' => {} })
       allow(Bulkrax::CsvValidationService::SchemaAnalyzer).to receive(:new)
-        .with(collection_klass, nil).and_return(collection_schema_analyzer)
+        .with(klass: collection_klass, admin_set_id: nil).and_return(collection_schema_analyzer)
       allow(collection_schema_analyzer).to receive(:required_terms).and_return(['title'])
       allow(collection_schema_analyzer).to receive(:controlled_vocab_terms)
         .and_return(['visibility', 'rights_statement'])

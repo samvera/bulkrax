@@ -33,7 +33,7 @@ module Bulkrax
     private
 
     def build_field_list_entry(model_name, klass)
-      schema_analyzer = CsvValidationService::SchemaAnalyzer.new(klass, @admin_set_id)
+      schema_analyzer = CsvValidationService::SchemaAnalyzer.new(klass: klass, admin_set_id: @admin_set_id)
       {
         model_name => {
           'properties' => extract_properties(klass),
@@ -45,7 +45,7 @@ module Bulkrax
 
     def extract_properties(klass)
       if klass.respond_to?(:schema)
-        Bulkrax::ValkyrieObjectFactory.schema_properties(klass, @admin_set_id).map(&:to_s)
+        Bulkrax::ValkyrieObjectFactory.schema_properties(klass: klass, admin_set_id: @admin_set_id).map(&:to_s)
       else
         klass.properties.keys.map(&:to_s)
       end

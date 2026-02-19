@@ -33,7 +33,7 @@ module ModelStubbingHelpers
   def stub_bulkrax_models
     # First, stub ValkyrieObjectFactory to prevent schema access issues
     stub_const('Bulkrax::ValkyrieObjectFactory', Class.new do
-      def self.schema_properties(klass)
+      def self.schema_properties(klass:, admin_set_id: nil) # rubocop:disable Lint/UnusedMethodArgument
         # Just return the properties as-is
         klass.properties.keys.map(&:to_s)
       end
