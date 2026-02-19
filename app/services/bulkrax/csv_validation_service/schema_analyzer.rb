@@ -3,7 +3,7 @@
 module Bulkrax
   # Analyzes model schemas for required and controlled vocabulary fields
   class CsvValidationService::SchemaAnalyzer
-    def initialize(klass, admin_set_id = nil)
+    def initialize(klass:, admin_set_id: nil)
       @klass = klass
       @admin_set_id = admin_set_id
       @schema = load_schema
@@ -40,7 +40,7 @@ module Bulkrax
       # flexible=true: @klass.new.singleton_class.schema returns the full schema
       # flexible=false: returns nil, falls back to @klass.schema
       if @admin_set_id.present? && defined?(Hyrax) && Hyrax.respond_to?(:schema_for)
-        Hyrax.schema_for(@klass, admin_set_id: @admin_set_id)
+        Hyrax.schema_for(klass: @klass, admin_set_id: @admin_set_id)
       else
         @klass.new.singleton_class.schema || @klass.schema
       end

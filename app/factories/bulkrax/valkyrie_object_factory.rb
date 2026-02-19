@@ -124,7 +124,7 @@ module Bulkrax
       return false unless field_supported?(field: field, model: model, admin_set_id: admin_set_id)
 
       if model.respond_to?(:schema)
-        schema = cached_schema_for(model, admin_set_id)
+        schema = cached_schema_for(klass: model, admin_set_id: admin_set_id)
         dry_type = schema.key(field.to_sym)
         return true if dry_type.respond_to?(:primitive) && dry_type.primitive == Array
 
@@ -136,7 +136,7 @@ module Bulkrax
 
     def self.field_supported?(field:, model:, admin_set_id: nil)
       if model.respond_to?(:schema)
-        schema_properties(model, admin_set_id).include?(field)
+        schema_properties(klass: model, admin_set_id: admin_set_id).include?(field)
       else
         # We *might* have a Fedora object, so we need to consider that approach as
         # well.
@@ -279,8 +279,8 @@ module Bulkrax
     # @param klass [Class] the model class
     # @param admin_set_id [String, nil] admin set used to resolve contexts
     # @return [Array<String>]
-    def self.schema_properties(klass, admin_set_id = nil)
-      cached_schema_for(klass, admin_set_id).map { |k| k.name.to_s }
+    def self.schema_properties(klass:, admin_set_id: nil)
+      cached_schema_for(klass: klass, admin_set_id: admin_set_id).map { |k| k.name.to_s }
     end
 
     ##
@@ -291,12 +291,12 @@ module Bulkrax
     # @param klass [Class]
     # @param admin_set_id [String, nil]
     # @return [Dry::Types::Hash]
-    def self.cached_schema_for(klass, admin_set_id = nil)
+    def self.cached_schema_for(klass:, admin_set_id: nil)
       @cached_schema_map ||= {}
       key = [klass.name, admin_set_id].compact.join('|')
       @cached_schema_map[key] ||=
         if admin_set_id.present? && defined?(Hyrax) && Hyrax.respond_to?(:schema_for)
-          Hyrax.schema_for(klass, admin_set_id: admin_set_id)
+          Hyrax.schema_for(klass: klass, admin_set_id: admin_set_id)
         else
           klass.new.singleton_class.schema || klass.schema
         end
@@ -501,7 +501,7 @@ module Bulkrax
       @permitted_attributes ||= (
         base_permitted_attributes + if klass.respond_to?(:schema)
                                       admin_set_id = attributes[:admin_set_id] || attributes['admin_set_id']
-                                      Bulkrax::ValkyrieObjectFactory.schema_properties(klass, admin_set_id)
+                                      Bulkrax::ValkyrieObjectFactory.schema_properties(klass: klass, admin_set_id: admin_set_id)
                                     else
                                       klass.properties.keys.map(&:to_sym)
                                     end

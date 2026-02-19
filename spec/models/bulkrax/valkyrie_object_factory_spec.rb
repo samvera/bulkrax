@@ -65,27 +65,26 @@ module Bulkrax
 
       before do
         described_class.instance_variable_set(:@cached_schema_map, nil)
-        # Allow stubbing schema_for when running against a Hyrax that may not define it yet
-        unless Hyrax.respond_to?(:schema_for)
-          Hyrax.define_singleton_method(:schema_for) { |k, admin_set_id: nil| k.new.singleton_class.schema || k.schema } # rubocop:disable Lint/UnusedBlockArgument
-        end
+        # rubocop:disable Lint/UnusedBlockArgument
+        Hyrax.define_singleton_method(:schema_for) { |klass:, admin_set_id: nil| klass.new.singleton_class.schema || klass.schema } unless Hyrax.respond_to?(:schema_for)
+        # rubocop:enable Lint/UnusedBlockArgument
       end
 
       it 'returns the schema without admin_set_id' do
-        expect(described_class.cached_schema_for(test_klass)).to eq([field])
+        expect(described_class.cached_schema_for(klass: test_klass)).to eq([field])
       end
 
       it 'delegates to Hyrax.schema_for when admin_set_id is present' do
         schema = double('schema')
-        allow(Hyrax).to receive(:schema_for).with(test_klass, admin_set_id: 'set-1').and_return(schema)
-        expect(described_class.cached_schema_for(test_klass, 'set-1')).to eq(schema)
+        allow(Hyrax).to receive(:schema_for).with(klass: test_klass, admin_set_id: 'set-1').and_return(schema)
+        expect(described_class.cached_schema_for(klass: test_klass, admin_set_id: 'set-1')).to eq(schema)
       end
 
       it 'memoizes the result and only calls Hyrax.schema_for once per (klass, admin_set_id)' do
         schema = double('schema')
-        allow(Hyrax).to receive(:schema_for).with(test_klass, admin_set_id: 'set-memo').and_return(schema)
-        described_class.cached_schema_for(test_klass, 'set-memo')
-        described_class.cached_schema_for(test_klass, 'set-memo')
+        allow(Hyrax).to receive(:schema_for).with(klass: test_klass, admin_set_id: 'set-memo').and_return(schema)
+        described_class.cached_schema_for(klass: test_klass, admin_set_id: 'set-memo')
+        described_class.cached_schema_for(klass: test_klass, admin_set_id: 'set-memo')
         expect(Hyrax).to have_received(:schema_for).once
       end
     end
@@ -105,21 +104,21 @@ module Bulkrax
 
       before do
         described_class.instance_variable_set(:@cached_schema_map, nil)
-        unless Hyrax.respond_to?(:schema_for)
-          Hyrax.define_singleton_method(:schema_for) { |k, admin_set_id: nil| k.new.singleton_class.schema || k.schema } # rubocop:disable Lint/UnusedBlockArgument
-        end
+        # rubocop:disable Lint/UnusedBlockArgument
+        Hyrax.define_singleton_method(:schema_for) { |klass:, admin_set_id: nil| klass.new.singleton_class.schema || klass.schema } unless Hyrax.respond_to?(:schema_for)
+        # rubocop:enable Lint/UnusedBlockArgument
       end
 
       it 'returns field names from the schema' do
-        expect(described_class.schema_properties(test_klass)).to eq(['title'])
+        expect(described_class.schema_properties(klass: test_klass)).to eq(['title'])
       end
 
       it 'includes context-specific fields when admin_set_id is provided' do
         context_field = double('Field', name: :dimensions)
         schema = double('schema')
         allow(schema).to receive(:map) { |&block| [field, context_field].map(&block) }
-        allow(Hyrax).to receive(:schema_for).with(test_klass, admin_set_id: 'set-ctx').and_return(schema)
-        result = described_class.schema_properties(test_klass, 'set-ctx')
+        allow(Hyrax).to receive(:schema_for).with(klass: test_klass, admin_set_id: 'set-ctx').and_return(schema)
+        result = described_class.schema_properties(klass: test_klass, admin_set_id: 'set-ctx')
         expect(result).to include('title', 'dimensions')
       end
     end
