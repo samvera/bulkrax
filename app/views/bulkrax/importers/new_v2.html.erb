@@ -151,10 +151,13 @@
                   Enter the path to the files on your server
                 </label>
                 <p class="text-muted small">CSV or ZIP file</p>
-                <input type="text" id="import-file-path"
-                       name="importer[parser_fields][import_file_path]"
-                       class="form-control"
-                       placeholder="/path/to/import.csv">
+                <input
+                  type="text"
+                  id="import-file-path"
+                  name="importer[parser_fields][import_file_path]"
+                  class="form-control"
+                  placeholder="/path/to/import.csv"
+                >
                 <!-- Params require file_style attribute -->
                 <%= hidden_field_tag 'importer[parser_fields][file_style]', I18n.t('bulkrax.importer.xml.file_style.server_path') %>
               </div>
@@ -286,7 +289,8 @@
 
             <!-- Default Visibility -->
             <div class="form-group">
-              <label class="control-label">Default Visibility</label>
+              <label class="control-label">Default Visibility <span class="text-danger">*</span></label>
+              <p class="text-muted small">Applied to records that don't specify a visibility.</p>
               <div class="visibility-options row">
                 <div class="col-sm-4">
                   <div class="visibility-card" data-visibility="open">
@@ -346,7 +350,7 @@
                     <div class="form-group">
                       <div class="form-check">
                         <%= check_box_tag 'importer[parser_fields][override_rights_statement]', '1', false, class: 'form-check-input', id: 'importer_parser_fields_override_rights_statement' %>
-                        <label class="form-check-label" for="importer_parser_fields_override_rights_statement">
+                        <label class="form-check-label control-label" for="importer_parser_fields_override_rights_statement">
                           <%= t('simple_form.labels.defaults.override_rights_statement') %>
                         </label>
                       </div>
@@ -354,8 +358,8 @@
                     </div>
 
                     <div class="form-group">
-                      <%= f.label :limit, 'Limit (for testing)', class: 'control-label' %>
-                      <%= f.number_field :limit, class: 'form-control', placeholder: 'Import only first N records' %>
+                      <%= f.label :limit, 'Test Limited Records', class: 'control-label' %>
+                      <%= f.number_field :limit, class: 'form-control', placeholder: 'Import only the first N records for testing' %>
                     </div>
                   </div>
                 </div>
@@ -435,7 +439,7 @@
             <button type="button" class="btn btn-secondary step-prev-btn" data-prev-step="2">
               <span class="fa fa-arrow-left"></span> Back
             </button>
-            <button type="submit" class="btn btn-success btn-lg" id="start-import-btn">
+            <button type="submit" class="btn btn-success" id="start-import-btn">
               Start Import
             </button>
           </div>

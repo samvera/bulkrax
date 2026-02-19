@@ -109,9 +109,10 @@
     isAddingFiles: false, // Flag to track if we're adding files vs replacing
     demoScenario: null, // Track which demo scenario is loaded
     demoScenariosData: null, // Cached demo scenarios JSON from server
+    adminSetId: '',
+    adminSetName: '',
     settings: {
       name: '',
-      adminSetId: '',
       visibility: 'open',
       rightsStatement: '',
       limit: ''
@@ -300,12 +301,13 @@
       updateStepNavigation()
     })
 
-    // Step navigation
+    // Step navigation - next step
     $('.step-next-btn').on('click', function () {
       var nextStep = parseInt($(this).data('next-step'))
       goToStep(nextStep)
     })
 
+    // Step navigation - previous step
     $('.step-prev-btn').on('click', function () {
       var prevStep = parseInt($(this).data('prev-step'))
       goToStep(prevStep)
@@ -330,7 +332,7 @@
 
     // Admin set selection change
     $('#importer-admin-set').on('change', function () {
-      StepperState.settings.adminSetId = $(this).val()
+      StepperState.adminSetId = $(this).val()
       StepperState.settings.adminSetName = $(this).find('option:selected').text()
       updateStepNavigation()
       // Update validate button state since admin set is required for validation
@@ -814,7 +816,7 @@
   // Update validate button enabled state based on current upload mode
   function updateValidateButtonState() {
     var $adminSetSelect = $('#importer-admin-set')
-    var adminSetValue = $adminSetSelect.val() || StepperState.settings.adminSetId
+    var adminSetValue = $adminSetSelect.val() || StepperState.adminSetId
     var hasAdminSet = adminSetValue && adminSetValue.length > 0
 
     var canValidate = false
@@ -841,8 +843,8 @@
     // Always refresh from DOM to ensure we have the current value
     var $adminSetSelect = $('#importer-admin-set')
     if ($adminSetSelect.length && $adminSetSelect.val()) {
-      StepperState.settings.adminSetId = $adminSetSelect.val()
-      StepperState.settings.adminSetName = $adminSetSelect.find('option:selected').text()
+      StepperState.adminSetId = $adminSetSelect.val()
+      StepperState.adminSetName = $adminSetSelect.find('option:selected').text()
     }
 
     var state = StepperState.uploadState
@@ -1006,7 +1008,7 @@
           parser_fields: {
             import_file_path: filePath
           },
-          admin_set_id: StepperState.settings.adminSetId
+          admin_set_id: StepperState.adminSetId
         }
       },
       timeout: CONSTANTS.AJAX_TIMEOUT_LONG
@@ -1630,8 +1632,8 @@
     if ($adminSetSelect.length) {
       var currentVal = $adminSetSelect.val()
       if (currentVal && currentVal.trim() !== '') {
-        StepperState.settings.adminSetId = currentVal.trim()
-        StepperState.settings.adminSetName = $adminSetSelect.find('option:selected').text().trim()
+        StepperState.adminSetId = currentVal.trim()
+        StepperState.adminSetName = $adminSetSelect.find('option:selected').text().trim()
       }
     }
   }
@@ -1718,7 +1720,7 @@
       var adminSetId = (cachedSelectors.adminSetSelect.length ? cachedSelectors.adminSetSelect.val() : '').trim()
       canProceed = name.length > 0 && adminSetId.length > 0
       StepperState.settings.name = name || StepperState.settings.name
-      StepperState.settings.adminSetId = adminSetId || StepperState.settings.adminSetId
+      StepperState.adminSetId = adminSetId || StepperState.adminSetId
       $('.step-content[data-step="2"] .step-next-btn').prop('disabled', !canProceed)
     }
   }
@@ -1734,7 +1736,7 @@
         var type = f.fileType === 'csv' ? 'CSV' : 'ZIP'
         var fromZip = f.fromZip ? ' — detected in ZIP' : ''
         return (
-          '<p>' + type + ': ' + escapeHtml(f.name) + ' (' + escapeHtml(f.size) + ')' + fromZip + '</p>'
+          '<p><span class="text-muted small">' + type + ':</span> ' + escapeHtml(f.name) + ' (' + escapeHtml(f.size) + ')' + fromZip + '</p>'
         )
       })
       .join('')
@@ -1770,8 +1772,8 @@
         adminSetName = selectedText
       }
     }
-    if (adminSetName === 'Not selected' && settings.adminSetName) {
-      adminSetName = settings.adminSetName
+    if (adminSetName === 'Not selected' && StepperState.adminSetName) {
+      adminSetName = StepperState.adminSetName
     }
     var visibilityLabels = {
       open: 'Public',
@@ -1781,21 +1783,21 @@
     var visibilityName = visibilityLabels[settings.visibility]
 
     var settingsHtml =
-      '<p>Name: ' +
+      '<p><span class="text-muted small">Name:</span> ' +
       escapeHtml(settings.name) +
       '</p>' +
-      '<p>Admin Set: ' +
-      escapeHtml(adminSetName) +
+      '<p><span class="text-muted small">Admin Set:</span> ' +
+      adminSetName +
       '</p>' +
-      '<p>Visibility: ' +
+      '<p><span class="text-muted small">Visibility:</span> ' +
       visibilityName +
       '</p>'
 
     if (settings.rightsStatement) {
-      settingsHtml += '<p>Rights: ' + settings.rightsStatement + '</p>'
+      settingsHtml += '<p><span class="text-muted small">Rights:</span> ' + settings.rightsStatement + '</p>'
     }
     if (settings.limit) {
-      settingsHtml += '<p>Limit: first ' + settings.limit + ' records</p>'
+      settingsHtml += '<p><span class="text-muted small">Limit:</span> first ' + settings.limit + ' records</p>'
     }
 
     $('.review-settings').html(settingsHtml)
