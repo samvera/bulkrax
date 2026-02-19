@@ -4,7 +4,9 @@
 }
 
 .step-title {
-  h2 {
+
+  h2,
+  .h2 {
     font-size: 20px;
     font-weight: 600;
     color: $color-text-dark;
@@ -22,19 +24,18 @@
   display: flex;
   border: 1px solid $border-color;
   border-radius: $border-radius;
-  background: $bg-light;
+  background: none;
   overflow: hidden;
 }
 
 .upload-mode-tab {
   flex: 1;
   padding: 12px 20px;
-  background: none;
+  background: #fff;
   border: none;
   font-size: 14px;
   font-weight: 500;
   color: $color-text-muted;
-  cursor: pointer;
   transition: color 0.3s ease, background-color 0.3s ease;
 
   .fa {
@@ -45,55 +46,38 @@
     color: $color-text-dark;
   }
 
-  & + & {
+  &+& {
     border-left: 1px solid $border-color;
   }
 
   &.active {
     color: $color-primary;
-    background: #fff;
+    background: $bg-primary-light;
+    border-bottom: 2px solid $color-primary;
   }
 }
 
-/* ====== File Path Panel ====== */
-.file-path-panel {
-  margin: 25px 0;
-}
-
-.file-path-input-wrapper {
-  padding: 30px;
-  border: 1px solid $border-color;
-  border-radius: $border-radius;
-  background: $bg-light;
-
-  .control-label {
-    font-size: 14px;
-    font-weight: 500;
-    color: $color-text-dark;
-    margin-bottom: 4px;
-  }
-
-  .text-muted {
-    margin-bottom: 12px;
-  }
-
-  .form-control {
-    font-size: 14px;
-    padding: 10px 12px;
-  }
-}
-
-/* ====== Upload Zone ====== */
+/* ====== Upload Files Zone ====== */
 .upload-zone-wrapper {
   margin: 25px 0;
 }
 
 .upload-dropzone {
-  @include dropzone-base($color-primary);
-  padding: 60px 20px;
-  margin: 25px 0;
+  @include dropzone-base(dashed, 60px, 40px);
 
   &:hover .upload-icon {
+    background: $bg-primary-hover;
+  }
+
+  p {
+    margin: 5px 0;
+  }
+}
+
+.upload-dropzone-small {
+  @include dropzone-base(dashed, 20px, 20px);
+
+  &:hover .upload-icon-small {
     background: $bg-primary-hover;
   }
 
@@ -114,40 +98,16 @@
   transition: background-color 0.3s ease;
 }
 
-/* Add Another File Dropzone (Smaller) */
-.add-another-dropzone {
-  margin-top: 20px;
-}
-
-.upload-dropzone-small {
-  @include dropzone-base($color-success);
-  padding: 30px 20px;
-  background: #fafbfc;
-
-  &:hover .upload-icon-small {
-    background: $bg-success-hover;
-  }
-
-  p {
-    margin: 3px 0;
-    font-size: 13px;
-  }
-
-  strong {
-    color: $color-text-dark;
-  }
-}
-
-.upload-icon-small {
-  width: 40px;
-  height: 40px;
-  margin: 0 auto 10px;
-  background: $bg-success-light;
-  border-radius: $border-radius;
+.upload-accepted-types {
   @include flex-center;
-  color: $color-success;
-  font-size: 20px;
-  transition: background-color 0.3s ease;
+  gap: 30px;
+  margin: 25px 0 0;
+
+  .fa {
+    font-size: 18px;
+    color: $color-text-muted;
+    margin: 0 6px;
+  }
 }
 
 .demo-scenarios {
@@ -166,25 +126,32 @@
   }
 }
 
+/* ====== Server Path Panel ====== */
+.file-path-input-wrapper {
+  @include dropzone-base(solid, 60px, 40px);
+
+  .control-label {
+    font-size: 16px;
+    margin-bottom: 4px;
+  }
+
+  .text-muted {
+    margin-bottom: 12px;
+  }
+
+  .form-control {
+    font-size: 14px;
+    padding: 10px 12px;
+    margin: 25px 0 0;
+  }
+}
+
 /* ====== Uploaded Files ====== */
 .uploaded-files-container {
   border: 1px solid $border-color;
   border-radius: $border-radius;
   overflow: hidden;
-}
-
-.uploaded-files-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 20px;
-  background: $bg-light;
-  border-bottom: 1px solid $border-color;
-
-  strong {
-    font-size: 14px;
-    color: $color-text-dark;
-  }
+  margin: 25px 0;
 }
 
 .uploaded-files-list {
@@ -285,7 +252,7 @@
   text-align: center;
 
   a {
-    font-size: 13px;
+    font-size: 15px;
     display: inline-flex;
     align-items: center;
     gap: 6px;

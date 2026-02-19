@@ -59,8 +59,8 @@
         <!-- ====== STEP 1: Upload & Validate ====== -->
         <div class="step-content" data-step="1">
           <div class="step-title">
-            <h2>Upload your import files</h2>
-            <p class="text-muted">Upload a CSV, a ZIP with files, or a single ZIP containing both your CSV and files</p>
+            <h2>Import Your Files <span class="text-danger">*</span></h2>
+            <p class="text-muted">Upload a metadata CSV and a ZIP file containing your files (max 2 uploads), or a single ZIP containing both — if using a single ZIP, the metadata CSV must be the only <code>.csv</code> file at the top level.</p>
           </div>
 
           <!-- Upload Area -->
@@ -82,7 +82,11 @@
                   <span class="fa fa-cloud-upload"></span>
                 </div>
                 <p>Drag & drop your files here, or <strong class="text-primary">browse</strong></p>
-                <p class="text-muted small">Accepts .csv or .zip files (you can upload multiple files)</p>
+                <p class="text-muted small">Upload CSV and ZIP (max 2 uploads)</p>
+                <div class="upload-accepted-types">
+                  <p class="text-muted small"><span class="fa fa-file-text-o"></span> .csv &mdash; metadata only</p>
+                  <p class="text-muted small"><span class="fa fa-file-archive-o"></span> .zip &mdash; files or metadata CSV + files</p>
+                </div>
                 <input type="file" id="file-input" name="importer[parser_fields][files][]" accept=".csv,.zip" multiple style="display: none;">
               </div>
 
@@ -114,10 +118,6 @@
 
             <!-- Files Uploaded State (hidden initially) -->
             <div class="uploaded-files-container" style="display: none;">
-              <div class="uploaded-files-header">
-                <strong>Uploaded Files</strong>
-                <button type="button" class="btn btn-sm btn-link text-danger" id="start-over-btn">Start over</button>
-              </div>
               <div class="uploaded-files-list">
                 <!-- File rows will be dynamically added here -->
               </div>
@@ -129,28 +129,28 @@
             <!-- Add another file dropzone (shown when 1 file uploaded) -->
             <div class="add-another-dropzone" style="display: none;">
               <div class="upload-dropzone-small">
-                <div class="upload-icon-small">
-                  <span class="fa fa-plus-circle"></span>
+                <div class="upload-icon">
+                  <span class="fa fa-cloud-upload"></span>
                 </div>
-                <p><strong>Add another file</strong></p>
-                <p class="text-muted small">Drop a CSV or ZIP file here, or click to browse</p>
+                <p>Add another file</p>
+                <p class="text-muted small">Drop a CSV or ZIP file here, or click to <strong class="text-primary">browse</strong></p>
+                <div class="upload-accepted-types">
+                  <p class="text-muted small"><span class="fa fa-file-text-o"></span>.csv -- metadata only</p>
+                  <p class="text-muted small"><span class="fa fa-file-archive-o"></span>.zip -- files OR metadata CSV + files</p>
+                </div>
               </div>
-            </div>
-
-            <!-- Start over link -->
-            <div class="start-over-link" style="display: none;">
-              <a href="#" id="upload-different-btn" class="text-danger">
-                <span class="fa fa-refresh"></span> <strong>Start over</strong>
-              </a>
             </div>
 
             <!-- File Path Input (hidden by default) -->
             <div class="file-path-panel" style="display: none;">
               <div class="file-path-input-wrapper">
+                <div class="upload-icon">
+                  <span class="fa fa-folder-open"></span>
+                </div>
                 <label for="import-file-path" class="control-label">
-                  Server file path <span class="text-danger">*</span>
+                  Enter the path to the files on your server
                 </label>
-                <p class="text-muted small">Enter the full path to a CSV or ZIP file on the server</p>
+                <p class="text-muted small">CSV or ZIP file</p>
                 <input type="text" id="import-file-path"
                        name="importer[parser_fields][import_file_path]"
                        class="form-control"
@@ -159,28 +159,39 @@
                 <%= hidden_field_tag 'importer[parser_fields][file_style]', I18n.t('bulkrax.importer.xml.file_style.server_path') %>
               </div>
             </div>
+
+            <!-- Start over link -->
+            <div class="start-over-link" style="display: none;">
+              <span class="fa fa-refresh text-danger"></span>
+              <a href="#" id="upload-different-btn" class="text-danger">
+                Clear files and start over
+              </a>
+            </div>
           </div>
 
           <!-- File Upload Error Messages -->
           <div id="file-upload-errors" class="file-upload-errors" style="display: none;"></div>
 
-          <!-- Download Template Link -->
-          <div class="download-template-link">
-            <span class="fa fa-download text-primary"></span>
-            <a href="<%= sample_csv_file_importers_path %>" class="text-primary" download>Download CSV template for your tenant</a>
-          </div>
-
           <!-- Admin Set -->
           <div class="form-group">
-            <%= f.label :admin_set_id, 'Admin Set', class: 'control-label' do %>
-              Admin Set <span class="text-danger">*</span>
-            <% end %>
+            <div class="step-title">
+              <%= f.label :admin_set_id, class: 'h2' do %>
+                Admin Set <span class="text-danger">*</span>
+              <% end %>
+              <p class="text-muted">Admin sets are required for imports and CSV template downloads</p>
+            </div>
             <% admin_sets = available_admin_sets %>
             <% default_admin_set = admin_sets.find { |name, id| name.include?('Default') }&.last %>
             <%= f.select :admin_set_id,
                 options_for_select([['Select an admin set...', '']] + admin_sets, default_admin_set),
                 {},
                 { id: 'importer-admin-set', class: 'form-control', required: true } %>
+          </div>
+
+          <!-- Download Template Link -->
+          <div class="download-template-link">
+            <span class="fa fa-download text-primary"></span>
+            <a href="<%= sample_csv_file_importers_path %>" class="text-primary" download>Download a CSV template for your tenant</a>
           </div>
 
           <!-- Validate Button -->

@@ -800,8 +800,8 @@
       $('.upload-zone-empty').hide()
       $('.uploaded-files-container').hide()
       $('.add-another-dropzone').hide()
-      $('.start-over-link').hide()
       $('.file-path-panel').show()
+      $('.start-over-link').hide()
     } else {
       // Hide file path panel, restore upload state
       $('.file-path-panel').hide()
@@ -1036,6 +1036,7 @@
     try {
       renderValidationResults(normalized)
       $btn.html('<span class="fa fa-check-circle"></span> Validated')
+      $('.start-over-link').show()
       updateStepNavigation()
     } catch (e) {
       console.error('Validation results render issue:', e)
@@ -1740,18 +1741,23 @@
     $('.review-files').html(filesHtml)
 
     // Records
-    var totalItems =
-      data.collections.length + data.works.length + data.fileSets.length
-    var recordsHtml =
-      '<p>' +
-      totalItems +
-      ' total — ' +
-      data.collections.length +
-      ' collections, ' +
-      data.works.length +
-      ' works, ' +
-      data.fileSets.length +
-      ' file sets</p>'
+    var totalItems = 0
+    var recordsHtml
+    if (data) {
+      totalItems = data.collections.length + data.works.length + data.fileSets.length
+      recordsHtml =
+        '<p>' +
+        totalItems +
+        ' total — ' +
+        data.collections.length +
+        ' collections, ' +
+        data.works.length +
+        ' works, ' +
+        data.fileSets.length +
+        ' file sets</p>'
+    } else {
+      recordsHtml = '<p class="text-muted">Validation was skipped — record counts unavailable</p>'
+    }
     $('.review-records').html(recordsHtml)
 
     // Settings - get admin set name from DOM first, then fallback to state
@@ -1795,7 +1801,7 @@
     $('.review-settings').html(settingsHtml)
 
     // Warnings
-    if (data.hasWarnings) {
+    if (data && data.hasWarnings) {
       var warningsHtml = '<ul class="small">'
       if (data.unrecognized.length > 0) {
         warningsHtml +=
@@ -1814,7 +1820,7 @@
 
     // Large import warning
     $('.total-items-count').text(totalItems)
-    if (totalItems > CONSTANTS.IMPORT_SIZE_MODERATE) {
+    if (data && totalItems > CONSTANTS.IMPORT_SIZE_MODERATE) {
       $('.large-import-warning').show()
     } else {
       $('.large-import-warning').hide()
