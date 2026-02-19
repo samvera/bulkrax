@@ -120,11 +120,11 @@ module Bulkrax
       save!(resource: resource, user: user)
     end
 
-    def self.field_multi_value?(field:, model:)
-      return false unless field_supported?(field: field, model: model)
+    def self.field_multi_value?(field:, model:, admin_set_id: nil)
+      return false unless field_supported?(field: field, model: model, admin_set_id: admin_set_id)
 
       if model.respond_to?(:schema)
-        schema = model.new.singleton_class.schema || model.schema
+        schema = cached_schema_for(klass: model, admin_set_id: admin_set_id)
         dry_type = schema.key(field.to_sym)
         return true if dry_type.respond_to?(:primitive) && dry_type.primitive == Array
 
@@ -134,9 +134,9 @@ module Bulkrax
       end
     end
 
-    def self.field_supported?(field:, model:)
+    def self.field_supported?(field:, model:, admin_set_id: nil)
       if model.respond_to?(:schema)
-        schema_properties(model).include?(field)
+        schema_properties(klass: model, admin_set_id: admin_set_id).include?(field)
       else
         # We *might* have a Fedora object, so we need to consider that approach as
         # well.
@@ -272,18 +272,34 @@ module Bulkrax
     # rubocop:enable Metrics/ParameterLists
 
     ##
-    # Retrieve properties from M3 model
-    # @param klass the model
+    # Retrieve schema property names for a model, respecting admin set contexts
+    # when using flexible metadata. Delegates context resolution to Hyrax so
+    # Bulkrax does not need to know about HYRAX_FLEXIBLE or contexts.
+    #
+    # @param klass [Class] the model class
+    # @param admin_set_id [String, nil] admin set used to resolve contexts
     # @return [Array<String>]
-    def self.schema_properties(klass, _admin_set_id = nil)
-      @schema_properties_map ||= {}
+    def self.schema_properties(klass:, admin_set_id: nil)
+      cached_schema_for(klass: klass, admin_set_id: admin_set_id).map { |k| k.name.to_s }
+    end
 
-      klass_key = klass.name
-      schema = klass.new.singleton_class.schema || klass.schema
-
-      @schema_properties_map[klass_key] = schema.map { |k| k.name.to_s } unless @schema_properties_map.key?(klass_key)
-
-      @schema_properties_map[klass_key]
+    ##
+    # Returns the schema for a model, memoized per (klass, admin_set_id) pair.
+    # Delegates to +Hyrax.schema_for+ when available so that context-gated
+    # properties are included without Bulkrax knowing about flexibility internals.
+    #
+    # @param klass [Class]
+    # @param admin_set_id [String, nil]
+    # @return [Dry::Types::Hash]
+    def self.cached_schema_for(klass:, admin_set_id: nil)
+      @cached_schema_map ||= {}
+      key = [klass.name, admin_set_id].compact.join('|')
+      @cached_schema_map[key] ||=
+        if admin_set_id.present? && defined?(Hyrax) && Hyrax.respond_to?(:schema_for)
+          Hyrax.schema_for(klass: klass, admin_set_id: admin_set_id)
+        else
+          klass.new.singleton_class.schema || klass.schema
+        end
     end
 
     def self.ordered_file_sets_for(object)
@@ -458,7 +474,9 @@ module Bulkrax
     # TODO What do we return when the calculated form fails?
     # @raise [StandardError] when there was a failure calling the translation.
     def perform_transaction_for(object:, attrs:)
-      form = Hyrax::Forms::ResourceForm.for(object).prepopulate!
+      admin_set_id = attrs[:admin_set_id] || attrs['admin_set_id'] ||
+                     attributes[:admin_set_id] || attributes['admin_set_id']
+      form = Hyrax::Forms::ResourceForm.for(resource: object, admin_set_id: admin_set_id).prepopulate!
 
       # TODO: Handle validations
       form.validate(attrs)
@@ -475,13 +493,15 @@ module Bulkrax
     end
 
     ##
-    # We accept attributes based on the model schema
+    # We accept attributes based on the model schema. Passes the admin set ID
+    # so that context-restricted properties are included in the permitted list.
     #
     # @return [Array<Symbols>]
     def permitted_attributes
       @permitted_attributes ||= (
         base_permitted_attributes + if klass.respond_to?(:schema)
-                                      Bulkrax::ValkyrieObjectFactory.schema_properties(klass)
+                                      admin_set_id = attributes[:admin_set_id] || attributes['admin_set_id']
+                                      Bulkrax::ValkyrieObjectFactory.schema_properties(klass: klass, admin_set_id: admin_set_id)
                                     else
                                       klass.properties.keys.map(&:to_sym)
                                     end

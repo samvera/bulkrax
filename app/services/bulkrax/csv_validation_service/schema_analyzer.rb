@@ -3,7 +3,7 @@
 module Bulkrax
   # Analyzes model schemas for required and controlled vocabulary fields
   class CsvValidationService::SchemaAnalyzer
-    def initialize(klass, admin_set_id = nil)
+    def initialize(klass:, admin_set_id: nil)
       @klass = klass
       @admin_set_id = admin_set_id
       @schema = load_schema
@@ -34,14 +34,16 @@ module Bulkrax
 
     def load_schema
       return nil unless @klass.respond_to?(:schema)
-      # Yes, this looks strange. The fallback is intentional.
-      # At the point in time when this service is being created, Hyrax behaves
-      # differently between flexible metadata setting on & off. This may be modified
-      # in the future, and this code can be revisited then.
-      # flexible=true: @klass.new.singleton_class.schema would return the full schema,
-      #                but @klass.schema doesn't get the flexible metadata terms
-      # flexible=false: @klass.new.singleton_class.schema returns nil so it will fallback
-      @klass.new.singleton_class.schema || @klass.schema
+      # Delegate to Hyrax.schema_for when available so that context-gated
+      # properties (e.g. M3 available_on.context) are included when the admin
+      # set defines them. Falls back to direct singleton schema loading otherwise.
+      # flexible=true: @klass.new.singleton_class.schema returns the full schema
+      # flexible=false: returns nil, falls back to @klass.schema
+      if @admin_set_id.present? && defined?(Hyrax) && Hyrax.respond_to?(:schema_for)
+        Hyrax.schema_for(klass: @klass, admin_set_id: @admin_set_id)
+      else
+        @klass.new.singleton_class.schema || @klass.schema
+      end
     rescue StandardError
       nil
     end

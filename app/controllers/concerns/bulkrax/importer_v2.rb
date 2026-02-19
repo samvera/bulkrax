@@ -28,7 +28,8 @@ module Bulkrax
         return render json: error, status: :ok if error
       end
 
-      render json: StepperResponseFormatter.format(run_validation(csv_file, zip_file)), status: :ok
+      admin_set_id = params[:importer]&.[](:admin_set_id)
+      render json: StepperResponseFormatter.format(run_validation(csv_file, zip_file, admin_set_id: admin_set_id)), status: :ok
     end
 
     def create_v2
@@ -114,12 +115,13 @@ module Bulkrax
     # Start demo server with: DEMO_MODE=true bin/web
     # @param csv_file [File, StringIO] the CSV to validate
     # @param zip_file [File, nil] an optional ZIP containing file attachments
+    # @param admin_set_id [String, nil] optional admin set ID for validation context
     # @return [Hash] validation result data
-    def run_validation(csv_file, zip_file)
+    def run_validation(csv_file, zip_file, admin_set_id: nil)
       if ENV['DEMO_MODE'] == 'true'
         generate_validation_response(csv_file, zip_file)
       else
-        CsvValidationService.validate(csv_file: csv_file, zip_file: zip_file)
+        CsvValidationService.validate(csv_file: csv_file, zip_file: zip_file, admin_set_id: admin_set_id)
       end
     end
 
