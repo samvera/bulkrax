@@ -78,6 +78,7 @@
     SCROLL_SPEED: 300,
     VALIDATION_DELAY: 2000,
     NOTIFICATION_FADE_SPEED: 300,
+    DEBOUNCE_DELAY: 300,
 
     // AJAX timeouts (in milliseconds)
     AJAX_TIMEOUT_SHORT: 10000, // 10 seconds for simple requests
@@ -101,6 +102,7 @@
     currentStep: 1,
     uploadedFiles: [],
     uploadState: CONSTANTS.UPLOAD_STATES.EMPTY,
+    uploadMode: 'upload', // 'upload' or 'file_path'
     validated: false,
     validationData: null,
     warningsAcked: false,
@@ -108,9 +110,10 @@
     isAddingFiles: false, // Flag to track if we're adding files vs replacing
     demoScenario: null, // Track which demo scenario is loaded
     demoScenariosData: null, // Cached demo scenarios JSON from server
+    adminSetId: '',
+    adminSetName: '',
     settings: {
       name: '',
-      adminSetId: '',
       visibility: 'open',
       rightsStatement: '',
       limit: ''
@@ -132,6 +135,7 @@
 
     bindEvents()
     initAdminSetState()
+    updateDownloadTemplateLink()
     updateStepperUI()
     initVisibilityCards()
     setDefaultImportName()
@@ -248,6 +252,17 @@
       }
     })
 
+    // Upload mode tabs
+    $('.upload-mode-tab').on('click', function () {
+      var mode = $(this).data('upload-mode')
+      switchUploadMode(mode)
+    })
+
+    // File path input
+    $('#import-file-path').on('input', debounce(function () {
+      updateValidateButtonState()
+    }, CONSTANTS.DEBOUNCE_DELAY))
+
     // Demo scenarios (for testing)
     $('.step-circle').on('dblclick', function () {
       var $panel = $('.demo-scenarios')
@@ -288,12 +303,13 @@
       updateStepNavigation()
     })
 
-    // Step navigation
+    // Step navigation - next step
     $('.step-next-btn').on('click', function () {
       var nextStep = parseInt($(this).data('next-step'))
       goToStep(nextStep)
     })
 
+    // Step navigation - previous step
     $('.step-prev-btn').on('click', function () {
       var prevStep = parseInt($(this).data('prev-step'))
       goToStep(prevStep)
@@ -314,16 +330,17 @@
     $('#bulkrax_importer_name').on('input', debounce(function () {
       StepperState.settings.name = $(this).val()
       updateStepNavigation()
-    }, 300))
+    }, CONSTANTS.DEBOUNCE_DELAY))
 
     // Admin set selection change
     $('#importer-admin-set').on('change', function () {
-      StepperState.settings.adminSetId = $(this).val()
+      StepperState.adminSetId = $(this).val()
       StepperState.settings.adminSetName = $(this).find('option:selected').text()
       updateStepNavigation()
+      updateDownloadTemplateLink()
       // Update validate button state since admin set is required for validation
-      if (StepperState.uploadedFiles.length > 0) {
-        renderUploadedFiles()
+      if (StepperState.uploadMode === 'file_path' || StepperState.uploadedFiles.length > 0) {
+        updateValidateButtonState()
       }
     })
 
@@ -338,7 +355,7 @@
 
     $('#bulkrax_importer_limit').on('input', debounce(function () {
       StepperState.settings.limit = $(this).val()
-    }, 300))
+    }, CONSTANTS.DEBOUNCE_DELAY))
 
     // Remove file button (delegated to parent since rows are dynamic)
     $('.uploaded-files-container').on('click', '.file-remove-btn', function () {
@@ -773,26 +790,78 @@
     }
   }
 
+  // Switch between upload and file path modes
+  function switchUploadMode(mode) {
+    if (mode === StepperState.uploadMode) return
+
+    StepperState.uploadMode = mode
+
+    // Toggle active tab
+    $('.upload-mode-tab').removeClass('active')
+    $('.upload-mode-tab[data-upload-mode="' + mode + '"]').addClass('active')
+
+    if (mode === 'file_path') {
+      // Hide upload-related elements, show file path panel
+      $('.upload-zone-empty').hide()
+      $('.uploaded-files-container').hide()
+      $('.add-another-dropzone').hide()
+      $('.file-path-panel').show()
+      $('.start-over-link').hide()
+    } else {
+      // Hide file path panel, restore upload state
+      $('.file-path-panel').hide()
+      renderUploadedFiles()
+    }
+
+    updateValidateButtonState()
+  }
+
+  // Update validate button enabled state based on current upload mode
+  function updateValidateButtonState() {
+    var $adminSetSelect = $('#importer-admin-set')
+    var adminSetValue = $adminSetSelect.val() || StepperState.adminSetId
+    var hasAdminSet = adminSetValue && adminSetValue.length > 0
+
+    var canValidate = false
+
+    if (StepperState.uploadMode === 'file_path') {
+      var filePath = $('#import-file-path').val() || ''
+      canValidate = filePath.trim().length > 0 && hasAdminSet
+    } else {
+      var fileCheck = StepperState.uploadedFiles.reduce(function (check, f) {
+        if (f.fileType === 'csv') check.hasCsv = true
+        if (f.fileType === 'zip') check.hasZip = true
+        return check
+      }, { hasCsv: false, hasZip: false })
+      canValidate = (fileCheck.hasCsv || fileCheck.hasZip) && hasAdminSet && !StepperState.validated
+    }
+
+    $('#validate-btn').prop('disabled', !canValidate)
+    $('#skip-validation-checkbox').prop('disabled', !canValidate && !StepperState.skipValidation)
+  }
+
   // Render uploaded files
   function renderUploadedFiles() {
     // Ensure admin set state is captured (handles timing issues)
     // Always refresh from DOM to ensure we have the current value
     var $adminSetSelect = $('#importer-admin-set')
     if ($adminSetSelect.length && $adminSetSelect.val()) {
-      StepperState.settings.adminSetId = $adminSetSelect.val()
-      StepperState.settings.adminSetName = $adminSetSelect.find('option:selected').text()
+      StepperState.adminSetId = $adminSetSelect.val()
+      StepperState.adminSetName = $adminSetSelect.find('option:selected').text()
     }
 
     var state = StepperState.uploadState
     var files = StepperState.uploadedFiles
+
+    // Don't manipulate upload DOM elements when in file path mode
+    if (StepperState.uploadMode === 'file_path') return
 
     if (state === CONSTANTS.UPLOAD_STATES.EMPTY) {
       $('.upload-zone-empty').show()
       $('.uploaded-files-container').hide()
       $('.add-another-dropzone').hide()
       $('.start-over-link').hide()
-      $('#validate-btn').prop('disabled', true)
-      $('#skip-validation-checkbox').prop('disabled', true) // Disable checkbox when empty
+      updateValidateButtonState()
       return
     }
 
@@ -801,14 +870,6 @@
 
     var $list = $('.uploaded-files-list')
     $list.empty()
-
-    var fileCheck = files.reduce(function (check, f) {
-      if (f.fileType === 'csv') check.hasCsv = true
-      if (f.fileType === 'zip') check.hasZip = true
-      return check
-    }, { hasCsv: false, hasZip: false })
-    var hasCsv = fileCheck.hasCsv
-    var hasZip = fileCheck.hasZip
 
     // Render all uploaded files
     var fileRows = files.map(function (file) {
@@ -853,16 +914,7 @@
       $('.start-over-link').show()
     }
 
-    // Enable validate button if we have a CSV OR a ZIP file (which might contain a CSV) AND an admin set is selected
-    var adminSetValue = $adminSetSelect.val() || StepperState.settings.adminSetId
-    var hasAdminSet = adminSetValue && adminSetValue.length > 0
-    $('#validate-btn').prop(
-      'disabled',
-      !(hasCsv || hasZip) || !hasAdminSet || StepperState.validated
-    )
-
-    // Enable skip validation checkbox only if we have a CSV or ZIP
-    $('#skip-validation-checkbox').prop('disabled', !(hasCsv || hasZip))
+    updateValidateButtonState()
   }
 
   // Render a single file row
@@ -914,6 +966,7 @@
     StepperState.skipValidation = false
     StepperState.demoScenario = null
     $('#file-input').val('')
+    $('#import-file-path').val('')
     $('.validation-results').hide()
     $('.warning-acknowledgment').hide()
     clearFileUploadError()
@@ -949,6 +1002,22 @@
     })
   }
 
+  function performFilePathValidation(filePath) {
+    return $.ajax({
+      url: CONSTANTS.ENDPOINTS.VALIDATE,
+      method: 'POST',
+      data: {
+        importer: {
+          parser_fields: {
+            import_file_path: filePath
+          },
+          admin_set_id: StepperState.adminSetId
+        }
+      },
+      timeout: CONSTANTS.AJAX_TIMEOUT_LONG
+    })
+  }
+
   // Simulate validation for demo scenarios
   function performMockValidation() {
     return new Promise(function (resolve, reject) {
@@ -972,6 +1041,7 @@
     try {
       renderValidationResults(normalized)
       $btn.html('<span class="fa fa-check-circle"></span> Validated')
+      $('.start-over-link').show()
       updateStepNavigation()
     } catch (e) {
       console.error('Validation results render issue:', e)
@@ -1030,7 +1100,9 @@
 
     // Check if we're in demo mode (no real files in state)
     var hasRealFiles = StepperState.uploadedFiles.some(function (f) { return f.file })
-    var useMockData = !hasRealFiles
+    var filePathValue = $('#import-file-path').val().trim()
+    var hasFilePath = filePathValue.length > 0
+    var useMockData = !hasRealFiles && !hasFilePath
 
     // Build FormData manually so ALL files from state are included.
     // The file input only holds the last-selected file, so uploading
@@ -1049,9 +1121,14 @@
     }
 
     // Choose validation method based on mode
-    var validationPromise = useMockData
-      ? performMockValidation()
-      : performValidation(formData)
+    var validationPromise
+    if (hasFilePath) {
+      validationPromise = performFilePathValidation(filePathValue)
+    } else if (useMockData) {
+      validationPromise = performMockValidation()
+    } else {
+      validationPromise = performValidation(formData)
+    }
 
     // Handle validation result
     validationPromise
@@ -1558,10 +1635,23 @@
     if ($adminSetSelect.length) {
       var currentVal = $adminSetSelect.val()
       if (currentVal && currentVal.trim() !== '') {
-        StepperState.settings.adminSetId = currentVal.trim()
-        StepperState.settings.adminSetName = $adminSetSelect.find('option:selected').text().trim()
+        StepperState.adminSetId = currentVal.trim()
+        StepperState.adminSetName = $adminSetSelect.find('option:selected').text().trim()
       }
     }
+  }
+
+  function updateDownloadTemplateLink() {
+    var $link = $('#download-csv-template-link')
+    if (!$link.length) return
+    var baseUrl = $link.data('sample-csv-url') || $link.attr('href')
+    var adminSetId = $('#importer-admin-set').val()
+    var href = baseUrl
+    if (adminSetId && adminSetId.trim() !== '') {
+      var sep = baseUrl.indexOf('?') >= 0 ? '&' : '?'
+      href = baseUrl + sep + 'admin_set_id=' + encodeURIComponent(adminSetId.trim())
+    }
+    $link.attr('href', href)
   }
 
   // Navigate to step
@@ -1646,7 +1736,7 @@
       var adminSetId = (cachedSelectors.adminSetSelect.length ? cachedSelectors.adminSetSelect.val() : '').trim()
       canProceed = name.length > 0 && adminSetId.length > 0
       StepperState.settings.name = name || StepperState.settings.name
-      StepperState.settings.adminSetId = adminSetId || StepperState.settings.adminSetId
+      StepperState.adminSetId = adminSetId || StepperState.adminSetId
       $('.step-content[data-step="2"] .step-next-btn').prop('disabled', !canProceed)
     }
   }
@@ -1662,25 +1752,30 @@
         var type = f.fileType === 'csv' ? 'CSV' : 'ZIP'
         var fromZip = f.fromZip ? ' — detected in ZIP' : ''
         return (
-          '<p>' + type + ': ' + escapeHtml(f.name) + ' (' + escapeHtml(f.size) + ')' + fromZip + '</p>'
+          '<p><span class="text-muted small">' + type + ':</span> ' + escapeHtml(f.name) + ' (' + escapeHtml(f.size) + ')' + fromZip + '</p>'
         )
       })
       .join('')
     $('.review-files').html(filesHtml)
 
     // Records
-    var totalItems =
-      data.collections.length + data.works.length + data.fileSets.length
-    var recordsHtml =
-      '<p>' +
-      totalItems +
-      ' total — ' +
-      data.collections.length +
-      ' collections, ' +
-      data.works.length +
-      ' works, ' +
-      data.fileSets.length +
-      ' file sets</p>'
+    var totalItems = 0
+    var recordsHtml
+    if (data) {
+      totalItems = data.collections.length + data.works.length + data.fileSets.length
+      recordsHtml =
+        '<p>' +
+        totalItems +
+        ' total — ' +
+        data.collections.length +
+        ' collections, ' +
+        data.works.length +
+        ' works, ' +
+        data.fileSets.length +
+        ' file sets</p>'
+    } else {
+      recordsHtml = '<p class="text-muted">Validation was skipped — record counts unavailable</p>'
+    }
     $('.review-records').html(recordsHtml)
 
     // Settings - get admin set name from DOM first, then fallback to state
@@ -1693,8 +1788,8 @@
         adminSetName = selectedText
       }
     }
-    if (adminSetName === 'Not selected' && settings.adminSetName) {
-      adminSetName = settings.adminSetName
+    if (adminSetName === 'Not selected' && StepperState.adminSetName) {
+      adminSetName = StepperState.adminSetName
     }
     var visibilityLabels = {
       open: 'Public',
@@ -1704,27 +1799,27 @@
     var visibilityName = visibilityLabels[settings.visibility]
 
     var settingsHtml =
-      '<p>Name: ' +
+      '<p><span class="text-muted small">Name:</span> ' +
       escapeHtml(settings.name) +
       '</p>' +
-      '<p>Admin Set: ' +
-      escapeHtml(adminSetName) +
+      '<p><span class="text-muted small">Admin Set:</span> ' +
+      adminSetName +
       '</p>' +
-      '<p>Visibility: ' +
+      '<p><span class="text-muted small">Visibility:</span> ' +
       visibilityName +
       '</p>'
 
     if (settings.rightsStatement) {
-      settingsHtml += '<p>Rights: ' + settings.rightsStatement + '</p>'
+      settingsHtml += '<p><span class="text-muted small">Rights:</span> ' + settings.rightsStatement + '</p>'
     }
     if (settings.limit) {
-      settingsHtml += '<p>Limit: first ' + settings.limit + ' records</p>'
+      settingsHtml += '<p><span class="text-muted small">Limit:</span> first ' + settings.limit + ' records</p>'
     }
 
     $('.review-settings').html(settingsHtml)
 
     // Warnings
-    if (data.hasWarnings) {
+    if (data && data.hasWarnings) {
       var warningsHtml = '<ul class="small">'
       if (data.unrecognized.length > 0) {
         warningsHtml +=
@@ -1743,7 +1838,7 @@
 
     // Large import warning
     $('.total-items-count').text(totalItems)
-    if (totalItems > CONSTANTS.IMPORT_SIZE_MODERATE) {
+    if (data && totalItems > CONSTANTS.IMPORT_SIZE_MODERATE) {
       $('.large-import-warning').show()
     } else {
       $('.large-import-warning').hide()

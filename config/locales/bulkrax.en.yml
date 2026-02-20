@@ -57,8 +57,8 @@ en:
     action:
       importer:
         edit_importer: "Edit Importer"
-        new: "New"
-        new_v2: "New (v2)"
+        new: "Advanced Import"
+        new_v2: "Guided Import"
         create: "Create"
         create_and_import: "Create and Import"
         create_and_validate: "Create and Validate"

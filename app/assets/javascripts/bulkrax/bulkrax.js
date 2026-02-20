@@ -1,16 +1,16 @@
 // Global JS file for Bulkrax
 
-$(document).on('turbolinks:load ready', function() {
+function setupGlobalListeners() {
   // Apply to Importer and Exporter views
   $('button#err_toggle').click(function() {
     $('#error_trace').toggle();
   });
-  
+
   $('button#fm_toggle').click(function() {
     $('#field_mapping').toggle();
   });
 
-  $('#bulkraxItemModal').on('show.bs.modal', function (event) {
+  $('#bulkraxItemModal').on('show.bs.modal', function(event) {
     var button = $(event.relatedTarget); // Button that triggered the modal
     var recipient = button.data('entry-id'); // Extract info from data-* attributes
     // If necessary, you could initiate an AJAX request here (and then do the updating in a callback).
@@ -21,4 +21,13 @@ $(document).on('turbolinks:load ready', function() {
     });
     return true;
   });
-});
+}
+
+// Use Turbolinks if available, fallback to Turbo if available, fallback to vanilla JS if needed.
+if (typeof Turbolinks !== 'undefined' && Turbolinks !== null) {
+  $(document).on('turbolinks:load ready', setupGlobalListeners);
+} else if (typeof Turbo !== 'undefined') {
+  $(document).on('turbo:load ready', setupGlobalListeners);
+} else {
+  $(document).on('ready', setupGlobalListeners);
+}

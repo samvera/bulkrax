@@ -103,8 +103,8 @@ result = CsvValidationService.validate(csv_file: csv_file, zip_file: zip_file)
   rowCount: 247,               # Total rows
   isValid: true/false,         # Overall validity
   hasWarnings: true/false,     # Has warnings
-  collections: [...],          # Collection items
-  works: [...],                # Work items
+  collections: [...],          # Collection items with parentIds and childIds
+  works: [...],                # Work items with parentIds and childIds
   fileSets: [...],             # File set items
   totalItems: 247,             # Total count
   fileReferences: 55,          # File refs in CSV
@@ -151,14 +151,14 @@ headers = service.valid_headers_for_models
 ```
 1. Initialize with csv_file (+ optional zip_file)
 2. Create ColumnResolver with field mappings
-3. Create CsvParser → parses CSV, extracts headers and data
+3. Create CsvParser → parses CSV, extracts headers and data (including parent and children columns)
 4. CsvParser extracts unique models from CSV
 5. Create FileValidator → analyzes zip contents
-6. Create ItemExtractor → categorizes CSV rows
+6. Create ItemExtractor → categorizes CSV rows and resolves bidirectional parent-child relationships
 7. ModelLoader validates models exist
 8. FieldAnalyzer gets schema for found models
 9. Create Validator → compares headers, checks required fields
-10. Return comprehensive validation results
+10. Return comprehensive validation results with resolved relationships
 ```
 
 ## Validation Subclasses
@@ -173,14 +173,14 @@ The validation mode delegates to 5 specialized subclasses, each with a focused r
 **Key Methods:**
 - `headers` - Returns array of CSV column names
 - `extract_models` - Extracts unique model names from CSV
-- `parse_data` - Parses CSV into structured hashes for validation
+- `parse_data` - Parses CSV into structured hashes for validation (includes parent and children fields)
 
 **Example:**
 ```ruby
 parser = CsvParser.new(csv_file, column_resolver)
-parser.headers          # => ['model', 'title', 'creator']
+parser.headers          # => ['model', 'title', 'creator', 'parents', 'children']
 parser.extract_models   # => ['GenericWork', 'Collection']
-parser.parse_data       # => [{source_identifier: 'work1', model: 'GenericWork', ...}]
+parser.parse_data       # => [{source_identifier: 'work1', model: 'GenericWork', parent: 'col1', children: nil, ...}]
 ```
 
 ### 2. ColumnResolver
@@ -192,6 +192,7 @@ parser.parse_data       # => [{source_identifier: 'work1', model: 'GenericWork',
 - `model_column_name(csv_headers)` - Finds the column used for model/work type
 - `source_identifier_column_name(csv_headers)` - Finds the source identifier column
 - `parent_column_name(csv_headers)` - Finds the parent relationships column
+- `children_column_name(csv_headers)` - Finds the children relationships column
 - `file_column_name(csv_headers)` - Finds the file reference column
 
 **Why It's Needed:** Bulkrax allows custom field mappings, so the CSV might use `work_type` instead of `model`, or `source_id` instead of `source_identifier`. This class handles those variations by querying the MappingManager to get possible column name variations, then checking which one actually exists in the CSV headers.
@@ -244,20 +245,35 @@ validator.found_files_count      # => 8
 ### 5. ItemExtractor
 **Location:** `app/services/bulkrax/csv_validation_service/item_extractor.rb`
 
-**Responsibility:** Extract and categorize items for UI display
+**Responsibility:** Extract and categorize items for UI display, with bidirectional parent-child relationship resolution
 
 **Key Methods:**
-- `collections` - Returns array of collection items
-- `works` - Returns array of work items (excluding collections and file sets)
-- `file_sets` - Returns array of file set items
+- `collections` - Returns array of collection items with parentIds and childIds
+- `works` - Returns array of work items with parentIds and childIds (excluding collections and file sets)
+- `file_sets` - Returns array of file set items (without parentIds or childIds)
 - `total_count` - Returns total number of items
+
+**Bidirectional Relationship Resolution:**
+The ItemExtractor automatically resolves parent-child relationships in both directions:
+- If row A has `children: 'B|C'`, then B and C will have parentIds that include A
+- Explicit parent values from the `parent` column are combined with inferred parents from `children` columns
+- This ensures consistency regardless of which side of the relationship is specified in the CSV
 
 **Example:**
 ```ruby
 extractor = ItemExtractor.new(csv_data)
-extractor.collections  # => [{id: 'col1', title: 'My Collection', type: 'collection'}]
-extractor.works        # => [{id: 'work1', title: 'My Work', type: 'work'}]
+extractor.collections  # => [{id: 'col1', title: 'My Collection', type: 'collection', parentIds: [], childIds: ['work1']}]
+extractor.works        # => [{id: 'work1', title: 'My Work', type: 'work', parentIds: ['col1'], childIds: []}]
 ```
+
+**CSV Example:**
+```csv
+source_identifier,children,parents
+col1,work1|work2,
+work1,,
+work2,,
+```
+Result: `col1` has `childIds: ['work1', 'work2']`, and both `work1` and `work2` have `parentIds: ['col1']` (inferred from col1's children column)
 
 ## Field Mapping Resolution
 
@@ -306,12 +322,13 @@ Potential additions to consider:
 
 1. **Row-Level Validation:** Validate individual cell values
 2. **Controlled Vocabulary Validation:** Check values against authorities
-3. **Relationship Validation:** Verify parent/child references exist
-4. **Type Coercion:** Suggest corrections for common data type errors
-5. **Batch Processing:** Handle very large CSV files efficiently
-6. **Incremental Validation:** Validate as user types in UI
-7. **Detailed Error Messages:** Line numbers, suggested fixes
-8. **Preview Generation:** Show how CSV will be imported
+3. **Relationship Validation:** Verify parent/child references exist in CSV (now that we extract childIds and parentIds, we could validate that referenced IDs actually exist)
+4. **Circular Relationship Detection:** Detect and warn about circular parent-child relationships
+5. **Type Coercion:** Suggest corrections for common data type errors
+6. **Batch Processing:** Handle very large CSV files efficiently
+7. **Incremental Validation:** Validate as user types in UI
+8. **Detailed Error Messages:** Line numbers, suggested fixes
+9. **Preview Generation:** Show how CSV will be imported with resolved relationships
 
 ## Benefits of This Architecture
 

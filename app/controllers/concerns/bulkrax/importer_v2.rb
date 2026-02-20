@@ -14,58 +14,23 @@ module Bulkrax
     end
 
     # AJAX endpoint to validate uploaded files
-    # rubocop:disable Metrics/MethodLength
     def validate_v2
-      files = params[:importer]&.[](:parser_fields)&.[](:files) || []
-      files = [files] unless files.is_a?(Array)
-      files = files.compact
+      files, error = resolve_validation_files
+      return render json: error, status: :ok if error
+      return render json: StepperResponseFormatter.error(message: 'No files uploaded'), status: :ok unless files.any?
 
-      unless files.any?
-        render json: StepperResponseFormatter.error(message: 'No files uploaded'), status: :ok
-        return
-      end
+      csv_file, zip_file = find_csv_and_zip(files)
 
-      # Find CSV file for validation
-      csv_file = files.find { |f| f.original_filename&.end_with?('.csv') }
-      zip_file = files.find { |f| f.original_filename&.end_with?('.zip') }
-
-      # If no CSV in uploaded files, check if ZIP contains CSV
       unless csv_file
-        unless zip_file
-          render json: StepperResponseFormatter.error(message: 'No CSV metadata file uploaded'), status: :ok
-          return
-        end
+        return render json: StepperResponseFormatter.error(message: 'No CSV metadata file uploaded'), status: :ok unless zip_file
 
-        error_response = nil
-        Zip::File.open(zip_file.path) do |zip|
-          result = find_csv_in_zip(zip)
-
-          if result.is_a?(Hash) && result[:messages]
-            error_response = result
-          elsif result
-            # Read the CSV content while the zip file is still open
-            csv_file = StringIO.new(result.get_input_stream.read)
-          end
-        end
-
-        if error_response
-          render json: error_response, status: :ok
-          return
-        end
+        csv_file, error = extract_csv_from_zip(zip_file)
+        return render json: error, status: :ok if error
       end
 
-      # Use demo mode if DEMO_MODE environment variable is set
-      # Start server with: DEMO_MODE=true bin/web
-      validation_data = if ENV['DEMO_MODE'] == 'true'
-                          generate_validation_response(csv_file, zip_file)
-                        else
-                          CsvValidationService.validate(csv_file: csv_file, zip_file: zip_file)
-                        end
-
-      formatted_response = StepperResponseFormatter.format(validation_data)
-      render json: formatted_response, status: :ok
+      admin_set_id = params[:importer]&.[](:admin_set_id)
+      render json: StepperResponseFormatter.format(run_validation(csv_file, zip_file, admin_set_id: admin_set_id)), status: :ok
     end
-    # rubocop:enable Metrics/MethodLength
 
     def create_v2
       files = extract_uploaded_files
@@ -103,8 +68,67 @@ module Bulkrax
 
     private
 
-    # Finds CSV file in ZIP by traversing directory levels
-    # Returns CSV entry object on success, or StepperResponseFormatter.error hash on error
+    # Resolves files for validation from either a server-side file path or uploaded params
+    # @return [Array<(Array<File>, nil)>] on success, a tuple of [files, nil]
+    # @return [Array<(nil, Hash)>] on error, a tuple of [nil, error_response]
+    def resolve_validation_files
+      if import_via_file_path?
+        return [nil, StepperResponseFormatter.error(message: 'File path does not exist')] unless File.exist?(import_file_path)
+
+        [[File.open(import_file_path)], nil]
+      else
+        files = params[:importer]&.[](:parser_fields)&.[](:files) || []
+        files = [files] unless files.is_a?(Array)
+        [files.compact, nil]
+      end
+    end
+
+    # Scans the given files for a CSV and a ZIP by file extension
+    # @param files [Array<File, ActionDispatch::Http::UploadedFile>] the resolved files to search
+    # @return [Array<(File, nil), (nil, File), (File, File), (nil, nil)>] a tuple of [csv_file, zip_file]; either may be nil
+    def find_csv_and_zip(files)
+      method = import_via_file_path? ? :path : :original_filename
+      csv_file = files.find { |f| f.public_send(method)&.end_with?('.csv') }
+      zip_file = files.find { |f| f.public_send(method)&.end_with?('.zip') }
+      [csv_file, zip_file]
+    end
+
+    # Opens a ZIP and extracts the CSV content into a StringIO while the archive is open
+    # @param zip_file [File] the ZIP file to search
+    # @return [Array<(StringIO, nil)>] on success, a tuple of [csv_file, nil]
+    # @return [Array<(nil, Hash)>] on error, a tuple of [nil, error_response]
+    def extract_csv_from_zip(zip_file)
+      csv_file = nil
+      error = nil
+      Zip::File.open(zip_file.path) do |zip|
+        result = find_csv_in_zip(zip)
+        if result.is_a?(Hash) && result[:messages]
+          error = result
+        elsif result
+          csv_file = StringIO.new(result.get_input_stream.read)
+        end
+      end
+      [csv_file, error]
+    end
+
+    # Runs validation via the real service, or returns mock data in DEMO_MODE
+    # Start demo server with: DEMO_MODE=true bin/web
+    # @param csv_file [File, StringIO] the CSV to validate
+    # @param zip_file [File, nil] an optional ZIP containing file attachments
+    # @param admin_set_id [String, nil] optional admin set ID for validation context
+    # @return [Hash] validation result data
+    def run_validation(csv_file, zip_file, admin_set_id: nil)
+      if ENV['DEMO_MODE'] == 'true'
+        generate_validation_response(csv_file, zip_file)
+      else
+        CsvValidationService.validate(csv_file: csv_file, zip_file: zip_file, admin_set_id: admin_set_id)
+      end
+    end
+
+    # Finds a CSV entry in a ZIP by traversing directory levels, preferring the shallowest
+    # @param zip [Zip::File] the open ZIP archive to search
+    # @return [Zip::Entry] the CSV entry on success
+    # @return [Hash] an error response hash if no CSV is found or multiple CSVs are ambiguous
     def find_csv_in_zip(zip)
       csv_entries = group_entries_by_directory_level(zip)
 
@@ -148,7 +172,7 @@ module Bulkrax
         :name,
         :admin_set_id,
         :limit,
-        parser_fields: [:visibility, :rights_statement, :override_rights_statement]
+        parser_fields: [:visibility, :rights_statement, :override_rights_statement, :import_file_path, :file_style]
       )
     end
 
@@ -157,31 +181,30 @@ module Bulkrax
     end
 
     def write_files_v2(files)
-      csv_file = files.find { |f| f.original_filename&.end_with?('.csv') }
-      zip_file = files.find { |f| f.original_filename&.end_with?('.zip') }
+      csv_file, zip_file = find_csv_and_zip(files)
 
-      csv_path = nil
-      zip_path = nil
-      if csv_file && zip_file
-        csv_path = @importer.parser.write_import_file(csv_file)
-        zip_path = @importer.parser.write_import_file(zip_file)
-        @importer.parser_fields['import_file_path'] = csv_path
-        @importer.parser_fields['attachments_zip_path'] = zip_path
-      elsif zip_file && !csv_file
-        zip_path = @importer.parser.write_import_file(zip_file)
-        @importer.parser_fields['import_file_path'] = zip_path
-      elsif csv_file && !zip_file
-        csv_path = @importer.parser.write_import_file(csv_file)
-        @importer.parser_fields['import_file_path'] = csv_path
-      end
+      csv_path = write_file_if_present(csv_file)
+      zip_path = write_file_if_present(zip_file)
 
-      @importer.save if csv_path || zip_path
+      return unless csv_path || zip_path
+
+      # Determine import_file_path: prefer CSV, fallback to ZIP
+      @importer.parser_fields['import_file_path'] = csv_path || zip_path
+      @importer.parser_fields['attachments_zip_path'] = zip_path if zip_path && csv_path
+
+      @importer.save
     rescue StandardError => e
       Rails.logger.error("Bulkrax::ImporterV2#write_files_v2 failed: #{e.message}")
       raise
     end
 
+    def write_file_if_present(file)
+      return nil unless file
+      @importer.parser.write_import_file(file)
+    end
+
     # rubocop:disable Metrics/MethodLength
+    # Hardcoded mock response generator for demo mode
     def generate_validation_response(_csv_file, zip_file)
       # Generate mock collections
       collections = [
@@ -351,6 +374,14 @@ module Bulkrax
         }
       end
     end # rubocop:enable Metrics/MethodLength
+
+    def import_via_file_path?
+      import_file_path.present?
+    end
+
+    def import_file_path
+      @file_path ||= params[:importer]&.[](:parser_fields)&.[](:import_file_path)
+    end
   end
   # rubocop:enable Metrics/ModuleLength
 end
