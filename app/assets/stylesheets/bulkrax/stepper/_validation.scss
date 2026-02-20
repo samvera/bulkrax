@@ -224,3 +224,7 @@ $accordion-variants: (
     padding-left: 20px;
   }
 }
+
+.accordion-item.accordion-warning .missing-field-group {
+  background-color: $bg-warning;
+}

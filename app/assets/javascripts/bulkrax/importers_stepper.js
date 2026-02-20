@@ -350,6 +350,7 @@
       if (!$(this).val()) {
         StepperState.settings.rightsStatement = ''
       }
+      updateStepNavigation()
     })
 
     $('#bulkrax_importer_limit').on('input', debounce(function () {
@@ -1715,6 +1716,44 @@
     }
   }
 
+  function isDefaultRightsStatementRequired() {
+    if (StepperState.skipValidation || !StepperState.validationData) return false
+    var missing = StepperState.validationData.missingRequired
+    if (!missing || !Array.isArray(missing)) return false
+    return missing.some(function (item) { return item && item.field === 'rights_statement' })
+  }
+
+  function didSkipValidation() {
+    return StepperState.skipValidation === true
+  }
+
+  function updateStep2RightsStatementUI() {
+    var required = isDefaultRightsStatementRequired()
+    var skipped = didSkipValidation()
+    var $alert = $('#default-rights-required-alert')
+    var $hint = $('#default-rights-skipped-hint')
+    var $label = $('.default-rights-statement-label')
+    var $optionalSettings = $('#optional-settings')
+
+    if ($alert.length) {
+      $alert.toggle(required)
+    }
+    if ($hint.length) {
+      $hint.toggle(skipped && !required)
+    }
+    if ($label.length) {
+      var $asterisk = $label.find('.text-danger.default-rights-required-asterisk')
+      if (required && !$asterisk.length) {
+        $label.append(' <span class="text-danger default-rights-required-asterisk">*</span>')
+      } else if (!required && $asterisk.length) {
+        $asterisk.remove()
+      }
+    }
+    if (required && $optionalSettings.length && !$optionalSettings.hasClass('show')) {
+      $optionalSettings.addClass('show')
+    }
+  }
+
   // Update step navigation button states
   function updateStepNavigation() {
     var step = StepperState.currentStep
@@ -1733,10 +1772,15 @@
       initCachedSelectors()
       var name = (cachedSelectors.nameInput.length ? cachedSelectors.nameInput.val() : '').trim()
       var adminSetId = (cachedSelectors.adminSetSelect.length ? cachedSelectors.adminSetSelect.val() : '').trim()
-      canProceed = name.length > 0 && adminSetId.length > 0
+      var rightsRequired = isDefaultRightsStatementRequired()
+      var rightsValue = $('select[name="importer[parser_fields][rights_statement]"]').val()
+      var hasRights = rightsValue && rightsValue.length > 0
+
+      canProceed = name.length > 0 && adminSetId.length > 0 && (!rightsRequired || hasRights)
       StepperState.settings.name = name || StepperState.settings.name
       StepperState.adminSetId = adminSetId || StepperState.adminSetId
       $('.step-content[data-step="2"] .step-next-btn').prop('disabled', !canProceed)
+      updateStep2RightsStatementUI()
     }
   }
 

@@ -172,9 +172,13 @@ module Bulkrax
         @file_validator
       )
 
-      {
+      missing_required = validator.missing_required_fields
+      only_rights_statement_missing = missing_required.present? &&
+        missing_required.all? { |h| h[:field].to_s == 'rights_statement' }
+
+      result = {
         headers: @csv_parser.headers,
-        missingRequired: validator.missing_required_fields,
+        missingRequired: missing_required,
         unrecognized: validator.unrecognized_headers,
         rowCount: @item_extractor.total_count,
         isValid: validator.valid?,
@@ -188,6 +192,13 @@ module Bulkrax
         foundFiles: @file_validator.found_files_count,
         zipIncluded: @file_validator.zip_included?
       }
+
+      if only_rights_statement_missing && !result[:isValid]
+        result[:isValid] = true
+        result[:hasWarnings] = true
+      end
+
+      result
     end
 
     # ============================================================================
