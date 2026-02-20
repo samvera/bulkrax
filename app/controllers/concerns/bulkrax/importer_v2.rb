@@ -181,8 +181,7 @@ module Bulkrax
     end
 
     def write_files_v2(files)
-      csv_file = find_csv_file(files)
-      zip_file = find_zip_file(files)
+      csv_file, zip_file = find_csv_and_zip(files)
 
       csv_path = write_file_if_present(csv_file)
       zip_path = write_file_if_present(zip_file)
