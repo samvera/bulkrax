@@ -67,6 +67,7 @@ module Bulkrax
       #   - source_identifier: Unique identifier for the item
       #   - model: Model type
       #   - parent: Parent identifier
+      #   - children: Children identifier(s)
       #   - file: File reference
       #   - raw_row: Original CSV row object
       def parse_data
@@ -76,6 +77,7 @@ module Bulkrax
           model_col = @column_resolver.model_column_name(headers)
           source_id_col = @column_resolver.source_identifier_column_name(headers)
           parent_col = @column_resolver.parent_column_name(headers)
+          children_col = @column_resolver.children_column_name(headers)
           file_col = @column_resolver.file_column_name(headers)
 
           CSV.read(file_path, headers: true).map do |row|
@@ -83,6 +85,7 @@ module Bulkrax
               source_identifier: row[source_id_col],
               model: row[model_col],
               parent: row[parent_col],
+              children: row[children_col],
               file: row[file_col],
               raw_row: row
             }

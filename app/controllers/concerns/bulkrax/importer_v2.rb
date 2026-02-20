@@ -181,28 +181,27 @@ module Bulkrax
     end
 
     def write_files_v2(files)
-      csv_file = files.find { |f| f.original_filename&.end_with?('.csv') }
-      zip_file = files.find { |f| f.original_filename&.end_with?('.zip') }
+      csv_file = find_csv_file(files)
+      zip_file = find_zip_file(files)
 
-      csv_path = nil
-      zip_path = nil
-      if csv_file && zip_file
-        csv_path = @importer.parser.write_import_file(csv_file)
-        zip_path = @importer.parser.write_import_file(zip_file)
-        @importer.parser_fields['import_file_path'] = csv_path
-        @importer.parser_fields['attachments_zip_path'] = zip_path
-      elsif zip_file && !csv_file
-        zip_path = @importer.parser.write_import_file(zip_file)
-        @importer.parser_fields['import_file_path'] = zip_path
-      elsif csv_file && !zip_file
-        csv_path = @importer.parser.write_import_file(csv_file)
-        @importer.parser_fields['import_file_path'] = csv_path
-      end
+      csv_path = write_file_if_present(csv_file)
+      zip_path = write_file_if_present(zip_file)
 
-      @importer.save if csv_path || zip_path
+      return unless csv_path || zip_path
+
+      # Determine import_file_path: prefer CSV, fallback to ZIP
+      @importer.parser_fields['import_file_path'] = csv_path || zip_path
+      @importer.parser_fields['attachments_zip_path'] = zip_path if zip_path && csv_path
+
+      @importer.save
     rescue StandardError => e
       Rails.logger.error("Bulkrax::ImporterV2#write_files_v2 failed: #{e.message}")
       raise
+    end
+
+    def write_file_if_present(file)
+      return nil unless file
+      @importer.parser.write_import_file(file)
     end
 
     # rubocop:disable Metrics/MethodLength

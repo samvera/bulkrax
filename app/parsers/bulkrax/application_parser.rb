@@ -12,7 +12,7 @@ module Bulkrax
              :seen, :increment_counters, :parser_fields, :user, :keys_without_numbers,
              :key_without_numbers, :status, :set_status_info, :status_info, :status_at,
              :exporter_export_path, :exporter_export_zip_path, :importer_unzip_path, :validate_only,
-             :zip?, :file?, :remove_and_rerun,
+             :zip?, :file?, :remove_and_rerun, :zip_file?,
              to: :importerexporter
 
     # @todo Convert to `class_attribute :parser_fiels, default: {}`
@@ -435,11 +435,21 @@ module Bulkrax
 
       Zip::File.open(file_to_unzip) do |zip_file|
         zip_file.each do |entry|
-          entry_path = File.join(importer_unzip_path(mkdir: true), entry.name)
+          next unless entry.file?
+          entry_path = destination_path_for(entry.name)
           FileUtils.mkdir_p(File.dirname(entry_path))
           zip_file.extract(entry, entry_path) unless File.exist?(entry_path)
         end
       end
+    end
+
+    def destination_path_for(entry)
+      File.join(importer_unzip_path(mkdir: true), entry)
+    end
+
+    def copy_file(file_to_copy)
+      destination = File.join(importer_unzip_path(mkdir: true), File.basename(file_to_copy))
+      FileUtils.cp(file_to_copy, destination)
     end
 
     def untar(file_to_untar)
@@ -452,8 +462,7 @@ module Bulkrax
     # File names referenced in CSVs have spaces replaced with underscores
     # @see Bulkrax::CsvParser#file_paths
     def remove_spaces_from_filenames
-      files = (Dir.glob(File.join(importer_unzip_path, 'files', '*')) +
-               Dir.glob(File.join(importer_unzip_path, '*', 'files', '*'))).uniq
+      files = Dir.glob(File.join(importer_unzip_path, 'files', '*')).uniq
       files_with_spaces = files.select { |f| f.split('/').last.match?(' ') }
       return if files_with_spaces.blank?
 
@@ -484,21 +493,6 @@ module Bulkrax
     # @return [String]
     def import_file_path
       @import_file_path ||= real_import_file_path
-    end
-
-    def files_preprocessed?
-      entry = parser_fields['import_file_path']
-      if entry.is_a?(String) && entry.end_with?('.zip')
-        unzip_dir = importer_unzip_path(mkdir: true)
-        return Dir.glob("#{unzip_dir}/**/*.csv").any?
-      end
-      directory = if entry.respond_to?(:name)
-                    File.join(importer_unzip_path, entry.name)
-                  else
-                    File.dirname(entry.to_s)
-                  end
-      return true if Dir.exist?(directory) && Dir.glob("#{directory}/*").any?
-      false
     end
 
     private
