@@ -243,7 +243,7 @@ module Bulkrax
         icon: 'fa-exclamation-triangle',
         title: 'File References',
         count: @data[:fileReferences],
-        summary: "#{@data[:fileReferences]} files referenced in CSV.",
+        summary: "#{@data[:fileReferences]} files referenced in CSV not found in import.",
         description: 'No ZIP file uploaded. Ensure files are accessible on the server or upload a ZIP.',
         items: [],
         defaultOpen: false
