@@ -201,7 +201,7 @@
 }
 
 .file-icon-csv {
-  background: $color-success;
+  background: $color-primary;
 }
 
 .file-icon-zip {
@@ -221,12 +221,23 @@
 
 .file-subtitle {
   font-size: 12px;
+  color: $color-text-muted;
+}
+
+.file-status {
+  font-size: 20px;
+}
+
+.file-status-success {
   color: $color-success;
 }
 
-.file-verified {
-  color: $color-success;
-  font-size: 20px;
+.file-status-warning {
+  color: $color-warning;
+}
+
+.file-status-error {
+  color: $color-error;
 }
 
 .upload-info-message {
@@ -243,19 +254,6 @@
 
   .fa {
     color: $color-text-muted;
-  }
-}
-
-/* Start Over Link */
-.start-over-link {
-  margin-top: 15px;
-  text-align: center;
-
-  a {
-    font-size: 15px;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
   }
 }
 

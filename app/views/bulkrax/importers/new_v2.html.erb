@@ -60,7 +60,7 @@
         <div class="step-content" data-step="1">
           <div class="step-title">
             <h2>Import Your Files <span class="text-danger">*</span></h2>
-            <p class="text-muted">Upload a metadata CSV and a ZIP file containing your files (max 2 uploads), or a single ZIP containing both — if using a single ZIP, the metadata CSV must be the only <code>.csv</code> file at the top level.</p>
+            <p class="text-muted">Upload a metadata CSV and a ZIP file containing your files (max 2 uploads), or a single ZIP containing both — if using a single ZIP, the metadata CSV must be the only <code>.csv</code> file at the top level.<br />You can also use a file path on your server.</p>
           </div>
 
           <!-- Upload Area -->
@@ -71,7 +71,7 @@
                 <span class="fa fa-cloud-upload"></span> Upload Files
               </button>
               <button type="button" class="upload-mode-tab" data-upload-mode="file_path">
-                <span class="fa fa-folder-open"></span> Server Path
+                <span class="fa fa-folder-open"></span> Import Path
               </button>
             </div>
 
@@ -135,8 +135,8 @@
                 <p>Add another file</p>
                 <p class="text-muted small">Drop a CSV or ZIP file here, or click to <strong class="text-primary">browse</strong></p>
                 <div class="upload-accepted-types">
-                  <p class="text-muted small"><span class="fa fa-file-text-o"></span>.csv -- metadata only</p>
-                  <p class="text-muted small"><span class="fa fa-file-archive-o"></span>.zip -- files OR metadata CSV + files</p>
+                  <p class="text-muted small"><span class="fa fa-file-text-o"></span> .csv &mdash; metadata only</p>
+                  <p class="text-muted small"><span class="fa fa-file-archive-o"></span> .zip &mdash; files or metadata CSV + files</p>
                 </div>
               </div>
             </div>
@@ -163,13 +163,6 @@
               </div>
             </div>
 
-            <!-- Start over link -->
-            <div class="start-over-link" style="display: none;">
-              <span class="fa fa-refresh text-danger"></span>
-              <a href="#" id="upload-different-btn" class="text-danger">
-                Clear files and start over
-              </a>
-            </div>
           </div>
 
           <!-- File Upload Error Messages -->
@@ -197,9 +190,12 @@
             <a id="download-csv-template-link" href="<%= sample_csv_file_importers_path %>" class="text-primary" download data-sample-csv-url="<%= sample_csv_file_importers_path %>">Download a CSV template for your tenant</a>
           </div>
 
-          <!-- Validate Button -->
-          <button type="button" id="validate-btn" class="validate-btn btn btn-primary btn-block btn-lg" disabled>
-            <span class="fa fa-file-text"></span> Validate Files
+          <!-- Validate Button (tab-scoped: only one is visible at a time) -->
+          <button type="button" id="validate-upload-btn" class="validate-btn btn btn-primary btn-block btn-lg" disabled>
+            <span class="fa fa-file-text"></span> Validate Files from Upload
+          </button>
+          <button type="button" id="validate-path-btn" class="validate-btn btn btn-primary btn-block btn-lg" style="display: none;" disabled>
+            <span class="fa fa-file-text"></span> Validate Files from Import Path
           </button>
 
           <!-- Validation Results (hidden initially) -->
@@ -256,10 +252,10 @@
 
           <!-- Step Navigation -->
           <div class="step-navigation">
-            <button type="button" class="btn btn-secondary" disabled>
-              <span class="fa fa-arrow-left"></span> Back
+            <button type="button" class="btn btn-outline-danger start-over-nav-btn">
+              <span class="fa fa-refresh"></span> Clear & Start Over
             </button>
-            <div>
+            <div class="step-nav-right">
               <label class="skip-validation-label">
                 <input type="checkbox" id="skip-validation-checkbox" disabled>
                 <span>Skip validation</span>
@@ -369,12 +365,17 @@
 
           <!-- Step Navigation -->
           <div class="step-navigation">
-            <button type="button" class="btn btn-secondary step-prev-btn" data-prev-step="1">
-              <span class="fa fa-arrow-left"></span> Back
+            <button type="button" class="btn btn-outline-danger start-over-nav-btn">
+              <span class="fa fa-refresh"></span> Start Over
             </button>
-            <button type="button" class="btn btn-primary step-next-btn" data-next-step="3" disabled>
-              Next <span class="fa fa-arrow-right"></span>
-            </button>
+            <div>
+              <button type="button" class="btn btn-secondary step-prev-btn" data-prev-step="1">
+                <span class="fa fa-arrow-left"></span> Back
+              </button>
+              <button type="button" class="btn btn-primary step-next-btn" data-next-step="3" disabled>
+                Next <span class="fa fa-arrow-right"></span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -436,12 +437,17 @@
 
           <!-- Step Navigation -->
           <div class="step-navigation">
-            <button type="button" class="btn btn-secondary step-prev-btn" data-prev-step="2">
-              <span class="fa fa-arrow-left"></span> Back
+            <button type="button" class="btn btn-outline-danger start-over-nav-btn">
+              <span class="fa fa-refresh"></span> Start Over
             </button>
-            <button type="submit" class="btn btn-success" id="start-import-btn">
-              Start Import
-            </button>
+            <div>
+              <button type="button" class="btn btn-secondary step-prev-btn" data-prev-step="2">
+                <span class="fa fa-arrow-left"></span> Back
+              </button>
+              <button type="submit" class="btn btn-success" id="start-import-btn">
+                Start Import
+              </button>
+            </div>
           </div>
         </div>
 
