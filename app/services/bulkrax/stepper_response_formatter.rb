@@ -29,8 +29,8 @@ module Bulkrax
     #   - rowCount: Total number of data rows
     #   - isValid: Boolean indicating validation success
     #   - hasWarnings: Boolean indicating presence of warnings
-    #   - collections: Array of collection items with id, title, type, parentIds (array)
-    #   - works: Array of work items with id, title, type, parentIds (array)
+    #   - collections: Array of collection items with id, title, type, parentIds (array), childIds (array)
+    #   - works: Array of work items with id, title, type, parentIds (array), childIds (array)
     #   - fileSets: Array of file set items
     #   - totalItems: Total count of items
     #   - fileReferences: Count of file references

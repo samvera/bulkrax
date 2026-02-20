@@ -68,6 +68,15 @@ module Bulkrax
         find_first_match(options, csv_headers)
       end
 
+      # Find the CSV column name used for children relationships
+      #
+      # @param csv_headers [Array<String>] Available CSV headers
+      # @return [String] Column name for children field
+      def children_column_name(csv_headers = [])
+        options = @mapping_manager.resolve_column_name(flag: 'related_children_field_mapping', default: 'children')
+        find_first_match(options, csv_headers)
+      end
+
       private
 
       # Find the first option that exists in csv_headers, or return first option
