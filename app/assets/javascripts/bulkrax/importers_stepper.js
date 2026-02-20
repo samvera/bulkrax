@@ -134,6 +134,7 @@
 
     bindEvents()
     initAdminSetState()
+    updateDownloadTemplateLink()
     updateStepperUI()
     initVisibilityCards()
     setDefaultImportName()
@@ -332,6 +333,7 @@
       StepperState.settings.adminSetName = $(this).find('option:selected').text()
       resetValidationState()
       updateStepNavigation()
+      updateDownloadTemplateLink()
       // Update validate button state since admin set is required for validation
       if (StepperState.uploadMode === 'file_path' || StepperState.uploadedFiles.length > 0) {
         updateValidateButtonState()
@@ -1718,6 +1720,19 @@
         StepperState.adminSetName = $adminSetSelect.find('option:selected').text().trim()
       }
     }
+  }
+
+  function updateDownloadTemplateLink() {
+    var $link = $('#download-csv-template-link')
+    if (!$link.length) return
+    var baseUrl = $link.data('sample-csv-url') || $link.attr('href')
+    var adminSetId = $('#importer-admin-set').val()
+    var href = baseUrl
+    if (adminSetId && adminSetId.trim() !== '') {
+      var sep = baseUrl.indexOf('?') >= 0 ? '&' : '?'
+      href = baseUrl + sep + 'admin_set_id=' + encodeURIComponent(adminSetId.trim())
+    }
+    $link.attr('href', href)
   }
 
   // Navigate to step

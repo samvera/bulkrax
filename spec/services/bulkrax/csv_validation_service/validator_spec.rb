@@ -27,7 +27,7 @@ RSpec.describe Bulkrax::CsvValidationService::Validator do
 
   describe '#unrecognized_headers' do
     context 'with standard headers' do
-      it 'returns empty array when all headers are recognized' do
+      it 'returns empty hash when all headers are recognized' do
         csv_headers = %w[title creator description]
         validator = described_class.new(csv_headers, valid_headers, field_metadata, mapping_manager)
 
@@ -38,7 +38,7 @@ RSpec.describe Bulkrax::CsvValidationService::Validator do
         csv_headers = %w[title creator invalid_field another_bad_one]
         validator = described_class.new(csv_headers, valid_headers, field_metadata, mapping_manager)
 
-        expect(validator.unrecognized_headers).to contain_exactly('invalid_field', 'another_bad_one')
+        expect(validator.unrecognized_headers.keys).to contain_exactly('invalid_field', 'another_bad_one')
       end
     end
 
@@ -68,7 +68,7 @@ RSpec.describe Bulkrax::CsvValidationService::Validator do
         csv_headers = %w[title_1 invalid_field_1 creator_2 another_bad_2]
         validator = described_class.new(csv_headers, valid_headers, field_metadata, mapping_manager)
 
-        expect(validator.unrecognized_headers).to contain_exactly('invalid_field_1', 'another_bad_2')
+        expect(validator.unrecognized_headers.keys).to contain_exactly('invalid_field_1', 'another_bad_2')
       end
 
       it 'handles mix of suffixed and non-suffixed headers' do
@@ -82,7 +82,7 @@ RSpec.describe Bulkrax::CsvValidationService::Validator do
         csv_headers = %w[title_abc creator_xyz]
         validator = described_class.new(csv_headers, valid_headers, field_metadata, mapping_manager)
 
-        expect(validator.unrecognized_headers).to contain_exactly('title_abc', 'creator_xyz')
+        expect(validator.unrecognized_headers.keys).to contain_exactly('title_abc', 'creator_xyz')
       end
 
       it 'handles underscores in field names correctly' do
@@ -90,6 +90,22 @@ RSpec.describe Bulkrax::CsvValidationService::Validator do
         validator = described_class.new(csv_headers, valid_headers, field_metadata, mapping_manager)
 
         expect(validator.unrecognized_headers).to be_empty
+      end
+    end
+
+    context 'spell checker suggestions' do
+      it 'includes a suggestion when one is available' do
+        csv_headers = %w[titel]
+        validator = described_class.new(csv_headers, valid_headers, field_metadata, mapping_manager)
+
+        expect(validator.unrecognized_headers['titel']).to eq('title')
+      end
+
+      it 'includes nil when no suggestion is available' do
+        csv_headers = %w[zzzznotafield]
+        validator = described_class.new(csv_headers, valid_headers, field_metadata, mapping_manager)
+
+        expect(validator.unrecognized_headers['zzzznotafield']).to be_nil
       end
     end
   end

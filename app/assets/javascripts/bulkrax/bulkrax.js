@@ -25,9 +25,9 @@ function setupGlobalListeners() {
 
 // Use Turbolinks if available, fallback to Turbo if available, fallback to vanilla JS if needed.
 if (typeof Turbolinks !== 'undefined' && Turbolinks !== null) {
-  $(document).on('turbolinks:load ready', setupGlobalListeners());
+  $(document).on('turbolinks:load ready', setupGlobalListeners);
 } else if (typeof Turbo !== 'undefined') {
-  $(document).on('turbo:load ready', setupGlobalListeners());
+  $(document).on('turbo:load ready', setupGlobalListeners);
 } else {
-  $(document).on('ready', setupGlobalListeners());
+  $(document).on('ready', setupGlobalListeners);
 }
