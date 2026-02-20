@@ -69,7 +69,8 @@ module Bulkrax
 
     # GET /importers/sample_csv_file
     def sample_csv_file
-      sample = Bulkrax::CsvValidationService.generate_template(models: 'all', output: 'file')
+      admin_set_id = params[:admin_set_id].presence
+      sample = Bulkrax::CsvValidationService.generate_template(models: 'all', output: 'file', admin_set_id: admin_set_id)
       send_file sample, filename: File.basename(sample), type: 'text/csv', disposition: 'attachment'
     rescue StandardError => e
       flash[:error] = "Unable to generate sample CSV file: #{e.message}"
