@@ -132,7 +132,7 @@ module Bulkrax
     # @return [Hash] Validation status with severity, icon, title, summary, details
     def validation_status
       severity, icon, title = determine_severity_level
-      recognized = @data[:headers] - (@data[:unrecognized] || [])
+      recognized = @data[:headers] - (@data[:unrecognized].keys || [])
 
       {
         severity: severity,
@@ -196,9 +196,15 @@ module Bulkrax
         title: 'Unrecognized Fields',
         count: @data[:unrecognized].length,
         description: 'These columns will be ignored during import:',
-        items: @data[:unrecognized].map { |field| { field: field, message: nil } },
+        items: unrecognized_fields_issue_items,
         defaultOpen: false
       }
+    end
+
+    def unrecognized_fields_issue_items
+      @data[:unrecognized].partition(&:last)
+                          .flatten(1)
+                          .map { |field| { field: field.first, message: field.last ? "Did you mean \"#{field.last}\"?" : nil } }
     end
 
     # Format file references issue

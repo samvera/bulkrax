@@ -126,6 +126,31 @@ RSpec.describe Bulkrax::CsvValidationService do
       expect(result[:missingFiles]).to be_empty
       expect(result[:foundFiles]).to eq(0)
     end
+
+    context 'with misspelled headers' do
+      let(:csv_content) do
+        <<~CSV
+          source_idenifier,titel,creater,model,perents,fille,december
+          work1,Test Work 1,Author 1,GenericWork,,image1.jpg,A test work
+          work2,Test Work 2,Author 2,GenericWork,col1,,Another work
+          col1,Test Collection,,,,,A collection
+          fs1,File Set 1,,,work1,document.pdf,A file set
+        CSV
+      end
+
+      it 'has unrecognized headers' do
+        result = described_class.validate(csv_file: csv_file, zip_file: nil)
+
+        expect(result[:unrecognized]).to eq({
+                                              'source_idenifier' => 'source_identifier',
+                                              'titel' => 'title',
+                                              'creater' => 'creator',
+                                              'perents' => 'parents',
+                                              'fille' => 'file',
+                                              'december' => nil
+                                            })
+      end
+    end
   end
 
   describe '#initialize' do

@@ -167,7 +167,7 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
         {
           headers: ['source_identifier', 'title', 'creator', 'model'],
           missingRequired: [],
-          unrecognized: [],
+          unrecognized: {},
           rowCount: 10,
           isValid: true,
           hasWarnings: false,
@@ -241,7 +241,7 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
           rowCount: 42,
           isValid: true,
           hasWarnings: false,
-          unrecognized: [],
+          unrecognized: {},
           fileReferences: 0
         }
 
@@ -256,7 +256,7 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
           rowCount: 10,
           isValid: true,
           hasWarnings: true,
-          unrecognized: ['unknown_field'],
+          unrecognized: { 'unknown_field' => nil },
           fileReferences: 0
         }
 
@@ -274,7 +274,7 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
           isValid: false,
           hasWarnings: false,
           missingRequired: [{ model: 'Work', field: 'source_identifier' }, { model: 'Work', field: 'model' }],
-          unrecognized: [],
+          unrecognized: {},
           fileReferences: 0
         }
 
@@ -292,7 +292,7 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
           isValid: false,
           hasWarnings: false,
           missingRequired: [{ model: 'Work', field: 'source_identifier' }, { model: 'Work', field: 'model' }],
-          unrecognized: [],
+          unrecognized: {},
           fileReferences: 0
         }
 
@@ -320,7 +320,7 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
             { model: 'Work', field: 'source_identifier' },
             { model: 'Work', field: 'model' }
           ],
-          unrecognized: [],
+          unrecognized: {},
           fileReferences: 0
         }
 
@@ -345,7 +345,7 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
           isValid: true,
           hasWarnings: true,
           missingRequired: [],
-          unrecognized: ['legacy_id'],
+          unrecognized: { 'legacy_id' => nil },
           fileReferences: 0
         }
 
@@ -362,6 +362,25 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
         )
       end
 
+      it 'lists fields with suggestions before fields without' do
+        data = {
+          headers: ['source_identifier', 'title', 'legacy_id', 'internal_notes', 'bad_field'],
+          rowCount: 10,
+          isValid: true,
+          hasWarnings: true,
+          missingRequired: [],
+          unrecognized: { 'legacy_id' => 'legacyid', 'internal_notes' => nil, 'bad_field' => nil },
+          fileReferences: 0
+        }
+
+        result = described_class.new(data).format
+        items = result[:messages][:issues].find { |i| i[:type] == 'unrecognized_fields' }[:items]
+
+        expect(items.first[:field]).to eq('legacy_id')
+        expect(items.first[:message]).to eq('Did you mean "legacyid"?')
+        expect(items.last(2).map { |i| i[:message] }).to all(be_nil)
+      end
+
       it 'generates file references issue for missing files in ZIP' do
         data = {
           headers: ['source_identifier', 'title', 'file'],
@@ -369,7 +388,7 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
           isValid: true,
           hasWarnings: true,
           missingRequired: [],
-          unrecognized: [],
+          unrecognized: {},
           fileReferences: 10,
           foundFiles: 8,
           missingFiles: ['file1.jpg', 'file2.pdf'],
@@ -398,7 +417,7 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
           isValid: true,
           hasWarnings: true,
           missingRequired: [],
-          unrecognized: [],
+          unrecognized: {},
           fileReferences: 5,
           foundFiles: 0,
           missingFiles: [],
@@ -424,7 +443,7 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
           isValid: true,
           hasWarnings: false,
           missingRequired: [],
-          unrecognized: [],
+          unrecognized: {},
           fileReferences: 0,
           foundFiles: 0,
           missingFiles: [],
