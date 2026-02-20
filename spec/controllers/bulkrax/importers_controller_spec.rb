@@ -262,6 +262,8 @@ module Bulkrax
           get :sample_csv_file, session: valid_session
 
           expect(response.headers['Content-Type']).to include('text/csv')
+          expect(Bulkrax::CsvValidationService).to have_received(:generate_template)
+            .with(models: 'all', output: 'file', admin_set_id: nil)
         end
 
         it 'passes admin_set_id to the service for context-aware template when provided' do
