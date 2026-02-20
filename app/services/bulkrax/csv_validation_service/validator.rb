@@ -60,10 +60,9 @@ module Bulkrax
       #
       # @return [Array<String>] Array of unrecognized header names
       def unrecognized_headers
-        @unrecognized_headers ||= @csv_headers.reject do |header|
-          normalized = normalize_header(header)
-          @valid_headers.include?(header) || @valid_headers.include?(normalized)
-        end
+        @unrecognized_headers ||= @csv_headers
+                                  .reject { |h| @valid_headers.include?(h) || @valid_headers.include?(normalize_header(h)) }
+                                  .index_with { |h| spell_checker.correct(h).first }
       end
 
       # Check if CSV is valid (no missing required fields and has headers)
@@ -99,6 +98,10 @@ module Bulkrax
       #   normalize_header('source_identifier') # => 'source_identifier'
       def normalize_header(header)
         header.sub(/_\d+\z/, '')
+      end
+
+      def spell_checker
+        DidYouMean::SpellChecker.new(dictionary: @valid_headers)
       end
     end
   end
