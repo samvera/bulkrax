@@ -1749,7 +1749,7 @@
         $asterisk.remove()
       }
     }
-    if (required && $optionalSettings.length && !$optionalSettings.hasClass('show')) {
+    if ((required || skipped) && $optionalSettings.length && !$optionalSettings.hasClass('show')) {
       $optionalSettings.addClass('show')
     }
   }
