@@ -173,16 +173,31 @@ module Bulkrax
     #
     # @return [Hash] Missing required fields issue structure
     def missing_required_issue
-      {
-        type: 'missing_required_fields',
-        severity: 'error',
-        icon: 'fa-times-circle',
-        title: 'Missing Required Fields',
-        count: @data[:missingRequired].length,
-        description: 'These required columns must be added to your CSV:',
-        items: @data[:missingRequired],
-        defaultOpen: false
-      }
+      only_rights_statement = @data[:missingRequired]&.all? { |h| h[:field].to_s == 'rights_statement' }
+
+      if only_rights_statement
+        {
+          type: 'missing_required_fields',
+          severity: 'warning',
+          icon: 'fa-exclamation-triangle',
+          title: 'Missing Required Fields',
+          count: @data[:missingRequired].length,
+          description: 'Your CSV does not include a rights_statement column. You can add it to your CSV or select a Default Rights Statement in the next step.',
+          items: @data[:missingRequired],
+          defaultOpen: false
+        }
+      else
+        {
+          type: 'missing_required_fields',
+          severity: 'error',
+          icon: 'fa-times-circle',
+          title: 'Missing Required Fields',
+          count: @data[:missingRequired].length,
+          description: 'These required columns must be added to your CSV:',
+          items: @data[:missingRequired],
+          defaultOpen: false
+        }
+      end
     end
 
     # Format unrecognized fields issue

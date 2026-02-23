@@ -127,6 +127,46 @@ RSpec.describe Bulkrax::CsvValidationService do
       expect(result[:foundFiles]).to eq(0)
     end
 
+    context 'when only rights_statement is missing (suppliable on Step 2)' do
+      let(:metadata_only_rights_missing) do
+        base = { properties: %w[source_identifier title creator model parents file description], controlled_vocab_terms: [] }
+        {
+          'GenericWork' => base.merge(required_terms: %w[source_identifier title creator model rights_statement]),
+          'Collection' => base.merge(required_terms: %w[source_identifier title])
+        }
+      end
+
+      before do
+        allow_any_instance_of(described_class).to receive(:field_metadata_for_all_models).and_return(metadata_only_rights_missing)
+      end
+
+      it 'treats validation as valid with warnings (isValid: true, hasWarnings: true)' do
+        result = described_class.validate(csv_file: csv_file, zip_file: zip_file)
+
+        expect(result[:missingRequired]).to be_present
+        expect(result[:missingRequired]).to all(satisfy { |h| h[:field].to_s == 'rights_statement' })
+        expect(result[:isValid]).to be true
+        expect(result[:hasWarnings]).to be true
+      end
+
+      it 'does not override when there are missing files in the ZIP' do
+        csv_refs_missing = <<~CSV
+          source_identifier,title,creator,model,parents,file,description
+          work1,Test Work 1,Author 1,GenericWork,,notinzip.jpg,A test work
+        CSV
+        csv_with_missing_ref = Tempfile.new(['test_missing', '.csv'])
+        csv_with_missing_ref.write(csv_refs_missing)
+        csv_with_missing_ref.rewind
+        result = described_class.validate(csv_file: csv_with_missing_ref, zip_file: zip_file)
+
+        expect(result[:missingFiles]).to include('notinzip.jpg')
+        expect(result[:isValid]).to be false
+
+        csv_with_missing_ref.close
+        csv_with_missing_ref.unlink
+      end
+    end
+
     context 'with misspelled headers' do
       let(:csv_content) do
         <<~CSV
