@@ -105,7 +105,7 @@
     uploadMode: 'upload', // 'upload' or 'file_path'
     validated: false,
     validationData: null,
-    warningsAcked: false,
+    warningsAcknowledge: false,
     skipValidation: false, // Flag to skip validation step
     isAddingFiles: false, // Flag to track if we're adding files vs replacing
     demoScenario: null, // Track which demo scenario is loaded
@@ -295,7 +295,7 @@
 
     // Warnings acknowledgment
     $('#warnings-acked').on('change', function () {
-      StepperState.warningsAcked = $(this).is(':checked')
+      StepperState.warningsAcknowledge = $(this).is(':checked')
       updateStepNavigation()
     })
 
@@ -360,9 +360,7 @@
       var fileName = $row.find('.file-name').text()
 
       // Remove from uploadedFiles array
-      StepperState.uploadedFiles = StepperState.uploadedFiles.filter(
-        function (file) { return file.name !== fileName }
-      )
+      StepperState.uploadedFiles = removeFile(StepperState.uploadedFiles, fileName)
 
       // Remove the row
       $row.remove()
@@ -509,18 +507,71 @@
   // FILE UPLOAD HANDLERS
   // ============================================================================
 
-  // Handle file selection
-  function handleFileSelect(isAddingMore) {
-    var files = $('#file-input')[0].files
-    if (files.length === 0) return
+  // Pure function: return a new file list with the named file removed.
+  function removeFile(existingFiles, fileName) {
+    return existingFiles.filter(function (f) { return f.name !== fileName })
+  }
 
-    // If not adding more, reset the uploaded files array
-    if (!isAddingMore) {
-      StepperState.uploadedFiles = []
+  // Pure function: sort rejected files into four labelled buckets.
+  function categorizeRejectedFiles(rejectedFiles) {
+    return rejectedFiles.reduce(function (acc, f) {
+      if (f.reason === 'invalid_type') acc.invalidTypes.push(f)
+      else if (f.reason === 'duplicate CSV') acc.duplicateCsv.push(f)
+      else if (f.reason === 'duplicate ZIP') acc.duplicateZip.push(f)
+      else if (f.reason === 'duplicate') acc.duplicates.push(f)
+      return acc
+    }, { invalidTypes: [], duplicateCsv: [], duplicateZip: [], duplicates: [] })
+  }
+
+  // Pure function: build user-facing error message strings from categorized rejections.
+  // Returns an array of message strings (one per non-empty category).
+  function buildRejectionMessages(categorized) {
+    var messages = []
+
+    if (categorized.invalidTypes.length > 0) {
+      messages.push(
+        'Invalid file format. Only .csv and .zip files are allowed.\n' +
+        'The following files were rejected:\n• ' +
+        categorized.invalidTypes.map(function (f) {
+          return f.name + ' (' + (f.extension || 'no extension') + ')'
+        }).join('\n• ')
+      )
+    }
+    if (categorized.duplicateCsv.length > 0) {
+      messages.push(
+        'Only 1 CSV file allowed. The following files were not added:\n• ' +
+        categorized.duplicateCsv.map(function (f) { return f.name }).join('\n• ')
+      )
+    }
+    if (categorized.duplicateZip.length > 0) {
+      messages.push(
+        'Only 1 ZIP file allowed. The following files were not added:\n• ' +
+        categorized.duplicateZip.map(function (f) { return f.name }).join('\n• ')
+      )
+    }
+    if (categorized.duplicates.length > 0) {
+      messages.push(
+        'The following files were already uploaded:\n• ' +
+        categorized.duplicates.map(function (f) { return f.name }).join('\n• ')
+      )
     }
 
-    // Count existing file types
-    var existingCounts = StepperState.uploadedFiles.reduce(function (counts, f) {
+    return messages
+  }
+
+  // Decide which files are accepted or rejected
+  // Params:
+  //   existingFiles - the current list of uploaded files
+  //   newFiles      - the batch of incoming files
+  //   isAddingMore  - boolean indicating if files are being added to the existing list
+  // Returns { updatedFiles, accepted, rejected } where:
+  //   updatedFiles - the new combined file list
+  //   accepted     - names of files that were added
+  //   rejected     - objects with { name, reason, extension? }
+  function processFileSelection(existingFiles, newFiles, isAddingMore) {
+    var baseFiles = isAddingMore ? existingFiles.slice() : []
+
+    var existingCounts = baseFiles.reduce(function (counts, f) {
       if (f.fileType === 'csv' && !f.fromZip) counts.csv++
       if (f.fileType === 'zip') counts.zip++
       return counts
@@ -528,54 +579,39 @@
     var existingCsvCount = existingCounts.csv
     var existingZipCount = existingCounts.zip
 
-    var addedFiles = []
-    var rejectedFiles = []
+    var updatedFiles = baseFiles.slice()
+    var accepted = []
+    var rejected = []
 
-    // Process selected files with validation
-    for (
-      var i = 0;
-      i < files.length && StepperState.uploadedFiles.length < CONSTANTS.MAX_FILES;
-      i++
-    ) {
-      var file = files[i]
+    for (var i = 0; i < newFiles.length && updatedFiles.length < CONSTANTS.MAX_FILES; i++) {
+      var file = newFiles[i]
       var fileName = file.name
       var fileSize = formatFileSize(file.size)
 
-      // Validate file extension first
       if (!isValidFileType(fileName)) {
-        rejectedFiles.push({
-          name: fileName,
-          reason: 'invalid_type',
-          extension: getFileExtension(fileName)
-        })
+        rejected.push({ name: fileName, reason: 'invalid_type', extension: getFileExtension(fileName) })
         continue
       }
 
       var fileType = fileName.endsWith('.csv') ? 'csv' : 'zip'
 
-      // Check for duplicates
-      var isDuplicate = StepperState.uploadedFiles.some(function (f) {
-        return f.name === fileName
-      })
-
+      var isDuplicate = updatedFiles.some(function (f) { return f.name === fileName })
       if (isDuplicate) {
-        rejectedFiles.push({ name: fileName, reason: 'duplicate' })
+        rejected.push({ name: fileName, reason: 'duplicate' })
         continue
       }
 
-      // Validate file type constraints (max 1 CSV, max 1 ZIP)
       if (fileType === 'csv' && existingCsvCount >= 1) {
-        rejectedFiles.push({ name: fileName, reason: 'duplicate CSV' })
+        rejected.push({ name: fileName, reason: 'duplicate CSV' })
         continue
       }
 
       if (fileType === 'zip' && existingZipCount >= 1) {
-        rejectedFiles.push({ name: fileName, reason: 'duplicate ZIP' })
+        rejected.push({ name: fileName, reason: 'duplicate ZIP' })
         continue
       }
 
-      // Add the file
-      StepperState.uploadedFiles.push({
+      updatedFiles.push({
         id: Date.now() + i,
         name: fileName,
         size: fileSize,
@@ -584,75 +620,43 @@
         file: file
       })
 
-      addedFiles.push(fileName)
+      accepted.push(fileName)
 
-      // Update counts
       if (fileType === 'csv') existingCsvCount++
       if (fileType === 'zip') existingZipCount++
     }
 
+    return { updatedFiles: updatedFiles, accepted: accepted, rejected: rejected }
+  }
+
+  // Handle file selection
+  function handleFileSelect(isAddingMore) {
+    var rawFiles = $('#file-input')[0].files
+    if (rawFiles.length === 0) return
+
+    var newFiles = []
+    for (var i = 0; i < rawFiles.length; i++) { newFiles.push(rawFiles[i]) }
+
+    var result = processFileSelection(StepperState.uploadedFiles, newFiles, isAddingMore)
+    StepperState.uploadedFiles = result.updatedFiles
+
+    var addedFiles = result.accepted
+    var rejectedFiles = result.rejected
+
     // Show appropriate warnings
     if (rejectedFiles.length > 0) {
-      var messages = []
+      var categorized = categorizeRejectedFiles(rejectedFiles)
+      var messages = buildRejectionMessages(categorized)
 
-      var categorized = rejectedFiles.reduce(function (acc, f) {
-        if (f.reason === 'invalid_type') acc.invalidTypes.push(f)
-        else if (f.reason === 'duplicate CSV') acc.duplicateCsv.push(f)
-        else if (f.reason === 'duplicate ZIP') acc.duplicateZip.push(f)
-        else if (f.reason === 'duplicate') acc.duplicates.push(f)
-        return acc
-      }, { invalidTypes: [], duplicateCsv: [], duplicateZip: [], duplicates: [] })
-
-      // Handle invalid file types FIRST
-      if (categorized.invalidTypes.length > 0) {
-        messages.push(
-          'Invalid file format. Only .csv and .zip files are allowed.\n' +
-          'The following files were rejected:\n• ' +
-          categorized.invalidTypes.map(function (f) {
-            return f.name + ' (' + (f.extension || 'no extension') + ')'
-          }).join('\n• ')
-        )
-      }
-
-      if (categorized.duplicateCsv.length > 0) {
-        messages.push(
-          'Only 1 CSV file allowed. The following files were not added:\n• ' +
-          categorized.duplicateCsv
-            .map(function (f) {
-              return f.name
-            })
-            .join('\n• ')
-        )
-      }
-      if (categorized.duplicateZip.length > 0) {
-        messages.push(
-          'Only 1 ZIP file allowed. The following files were not added:\n• ' +
-          categorized.duplicateZip
-            .map(function (f) {
-              return f.name
-            })
-            .join('\n• ')
-        )
-      }
-      if (categorized.duplicates.length > 0) {
-        messages.push(
-          'The following files were already uploaded:\n• ' +
-          categorized.duplicates
-            .map(function (f) {
-              return f.name
-            })
-            .join('\n• ')
-        )
-      }
       if (
         StepperState.uploadedFiles.length >= CONSTANTS.MAX_FILES &&
-        files.length > addedFiles.length + rejectedFiles.length
+        newFiles.length > addedFiles.length + rejectedFiles.length
       ) {
         messages.push('Maximum of ' + CONSTANTS.MAX_FILES + ' files reached (1 CSV and 1 ZIP).')
       }
 
       showFileUploadError(messages)
-    } else if (files.length > addedFiles.length) {
+    } else if (newFiles.length > addedFiles.length) {
       showFileUploadError([
         'Maximum of ' + CONSTANTS.MAX_FILES + ' files allowed (1 CSV and 1 ZIP). Only the first ' +
         addedFiles.length +
@@ -754,36 +758,28 @@
   // UPLOAD STATE MANAGEMENT
   // ============================================================================
 
-  // Update upload state based on files
-  function updateUploadState() {
-    var files = StepperState.uploadedFiles
-    if (files.length === 0) {
-      StepperState.uploadState = CONSTANTS.UPLOAD_STATES.EMPTY
-      return
-    }
+  // Pure function: derive upload state from a list of files.
+  // Returns one of the UPLOAD_STATES string values.
+  function computeUploadState(files) {
+    if (files.length === 0) return CONSTANTS.UPLOAD_STATES.EMPTY
 
-    var fileFlags = files.reduce(function (flags, f) {
-      if (f.fileType === 'csv' && !f.fromZip) flags.hasStandaloneCsv = true
-      if (f.fileType === 'zip') flags.hasZip = true
-      if (f.fileType === 'csv' && f.fromZip) flags.hasCsvInZip = true
-      return flags
+    var flags = files.reduce(function (f, item) {
+      if (item.fileType === 'csv' && !item.fromZip) f.hasStandaloneCsv = true
+      if (item.fileType === 'zip') f.hasZip = true
+      if (item.fileType === 'csv' && item.fromZip) f.hasCsvInZip = true
+      return f
     }, { hasStandaloneCsv: false, hasZip: false, hasCsvInZip: false })
 
-    var hasStandaloneCsv = fileFlags.hasStandaloneCsv
-    var hasZip = fileFlags.hasZip
-    var hasCsvInZip = fileFlags.hasCsvInZip
+    if (flags.hasZip && flags.hasCsvInZip && !flags.hasStandaloneCsv) return CONSTANTS.UPLOAD_STATES.ZIP_WITH_CSV
+    if (flags.hasZip && !flags.hasCsvInZip && !flags.hasStandaloneCsv) return CONSTANTS.UPLOAD_STATES.ZIP_FILES_ONLY
+    if (flags.hasStandaloneCsv && flags.hasZip) return CONSTANTS.UPLOAD_STATES.CSV_AND_ZIP
+    if (flags.hasStandaloneCsv) return CONSTANTS.UPLOAD_STATES.CSV_ONLY
+    return CONSTANTS.UPLOAD_STATES.EMPTY
+  }
 
-    if (hasZip && hasCsvInZip && !hasStandaloneCsv) {
-      StepperState.uploadState = CONSTANTS.UPLOAD_STATES.ZIP_WITH_CSV
-    } else if (hasZip && !hasCsvInZip && !hasStandaloneCsv) {
-      StepperState.uploadState = CONSTANTS.UPLOAD_STATES.ZIP_FILES_ONLY
-    } else if (hasStandaloneCsv && hasZip) {
-      StepperState.uploadState = CONSTANTS.UPLOAD_STATES.CSV_AND_ZIP
-    } else if (hasStandaloneCsv && !hasZip) {
-      StepperState.uploadState = CONSTANTS.UPLOAD_STATES.CSV_ONLY
-    } else {
-      StepperState.uploadState = CONSTANTS.UPLOAD_STATES.EMPTY
-    }
+  // Update upload state based on files
+  function updateUploadState() {
+    StepperState.uploadState = computeUploadState(StepperState.uploadedFiles)
   }
 
   // Switch between upload and file path modes
@@ -823,7 +819,7 @@
 
     StepperState.validated = false
     StepperState.validationData = null
-    StepperState.warningsAcked = false
+    StepperState.warningsAcknowledge = false
     $('#warnings-acked').prop('checked', false)
     $('.validation-results').hide()
     $('.warning-acknowledgment').hide()
@@ -833,29 +829,33 @@
     updateStepNavigation()
   }
 
-  // Update validate button enabled state based on current upload mode
-  function updateValidateButtonState() {
-    var $adminSetSelect = $('#importer-admin-set')
-    var adminSetValue = $adminSetSelect.val() || StepperState.adminSetId
-    var hasAdminSet = adminSetValue && adminSetValue.length > 0
+  // Pure function: decide whether validation can proceed given the current inputs.
+  // Returns true if the user has provided enough to attempt validation.
+  function canValidate(uploadedFiles, uploadMode, filePath, adminSetId) {
+    var hasAdminSet = !!(adminSetId && adminSetId.length > 0)
 
-    var canValidate = false
-
-    if (StepperState.uploadMode === 'file_path') {
-      var filePath = $('#import-file-path').val() || ''
-      canValidate = filePath.trim().length > 0 && hasAdminSet
-    } else {
-      var fileCheck = StepperState.uploadedFiles.reduce(function (check, f) {
-        if (f.fileType === 'csv') check.hasCsv = true
-        if (f.fileType === 'zip') check.hasZip = true
-        return check
-      }, { hasCsv: false, hasZip: false })
-      canValidate = (fileCheck.hasCsv || fileCheck.hasZip) && hasAdminSet
+    if (uploadMode === 'file_path') {
+      return (filePath || '').trim().length > 0 && hasAdminSet
     }
 
+    var fileCheck = uploadedFiles.reduce(function (check, f) {
+      if (f.fileType === 'csv') check.hasCsv = true
+      if (f.fileType === 'zip') check.hasZip = true
+      return check
+    }, { hasCsv: false, hasZip: false })
+
+    return (fileCheck.hasCsv || fileCheck.hasZip) && hasAdminSet
+  }
+
+  // Update validate button enabled state based on current upload mode
+  function updateValidateButtonState() {
+    var adminSetValue = $('#importer-admin-set').val() || StepperState.adminSetId
+    var filePath = $('#import-file-path').val() || ''
+    var enabled = canValidate(StepperState.uploadedFiles, StepperState.uploadMode, filePath, adminSetValue)
+
     var $validateBtn = StepperState.uploadMode === 'file_path' ? $('#validate-path-btn') : $('#validate-upload-btn')
-    $validateBtn.prop('disabled', !canValidate)
-    $('#skip-validation-checkbox').prop('disabled', !canValidate && !StepperState.skipValidation)
+    $validateBtn.prop('disabled', !enabled)
+    $('#skip-validation-checkbox').prop('disabled', !enabled && !StepperState.skipValidation)
   }
 
   // Render uploaded files
@@ -994,7 +994,7 @@
     StepperState.uploadState = CONSTANTS.UPLOAD_STATES.EMPTY
     StepperState.validated = false
     StepperState.validationData = null
-    StepperState.warningsAcked = false
+    StepperState.warningsAcknowledge = false
     StepperState.skipValidation = false
     StepperState.demoScenario = null
     $('#file-input').val('')
@@ -1332,31 +1332,43 @@
     }
   }
 
+  // Pure function: return zone metadata for a given item count.
+  function getImportSizeZone(count) {
+    if (count <= CONSTANTS.IMPORT_SIZE_OPTIMAL) {
+      return {
+        pct: (count / CONSTANTS.IMPORT_SIZE_OPTIMAL) * 33,
+        color: 'gauge-marker-optimal',
+        zone: 'Optimal',
+        msg: 'Great! Smaller imports are easier to validate and troubleshoot.',
+        cardClass: 'gauge-card-optimal'
+      }
+    } else if (count <= CONSTANTS.IMPORT_SIZE_MODERATE) {
+      return {
+        pct: 33 + ((count - CONSTANTS.IMPORT_SIZE_OPTIMAL) / (CONSTANTS.IMPORT_SIZE_MODERATE - CONSTANTS.IMPORT_SIZE_OPTIMAL)) * 33,
+        color: 'gauge-marker-moderate',
+        zone: 'Moderate',
+        msg: 'Consider splitting into smaller batches for easier error resolution.',
+        cardClass: 'gauge-card-moderate'
+      }
+    } else {
+      return {
+        pct: Math.min(66 + ((count - CONSTANTS.IMPORT_SIZE_MODERATE) / CONSTANTS.IMPORT_SIZE_MODERATE) * 34, 100),
+        color: 'gauge-marker-large',
+        zone: 'Large',
+        msg: 'Large imports take longer and are harder to debug. We strongly recommend splitting into batches of ' + CONSTANTS.IMPORT_SIZE_OPTIMAL + ' or fewer.',
+        cardClass: 'gauge-card-large'
+      }
+    }
+  }
+
   // Render import size gauge
   function renderImportSizeGauge(count) {
-    var pct, color, zone, msg, cardClass
-
-    if (count <= CONSTANTS.IMPORT_SIZE_OPTIMAL) {
-      pct = (count / CONSTANTS.IMPORT_SIZE_OPTIMAL) * 33
-      color = 'gauge-marker-optimal'
-      zone = 'Optimal'
-      msg = 'Great! Smaller imports are easier to validate and troubleshoot.'
-      cardClass = 'gauge-card-optimal'
-    } else if (count <= CONSTANTS.IMPORT_SIZE_MODERATE) {
-      pct = 33 + ((count - CONSTANTS.IMPORT_SIZE_OPTIMAL) / (CONSTANTS.IMPORT_SIZE_MODERATE - CONSTANTS.IMPORT_SIZE_OPTIMAL)) * 33
-      color = 'gauge-marker-moderate'
-      zone = 'Moderate'
-      msg =
-        'Consider splitting into smaller batches for easier error resolution.'
-      cardClass = 'gauge-card-moderate'
-    } else {
-      pct = Math.min(66 + ((count - CONSTANTS.IMPORT_SIZE_MODERATE) / CONSTANTS.IMPORT_SIZE_MODERATE) * 34, 100)
-      color = 'gauge-marker-large'
-      zone = 'Large'
-      msg =
-        'Large imports take longer and are harder to debug. We strongly recommend splitting into batches of ' + CONSTANTS.IMPORT_SIZE_OPTIMAL + ' or fewer.'
-      cardClass = 'gauge-card-large'
-    }
+    var z = getImportSizeZone(count)
+    var pct = z.pct
+    var color = z.color
+    var zone = z.zone
+    var msg = z.msg
+    var cardClass = z.cardClass
 
     var html =
       '<div class="gauge-card ' +
@@ -1703,10 +1715,7 @@
 
   // Set default import name
   function setDefaultImportName() {
-    var today = new Date()
-    var dateStr =
-      today.getMonth() + 1 + '/' + today.getDate() + '/' + today.getFullYear()
-    var defaultName = 'CSV Import - ' + dateStr
+    var defaultName = getDefaultImportName(new Date())
     $('#bulkrax_importer_name').val(defaultName)
     StepperState.settings.name = defaultName
   }
@@ -1734,6 +1743,23 @@
       href = baseUrl + sep + 'admin_set_id=' + encodeURIComponent(adminSetId.trim())
     }
     $link.attr('href', href)
+  }
+
+  // Pure function: decide if the user may leave step 1.
+  function canProceedFromStep1(state) {
+    if (state.skipValidation) return true
+    var data = state.validationData
+    return state.validated && !!(data && data.isValid) && (!data.hasWarnings || state.warningsAcknowledge)
+  }
+
+  // Pure function: decide if the user may leave step 2.
+  function canProceedFromStep2(name, adminSetId) {
+    return name.trim().length > 0 && adminSetId.trim().length > 0
+  }
+
+  // Pure function: build the default import name from a Date object.
+  function getDefaultImportName(date) {
+    return 'CSV Import - ' + (date.getMonth() + 1) + '/' + date.getDate() + '/' + date.getFullYear()
   }
 
   // Navigate to step
@@ -1803,23 +1829,16 @@
     var step = StepperState.currentStep
 
     if (step === 1) {
-      var data = StepperState.validationData
-      var isValid = data && data.isValid
-      var hasWarnings = data && data.hasWarnings
-      var canProceed = StepperState.skipValidation ||
-        (StepperState.validated &&
-          isValid &&
-          (!hasWarnings || StepperState.warningsAcked))
-
+      var canProceed = canProceedFromStep1(StepperState)
       $('.step-content[data-step="1"] .step-next-btn').prop('disabled', !canProceed)
     } else if (step === 2) {
       initCachedSelectors()
       var name = (cachedSelectors.nameInput.length ? cachedSelectors.nameInput.val() : '').trim()
       var adminSetId = (cachedSelectors.adminSetSelect.length ? cachedSelectors.adminSetSelect.val() : '').trim()
-      canProceed = name.length > 0 && adminSetId.length > 0
+      var canProceed2 = canProceedFromStep2(name, adminSetId)
       StepperState.settings.name = name || StepperState.settings.name
       StepperState.adminSetId = adminSetId || StepperState.adminSetId
-      $('.step-content[data-step="2"] .step-next-btn').prop('disabled', !canProceed)
+      $('.step-content[data-step="2"] .step-next-btn').prop('disabled', !canProceed2)
     }
   }
 
@@ -2018,6 +2037,10 @@
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
       CONSTANTS: CONSTANTS,
+      StepperState: StepperState,
+      processFileSelection: processFileSelection,
+      removeFile: removeFile,
+      canValidate: canValidate,
       debounce: debounce,
       getFileExtension: getFileExtension,
       isValidFileType: isValidFileType,
@@ -2025,7 +2048,15 @@
       determineHasWarnings: determineHasWarnings,
       normalizeValidationData: normalizeValidationData,
       normalizeRelationships: normalizeRelationships,
-      groupItemsByModel: groupItemsByModel
+      groupItemsByModel: groupItemsByModel,
+      // Orchestration layer — extracted pure logic
+      computeUploadState: computeUploadState,
+      canProceedFromStep1: canProceedFromStep1,
+      canProceedFromStep2: canProceedFromStep2,
+      categorizeRejectedFiles: categorizeRejectedFiles,
+      buildRejectionMessages: buildRejectionMessages,
+      getImportSizeZone: getImportSizeZone,
+      getDefaultImportName: getDefaultImportName
     }
   }
 })(jQuery, window.BulkraxUtils || {})
