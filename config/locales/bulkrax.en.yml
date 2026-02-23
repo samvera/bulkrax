@@ -64,6 +64,7 @@ en:
         create_and_validate: "Create and Validate"
         generate_csv_template: "Generate CSV Import Template"
         download_original_file: "Download Original File"
+        download_original_files: "Download Original Files"
         export_errored_entries: "Export Errored Entries"
         upload_corrected_entries: "Upload Corrected Entries"
         import_corrected_works: "Import Corrected Works"

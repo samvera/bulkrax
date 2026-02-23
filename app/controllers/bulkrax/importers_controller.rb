@@ -217,10 +217,26 @@ module Bulkrax
     end
 
     def original_file
-      if @importer.original_file?
-        send_file @importer.original_file
-      else
+      file_type = params[:file_type]&.to_sym
+
+      files = @importer.original_files
+      if files.empty?
         redirect_to @importer, alert: 'Importer does not support file re-download or the imported file is not found on the server.'
+        return
+      end
+
+      # If file_type is specified, find that specific file
+      if file_type
+        file = files.find { |f| f[:type] == file_type }
+        if file
+          send_file file[:path], filename: file[:name], disposition: 'attachment'
+        else
+          redirect_to @importer, alert: "File type '#{file_type}' not found."
+        end
+      else
+        # Default behavior: send the first file (CSV) for backward compatibility
+        file = files.first
+        send_file file[:path], filename: file[:name], disposition: 'attachment'
       end
     end
 
