@@ -169,6 +169,30 @@ module Bulkrax
       import_file_path if original_file?
     end
 
+    # Returns all available original files (CSV and ZIP if present)
+    # @return [Array<Hash>] Array of hashes with :path and :name keys
+    def original_files
+      files = []
+
+      if import_file_path && File.exist?(import_file_path)
+        files << {
+          path: import_file_path,
+          name: File.basename(import_file_path),
+          type: :csv
+        }
+      end
+
+      if parser_fields['attachments_zip_path'] && File.exist?(parser_fields['attachments_zip_path'])
+        files << {
+          path: parser_fields['attachments_zip_path'],
+          name: File.basename(parser_fields['attachments_zip_path']),
+          type: :zip
+        }
+      end
+
+      files
+    end
+
     def replace_files
       self.parser_fields['replace_files']
     end
