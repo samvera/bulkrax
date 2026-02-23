@@ -151,9 +151,9 @@ module Bulkrax
       context 'when both CSV and ZIP files exist' do
         let(:importer) do
           FactoryBot.build(:bulkrax_importer_csv, parser_fields: {
-            'import_file_path' => csv_file.path,
-            'attachments_zip_path' => zip_file.path
-          })
+                             'import_file_path' => csv_file.path,
+                             'attachments_zip_path' => zip_file.path
+                           })
         end
 
         it 'returns both files in order' do
@@ -181,9 +181,9 @@ module Bulkrax
       context 'when files are specified but do not exist on disk' do
         let(:importer) do
           FactoryBot.build(:bulkrax_importer_csv, parser_fields: {
-            'import_file_path' => '/nonexistent/file.csv',
-            'attachments_zip_path' => '/nonexistent/file.zip'
-          })
+                             'import_file_path' => '/nonexistent/file.csv',
+                             'attachments_zip_path' => '/nonexistent/file.zip'
+                           })
         end
 
         it 'returns an empty array' do
