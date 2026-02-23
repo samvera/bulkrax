@@ -338,6 +338,36 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
         )
       end
 
+      it 'formats missing required fields as warning when only rights_statement is missing' do
+        data = {
+          headers: ['source_identifier', 'title', 'creator', 'model'],
+          rowCount: 2,
+          isValid: true,
+          hasWarnings: true,
+          missingRequired: [
+            { model: 'GenericWork', field: 'rights_statement' },
+            { model: 'Image', field: 'rights_statement' }
+          ],
+          unrecognized: {},
+          fileReferences: 0
+        }
+
+        result = described_class.new(data).format
+        issue = result[:messages][:issues].find { |i| i[:type] == 'missing_required_fields' }
+
+        expect(issue[:severity]).to eq('warning')
+        expect(issue[:icon]).to eq('fa-exclamation-triangle')
+        expect(issue[:title]).to eq('Missing Required Fields')
+        expect(issue[:count]).to eq(2)
+        expect(issue[:description]).to eq(
+          'Your CSV does not include a rights_statement column. You can add it to your CSV or select a Default Rights Statement in the next step.'
+        )
+        expect(issue[:items]).to contain_exactly(
+          { model: 'GenericWork', field: 'rights_statement' },
+          { model: 'Image', field: 'rights_statement' }
+        )
+      end
+
       it 'generates unrecognized fields issue' do
         data = {
           headers: ['source_identifier', 'title', 'legacy_id'],

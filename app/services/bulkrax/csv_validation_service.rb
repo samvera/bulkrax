@@ -163,41 +163,10 @@ module Bulkrax
     #   - foundFiles: Count of files found in zip
     #   - zipIncluded: Boolean indicating if zip was provided
     def validate
-      # Create validator with all necessary dependencies
-      validator = Validator.new(
-        @csv_parser.headers,
-        valid_headers_for_models,
-        field_metadata_for_all_models,
-        @mapping_manager,
-        @file_validator
-      )
-
+      validator = build_validator
       missing_required = validator.missing_required_fields
-      only_rights_statement_missing = missing_required.present? &&
-        missing_required.all? { |h| h[:field].to_s == 'rights_statement' }
-
-      result = {
-        headers: @csv_parser.headers,
-        missingRequired: missing_required,
-        unrecognized: validator.unrecognized_headers,
-        rowCount: @item_extractor.total_count,
-        isValid: validator.valid?,
-        hasWarnings: validator.warnings?,
-        collections: @item_extractor.collections,
-        works: @item_extractor.works,
-        fileSets: @item_extractor.file_sets,
-        totalItems: @item_extractor.total_count,
-        fileReferences: @file_validator.count_references,
-        missingFiles: @file_validator.missing_files,
-        foundFiles: @file_validator.found_files_count,
-        zipIncluded: @file_validator.zip_included?
-      }
-
-      if only_rights_statement_missing && !result[:isValid]
-        result[:isValid] = true
-        result[:hasWarnings] = true
-      end
-
+      result = build_validation_result(validator, missing_required)
+      apply_rights_statement_override!(result, missing_required)
       result
     end
 
@@ -247,6 +216,46 @@ module Bulkrax
     attr_reader :field_analyzer, :mapping_manager
 
     private
+
+    def build_validator
+      Validator.new(
+        @csv_parser.headers,
+        valid_headers_for_models,
+        field_metadata_for_all_models,
+        @mapping_manager,
+        @file_validator
+      )
+    end
+
+    def build_validation_result(validator, missing_required)
+      {
+        headers: @csv_parser.headers,
+        missingRequired: missing_required,
+        unrecognized: validator.unrecognized_headers,
+        rowCount: @item_extractor.total_count,
+        isValid: validator.valid?,
+        hasWarnings: validator.warnings?,
+        collections: @item_extractor.collections,
+        works: @item_extractor.works,
+        fileSets: @item_extractor.file_sets,
+        totalItems: @item_extractor.total_count,
+        fileReferences: @file_validator.count_references,
+        missingFiles: @file_validator.missing_files,
+        foundFiles: @file_validator.found_files_count,
+        zipIncluded: @file_validator.zip_included?
+      }
+    end
+
+    def apply_rights_statement_override!(result, missing_required)
+      only_rights_statement_missing = missing_required.present? &&
+                                      missing_required.all? { |h| h[:field].to_s == 'rights_statement' }
+      return unless only_rights_statement_missing && !result[:isValid]
+      return if result[:headers].blank?
+      return if result[:missingFiles]&.any?
+
+      result[:isValid] = true
+      result[:hasWarnings] = true
+    end
 
     # Ensure CSV builder is initialized (for generation mode)
     def ensure_csv_builder
