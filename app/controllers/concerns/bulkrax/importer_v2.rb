@@ -38,6 +38,14 @@ module Bulkrax
       files = nil
       files = resolve_create_files
 
+      if params[:uploaded_files].present? && files.empty?
+        respond_to do |format|
+          format.html { render :new_v2, status: :unprocessable_entity }
+          format.json { render json: { errors: ['No valid uploaded files found'] }, status: :unprocessable_entity }
+        end
+        return
+      end
+
       @importer = Importer.new(importer_params_v2)
       @importer.parser_klass = 'Bulkrax::CsvParser'
       @importer.user = current_user if respond_to?(:current_user) && current_user.present?
@@ -103,10 +111,14 @@ module Bulkrax
       end
       [files, nil]
     rescue StandardError => e
-      [nil, StepperResponseFormatter.error(message: "Failed to load uploaded files: #{e.message}")]
+      Rails.logger.error("Bulkrax: error loading Hyrax uploaded files: #{e.class}: #{e.message}")
+      Rails.logger.debug { e.full_message }
+      [nil, StepperResponseFormatter.error(message: 'Failed to load uploaded files')]
     end
 
     def uploaded_files_scope
+      return [] unless defined?(::Hyrax)
+
       base = Hyrax::UploadedFile.where(id: params[:uploaded_files])
       if respond_to?(:current_user) && current_user.present?
         base.where(user_id: current_user.id)

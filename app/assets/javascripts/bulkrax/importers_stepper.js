@@ -540,8 +540,19 @@
 
     var maxFileSizeBytes = getMaxFileSize()
 
-    // If not adding more, reset the uploaded files array
+    // If not adding more, abort any in-progress uploads and clean up server-side records
+    // before replacing the file list so we don't orphan uploads or desync uploadsInProgress.
     if (!isAddingMore) {
+      StepperState.uploadedFiles.forEach(function (f) {
+        if (f.uploadXhr) {
+          f.uploadAbortedByUser = true
+          f.uploadXhr.abort()
+        }
+        if (f.uploadId) {
+          $.ajax({ url: CONSTANTS.UPLOAD_URL + f.uploadId, method: 'DELETE', timeout: CONSTANTS.AJAX_TIMEOUT_SHORT })
+        }
+      })
+      StepperState.uploadsInProgress = 0
       StepperState.uploadedFiles = []
     }
 
@@ -1144,8 +1155,10 @@
     var type = file.fileType
     var name = file.name
     var subtitle = file.subtitle || file.size
-    // Show progress until server has accepted the file (uploadId); demo entries may have no .file
-    var isUploading = file.file && !file.uploadId
+    // Show progress until all chunks are done (uploadComplete); uploadId is set after the first
+    // chunk so it cannot be used here — the progress bar would vanish mid-upload otherwise.
+    // Demo entries (no .file) are treated as already complete.
+    var isUploading = file.file && !file.uploadComplete
     var verified = !isUploading
 
     var icon = type === 'csv' ? 'fa-file-text' : 'fa-file-archive-o'
@@ -1164,7 +1177,7 @@
     }
 
     var statusHtml = verified
-      ? '<span class="fa fa-check-circle file-verified"></span>'
+      ? '<span class="fa fa-check-circle file-verified file-status-success"></span>'
       : ''
 
     var safeName = escapeHtml(name)
@@ -1194,9 +1207,13 @@
 
   // Reset upload state
   function resetUploadState() {
-    // Abort in-progress uploads and delete server-side files
+    // Abort in-progress uploads and delete server-side files.
+    // Mark as user-aborted first so the catch handler doesn't double-decrement uploadsInProgress.
     StepperState.uploadedFiles.forEach(function (f) {
-      if (f.uploadXhr) f.uploadXhr.abort()
+      if (f.uploadXhr) {
+        f.uploadAbortedByUser = true
+        f.uploadXhr.abort()
+      }
       if (f.uploadId) {
         $.ajax({ url: CONSTANTS.UPLOAD_URL + f.uploadId, method: 'DELETE', timeout: CONSTANTS.AJAX_TIMEOUT_SHORT })
       }
@@ -2213,13 +2230,16 @@
     // Disable the file input so raw files aren't sent with the form
     $('#file-input').prop('disabled', true)
 
-    // Add uploaded file IDs as hidden inputs (use .val() to avoid XSS)
-    StepperState.uploadedFiles.forEach(function (f) {
-      if (f.uploadId) {
-        var $input = $('<input>', { type: 'hidden', name: 'uploaded_files[]' }).val(f.uploadId)
-        $form.append($input)
-      }
-    })
+    // Only append uploaded file IDs in upload mode; in file_path mode the import_file_path
+    // param is used and appending IDs would cause create_v2 to ignore the path.
+    if (StepperState.uploadMode === 'upload' && Array.isArray(StepperState.uploadedFiles)) {
+      StepperState.uploadedFiles.forEach(function (f) {
+        if (f.uploadId) {
+          var $input = $('<input>', { type: 'hidden', name: 'uploaded_files[]' }).val(f.uploadId)
+          $form.append($input)
+        }
+      })
+    }
 
     // Submit the form so the request hits create_v2 and creates the importer / enqueues job
     $form[0].submit()
