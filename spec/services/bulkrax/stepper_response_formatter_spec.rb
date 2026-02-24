@@ -461,7 +461,7 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
         expect(issue[:icon]).to eq('fa-exclamation-triangle')
         expect(issue[:title]).to eq('File References')
         expect(issue[:count]).to eq(5)
-        expect(issue[:summary]).to eq('5 files referenced in CSV.')
+        expect(issue[:summary]).to eq('5 files referenced in CSV not found in import.')
         expect(issue[:description]).to eq('No ZIP file uploaded. Ensure files are accessible on the server or upload a ZIP.')
         expect(issue[:items]).to be_empty
       end

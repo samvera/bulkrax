@@ -166,6 +166,7 @@
     // File upload - add another dropzone
     $('.upload-dropzone-small').on('click', function () {
       StepperState.isAddingFiles = true
+      $('#file-input').val('') // Prevent upload of a duplicate file
       $('#file-input').trigger('click')
     })
 
@@ -259,6 +260,7 @@
 
     // File path input
     $('#import-file-path').on('input', debounce(function () {
+      resetValidationState()
       updateValidateButtonState()
     }, CONSTANTS.DEBOUNCE_DELAY))
 
@@ -281,18 +283,12 @@
     })
 
     // Start over
-    $('#start-over-btn').on('click', function () {
-      resetUploadState()
+    $('.start-over-nav-btn').on('click', function () {
+      startOver()
     })
 
-    // Start over
-    $('#upload-different-btn').on('click', function (e) {
-      e.preventDefault()
-      resetUploadState()
-    })
-
-    // Validate button
-    $('#validate-btn').on('click', function () {
+    // Validate button (one per tab; only the active one is visible)
+    $('#validate-upload-btn, #validate-path-btn').on('click', function () {
       validateFiles()
     })
 
@@ -335,6 +331,7 @@
     $('#importer-admin-set').on('change', function () {
       StepperState.adminSetId = $(this).val()
       StepperState.settings.adminSetName = $(this).find('option:selected').text()
+      resetValidationState()
       updateStepNavigation()
       updateDownloadTemplateLink()
       // Update validate button state since admin set is required for validation
@@ -371,16 +368,10 @@
       $row.remove()
       $('#file-input').val('')
 
-      // If no files left, reset to empty state
+      // Reset validation since files changed
+      resetValidationState()
       if (StepperState.uploadedFiles.length === 0) {
-        StepperState.validated = false
-        StepperState.validationData = null
         StepperState.skipValidation = false
-        $('.validation-results').hide()
-        $('.warning-acknowledgment').hide()
-        $('#validate-btn')
-          .prop('disabled', true)
-          .html('<span class="fa fa-file-text"></span> Validate Files')
         $('#skip-validation-checkbox').prop('checked', false)
       }
 
@@ -671,6 +662,11 @@
       clearFileUploadError()
     }
 
+    // Reset validation since files changed
+    if (addedFiles.length > 0) {
+      resetValidationState()
+    }
+
     updateUploadState()
     renderUploadedFiles()
   }
@@ -806,14 +802,35 @@
       $('.uploaded-files-container').hide()
       $('.add-another-dropzone').hide()
       $('.file-path-panel').show()
-      $('.start-over-link').hide()
+      $('#validate-upload-btn').hide()
+      $('#validate-path-btn').show()
     } else {
       // Hide file path panel, restore upload state
       $('.file-path-panel').hide()
+      $('#validate-path-btn').hide()
+      $('#validate-upload-btn').show()
       renderUploadedFiles()
     }
 
+    // Reset validation when switching modes
+    resetValidationState()
     updateValidateButtonState()
+  }
+
+  // Reset validation state and restore button text (called when inputs change)
+  function resetValidationState() {
+    if (!StepperState.validated) return
+
+    StepperState.validated = false
+    StepperState.validationData = null
+    StepperState.warningsAcked = false
+    $('#warnings-acked').prop('checked', false)
+    $('.validation-results').hide()
+    $('.warning-acknowledgment').hide()
+    $('#validate-upload-btn').html('<span class="fa fa-file-text"></span> Validate Files from Upload')
+    $('#validate-path-btn').html('<span class="fa fa-file-text"></span> Validate Files from Import Path')
+    renderUploadedFiles()
+    updateStepNavigation()
   }
 
   // Update validate button enabled state based on current upload mode
@@ -833,10 +850,11 @@
         if (f.fileType === 'zip') check.hasZip = true
         return check
       }, { hasCsv: false, hasZip: false })
-      canValidate = (fileCheck.hasCsv || fileCheck.hasZip) && hasAdminSet && !StepperState.validated
+      canValidate = (fileCheck.hasCsv || fileCheck.hasZip) && hasAdminSet
     }
 
-    $('#validate-btn').prop('disabled', !canValidate)
+    var $validateBtn = StepperState.uploadMode === 'file_path' ? $('#validate-path-btn') : $('#validate-upload-btn')
+    $validateBtn.prop('disabled', !canValidate)
     $('#skip-validation-checkbox').prop('disabled', !canValidate && !StepperState.skipValidation)
   }
 
@@ -860,7 +878,6 @@
       $('.upload-zone-empty').show()
       $('.uploaded-files-container').hide()
       $('.add-another-dropzone').hide()
-      $('.start-over-link').hide()
       updateValidateButtonState()
       return
     }
@@ -871,10 +888,21 @@
     var $list = $('.uploaded-files-list')
     $list.empty()
 
-    // Render all uploaded files
+    // Render all uploaded files — only show status icon after validation
+    var validationStatus = null
+    if (StepperState.validated && StepperState.validationData) {
+      var vd = StepperState.validationData
+      if (!vd.isValid) {
+        validationStatus = 'error'
+      } else if (vd.hasWarnings) {
+        validationStatus = 'warning'
+      } else {
+        validationStatus = 'success'
+      }
+    }
     var fileRows = files.map(function (file) {
       var subtitle = file.subtitle || file.size
-      return renderFileRow(file.fileType, file.name, subtitle, true)
+      return renderFileRow(file.fileType, file.name, subtitle, validationStatus)
     })
     $list.append(fileRows.join(''))
 
@@ -908,22 +936,26 @@
     // Show/hide "Add another file" dropzone based on file count
     if (files.length === 1) {
       $('.add-another-dropzone').show()
-      $('.start-over-link').show()
     } else {
       $('.add-another-dropzone').hide()
-      $('.start-over-link').show()
     }
 
     updateValidateButtonState()
   }
 
   // Render a single file row
-  function renderFileRow(type, name, subtitle, verified) {
+  // validationStatus: null (not yet validated), 'success', 'warning', or 'error'
+  function renderFileRow(type, name, subtitle, validationStatus) {
     var icon = type === 'csv' ? 'fa-file-text' : 'fa-file-archive-o'
     var iconBg = type === 'csv' ? 'file-icon-csv' : 'file-icon-zip'
-    var checkmark = verified
-      ? '<span class="fa fa-check-circle file-verified"></span>'
-      : ''
+    var statusIcon = ''
+    if (validationStatus === 'success') {
+      statusIcon = '<span class="fa fa-check-circle file-status file-status-success"></span>'
+    } else if (validationStatus === 'warning') {
+      statusIcon = '<span class="fa fa-exclamation-triangle file-status file-status-warning"></span>'
+    } else if (validationStatus === 'error') {
+      statusIcon = '<span class="fa fa-times-circle file-status file-status-error"></span>'
+    }
 
     // Escape user-provided data (file name and subtitle)
     var safeName = escapeHtml(name)
@@ -947,7 +979,7 @@
       '</div>' +
       '</div>' +
       '<div class="file-actions">' +
-      checkmark +
+      statusIcon +
       '<button type="button" class="file-remove-btn" aria-label="Remove file">' +
       '<span class="fa fa-times"></span>' +
       '</button>' +
@@ -969,6 +1001,7 @@
     $('#import-file-path').val('')
     $('.validation-results').hide()
     $('.warning-acknowledgment').hide()
+    $('#warnings-acked').prop('checked', false)
     clearFileUploadError()
 
     // Clear all notifications
@@ -977,13 +1010,60 @@
     // Reset skip validation checkbox
     $('#skip-validation-checkbox').prop('checked', false)
 
-    // Reset validate button to original state
-    $('#validate-btn')
+    // Reset both validate buttons to original state
+    $('#validate-upload-btn')
       .prop('disabled', true)
-      .html('<span class="fa fa-file-text"></span> Validate Files')
+      .html('<span class="fa fa-file-text"></span> Validate Files from Upload')
+    $('#validate-path-btn')
+      .prop('disabled', true)
+      .html('<span class="fa fa-file-text"></span> Validate Files from Import Path')
 
     renderUploadedFiles()
     updateStepNavigation()
+  }
+
+  // Full reset: clear everything and return to step 1
+  function startOver() {
+    // Reset files and validation
+    resetUploadState()
+
+    // Reset upload mode to default "upload" tab
+    StepperState.uploadMode = 'upload'
+    $('.upload-mode-tab').removeClass('active')
+    $('.upload-mode-tab[data-upload-mode="upload"]').addClass('active')
+    $('.uploaded-files-container').hide()
+    $('.file-path-panel').hide()
+    $('#validate-path-btn').hide()
+    $('#validate-upload-btn').show()
+
+    // Reset admin set to default
+    var $adminSetSelect = $('#importer-admin-set')
+    var defaultAdminSet = $adminSetSelect.find('option').filter(function () {
+      return $(this).text().indexOf('Default') !== -1
+    }).val() || ''
+    $adminSetSelect.val(defaultAdminSet)
+    StepperState.adminSetId = defaultAdminSet
+    StepperState.adminSetName = $adminSetSelect.find('option:selected').text()
+
+    // Reset settings
+    setDefaultImportName()
+    StepperState.settings.visibility = 'open'
+    $('.visibility-card').removeClass('active')
+    $('.visibility-card[data-visibility="open"]').addClass('active')
+    $('input[name="importer[parser_fields][visibility]"][value="open"]').prop('checked', true)
+    $('select[name="importer[parser_fields][rights_statement]"]').val('')
+    StepperState.settings.rightsStatement = ''
+    $('#bulkrax_importer_limit').val('')
+    StepperState.settings.limit = ''
+    $('input[name="importer[parser_fields][override_rights_statement]"]').prop('checked', false)
+
+    // Clear review step warnings from previous run
+    $('.review-warnings-list').empty()
+    $('.review-warnings').hide()
+    $('.large-import-warning').hide()
+
+    // Navigate to step 1
+    goToStep(1)
   }
 
   // ============================================================================
@@ -1040,8 +1120,8 @@
 
     try {
       renderValidationResults(normalized)
+      renderUploadedFiles()
       $btn.html('<span class="fa fa-check-circle"></span> Validated')
-      $('.start-over-link').show()
       updateStepNavigation()
     } catch (e) {
       console.error('Validation results render issue:', e)
@@ -1082,9 +1162,12 @@
     showNotification(errorMsg, 'error')
 
     // Reset button state
+    var resetLabel = $btn.attr('id') === 'validate-path-btn'
+      ? '<span class="fa fa-file-text"></span> Validate Files from Import Path'
+      : '<span class="fa fa-file-text"></span> Validate Files from Upload'
     $btn
       .prop('disabled', false)
-      .html('<span class="fa fa-file-text"></span> Validate Files')
+      .html(resetLabel)
 
     // Reset validation state on error
     StepperState.validated = false
@@ -1093,41 +1176,40 @@
 
   // Validate files (AJAX call to backend)
   function validateFiles() {
-    var $btn = $('#validate-btn')
+    var $btn = StepperState.uploadMode === 'file_path' ? $('#validate-path-btn') : $('#validate-upload-btn')
     $btn
       .prop('disabled', true)
       .html('<span class="fa fa-spinner fa-spin"></span> Validating...')
 
-    // Check if we're in demo mode (no real files in state)
-    var hasRealFiles = StepperState.uploadedFiles.some(function (f) { return f.file })
-    var filePathValue = $('#import-file-path').val().trim()
-    var hasFilePath = filePathValue.length > 0
-    var useMockData = !hasRealFiles && !hasFilePath
-
-    // Build FormData manually so ALL files from state are included.
-    // The file input only holds the last-selected file, so uploading
-    // a ZIP then adding a CSV would lose the ZIP from the form.
-    var formData
-    if (!useMockData) {
-      formData = new FormData($('#bulk-import-stepper-form')[0])
-      // Remove the file input's entries (only has the last-selected file)
-      formData.delete('importer[parser_fields][files][]')
-      // Re-add all files from state
-      StepperState.uploadedFiles.forEach(function (f) {
-        if (f.file) {
-          formData.append('importer[parser_fields][files][]', f.file)
-        }
-      })
+    // Uncheck "Skip validation" since the user is actively validating
+    if (StepperState.skipValidation) {
+      StepperState.skipValidation = false
+      $('#skip-validation-checkbox').prop('checked', false)
     }
 
-    // Choose validation method based on mode
+    // Choose validation method based on the active upload mode tab.
+    // Each tab is validated independently — no cross-tab priority.
     var validationPromise
-    if (hasFilePath) {
+    if (StepperState.uploadMode === 'file_path') {
+      var filePathValue = $('#import-file-path').val().trim()
       validationPromise = performFilePathValidation(filePathValue)
-    } else if (useMockData) {
-      validationPromise = performMockValidation()
     } else {
-      validationPromise = performValidation(formData)
+      var hasRealFiles = StepperState.uploadedFiles.some(function (f) { return f.file })
+      if (hasRealFiles) {
+        // Build FormData manually so ALL files from state are included.
+        // The file input only holds the last-selected file, so uploading
+        // a ZIP then adding a CSV would lose the ZIP from the form.
+        var formData = new FormData($('#bulk-import-stepper-form')[0])
+        formData.delete('importer[parser_fields][files][]')
+        StepperState.uploadedFiles.forEach(function (f) {
+          if (f.file) {
+            formData.append('importer[parser_fields][files][]', f.file)
+          }
+        })
+        validationPromise = performValidation(formData)
+      } else {
+        validationPromise = performMockValidation()
+      }
     }
 
     // Handle validation result
@@ -1861,22 +1943,25 @@
 
     $('.review-settings').html(settingsHtml)
 
-    // Warnings
-    if (data && data.hasWarnings) {
-      var warningsHtml = '<ul class="small">'
-      if (data.unrecognized.length > 0) {
-        warningsHtml +=
-          '<li>• ' +
-          data.unrecognized.length +
-          ' unrecognized column(s) will be ignored</li>'
-      }
-      if (data.missingFiles.length > 0) {
-        warningsHtml +=
-          '<li>• ' + data.missingFiles.length + ' file(s) missing from ZIP</li>'
-      }
-      warningsHtml += '</ul>'
+    // Warnings — derive from messages.issues so all warning types are covered
+    var warningIssues = (data && data.messages && data.messages.issues)
+      ? data.messages.issues.filter(function (issue) { return issue.severity === 'warning' })
+      : []
+    if (warningIssues.length > 0) {
+      var warningsHtml = ''
+      warningIssues.forEach(function (issue) {
+        var label = issue.title
+        if (issue.count) { label += ' (' + issue.count + ')' }
+        var detail = issue.summary || issue.description || ''
+        warningsHtml += '<p>' + label
+        if (detail) { warningsHtml += ' — ' + detail }
+        warningsHtml += '</p>'
+      })
       $('.review-warnings-list').html(warningsHtml)
       $('.review-warnings').show()
+    } else {
+      $('.review-warnings-list').empty()
+      $('.review-warnings').hide()
     }
 
     // Large import warning
