@@ -1157,7 +1157,7 @@
       progressBlock =
         '<div class="upload-progress-block">' +
         '<div class="upload-progress-label">Uploading… ' + progress + '%</div>' +
-        '<div class="upload-progress-bar-container">' +
+        '<div class="upload-progress-bar-container" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + progress + '">' +
         '<div class="upload-progress-bar" style="width:' + progress + '%;"></div>' +
         '</div>' +
         '</div>'
