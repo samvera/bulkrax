@@ -570,6 +570,56 @@ describe('Step 3: Review & Start', () => {
     })
   })
 
+  describe('file summary for file_path mode (buildFilesSummary)', () => {
+    it('returns the import path when uploadMode is file_path', () => {
+      var entries = stepper.buildFilesSummary([], 'file_path', '/srv/imports/batch_01.csv')
+      expect(entries.length).toBe(1)
+      expect(entries[0].type).toBe('Path')
+      expect(entries[0].name).toBe('/srv/imports/batch_01.csv')
+    })
+
+    it('trims whitespace from the file path', () => {
+      var entries = stepper.buildFilesSummary([], 'file_path', '  /srv/imports/data.csv  ')
+      expect(entries[0].name).toBe('/srv/imports/data.csv')
+    })
+
+    it('returns empty when file_path mode has no path entered', () => {
+      var entries = stepper.buildFilesSummary([], 'file_path', '')
+      expect(entries.length).toBe(0)
+    })
+
+    it('returns empty when file_path mode has whitespace-only path', () => {
+      var entries = stepper.buildFilesSummary([], 'file_path', '   ')
+      expect(entries.length).toBe(0)
+    })
+
+    it('returns uploaded files when uploadMode is upload', () => {
+      var files = [
+        { name: 'data.csv', fileType: 'csv', size: '2 KB', fromZip: false },
+        { name: 'assets.zip', fileType: 'zip', size: '5 MB', fromZip: false }
+      ]
+      var entries = stepper.buildFilesSummary(files, 'upload', '')
+      expect(entries.length).toBe(2)
+      expect(entries[0].type).toBe('CSV')
+      expect(entries[0].name).toBe('data.csv')
+      expect(entries[0].size).toBe('2 KB')
+      expect(entries[1].type).toBe('ZIP')
+    })
+
+    it('preserves the fromZip flag on uploaded files', () => {
+      var files = [
+        { name: 'data.csv', fileType: 'csv', size: '1 KB', fromZip: true }
+      ]
+      var entries = stepper.buildFilesSummary(files, 'upload', '')
+      expect(entries[0].fromZip).toBe(true)
+    })
+
+    it('sets size to null for file_path entries (size is unknown)', () => {
+      var entries = stepper.buildFilesSummary([], 'file_path', '/srv/imports/data.csv')
+      expect(entries[0].size).toBeNull()
+    })
+  })
+
   describe('record counts', () => {
     it('totals collections + works + file sets from validation data', () => {
       // This computation lives inside updateReviewSummary (not exported).

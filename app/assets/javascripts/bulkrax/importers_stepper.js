@@ -1895,6 +1895,24 @@
     }
   }
 
+  // Pure function: build file summary entries for the review step.
+  // When uploadMode is 'file_path', returns a single entry for the path.
+  // When uploadMode is 'upload', returns one entry per uploaded file.
+  // Each entry: { type, name, size, fromZip }
+  function buildFilesSummary(uploadedFiles, uploadMode, filePath) {
+    if (uploadMode === 'file_path' && filePath && filePath.trim().length > 0) {
+      return [{ type: 'Path', name: filePath.trim(), size: null, fromZip: false }]
+    }
+    return uploadedFiles.map(function (f) {
+      return {
+        type: f.fileType === 'csv' ? 'CSV' : 'ZIP',
+        name: f.name,
+        size: f.size,
+        fromZip: !!f.fromZip
+      }
+    })
+  }
+
   // Pure function: compute record counts from validation data.
   // Returns { skipped, totalItems, collections, works, fileSets }.
   function buildRecordsSummary(data) {
@@ -1937,12 +1955,14 @@
     var settings = StepperState.settings
 
     // Files
-    var filesHtml = StepperState.uploadedFiles
-      .map(function (f) {
-        var type = f.fileType === 'csv' ? 'CSV' : 'ZIP'
-        var fromZip = f.fromZip ? ' — detected in ZIP' : ''
+    var filePath = $('#import-file-path').val() || ''
+    var fileSummaryEntries = buildFilesSummary(StepperState.uploadedFiles, StepperState.uploadMode, filePath)
+    var filesHtml = fileSummaryEntries
+      .map(function (entry) {
+        var fromZip = entry.fromZip ? ' — detected in ZIP' : ''
+        var sizeStr = entry.size ? ' (' + escapeHtml(entry.size) + ')' : ''
         return (
-          '<p><span class="text-muted small">' + type + ':</span> ' + escapeHtml(f.name) + ' (' + escapeHtml(f.size) + ')' + fromZip + '</p>'
+          '<p><span class="text-muted small">' + entry.type + ':</span> ' + escapeHtml(entry.name) + sizeStr + fromZip + '</p>'
         )
       })
       .join('')
@@ -2133,6 +2153,7 @@
       // Step-level pure state transformers
       applyValidationReset: applyValidationReset,
       applyStartOver: applyStartOver,
+      buildFilesSummary: buildFilesSummary,
       buildRecordsSummary: buildRecordsSummary,
       buildSettingsSummary: buildSettingsSummary
     }
