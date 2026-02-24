@@ -37,14 +37,7 @@ module Bulkrax
     def create_v2
       files = nil
       files = resolve_create_files
-
-      if params[:uploaded_files].present? && files.empty?
-        respond_to do |format|
-          format.html { render :new_v2, status: :unprocessable_entity }
-          format.json { render json: { errors: ['No valid uploaded files found'] }, status: :unprocessable_entity }
-        end
-        return
-      end
+      return render_invalid_uploaded_files_response if params[:uploaded_files].present? && files.empty?
 
       @importer = Importer.new(importer_params_v2)
       @importer.parser_klass = 'Bulkrax::CsvParser'
@@ -124,6 +117,13 @@ module Bulkrax
         base.where(user_id: current_user.id)
       else
         base.none
+      end
+    end
+
+    def render_invalid_uploaded_files_response
+      respond_to do |format|
+        format.html { render :new_v2, status: :unprocessable_entity }
+        format.json { render json: { errors: ['No valid uploaded files found'] }, status: :unprocessable_entity }
       end
     end
 
