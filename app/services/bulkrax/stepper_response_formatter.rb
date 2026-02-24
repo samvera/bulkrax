@@ -89,6 +89,7 @@ module Bulkrax
         rowCount: @data[:rowCount],
         isValid: @data[:isValid],
         hasWarnings: @data[:hasWarnings],
+        rowErrors: @data[:rowErrors],
         collections: @data[:collections],
         works: @data[:works],
         fileSets: @data[:fileSets],
@@ -120,6 +121,7 @@ module Bulkrax
       issues << missing_required_issue if @data[:missingRequired]&.any?
       issues << unrecognized_fields_issue if @data[:unrecognized]&.any?
       issues << file_references_issue if @data[:fileReferences]&.positive?
+      issues << row_errors_issue if @data[:rowErrors]&.any?
 
       {
         validationStatus: validation_status,
