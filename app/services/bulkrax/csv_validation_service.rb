@@ -56,7 +56,7 @@ module Bulkrax
   #   # Returns hash with: headers, missingRequired, unrecognized, rowCount, isValid, etc.
   #
   class CsvValidationService
-    attr_reader :mappings, :all_models
+    attr_reader :mappings, :all_models, :admin_set_id
 
     # ============================================================================
     # CLASS METHODS - Primary entry points
@@ -94,6 +94,9 @@ module Bulkrax
     # @param zip_file [File, nil] Zip archive for validation mode
     # @param admin_set_id [String, nil] Optional admin set ID for context
     def initialize(models: nil, csv_file: nil, zip_file: nil, admin_set_id: nil)
+      # Store admin_set_id for later use
+      @admin_set_id = admin_set_id
+
       # Common initialization - load field mappings
       @mapping_manager = CsvValidationService::MappingManager.new
       @mappings = @mapping_manager.mappings
@@ -127,7 +130,7 @@ module Bulkrax
     # @return [String] Path to written file
     def to_file(file_path: nil)
       ensure_csv_builder
-      file_path ||= CsvValidationService::FilePathGenerator.default_path
+      file_path ||= CsvValidationService::FilePathGenerator.default_path(@admin_set_id)
       @csv_builder.write_to_file(file_path)
       file_path
     end
