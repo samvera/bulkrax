@@ -7,7 +7,7 @@
   <meta name="turbolinks-cache-control" content="no-cache">
 <% end %>
 
-<div class="bulk-import-stepper-container">
+<div class="bulk-import-stepper-container" data-max-file-size="<%= (defined?(Hyrax) && Hyrax.config.uploader&.[](:maxFileSize)) || 524288000 %>">
   <div class="stepper-wrapper">
 
     <!-- Stepper Header -->

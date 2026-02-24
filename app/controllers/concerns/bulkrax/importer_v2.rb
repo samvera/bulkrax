@@ -30,10 +30,14 @@ module Bulkrax
 
       admin_set_id = params[:importer]&.[](:admin_set_id)
       render json: StepperResponseFormatter.format(run_validation(csv_file, zip_file, admin_set_id: admin_set_id)), status: :ok
+    ensure
+      close_file_handles(files)
     end
 
     def create_v2
-      files = extract_uploaded_files
+      files = nil
+      files = resolve_create_files
+      return render_invalid_uploaded_files_response if params[:uploaded_files].present? && files.empty?
 
       @importer = Importer.new(importer_params_v2)
       @importer.parser_klass = 'Bulkrax::CsvParser'
@@ -54,6 +58,8 @@ module Bulkrax
           format.json { render json: { errors: @importer.errors.full_messages }, status: :unprocessable_entity }
         end
       end
+    ensure
+      close_file_handles(files)
     end
 
     # Serve demo scenario fixtures for frontend testing
@@ -68,7 +74,7 @@ module Bulkrax
 
     private
 
-    # Resolves files for validation from either a server-side file path or uploaded params
+    # Resolves files for validation from either a server-side file path, pre-uploaded Hyrax files, or direct upload params
     # @return [Array<(Array<File>, nil)>] on success, a tuple of [files, nil]
     # @return [Array<(nil, Hash)>] on error, a tuple of [nil, error_response]
     def resolve_validation_files
@@ -76,6 +82,8 @@ module Bulkrax
         return [nil, StepperResponseFormatter.error(message: 'File path does not exist')] unless File.exist?(import_file_path)
 
         [[File.open(import_file_path)], nil]
+      elsif params[:uploaded_files].present?
+        resolve_hyrax_uploaded_files
       else
         files = params[:importer]&.[](:parser_fields)&.[](:files) || []
         files = [files] unless files.is_a?(Array)
@@ -83,14 +91,58 @@ module Bulkrax
       end
     end
 
+    # Loads files from Hyrax::UploadedFile IDs (used by chunked upload flow).
+    # Scoped to current_user to prevent accessing another user's uploads.
+    def resolve_hyrax_uploaded_files
+      uploads = uploaded_files_scope
+      return [nil, StepperResponseFormatter.error(message: 'No uploaded files found for the given IDs')] if uploads.empty?
+
+      files = uploads.filter_map do |u|
+        path = u.file&.path
+        next nil unless path && File.exist?(path)
+        File.open(path)
+      end
+      [files, nil]
+    rescue StandardError => e
+      Rails.logger.error("Bulkrax: error loading Hyrax uploaded files: #{e.class}: #{e.message}")
+      Rails.logger.debug { e.full_message }
+      [nil, StepperResponseFormatter.error(message: 'Failed to load uploaded files')]
+    end
+
+    def uploaded_files_scope
+      return [] unless defined?(::Hyrax)
+
+      base = Hyrax::UploadedFile.where(id: params[:uploaded_files])
+      if respond_to?(:current_user) && current_user.present?
+        base.where(user_id: current_user.id)
+      else
+        base.none
+      end
+    end
+
+    def render_invalid_uploaded_files_response
+      respond_to do |format|
+        format.html { render :new_v2, status: :unprocessable_entity }
+        format.json { render json: { errors: ['No valid uploaded files found'] }, status: :unprocessable_entity }
+      end
+    end
+
     # Scans the given files for a CSV and a ZIP by file extension
     # @param files [Array<File, ActionDispatch::Http::UploadedFile>] the resolved files to search
     # @return [Array<(File, nil), (nil, File), (File, File), (nil, nil)>] a tuple of [csv_file, zip_file]; either may be nil
     def find_csv_and_zip(files)
-      method = import_via_file_path? ? :path : :original_filename
-      csv_file = files.find { |f| f.public_send(method)&.end_with?('.csv') }
-      zip_file = files.find { |f| f.public_send(method)&.end_with?('.zip') }
+      csv_file = files.find { |f| filename_for(f)&.end_with?('.csv') }
+      zip_file = files.find { |f| filename_for(f)&.end_with?('.zip') }
       [csv_file, zip_file]
+    end
+
+    # Returns a filename from any file-like object (ActionDispatch upload, File, or Tempfile)
+    def filename_for(file)
+      if file.respond_to?(:original_filename)
+        file.original_filename
+      elsif file.respond_to?(:path)
+        file.path
+      end
     end
 
     # Opens a ZIP and extracts the CSV content into a StringIO while the archive is open
@@ -160,6 +212,24 @@ module Bulkrax
       csv_by_depth[shallowest_depth]
     end
 
+    def resolve_create_files
+      if params[:uploaded_files].present?
+        uploads = uploaded_files_scope
+        uploads.filter_map do |u|
+          path = u.file&.path
+          next nil unless path && File.exist?(path)
+          File.open(path)
+        end
+      else
+        extract_uploaded_files
+      end
+    end
+
+    def close_file_handles(files)
+      return unless files.is_a?(Array)
+      files.each { |f| f.close if f.respond_to?(:close) }
+    end
+
     def extract_uploaded_files
       files_param = params[:importer]&.[](:parser_fields)&.[](:files)
       return [] if files_param.blank?
@@ -200,7 +270,14 @@ module Bulkrax
 
     def write_file_if_present(file)
       return nil unless file
-      @importer.parser.write_import_file(file)
+
+      if file.respond_to?(:original_filename)
+        @importer.parser.write_import_file(file)
+      else
+        dest_path = File.join(@importer.parser.path_for_import, File.basename(file.path))
+        FileUtils.cp(file.path, dest_path)
+        dest_path
+      end
     end
 
     # rubocop:disable Metrics/MethodLength
