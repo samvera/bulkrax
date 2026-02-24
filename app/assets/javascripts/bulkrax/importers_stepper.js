@@ -813,13 +813,25 @@
     updateValidateButtonState()
   }
 
+  // Pure function: apply validation reset to a state object, returning a new state.
+  // Clears validated, validationData, and warningsAcknowledge.
+  // DOM side-effects (hiding panels, unchecking boxes) are handled by the caller.
+  function applyValidationReset(state) {
+    return Object.assign({}, state, {
+      validated: false,
+      validationData: null,
+      warningsAcknowledge: false
+    })
+  }
+
   // Reset validation state and restore button text (called when inputs change)
   function resetValidationState() {
     if (!StepperState.validated) return
 
-    StepperState.validated = false
-    StepperState.validationData = null
-    StepperState.warningsAcknowledge = false
+    var next = applyValidationReset(StepperState)
+    StepperState.validated = next.validated
+    StepperState.validationData = next.validationData
+    StepperState.warningsAcknowledge = next.warningsAcknowledge
     $('#warnings-acked').prop('checked', false)
     $('.validation-results').hide()
     $('.warning-acknowledgment').hide()
@@ -1022,13 +1034,52 @@
     updateStepNavigation()
   }
 
+  // Pure function: compute fully-reset state for a "start over" action.
+  // Returns a new state object with all fields reset to their initial values.
+  // DOM side-effects (UI resets, navigation) are handled by the caller.
+  function applyStartOver(state) {
+    return Object.assign({}, state, {
+      uploadedFiles: [],
+      uploadState: CONSTANTS.UPLOAD_STATES.EMPTY,
+      validated: false,
+      validationData: null,
+      warningsAcknowledge: false,
+      skipValidation: false,
+      demoScenario: null,
+      uploadMode: 'upload',
+      adminSetId: '',
+      adminSetName: '',
+      settings: {
+        name: '',
+        visibility: 'open',
+        rightsStatement: '',
+        limit: ''
+      }
+    })
+  }
+
   // Full reset: clear everything and return to step 1
   function startOver() {
-    // Reset files and validation
-    resetUploadState()
+    // Apply pure state reset
+    Object.assign(StepperState, applyStartOver(StepperState))
 
-    // Reset upload mode to default "upload" tab
-    StepperState.uploadMode = 'upload'
+    // DOM resets (mirrors resetUploadState without the separate function call)
+    $('#file-input').val('')
+    $('#import-file-path').val('')
+    $('.validation-results').hide()
+    $('.warning-acknowledgment').hide()
+    $('#warnings-acked').prop('checked', false)
+    clearFileUploadError()
+    $('#upload-notifications').empty()
+    $('#skip-validation-checkbox').prop('checked', false)
+    $('#validate-upload-btn')
+      .prop('disabled', true)
+      .html('<span class="fa fa-file-text"></span> Validate Files from Upload')
+    $('#validate-path-btn')
+      .prop('disabled', true)
+      .html('<span class="fa fa-file-text"></span> Validate Files from Import Path')
+
+    // Upload mode UI
     $('.upload-mode-tab').removeClass('active')
     $('.upload-mode-tab[data-upload-mode="upload"]').addClass('active')
     $('.uploaded-files-container').hide()
@@ -1036,7 +1087,7 @@
     $('#validate-path-btn').hide()
     $('#validate-upload-btn').show()
 
-    // Reset admin set to default
+    // Admin set reset from DOM (overrides the empty string from applyStartOver)
     var $adminSetSelect = $('#importer-admin-set')
     var defaultAdminSet = $adminSetSelect.find('option').filter(function () {
       return $(this).text().indexOf('Default') !== -1
@@ -1045,16 +1096,13 @@
     StepperState.adminSetId = defaultAdminSet
     StepperState.adminSetName = $adminSetSelect.find('option:selected').text()
 
-    // Reset settings
+    // Settings form UI
     setDefaultImportName()
-    StepperState.settings.visibility = 'open'
     $('.visibility-card').removeClass('active')
     $('.visibility-card[data-visibility="open"]').addClass('active')
     $('input[name="importer[parser_fields][visibility]"][value="open"]').prop('checked', true)
     $('select[name="importer[parser_fields][rights_statement]"]').val('')
-    StepperState.settings.rightsStatement = ''
     $('#bulkrax_importer_limit').val('')
-    StepperState.settings.limit = ''
     $('input[name="importer[parser_fields][override_rights_statement]"]').prop('checked', false)
 
     // Clear review step warnings from previous run
@@ -1063,6 +1111,7 @@
     $('.large-import-warning').hide()
 
     // Navigate to step 1
+    renderUploadedFiles()
     goToStep(1)
   }
 
@@ -1082,6 +1131,7 @@
     })
   }
 
+  // Perform validation API call for file path input mode
   function performFilePathValidation(filePath) {
     return $.ajax({
       url: CONSTANTS.ENDPOINTS.VALIDATE,
@@ -1174,7 +1224,8 @@
     StepperState.validationData = null
   }
 
-  // Validate files (AJAX call to backend)
+  // Validate files — dispatches to file path AJAX, file upload AJAX, or mock validation
+  // (demo scenarios), depending on the current upload mode and whether real files are present
   function validateFiles() {
     var $btn = StepperState.uploadMode === 'file_path' ? $('#validate-path-btn') : $('#validate-upload-btn')
     $btn
@@ -1246,6 +1297,7 @@
     return hasWarningsValue === true
   }
 
+  // Normalize API response — maps both camelCase and snake_case keys to a standard camelCase structure
   function normalizeValidationData(data) {
     if (!data) return data
     return {
@@ -1465,7 +1517,7 @@
     var $wrapper = $('.accordion-wrapper')
     $wrapper.empty()
 
-    // Check if we have the new messages structure
+    // Guard against malformed response — messages.validationStatus is required
     if (!data.messages || !data.messages.validationStatus) {
       console.error('Invalid validation response: missing messages structure')
       return
@@ -1732,6 +1784,7 @@
     }
   }
 
+  // Update the CSV template download link to include the selected admin_set_id as a query param
   function updateDownloadTemplateLink() {
     var $link = $('#download-csv-template-link')
     if (!$link.length) return
@@ -1842,6 +1895,42 @@
     }
   }
 
+  // Pure function: compute record counts from validation data.
+  // Returns { skipped, totalItems, collections, works, fileSets }.
+  function buildRecordsSummary(data) {
+    if (!data) {
+      return { skipped: true, totalItems: 0, collections: 0, works: 0, fileSets: 0 }
+    }
+    var collections = (data.collections || []).length
+    var works = (data.works || []).length
+    var fileSets = (data.fileSets || []).length
+    return {
+      skipped: false,
+      totalItems: collections + works + fileSets,
+      collections: collections,
+      works: works,
+      fileSets: fileSets
+    }
+  }
+
+  // Pure function: build a structured settings summary for display.
+  // Returns { name, adminSetName, visibility (human-readable label),
+  //           rightsStatement (null when empty), limit (null when empty) }.
+  function buildSettingsSummary(settings, adminSetName) {
+    var visibilityLabels = {
+      open: 'Public',
+      authenticated: 'Institution',
+      restricted: 'Private'
+    }
+    return {
+      name: settings.name,
+      adminSetName: adminSetName || 'Not selected',
+      visibility: visibilityLabels[settings.visibility] || settings.visibility,
+      rightsStatement: settings.rightsStatement || null,
+      limit: settings.limit || null
+    }
+  }
+
   // Update review summary
   function updateReviewSummary() {
     var data = StepperState.validationData
@@ -1860,61 +1949,44 @@
     $('.review-files').html(filesHtml)
 
     // Records
-    var totalItems = 0
-    var recordsHtml
-    if (data) {
-      totalItems = data.collections.length + data.works.length + data.fileSets.length
-      recordsHtml =
-        '<p>' +
-        totalItems +
-        ' total — ' +
-        data.collections.length +
-        ' collections, ' +
-        data.works.length +
-        ' works, ' +
-        data.fileSets.length +
-        ' file sets</p>'
-    } else {
-      recordsHtml = '<p class="text-muted">Validation was skipped — record counts unavailable</p>'
-    }
+    var recordsSummary = buildRecordsSummary(data)
+    var totalItems = recordsSummary.totalItems
+    var recordsHtml = recordsSummary.skipped
+      ? '<p class="text-muted">Validation was skipped — record counts unavailable</p>'
+      : '<p>' + recordsSummary.totalItems + ' total — ' + recordsSummary.collections + ' collections, ' + recordsSummary.works + ' works, ' + recordsSummary.fileSets + ' file sets</p>'
     $('.review-records').html(recordsHtml)
 
     // Settings - get admin set name from DOM first, then fallback to state
     var $currentAdminSet = $('#importer-admin-set')
-    var adminSetName = 'Not selected'
+    var resolvedAdminSetName = 'Not selected'
     if ($currentAdminSet.length) {
       var selectedText = $currentAdminSet.find('option:selected').text().trim()
       var selectedValue = $currentAdminSet.val()
       if (selectedValue && selectedValue !== '' && selectedText !== 'Select an admin set...') {
-        adminSetName = selectedText
+        resolvedAdminSetName = selectedText
       }
     }
-    if (adminSetName === 'Not selected' && StepperState.adminSetName) {
-      adminSetName = StepperState.adminSetName
+    if (resolvedAdminSetName === 'Not selected' && StepperState.adminSetName) {
+      resolvedAdminSetName = StepperState.adminSetName
     }
-    var visibilityLabels = {
-      open: 'Public',
-      authenticated: 'Institution',
-      restricted: 'Private'
-    }
-    var visibilityName = visibilityLabels[settings.visibility]
+    var settingsSummary = buildSettingsSummary(settings, resolvedAdminSetName)
 
     var settingsHtml =
       '<p><span class="text-muted small">Name:</span> ' +
-      escapeHtml(settings.name) +
+      escapeHtml(settingsSummary.name) +
       '</p>' +
       '<p><span class="text-muted small">Admin Set:</span> ' +
-      adminSetName +
+      settingsSummary.adminSetName +
       '</p>' +
       '<p><span class="text-muted small">Visibility:</span> ' +
-      visibilityName +
+      settingsSummary.visibility +
       '</p>'
 
-    if (settings.rightsStatement) {
-      settingsHtml += '<p><span class="text-muted small">Rights:</span> ' + settings.rightsStatement + '</p>'
+    if (settingsSummary.rightsStatement) {
+      settingsHtml += '<p><span class="text-muted small">Rights:</span> ' + settingsSummary.rightsStatement + '</p>'
     }
-    if (settings.limit) {
-      settingsHtml += '<p><span class="text-muted small">Limit:</span> first ' + settings.limit + ' records</p>'
+    if (settingsSummary.limit) {
+      settingsHtml += '<p><span class="text-muted small">Limit:</span> first ' + settingsSummary.limit + ' records</p>'
     }
 
     $('.review-settings').html(settingsHtml)
@@ -1996,6 +2068,7 @@
   // NOTIFICATION FUNCTIONS
   // ============================================================================
 
+  // Append a dismissible notification banner to #upload-notifications
   function showNotification(message, type) {
     type = type || 'info' // 'error', 'warning', 'info'
 
@@ -2056,7 +2129,12 @@
       categorizeRejectedFiles: categorizeRejectedFiles,
       buildRejectionMessages: buildRejectionMessages,
       getImportSizeZone: getImportSizeZone,
-      getDefaultImportName: getDefaultImportName
+      getDefaultImportName: getDefaultImportName,
+      // Step-level pure state transformers
+      applyValidationReset: applyValidationReset,
+      applyStartOver: applyStartOver,
+      buildRecordsSummary: buildRecordsSummary,
+      buildSettingsSummary: buildSettingsSummary
     }
   }
 })(jQuery, window.BulkraxUtils || {})
