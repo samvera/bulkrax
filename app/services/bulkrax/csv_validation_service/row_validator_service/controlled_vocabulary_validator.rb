@@ -9,6 +9,7 @@ module Bulkrax
       @field_metadata = field_metadata
     end
 
+    # rubocop:disable Metrics/MethodLength
     def validate
       return [] if @field_metadata.blank?
 
@@ -47,6 +48,7 @@ module Bulkrax
 
       errors
     end
+    # rubocop:enable Metrics/MethodLength
 
     private
 

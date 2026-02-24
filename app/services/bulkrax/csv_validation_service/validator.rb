@@ -26,6 +26,7 @@ module Bulkrax
       # @param mapping_manager [CsvValidationService::MappingManager] Field mapping manager
       # @param file_validator [CsvValidationService::FileValidator] Optional file validator for warnings
       # @param row_validator [CsvValidationService::RowsValidator] Row validator for row-level validation
+      # rubocop:disable Metrics/ParameterLists
       def initialize(csv_headers, valid_headers, field_metadata, mapping_manager, file_validator = nil, row_validator = nil)
         @csv_headers = csv_headers || []
         @valid_headers = valid_headers || []
@@ -34,6 +35,7 @@ module Bulkrax
         @file_validator = file_validator
         @row_validator = row_validator
       end
+      # rubocop:enable Metrics/ParameterLists
 
       # Find required fields that are missing from the CSV
       # Headers with numeric suffixes (_1, _2, etc.) are normalized before checking

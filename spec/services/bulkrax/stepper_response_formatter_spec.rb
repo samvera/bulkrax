@@ -466,6 +466,112 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
         expect(issue[:items]).to be_empty
       end
 
+      it 'generates row errors issue with error severity when any row error is an error' do
+        data = {
+          headers: ['source_identifier', 'title', 'creator', 'model'],
+          rowCount: 5,
+          isValid: false,
+          hasWarnings: false,
+          missingRequired: [],
+          unrecognized: {},
+          fileReferences: 0,
+          rowErrors: [
+            { row: 1, source_identifier: 'ABC', severity: 'error', category: 'missing_required_value',
+              column: 'creator', value: nil, message: "Field 'creator' is required but is empty for this row.",
+              suggestion: "Add a value for 'creator' in row 1." },
+            { row: 2, source_identifier: 'DEF', severity: 'warning', category: 'missing_required_value',
+              column: 'title', value: nil, message: "Field 'title' is recommended.",
+              suggestion: "Add a value for 'title' in row 2." }
+          ]
+        }
+
+        result = described_class.new(data).format
+        issue = result[:messages][:issues].find { |i| i[:type] == 'row_level_errors' }
+
+        expect(issue[:severity]).to eq('error')
+        expect(issue[:icon]).to eq('fa-times-circle')
+        expect(issue[:title]).to eq('Row Validation Errors')
+        expect(issue[:count]).to eq(2)
+        expect(issue[:items]).to contain_exactly(
+          { field: 'Row 1 · creator', message: "Field 'creator' is required but is empty for this row." },
+          { field: 'Row 2 · title', message: "Field 'title' is recommended." }
+        )
+      end
+
+      it 'generates row errors issue with warning severity when all row errors are warnings' do
+        data = {
+          headers: ['source_identifier', 'title', 'creator', 'model'],
+          rowCount: 5,
+          isValid: true,
+          hasWarnings: true,
+          missingRequired: [],
+          unrecognized: {},
+          fileReferences: 0,
+          rowErrors: [
+            { row: 1, source_identifier: 'ABC', severity: 'warning', category: 'missing_recommended_value',
+              column: 'creator', value: nil, message: "Field 'creator' is recommended.",
+              suggestion: "Add a value for 'creator' in row 1." }
+          ]
+        }
+
+        result = described_class.new(data).format
+        issue = result[:messages][:issues].find { |i| i[:type] == 'row_level_errors' }
+
+        expect(issue[:severity]).to eq('warning')
+        expect(issue[:icon]).to eq('fa-exclamation-triangle')
+        expect(issue[:count]).to eq(1)
+      end
+
+      it 'suppresses row errors for columns already flagged in missingRequired' do
+        data = {
+          headers: ['source_identifier', 'title', 'model'],
+          rowCount: 3,
+          isValid: false,
+          hasWarnings: false,
+          missingRequired: [{ model: 'GenericWork', field: 'rights_statement' }],
+          unrecognized: {},
+          fileReferences: 0,
+          rowErrors: [
+            { row: 1, source_identifier: 'ABC', severity: 'error', category: 'missing_required_value',
+              column: 'rights_statement', value: nil, message: "Field 'rights_statement' is required but is empty for this row.",
+              suggestion: "Add a value for 'rights_statement' in row 1." },
+            { row: 1, source_identifier: 'ABC', severity: 'error', category: 'missing_required_value',
+              column: 'creator', value: nil, message: "Field 'creator' is required but is empty for this row.",
+              suggestion: "Add a value for 'creator' in row 1." }
+          ]
+        }
+
+        result = described_class.new(data).format
+        issue = result[:messages][:issues].find { |i| i[:type] == 'row_level_errors' }
+
+        expect(issue[:count]).to eq(1)
+        expect(issue[:items]).to contain_exactly(
+          { field: 'Row 1 · creator', message: "Field 'creator' is required but is empty for this row." }
+        )
+      end
+
+      it 'omits row errors issue entirely when all row errors are suppressed by missingRequired' do
+        data = {
+          headers: ['source_identifier', 'title', 'model'],
+          rowCount: 3,
+          isValid: true,
+          hasWarnings: true,
+          missingRequired: [{ model: 'GenericWork', field: 'rights_statement' }],
+          unrecognized: {},
+          fileReferences: 0,
+          rowErrors: [
+            { row: 1, source_identifier: 'ABC', severity: 'warning', category: 'missing_required_value',
+              column: 'rights_statement', value: nil, message: "Field 'rights_statement' is required but is empty for this row.",
+              suggestion: "Add a value for 'rights_statement' in row 1." }
+          ]
+        }
+
+        result = described_class.new(data).format
+        issue = result[:messages][:issues].find { |i| i[:type] == 'row_level_errors' }
+
+        expect(issue).to be_nil
+      end
+
       it 'does not generate file references issue when no files are referenced' do
         data = {
           headers: ['source_identifier', 'title'],
