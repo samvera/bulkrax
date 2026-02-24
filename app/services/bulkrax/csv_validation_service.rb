@@ -101,6 +101,9 @@ module Bulkrax
       @mapping_manager = CsvValidationService::MappingManager.new
       @mappings = @mapping_manager.mappings
 
+      # Common components used by both modes (must be initialized before field_metadata_for_all_models is called)
+      @field_analyzer = CsvValidationService::FieldAnalyzer.new(@mappings, admin_set_id)
+
       # Determine mode and load models accordingly
       if csv_file
         # Validation mode: initialize specialized components
@@ -116,9 +119,6 @@ module Bulkrax
         @all_models = CsvValidationService::ModelLoader.new(Array.wrap(models)).models
         @csv_builder = CsvValidationService::CsvBuilder.new(self)
       end
-
-      # Common components used by both modes
-      @field_analyzer = CsvValidationService::FieldAnalyzer.new(@mappings, admin_set_id)
     end
 
     # ============================================================================

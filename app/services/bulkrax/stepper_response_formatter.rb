@@ -272,6 +272,39 @@ module Bulkrax
         defaultOpen: false
       }
     end
+
+    def row_errors_issue
+      filtered = filtered_row_errors
+      return nil if filtered.empty?
+
+      severity = filtered.any? { |e| e[:severity] == 'error' } ? 'error' : 'warning'
+      icon = severity == 'error' ? 'fa-times-circle' : 'fa-exclamation-triangle'
+
+      {
+        type: 'row_level_errors',
+        severity: severity,
+        icon: icon,
+        title: 'Row Validation Errors',
+        count: filtered.length,
+        description: 'The following issues exist with data in your CSV:',
+        items: row_error_items(filtered),
+        defaultOpen: false
+      }
+    end
+
+    def filtered_row_errors
+      missing_required_columns = @data[:missingRequired]&.map { |h| h[:field].to_s } || []
+      @data[:rowErrors].reject { |e| missing_required_columns.include?(e[:column].to_s) }
+    end
+
+    def row_error_items(errors)
+      errors.map do |error|
+        {
+          field: "Row #{error[:row]} · #{error[:column]}",
+          message: error[:message]
+        }
+      end
+    end
   end
 end
 # rubocop:enable Metrics/ClassLength
