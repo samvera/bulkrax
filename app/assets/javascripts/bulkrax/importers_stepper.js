@@ -888,7 +888,9 @@
           ajaxOptions.headers = headers
         }
 
-        fileEntry.uploadXhr = $.ajax(ajaxOptions)
+        var jqXhr = $.ajax(ajaxOptions)
+        fileEntry.uploadXhr = jqXhr
+        jqXhr
           .then(function (result) {
             if (isFirstChunk && result.files && result.files[0]) {
               fileEntry.uploadId = result.files[0].id
@@ -912,7 +914,9 @@
       updateUploadState()
       updateValidateButtonState()
       renderUploadedFiles()
-      showNotification('Upload failed for ' + file.name + ': ' + (error.message || 'Unknown error'), 'error')
+      if (error.message !== 'abort') {
+        showNotification('Upload failed for ' + file.name + ': ' + (error.message || 'Unknown error'), 'error')
+      }
     })
   }
 
