@@ -88,9 +88,7 @@ module Bulkrax
     # Loads files from Hyrax::UploadedFile IDs (used by chunked upload flow)
     def resolve_hyrax_uploaded_files
       uploads = Hyrax::UploadedFile.where(id: params[:uploaded_files])
-      if uploads.empty?
-        return [nil, StepperResponseFormatter.error(message: 'No uploaded files found for the given IDs')]
-      end
+      return [nil, StepperResponseFormatter.error(message: 'No uploaded files found for the given IDs')] if uploads.empty?
 
       files = uploads.filter_map do |u|
         path = u.file&.path
