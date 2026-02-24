@@ -30,9 +30,12 @@ module Bulkrax
 
       admin_set_id = params[:importer]&.[](:admin_set_id)
       render json: StepperResponseFormatter.format(run_validation(csv_file, zip_file, admin_set_id: admin_set_id)), status: :ok
+    ensure
+      close_file_handles(files)
     end
 
     def create_v2
+      files = nil
       files = resolve_create_files
 
       @importer = Importer.new(importer_params_v2)
@@ -54,6 +57,8 @@ module Bulkrax
           format.json { render json: { errors: @importer.errors.full_messages }, status: :unprocessable_entity }
         end
       end
+    ensure
+      close_file_handles(files)
     end
 
     # Serve demo scenario fixtures for frontend testing
@@ -85,9 +90,10 @@ module Bulkrax
       end
     end
 
-    # Loads files from Hyrax::UploadedFile IDs (used by chunked upload flow)
+    # Loads files from Hyrax::UploadedFile IDs (used by chunked upload flow).
+    # Scoped to current_user to prevent accessing another user's uploads.
     def resolve_hyrax_uploaded_files
-      uploads = Hyrax::UploadedFile.where(id: params[:uploaded_files])
+      uploads = uploaded_files_scope
       return [nil, StepperResponseFormatter.error(message: 'No uploaded files found for the given IDs')] if uploads.empty?
 
       files = uploads.filter_map do |u|
@@ -98,6 +104,15 @@ module Bulkrax
       [files, nil]
     rescue StandardError => e
       [nil, StepperResponseFormatter.error(message: "Failed to load uploaded files: #{e.message}")]
+    end
+
+    def uploaded_files_scope
+      base = Hyrax::UploadedFile.where(id: params[:uploaded_files])
+      if respond_to?(:current_user) && current_user.present?
+        base.where(user_id: current_user.id)
+      else
+        base.none
+      end
     end
 
     # Scans the given files for a CSV and a ZIP by file extension
@@ -187,7 +202,7 @@ module Bulkrax
 
     def resolve_create_files
       if params[:uploaded_files].present?
-        uploads = Hyrax::UploadedFile.where(id: params[:uploaded_files])
+        uploads = uploaded_files_scope
         uploads.filter_map do |u|
           path = u.file&.path
           next nil unless path && File.exist?(path)
@@ -196,6 +211,11 @@ module Bulkrax
       else
         extract_uploaded_files
       end
+    end
+
+    def close_file_handles(files)
+      return unless files.is_a?(Array)
+      files.each { |f| f.close if f.respond_to?(:close) }
     end
 
     def extract_uploaded_files

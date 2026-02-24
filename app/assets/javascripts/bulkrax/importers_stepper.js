@@ -367,6 +367,7 @@
       var fileEntry = StepperState.uploadedFiles.find(function (f) { return f.id === fileId })
       if (fileEntry) {
         if (fileEntry.uploadXhr) {
+          fileEntry.uploadAbortedByUser = true
           fileEntry.uploadXhr.abort()
           StepperState.uploadsInProgress--
         }
@@ -577,6 +578,12 @@
         continue
       }
 
+      // Reject empty/zero-byte files to avoid server-side errors
+      if (file.size === 0) {
+        rejectedFiles.push({ name: fileName, reason: 'file_empty' })
+        continue
+      }
+
       // Respect tenant/account file size limit (same as v1 and Hyrax uploader)
       if (maxFileSizeBytes != null && file.size > maxFileSizeBytes) {
         rejectedFiles.push({
@@ -640,12 +647,13 @@
 
       var categorized = rejectedFiles.reduce(function (acc, f) {
         if (f.reason === 'invalid_type') acc.invalidTypes.push(f)
+        else if (f.reason === 'file_empty') acc.fileEmpty.push(f)
         else if (f.reason === 'file_too_large') acc.fileTooLarge.push(f)
         else if (f.reason === 'duplicate CSV') acc.duplicateCsv.push(f)
         else if (f.reason === 'duplicate ZIP') acc.duplicateZip.push(f)
         else if (f.reason === 'duplicate') acc.duplicates.push(f)
         return acc
-      }, { invalidTypes: [], fileTooLarge: [], duplicateCsv: [], duplicateZip: [], duplicates: [] })
+      }, { invalidTypes: [], fileEmpty: [], fileTooLarge: [], duplicateCsv: [], duplicateZip: [], duplicates: [] })
 
       // Handle invalid file types FIRST
       if (categorized.invalidTypes.length > 0) {
@@ -658,6 +666,13 @@
         )
       }
 
+      if (categorized.fileEmpty.length > 0) {
+        messages.push(
+          'Empty files (0 bytes) are not allowed.\n' +
+          'The following files were rejected:\n• ' +
+          categorized.fileEmpty.map(function (f) { return f.name }).join('\n• ')
+        )
+      }
       if (categorized.fileTooLarge.length > 0) {
         var limitMb = categorized.fileTooLarge[0].limit / (1024 * 1024)
         messages.push(
@@ -824,6 +839,7 @@
     fileEntry.uploadProgress = 0
     fileEntry.uploadComplete = false
     fileEntry.uploadId = null
+    fileEntry.uploadAbortedByUser = false
 
     updateValidateButtonState()
     renderUploadedFiles()
@@ -903,7 +919,13 @@
     }
 
     sendNextChunk().catch(function (error) {
-      StepperState.uploadsInProgress--
+      if (!fileEntry.uploadAbortedByUser) {
+        StepperState.uploadsInProgress--
+      }
+      fileEntry.uploadAbortedByUser = false
+      if (fileEntry.uploadId) {
+        $.ajax({ url: CONSTANTS.UPLOAD_URL + fileEntry.uploadId, method: 'DELETE', timeout: CONSTANTS.AJAX_TIMEOUT_SHORT })
+      }
       StepperState.uploadedFiles = StepperState.uploadedFiles.filter(function (f) {
         return f !== fileEntry
       })
@@ -1404,8 +1426,14 @@
     } else {
       if (useMockData) {
         validationPromise = performMockValidation()
-      } else {
+      } else if (validationData) {
         validationPromise = performValidation(validationData)
+      } else {
+        showNotification('No files to validate. Upload files or enter an import path.', 'warning')
+        $btn.prop('disabled', false).html($btn.attr('id') === 'validate-path-btn'
+          ? '<span class="fa fa-file-text"></span> Validate Files from Import Path'
+          : '<span class="fa fa-file-text"></span> Validate Files from Upload')
+        return
       }
     }
 
@@ -2185,10 +2213,11 @@
     // Disable the file input so raw files aren't sent with the form
     $('#file-input').prop('disabled', true)
 
-    // Add uploaded file IDs as hidden inputs
+    // Add uploaded file IDs as hidden inputs (use .val() to avoid XSS)
     StepperState.uploadedFiles.forEach(function (f) {
       if (f.uploadId) {
-        $form.append('<input type="hidden" name="uploaded_files[]" value="' + f.uploadId + '">')
+        var $input = $('<input>', { type: 'hidden', name: 'uploaded_files[]' }).val(f.uploadId)
+        $form.append($input)
       }
     })
 
