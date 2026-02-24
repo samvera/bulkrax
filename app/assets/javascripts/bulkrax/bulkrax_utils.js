@@ -61,12 +61,36 @@
   }
 
   // ============================================================================
+  // INTERNATIONALIZATION
+  // ============================================================================
+
+  /**
+   * Look up a translation key from BulkraxI18n and interpolate variables.
+   * Falls back to the key name if not found.
+   * @param {string} key - Translation key (e.g. 'file_upload_error')
+   * @param {Object} [vars] - Interpolation variables (e.g. {count: 5})
+   * @returns {string} Translated and interpolated string
+   */
+  function t(key, vars) {
+    var translations = window.BulkraxI18n || {}
+    var text = translations[key]
+    if (text == null) return key
+    if (vars) {
+      Object.keys(vars).forEach(function (k) {
+        text = text.replace(new RegExp('%\\{' + k + '\\}', 'g'), vars[k])
+      })
+    }
+    return text
+  }
+
+  // ============================================================================
   // PUBLIC API
   // ============================================================================
 
   window.BulkraxUtils = {
     escapeHtml: escapeHtml,
     formatFileSize: formatFileSize,
-    normalizeBoolean: normalizeBoolean
+    normalizeBoolean: normalizeBoolean,
+    t: t
   }
 })()
