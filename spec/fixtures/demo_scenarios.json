@@ -1,6 +1,6 @@
 {
   "_meta": {
-    "description": "Demo validation scenarios for the Bulkrax v2 import stepper",
+    "description": "Demo validation scenarios for the Bulkrax guided import stepper",
     "schemaRef": "docs/VALIDATION_RESPONSE_QUICK_REF.json"
   },
   "scenarios": {

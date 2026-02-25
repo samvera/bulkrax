@@ -134,8 +134,8 @@ de:
         click_here: klicken Sie hier
         csv_only: Es werden nur CSV-Dateien akzeptiert.
         instructions_html: Laden Sie für den <b>%{name}-</b> Importer <b>nur</b> die korrigierten Einträge hoch. Um fehlerhafte Einträge zur Korrektur zu exportieren,
-      v2:
-        breadcrumb: Neuer Import (V2)
+      guided_import:
+        breadcrumb: Geführter Import
         flash:
           demo_not_available: Demo-Szenarien nicht verfügbar
           import_started: Der Import wurde erfolgreich gestartet.
@@ -392,7 +392,7 @@ de:
         generate_csv_template: CSV-Importvorlage generieren
         import_corrected_works: Importierte korrigierte Werke
         new: Erweiterter Import
-        new_v2: Geführter Import
+        guided_import_new: Geführter Import
         remove_and_build: Entfernen und dann neu erstellen
         remove_and_rerun: Entfernen und erneut ausführen
         remove_and_rerun_confirm: Sind Sie sicher? Dadurch werden alle Arbeiten sowie alle zugehörigen Dateien und Beziehungen vor dem erneuten Ausführen gelöscht.

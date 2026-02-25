@@ -189,7 +189,7 @@ ignore_unused:
 # <%# I18n::Tasks.add_scanner 'I18n::Tasks::Scanners::PatternMapper',
 #       patterns: [['\bSpree\.t[( ]\s*%{key}', 'spree.%{key}']] %>
 
-# Map BulkraxUtils.t('key') calls in JS to bulkrax.importer.v2.js.* keys
+# Map BulkraxUtils.t('key') calls in JS to bulkrax.importer.guided_import.js.* keys
 <% I18n::Tasks.add_scanner 'I18n::Tasks::Scanners::PatternMapper',
       only: %w(**/*.js),
-      patterns: [["\\bt\\(\\s*%{key}", 'bulkrax.importer.v2.js.%{key}']] %>
+      patterns: [["\\bt\\(\\s*%{key}", 'bulkrax.importer.guided_import.js.%{key}']] %>
