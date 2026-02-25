@@ -249,9 +249,9 @@ function setError(selector, error) {
 
 // Use Turbolinks if available, fallback to Turbo if available, fallback to jQuery if needed.
 if (typeof Turbolinks !== 'undefined' && Turbolinks !== null) {
-  $(document).on('turbolinks:load ready', prepBulkrax());
+  $(document).on('turbolinks:load', prepBulkrax());
 } else if (typeof Turbo !== 'undefined') {
-  $(document).on('turbo:load ready', prepBulkrax());
+  $(document).on('turbo:load', prepBulkrax());
 } else {
   $(document).ready(function() {prepBulkrax()});
 }
