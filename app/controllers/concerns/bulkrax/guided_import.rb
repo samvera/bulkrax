@@ -15,6 +15,8 @@ module Bulkrax
 
     # AJAX endpoint to validate uploaded files
     def guided_import_validate
+      set_locale_from_params
+
       files, error = resolve_validation_files
       return render json: error, status: :ok if error
       return render json: StepperResponseFormatter.error(message: I18n.t('bulkrax.importer.guided_import.validation.no_files_uploaded')), status: :ok unless files.any?
@@ -458,6 +460,10 @@ module Bulkrax
 
     def import_file_path
       @file_path ||= params[:importer]&.[](:parser_fields)&.[](:import_file_path)
+    end
+
+    def set_locale_from_params
+      I18n.locale = params[:locale] if params[:locale].present? && I18n.available_locales.include?(params[:locale].to_sym)
     end
   end
   # rubocop:enable Metrics/ModuleLength
