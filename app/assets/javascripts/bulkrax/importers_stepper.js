@@ -29,6 +29,7 @@
   var escapeHtml = Utils.escapeHtml
   var formatFileSize = Utils.formatFileSize
   var normalizeBoolean = Utils.normalizeBoolean
+  var t = Utils.t
 
   // ============================================================================
   // UTILITY FUNCTIONS
@@ -214,7 +215,7 @@
         // Show warning if more than MAX_FILES were dropped
         if (droppedFiles.length > CONSTANTS.MAX_FILES) {
           showNotification(
-            'Only the first ' + CONSTANTS.MAX_FILES + ' files have been uploaded. You can upload up to ' + CONSTANTS.MAX_FILES + ' files (1 CSV and 1 ZIP).'
+            t('only_first_files', { count: CONSTANTS.MAX_FILES, max: CONSTANTS.MAX_FILES })
           )
         }
       }
@@ -251,7 +252,7 @@
         // Show warning if more than 1 file was dropped
         if (droppedFiles.length > 1) {
           showNotification(
-            'Only 1 additional file can be added. The first file has been added.'
+            t('only_one_additional')
           )
         }
       }
@@ -500,7 +501,7 @@
         '<button type="button" class="close" data-dismiss="alert" aria-label="Close">',
         '<span aria-hidden="true">&times;</span>',
         '</button>',
-        '<strong><span class="fa fa-exclamation-circle"></span> File Upload Error</strong>',
+        '<strong><span class="fa fa-exclamation-circle"></span> ' + t('file_upload_error') + '</strong>',
         '<ul class="mb-0 mt-2">'
       ]
 
@@ -669,10 +670,10 @@
       // Handle invalid file types FIRST
       if (categorized.invalidTypes.length > 0) {
         messages.push(
-          'Invalid file format. Only .csv and .zip files are allowed.\n' +
-          'The following files were rejected:\n• ' +
+          t('invalid_format') + '\n' +
+          t('rejected_files') + '\n• ' +
           categorized.invalidTypes.map(function (f) {
-            return f.name + ' (' + (f.extension || 'no extension') + ')'
+            return f.name + ' (' + (f.extension || t('no_extension')) + ')'
           }).join('\n• ')
         )
       }
@@ -697,7 +698,7 @@
 
       if (categorized.duplicateCsv.length > 0) {
         messages.push(
-          'Only 1 CSV file allowed. The following files were not added:\n• ' +
+          t('csv_limit') + '\n• ' +
           categorized.duplicateCsv
             .map(function (f) {
               return f.name
@@ -707,7 +708,7 @@
       }
       if (categorized.duplicateZip.length > 0) {
         messages.push(
-          'Only 1 ZIP file allowed. The following files were not added:\n• ' +
+          t('zip_limit') + '\n• ' +
           categorized.duplicateZip
             .map(function (f) {
               return f.name
@@ -717,7 +718,7 @@
       }
       if (categorized.duplicates.length > 0) {
         messages.push(
-          'The following files were already uploaded:\n• ' +
+          t('already_uploaded') + '\n• ' +
           categorized.duplicates
             .map(function (f) {
               return f.name
@@ -729,15 +730,13 @@
         StepperState.uploadedFiles.length >= CONSTANTS.MAX_FILES &&
         files.length > addedFiles.length + rejectedFiles.length
       ) {
-        messages.push('Maximum of ' + CONSTANTS.MAX_FILES + ' files reached (1 CSV and 1 ZIP).')
+        messages.push(t('max_files', { count: CONSTANTS.MAX_FILES }))
       }
 
       showFileUploadError(messages)
     } else if (files.length > addedFiles.length) {
       showFileUploadError([
-        'Maximum of ' + CONSTANTS.MAX_FILES + ' files allowed (1 CSV and 1 ZIP). Only the first ' +
-        addedFiles.length +
-        ' file(s) were added.'
+        t('max_files_added', { count: CONSTANTS.MAX_FILES, added: addedFiles.length })
       ])
     } else {
       clearFileUploadError()
@@ -792,14 +791,14 @@
         demoScenariosRequest = null // Clear in-flight tracker on error
 
         var status = xhr.statusText || 'error'
-        var errorMsg = 'Failed to load demo scenarios'
+        var errorMsg = t('demo_load_failed')
 
         if (status === 'timeout') {
-          errorMsg = 'Request timed out while loading demo scenarios'
+          errorMsg = t('demo_timeout')
         } else if (xhr.status === 0) {
-          errorMsg = 'Network error - please check your connection'
+          errorMsg = t('demo_network_error')
         } else if (xhr.status >= 500) {
-          errorMsg = 'Server error while loading demo scenarios'
+          errorMsg = t('demo_server_error')
         }
 
         console.warn(errorMsg, {
@@ -1035,8 +1034,8 @@
     $('#warnings-acked').prop('checked', false)
     $('.validation-results').hide()
     $('.warning-acknowledgment').hide()
-    $('#validate-upload-btn').html('<span class="fa fa-file-text"></span> Validate Files from Upload')
-    $('#validate-path-btn').html('<span class="fa fa-file-text"></span> Validate Files from Import Path')
+    $('#validate-upload-btn').html('<span class="fa fa-file-text"></span> ' + t('validate_upload'))
+    $('#validate-path-btn').html('<span class="fa fa-file-text"></span> ' + t('validate_path'))
     renderUploadedFiles()
     updateStepNavigation()
   }
@@ -1117,16 +1116,16 @@
     var infoMessage = ''
     if (state === CONSTANTS.UPLOAD_STATES.ZIP_WITH_CSV) {
       infoMessage =
-        '<div class="upload-info"><span class="fa fa-info-circle"></span> Single package with CSV and files</div>'
+        '<div class="upload-info"><span class="fa fa-info-circle"></span> ' + t('upload_single_package') + '</div>'
     } else if (state === CONSTANTS.UPLOAD_STATES.CSV_ONLY) {
       infoMessage =
-        '<div class="upload-info"><span class="fa fa-info-circle"></span> No ZIP uploaded — files will be matched from server paths or you can add more files</div>'
+        '<div class="upload-info"><span class="fa fa-info-circle"></span> ' + t('upload_csv_only') + '</div>'
     } else if (state === CONSTANTS.UPLOAD_STATES.ZIP_FILES_ONLY) {
       infoMessage =
-        '<div class="upload-info"><span class="fa fa-info-circle"></span> ZIP file uploaded — validation will check for CSV content</div>'
+        '<div class="upload-info"><span class="fa fa-info-circle"></span> ' + t('upload_zip_only') + '</div>'
     } else if (state === CONSTANTS.UPLOAD_STATES.CSV_AND_ZIP) {
       infoMessage =
-        '<div class="upload-info"><span class="fa fa-info-circle"></span> CSV + files uploaded separately</div>'
+        '<div class="upload-info"><span class="fa fa-info-circle"></span> ' + t('upload_csv_and_zip') + '</div>'
     }
 
     $('.upload-info-message').html(infoMessage)
@@ -1134,10 +1133,10 @@
     // Show file count if multiple files
     if (files.length > 1) {
       $('.uploaded-files-header strong').text(
-        'Uploaded Files (' + files.length + ')'
+        t('uploaded_files', { count: files.length })
       )
     } else {
-      $('.uploaded-files-header strong').text('Uploaded File')
+      $('.uploaded-files-header strong').text(t('uploaded_file'))
     }
 
     // Show/hide "Add another file" dropzone based on file count
@@ -1195,7 +1194,7 @@
       '</div>' +
       '<div class="file-actions">' +
       statusHtml +
-      '<button type="button" class="file-remove-btn" aria-label="Remove file">' +
+      '<button type="button" class="file-remove-btn" aria-label="' + t('remove_file') + '">' +
       '<span class="fa fa-times"></span>' +
       '</button>' +
       '</div>' +
@@ -1243,10 +1242,10 @@
     // Reset both validate buttons to original state
     $('#validate-upload-btn')
       .prop('disabled', true)
-      .html('<span class="fa fa-file-text"></span> Validate Files from Upload')
+      .html('<span class="fa fa-file-text"></span> ' + t('validate_upload'))
     $('#validate-path-btn')
       .prop('disabled', true)
-      .html('<span class="fa fa-file-text"></span> Validate Files from Import Path')
+      .html('<span class="fa fa-file-text"></span> ' + t('validate_path'))
 
     renderUploadedFiles()
     updateStepNavigation()
@@ -1332,7 +1331,7 @@
       setTimeout(function () {
         var mockData = getMockValidationData()
         if (!mockData) {
-          reject(new Error('Demo data not loaded. Try selecting a scenario again.'))
+          reject(new Error(t('demo_data_not_loaded')))
           return
         }
         resolve(mockData)
@@ -1349,11 +1348,11 @@
     try {
       renderValidationResults(normalized)
       renderUploadedFiles()
-      $btn.html('<span class="fa fa-check-circle"></span> Validated')
+      $btn.html('<span class="fa fa-check-circle"></span> ' + t('validated'))
       updateStepNavigation()
     } catch (e) {
       console.error('Validation results render issue:', e)
-      throw new Error('Validation completed but results could not be displayed. Please try again.')
+      throw new Error(t('render_error'))
     }
   }
 
@@ -1361,21 +1360,21 @@
   function handleValidationError(error, $btn) {
     var xhr = error
     var status = xhr.statusText || 'error'
-    var errorMsg = 'Validation failed. Please try again.'
+    var errorMsg = t('validation_failed')
 
     // Handle specific error cases
     if (status === 'timeout') {
-      errorMsg = 'Validation timed out. Your files may be too large. Please try with smaller files or contact support.'
+      errorMsg = t('validation_timeout')
     } else if (xhr.status === 0) {
-      errorMsg = 'Network error - please check your connection and try again.'
+      errorMsg = t('network_error')
     } else if (xhr.status === 413) {
-      errorMsg = 'Files are too large. Please reduce file size and try again.'
+      errorMsg = t('files_too_large')
     } else if (xhr.status === 422) {
       errorMsg = xhr.responseJSON && xhr.responseJSON.error
         ? xhr.responseJSON.error
-        : 'Invalid file format. Please check your files and try again.'
+        : t('invalid_file_format')
     } else if (xhr.status >= 500) {
-      errorMsg = 'Server error during validation. Please try again or contact support.'
+      errorMsg = t('server_error')
     } else if (xhr.responseJSON && xhr.responseJSON.error) {
       errorMsg = xhr.responseJSON.error
     }
@@ -1391,8 +1390,8 @@
 
     // Reset button state
     var resetLabel = $btn.attr('id') === 'validate-path-btn'
-      ? '<span class="fa fa-file-text"></span> Validate Files from Import Path'
-      : '<span class="fa fa-file-text"></span> Validate Files from Upload'
+      ? '<span class="fa fa-file-text"></span> ' + t('validate_path')
+      : '<span class="fa fa-file-text"></span> ' + t('validate_upload')
     $btn
       .prop('disabled', false)
       .html(resetLabel)
@@ -1407,7 +1406,7 @@
     var $btn = StepperState.uploadMode === 'file_path' ? $('#validate-path-btn') : $('#validate-upload-btn')
     $btn
       .prop('disabled', true)
-      .html('<span class="fa fa-spinner fa-spin"></span> Validating...')
+      .html('<span class="fa fa-spinner fa-spin"></span> ' + t('validating'))
 
     // Uncheck "Skip validation" since the user is actively validating
     if (StepperState.skipValidation) {
@@ -1581,22 +1580,20 @@
     if (count <= CONSTANTS.IMPORT_SIZE_OPTIMAL) {
       pct = (count / CONSTANTS.IMPORT_SIZE_OPTIMAL) * 33
       color = 'gauge-marker-optimal'
-      zone = 'Optimal'
-      msg = 'Great! Smaller imports are easier to validate and troubleshoot.'
+      zone = t('gauge_optimal')
+      msg = t('gauge_optimal_msg')
       cardClass = 'gauge-card-optimal'
     } else if (count <= CONSTANTS.IMPORT_SIZE_MODERATE) {
       pct = 33 + ((count - CONSTANTS.IMPORT_SIZE_OPTIMAL) / (CONSTANTS.IMPORT_SIZE_MODERATE - CONSTANTS.IMPORT_SIZE_OPTIMAL)) * 33
       color = 'gauge-marker-moderate'
-      zone = 'Moderate'
-      msg =
-        'Consider splitting into smaller batches for easier error resolution.'
+      zone = t('gauge_moderate')
+      msg = t('gauge_moderate_msg')
       cardClass = 'gauge-card-moderate'
     } else {
       pct = Math.min(66 + ((count - CONSTANTS.IMPORT_SIZE_MODERATE) / CONSTANTS.IMPORT_SIZE_MODERATE) * 34, 100)
       color = 'gauge-marker-large'
-      zone = 'Large'
-      msg =
-        'Large imports take longer and are harder to debug. We strongly recommend splitting into batches of ' + CONSTANTS.IMPORT_SIZE_OPTIMAL + ' or fewer.'
+      zone = t('gauge_large')
+      msg = t('gauge_large_msg', { limit: CONSTANTS.IMPORT_SIZE_OPTIMAL })
       cardClass = 'gauge-card-large'
     }
 
@@ -1605,9 +1602,9 @@
       cardClass +
       '">' +
       '<div class="gauge-header">' +
-      '<span>Import Size: ' +
-      count +
-      ' items</span>' +
+      '<span>' +
+      t('gauge_import_size', { count: count }) +
+      '</span>' +
       '<span class="gauge-zone">' +
       zone +
       '</span>' +
@@ -1834,7 +1831,7 @@
     var itemCount = data.collections.length + data.works.length
     $container.append(
       createAccordion(
-        'Import Hierarchy',
+        t('import_hierarchy'),
         'fa-sitemap',
         'info',
         itemCount,
@@ -1855,7 +1852,7 @@
       console.warn('Max tree depth reached for item:', item.id)
       return '<div class="tree-item tree-truncated" style="padding-left: ' + (depth * 20) + 'px">' +
         '<span class="fa fa-ellipsis-h text-muted"></span>' +
-        '<span class="tree-label text-muted"><em>Hierarchy too deep (max ' + CONSTANTS.MAX_TREE_DEPTH + ' levels)</em></span>' +
+        '<span class="tree-label text-muted"><em>' + t('hierarchy_too_deep', { max: CONSTANTS.MAX_TREE_DEPTH }) + '</em></span>' +
         '</div>'
     }
 
@@ -1864,7 +1861,7 @@
       console.error('Circular reference detected for item:', item.id)
       return '<div class="tree-item tree-error" style="padding-left: ' + (depth * 20) + 'px">' +
         '<span class="fa fa-exclamation-triangle text-danger"></span>' +
-        '<span class="tree-label text-danger"><em>Circular reference detected</em></span>' +
+        '<span class="tree-label text-danger"><em>' + t('circular_reference') + '</em></span>' +
         '</div>'
     }
 
@@ -1902,9 +1899,9 @@
       safeTitle +
       '</span>' +
       (item.parentIds && item.parentIds.length > 1
-        ? '<span class="tree-shared-badge" title="Appears in ' +
-        item.parentIds.length + ' collections">' +
-        '<span class="fa fa-link"></span> shared</span>'
+        ? '<span class="tree-shared-badge" title="' +
+        t('appears_in_collections', { count: item.parentIds.length }) + '">' +
+        '<span class="fa fa-link"></span> ' + t('shared_badge') + '</span>'
         : '') +
       count +
       '</div>'
@@ -1948,7 +1945,7 @@
     var today = new Date()
     var dateStr =
       today.getMonth() + 1 + '/' + today.getDate() + '/' + today.getFullYear()
-    var defaultName = 'CSV Import - ' + dateStr
+    var defaultName = t('import_name_prefix') + dateStr
     $('#bulkrax_importer_name').val(defaultName)
     StepperState.settings.name = defaultName
   }
@@ -2117,7 +2114,7 @@
     var filesHtml = StepperState.uploadedFiles
       .map(function (f) {
         var type = f.fileType === 'csv' ? 'CSV' : 'ZIP'
-        var fromZip = f.fromZip ? ' — detected in ZIP' : ''
+        var fromZip = f.fromZip ? ' — ' + t('detected_in_zip') : ''
         return (
           '<p><span class="text-muted small">' + type + ':</span> ' + escapeHtml(f.name) + ' (' + escapeHtml(f.size) + ')' + fromZip + '</p>'
         )
@@ -2132,55 +2129,54 @@
       totalItems = data.collections.length + data.works.length + data.fileSets.length
       recordsHtml =
         '<p>' +
-        totalItems +
-        ' total — ' +
-        data.collections.length +
-        ' collections, ' +
-        data.works.length +
-        ' works, ' +
-        data.fileSets.length +
-        ' file sets</p>'
+        t('review_total', {
+          total: totalItems,
+          collections: data.collections.length,
+          works: data.works.length,
+          file_sets: data.fileSets.length
+        }) +
+        '</p>'
     } else {
-      recordsHtml = '<p class="text-muted">Validation was skipped — record counts unavailable</p>'
+      recordsHtml = '<p class="text-muted">' + t('review_skipped') + '</p>'
     }
     $('.review-records').html(recordsHtml)
 
     // Settings - get admin set name from DOM first, then fallback to state
     var $currentAdminSet = $('#importer-admin-set')
-    var adminSetName = 'Not selected'
+    var adminSetName = t('not_selected')
     if ($currentAdminSet.length) {
       var selectedText = $currentAdminSet.find('option:selected').text().trim()
       var selectedValue = $currentAdminSet.val()
-      if (selectedValue && selectedValue !== '' && selectedText !== 'Select an admin set...') {
+      if (selectedValue && selectedValue !== '' && selectedText !== t('admin_set_prompt')) {
         adminSetName = selectedText
       }
     }
-    if (adminSetName === 'Not selected' && StepperState.adminSetName) {
+    if (adminSetName === t('not_selected') && StepperState.adminSetName) {
       adminSetName = StepperState.adminSetName
     }
     var visibilityLabels = {
-      open: 'Public',
-      authenticated: 'Institution',
-      restricted: 'Private'
+      open: t('visibility_public'),
+      authenticated: t('visibility_institution'),
+      restricted: t('visibility_private')
     }
     var visibilityName = visibilityLabels[settings.visibility]
 
     var settingsHtml =
-      '<p><span class="text-muted small">Name:</span> ' +
+      '<p><span class="text-muted small">' + t('review_name') + '</span> ' +
       escapeHtml(settings.name) +
       '</p>' +
-      '<p><span class="text-muted small">Admin Set:</span> ' +
+      '<p><span class="text-muted small">' + t('review_admin_set') + '</span> ' +
       adminSetName +
       '</p>' +
-      '<p><span class="text-muted small">Visibility:</span> ' +
+      '<p><span class="text-muted small">' + t('review_visibility') + '</span> ' +
       visibilityName +
       '</p>'
 
     if (settings.rightsStatement) {
-      settingsHtml += '<p><span class="text-muted small">Rights:</span> ' + settings.rightsStatement + '</p>'
+      settingsHtml += '<p><span class="text-muted small">' + t('review_rights') + '</span> ' + settings.rightsStatement + '</p>'
     }
     if (settings.limit) {
-      settingsHtml += '<p><span class="text-muted small">Limit:</span> first ' + settings.limit + ' records</p>'
+      settingsHtml += '<p><span class="text-muted small">' + t('review_limit') + '</span> ' + t('review_first_n_records', { count: settings.limit }) + '</p>'
     }
 
     $('.review-settings').html(settingsHtml)
@@ -2225,7 +2221,7 @@
     var $form = $('#bulk-import-stepper-form')
     $btn
       .prop('disabled', true)
-      .html('<span class="fa fa-spinner fa-spin"></span> Starting...')
+      .html('<span class="fa fa-spinner fa-spin"></span> ' + t('starting'))
 
     // Disable the file input so raw files aren't sent with the form
     $('#file-input').prop('disabled', true)

@@ -195,6 +195,16 @@ Once your the exporter has run, a download icon will appear on the exporters men
 * Ruby 2.7 or newer is required
 * Hyrax 2.3 or newer is required
 
+## Translations
+
+The [i18n-tasks gem](https://github.com/glebm/i18n-tasks) is a static analysis tool that helps manage Rails locale files. It scans the codebase for calls to `t()` and `I18n.t()` and creates a list of all the translation keys then compares that list against what actually exists in the locale files.
+
+Useful commands:
+- `bundle exec i18n-tasks` - a list of all tasks
+- `i18n-tasks health` - check for unused keys and files that need formatting
+- `i18n-tasks normalize` - sort and auto-format
+- `i18n-tasks translate-missing` - creates missing translations; **NOTE**: requires a service such as Google Translate
+
 ## Contributing
 If you're working on a PR for this project, create a feature branch off of `main`.
 
