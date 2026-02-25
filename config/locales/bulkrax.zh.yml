@@ -134,8 +134,8 @@ zh:
         click_here: 点击这里
         csv_only: 仅允许上传CSV文件。
         instructions_html: "<b>仅</b>上传已更正的<b>%{name}</b>导入器条目。要导出失败的条目以进行更正，"
-      v2:
-        breadcrumb: 新进口（V2）
+      guided_import:
+        breadcrumb: 引导式导入
         flash:
           demo_not_available: 暂无演示场景
           import_started: 导入操作已成功开始。
@@ -391,7 +391,7 @@ zh:
         generate_csv_template: 生成 CSV 导入模板
         import_corrected_works: 导入修正作品
         new: 高级导入
-        new_v2: 引导式进口
+        guided_import_new: 引导式进口
         remove_and_build: 移除，然后构建
         remove_and_rerun: 删除并重新运行
         remove_and_rerun_confirm: 你确定吗？重新运行后，这将删除所有作品及其关联文件和关系。

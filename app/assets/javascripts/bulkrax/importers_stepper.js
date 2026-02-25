@@ -93,8 +93,8 @@
 
     // API endpoints
     ENDPOINTS: {
-      DEMO_SCENARIOS: '/importers/v2/demo_scenarios',
-      VALIDATE: '/importers/v2/validate'
+      DEMO_SCENARIOS: '/importers/guided_import/demo_scenarios',
+      VALIDATE: '/importers/guided_import/validate'
     }
   }
 
@@ -2227,7 +2227,7 @@
     $('#file-input').prop('disabled', true)
 
     // Only append uploaded file IDs in upload mode; in file_path mode the import_file_path
-    // param is used and appending IDs would cause create_v2 to ignore the path.
+    // param is used and appending IDs would cause guided_import_create to ignore the path.
     if (StepperState.uploadMode === 'upload' && Array.isArray(StepperState.uploadedFiles)) {
       StepperState.uploadedFiles.forEach(function (f) {
         if (f.uploadId) {
@@ -2237,7 +2237,7 @@
       })
     }
 
-    // Submit the form so the request hits create_v2 and creates the importer / enqueues job
+    // Submit the form so the request hits guided_import_create and creates the importer / enqueues job
     $form[0].submit()
   }
 

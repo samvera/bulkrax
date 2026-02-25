@@ -159,8 +159,8 @@ en:
         click_here: click here
         csv_only: Only CSV files are allowed.
         instructions_html: Upload <b>only</b> the corrected entries for the <b>%{name}</b> importer. To export failed entries for correction,
-      v2:
-        breadcrumb: New Import (V2)
+      guided_import:
+        breadcrumb: Guided Import
         flash:
           demo_not_available: Demo scenarios not available
           import_started: Import started successfully.
@@ -418,7 +418,7 @@ en:
         generate_csv_template: Generate CSV Import Template
         import_corrected_works: Import Corrected Works
         new: Advanced Import
-        new_v2: Guided Import
+        guided_import_new: Guided Import
         remove_and_build: Remove and then Build
         remove_and_rerun: Remove and Rerun
         remove_and_rerun_confirm: Are you sure? This will delete all the works and any associated files and relationships before re running.

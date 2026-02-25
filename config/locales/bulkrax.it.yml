@@ -134,8 +134,8 @@ it:
         click_here: clicca qui
         csv_only: Sono consentiti solo file CSV.
         instructions_html: Carica <b>solo</b> le voci corrette per l'importatore <b>%{name}</b> . Per esportare le voci non riuscite per la correzione,
-      v2:
-        breadcrumb: Nuova importazione (V2)
+      guided_import:
+        breadcrumb: Importazioneguidata
         flash:
           demo_not_available: Scenari demo non disponibili
           import_started: Importazione avviata con successo.
@@ -392,7 +392,7 @@ it:
         generate_csv_template: Genera modello di importazione CSV
         import_corrected_works: Importa lavori corretti
         new: Importazione avanzata
-        new_v2: Importazione guidata
+        guided_import_new: Importazione guidata
         remove_and_build: Rimuovi e poi costruisci
         remove_and_rerun: Rimuovi e riesegui
         remove_and_rerun_confirm: Sei sicuro? Questa operazione eliminerà tutti i lavori e tutti i file e le relazioni associati prima di rieseguire l'operazione.

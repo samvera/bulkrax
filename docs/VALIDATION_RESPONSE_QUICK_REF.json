@@ -1,5 +1,5 @@
 {
-  "_comment": "Quick Reference - JSON Response Structure for POST /importers/v2/validate",
+  "_comment": "Quick Reference - JSON Response Structure for POST /importers/guided_import/validate",
   "_version": "1.0",
   "_required_fields": "All fields marked with * are required",
   "structure": {

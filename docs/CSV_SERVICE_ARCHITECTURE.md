@@ -491,11 +491,10 @@ The spec file (`csv_validation_service_spec.rb`, 317 lines) covers:
 
 ## Usage in Controller
 
-The controller concern `Bulkrax::ImporterV2` handles the web interface:
-
+The controller concern `Bulkrax::GuidedImport` handles the web interface:
 ```ruby
-# In ImporterV2 controller concern (app/controllers/concerns/bulkrax/importer_v2.rb)
-def validate_v2
+# In GuidedImport controller concern (app/controllers/concerns/bulkrax/guided_import.rb)
+def guided_import_validate
   files, error = resolve_validation_files
   return render json: error, status: :ok if error
   return render json: StepperResponseFormatter.error(message: 'No files uploaded'), status: :ok unless files.any?
@@ -546,7 +545,7 @@ The controller:
 - `app/services/bulkrax/csv_validation_service/item_extractor.rb` - Item categorization (177 lines)
 
 ### Related Files
-- `app/controllers/concerns/bulkrax/importer_v2.rb` - Controller concern using CsvValidationService
+- `app/controllers/concerns/bulkrax/guided_import.rb` - Controller concern using CsvValidationService
 - `app/services/bulkrax/stepper_response_formatter.rb` - Formats validation results for the stepper UI
 - `spec/services/bulkrax/csv_validation_service_spec.rb` - Comprehensive tests (317 lines)
 
