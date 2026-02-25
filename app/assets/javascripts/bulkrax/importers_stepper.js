@@ -138,6 +138,8 @@
       return
     }
 
+    eventsInitialized = false
+
     bindEvents()
     initAdminSetState()
     updateDownloadTemplateLink()
@@ -1319,7 +1321,8 @@
             import_file_path: filePath
           },
           admin_set_id: StepperState.adminSetId
-        }
+        },
+        locale: $('input[name="locale"]').val()
       },
       timeout: CONSTANTS.AJAX_TIMEOUT_LONG
     })
@@ -1429,7 +1432,8 @@
           .map(function (f) { return f.uploadId }),
         importer: {
           admin_set_id: StepperState.adminSetId
-        }
+        },
+        locale: $('input[name="locale"]').val()
       }
     }
 
@@ -2284,5 +2288,5 @@
   }
 
   // Initialize on document ready and turbolinks load
-  $(document).on('ready turbolinks:load', initBulkImportStepper)
+  $(document).on('turbolinks:load', initBulkImportStepper)
 })(jQuery, window.BulkraxUtils || {})
