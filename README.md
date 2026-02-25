@@ -214,7 +214,7 @@ See
 [CONTRIBUTING.md](https://github.com/samvera/bulkrax/blob/main/CONTRIBUTING.md)
 for contributing guidelines.
 
-We encourage everyone to help improve this project.  Bug reports and pull requests are welcome on GitHub at https://github.com/samvera/bulkrax.
+We encourage everyone to help improve this project.  Bug reports and pull requests are welcome on GitHub at https://github.com/samvera/bulkrax. For guided import bugs, use the [Guided import bug report](https://github.com/samvera/bulkrax/issues/new?template=guided_import_bug_report.md) template.
 
 This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant](https://contributor-covenant.org) code of conduct.
 
