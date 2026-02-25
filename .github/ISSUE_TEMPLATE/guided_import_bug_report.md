@@ -1,6 +1,6 @@
 ---
 name: Guided import bug report
-description: Report a bug in the Bulkrax guided import (importer stepper) flow
+about: Report a bug in the Bulkrax guided import (importer stepper) flow
 title: "[Guided import]: "
 labels: ["bug", "triage", "guided-import"]
 assignees: ""
