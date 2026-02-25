@@ -208,6 +208,7 @@ de:
           next_step: Nächste
           skip_validation: Validierung überspringen
           start_import: Import starten
+        feedback_link: Fehler melden / Feedback
         page_subtitle: Importieren Sie Sammlungen, Werke und Dateien per CSV-Datei
         page_title: Starten Sie einen Massenimport
         step1:

@@ -208,6 +208,7 @@ es:
           next_step: Próximo
           skip_validation: Saltar validación
           start_import: Iniciar importación
+        feedback_link: Reportar un error / Comentarios
         page_subtitle: Importar colecciones, obras y archivos mediante CSV
         page_title: Iniciar una importación masiva
         step1:

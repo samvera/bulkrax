@@ -233,6 +233,7 @@ en:
           next_step: Next
           skip_validation: Skip validation
           start_import: Start Import
+        feedback_link: Report a Bug / Feedback
         page_subtitle: Import collections, works, and files via CSV
         page_title: Start a Bulk Import
         step1:
