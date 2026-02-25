@@ -10,19 +10,19 @@ module Bulkrax
       @importer = Importer.new
       return unless defined?(::Hyrax)
       add_importer_breadcrumbs
-      add_breadcrumb 'New Import (V2)'
+      add_breadcrumb I18n.t('bulkrax.importer.v2.breadcrumb')
     end
 
     # AJAX endpoint to validate uploaded files
     def validate_v2
       files, error = resolve_validation_files
       return render json: error, status: :ok if error
-      return render json: StepperResponseFormatter.error(message: 'No files uploaded'), status: :ok unless files.any?
+      return render json: StepperResponseFormatter.error(message: I18n.t('bulkrax.importer.v2.validation.no_files_uploaded')), status: :ok unless files.any?
 
       csv_file, zip_file = find_csv_and_zip(files)
 
       unless csv_file
-        return render json: StepperResponseFormatter.error(message: 'No CSV metadata file uploaded'), status: :ok unless zip_file
+        return render json: StepperResponseFormatter.error(message: I18n.t('bulkrax.importer.v2.validation.no_csv_uploaded')), status: :ok unless zip_file
 
         csv_file, error = extract_csv_from_zip(zip_file)
         return render json: error, status: :ok if error
@@ -49,7 +49,7 @@ module Bulkrax
         Bulkrax::ImporterJob.perform_later(@importer.id)
 
         respond_to do |format|
-          format.html { redirect_to bulkrax.importers_path, notice: 'Import started successfully.' }
+          format.html { redirect_to bulkrax.importers_path, notice: I18n.t('bulkrax.importer.v2.flash.import_started') }
           format.json { render json: { success: true, importer_id: @importer.id }, status: :created }
         end
       else
@@ -68,7 +68,7 @@ module Bulkrax
       if File.exist?(file_path)
         render json: File.read(file_path), status: :ok
       else
-        render json: { error: 'Demo scenarios not available' }, status: :not_found
+        render json: { error: I18n.t('bulkrax.importer.v2.flash.demo_not_available') }, status: :not_found
       end
     end
 
@@ -79,7 +79,7 @@ module Bulkrax
     # @return [Array<(nil, Hash)>] on error, a tuple of [nil, error_response]
     def resolve_validation_files
       if import_via_file_path?
-        return [nil, StepperResponseFormatter.error(message: 'File path does not exist')] unless File.exist?(import_file_path)
+        return [nil, StepperResponseFormatter.error(message: I18n.t('bulkrax.importer.v2.validation.file_path_not_exist'))] unless File.exist?(import_file_path)
 
         [[File.open(import_file_path)], nil]
       elsif params[:uploaded_files].present?
@@ -184,17 +184,17 @@ module Bulkrax
     def find_csv_in_zip(zip)
       csv_entries = group_entries_by_directory_level(zip)
 
-      return StepperResponseFormatter.error(message: 'No CSV files found in ZIP') if csv_entries.empty?
+      return StepperResponseFormatter.error(message: I18n.t('bulkrax.importer.v2.validation.no_csv_in_zip')) if csv_entries.empty?
 
       csv_by_depth = get_directory_depth_for_each_csv(csv_entries)
       csvs_at_level = determine_csvs_at_shallowest_level(csv_by_depth)
 
       csvs_by_directory = csvs_at_level.group_by { |entry| File.dirname(entry.name) }
       csvs_by_directory.each do |_dir, csvs|
-        return StepperResponseFormatter.error(message: 'Multiple CSV files found in the same directory within ZIP') if csvs.count > 1
+        return StepperResponseFormatter.error(message: I18n.t('bulkrax.importer.v2.validation.multiple_csv_same_dir')) if csvs.count > 1
       end
 
-      return StepperResponseFormatter.error(message: 'Multiple CSV files found at the same level within ZIP') if csvs_at_level.size > 1
+      return StepperResponseFormatter.error(message: I18n.t('bulkrax.importer.v2.validation.multiple_csv_same_level')) if csvs_at_level.size > 1
 
       csvs_at_level.first
     end
@@ -377,19 +377,19 @@ module Bulkrax
         severity: severity,
         icon: icon,
         title: title,
-        summary: "#{results[:headers].length} columns detected · #{results[:row_count]} records found",
-        details: results[:is_valid] ? "Recognized fields: #{recognized.join(', ')}" : 'Critical errors must be fixed before import.',
+        summary: I18n.t('bulkrax.importer.v2.validation.columns_detected', columns: results[:headers].length, records: results[:row_count]),
+        details: results[:is_valid] ? I18n.t('bulkrax.importer.v2.validation.recognized_fields', fields: recognized.join(', ')) : I18n.t('bulkrax.importer.v2.validation.critical_errors'),
         defaultOpen: true
       }
     end
 
     def validation_status_level(is_valid, has_warnings)
       if !is_valid
-        ['error', 'fa-times-circle', 'Validation Failed']
+        ['error', 'fa-times-circle', I18n.t('bulkrax.importer.v2.validation.failed')]
       elsif has_warnings
-        ['warning', 'fa-exclamation-triangle', 'Validation Passed with Warnings']
+        ['warning', 'fa-exclamation-triangle', I18n.t('bulkrax.importer.v2.validation.passed_warnings')]
       else
-        ['success', 'fa-check-circle', 'Validation Passed']
+        ['success', 'fa-check-circle', I18n.t('bulkrax.importer.v2.validation.passed')]
       end
     end
 
@@ -398,10 +398,10 @@ module Bulkrax
         type: 'missing_required_fields',
         severity: 'error',
         icon: 'fa-times-circle',
-        title: 'Missing Required Fields',
+        title: I18n.t('bulkrax.importer.v2.validation.missing_required_title'),
         count: missing_required.length,
-        description: 'These required columns must be added to your CSV:',
-        items: missing_required.map { |field| { field: field, message: 'add this column to your CSV' } },
+        description: I18n.t('bulkrax.importer.v2.validation.missing_required_desc'),
+        items: missing_required.map { |field| { field: field, message: I18n.t('bulkrax.importer.v2.validation.missing_required_hint') } },
         defaultOpen: false
       }
     end
@@ -411,9 +411,9 @@ module Bulkrax
         type: 'unrecognized_fields',
         severity: 'warning',
         icon: 'fa-exclamation-triangle',
-        title: 'Unrecognized Fields',
+        title: I18n.t('bulkrax.importer.v2.validation.unrecognized_title'),
         count: unrecognized.length,
-        description: 'These columns will be ignored during import:',
+        description: I18n.t('bulkrax.importer.v2.validation.unrecognized_desc'),
         items: unrecognized.map { |field| { field: field, message: nil } },
         defaultOpen: false
       }
@@ -430,11 +430,11 @@ module Bulkrax
           type: 'file_references',
           severity: 'warning',
           icon: 'fa-info-circle',
-          title: 'File References',
+          title: I18n.t('bulkrax.importer.v2.validation.file_references_title'),
           count: file_references,
-          summary: "#{found_files} of #{file_references} files found in ZIP.",
-          description: "#{missing_files.length} #{'file'.pluralize(missing_files.length)} referenced in your CSV but missing from the ZIP:",
-          items: missing_files.map { |file| { field: file, message: 'missing from ZIP' } },
+          summary: I18n.t('bulkrax.importer.v2.validation.files_found_in_zip', found: found_files, total: file_references),
+          description: I18n.t('bulkrax.importer.v2.validation.files_missing_from_zip', count: missing_files.length, files_word: 'file'.pluralize(missing_files.length)),
+          items: missing_files.map { |file| { field: file, message: I18n.t('bulkrax.importer.v2.validation.missing_from_zip') } },
           defaultOpen: false
         }
       elsif !results[:zip_included]
@@ -442,10 +442,10 @@ module Bulkrax
           type: 'file_references',
           severity: 'warning',
           icon: 'fa-exclamation-triangle',
-          title: 'File References',
+          title: I18n.t('bulkrax.importer.v2.validation.file_references_title'),
           count: file_references,
-          summary: "#{file_references} files referenced in CSV.",
-          description: 'No ZIP file uploaded. Ensure files are accessible on the server or upload a ZIP.',
+          summary: I18n.t('bulkrax.importer.v2.validation.files_referenced', count: file_references),
+          description: I18n.t('bulkrax.importer.v2.validation.no_zip_desc'),
           items: [],
           defaultOpen: false
         }

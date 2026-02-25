@@ -32,6 +32,7 @@ group :development, :test do
   # To use a debugger
   gem 'byebug'
   gem 'database_cleaner'
+  gem 'i18n-tasks'
   gem 'pry-byebug'
   gem 'solargraph'
   gem 'solr_wrapper', '>= 0.3'
