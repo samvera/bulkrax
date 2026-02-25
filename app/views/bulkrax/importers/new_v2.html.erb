@@ -11,7 +11,7 @@
   window.BulkraxI18n = <%= raw I18n.t('bulkrax.importer.v2.js').to_json %>;
 </script>
 
-<div class="bulk-import-stepper-container">
+<div class="bulk-import-stepper-container" data-max-file-size="<%= (defined?(Hyrax) && Hyrax.config.uploader&.[](:maxFileSize)) || 524288000 %>">
   <div class="stepper-wrapper">
 
     <!-- Stepper Header -->
