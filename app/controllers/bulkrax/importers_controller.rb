@@ -8,7 +8,7 @@ module Bulkrax
     include Bulkrax::API
     include Bulkrax::DatatablesBehavior
     include Bulkrax::ValidationHelper
-    include Bulkrax::ImporterV2
+    include Bulkrax::GuidedImport
 
     protect_from_forgery unless: -> { api_request? }
     before_action :token_authenticate!, if: -> { api_request? }, only: [:create, :update, :delete]

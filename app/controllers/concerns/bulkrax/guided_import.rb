@@ -2,27 +2,27 @@
 
 module Bulkrax
   # rubocop:disable Metrics/ModuleLength
-  module ImporterV2
+  module GuidedImport
     extend ActiveSupport::Concern
 
     # trigger form to allow upload
-    def new_v2
+    def guided_import_new
       @importer = Importer.new
       return unless defined?(::Hyrax)
       add_importer_breadcrumbs
-      add_breadcrumb I18n.t('bulkrax.importer.v2.breadcrumb')
+      add_breadcrumb I18n.t('bulkrax.importer.guided_import.breadcrumb')
     end
 
     # AJAX endpoint to validate uploaded files
-    def validate_v2
+    def guided_import_validate
       files, error = resolve_validation_files
       return render json: error, status: :ok if error
-      return render json: StepperResponseFormatter.error(message: I18n.t('bulkrax.importer.v2.validation.no_files_uploaded')), status: :ok unless files.any?
+      return render json: StepperResponseFormatter.error(message: I18n.t('bulkrax.importer.guided_import.validation.no_files_uploaded')), status: :ok unless files.any?
 
       csv_file, zip_file = find_csv_and_zip(files)
 
       unless csv_file
-        return render json: StepperResponseFormatter.error(message: I18n.t('bulkrax.importer.v2.validation.no_csv_uploaded')), status: :ok unless zip_file
+        return render json: StepperResponseFormatter.error(message: I18n.t('bulkrax.importer.guided_import.validation.no_csv_uploaded')), status: :ok unless zip_file
 
         csv_file, error = extract_csv_from_zip(zip_file)
         return render json: error, status: :ok if error
@@ -34,27 +34,27 @@ module Bulkrax
       close_file_handles(files)
     end
 
-    def create_v2
+    def guided_import_create
       files = nil
       files = resolve_create_files
       return render_invalid_uploaded_files_response if params[:uploaded_files].present? && files.empty?
 
-      @importer = Importer.new(importer_params_v2)
+      @importer = Importer.new(guided_import_params)
       @importer.parser_klass = 'Bulkrax::CsvParser'
       @importer.user = current_user if respond_to?(:current_user) && current_user.present?
-      apply_field_mapping_v2
+      apply_guided_import_field_mapping
 
       if @importer.save
-        write_files_v2(files)
+        write_guided_import_files(files)
         Bulkrax::ImporterJob.perform_later(@importer.id)
 
         respond_to do |format|
-          format.html { redirect_to bulkrax.importers_path, notice: I18n.t('bulkrax.importer.v2.flash.import_started') }
+          format.html { redirect_to bulkrax.importers_path, notice: I18n.t('bulkrax.importer.guided_import.flash.import_started') }
           format.json { render json: { success: true, importer_id: @importer.id }, status: :created }
         end
       else
         respond_to do |format|
-          format.html { render :new_v2, status: :unprocessable_entity }
+          format.html { render :guided_import_new, status: :unprocessable_entity }
           format.json { render json: { errors: @importer.errors.full_messages }, status: :unprocessable_entity }
         end
       end
@@ -63,12 +63,12 @@ module Bulkrax
     end
 
     # Serve demo scenario fixtures for frontend testing
-    def demo_scenarios_v2
+    def guided_import_demo_scenarios
       file_path = Bulkrax::Engine.root.join('lib', 'bulkrax', 'data', 'demo_scenarios.json')
       if File.exist?(file_path)
         render json: File.read(file_path), status: :ok
       else
-        render json: { error: I18n.t('bulkrax.importer.v2.flash.demo_not_available') }, status: :not_found
+        render json: { error: I18n.t('bulkrax.importer.guided_import.flash.demo_not_available') }, status: :not_found
       end
     end
 
@@ -79,7 +79,7 @@ module Bulkrax
     # @return [Array<(nil, Hash)>] on error, a tuple of [nil, error_response]
     def resolve_validation_files
       if import_via_file_path?
-        return [nil, StepperResponseFormatter.error(message: I18n.t('bulkrax.importer.v2.validation.file_path_not_exist'))] unless File.exist?(import_file_path)
+        return [nil, StepperResponseFormatter.error(message: I18n.t('bulkrax.importer.guided_import.validation.file_path_not_exist'))] unless File.exist?(import_file_path)
 
         [[File.open(import_file_path)], nil]
       elsif params[:uploaded_files].present?
@@ -122,7 +122,7 @@ module Bulkrax
 
     def render_invalid_uploaded_files_response
       respond_to do |format|
-        format.html { render :new_v2, status: :unprocessable_entity }
+        format.html { render :guided_import_new, status: :unprocessable_entity }
         format.json { render json: { errors: ['No valid uploaded files found'] }, status: :unprocessable_entity }
       end
     end
@@ -184,17 +184,17 @@ module Bulkrax
     def find_csv_in_zip(zip)
       csv_entries = group_entries_by_directory_level(zip)
 
-      return StepperResponseFormatter.error(message: I18n.t('bulkrax.importer.v2.validation.no_csv_in_zip')) if csv_entries.empty?
+      return StepperResponseFormatter.error(message: I18n.t('bulkrax.importer.guided_import.validation.no_csv_in_zip')) if csv_entries.empty?
 
       csv_by_depth = get_directory_depth_for_each_csv(csv_entries)
       csvs_at_level = determine_csvs_at_shallowest_level(csv_by_depth)
 
       csvs_by_directory = csvs_at_level.group_by { |entry| File.dirname(entry.name) }
       csvs_by_directory.each do |_dir, csvs|
-        return StepperResponseFormatter.error(message: I18n.t('bulkrax.importer.v2.validation.multiple_csv_same_dir')) if csvs.count > 1
+        return StepperResponseFormatter.error(message: I18n.t('bulkrax.importer.guided_import.validation.multiple_csv_same_dir')) if csvs.count > 1
       end
 
-      return StepperResponseFormatter.error(message: I18n.t('bulkrax.importer.v2.validation.multiple_csv_same_level')) if csvs_at_level.size > 1
+      return StepperResponseFormatter.error(message: I18n.t('bulkrax.importer.guided_import.validation.multiple_csv_same_level')) if csvs_at_level.size > 1
 
       csvs_at_level.first
     end
@@ -237,7 +237,7 @@ module Bulkrax
       files_param.is_a?(Array) ? files_param.compact : [files_param].compact
     end
 
-    def importer_params_v2
+    def guided_import_params
       params.require(:importer).permit(
         :name,
         :admin_set_id,
@@ -246,11 +246,11 @@ module Bulkrax
       )
     end
 
-    def apply_field_mapping_v2
+    def apply_guided_import_field_mapping
       @importer.field_mapping = Bulkrax.field_mappings['Bulkrax::CsvParser']
     end
 
-    def write_files_v2(files)
+    def write_guided_import_files(files)
       csv_file, zip_file = find_csv_and_zip(files)
 
       csv_path = write_file_if_present(csv_file)
@@ -264,7 +264,7 @@ module Bulkrax
 
       @importer.save
     rescue StandardError => e
-      Rails.logger.error("Bulkrax::ImporterV2#write_files_v2 failed: #{e.message}")
+      Rails.logger.error("Bulkrax::GuidedImport#write_guided_import_files failed: #{e.message}")
       raise
     end
 
@@ -377,19 +377,19 @@ module Bulkrax
         severity: severity,
         icon: icon,
         title: title,
-        summary: I18n.t('bulkrax.importer.v2.validation.columns_detected', columns: results[:headers].length, records: results[:row_count]),
-        details: results[:is_valid] ? I18n.t('bulkrax.importer.v2.validation.recognized_fields', fields: recognized.join(', ')) : I18n.t('bulkrax.importer.v2.validation.critical_errors'),
+        summary: I18n.t('bulkrax.importer.guided_import.validation.columns_detected', columns: results[:headers].length, records: results[:row_count]),
+        details: results[:is_valid] ? I18n.t('bulkrax.importer.guided_import.validation.recognized_fields', fields: recognized.join(', ')) : I18n.t('bulkrax.importer.guided_import.validation.critical_errors'),
         defaultOpen: true
       }
     end
 
     def validation_status_level(is_valid, has_warnings)
       if !is_valid
-        ['error', 'fa-times-circle', I18n.t('bulkrax.importer.v2.validation.failed')]
+        ['error', 'fa-times-circle', I18n.t('bulkrax.importer.guided_import.validation.failed')]
       elsif has_warnings
-        ['warning', 'fa-exclamation-triangle', I18n.t('bulkrax.importer.v2.validation.passed_warnings')]
+        ['warning', 'fa-exclamation-triangle', I18n.t('bulkrax.importer.guided_import.validation.passed_warnings')]
       else
-        ['success', 'fa-check-circle', I18n.t('bulkrax.importer.v2.validation.passed')]
+        ['success', 'fa-check-circle', I18n.t('bulkrax.importer.guided_import.validation.passed')]
       end
     end
 
@@ -398,10 +398,10 @@ module Bulkrax
         type: 'missing_required_fields',
         severity: 'error',
         icon: 'fa-times-circle',
-        title: I18n.t('bulkrax.importer.v2.validation.missing_required_title'),
+        title: I18n.t('bulkrax.importer.guided_import.validation.missing_required_title'),
         count: missing_required.length,
-        description: I18n.t('bulkrax.importer.v2.validation.missing_required_desc'),
-        items: missing_required.map { |field| { field: field, message: I18n.t('bulkrax.importer.v2.validation.missing_required_hint') } },
+        description: I18n.t('bulkrax.importer.guided_import.validation.missing_required_desc'),
+        items: missing_required.map { |field| { field: field, message: I18n.t('bulkrax.importer.guided_import.validation.missing_required_hint') } },
         defaultOpen: false
       }
     end
@@ -411,9 +411,9 @@ module Bulkrax
         type: 'unrecognized_fields',
         severity: 'warning',
         icon: 'fa-exclamation-triangle',
-        title: I18n.t('bulkrax.importer.v2.validation.unrecognized_title'),
+        title: I18n.t('bulkrax.importer.guided_import.validation.unrecognized_title'),
         count: unrecognized.length,
-        description: I18n.t('bulkrax.importer.v2.validation.unrecognized_desc'),
+        description: I18n.t('bulkrax.importer.guided_import.validation.unrecognized_desc'),
         items: unrecognized.map { |field| { field: field, message: nil } },
         defaultOpen: false
       }
@@ -430,11 +430,11 @@ module Bulkrax
           type: 'file_references',
           severity: 'warning',
           icon: 'fa-info-circle',
-          title: I18n.t('bulkrax.importer.v2.validation.file_references_title'),
+          title: I18n.t('bulkrax.importer.guided_import.validation.file_references_title'),
           count: file_references,
-          summary: I18n.t('bulkrax.importer.v2.validation.files_found_in_zip', found: found_files, total: file_references),
-          description: I18n.t('bulkrax.importer.v2.validation.files_missing_from_zip', count: missing_files.length, files_word: 'file'.pluralize(missing_files.length)),
-          items: missing_files.map { |file| { field: file, message: I18n.t('bulkrax.importer.v2.validation.missing_from_zip') } },
+          summary: I18n.t('bulkrax.importer.guided_import.validation.files_found_in_zip', found: found_files, total: file_references),
+          description: I18n.t('bulkrax.importer.guided_import.validation.files_missing_from_zip', count: missing_files.length, files_word: 'file'.pluralize(missing_files.length)),
+          items: missing_files.map { |file| { field: file, message: I18n.t('bulkrax.importer.guided_import.validation.missing_from_zip') } },
           defaultOpen: false
         }
       elsif !results[:zip_included]
@@ -442,10 +442,10 @@ module Bulkrax
           type: 'file_references',
           severity: 'warning',
           icon: 'fa-exclamation-triangle',
-          title: I18n.t('bulkrax.importer.v2.validation.file_references_title'),
+          title: I18n.t('bulkrax.importer.guided_import.validation.file_references_title'),
           count: file_references,
-          summary: I18n.t('bulkrax.importer.v2.validation.files_referenced', count: file_references),
-          description: I18n.t('bulkrax.importer.v2.validation.no_zip_desc'),
+          summary: I18n.t('bulkrax.importer.guided_import.validation.files_referenced', count: file_references),
+          description: I18n.t('bulkrax.importer.guided_import.validation.no_zip_desc'),
           items: [],
           defaultOpen: false
         }

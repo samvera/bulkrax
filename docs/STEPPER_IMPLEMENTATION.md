@@ -1,6 +1,6 @@
 # Bulk Import Stepper - Implementation Guide
 
-This document describes the v2 bulk import stepper wizard, a Rails-native multi-step import interface for Bulkrax.
+This document describes the guided import stepper wizard, a Rails-native multi-step import interface for Bulkrax.
 
 ## Overview
 
@@ -18,7 +18,7 @@ The stepper wizard is a 3-step process for bulk importing CSV files and associat
 
 | Component | Path | Lines | Purpose |
 |-----------|------|-------|---------|
-| Main View | `app/views/bulkrax/importers/new_v2.html.erb` | 473 | 3-step stepper form |
+| Main View | `app/views/bulkrax/importers/guided_import_new.html.erb` | 473 | 3-step stepper form |
 | JavaScript | `app/assets/javascripts/bulkrax/importers_stepper.js` | 2,055 | State management, validation, UI |
 | JS Utilities | `app/assets/javascripts/bulkrax/bulkrax_utils.js` | 73 | HTML escaping, formatting helpers |
 | Stylesheet | `app/assets/stylesheets/bulkrax/stepper.scss` | 28 | Main import file for 11 SCSS partials |
@@ -33,7 +33,7 @@ The stepper wizard is a 3-step process for bulk importing CSV files and associat
 | Review | `app/assets/stylesheets/bulkrax/stepper/_review.scss` | - | Review step summary |
 | Navigation | `app/assets/stylesheets/bulkrax/stepper/_navigation.scss` | - | Step navigation buttons |
 | Responsive | `app/assets/stylesheets/bulkrax/stepper/_responsive.scss` | - | Mobile/tablet breakpoints |
-| Controller | `app/controllers/concerns/bulkrax/importer_v2.rb` | 387 | 4 endpoints + helpers |
+| Controller | `app/controllers/concerns/bulkrax/guided_import.rb` | 387 | 4 endpoints + helpers |
 | Formatter | `app/services/bulkrax/stepper_response_formatter.rb` | 275 | Validation response formatting |
 | Helper | `app/helpers/bulkrax/importers_helper.rb` | 14 | Admin set enumeration |
 
@@ -42,10 +42,10 @@ The stepper wizard is a 3-step process for bulk importing CSV files and associat
 Defined in `config/routes.rb` under the `importers` collection:
 
 ```ruby
-get 'new/v2', action: :new_v2, as: :new_v2           # GET /importers/new/v2
-post 'v2', action: :create_v2, as: :v2                # POST /importers/v2
-post 'v2/validate', action: :validate_v2, as: :validate_v2  # POST /importers/v2/validate
-get 'v2/demo_scenarios', action: :demo_scenarios_v2, as: :demo_scenarios_v2  # GET /importers/v2/demo_scenarios
+get 'new/guided_import', action: :guided_import_new, as: :guided_import_new        # GET /importers/new/guided_import
+post 'guided_import', action: :guided_import_create, as: :guided_import_create      # POST /importers/guided_import
+post 'guided_import/validate', action: :guided_import_validate, as: :guided_import_validate  # POST /importers/guided_import/validate
+get 'guided_import/demo_scenarios', action: :guided_import_demo_scenarios, as: :guided_import_demo_scenarios  # GET /importers/guided_import/demo_scenarios
 ```
 
 ## Step 1: Upload & Validate
@@ -89,7 +89,7 @@ A "Download a CSV template" link generates a template via `CsvValidationService.
 2. User selects admin set
 3. User clicks "Validate"
 4. JavaScript builds FormData (or file path params) + admin_set_id
-5. AJAX POST to /importers/v2/validate (60s timeout)
+5. AJAX POST to /importers/guided_import/validate (60s timeout)
 6. Controller resolves files -> finds CSV and ZIP -> extracts CSV from ZIP if needed
 7. CsvValidationService.validate() processes CSV
 8. StepperResponseFormatter.format() structures the response
@@ -146,20 +146,20 @@ The review step displays:
 - **Settings Summary** - Chosen visibility, rights statement, record limit
 - **Warnings Summary** - Any unresolved warnings from validation
 
-## Controller Concern: `ImporterV2`
+## Controller Concern: `GuidedImport`
 
-**Location:** `app/controllers/concerns/bulkrax/importer_v2.rb` (387 lines)
+**Location:** `app/controllers/concerns/bulkrax/guided_import.rb` (387 lines)
 
 ### Public Actions
 
 | Action | Method | Purpose |
 |--------|--------|---------|
-| `new_v2` | GET | Render the stepper form (with Hyrax breadcrumbs) |
-| `validate_v2` | POST | AJAX validation endpoint |
-| `create_v2` | POST | Create importer and start import job |
-| `demo_scenarios_v2` | GET | Serve demo scenarios JSON from `lib/bulkrax/data/demo_scenarios.json` |
+| `guided_import_new` | GET | Render the stepper form (with Hyrax breadcrumbs) |
+| `guided_import_validate` | POST | AJAX validation endpoint |
+| `guided_import_create` | POST | Create importer and start import job |
+| `guided_import_demo_scenarios` | GET | Serve demo scenarios JSON from `lib/bulkrax/data/demo_scenarios.json` |
 
-### `validate_v2` Details
+### `guided_import_validate` Details
 
 1. Resolves files from either upload params or file path
 2. Finds CSV and ZIP from the file list (by extension)
@@ -168,10 +168,10 @@ The review step displays:
 5. Formats result through `StepperResponseFormatter.format()`
 6. Returns JSON response
 
-### `create_v2` Details
+### `guided_import_create` Details
 
 1. Extracts uploaded files from params
-2. Creates `Importer` with v2 strong parameters:
+2. Creates `Importer` with guided import strong parameters:
    - `name`, `admin_set_id`, `limit`
    - `parser_fields`: `visibility`, `rights_statement`, `override_rights_statement`, `import_file_path`, `file_style`
 3. Sets `parser_klass` to `Bulkrax::CsvParser`
@@ -189,7 +189,7 @@ Key helpers include:
 - `extract_csv_from_zip(zip_file)` - Opens ZIP, finds CSV, returns `[csv_file, error]`
 - `find_csv_in_zip(zip)` - Smart CSV discovery preferring shallowest directory level
 - `run_validation(csv_file, zip_file, admin_set_id:)` - Delegates to `CsvValidationService` or demo mode
-- `write_files_v2(files)` - Writes CSV and ZIP to disk via parser methods
+- `write_guided_import_files(files)` - Writes CSV and ZIP to disk via parser methods
 - `generate_validation_response` - Mock data generator for demo mode
 - `build_validation_messages` - Format validation response structure
 - `validation_status` / `validation_status_level` - Determine severity, icon, and title
@@ -360,11 +360,11 @@ MAX_TREE_DEPTH: 50         // Prevent stack overflow
 - `updateDownloadTemplateLink()` - Update template URL with admin set ID
 
 **Form Submission:**
-- `handleImportSubmit()` - Prepare and submit form
+- `handleImportSubmit()` - Prepare and submit form to `guided_import_create`
 - `syncFilesToInput()` - Sync state files to hidden form input
 
 **Demo Mode:**
-- `loadDemoScenariosData()` - Fetch JSON from `/importers/v2/demo_scenarios`
+- `loadDemoScenariosData()` - Fetch JSON from `/importers/guided_import/demo_scenarios`
 - `loadDemoScenario(scenario)` - Load mock files and validation data
 - `getMockValidationData()` - Look up mock data for current scenario
 
@@ -429,9 +429,9 @@ $border-radius: 8px;
 
 ## View Structure
 
-**Location:** `app/views/bulkrax/importers/new_v2.html.erb` (473 lines)
+**Location:** `app/views/bulkrax/importers/guided_import_new.html.erb` (473 lines)
 
-The view wraps everything in a single `form_for [:bulkrax, Bulkrax::Importer.new]` (multipart, posting to `v2_importers_path`):
+The view wraps everything in a single `form_for [:bulkrax, Bulkrax::Importer.new]` (multipart, posting to `guided_import_create_importers_path`):
 
 - **Stepper Header** - 3-step progress indicator with icons (cloud-upload, cog, play)
 - **Success State** - Hidden card shown after successful submission
@@ -472,7 +472,8 @@ The view wraps everything in a single `form_for [:bulkrax, Bulkrax::Importer.new
 ```
 Browser                     Controller                  Services
   |                            |                           |
-  |-- POST /v2/validate ------>|                           |
+  |-- POST /guided_import/ --->|                           |
+  |   validate                 |                           |
   |  (FormData + admin_set_id) |                           |
   |                            |-- resolve_validation_files|
   |                            |-- find_csv_and_zip        |
@@ -498,11 +499,12 @@ Browser                     Controller                  Services
 ```
 Browser                     Controller                  Background
   |                            |                           |
-  |-- POST /v2 -------------->|                           |
+  |-- POST /guided_import ---->|                           |
   |  (form with files)         |                           |
   |                            |-- Importer.new(params)    |
   |                            |-- importer.save           |
-  |                            |-- write_files_v2(files)   |
+  |                            |-- write_guided_import_    |
+  |                            |   files(files)            |
   |                            |                           |
   |                            |-- ImporterJob ------------->|
   |                            |  .perform_later            |  |
@@ -515,7 +517,7 @@ Browser                     Controller                  Background
 The stepper includes a demo mode for testing without real files:
 
 1. Double-click the upload zone to reveal the demo scenarios panel
-2. Demo scenarios are fetched from `GET /importers/v2/demo_scenarios` (reads `lib/bulkrax/data/demo_scenarios.json`)
+2. Demo scenarios are fetched from `GET /importers/guided_import/demo_scenarios` (reads `lib/bulkrax/data/demo_scenarios.json`)
 3. Select a scenario to load mock files and validation data
 4. Validation uses mock data from the controller's `generate_validation_response` method
 5. All UI features (accordions, tree, gauge, navigation) are testable without real backend processing
@@ -536,12 +538,16 @@ The stepper includes a demo mode for testing without real files:
 3. Click Validate to call the real backend endpoint
 4. Form submission creates a real `Importer` and enqueues `ImporterJob`
 
+### Spec File
+
+**Location:** `spec/controllers/concerns/bulkrax/guided_import_spec.rb`
+
 ## Usage
 
 ### For Users
 
 1. Navigate to Importers index
-2. Click "New Import (V2)" button
+2. Click "Guided Import" button
 3. Follow the 3-step wizard:
    - Upload files (or enter server path), select admin set, and validate
    - Configure import name, visibility, and optional settings
@@ -556,7 +562,7 @@ Validation logic lives in `CsvValidationService` and its 17 subclasses (see `doc
 
 #### Adding New Steps
 
-1. Add step HTML to `new_v2.html.erb` (follow existing step pattern)
+1. Add step HTML to `guided_import_new.html.erb` (follow existing step pattern)
 2. Update stepper header with new step circle and connector
 3. Add navigation logic in `goToStep()` and `updateStepperUI()` in the JavaScript
 4. Update `updateStepNavigation()` for enable/disable logic
@@ -616,7 +622,7 @@ rake assets:precompile
 
 The old importer form is still available at `/importers/new`. To fully migrate:
 
-1. Test v2 thoroughly with various file types and edge cases
+1. Test the guided import thoroughly with various file types and edge cases
 2. Train users on the new interface
 3. Consider deprecating the old form
 4. Update documentation and help text

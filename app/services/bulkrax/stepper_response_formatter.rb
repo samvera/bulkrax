@@ -47,7 +47,7 @@ module Bulkrax
     # @param message [String] Error message to display
     # @param summary [String] Optional summary (defaults to standard message)
     # @return [Hash] Error response structure
-    def self.error(message: I18n.t('bulkrax.importer.v2.validation.unable_to_process'), summary: nil)
+    def self.error(message: I18n.t('bulkrax.importer.guided_import.validation.unable_to_process'), summary: nil)
       {
         totalItems: 0,
         collections: [],
@@ -59,9 +59,9 @@ module Bulkrax
           validationStatus: {
             severity: 'error',
             icon: 'fa-times-circle',
-            title: I18n.t('bulkrax.importer.v2.validation.failed'),
+            title: I18n.t('bulkrax.importer.guided_import.validation.failed'),
             summary: summary || message,
-            details: I18n.t('bulkrax.importer.v2.validation.critical_errors'),
+            details: I18n.t('bulkrax.importer.guided_import.validation.critical_errors'),
             defaultOpen: true
           },
           issues: []
@@ -138,7 +138,7 @@ module Bulkrax
         severity: severity,
         icon: icon,
         title: title,
-        summary: I18n.t('bulkrax.importer.v2.validation.columns_detected', columns: @data[:headers].length, records: @data[:rowCount]),
+        summary: I18n.t('bulkrax.importer.guided_import.validation.columns_detected', columns: @data[:headers].length, records: @data[:rowCount]),
         details: details_message(recognized),
         defaultOpen: true
       }
@@ -149,11 +149,11 @@ module Bulkrax
     # @return [Array<String>] [severity, icon, title]
     def determine_severity_level
       if !@data[:isValid]
-        ['error', 'fa-times-circle', I18n.t('bulkrax.importer.v2.validation.failed')]
+        ['error', 'fa-times-circle', I18n.t('bulkrax.importer.guided_import.validation.failed')]
       elsif @data[:hasWarnings]
-        ['warning', 'fa-exclamation-triangle', I18n.t('bulkrax.importer.v2.validation.passed_warnings')]
+        ['warning', 'fa-exclamation-triangle', I18n.t('bulkrax.importer.guided_import.validation.passed_warnings')]
       else
-        ['success', 'fa-check-circle', I18n.t('bulkrax.importer.v2.validation.passed')]
+        ['success', 'fa-check-circle', I18n.t('bulkrax.importer.guided_import.validation.passed')]
       end
     end
 
@@ -163,9 +163,9 @@ module Bulkrax
     # @return [String] Details message
     def details_message(recognized)
       if @data[:isValid]
-        I18n.t('bulkrax.importer.v2.validation.recognized_fields', fields: recognized.join(', '))
+        I18n.t('bulkrax.importer.guided_import.validation.recognized_fields', fields: recognized.join(', '))
       else
-        I18n.t('bulkrax.importer.v2.validation.critical_errors')
+        I18n.t('bulkrax.importer.guided_import.validation.critical_errors')
       end
     end
 
@@ -180,9 +180,9 @@ module Bulkrax
           type: 'missing_required_fields',
           severity: 'warning',
           icon: 'fa-exclamation-triangle',
-          title: I18n.t('bulkrax.importer.v2.validation.missing_required_title'),
+          title: I18n.t('bulkrax.importer.guided_import.validation.missing_required_title'),
           count: @data[:missingRequired].length,
-          description: I18n.t('bulkrax.importer.v2.validation.missing_rights_desc'),
+          description: I18n.t('bulkrax.importer.guided_import.validation.missing_rights_desc'),
           items: @data[:missingRequired],
           defaultOpen: false
         }
@@ -191,9 +191,9 @@ module Bulkrax
           type: 'missing_required_fields',
           severity: 'error',
           icon: 'fa-times-circle',
-          title: I18n.t('bulkrax.importer.v2.validation.missing_required_title'),
+          title: I18n.t('bulkrax.importer.guided_import.validation.missing_required_title'),
           count: @data[:missingRequired].length,
-          description: I18n.t('bulkrax.importer.v2.validation.missing_required_desc'),
+          description: I18n.t('bulkrax.importer.guided_import.validation.missing_required_desc'),
           items: @data[:missingRequired],
           defaultOpen: false
         }
@@ -208,9 +208,9 @@ module Bulkrax
         type: 'unrecognized_fields',
         severity: 'warning',
         icon: 'fa-exclamation-triangle',
-        title: I18n.t('bulkrax.importer.v2.validation.unrecognized_title'),
+        title: I18n.t('bulkrax.importer.guided_import.validation.unrecognized_title'),
         count: @data[:unrecognized].length,
-        description: I18n.t('bulkrax.importer.v2.validation.unrecognized_desc'),
+        description: I18n.t('bulkrax.importer.guided_import.validation.unrecognized_desc'),
         items: unrecognized_fields_issue_items,
         defaultOpen: false
       }
@@ -219,7 +219,7 @@ module Bulkrax
     def unrecognized_fields_issue_items
       @data[:unrecognized].partition(&:last)
                           .flatten(1)
-                          .map { |field| { field: field.first, message: field.last ? I18n.t('bulkrax.importer.v2.validation.did_you_mean', suggestion: field.last) : nil } }
+                          .map { |field| { field: field.first, message: field.last ? I18n.t('bulkrax.importer.guided_import.validation.did_you_mean', suggestion: field.last) : nil } }
     end
 
     # Format file references issue
@@ -245,11 +245,11 @@ module Bulkrax
         type: 'file_references',
         severity: 'warning',
         icon: 'fa-info-circle',
-        title: I18n.t('bulkrax.importer.v2.validation.file_references_title'),
+        title: I18n.t('bulkrax.importer.guided_import.validation.file_references_title'),
         count: @data[:fileReferences],
-        summary: I18n.t('bulkrax.importer.v2.validation.files_found_in_zip', found: @data[:foundFiles], total: @data[:fileReferences]),
-        description: I18n.t('bulkrax.importer.v2.validation.files_missing_from_zip', count: missing_files.length, files_word: 'file'.pluralize(missing_files.length)),
-        items: missing_files.map { |file| { field: file, message: I18n.t('bulkrax.importer.v2.validation.missing_from_zip') } },
+        summary: I18n.t('bulkrax.importer.guided_import.validation.files_found_in_zip', found: @data[:foundFiles], total: @data[:fileReferences]),
+        description: I18n.t('bulkrax.importer.guided_import.validation.files_missing_from_zip', count: missing_files.length, files_word: 'file'.pluralize(missing_files.length)),
+        items: missing_files.map { |file| { field: file, message: I18n.t('bulkrax.importer.guided_import.validation.missing_from_zip') } },
         defaultOpen: false
       }
     end
@@ -262,10 +262,10 @@ module Bulkrax
         type: 'file_references',
         severity: 'warning',
         icon: 'fa-exclamation-triangle',
-        title: I18n.t('bulkrax.importer.v2.validation.file_references_title'),
+        title: I18n.t('bulkrax.importer.guided_import.validation.file_references_title'),
         count: @data[:fileReferences],
-        summary: I18n.t('bulkrax.importer.v2.validation.files_referenced', count: @data[:fileReferences]),
-        description: I18n.t('bulkrax.importer.v2.validation.no_zip_desc'),
+        summary: I18n.t('bulkrax.importer.guided_import.validation.files_referenced', count: @data[:fileReferences]),
+        description: I18n.t('bulkrax.importer.guided_import.validation.no_zip_desc'),
         items: [],
         defaultOpen: false
       }
