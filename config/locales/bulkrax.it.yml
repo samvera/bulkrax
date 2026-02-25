@@ -208,6 +208,7 @@ it:
           next_step: Prossimo
           skip_validation: Salta la convalida
           start_import: Avvia importazione
+        feedback_link: Segnala un bug / Feedback
         page_subtitle: Importa raccolte, opere e file tramite CSV
         page_title: Avvia un'importazione in blocco
         step1:

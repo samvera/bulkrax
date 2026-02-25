@@ -208,6 +208,7 @@ fr:
           next_step: Suivant
           skip_validation: Ignorer la validation
           start_import: Démarrer l'importation
+        feedback_link: Signaler un bug / Commentaires
         page_subtitle: Importer des collections, des œuvres et des fichiers via CSV
         page_title: Lancer une importation en masse
         step1:
