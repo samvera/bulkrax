@@ -232,6 +232,7 @@ pt-BR:
           import_summary: Resumo da Importação
           title: Importe seus arquivos
           upload_files: Enviar arquivos
+          file_input_label: Enviar arquivo CSV ou ZIP
           validate_path: Validar arquivos do caminho de importação
           validate_upload: Validar arquivos enviados
           warning_ack: Declaro estar ciente desses avisos e desejo prosseguir com a importação.

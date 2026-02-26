@@ -232,6 +232,7 @@ es:
           import_summary: Resumen de importación
           title: Importar sus archivos
           upload_files: Subir archivos
+          file_input_label: Subir archivo CSV o ZIP
           validate_path: Validar archivos desde la ruta de importación
           validate_upload: Validar archivos desde la carga
           warning_ack: Reconozco estas advertencias y deseo continuar con la importación.

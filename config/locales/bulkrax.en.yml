@@ -257,6 +257,7 @@ en:
           import_summary: Import Summary
           title: Import Your Files
           upload_files: Upload Files
+          file_input_label: Upload CSV or ZIP file
           validate_path: Validate Files from Import Path
           validate_upload: Validate Files from Upload
           warning_ack: I acknowledge these warnings and want to proceed with the import.

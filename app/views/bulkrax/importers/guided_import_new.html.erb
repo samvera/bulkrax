@@ -1,7 +1,7 @@
 <% provide :page_header do %>
   <h1><span class="fa fa-cloud-upload" aria-hidden="true"></span> <%= t('bulkrax.importer.guided_import.page_title') %></h1>
-  <p class="text-muted"><%= t('bulkrax.importer.guided_import.page_subtitle') %></p>
-  <p class="text-muted small">
+  <p><%= t('bulkrax.importer.guided_import.page_subtitle') %></p>
+  <p>
     <%= link_to t('bulkrax.importer.guided_import.feedback_link'), 'https://github.com/samvera/bulkrax/issues/new?template=guided_import_bug_report.md', target: '_blank', rel: 'noopener noreferrer', class: 'feedback-link' %>
   </p>
 <% end %>
@@ -89,12 +89,25 @@
                   <span class="fa fa-cloud-upload"></span>
                 </div>
                 <p><%= t('bulkrax.importer.guided_import.step1.dropzone_main_html').html_safe %></p>
-                <p class="text-muted small"><%= t('bulkrax.importer.guided_import.step1.dropzone_hint') %></p>
+                <p class="text-muted small">
+                  <%= t('bulkrax.importer.guided_import.step1.dropzone_hint') %>
+                </p>
                 <div class="upload-accepted-types">
-                  <p class="text-muted small"><span class="fa fa-file-text-o"></span> <%= t('bulkrax.importer.guided_import.step1.dropzone_csv_hint') %></p>
-                  <p class="text-muted small"><span class="fa fa-file-archive-o"></span> <%= t('bulkrax.importer.guided_import.step1.dropzone_zip_hint') %></p>
+                  <p class="text-muted small">
+                    <span class="fa fa-file-text-o"></span> <%= t('bulkrax.importer.guided_import.step1.dropzone_csv_hint') %>
+                  </p>
+                  <p class="text-muted small">
+                    <span class="fa fa-file-archive-o"></span> <%= t('bulkrax.importer.guided_import.step1.dropzone_zip_hint') %>
+                  </p>
                 </div>
-                <input type="file" id="file-input" name="importer[parser_fields][files][]" accept=".csv,.zip" multiple style="display: none;">
+                <input
+                  type="file"
+                  id="file-input"
+                  name="importer[parser_fields][files][]"
+                  accept=".csv,.zip"
+                  multiple style="display: none"
+                  aria-label="<%= t('bulkrax.importer.guided_import.step1.upload_files') %>"
+                >
               </div>
 
               <!-- Demo Scenarios (for testing) -->
@@ -178,7 +191,7 @@
           <!-- Admin Set -->
           <div class="form-group">
             <div class="step-title">
-              <%= f.label :admin_set_id, class: 'h2' do %>
+              <%= f.label :admin_set_id, for: 'importer-admin-set', class: 'h2' do %>
                 <%= t('bulkrax.importer.guided_import.step1.admin_set') %> <span class="text-danger">*</span>
               <% end %>
               <p class="text-muted"><%= t('bulkrax.importer.guided_import.step1.admin_set_hint') %></p>
@@ -292,40 +305,64 @@
 
             <!-- Default Visibility -->
             <div class="form-group">
-              <label class="control-label"><%= t('bulkrax.importer.guided_import.step2.default_visibility') %> <span class="text-danger">*</span></label>
-              <p class="text-muted small"><%= t('bulkrax.importer.guided_import.step2.visibility_hint') %></p>
-              <div class="visibility-options row">
-                <div class="col-sm-4">
-                  <div class="visibility-card" data-visibility="open">
-                    <span class="fa fa-globe visibility-icon"></span>
-                    <div class="visibility-label"><%= t('bulkrax.importer.guided_import.step2.visibility_public') %></div>
-                    <div class="visibility-desc"><%= t('bulkrax.importer.guided_import.step2.visibility_public_desc') %></div>
-                    <input type="radio" name="importer[parser_fields][visibility]" value="open" checked style="display: none;">
+              <fieldset>
+                <legend class="control-label"><%= t('bulkrax.importer.guided_import.step2.default_visibility') %> <span class="text-danger">*</span></legend>
+                <p class="text-muted small"><%= t('bulkrax.importer.guided_import.step2.visibility_hint') %></p>
+                <div class="visibility-options row">
+                  <div class="col-sm-4">
+                    <div class="visibility-card" data-visibility="open">
+                      <span class="fa fa-globe visibility-icon" aria-hidden="true"></span>
+                      <label class="visibility-label" for="visibility_open"><%= t('bulkrax.importer.guided_import.step2.visibility_public') %>
+                        <input
+                          type="radio"
+                          id="visibility_open"
+                          name="importer[parser_fields][visibility]"
+                          value="open"
+                          checked class="sr-only"
+                        >
+                      </label>
+                      <div class="visibility-desc"><%= t('bulkrax.importer.guided_import.step2.visibility_public_desc') %></div>
+                    </div>
+                  </div>
+                  <div class="col-sm-4">
+                    <div class="visibility-card" data-visibility="authenticated">
+                      <span class="fa fa-users visibility-icon" aria-hidden="true"></span>
+                      <label class="visibility-label" for="visibility_authenticated"><%= t('bulkrax.importer.guided_import.step2.visibility_institution') %>
+                        <input
+                          type="radio"
+                          id="visibility_authenticated"
+                          name="importer[parser_fields][visibility]"
+                          value="authenticated"
+                          class="sr-only"
+                        >
+                      </label>
+                      <div class="visibility-desc"><%= t('bulkrax.importer.guided_import.step2.visibility_institution_desc') %></div>
+                    </div>
+                  </div>
+                  <div class="col-sm-4">
+                    <div class="visibility-card" data-visibility="restricted">
+                      <span class="fa fa-lock visibility-icon" aria-hidden="true"></span>
+                      <label class="visibility-label" for="visibility_restricted"><%= t('bulkrax.importer.guided_import.step2.visibility_private') %>
+                        <input
+                          type="radio"
+                          id="visibility_restricted"
+                          name="importer[parser_fields][visibility]"
+                          value="restricted"
+                          class="sr-only"
+                        >
+                      </label>
+                      <div class="visibility-desc"><%= t('bulkrax.importer.guided_import.step2.visibility_private_desc') %></div>
+                    </div>
                   </div>
                 </div>
-                <div class="col-sm-4">
-                  <div class="visibility-card" data-visibility="authenticated">
-                    <span class="fa fa-users visibility-icon"></span>
-                    <div class="visibility-label"><%= t('bulkrax.importer.guided_import.step2.visibility_institution') %></div>
-                    <div class="visibility-desc"><%= t('bulkrax.importer.guided_import.step2.visibility_institution_desc') %></div>
-                    <input type="radio" name="importer[parser_fields][visibility]" value="authenticated" style="display: none;">
-                  </div>
-                </div>
-                <div class="col-sm-4">
-                  <div class="visibility-card" data-visibility="restricted">
-                    <span class="fa fa-lock visibility-icon"></span>
-                    <div class="visibility-label"><%= t('bulkrax.importer.guided_import.step2.visibility_private') %></div>
-                    <div class="visibility-desc"><%= t('bulkrax.importer.guided_import.step2.visibility_private_desc') %></div>
-                    <input type="radio" name="importer[parser_fields][visibility]" value="restricted" style="display: none;">
-                  </div>
-                </div>
-              </div>
+              </fieldset>
             </div>
 
+            <!-- Optional Settings -->
             <div class="optional-settings-accordion">
               <div class="card">
                 <div class="card-header" data-toggle="collapse" data-target="#optional-settings">
-                  <h4 class="mb-0">
+                  <h3 class="mb-0">
                     <button class="btn btn-link text-left w-100 d-flex justify-content-between align-items-center" type="button">
                       <span>
                         <span class="fa fa-cog"></span>
@@ -333,7 +370,7 @@
                       </span>
                       <span class="fa fa-chevron-down"></span>
                     </button>
-                  </h4>
+                  </h3>
                 </div>
                 <div id="optional-settings" class="collapse">
                   <div class="card-body">
@@ -344,7 +381,7 @@
                       <%= t('bulkrax.importer.guided_import.step2.rights_skipped_hint_html').html_safe %>
                     </div>
                     <div class="form-group">
-                      <label class="control-label default-rights-statement-label"><%= t('bulkrax.importer.guided_import.step2.default_rights') %></label>
+                      <label class="control-label default-rights-statement-label" for="importer_parser_fields_rights_statement"><%= t('bulkrax.importer.guided_import.step2.default_rights') %></label>
                       <% if defined?(::Hyrax) %>
                         <% rights_statements = Hyrax.config.rights_statement_service_class.new %>
                         <%= select_tag 'importer[parser_fields][rights_statement]',

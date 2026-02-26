@@ -2,9 +2,26 @@
 .settings-form {
   margin: 25px 0;
 
-  .form-group { margin-bottom: 25px; }
-  .control-label { font-size: 14px; font-weight: 500; color: $color-text-dark; margin-bottom: 8px; }
-  .text-danger { color: $color-error; }
+  .form-group {
+    margin-bottom: 25px;
+
+    fieldset {
+      border: none;
+      padding: 0;
+      margin: 0;
+    }
+  }
+
+  .control-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: $color-text-dark;
+    margin-bottom: 8px;
+  }
+
+  .text-danger {
+    color: $color-error;
+  }
 }
 
 /* ====== Visibility Options ====== */
@@ -20,14 +37,19 @@
   cursor: pointer;
   transition: border-color 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
 
-  &:hover { border-color: $color-text-disabled; }
+  &:hover {
+    border-color: $color-text-disabled;
+  }
 
   &.active {
     border-color: $color-primary;
     background: $bg-primary-light;
     box-shadow: 0 2px 4px rgba($color-primary, 0.1);
 
-    .visibility-icon, .visibility-label { color: $color-primary; }
+    .visibility-icon,
+    .visibility-label {
+      color: $color-primary;
+    }
   }
 }
 
@@ -43,6 +65,7 @@
   font-weight: 600;
   color: $color-text-dark;
   margin-bottom: 4px;
+  display: block;
 }
 
 .visibility-desc {
@@ -52,9 +75,18 @@
 
 /* ====== Optional Settings (Bootstrap 4 Card) ====== */
 .optional-settings-accordion {
-  .card { margin-bottom: 0; border: 1px solid $border-color; }
-  .card-body { padding: 20px; }
-  .fa-cog { margin-right: 8px; }
+  .card {
+    margin-bottom: 0;
+    border: 1px solid $border-color;
+  }
+
+  .card-body {
+    padding: 20px;
+  }
+
+  .fa-cog {
+    margin-right: 8px;
+  }
 
   .card-header {
     cursor: pointer;
@@ -68,7 +100,10 @@
       font-weight: 500;
       padding: 12px 16px;
 
-      &:hover { text-decoration: none; background: $bg-muted; }
+      &:hover {
+        text-decoration: none;
+        background: $bg-muted;
+      }
     }
   }
 }
