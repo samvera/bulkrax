@@ -979,12 +979,12 @@
       safeSubtitle +
       '</div>' +
       '</div>' +
-      '</div>' +
       '<div class="file-actions">' +
       statusIcon +
       '<button type="button" class="file-remove-btn" aria-label="Remove file">' +
       '<span class="fa fa-times"></span>' +
       '</button>' +
+      '</div>' +
       '</div>' +
       '</div>'
     )
@@ -1408,7 +1408,7 @@
       '<div class="gauge-labels">' +
       '<span>0</span><span>' + CONSTANTS.IMPORT_SIZE_OPTIMAL + '</span><span>' + CONSTANTS.IMPORT_SIZE_MODERATE + '</span><span>' + CONSTANTS.IMPORT_SIZE_LARGE + '+</span>' +
       '</div>' +
-      '<p class="gauge-message">' +
+      '<p class="gauge-message text-muted small">' +
       msg +
       '</p>' +
       '</div>'
