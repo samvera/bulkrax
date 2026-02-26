@@ -231,6 +231,7 @@ zh:
           import_summary: 导入摘要
           title: 导入您的文件
           upload_files: 上传文件
+          file_input_label: 上传CSV或ZIP文件
           validate_path: 验证导入路径中的文件
           validate_upload: 验证上传的文件
           warning_ack: 我已了解这些警告，并希望继续导入。

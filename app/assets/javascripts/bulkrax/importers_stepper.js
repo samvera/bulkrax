@@ -29,7 +29,6 @@
   var escapeHtml = Utils.escapeHtml
   var formatFileSize = Utils.formatFileSize
   var normalizeBoolean = Utils.normalizeBoolean
-  var t = Utils.t
 
   // ============================================================================
   // UTILITY FUNCTIONS
@@ -82,11 +81,7 @@
 
     // AJAX timeouts (in milliseconds)
     AJAX_TIMEOUT_SHORT: 10000, // 10 seconds for simple requests
-    AJAX_TIMEOUT_LONG: 120000, // 2 minutes for validation
-
-    // Chunked upload settings (matches Hyrax v1 uploader)
-    CHUNK_SIZE: 10000000, // 10 MB per chunk
-    UPLOAD_URL: '/uploads/',
+    AJAX_TIMEOUT_LONG: 60000, // 60 seconds for file uploads/validation
 
     // Hierarchy rendering limits
     MAX_TREE_DEPTH: 50, // Prevent stack overflow on deeply nested hierarchies
@@ -114,7 +109,6 @@
     isAddingFiles: false, // Flag to track if we're adding files vs replacing
     demoScenario: null, // Track which demo scenario is loaded
     demoScenariosData: null, // Cached demo scenarios JSON from server
-    uploadsInProgress: 0,
     adminSetId: '',
     adminSetName: '',
     settings: {
@@ -217,7 +211,7 @@
         // Show warning if more than MAX_FILES were dropped
         if (droppedFiles.length > CONSTANTS.MAX_FILES) {
           showNotification(
-            t('only_first_files', { count: CONSTANTS.MAX_FILES, max: CONSTANTS.MAX_FILES })
+            'Only the first ' + CONSTANTS.MAX_FILES + ' files have been uploaded. You can upload up to ' + CONSTANTS.MAX_FILES + ' files (1 CSV and 1 ZIP).'
           )
         }
       }
@@ -254,7 +248,7 @@
         // Show warning if more than 1 file was dropped
         if (droppedFiles.length > 1) {
           showNotification(
-            t('only_one_additional')
+            'Only 1 additional file can be added. The first file has been added.'
           )
         }
       }
@@ -365,23 +359,11 @@
     // Remove file button (delegated to parent since rows are dynamic)
     $('.uploaded-files-container').on('click', '.file-remove-btn', function () {
       var $row = $(this).closest('.file-row')
-      var fileId = $row.data('file-id')
-
-      var fileEntry = StepperState.uploadedFiles.find(function (f) { return f.id === fileId })
-      if (fileEntry) {
-        if (fileEntry.uploadXhr) {
-          fileEntry.uploadAbortedByUser = true
-          fileEntry.uploadXhr.abort()
-          StepperState.uploadsInProgress--
-        }
-        if (fileEntry.uploadId) {
-          $.ajax({ url: CONSTANTS.UPLOAD_URL + fileEntry.uploadId, method: 'DELETE', timeout: CONSTANTS.AJAX_TIMEOUT_SHORT })
-        }
-      }
+      var fileName = $row.find('.file-name').text()
 
       // Remove from uploadedFiles array
       StepperState.uploadedFiles = StepperState.uploadedFiles.filter(
-        function (file) { return file.id !== fileId }
+        function (file) { return file.name !== fileName }
       )
 
       // Remove the row
@@ -503,7 +485,7 @@
         '<button type="button" class="close" data-dismiss="alert" aria-label="Close">',
         '<span aria-hidden="true">&times;</span>',
         '</button>',
-        '<strong><span class="fa fa-exclamation-circle"></span> ' + t('file_upload_error') + '</strong>',
+        '<strong><span class="fa fa-exclamation-circle"></span> File Upload Error</strong>',
         '<ul class="mb-0 mt-2">'
       ]
 
@@ -529,33 +511,13 @@
   // FILE UPLOAD HANDLERS
   // ============================================================================
 
-  // Get tenant/account max file size (bytes) from the page, same source as v1 uploader
-  function getMaxFileSize() {
-    var val = $('.bulk-import-stepper-container').data('max-file-size')
-    if (val == null || val === '') return null
-    return parseInt(val, 10) || null
-  }
-
   // Handle file selection
   function handleFileSelect(isAddingMore) {
     var files = $('#file-input')[0].files
     if (files.length === 0) return
 
-    var maxFileSizeBytes = getMaxFileSize()
-
-    // If not adding more, abort any in-progress uploads and clean up server-side records
-    // before replacing the file list so we don't orphan uploads or desync uploadsInProgress.
+    // If not adding more, reset the uploaded files array
     if (!isAddingMore) {
-      StepperState.uploadedFiles.forEach(function (f) {
-        if (f.uploadXhr) {
-          f.uploadAbortedByUser = true
-          f.uploadXhr.abort()
-        }
-        if (f.uploadId) {
-          $.ajax({ url: CONSTANTS.UPLOAD_URL + f.uploadId, method: 'DELETE', timeout: CONSTANTS.AJAX_TIMEOUT_SHORT })
-        }
-      })
-      StepperState.uploadsInProgress = 0
       StepperState.uploadedFiles = []
     }
 
@@ -570,7 +532,6 @@
 
     var addedFiles = []
     var rejectedFiles = []
-    var newEntries = []
 
     // Process selected files with validation
     for (
@@ -588,23 +549,6 @@
           name: fileName,
           reason: 'invalid_type',
           extension: getFileExtension(fileName)
-        })
-        continue
-      }
-
-      // Reject empty/zero-byte files to avoid server-side errors
-      if (file.size === 0) {
-        rejectedFiles.push({ name: fileName, reason: 'file_empty' })
-        continue
-      }
-
-      // Respect tenant/account file size limit (same as v1 and Hyrax uploader)
-      if (maxFileSizeBytes != null && file.size > maxFileSizeBytes) {
-        rejectedFiles.push({
-          name: fileName,
-          reason: 'file_too_large',
-          size: file.size,
-          limit: maxFileSizeBytes
         })
         continue
       }
@@ -632,21 +576,15 @@
         continue
       }
 
-      // Add the file with upload tracking properties
-      var fileEntry = {
+      // Add the file
+      StepperState.uploadedFiles.push({
         id: Date.now() + i,
         name: fileName,
         size: fileSize,
         fileType: fileType,
         fromZip: false,
-        file: file,
-        uploadId: null,
-        uploadProgress: 0,
-        uploadComplete: false,
-        uploadXhr: null
-      }
-      StepperState.uploadedFiles.push(fileEntry)
-      newEntries.push(fileEntry)
+        file: file
+      })
 
       addedFiles.push(fileName)
 
@@ -661,46 +599,26 @@
 
       var categorized = rejectedFiles.reduce(function (acc, f) {
         if (f.reason === 'invalid_type') acc.invalidTypes.push(f)
-        else if (f.reason === 'file_empty') acc.fileEmpty.push(f)
-        else if (f.reason === 'file_too_large') acc.fileTooLarge.push(f)
         else if (f.reason === 'duplicate CSV') acc.duplicateCsv.push(f)
         else if (f.reason === 'duplicate ZIP') acc.duplicateZip.push(f)
         else if (f.reason === 'duplicate') acc.duplicates.push(f)
         return acc
-      }, { invalidTypes: [], fileEmpty: [], fileTooLarge: [], duplicateCsv: [], duplicateZip: [], duplicates: [] })
+      }, { invalidTypes: [], duplicateCsv: [], duplicateZip: [], duplicates: [] })
 
       // Handle invalid file types FIRST
       if (categorized.invalidTypes.length > 0) {
         messages.push(
-          t('invalid_format') + '\n' +
-          t('rejected_files') + '\n• ' +
+          'Invalid file format. Only .csv and .zip files are allowed.\n' +
+          'The following files were rejected:\n• ' +
           categorized.invalidTypes.map(function (f) {
-            return f.name + ' (' + (f.extension || t('no_extension')) + ')'
-          }).join('\n• ')
-        )
-      }
-
-      if (categorized.fileEmpty.length > 0) {
-        messages.push(
-          'Empty files (0 bytes) are not allowed.\n' +
-          'The following files were rejected:\n• ' +
-          categorized.fileEmpty.map(function (f) { return f.name }).join('\n• ')
-        )
-      }
-      if (categorized.fileTooLarge.length > 0) {
-        var limitMb = categorized.fileTooLarge[0].limit / (1024 * 1024)
-        messages.push(
-          'File size exceeds the maximum allowed (' + Math.round(limitMb) + ' MB per file).\n' +
-          'The following files were rejected:\n• ' +
-          categorized.fileTooLarge.map(function (f) {
-            return f.name + ' (' + formatFileSize(f.size) + ')'
+            return f.name + ' (' + (f.extension || 'no extension') + ')'
           }).join('\n• ')
         )
       }
 
       if (categorized.duplicateCsv.length > 0) {
         messages.push(
-          t('csv_limit') + '\n• ' +
+          'Only 1 CSV file allowed. The following files were not added:\n• ' +
           categorized.duplicateCsv
             .map(function (f) {
               return f.name
@@ -710,7 +628,7 @@
       }
       if (categorized.duplicateZip.length > 0) {
         messages.push(
-          t('zip_limit') + '\n• ' +
+          'Only 1 ZIP file allowed. The following files were not added:\n• ' +
           categorized.duplicateZip
             .map(function (f) {
               return f.name
@@ -720,7 +638,7 @@
       }
       if (categorized.duplicates.length > 0) {
         messages.push(
-          t('already_uploaded') + '\n• ' +
+          'The following files were already uploaded:\n• ' +
           categorized.duplicates
             .map(function (f) {
               return f.name
@@ -732,13 +650,15 @@
         StepperState.uploadedFiles.length >= CONSTANTS.MAX_FILES &&
         files.length > addedFiles.length + rejectedFiles.length
       ) {
-        messages.push(t('max_files', { count: CONSTANTS.MAX_FILES }))
+        messages.push('Maximum of ' + CONSTANTS.MAX_FILES + ' files reached (1 CSV and 1 ZIP).')
       }
 
       showFileUploadError(messages)
     } else if (files.length > addedFiles.length) {
       showFileUploadError([
-        t('max_files_added', { count: CONSTANTS.MAX_FILES, added: addedFiles.length })
+        'Maximum of ' + CONSTANTS.MAX_FILES + ' files allowed (1 CSV and 1 ZIP). Only the first ' +
+        addedFiles.length +
+        ' file(s) were added.'
       ])
     } else {
       clearFileUploadError()
@@ -751,13 +671,6 @@
 
     updateUploadState()
     renderUploadedFiles()
-
-    // Start chunked uploads for newly added files
-    newEntries.forEach(function (entry) {
-      if (entry.file) {
-        uploadFileChunked(entry)
-      }
-    })
   }
 
   // ============================================================================
@@ -793,14 +706,14 @@
         demoScenariosRequest = null // Clear in-flight tracker on error
 
         var status = xhr.statusText || 'error'
-        var errorMsg = t('demo_load_failed')
+        var errorMsg = 'Failed to load demo scenarios'
 
         if (status === 'timeout') {
-          errorMsg = t('demo_timeout')
+          errorMsg = 'Request timed out while loading demo scenarios'
         } else if (xhr.status === 0) {
-          errorMsg = t('demo_network_error')
+          errorMsg = 'Network error - please check your connection'
         } else if (xhr.status >= 500) {
-          errorMsg = t('demo_server_error')
+          errorMsg = 'Server error while loading demo scenarios'
         }
 
         console.warn(errorMsg, {
@@ -837,126 +750,6 @@
         // Error already handled and displayed in loadDemoScenariosData
         console.error('Failed to load demo scenario:', error)
       })
-  }
-
-  // ============================================================================
-  // CHUNKED FILE UPLOAD (to Hyrax /uploads/ endpoint)
-  // ============================================================================
-
-  function uploadFileChunked(fileEntry) {
-    var file = fileEntry.file
-    if (!file) return
-
-    StepperState.uploadsInProgress++
-    fileEntry.uploadProgress = 0
-    fileEntry.uploadComplete = false
-    fileEntry.uploadId = null
-    fileEntry.uploadAbortedByUser = false
-
-    updateValidateButtonState()
-    renderUploadedFiles()
-
-    var chunkSize = CONSTANTS.CHUNK_SIZE
-    var totalSize = file.size
-    var offset = 0
-
-    function sendNextChunk() {
-      if (offset >= totalSize) {
-        fileEntry.uploadComplete = true
-        fileEntry.uploadProgress = 100
-        StepperState.uploadsInProgress--
-        updateValidateButtonState()
-        renderUploadedFiles()
-        return Promise.resolve()
-      }
-
-      var end = Math.min(offset + chunkSize, totalSize)
-      var isFirstChunk = (offset === 0)
-      var chunk = file.slice(offset, end)
-
-      var formData = new FormData()
-      formData.append('files[]', chunk, file.name)
-
-      var headers = {}
-      if (!isFirstChunk) {
-        formData.append('id', fileEntry.uploadId)
-        headers['Content-Range'] = 'bytes ' + offset + '-' + (end - 1) + '/' + totalSize
-      }
-
-      var currentOffset = offset
-
-      return new Promise(function (resolve, reject) {
-        var ajaxOptions = {
-          url: CONSTANTS.UPLOAD_URL,
-          method: 'POST',
-          data: formData,
-          processData: false,
-          contentType: false,
-          dataType: 'json',
-          timeout: 0,
-          xhr: function () {
-            var xhr = new XMLHttpRequest()
-            xhr.upload.addEventListener('progress', function (e) {
-              if (e.lengthComputable) {
-                var chunkLoaded = currentOffset + e.loaded
-                var percent = Math.round((chunkLoaded / totalSize) * 100)
-                fileEntry.uploadProgress = Math.min(percent, 99)
-                renderUploadProgress(fileEntry)
-              }
-            })
-            return xhr
-          }
-        }
-
-        if (Object.keys(headers).length > 0) {
-          ajaxOptions.headers = headers
-        }
-
-        var jqXhr = $.ajax(ajaxOptions)
-        fileEntry.uploadXhr = jqXhr
-        jqXhr
-          .then(function (result) {
-            if (isFirstChunk && result.files && result.files[0]) {
-              fileEntry.uploadId = result.files[0].id
-            }
-            offset = end
-            fileEntry.uploadXhr = null
-            resolve()
-          })
-          .catch(function (xhr) {
-            fileEntry.uploadXhr = null
-            reject(new Error(xhr.statusText || 'Upload failed'))
-          })
-      }).then(sendNextChunk)
-    }
-
-    sendNextChunk().catch(function (error) {
-      if (!fileEntry.uploadAbortedByUser) {
-        StepperState.uploadsInProgress--
-      }
-      fileEntry.uploadAbortedByUser = false
-      if (fileEntry.uploadId) {
-        $.ajax({ url: CONSTANTS.UPLOAD_URL + fileEntry.uploadId, method: 'DELETE', timeout: CONSTANTS.AJAX_TIMEOUT_SHORT })
-      }
-      StepperState.uploadedFiles = StepperState.uploadedFiles.filter(function (f) {
-        return f !== fileEntry
-      })
-      updateUploadState()
-      updateValidateButtonState()
-      renderUploadedFiles()
-      if (error.message !== 'abort') {
-        showNotification('Upload failed for ' + file.name + ': ' + (error.message || 'Unknown error'), 'error')
-      }
-    })
-  }
-
-  function renderUploadProgress(fileEntry) {
-    var $row = $('.file-row[data-file-id="' + fileEntry.id + '"]')
-    if ($row.length) {
-      var pct = fileEntry.uploadProgress || 0
-      $row.find('.upload-progress-bar').css('width', pct + '%')
-      $row.find('.upload-progress-label').text('Uploading… ' + pct + '%')
-    }
   }
 
   // ============================================================================
@@ -1036,8 +829,8 @@
     $('#warnings-acked').prop('checked', false)
     $('.validation-results').hide()
     $('.warning-acknowledgment').hide()
-    $('#validate-upload-btn').html('<span class="fa fa-file-text"></span> ' + t('validate_upload'))
-    $('#validate-path-btn').html('<span class="fa fa-file-text"></span> ' + t('validate_path'))
+    $('#validate-upload-btn').html('<span class="fa fa-file-text"></span> Validate Files from Upload')
+    $('#validate-path-btn').html('<span class="fa fa-file-text"></span> Validate Files from Import Path')
     renderUploadedFiles()
     updateStepNavigation()
   }
@@ -1059,7 +852,7 @@
         if (f.fileType === 'zip') check.hasZip = true
         return check
       }, { hasCsv: false, hasZip: false })
-      canValidate = (fileCheck.hasCsv || fileCheck.hasZip) && hasAdminSet && !StepperState.validated && StepperState.uploadsInProgress === 0
+      canValidate = (fileCheck.hasCsv || fileCheck.hasZip) && hasAdminSet
     }
 
     var $validateBtn = StepperState.uploadMode === 'file_path' ? $('#validate-path-btn') : $('#validate-upload-btn')
@@ -1110,7 +903,8 @@
       }
     }
     var fileRows = files.map(function (file) {
-      return renderFileRow(file)
+      var subtitle = file.subtitle || file.size
+      return renderFileRow(file.fileType, file.name, subtitle, validationStatus)
     })
     $list.append(fileRows.join(''))
 
@@ -1118,16 +912,16 @@
     var infoMessage = ''
     if (state === CONSTANTS.UPLOAD_STATES.ZIP_WITH_CSV) {
       infoMessage =
-        '<div class="upload-info"><span class="fa fa-info-circle"></span> ' + t('upload_single_package') + '</div>'
+        '<div class="upload-info"><span class="fa fa-info-circle"></span> Single package with CSV and files</div>'
     } else if (state === CONSTANTS.UPLOAD_STATES.CSV_ONLY) {
       infoMessage =
-        '<div class="upload-info"><span class="fa fa-info-circle"></span> ' + t('upload_csv_only') + '</div>'
+        '<div class="upload-info"><span class="fa fa-info-circle"></span> No ZIP uploaded — files will be matched from server paths or you can add more files</div>'
     } else if (state === CONSTANTS.UPLOAD_STATES.ZIP_FILES_ONLY) {
       infoMessage =
-        '<div class="upload-info"><span class="fa fa-info-circle"></span> ' + t('upload_zip_only') + '</div>'
+        '<div class="upload-info"><span class="fa fa-info-circle"></span> ZIP file uploaded — validation will check for CSV content</div>'
     } else if (state === CONSTANTS.UPLOAD_STATES.CSV_AND_ZIP) {
       infoMessage =
-        '<div class="upload-info"><span class="fa fa-info-circle"></span> ' + t('upload_csv_and_zip') + '</div>'
+        '<div class="upload-info"><span class="fa fa-info-circle"></span> CSV + files uploaded separately</div>'
     }
 
     $('.upload-info-message').html(infoMessage)
@@ -1135,10 +929,10 @@
     // Show file count if multiple files
     if (files.length > 1) {
       $('.uploaded-files-header strong').text(
-        t('uploaded_files', { count: files.length })
+        'Uploaded Files (' + files.length + ')'
       )
     } else {
-      $('.uploaded-files-header strong').text(t('uploaded_file'))
+      $('.uploaded-files-header strong').text('Uploaded File')
     }
 
     // Show/hide "Add another file" dropzone based on file count
@@ -1152,75 +946,52 @@
   }
 
   // Render a single file row
-  function renderFileRow(file) {
-    var type = file.fileType
-    var name = file.name
-    var subtitle = file.subtitle || file.size
-    // Show progress until all chunks are done (uploadComplete); uploadId is set after the first
-    // chunk so it cannot be used here — the progress bar would vanish mid-upload otherwise.
-    // Demo entries (no .file) are treated as already complete.
-    var isUploading = file.file && !file.uploadComplete
-    var verified = !isUploading
-
+  // validationStatus: null (not yet validated), 'success', 'warning', or 'error'
+  function renderFileRow(type, name, subtitle, validationStatus) {
     var icon = type === 'csv' ? 'fa-file-text' : 'fa-file-archive-o'
     var iconBg = type === 'csv' ? 'file-icon-csv' : 'file-icon-zip'
-
-    var progress = file.uploadProgress || 0
-    var progressBlock = ''
-    if (isUploading) {
-      progressBlock =
-        '<div class="upload-progress-block">' +
-        '<div class="upload-progress-label">Uploading… ' + progress + '%</div>' +
-        '<div class="upload-progress-bar-container" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + progress + '">' +
-        '<div class="upload-progress-bar" style="width:' + progress + '%;"></div>' +
-        '</div>' +
-        '</div>'
+    var statusIcon = ''
+    if (validationStatus === 'success') {
+      statusIcon = '<span class="fa fa-check-circle file-status file-status-success"></span>'
+    } else if (validationStatus === 'warning') {
+      statusIcon = '<span class="fa fa-exclamation-triangle file-status file-status-warning"></span>'
+    } else if (validationStatus === 'error') {
+      statusIcon = '<span class="fa fa-times-circle file-status file-status-error"></span>'
     }
 
-    var statusHtml = verified
-      ? '<span class="fa fa-check-circle file-verified file-status-success"></span>'
-      : ''
-
+    // Escape user-provided data (file name and subtitle)
     var safeName = escapeHtml(name)
     var safeSubtitle = escapeHtml(subtitle)
 
     return (
-      '<div class="file-row" data-file-id="' + file.id + '">' +
-      '<div class="file-row-main">' +
+      '<div class="file-row">' +
       '<div class="file-info">' +
-      '<div class="file-icon ' + iconBg + '"><span class="fa ' + icon + '"></span></div>' +
+      '<div class="file-icon ' +
+      iconBg +
+      '"><span class="fa ' +
+      icon +
+      '"></span></div>' +
       '<div class="file-details">' +
-      '<div class="file-name">' + safeName + '</div>' +
-      '<div class="file-subtitle">' + safeSubtitle + '</div>' +
+      '<div class="file-name">' +
+      safeName +
+      '</div>' +
+      '<div class="file-subtitle">' +
+      safeSubtitle +
+      '</div>' +
       '</div>' +
       '</div>' +
       '<div class="file-actions">' +
-      statusHtml +
-      '<button type="button" class="file-remove-btn" aria-label="' + t('remove_file') + '">' +
+      statusIcon +
+      '<button type="button" class="file-remove-btn" aria-label="Remove file">' +
       '<span class="fa fa-times"></span>' +
       '</button>' +
       '</div>' +
-      '</div>' +
-      progressBlock +
       '</div>'
     )
   }
 
   // Reset upload state
   function resetUploadState() {
-    // Abort in-progress uploads and delete server-side files.
-    // Mark as user-aborted first so the catch handler doesn't double-decrement uploadsInProgress.
-    StepperState.uploadedFiles.forEach(function (f) {
-      if (f.uploadXhr) {
-        f.uploadAbortedByUser = true
-        f.uploadXhr.abort()
-      }
-      if (f.uploadId) {
-        $.ajax({ url: CONSTANTS.UPLOAD_URL + f.uploadId, method: 'DELETE', timeout: CONSTANTS.AJAX_TIMEOUT_SHORT })
-      }
-    })
-    StepperState.uploadsInProgress = 0
-
     StepperState.uploadedFiles = []
     StepperState.uploadState = CONSTANTS.UPLOAD_STATES.EMPTY
     StepperState.validated = false
@@ -1244,10 +1015,10 @@
     // Reset both validate buttons to original state
     $('#validate-upload-btn')
       .prop('disabled', true)
-      .html('<span class="fa fa-file-text"></span> ' + t('validate_upload'))
+      .html('<span class="fa fa-file-text"></span> Validate Files from Upload')
     $('#validate-path-btn')
       .prop('disabled', true)
-      .html('<span class="fa fa-file-text"></span> ' + t('validate_path'))
+      .html('<span class="fa fa-file-text"></span> Validate Files from Import Path')
 
     renderUploadedFiles()
     updateStepNavigation()
@@ -1301,12 +1072,15 @@
   // VALIDATION
   // ============================================================================
 
-  // Perform validation API call with uploaded file IDs
-  function performValidation(data) {
+  // Perform validation API call
+  function performValidation(formData) {
+    formData.append('locale', window.BulkraxLocale || document.documentElement.lang)
     return $.ajax({
       url: CONSTANTS.ENDPOINTS.VALIDATE,
       method: 'POST',
-      data: data,
+      data: formData,
+      processData: false,
+      contentType: false,
       timeout: CONSTANTS.AJAX_TIMEOUT_LONG
     })
   }
@@ -1334,7 +1108,7 @@
       setTimeout(function () {
         var mockData = getMockValidationData()
         if (!mockData) {
-          reject(new Error(t('demo_data_not_loaded')))
+          reject(new Error('Demo data not loaded. Try selecting a scenario again.'))
           return
         }
         resolve(mockData)
@@ -1351,11 +1125,11 @@
     try {
       renderValidationResults(normalized)
       renderUploadedFiles()
-      $btn.html('<span class="fa fa-check-circle"></span> ' + t('validated'))
+      $btn.html('<span class="fa fa-check-circle"></span> Validated')
       updateStepNavigation()
     } catch (e) {
       console.error('Validation results render issue:', e)
-      throw new Error(t('render_error'))
+      throw new Error('Validation completed but results could not be displayed. Please try again.')
     }
   }
 
@@ -1363,21 +1137,21 @@
   function handleValidationError(error, $btn) {
     var xhr = error
     var status = xhr.statusText || 'error'
-    var errorMsg = t('validation_failed')
+    var errorMsg = 'Validation failed. Please try again.'
 
     // Handle specific error cases
     if (status === 'timeout') {
-      errorMsg = t('validation_timeout')
+      errorMsg = 'Validation timed out. Your files may be too large. Please try with smaller files or contact support.'
     } else if (xhr.status === 0) {
-      errorMsg = t('network_error')
+      errorMsg = 'Network error - please check your connection and try again.'
     } else if (xhr.status === 413) {
-      errorMsg = t('files_too_large')
+      errorMsg = 'Files are too large. Please reduce file size and try again.'
     } else if (xhr.status === 422) {
       errorMsg = xhr.responseJSON && xhr.responseJSON.error
         ? xhr.responseJSON.error
-        : t('invalid_file_format')
+        : 'Invalid file format. Please check your files and try again.'
     } else if (xhr.status >= 500) {
-      errorMsg = t('server_error')
+      errorMsg = 'Server error during validation. Please try again or contact support.'
     } else if (xhr.responseJSON && xhr.responseJSON.error) {
       errorMsg = xhr.responseJSON.error
     }
@@ -1393,8 +1167,8 @@
 
     // Reset button state
     var resetLabel = $btn.attr('id') === 'validate-path-btn'
-      ? '<span class="fa fa-file-text"></span> ' + t('validate_path')
-      : '<span class="fa fa-file-text"></span> ' + t('validate_upload')
+      ? '<span class="fa fa-file-text"></span> Validate Files from Import Path'
+      : '<span class="fa fa-file-text"></span> Validate Files from Upload'
     $btn
       .prop('disabled', false)
       .html(resetLabel)
@@ -1409,7 +1183,7 @@
     var $btn = StepperState.uploadMode === 'file_path' ? $('#validate-path-btn') : $('#validate-upload-btn')
     $btn
       .prop('disabled', true)
-      .html('<span class="fa fa-spinner fa-spin"></span> ' + t('validating'))
+      .html('<span class="fa fa-spinner fa-spin"></span> Validating...')
 
     // Uncheck "Skip validation" since the user is actively validating
     if (StepperState.skipValidation) {
@@ -1437,6 +1211,7 @@
       }
     }
 
+
     // Choose validation method based on the active upload mode tab.
     // Each tab is validated independently — no cross-tab priority.
     var validationPromise
@@ -1444,16 +1219,21 @@
       var filePathValue = $('#import-file-path').val().trim()
       validationPromise = performFilePathValidation(filePathValue)
     } else {
-      if (useMockData) {
-        validationPromise = performMockValidation()
-      } else if (validationData) {
-        validationPromise = performValidation(validationData)
+      var hasRealFiles = StepperState.uploadedFiles.some(function (f) { return f.file })
+      if (hasRealFiles) {
+        // Build FormData manually so ALL files from state are included.
+        // The file input only holds the last-selected file, so uploading
+        // a ZIP then adding a CSV would lose the ZIP from the form.
+        var formData = new FormData($('#bulk-import-stepper-form')[0])
+        formData.delete('importer[parser_fields][files][]')
+        StepperState.uploadedFiles.forEach(function (f) {
+          if (f.file) {
+            formData.append('importer[parser_fields][files][]', f.file)
+          }
+        })
+        validationPromise = performValidation(formData)
       } else {
-        showNotification('No files to validate. Upload files or enter an import path.', 'warning')
-        $btn.prop('disabled', false).html($btn.attr('id') === 'validate-path-btn'
-          ? '<span class="fa fa-file-text"></span> Validate Files from Import Path'
-          : '<span class="fa fa-file-text"></span> Validate Files from Upload')
-        return
+        validationPromise = performMockValidation()
       }
     }
 
@@ -1584,20 +1364,22 @@
     if (count <= CONSTANTS.IMPORT_SIZE_OPTIMAL) {
       pct = (count / CONSTANTS.IMPORT_SIZE_OPTIMAL) * 33
       color = 'gauge-marker-optimal'
-      zone = t('gauge_optimal')
-      msg = t('gauge_optimal_msg')
+      zone = 'Optimal'
+      msg = 'Great! Smaller imports are easier to validate and troubleshoot.'
       cardClass = 'gauge-card-optimal'
     } else if (count <= CONSTANTS.IMPORT_SIZE_MODERATE) {
       pct = 33 + ((count - CONSTANTS.IMPORT_SIZE_OPTIMAL) / (CONSTANTS.IMPORT_SIZE_MODERATE - CONSTANTS.IMPORT_SIZE_OPTIMAL)) * 33
       color = 'gauge-marker-moderate'
-      zone = t('gauge_moderate')
-      msg = t('gauge_moderate_msg')
+      zone = 'Moderate'
+      msg =
+        'Consider splitting into smaller batches for easier error resolution.'
       cardClass = 'gauge-card-moderate'
     } else {
       pct = Math.min(66 + ((count - CONSTANTS.IMPORT_SIZE_MODERATE) / CONSTANTS.IMPORT_SIZE_MODERATE) * 34, 100)
       color = 'gauge-marker-large'
-      zone = t('gauge_large')
-      msg = t('gauge_large_msg', { limit: CONSTANTS.IMPORT_SIZE_OPTIMAL })
+      zone = 'Large'
+      msg =
+        'Large imports take longer and are harder to debug. We strongly recommend splitting into batches of ' + CONSTANTS.IMPORT_SIZE_OPTIMAL + ' or fewer.'
       cardClass = 'gauge-card-large'
     }
 
@@ -1606,9 +1388,9 @@
       cardClass +
       '">' +
       '<div class="gauge-header">' +
-      '<span>' +
-      t('gauge_import_size', { count: count }) +
-      '</span>' +
+      '<span>Import Size: ' +
+      count +
+      ' items</span>' +
       '<span class="gauge-zone">' +
       zone +
       '</span>' +
@@ -1835,7 +1617,7 @@
     var itemCount = data.collections.length + data.works.length
     $container.append(
       createAccordion(
-        t('import_hierarchy'),
+        'Import Hierarchy',
         'fa-sitemap',
         'info',
         itemCount,
@@ -1856,7 +1638,7 @@
       console.warn('Max tree depth reached for item:', item.id)
       return '<div class="tree-item tree-truncated" style="padding-left: ' + (depth * 20) + 'px">' +
         '<span class="fa fa-ellipsis-h text-muted"></span>' +
-        '<span class="tree-label text-muted"><em>' + t('hierarchy_too_deep', { max: CONSTANTS.MAX_TREE_DEPTH }) + '</em></span>' +
+        '<span class="tree-label text-muted"><em>Hierarchy too deep (max ' + CONSTANTS.MAX_TREE_DEPTH + ' levels)</em></span>' +
         '</div>'
     }
 
@@ -1865,7 +1647,7 @@
       console.error('Circular reference detected for item:', item.id)
       return '<div class="tree-item tree-error" style="padding-left: ' + (depth * 20) + 'px">' +
         '<span class="fa fa-exclamation-triangle text-danger"></span>' +
-        '<span class="tree-label text-danger"><em>' + t('circular_reference') + '</em></span>' +
+        '<span class="tree-label text-danger"><em>Circular reference detected</em></span>' +
         '</div>'
     }
 
@@ -1903,9 +1685,9 @@
       safeTitle +
       '</span>' +
       (item.parentIds && item.parentIds.length > 1
-        ? '<span class="tree-shared-badge" title="' +
-        t('appears_in_collections', { count: item.parentIds.length }) + '">' +
-        '<span class="fa fa-link"></span> ' + t('shared_badge') + '</span>'
+        ? '<span class="tree-shared-badge" title="Appears in ' +
+        item.parentIds.length + ' collections">' +
+        '<span class="fa fa-link"></span> shared</span>'
         : '') +
       count +
       '</div>'
@@ -1949,7 +1731,7 @@
     var today = new Date()
     var dateStr =
       today.getMonth() + 1 + '/' + today.getDate() + '/' + today.getFullYear()
-    var defaultName = t('import_name_prefix') + dateStr
+    var defaultName = 'CSV Import - ' + dateStr
     $('#bulkrax_importer_name').val(defaultName)
     StepperState.settings.name = defaultName
   }
@@ -2118,7 +1900,7 @@
     var filesHtml = StepperState.uploadedFiles
       .map(function (f) {
         var type = f.fileType === 'csv' ? 'CSV' : 'ZIP'
-        var fromZip = f.fromZip ? ' — ' + t('detected_in_zip') : ''
+        var fromZip = f.fromZip ? ' — detected in ZIP' : ''
         return (
           '<p><span class="text-muted small">' + type + ':</span> ' + escapeHtml(f.name) + ' (' + escapeHtml(f.size) + ')' + fromZip + '</p>'
         )
@@ -2133,54 +1915,55 @@
       totalItems = data.collections.length + data.works.length + data.fileSets.length
       recordsHtml =
         '<p>' +
-        t('review_total', {
-          total: totalItems,
-          collections: data.collections.length,
-          works: data.works.length,
-          file_sets: data.fileSets.length
-        }) +
-        '</p>'
+        totalItems +
+        ' total — ' +
+        data.collections.length +
+        ' collections, ' +
+        data.works.length +
+        ' works, ' +
+        data.fileSets.length +
+        ' file sets</p>'
     } else {
-      recordsHtml = '<p class="text-muted">' + t('review_skipped') + '</p>'
+      recordsHtml = '<p class="text-muted">Validation was skipped — record counts unavailable</p>'
     }
     $('.review-records').html(recordsHtml)
 
     // Settings - get admin set name from DOM first, then fallback to state
     var $currentAdminSet = $('#importer-admin-set')
-    var adminSetName = t('not_selected')
+    var adminSetName = 'Not selected'
     if ($currentAdminSet.length) {
       var selectedText = $currentAdminSet.find('option:selected').text().trim()
       var selectedValue = $currentAdminSet.val()
-      if (selectedValue && selectedValue !== '' && selectedText !== t('admin_set_prompt')) {
+      if (selectedValue && selectedValue !== '' && selectedText !== 'Select an admin set...') {
         adminSetName = selectedText
       }
     }
-    if (adminSetName === t('not_selected') && StepperState.adminSetName) {
+    if (adminSetName === 'Not selected' && StepperState.adminSetName) {
       adminSetName = StepperState.adminSetName
     }
     var visibilityLabels = {
-      open: t('visibility_public'),
-      authenticated: t('visibility_institution'),
-      restricted: t('visibility_private')
+      open: 'Public',
+      authenticated: 'Institution',
+      restricted: 'Private'
     }
     var visibilityName = visibilityLabels[settings.visibility]
 
     var settingsHtml =
-      '<p><span class="text-muted small">' + t('review_name') + '</span> ' +
+      '<p><span class="text-muted small">Name:</span> ' +
       escapeHtml(settings.name) +
       '</p>' +
-      '<p><span class="text-muted small">' + t('review_admin_set') + '</span> ' +
+      '<p><span class="text-muted small">Admin Set:</span> ' +
       adminSetName +
       '</p>' +
-      '<p><span class="text-muted small">' + t('review_visibility') + '</span> ' +
+      '<p><span class="text-muted small">Visibility:</span> ' +
       visibilityName +
       '</p>'
 
     if (settings.rightsStatement) {
-      settingsHtml += '<p><span class="text-muted small">' + t('review_rights') + '</span> ' + settings.rightsStatement + '</p>'
+      settingsHtml += '<p><span class="text-muted small">Rights:</span> ' + settings.rightsStatement + '</p>'
     }
     if (settings.limit) {
-      settingsHtml += '<p><span class="text-muted small">' + t('review_limit') + '</span> ' + t('review_first_n_records', { count: settings.limit }) + '</p>'
+      settingsHtml += '<p><span class="text-muted small">Limit:</span> first ' + settings.limit + ' records</p>'
     }
 
     $('.review-settings').html(settingsHtml)
@@ -2225,7 +2008,7 @@
     var $form = $('#bulk-import-stepper-form')
     $btn
       .prop('disabled', true)
-      .html('<span class="fa fa-spinner fa-spin"></span> ' + t('starting'))
+      .html('<span class="fa fa-spinner fa-spin"></span> Starting...')
 
     // Disable the file input so raw files aren't sent with the form
     $('#file-input').prop('disabled', true)
@@ -2243,6 +2026,20 @@
 
     // Submit the form so the request hits guided_import_create and creates the importer / enqueues job
     $form[0].submit()
+  }
+
+  // Sync all files from StepperState into the file input element
+  function syncFilesToInput() {
+    var inputElement = $('#file-input')[0]
+    if (!inputElement) return
+
+    var realFiles = StepperState.uploadedFiles
+      .filter(function (f) { return f.file })
+      .map(function (f) { return f.file })
+
+    if (realFiles.length > 0) {
+      setInputFiles(inputElement, realFiles)
+    }
   }
 
   // Look up mock validation data from cached demo scenarios JSON

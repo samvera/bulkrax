@@ -20,7 +20,7 @@
       color: #fff;
       box-shadow: 0 4px 8px rgba($color-primary, 0.3);
     }
-    .step-label { color: $color-primary; font-weight: 600; }
+    .step-label { color: $color-primary; font-weight: 700; }
   }
 
   &.completed {
@@ -32,7 +32,7 @@
       .fa:not(.step-check) { display: none; }
       .step-check { display: inline; }
     }
-    .step-label { color: $color-success; }
+    .step-label { color: $color-success; font-weight: 700; }
   }
 }
 
