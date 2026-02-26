@@ -280,6 +280,10 @@ RSpec.describe Bulkrax::CsvValidationService::RowValidatorService do
       before do
         allow(Qa::Authorities::Local).to receive(:subauthority_for).with('rights_statements').and_return(authority)
         allow(Qa::Authorities::Local).to receive(:subauthority_for).with('rights_statement').and_return(authority)
+        allow(authority).to receive(:all).and_return([
+          { 'label' => 'In Copyright', 'active' => true },
+          { 'label' => 'No Copyright', 'active' => true }
+        ])
       end
 
       it 'returns an invalid_controlled_value error when term is not active' do
@@ -339,6 +343,21 @@ RSpec.describe Bulkrax::CsvValidationService::RowValidatorService do
         expect(controlled_errors).to be_empty
       end
 
+      it 'does not error when term has no active key' do
+        allow(authority).to receive(:find).with('Some Term').and_return({ 'id' => 'some-term', 'label' => 'Some Term' })
+
+        data = [{
+          source_identifier: 'work1',
+          model: 'GenericWork',
+          parent: nil,
+          children: nil,
+          raw_row: { 'title' => 'Work 1', 'rights_statement' => 'Some Term' }
+        }]
+        validator = described_class.new(data, field_metadata_with_controlled)
+        controlled_errors = validator.errors.select { |e| e[:category] == 'invalid_controlled_value' }
+        expect(controlled_errors).to be_empty
+      end
+
       it 'does not error when controlled field is blank' do
         data = [{
           source_identifier: 'work1',
@@ -354,16 +373,30 @@ RSpec.describe Bulkrax::CsvValidationService::RowValidatorService do
 
       it 'includes the row number in the error' do
         allow(authority).to receive(:find).with('Bad Term').and_return({ 'active' => false })
+        allow(authority).to receive(:find).with('In Copyright').and_return({ 'active' => true })
 
         data = [
           { source_identifier: 'work1', model: 'GenericWork', parent: nil, children: nil, raw_row: { 'title' => 'Work 1', 'rights_statement' => 'In Copyright' } },
           { source_identifier: 'work2', model: 'GenericWork', parent: nil, children: nil, raw_row: { 'title' => 'Work 2', 'rights_statement' => 'Bad Term' } }
         ]
-        allow(authority).to receive(:find).with('In Copyright').and_return({ 'active' => true })
-
         validator = described_class.new(data, field_metadata_with_controlled)
         error = validator.errors.find { |e| e[:category] == 'invalid_controlled_value' }
-        expect(error[:row]).to eq(2)
+        expect(error[:row]).to eq(3)
+      end
+
+      it 'includes a suggestion when a close match exists' do
+        allow(authority).to receive(:find).with('In Copyrigh').and_return({})
+
+        data = [{
+          source_identifier: 'work1',
+          model: 'GenericWork',
+          parent: nil,
+          children: nil,
+          raw_row: { 'title' => 'Work 1', 'rights_statement' => 'In Copyrigh' }
+        }]
+        validator = described_class.new(data, field_metadata_with_controlled)
+        error = validator.errors.find { |e| e[:category] == 'invalid_controlled_value' }
+        expect(error[:suggestion]).to include('In Copyright')
       end
 
       it 'skips controlled vocab check when model has no controlled_vocab_terms' do
@@ -375,8 +408,6 @@ RSpec.describe Bulkrax::CsvValidationService::RowValidatorService do
       end
 
       it 'skips controlled vocab check when field is not in controlled_vocab_terms for that model' do
-        allow(authority).to receive(:find).with('anything')
-
         data = [{
           source_identifier: 'work1',
           model: 'GenericWork',

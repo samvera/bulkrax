@@ -284,9 +284,9 @@ module Bulkrax
         type: 'row_level_errors',
         severity: severity,
         icon: icon,
-        title: 'Row Validation Errors',
+        title: I18n.t('bulkrax.importer.guided_import.stepper_response_formatter.row_errors_issue.title'),
         count: filtered.length,
-        description: 'The following issues exist with data in your CSV:',
+        description: I18n.t('bulkrax.importer.guided_import.stepper_response_formatter.row_errors_issue.description'),
         items: row_error_items(filtered),
         defaultOpen: false
       }
@@ -300,7 +300,7 @@ module Bulkrax
     def row_error_items(errors)
       errors.map do |error|
         {
-          field: "Row #{error[:row]} · #{error[:column]}",
+          field: I18n.t('bulkrax.importer.guided_import.stepper_response_formatter.row_errors_issue.row_label', row: error[:row], column: error[:column]),
           message: error[:message]
         }
       end

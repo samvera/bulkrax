@@ -271,6 +271,11 @@ pt-BR:
           configure_settings: Configurar configurações
           review_start: Analisar e começar
           upload_validate: Carregar e validar
+        stepper_response_formatter:
+          row_errors_issue:
+            description: "Existem os seguintes problemas com os dados no seu CSV:"
+            row_label: "Linha %{row} · %{column}"
+            title: Erros de validação de linha
         success:
           message: Sua importação está sendo processada em segundo plano. Você será notificado quando ela for concluída.
           start_another: Iniciar outra importação
@@ -278,6 +283,10 @@ pt-BR:
           view_queue: Visualizar fila de importação
         validation:
           columns_detected: "%{columns} colunas detectadas · %{records} registros encontrados"
+          controlled_vocabulary_validator:
+            errors:
+              message: "'%{value}' não é um termo reconhecido para '%{field}'."
+              suggestion: "Verifique o vocabulário controlado para termos válidos."
           critical_errors: Erros críticos devem ser corrigidos antes da importação.
           did_you_mean: Você quis dizer "%{suggestion}"?
           failed: Validação falhou

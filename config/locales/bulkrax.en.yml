@@ -296,6 +296,11 @@ en:
           configure_settings: Configure Settings
           review_start: Review & Start
           upload_validate: Upload & Validate
+        stepper_response_formatter:
+          row_errors_issue:
+            description: "The following issues exist with data in your CSV:"
+            row_label: "Row %{row} · %{column}"
+            title: Row Validation Errors
         success:
           message: Your import is now processing in the background. You'll be notified when it's complete.
           start_another: Start Another Import
@@ -303,6 +308,10 @@ en:
           view_queue: View Import Queue
         validation:
           columns_detected: "%{columns} columns detected · %{records} records found"
+          controlled_vocabulary_validator:
+            errors:
+              message: "'%{value}' is not a recognized term for '%{field}'."
+              suggestion: Check the controlled vocabulary for valid terms.
           critical_errors: Critical errors must be fixed before import.
           did_you_mean: Did you mean "%{suggestion}"?
           failed: Validation Failed

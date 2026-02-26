@@ -31,17 +31,18 @@ module Bulkrax
           next if authority.nil?
 
           term = authority.find(value)
-          next if term&.dig('active') == true
+          term_invalid = term.blank? || term.dig('active') == false
+          next unless term_invalid
 
           errors << {
-            row: index + 1,
+            row: index + 2, # index starts at 0 which is the first row, adding 2 to account for header row and 0-based index
             source_identifier: row[:source_identifier],
             severity: 'error',
             category: 'invalid_controlled_value',
             column: field,
             value: value,
-            message: "'#{value}' is not a recognized term for '#{field}'.",
-            suggestion: "Check the controlled vocabulary for valid terms."
+            message: [I18n.t('bulkrax.importer.guided_import.validation.controlled_vocabulary_validator.errors.message', value: value, field: field), suggestion(value, authority)].join(' '),
+            suggestion: suggestion(value, authority)
           }
         end
       end
@@ -58,6 +59,21 @@ module Bulkrax
       Qa::Authorities::Local.subauthority_for(field)
     rescue Qa::InvalidSubAuthority
       nil
+    end
+
+    def suggestion(value, authority)
+      suggestion = DidYouMean::SpellChecker.new(dictionary: dictionary_for(authority)).correct(value).first
+      return fallback_suggestion if suggestion.nil?
+
+      I18n.t('bulkrax.importer.guided_import.validation.did_you_mean', suggestion: suggestion)
+    end
+
+    def fallback_suggestion
+      I18n.t('bulkrax.importer.guided_import.validation.controlled_vocabulary_validator.errors.suggestion')
+    end
+
+    def dictionary_for(authority)
+      authority.all.filter_map { |term| term['label'] if term['active'] == true }.uniq
     end
   end
 end

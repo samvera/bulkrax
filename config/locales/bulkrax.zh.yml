@@ -270,6 +270,11 @@ zh:
           configure_settings: 配置设置
           review_start: 回顾与开始
           upload_validate: 上传并验证
+        stepper_response_formatter:
+          row_errors_issue:
+            description: "您的 CSV 数据中存在以下问题："
+            row_label: "第 %{row} 行 · %{column}"
+            title: 行校验错误
         success:
           message: 您的导入操作正在后台处理中。完成后您将收到通知。
           start_another: 开始另一次导入
@@ -277,6 +282,10 @@ zh:
           view_queue: 查看导入队列
         validation:
           columns_detected: 检测到 %{columns} 列 · 找到 %{records} 条记录
+          controlled_vocabulary_validator:
+            errors:
+              message: "'%{value}' 不是 '%{field}' 的认可术语。"
+              suggestion: "请检查受控词表以获取有效术语。"
           critical_errors: 导入前必须修复关键错误。
           did_you_mean: 您是不是想输入“%{suggestion}”？
           failed: 验证失败

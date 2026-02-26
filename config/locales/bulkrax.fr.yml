@@ -271,6 +271,11 @@ fr:
           configure_settings: Configurer les paramètres
           review_start: Révision et démarrage
           upload_validate: Télécharger et valider
+        stepper_response_formatter:
+          row_errors_issue:
+            description: "Les problèmes suivants existent avec les données de votre CSV :"
+            row_label: "Ligne %{row} · %{column}"
+            title: Erreurs de validation de ligne
         success:
           message: Votre importation est en cours de traitement en arrière-plan. Vous serez averti(e) lorsqu'elle sera terminée.
           start_another: Lancer une autre importation
@@ -278,6 +283,10 @@ fr:
           view_queue: Afficher la file d'importation
         validation:
           columns_detected: "%{columns} colonnes détectées · %{records} enregistrements trouvés"
+          controlled_vocabulary_validator:
+            errors:
+              message: "« %{value} » n'est pas un terme reconnu pour « %{field} »."
+              suggestion: "Veuillez vérifier le vocabulaire contrôlé pour les termes valides."
           critical_errors: Les erreurs critiques doivent être corrigées avant l'importation.
           did_you_mean: Vouliez-vous dire « %{suggestion} » ?
           failed: Échec de la validation

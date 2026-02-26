@@ -271,6 +271,11 @@ it:
           configure_settings: Configura le impostazioni
           review_start: Revisione e inizio
           upload_validate: Carica e convalida
+        stepper_response_formatter:
+          row_errors_issue:
+            description: "Sussistono i seguenti problemi con i dati nel file CSV:"
+            row_label: "Riga %{row} · %{column}"
+            title: Errori di validazione delle righe
         success:
           message: L'importazione è in corso di elaborazione in background. Riceverai una notifica al termine dell'operazione.
           start_another: Avvia un'altra importazione
@@ -278,6 +283,10 @@ it:
           view_queue: Visualizza coda di importazione
         validation:
           columns_detected: "%{columns} colonne rilevate · %{records} record trovati"
+          controlled_vocabulary_validator:
+            errors:
+              message: "'%{value}' non è un termine riconosciuto per '%{field}'."
+              suggestion: "Controllare il vocabolario controllato per i termini validi."
           critical_errors: Gli errori critici devono essere corretti prima dell'importazione.
           did_you_mean: Volevi dire "%{suggestion}"?
           failed: Convalida fallita

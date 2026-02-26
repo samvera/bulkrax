@@ -271,6 +271,11 @@ de:
           configure_settings: Einstellungen konfigurieren
           review_start: Rezension & Start
           upload_validate: Hochladen & Validieren
+        stepper_response_formatter:
+          row_errors_issue:
+            description: "Die folgenden Probleme bestehen bei den Daten in Ihrer CSV-Datei:"
+            row_label: "Zeile %{row} · %{column}"
+            title: Zeilenvalidierungsfehler
         success:
           message: Ihr Importvorgang wird derzeit im Hintergrund verarbeitet. Sie werden benachrichtigt, sobald er abgeschlossen ist.
           start_another: Einen weiteren Import starten
@@ -278,6 +283,10 @@ de:
           view_queue: Importwarteschlange anzeigen
         validation:
           columns_detected: "%{columns} Spalten erkannt · %{records} Datensätze gefunden"
+          controlled_vocabulary_validator:
+            errors:
+              message: "'%{value}' ist kein bekannter Begriff für '%{field}'."
+              suggestion: "Überprüfen Sie das kontrollierte Vokabular auf gültige Begriffe."
           critical_errors: Kritische Fehler müssen vor dem Import behoben werden.
           did_you_mean: Meinten Sie "%{suggestion}"?
           failed: Validierung fehlgeschlagen
