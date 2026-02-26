@@ -20,7 +20,11 @@
       color: #fff;
       box-shadow: 0 4px 8px rgba($color-primary, 0.3);
     }
-    .step-label { color: $color-primary; font-weight: 600; }
+
+    .step-label {
+      color: $color-primary;
+      font-weight: 700;
+    }
   }
 
   &.completed {
@@ -29,10 +33,19 @@
       border-color: $color-success;
       color: #fff;
 
-      .fa:not(.step-check) { display: none; }
-      .step-check { display: inline; }
+      .fa:not(.step-check) {
+        display: none;
+      }
+
+      .step-check {
+        display: inline;
+      }
     }
-    .step-label { color: $color-success; }
+
+    .step-label {
+      color: $color-success-dark;
+      font-weight: 700;
+    }
   }
 }
 
@@ -48,7 +61,9 @@
   transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
   position: relative;
 
-  .step-check { display: none; }
+  .step-check {
+    display: none;
+  }
 }
 
 .step-label {
@@ -67,5 +82,7 @@
   max-width: 120px;
   transition: background 0.3s ease;
 
-  &.completed { background: $color-success; }
+  &.completed {
+    background: $color-success;
+  }
 }
