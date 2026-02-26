@@ -493,8 +493,8 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
         expect(issue[:title]).to eq('Row Validation Errors')
         expect(issue[:count]).to eq(2)
         expect(issue[:items]).to contain_exactly(
-          { field: 'Row 1 · creator', message: "Field 'creator' is required but is empty for this row." },
-          { field: 'Row 2 · title', message: "Field 'title' is recommended." }
+          { field: 'Row 1 · creator', message: "Field 'creator' is required but is empty for this row. Add a value for 'creator' in row 1." },
+          { field: 'Row 2 · title', message: "Field 'title' is recommended. Add a value for 'title' in row 2." }
         )
       end
 
@@ -546,7 +546,7 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
 
         expect(issue[:count]).to eq(1)
         expect(issue[:items]).to contain_exactly(
-          { field: 'Row 1 · creator', message: "Field 'creator' is required but is empty for this row." }
+          { field: 'Row 1 · creator', message: "Field 'creator' is required but is empty for this row. Add a value for 'creator' in row 1." }
         )
       end
 

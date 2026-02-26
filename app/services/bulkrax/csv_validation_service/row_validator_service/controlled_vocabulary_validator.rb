@@ -41,7 +41,7 @@ module Bulkrax
             category: 'invalid_controlled_value',
             column: field,
             value: value,
-            message: [I18n.t('bulkrax.importer.guided_import.validation.controlled_vocabulary_validator.errors.message', value: value, field: field), suggestion(value, authority)].join(' '),
+            message: I18n.t('bulkrax.importer.guided_import.validation.controlled_vocabulary_validator.errors.message', value: value, field: field),
             suggestion: suggestion(value, authority)
           }
         end

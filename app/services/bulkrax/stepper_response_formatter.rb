@@ -299,9 +299,11 @@ module Bulkrax
 
     def row_error_items(errors)
       errors.map do |error|
+        message = error[:message]
+        message = [message, error[:suggestion]].compact.join(' ') if error[:suggestion].present?
         {
           field: I18n.t('bulkrax.importer.guided_import.stepper_response_formatter.row_errors_issue.row_label', row: error[:row], column: error[:column]),
-          message: error[:message]
+          message: message
         }
       end
     end

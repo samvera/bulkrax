@@ -281,9 +281,9 @@ RSpec.describe Bulkrax::CsvValidationService::RowValidatorService do
         allow(Qa::Authorities::Local).to receive(:subauthority_for).with('rights_statements').and_return(authority)
         allow(Qa::Authorities::Local).to receive(:subauthority_for).with('rights_statement').and_return(authority)
         allow(authority).to receive(:all).and_return([
-          { 'label' => 'In Copyright', 'active' => true },
-          { 'label' => 'No Copyright', 'active' => true }
-        ])
+                                                       { 'label' => 'In Copyright', 'active' => true },
+                                                       { 'label' => 'No Copyright', 'active' => true }
+                                                     ])
       end
 
       it 'returns an invalid_controlled_value error when term is not active' do
