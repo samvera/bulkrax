@@ -288,6 +288,10 @@ zh:
               suggestion: "请检查受控词表以获取有效术语。"
           critical_errors: 导入前必须修复关键错误。
           did_you_mean: 您是不是想输入“%{suggestion}”？
+          duplicate_identifier_validator:
+            errors:
+              message: "重复的 %{field} '%{value}' — 也出现在第 %{original_row} 行。"
+              suggestion: "每个 %{field} 在 CSV 中必须是唯一的。"
           failed: 验证失败
           file_path_not_exist: 文件路径不存在
           file_references_title: 文件引用

@@ -314,6 +314,10 @@ en:
               suggestion: Check the controlled vocabulary for valid terms.
           critical_errors: Critical errors must be fixed before import.
           did_you_mean: Did you mean "%{suggestion}"?
+          duplicate_identifier_validator:
+            errors:
+              message: "Duplicate %{field} '%{value}' — also appears in row %{original_row}."
+              suggestion: "Each %{field} must be unique within the CSV."
           failed: Validation Failed
           file_path_not_exist: File path does not exist
           file_references_title: File References

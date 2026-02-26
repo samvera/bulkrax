@@ -2,11 +2,12 @@
 
 module Bulkrax
   class CsvValidationService::RowValidatorService
-    attr_reader :csv_data
+    attr_reader :csv_data, :manager_mapper
 
-    def initialize(csv_data, field_metadata = nil)
+    def initialize(csv_data, field_metadata = nil, manager_mapper = nil)
       @csv_data = csv_data
       @field_metadata = field_metadata
+      @manager_mapper = manager_mapper
     end
 
     def valid?
@@ -33,7 +34,7 @@ module Bulkrax
     end
 
     def duplicate_identifier_validator
-      @duplicate_identifier_validator ||= DuplicateIdentifierValidator.new(csv_data)
+      @duplicate_identifier_validator ||= DuplicateIdentifierValidator.new(csv_data, manager_mapper)
     end
 
     def invalid_relationship_validator

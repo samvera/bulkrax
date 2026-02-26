@@ -113,7 +113,7 @@ module Bulkrax
         @csv_data = @csv_parser.parse_data
         @file_validator = CsvValidationService::FileValidator.new(@csv_data, zip_file, admin_set_id)
         @item_extractor = CsvValidationService::ItemExtractor.new(@csv_data)
-        @row_validator = CsvValidationService::RowValidatorService.new(@csv_data, field_metadata_for_all_models)
+        @row_validator = CsvValidationService::RowValidatorService.new(@csv_data, field_metadata_for_all_models, @mapping_manager)
       else
         # Generation mode: use provided models
         @all_models = CsvValidationService::ModelLoader.new(Array.wrap(models)).models

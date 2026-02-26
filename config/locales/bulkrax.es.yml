@@ -289,6 +289,10 @@ es:
               suggestion: "Consulte el vocabulario controlado para ver los términos válidos."
           critical_errors: Los errores críticos deben corregirse antes de la importación.
           did_you_mean: ¿Quisiste decir "%{suggestion}"?
+          duplicate_identifier_validator:
+            errors:
+              message: "%{field} duplicado '%{value}': también aparece en la fila %{original_row}."
+              suggestion: "Cada %{field} debe ser único dentro del CSV."
           failed: Validación fallida
           file_path_not_exist: La ruta del archivo no existe
           file_references_title: Referencias de archivos

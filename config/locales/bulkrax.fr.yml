@@ -289,6 +289,10 @@ fr:
               suggestion: "Veuillez vérifier le vocabulaire contrôlé pour les termes valides."
           critical_errors: Les erreurs critiques doivent être corrigées avant l'importation.
           did_you_mean: Vouliez-vous dire « %{suggestion} » ?
+          duplicate_identifier_validator:
+            errors:
+              message: "%{field} en double « %{value} » — apparaît également à la ligne %{original_row}."
+              suggestion: "Chaque %{field} doit être unique dans le CSV."
           failed: Échec de la validation
           file_path_not_exist: Le chemin d'accès au fichier n'existe pas.
           file_references_title: Références de fichiers

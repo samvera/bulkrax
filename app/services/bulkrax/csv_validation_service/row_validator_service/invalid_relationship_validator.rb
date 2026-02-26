@@ -20,7 +20,7 @@ module Bulkrax
           next if valid_identifiers.include?(parent_id)
 
           errors << {
-            row: index + 1,
+            row: index + 2,
             source_identifier: row[:source_identifier],
             severity: 'error',
             category: 'invalid_parent_reference',

@@ -24,7 +24,7 @@ module Bulkrax
           next if row[:raw_row][field].present?
 
           errors << {
-            row: index + 1,
+            row: index + 2,
             source_identifier: row[:source_identifier],
             severity: 'error',
             category: 'missing_required_value',

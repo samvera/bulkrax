@@ -3,6 +3,8 @@
 require 'rails_helper'
 
 RSpec.describe Bulkrax::CsvValidationService::RowValidatorService do
+  let(:mapping_manager) { instance_double(Bulkrax::CsvValidationService::MappingManager) }
+
   let(:field_metadata) do
     {
       'GenericWork' => {
@@ -44,14 +46,18 @@ RSpec.describe Bulkrax::CsvValidationService::RowValidatorService do
     ]
   end
 
+  before do
+    allow(mapping_manager).to receive(:find_by_flag).with(:source_identifier, nil).and_return('source_identifier')
+  end
+
   describe '#errors' do
     it 'returns empty array when data is valid' do
-      validator = described_class.new(csv_data, field_metadata)
+      validator = described_class.new(csv_data, field_metadata, mapping_manager)
       expect(validator.errors).to be_empty
     end
 
     it 'returns empty array for empty csv data' do
-      validator = described_class.new([], field_metadata)
+      validator = described_class.new([], field_metadata, mapping_manager)
       expect(validator.errors).to be_empty
     end
 
@@ -67,7 +73,7 @@ RSpec.describe Bulkrax::CsvValidationService::RowValidatorService do
       end
 
       it 'returns a duplicate_source_identifier error' do
-        validator = described_class.new(data_with_duplicate, field_metadata)
+        validator = described_class.new(data_with_duplicate, field_metadata, mapping_manager)
         expect(validator.errors).to include(
           hash_including(
             category: 'duplicate_source_identifier',
@@ -79,13 +85,13 @@ RSpec.describe Bulkrax::CsvValidationService::RowValidatorService do
       end
 
       it 'includes the row number in the error' do
-        validator = described_class.new(data_with_duplicate, field_metadata)
+        validator = described_class.new(data_with_duplicate, field_metadata, mapping_manager)
         error = validator.errors.find { |e| e[:category] == 'duplicate_source_identifier' }
         expect(error[:row]).to be_present
       end
 
       it 'includes a human readable message mentioning the identifier' do
-        validator = described_class.new(data_with_duplicate, field_metadata)
+        validator = described_class.new(data_with_duplicate, field_metadata, mapping_manager)
         error = validator.errors.find { |e| e[:category] == 'duplicate_source_identifier' }
         expect(error[:message]).to include('work1')
       end
@@ -95,9 +101,22 @@ RSpec.describe Bulkrax::CsvValidationService::RowValidatorService do
           { source_identifier: 'work1', model: 'GenericWork', parent: nil, children: nil, raw_row: { 'title' => 'Dupe 1' } },
           { source_identifier: 'work1', model: 'GenericWork', parent: nil, children: nil, raw_row: { 'title' => 'Dupe 2' } }
         ]
-        validator = described_class.new(data_with_multiple_dupes, field_metadata)
+        validator = described_class.new(data_with_multiple_dupes, field_metadata, mapping_manager)
         duplicate_errors = validator.errors.select { |e| e[:category] == 'duplicate_source_identifier' }
         expect(duplicate_errors.length).to eq(2)
+      end
+
+      it 'uses the source_identifier column name from the mapping manager' do
+        allow(mapping_manager).to receive(:find_by_flag).with(:source_identifier, nil).and_return('source_id')
+        validator = described_class.new(data_with_duplicate, field_metadata, mapping_manager)
+        error = validator.errors.find { |e| e[:category] == 'duplicate_source_identifier' }
+        expect(error[:column]).to eq('source_id')
+      end
+
+      it 'falls back to source_identifier when no mapping manager provided' do
+        validator = described_class.new(data_with_duplicate, field_metadata, nil)
+        error = validator.errors.find { |e| e[:category] == 'duplicate_source_identifier' }
+        expect(error[:column]).to eq('source_identifier')
       end
     end
 
@@ -113,7 +132,7 @@ RSpec.describe Bulkrax::CsvValidationService::RowValidatorService do
       end
 
       it 'returns an invalid_parent_reference error' do
-        validator = described_class.new(data_with_bad_parent, field_metadata)
+        validator = described_class.new(data_with_bad_parent, field_metadata, mapping_manager)
         expect(validator.errors).to include(
           hash_including(
             category: 'invalid_parent_reference',
@@ -125,19 +144,19 @@ RSpec.describe Bulkrax::CsvValidationService::RowValidatorService do
       end
 
       it 'includes the row number in the error' do
-        validator = described_class.new(data_with_bad_parent, field_metadata)
+        validator = described_class.new(data_with_bad_parent, field_metadata, mapping_manager)
         error = validator.errors.find { |e| e[:category] == 'invalid_parent_reference' }
         expect(error[:row]).to be_present
       end
 
       it 'includes a human readable message mentioning the missing identifier' do
-        validator = described_class.new(data_with_bad_parent, field_metadata)
+        validator = described_class.new(data_with_bad_parent, field_metadata, mapping_manager)
         error = validator.errors.find { |e| e[:category] == 'invalid_parent_reference' }
         expect(error[:message]).to include('col-does-not-exist')
       end
 
       it 'does not error when parent exists in the csv' do
-        validator = described_class.new(csv_data, field_metadata)
+        validator = described_class.new(csv_data, field_metadata, mapping_manager)
         parent_errors = validator.errors.select { |e| e[:category] == 'invalid_parent_reference' }
         expect(parent_errors).to be_empty
       end
@@ -150,7 +169,7 @@ RSpec.describe Bulkrax::CsvValidationService::RowValidatorService do
           children: nil,
           raw_row: { 'title' => 'Work 3' }
         }]
-        validator = described_class.new(data_with_mixed_parents, field_metadata)
+        validator = described_class.new(data_with_mixed_parents, field_metadata, mapping_manager)
         parent_errors = validator.errors.select { |e| e[:category] == 'invalid_parent_reference' }
         expect(parent_errors.length).to eq(1)
         expect(parent_errors.first[:value]).to eq('col-missing')
@@ -164,7 +183,7 @@ RSpec.describe Bulkrax::CsvValidationService::RowValidatorService do
           children: nil,
           raw_row: { 'title' => 'Work 3' }
         }]
-        validator = described_class.new(data_with_bad_parents, field_metadata)
+        validator = described_class.new(data_with_bad_parents, field_metadata, mapping_manager)
         parent_errors = validator.errors.select { |e| e[:category] == 'invalid_parent_reference' }
         expect(parent_errors.length).to eq(2)
       end
@@ -179,7 +198,7 @@ RSpec.describe Bulkrax::CsvValidationService::RowValidatorService do
           children: nil,
           raw_row: { 'title' => '' }
         }]
-        validator = described_class.new(data_with_missing_title, field_metadata)
+        validator = described_class.new(data_with_missing_title, field_metadata, mapping_manager)
         expect(validator.errors).to include(
           hash_including(
             category: 'missing_required_value',
@@ -198,7 +217,7 @@ RSpec.describe Bulkrax::CsvValidationService::RowValidatorService do
           children: nil,
           raw_row: {}
         }]
-        validator = described_class.new(data_with_absent_title, field_metadata)
+        validator = described_class.new(data_with_absent_title, field_metadata, mapping_manager)
         expect(validator.errors).to include(
           hash_including(
             category: 'missing_required_value',
@@ -213,13 +232,13 @@ RSpec.describe Bulkrax::CsvValidationService::RowValidatorService do
           { source_identifier: 'work1', model: 'GenericWork', parent: nil, children: nil, raw_row: { 'title' => 'ok' } },
           { source_identifier: 'work2', model: 'GenericWork', parent: nil, children: nil, raw_row: { 'title' => '' } }
         ]
-        validator = described_class.new(data, field_metadata)
+        validator = described_class.new(data, field_metadata, mapping_manager)
         error = validator.errors.find { |e| e[:category] == 'missing_required_value' }
-        expect(error[:row]).to eq(2)
+        expect(error[:row]).to eq(3)
       end
 
       it 'does not error when required field is present' do
-        validator = described_class.new(csv_data, field_metadata)
+        validator = described_class.new(csv_data, field_metadata, mapping_manager)
         required_errors = validator.errors.select { |e| e[:category] == 'missing_required_value' }
         expect(required_errors).to be_empty
       end
@@ -239,13 +258,13 @@ RSpec.describe Bulkrax::CsvValidationService::RowValidatorService do
           children: nil,
           raw_row: {}
         }]
-        validator = described_class.new(data, metadata_with_multiple_required)
+        validator = described_class.new(data, metadata_with_multiple_required, mapping_manager)
         required_errors = validator.errors.select { |e| e[:category] == 'missing_required_value' }
         expect(required_errors.map { |e| e[:column] }).to contain_exactly('title', 'creator')
       end
 
       it 'does not report missing_required_value when field_metadata is nil' do
-        validator = described_class.new(csv_data, nil)
+        validator = described_class.new(csv_data, nil, mapping_manager)
         required_errors = validator.errors.select { |e| e[:category] == 'missing_required_value' }
         expect(required_errors).to be_empty
       end
@@ -258,7 +277,7 @@ RSpec.describe Bulkrax::CsvValidationService::RowValidatorService do
           children: nil,
           raw_row: {}
         }]
-        validator = described_class.new(data, field_metadata)
+        validator = described_class.new(data, field_metadata, mapping_manager)
         required_errors = validator.errors.select { |e| e[:category] == 'missing_required_value' }
         expect(required_errors).to be_empty
       end
@@ -281,9 +300,9 @@ RSpec.describe Bulkrax::CsvValidationService::RowValidatorService do
         allow(Qa::Authorities::Local).to receive(:subauthority_for).with('rights_statements').and_return(authority)
         allow(Qa::Authorities::Local).to receive(:subauthority_for).with('rights_statement').and_return(authority)
         allow(authority).to receive(:all).and_return([
-                                                       { 'label' => 'In Copyright', 'active' => true },
-                                                       { 'label' => 'No Copyright', 'active' => true }
-                                                     ])
+          { 'label' => 'In Copyright', 'active' => true },
+          { 'label' => 'No Copyright', 'active' => true }
+        ])
       end
 
       it 'returns an invalid_controlled_value error when term is not active' do
@@ -296,7 +315,7 @@ RSpec.describe Bulkrax::CsvValidationService::RowValidatorService do
           children: nil,
           raw_row: { 'title' => 'Work 1', 'rights_statement' => 'Bad Term' }
         }]
-        validator = described_class.new(data, field_metadata_with_controlled)
+        validator = described_class.new(data, field_metadata_with_controlled, mapping_manager)
         expect(validator.errors).to include(
           hash_including(
             category: 'invalid_controlled_value',
@@ -318,7 +337,7 @@ RSpec.describe Bulkrax::CsvValidationService::RowValidatorService do
           children: nil,
           raw_row: { 'title' => 'Work 1', 'rights_statement' => 'Unknown Term' }
         }]
-        validator = described_class.new(data, field_metadata_with_controlled)
+        validator = described_class.new(data, field_metadata_with_controlled, mapping_manager)
         expect(validator.errors).to include(
           hash_including(
             category: 'invalid_controlled_value',
@@ -338,7 +357,7 @@ RSpec.describe Bulkrax::CsvValidationService::RowValidatorService do
           children: nil,
           raw_row: { 'title' => 'Work 1', 'rights_statement' => 'In Copyright' }
         }]
-        validator = described_class.new(data, field_metadata_with_controlled)
+        validator = described_class.new(data, field_metadata_with_controlled, mapping_manager)
         controlled_errors = validator.errors.select { |e| e[:category] == 'invalid_controlled_value' }
         expect(controlled_errors).to be_empty
       end
@@ -353,7 +372,7 @@ RSpec.describe Bulkrax::CsvValidationService::RowValidatorService do
           children: nil,
           raw_row: { 'title' => 'Work 1', 'rights_statement' => 'Some Term' }
         }]
-        validator = described_class.new(data, field_metadata_with_controlled)
+        validator = described_class.new(data, field_metadata_with_controlled, mapping_manager)
         controlled_errors = validator.errors.select { |e| e[:category] == 'invalid_controlled_value' }
         expect(controlled_errors).to be_empty
       end
@@ -366,7 +385,7 @@ RSpec.describe Bulkrax::CsvValidationService::RowValidatorService do
           children: nil,
           raw_row: { 'title' => 'Work 1', 'rights_statement' => '' }
         }]
-        validator = described_class.new(data, field_metadata_with_controlled)
+        validator = described_class.new(data, field_metadata_with_controlled, mapping_manager)
         controlled_errors = validator.errors.select { |e| e[:category] == 'invalid_controlled_value' }
         expect(controlled_errors).to be_empty
       end
@@ -379,7 +398,7 @@ RSpec.describe Bulkrax::CsvValidationService::RowValidatorService do
           { source_identifier: 'work1', model: 'GenericWork', parent: nil, children: nil, raw_row: { 'title' => 'Work 1', 'rights_statement' => 'In Copyright' } },
           { source_identifier: 'work2', model: 'GenericWork', parent: nil, children: nil, raw_row: { 'title' => 'Work 2', 'rights_statement' => 'Bad Term' } }
         ]
-        validator = described_class.new(data, field_metadata_with_controlled)
+        validator = described_class.new(data, field_metadata_with_controlled, mapping_manager)
         error = validator.errors.find { |e| e[:category] == 'invalid_controlled_value' }
         expect(error[:row]).to eq(3)
       end
@@ -394,7 +413,7 @@ RSpec.describe Bulkrax::CsvValidationService::RowValidatorService do
           children: nil,
           raw_row: { 'title' => 'Work 1', 'rights_statement' => 'In Copyrigh' }
         }]
-        validator = described_class.new(data, field_metadata_with_controlled)
+        validator = described_class.new(data, field_metadata_with_controlled, mapping_manager)
         error = validator.errors.find { |e| e[:category] == 'invalid_controlled_value' }
         expect(error[:suggestion]).to include('In Copyright')
       end
@@ -402,7 +421,7 @@ RSpec.describe Bulkrax::CsvValidationService::RowValidatorService do
       it 'skips controlled vocab check when model has no controlled_vocab_terms' do
         expect(Qa::Authorities::Local).not_to receive(:subauthority_for)
 
-        validator = described_class.new(csv_data, field_metadata)
+        validator = described_class.new(csv_data, field_metadata, mapping_manager)
         controlled_errors = validator.errors.select { |e| e[:category] == 'invalid_controlled_value' }
         expect(controlled_errors).to be_empty
       end
@@ -415,7 +434,7 @@ RSpec.describe Bulkrax::CsvValidationService::RowValidatorService do
           children: nil,
           raw_row: { 'title' => 'Work 1', 'creator' => 'anything' }
         }]
-        validator = described_class.new(data, field_metadata_with_controlled)
+        validator = described_class.new(data, field_metadata_with_controlled, mapping_manager)
         controlled_errors = validator.errors.select { |e| e[:category] == 'invalid_controlled_value' }
         expect(controlled_errors).to be_empty
       end
@@ -424,7 +443,7 @@ RSpec.describe Bulkrax::CsvValidationService::RowValidatorService do
 
   describe '#errors?' do
     it 'returns false when data is valid' do
-      validator = described_class.new(csv_data, field_metadata)
+      validator = described_class.new(csv_data, field_metadata, mapping_manager)
       expect(validator.errors?).to be false
     end
 
@@ -436,7 +455,7 @@ RSpec.describe Bulkrax::CsvValidationService::RowValidatorService do
         children: nil,
         raw_row: { 'title' => 'Dupe' }
       }]
-      validator = described_class.new(data_with_duplicate, field_metadata)
+      validator = described_class.new(data_with_duplicate, field_metadata, mapping_manager)
       expect(validator.errors?).to be true
     end
 
@@ -448,7 +467,7 @@ RSpec.describe Bulkrax::CsvValidationService::RowValidatorService do
         children: nil,
         raw_row: { 'title' => 'Work 3' }
       }]
-      validator = described_class.new(data_with_bad_parent, field_metadata)
+      validator = described_class.new(data_with_bad_parent, field_metadata, mapping_manager)
       expect(validator.errors?).to be true
     end
 
@@ -460,14 +479,14 @@ RSpec.describe Bulkrax::CsvValidationService::RowValidatorService do
         children: nil,
         raw_row: { 'title' => '' }
       }]
-      validator = described_class.new(data_with_missing, field_metadata)
+      validator = described_class.new(data_with_missing, field_metadata, mapping_manager)
       expect(validator.errors?).to be true
     end
   end
 
   describe '#valid?' do
     it 'returns true when data is valid' do
-      validator = described_class.new(csv_data, field_metadata)
+      validator = described_class.new(csv_data, field_metadata, mapping_manager)
       expect(validator).to be_valid
     end
 
@@ -479,7 +498,7 @@ RSpec.describe Bulkrax::CsvValidationService::RowValidatorService do
         children: nil,
         raw_row: { 'title' => 'Dupe' }
       }]
-      validator = described_class.new(data_with_duplicate, field_metadata)
+      validator = described_class.new(data_with_duplicate, field_metadata, mapping_manager)
       expect(validator).not_to be_valid
     end
   end

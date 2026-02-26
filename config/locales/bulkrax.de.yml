@@ -289,6 +289,10 @@ de:
               suggestion: "Überprüfen Sie das kontrollierte Vokabular auf gültige Begriffe."
           critical_errors: Kritische Fehler müssen vor dem Import behoben werden.
           did_you_mean: Meinten Sie "%{suggestion}"?
+          duplicate_identifier_validator:
+            errors:
+              message: "Doppelter %{field} '%{value}' — erscheint auch in Zeile %{original_row}."
+              suggestion: "Jeder %{field} muss innerhalb der CSV-Datei eindeutig sein."
           failed: Validierung fehlgeschlagen
           file_path_not_exist: Der Dateipfad existiert nicht.
           file_references_title: Dateiverweise
