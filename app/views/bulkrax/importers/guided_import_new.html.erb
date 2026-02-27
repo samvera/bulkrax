@@ -73,11 +73,23 @@
           <!-- Upload Area -->
           <div class="upload-zone-wrapper">
             <!-- Upload Mode Tabs -->
-            <div class="upload-mode-tabs">
-              <button type="button" class="upload-mode-tab active" data-upload-mode="upload">
+            <div class="upload-mode-tabs" role="tablist">
+              <button 
+                type="button" 
+                class="upload-mode-tab active" 
+                data-upload-mode="upload" 
+                role="tab" 
+                aria-selected="true"
+              >
                 <span class="fa fa-cloud-upload" aria-hidden="true"></span> <%= t('bulkrax.importer.guided_import.step1.upload_files') %>
               </button>
-              <button type="button" class="upload-mode-tab" data-upload-mode="file_path">
+              <button
+                type="button" 
+                class="upload-mode-tab" 
+                data-upload-mode="file_path"
+                role="tab" 
+                aria-selected="false"
+              >
                 <span class="fa fa-folder-open" aria-hidden="true"></span> <%= t('bulkrax.importer.guided_import.step1.import_path') %>
               </button>
             </div>

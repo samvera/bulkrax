@@ -1019,6 +1019,8 @@
     // Toggle active tab
     $('.upload-mode-tab').removeClass('active')
     $('.upload-mode-tab[data-upload-mode="' + mode + '"]').addClass('active')
+    $('.upload-mode-tab').attr('aria-selected', 'false')
+    $('.upload-mode-tab[data-upload-mode="' + mode + '"]').attr('aria-selected', 'true')
 
     if (mode === 'file_path') {
       // Hide upload-related elements, show file path panel
