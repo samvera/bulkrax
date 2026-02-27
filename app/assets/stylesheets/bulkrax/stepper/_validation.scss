@@ -154,9 +154,22 @@ $accordion-variants: (
   padding: 12px 16px;
   cursor: pointer;
   transition: opacity 0.2s ease;
+  // Button reset — element changed from <div> to <button> for keyboard accessibility
+  width: 100%;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
 
   &:hover {
     opacity: 0.85;
+  }
+
+  &:focus-visible {
+    outline: 2px solid #4a90d9;
+    outline-offset: -2px;
+    border-radius: 4px;
   }
 }
 

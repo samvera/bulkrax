@@ -160,11 +160,20 @@
     }
 
     // File upload - main dropzone
+    // <label for="file-input"> is needed for accessibility but also opens the file selector when clicked
+    // this will prevent that behavior while maintaining accessibility
     $('.upload-dropzone').on('click', function (e) {
       if (e.target.id === 'file-input') return
-
-      StepperState.isAddingFiles = false
-      $('#file-input').trigger('click')
+      e.preventDefault()
+      openMainFilePicker()
+    })
+    // role="button" in WCAG 2.1 AA requires keyboard interaction for enter and space key
+    // this allows user to open the file picker with the space key when the dropzone is focused
+    $('.upload-dropzone').on('keydown', function (e) {
+      if (e.key === ' ') {
+        e.preventDefault()
+        openMainFilePicker()
+      }
     })
 
     // Delegated event handlers for dynamic content
@@ -172,10 +181,19 @@
     bindDelegatedEvents()
 
     // File upload - add another dropzone
-    $('.upload-dropzone-small').on('click', function () {
-      StepperState.isAddingFiles = true
-      $('#file-input').val('') // Prevent upload of a duplicate file
-      $('#file-input').trigger('click')
+    // <label for="file-input-additional"> is needed for accessibility but also opens the file selector when clicked
+    // this will prevent that behavior while maintaining accessibility
+    $('.upload-dropzone-small').on('click', function (e) {
+      e.preventDefault()
+      openAdditionalFilePicker()
+    })
+    // role="button" in WCAG 2.1 AA requires keyboard interaction for enter and space key
+    // this allows user to open the file picker with the space key when the dropzone is focused
+    $('.upload-dropzone-small').on('keydown', function (e) {
+      if (e.key === ' ') {
+        e.preventDefault()
+        openAdditionalFilePicker()
+      }
     })
 
     $('#file-input').on('change', function () {
@@ -209,10 +227,7 @@
         // Try to set files on input element (with browser compatibility fallback)
         setInputFiles($('#file-input')[0], filesToAdd)
 
-        // Set flag based on whether we already have files
-        StepperState.isAddingFiles = false // Drag and drop replaces files
-
-        handleFileSelect(StepperState.isAddingFiles)
+        handleFileSelect(false) // Drag and drop replaces files
 
         // Show warning if more than MAX_FILES were dropped
         if (droppedFiles.length > CONSTANTS.MAX_FILES) {
@@ -245,11 +260,8 @@
         // Try to set files on input element (with browser compatibility fallback)
         setInputFiles($('#file-input')[0], filesToAdd)
 
-        // Set flag to indicate we're adding files
-        StepperState.isAddingFiles = true
-
-        handleFileSelect(StepperState.isAddingFiles)
-        StepperState.isAddingFiles = false
+        handleFileSelect(true)
+        StepperState.isAddingFiles = false // reset after handling
 
         // Show warning if more than 1 file was dropped
         if (droppedFiles.length > 1) {
@@ -434,19 +446,34 @@
     })
 
     // Tree toggle events - delegated to import summary container
-    $('.import-summary').on('click.tree', '.tree-item', function (e) {
-      e.stopPropagation()
-      var $children = $(this).next('.tree-children')
-      var $chevron = $(this).find('.tree-chevron')
+    function toggleTreeItem($item) {
+      var $children = $item.next('.tree-children')
+      var $chevron = $item.find('.tree-chevron')
 
       if ($children.length > 0) {
-        if ($children.is(':visible')) {
+        var isExpanded = $children.is(':visible')
+        if (isExpanded) {
           $children.slideUp(CONSTANTS.ANIMATION_SPEED)
           $chevron.removeClass('fa-chevron-down').addClass('fa-chevron-right')
         } else {
           $children.slideDown(CONSTANTS.ANIMATION_SPEED)
           $chevron.removeClass('fa-chevron-right').addClass('fa-chevron-down')
         }
+        $item.attr('aria-expanded', String(!isExpanded))
+      }
+    }
+
+    $('.import-summary').on('click.tree', '.tree-item', function (e) {
+      e.stopPropagation()
+      toggleTreeItem($(this))
+    })
+
+    // Keyboard support for tree items (Enter/Space to toggle)
+    $('.import-summary').on('keydown.tree', '.tree-item[tabindex]', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault()
+        e.stopPropagation()
+        toggleTreeItem($(this))
       }
     })
   }
@@ -534,6 +561,21 @@
     var val = $('.bulk-import-stepper-container').data('max-file-size')
     if (val == null || val === '') return null
     return parseInt(val, 10) || null
+  }
+
+  // Ensures the file picker opens in the correct mode (replace vs add)
+  // Ensures an invalid file is not added
+  function openMainFilePicker() {
+    StepperState.isAddingFiles = false
+    $('#file-input').val('')
+    $('#file-input').trigger('click')
+  }
+
+  // Open the file picker in "add" mode (appends to existing files)
+  function openAdditionalFilePicker() {
+    StepperState.isAddingFiles = true
+    $('#file-input').val('')
+    $('#file-input').trigger('click')
   }
 
   // Handle file selection
@@ -1004,6 +1046,8 @@
     // Toggle active tab
     $('.upload-mode-tab').removeClass('active')
     $('.upload-mode-tab[data-upload-mode="' + mode + '"]').addClass('active')
+    $('.upload-mode-tab').attr('aria-selected', 'false')
+    $('.upload-mode-tab[data-upload-mode="' + mode + '"]').attr('aria-selected', 'true')
 
     if (mode === 'file_path') {
       // Hide upload-related elements, show file path panel
@@ -1772,7 +1816,7 @@
       ' ' +
       openClass +
       '">' +
-      '<div class="accordion-header">' +
+      '<button type="button" class="accordion-header">' +
       '<div class="accordion-title-bar">' +
       '<span class="fa ' +
       icon +
@@ -1785,7 +1829,7 @@
       '<span class="fa ' +
       chevron +
       ' accordion-chevron"></span>' +
-      '</div>' +
+      '</button>' +
       '<div class="accordion-content" style="display: ' +
       contentDisplay +
       '">' +
@@ -1887,10 +1931,15 @@
     var safeId = escapeHtml(item.id)
     var safeTitle = escapeHtml(item.title)
 
+    // Make expandable tree items focusable and semantically interactive
+    var treeItemAttrs = hasChildren
+      ? ' tabindex="0" role="treeitem" aria-expanded="false"'
+      : ''
+
     var html =
       '<div class="tree-item" data-item-id="' +
       safeId +
-      '" style="padding-left: ' +
+      '"' + treeItemAttrs + ' style="padding-left: ' +
       paddingLeft +
       'px">' +
       chevron +
@@ -1984,8 +2033,13 @@
     StepperState.currentStep = stepNum
     updateStepperUI()
 
-    // Scroll to top
-    $('html, body').animate({ scrollTop: 0 }, CONSTANTS.SCROLL_SPEED)
+    // Scroll to top, then move focus to the new step's heading
+    $('html, body').animate({ scrollTop: 0 }, CONSTANTS.SCROLL_SPEED, function () {
+      var $stepHeading = $('.step-content[data-step="' + stepNum + '"] .step-title h2')
+      if ($stepHeading.length) {
+        $stepHeading.first().focus()
+      }
+    })
 
     // Update review summary if going to step 3
     if (stepNum === 3) {
