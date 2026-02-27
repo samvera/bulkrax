@@ -318,6 +318,10 @@ de:
           passed: Validierung erfolgreich
           passed_warnings: Validierung mit Warnungen bestanden
           recognized_fields: 'Erkannte Felder: %{fields}'
+          required_field_validator:
+            errors:
+              message: "Das Feld '%{field}' ist erforderlich, ist aber für diese Zeile leer."
+              suggestion: "Geben Sie einen Wert für '%{field}' ein."
           unable_to_process: Die Validierungsdateien konnten nicht verarbeitet werden.
           unrecognized_desc: 'Diese Spalten werden beim Import ignoriert:'
           unrecognized_title: Nicht anerkannte Felder

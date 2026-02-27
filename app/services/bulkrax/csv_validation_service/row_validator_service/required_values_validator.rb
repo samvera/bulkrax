@@ -30,8 +30,8 @@ module Bulkrax
             category: 'missing_required_value',
             column: field,
             value: nil,
-            message: "Field '#{field}' is required but is empty for this row.",
-            suggestion: "Add a value for '#{field}'."
+            message: I18n.t('bulkrax.importer.guided_import.validation.required_field_validator.errors.message', field: field),
+            suggestion: I18n.t('bulkrax.importer.guided_import.validation.required_field_validator.errors.suggestion', field: field)
           }
         end
       end

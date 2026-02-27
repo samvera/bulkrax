@@ -318,6 +318,10 @@ es:
           passed: Validación aprobada
           passed_warnings: Validación aprobada con advertencias
           recognized_fields: 'Campos reconocidos: %{fields}'
+          required_field_validator:
+            errors:
+              message: "El campo '%{field}' es obligatorio pero está vacío para esta fila."
+              suggestion: "Añada un valor para '%{field}'."
           unable_to_process: No se pueden procesar archivos para su validación
           unrecognized_desc: 'Estas columnas se ignorarán durante la importación:'
           unrecognized_title: Campos no reconocidos

@@ -318,6 +318,10 @@ it:
           passed: Validazione superata
           passed_warnings: Validazione superata con avvisi
           recognized_fields: 'Campi riconosciuti: %{fields}'
+          required_field_validator:
+            errors:
+              message: "Il campo '%{field}' è obbligatorio ma è vuoto per questa riga."
+              suggestion: "Aggiungi un valore per '%{field}'."
           unable_to_process: Impossibile elaborare i file per la convalida
           unrecognized_desc: 'Queste colonne verranno ignorate durante l''importazione:'
           unrecognized_title: Campi non riconosciuti

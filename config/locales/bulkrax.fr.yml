@@ -318,6 +318,10 @@ fr:
           passed: Validation réussie
           passed_warnings: Validation réussie avec avertissements
           recognized_fields: 'Champs reconnus : %{fields}'
+          required_field_validator:
+            errors:
+              message: "Le champ « %{field} » est obligatoire mais il est vide pour cette ligne."
+              suggestion: "Ajoutez une valeur pour « %{field} »."
           unable_to_process: Impossible de traiter les fichiers pour validation
           unrecognized_desc: 'Ces colonnes seront ignorées lors de l''importation :'
           unrecognized_title: Champs non reconnus

@@ -317,6 +317,10 @@ zh:
           passed: 验证通过
           passed_warnings: 验证通过，但存在警告
           recognized_fields: 已识别字段：%{fields}
+          required_field_validator:
+            errors:
+              message: "字段 '%{field}' 是必填项，但此行中该字段为空。"
+              suggestion: "请为 '%{field}' 添加一个值。"
           unable_to_process: 无法处理文件进行验证
           unrecognized_desc: 导入过程中将忽略以下列：
           unrecognized_title: 未识别字段
