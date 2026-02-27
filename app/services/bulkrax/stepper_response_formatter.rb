@@ -89,6 +89,7 @@ module Bulkrax
         rowCount: @data[:rowCount],
         isValid: @data[:isValid],
         hasWarnings: @data[:hasWarnings],
+        rowErrors: @data[:rowErrors],
         collections: @data[:collections],
         works: @data[:works],
         fileSets: @data[:fileSets],
@@ -120,6 +121,7 @@ module Bulkrax
       issues << missing_required_issue if @data[:missingRequired]&.any?
       issues << unrecognized_fields_issue if @data[:unrecognized]&.any?
       issues << file_references_issue if @data[:fileReferences]&.positive?
+      issues << row_errors_issue if @data[:rowErrors]&.any?
 
       {
         validationStatus: validation_status,
@@ -269,6 +271,41 @@ module Bulkrax
         items: [],
         defaultOpen: false
       }
+    end
+
+    def row_errors_issue
+      filtered = filtered_row_errors
+      return nil if filtered.empty?
+
+      severity = filtered.any? { |e| e[:severity] == 'error' } ? 'error' : 'warning'
+      icon = severity == 'error' ? 'fa-times-circle' : 'fa-exclamation-triangle'
+
+      {
+        type: 'row_level_errors',
+        severity: severity,
+        icon: icon,
+        title: I18n.t('bulkrax.importer.guided_import.stepper_response_formatter.row_errors_issue.title'),
+        count: filtered.length,
+        description: I18n.t('bulkrax.importer.guided_import.stepper_response_formatter.row_errors_issue.description'),
+        items: row_error_items(filtered),
+        defaultOpen: false
+      }
+    end
+
+    def filtered_row_errors
+      missing_required_columns = @data[:missingRequired]&.map { |h| h[:field].to_s } || []
+      @data[:rowErrors].reject { |e| missing_required_columns.include?(e[:column].to_s) }
+    end
+
+    def row_error_items(errors)
+      errors.map do |error|
+        message = error[:message]
+        message = [message, error[:suggestion]].compact.join(' ') if error[:suggestion].present?
+        {
+          field: I18n.t('bulkrax.importer.guided_import.stepper_response_formatter.row_errors_issue.row_label', row: error[:row], column: error[:column]),
+          message: message
+        }
+      end
     end
   end
 end

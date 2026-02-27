@@ -272,6 +272,11 @@ pt-BR:
           configure_settings: Configurar configurações
           review_start: Analisar e começar
           upload_validate: Carregar e validar
+        stepper_response_formatter:
+          row_errors_issue:
+            description: "Existem os seguintes problemas com os dados no seu CSV:"
+            row_label: "Linha %{row} · %{column}"
+            title: Erros de validação de linha
         success:
           message: Sua importação está sendo processada em segundo plano. Você será notificado quando ela for concluída.
           start_another: Iniciar outra importação
@@ -279,8 +284,16 @@ pt-BR:
           view_queue: Visualizar fila de importação
         validation:
           columns_detected: "%{columns} colunas detectadas · %{records} registros encontrados"
+          controlled_vocabulary_validator:
+            errors:
+              message: "'%{value}' não é um termo reconhecido para '%{field}'."
+              suggestion: "Verifique o vocabulário controlado para termos válidos."
           critical_errors: Erros críticos devem ser corrigidos antes da importação.
           did_you_mean: Você quis dizer "%{suggestion}"?
+          duplicate_identifier_validator:
+            errors:
+              message: "%{field} duplicado '%{value}' — também aparece na linha %{original_row}."
+              suggestion: "Cada %{field} deve ser exclusivo no CSV."
           failed: Validação falhou
           file_path_not_exist: O caminho do arquivo não existe.
           file_references_title: Referências de arquivos
@@ -298,9 +311,17 @@ pt-BR:
           no_csv_uploaded: Nenhum arquivo de metadados CSV foi carregado.
           no_files_uploaded: Nenhum arquivo foi enviado.
           no_zip_desc: Nenhum arquivo ZIP foi enviado. Certifique-se de que os arquivos estejam acessíveis no servidor ou envie um arquivo ZIP.
+          parent_reference_validator:
+            errors:
+              message: "O pai referenciado '%{value}' não existe como %{field} neste CSV."
+              suggestion: "Verifique se há erros de digitação ou adicione o registro pai."
           passed: Validação aprovada
           passed_warnings: Validação aprovada com advertências.
           recognized_fields: 'Campos reconhecidos: %{fields}'
+          required_field_validator:
+            errors:
+              message: "O campo '%{field}' é obrigatório, mas está vazio para esta linha."
+              suggestion: "Adicione um valor para '%{field}'."
           unable_to_process: Não foi possível processar os arquivos para validação.
           unrecognized_desc: 'Estas colunas serão ignoradas durante a importação:'
           unrecognized_title: Campos não reconhecidos

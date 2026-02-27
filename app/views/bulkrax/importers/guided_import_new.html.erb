@@ -100,12 +100,12 @@
                     <span class="fa fa-file-archive-o"></span> <%= t('bulkrax.importer.guided_import.step1.dropzone_zip_hint') %>
                   </p>
                 </div>
-                <input 
-                  type="file" 
+                <input
+                  type="file"
                   id="file-input"
-                  name="importer[parser_fields][files][]" 
-                  accept=".csv,.zip" 
-                  multiple style="display: none" 
+                  name="importer[parser_fields][files][]"
+                  accept=".csv,.zip"
+                  multiple style="display: none"
                   aria-label="<%= t('bulkrax.importer.guided_import.step1.upload_files') %>"
                 >
               </div>
@@ -313,7 +313,7 @@
                     <div class="visibility-card" data-visibility="open">
                       <span class="fa fa-globe visibility-icon" aria-hidden="true"></span>
                       <label class="visibility-label" for="visibility_open"><%= t('bulkrax.importer.guided_import.step2.visibility_public') %>
-                        <input 
+                        <input
                           type="radio"
                           id="visibility_open"
                           name="importer[parser_fields][visibility]"
@@ -343,7 +343,7 @@
                     <div class="visibility-card" data-visibility="restricted">
                       <span class="fa fa-lock visibility-icon" aria-hidden="true"></span>
                       <label class="visibility-label" for="visibility_restricted"><%= t('bulkrax.importer.guided_import.step2.visibility_private') %>
-                        <input 
+                        <input
                           type="radio"
                           id="visibility_restricted"
                           name="importer[parser_fields][visibility]"

@@ -272,6 +272,11 @@ de:
           configure_settings: Einstellungen konfigurieren
           review_start: Rezension & Start
           upload_validate: Hochladen & Validieren
+        stepper_response_formatter:
+          row_errors_issue:
+            description: "Die folgenden Probleme bestehen bei den Daten in Ihrer CSV-Datei:"
+            row_label: "Zeile %{row} · %{column}"
+            title: Zeilenvalidierungsfehler
         success:
           message: Ihr Importvorgang wird derzeit im Hintergrund verarbeitet. Sie werden benachrichtigt, sobald er abgeschlossen ist.
           start_another: Einen weiteren Import starten
@@ -279,8 +284,16 @@ de:
           view_queue: Importwarteschlange anzeigen
         validation:
           columns_detected: "%{columns} Spalten erkannt · %{records} Datensätze gefunden"
+          controlled_vocabulary_validator:
+            errors:
+              message: "'%{value}' ist kein bekannter Begriff für '%{field}'."
+              suggestion: "Überprüfen Sie das kontrollierte Vokabular auf gültige Begriffe."
           critical_errors: Kritische Fehler müssen vor dem Import behoben werden.
           did_you_mean: Meinten Sie "%{suggestion}"?
+          duplicate_identifier_validator:
+            errors:
+              message: "Doppelter %{field} '%{value}' — erscheint auch in Zeile %{original_row}."
+              suggestion: "Jeder %{field} muss innerhalb der CSV-Datei eindeutig sein."
           failed: Validierung fehlgeschlagen
           file_path_not_exist: Der Dateipfad existiert nicht.
           file_references_title: Dateiverweise
@@ -298,9 +311,17 @@ de:
           no_csv_uploaded: Es wurde keine CSV-Metadatendatei hochgeladen.
           no_files_uploaded: Es wurden keine Dateien hochgeladen.
           no_zip_desc: Es wurde keine ZIP-Datei hochgeladen. Stellen Sie sicher, dass die Dateien auf dem Server zugänglich sind, oder laden Sie eine ZIP-Datei hoch.
+          parent_reference_validator:
+            errors:
+              message: "Das referenzierte übergeordnete Element '%{value}' existiert nicht als %{field} in dieser CSV-Datei."
+              suggestion: "Prüfen Sie auf Tippfehler oder fügen Sie den Datensatz für das übergeordnete Element hinzu."
           passed: Validierung erfolgreich
           passed_warnings: Validierung mit Warnungen bestanden
           recognized_fields: 'Erkannte Felder: %{fields}'
+          required_field_validator:
+            errors:
+              message: "Das Feld '%{field}' ist erforderlich, ist aber für diese Zeile leer."
+              suggestion: "Geben Sie einen Wert für '%{field}' ein."
           unable_to_process: Die Validierungsdateien konnten nicht verarbeitet werden.
           unrecognized_desc: 'Diese Spalten werden beim Import ignoriert:'
           unrecognized_title: Nicht anerkannte Felder

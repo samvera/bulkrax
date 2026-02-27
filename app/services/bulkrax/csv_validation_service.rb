@@ -101,6 +101,9 @@ module Bulkrax
       @mapping_manager = CsvValidationService::MappingManager.new
       @mappings = @mapping_manager.mappings
 
+      # Common components used by both modes (must be initialized before field_metadata_for_all_models is called)
+      @field_analyzer = CsvValidationService::FieldAnalyzer.new(@mappings, admin_set_id)
+
       # Determine mode and load models accordingly
       if csv_file
         # Validation mode: initialize specialized components
@@ -110,14 +113,12 @@ module Bulkrax
         @csv_data = @csv_parser.parse_data
         @file_validator = CsvValidationService::FileValidator.new(@csv_data, zip_file, admin_set_id)
         @item_extractor = CsvValidationService::ItemExtractor.new(@csv_data)
+        @row_validator = Bulkrax.row_validator_service.new(@csv_data, field_metadata_for_all_models, @mapping_manager)
       else
         # Generation mode: use provided models
         @all_models = CsvValidationService::ModelLoader.new(Array.wrap(models)).models
         @csv_builder = CsvValidationService::CsvBuilder.new(self)
       end
-
-      # Common components used by both modes
-      @field_analyzer = CsvValidationService::FieldAnalyzer.new(@mappings, admin_set_id)
     end
 
     # ============================================================================
@@ -226,7 +227,8 @@ module Bulkrax
         valid_headers_for_models,
         field_metadata_for_all_models,
         @mapping_manager,
-        @file_validator
+        @file_validator,
+        @row_validator
       )
     end
 
@@ -238,6 +240,7 @@ module Bulkrax
         rowCount: @item_extractor.total_count,
         isValid: validator.valid?,
         hasWarnings: validator.warnings?,
+        rowErrors: @row_validator.errors,
         collections: @item_extractor.collections,
         works: @item_extractor.works,
         fileSets: @item_extractor.file_sets,
