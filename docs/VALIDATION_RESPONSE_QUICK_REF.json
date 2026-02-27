@@ -9,9 +9,9 @@
     "missingRequired*": [
       "string|object - Missing required columns (legacy: strings, new: {model, field})"
     ],
-    "unrecognized*": [
-      "string - Unrecognized column names"
-    ],
+    "unrecognized*": {
+      "column_name": "string|null - Spell-check suggestion, or null if no suggestion"
+    },
     "rowCount*": "integer - Number of data rows",
     "isValid*": "boolean - Validation passed?",
     "hasWarnings*": "boolean - Non-critical warnings exist?",
@@ -139,7 +139,7 @@
       "model"
     ],
     "missingRequired": [],
-    "unrecognized": [],
+    "unrecognized": {},
     "rowCount": 10,
     "isValid": true,
     "hasWarnings": false,
@@ -171,9 +171,9 @@
       "legacy_id"
     ],
     "missingRequired": [],
-    "unrecognized": [
-      "legacy_id"
-    ],
+    "unrecognized": {
+      "legacy_id": null
+    },
     "rowCount": 25,
     "isValid": true,
     "hasWarnings": true,
@@ -224,7 +224,7 @@
       "source_identifier",
       "rights_statement"
     ],
-    "unrecognized": [],
+    "unrecognized": {},
     "rowCount": 15,
     "isValid": false,
     "hasWarnings": false,

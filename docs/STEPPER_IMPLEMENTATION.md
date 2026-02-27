@@ -16,26 +16,27 @@ The stepper wizard is a 3-step process for bulk importing CSV files and associat
 
 ### Files
 
-| Component | Path | Lines | Purpose |
-|-----------|------|-------|---------|
-| Main View | `app/views/bulkrax/importers/guided_import_new.html.erb` | 473 | 3-step stepper form |
-| JavaScript | `app/assets/javascripts/bulkrax/importers_stepper.js` | 2,055 | State management, validation, UI |
-| JS Utilities | `app/assets/javascripts/bulkrax/bulkrax_utils.js` | 73 | HTML escaping, formatting helpers |
-| Stylesheet | `app/assets/stylesheets/bulkrax/stepper.scss` | 28 | Main import file for 11 SCSS partials |
-| Variables | `app/assets/stylesheets/bulkrax/stepper/_variables.scss` | 47 | Color palette and dimensions |
-| Mixins | `app/assets/stylesheets/bulkrax/stepper/_mixins.scss` | - | Reusable SCSS mixins |
-| Header | `app/assets/stylesheets/bulkrax/stepper/_header.scss` | 72 | Stepper progress header |
-| Success | `app/assets/stylesheets/bulkrax/stepper/_success.scss` | - | Post-submission success card |
-| Upload | `app/assets/stylesheets/bulkrax/stepper/_upload.scss` | - | Upload zone and file list |
-| Validation | `app/assets/stylesheets/bulkrax/stepper/_validation.scss` | - | Accordion results styling |
-| Summary | `app/assets/stylesheets/bulkrax/stepper/_summary.scss` | - | Import summary cards and tree |
-| Settings | `app/assets/stylesheets/bulkrax/stepper/_settings.scss` | - | Settings form controls |
-| Review | `app/assets/stylesheets/bulkrax/stepper/_review.scss` | - | Review step summary |
-| Navigation | `app/assets/stylesheets/bulkrax/stepper/_navigation.scss` | - | Step navigation buttons |
-| Responsive | `app/assets/stylesheets/bulkrax/stepper/_responsive.scss` | - | Mobile/tablet breakpoints |
-| Controller | `app/controllers/concerns/bulkrax/guided_import.rb` | 387 | 4 endpoints + helpers |
-| Formatter | `app/services/bulkrax/stepper_response_formatter.rb` | 275 | Validation response formatting |
-| Helper | `app/helpers/bulkrax/importers_helper.rb` | 14 | Admin set enumeration |
+| Component | Path | Purpose |
+|-----------|------|---------|
+| Main View | `app/views/bulkrax/importers/guided_import_new.html.erb` | 3-step stepper form |
+| JavaScript | `app/assets/javascripts/bulkrax/importers_stepper.js` | State management, validation, UI |
+| JS Utilities | `app/assets/javascripts/bulkrax/bulkrax_utils.js` | HTML escaping, formatting helpers |
+| Stylesheet | `app/assets/stylesheets/bulkrax/stepper.scss` | Main import file for 11 SCSS partials |
+| Variables | `app/assets/stylesheets/bulkrax/stepper/_variables.scss` | Color palette and dimensions |
+| Mixins | `app/assets/stylesheets/bulkrax/stepper/_mixins.scss` | Reusable SCSS mixins |
+| Header | `app/assets/stylesheets/bulkrax/stepper/_header.scss` | Stepper progress header |
+| Success | `app/assets/stylesheets/bulkrax/stepper/_success.scss` | Post-submission success card |
+| Upload | `app/assets/stylesheets/bulkrax/stepper/_upload.scss` | Upload zone and file list |
+| Validation | `app/assets/stylesheets/bulkrax/stepper/_validation.scss` | Accordion results styling |
+| Summary | `app/assets/stylesheets/bulkrax/stepper/_summary.scss` | Import summary cards and tree |
+| Settings | `app/assets/stylesheets/bulkrax/stepper/_settings.scss` | Settings form controls |
+| Review | `app/assets/stylesheets/bulkrax/stepper/_review.scss` | Review step summary |
+| Navigation | `app/assets/stylesheets/bulkrax/stepper/_navigation.scss` | Step navigation buttons |
+| Responsive | `app/assets/stylesheets/bulkrax/stepper/_responsive.scss` | Mobile/tablet breakpoints |
+| Controller | `app/controllers/concerns/bulkrax/guided_import.rb` | 4 endpoints + helpers |
+| Formatter | `app/services/bulkrax/stepper_response_formatter.rb` | Validation response formatting |
+| Helper | `app/helpers/bulkrax/importers_helper.rb` | Admin set enumeration |
+| Row Validator | `app/services/bulkrax/csv_validation_service/row_validator_service.rb` | Row-level validation processor chain |
 
 ### Routes
 
@@ -148,7 +149,7 @@ The review step displays:
 
 ## Controller Concern: `GuidedImport`
 
-**Location:** `app/controllers/concerns/bulkrax/guided_import.rb` (387 lines)
+**Location:** `app/controllers/concerns/bulkrax/guided_import.rb`
 
 ### Public Actions
 
@@ -198,7 +199,7 @@ Key helpers include:
 
 ## StepperResponseFormatter
 
-**Location:** `app/services/bulkrax/stepper_response_formatter.rb` (275 lines)
+**Location:** `app/services/bulkrax/stepper_response_formatter.rb`
 
 Transforms raw `CsvValidationService` output into a structured response for the frontend.
 
@@ -267,7 +268,7 @@ StepperResponseFormatter.error(message: 'Something went wrong', summary: 'Error 
 
 ## JavaScript Architecture
 
-**Location:** `app/assets/javascripts/bulkrax/importers_stepper.js` (2,055 lines)
+**Location:** `app/assets/javascripts/bulkrax/importers_stepper.js`
 
 ### Dependencies
 
@@ -291,6 +292,7 @@ var StepperState = {
   isAddingFiles: false,
   demoScenario: null,
   demoScenariosData: null,        // Cached demo scenarios JSON
+  uploadsInProgress: 0,
   adminSetId: '',
   adminSetName: '',
   settings: {
@@ -310,12 +312,15 @@ IMPORT_SIZE_OPTIMAL: 100
 IMPORT_SIZE_MODERATE: 500
 IMPORT_SIZE_LARGE: 1000
 ALLOWED_EXTENSIONS: ['.csv', '.zip']
-ANIMATION_SPEED: 200       // ms
-SCROLL_SPEED: 300          // ms
-VALIDATION_DELAY: 2000     // ms
-AJAX_TIMEOUT_SHORT: 10000  // 10s for simple requests
-AJAX_TIMEOUT_LONG: 60000   // 60s for file uploads/validation
-MAX_TREE_DEPTH: 50         // Prevent stack overflow
+ANIMATION_SPEED: 200           // ms
+SCROLL_SPEED: 300              // ms
+VALIDATION_DELAY: 2000         // ms
+NOTIFICATION_FADE_SPEED: 300   // ms
+DEBOUNCE_DELAY: 300            // ms
+AJAX_TIMEOUT_SHORT: 10000      // 10s for simple requests
+AJAX_TIMEOUT_LONG: 120000      // 2min for file uploads/validation
+CHUNK_SIZE: 10000000           // 10 MB per upload chunk
+MAX_TREE_DEPTH: 50             // Prevent stack overflow
 ```
 
 ### Key Function Groups
@@ -370,7 +375,7 @@ MAX_TREE_DEPTH: 50         // Prevent stack overflow
 
 ## Utility JavaScript
 
-**Location:** `app/assets/javascripts/bulkrax/bulkrax_utils.js` (73 lines)
+**Location:** `app/assets/javascripts/bulkrax/bulkrax_utils.js`
 
 Provides `window.BulkraxUtils` with:
 
@@ -384,7 +389,7 @@ Provides `window.BulkraxUtils` with:
 
 ```scss
 // Brand colors
-$color-primary: #337ab7;
+$color-primary: #2b6da5;
 $color-success: #5cb85c;
 $color-success-bright: #28a745;
 $color-warning: #ffc107;
@@ -429,7 +434,7 @@ $border-radius: 8px;
 
 ## View Structure
 
-**Location:** `app/views/bulkrax/importers/guided_import_new.html.erb` (473 lines)
+**Location:** `app/views/bulkrax/importers/guided_import_new.html.erb`
 
 The view wraps everything in a single `form_for [:bulkrax, Bulkrax::Importer.new]` (multipart, posting to `guided_import_create_importers_path`):
 
