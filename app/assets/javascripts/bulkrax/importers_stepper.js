@@ -434,19 +434,34 @@
     })
 
     // Tree toggle events - delegated to import summary container
-    $('.import-summary').on('click.tree', '.tree-item', function (e) {
-      e.stopPropagation()
-      var $children = $(this).next('.tree-children')
-      var $chevron = $(this).find('.tree-chevron')
+    function toggleTreeItem($item) {
+      var $children = $item.next('.tree-children')
+      var $chevron = $item.find('.tree-chevron')
 
       if ($children.length > 0) {
-        if ($children.is(':visible')) {
+        var isExpanded = $children.is(':visible')
+        if (isExpanded) {
           $children.slideUp(CONSTANTS.ANIMATION_SPEED)
           $chevron.removeClass('fa-chevron-down').addClass('fa-chevron-right')
         } else {
           $children.slideDown(CONSTANTS.ANIMATION_SPEED)
           $chevron.removeClass('fa-chevron-right').addClass('fa-chevron-down')
         }
+        $item.attr('aria-expanded', String(!isExpanded))
+      }
+    }
+
+    $('.import-summary').on('click.tree', '.tree-item', function (e) {
+      e.stopPropagation()
+      toggleTreeItem($(this))
+    })
+
+    // Keyboard support for tree items (Enter/Space to toggle)
+    $('.import-summary').on('keydown.tree', '.tree-item[tabindex]', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault()
+        e.stopPropagation()
+        toggleTreeItem($(this))
       }
     })
   }
@@ -1772,7 +1787,7 @@
       ' ' +
       openClass +
       '">' +
-      '<div class="accordion-header">' +
+      '<button type="button" class="accordion-header">' +
       '<div class="accordion-title-bar">' +
       '<span class="fa ' +
       icon +
@@ -1785,7 +1800,7 @@
       '<span class="fa ' +
       chevron +
       ' accordion-chevron"></span>' +
-      '</div>' +
+      '</button>' +
       '<div class="accordion-content" style="display: ' +
       contentDisplay +
       '">' +
@@ -1887,10 +1902,15 @@
     var safeId = escapeHtml(item.id)
     var safeTitle = escapeHtml(item.title)
 
+    // Make expandable tree items focusable and semantically interactive
+    var treeItemAttrs = hasChildren
+      ? ' tabindex="0" role="treeitem" aria-expanded="false"'
+      : ''
+
     var html =
       '<div class="tree-item" data-item-id="' +
       safeId +
-      '" style="padding-left: ' +
+      '"' + treeItemAttrs + ' style="padding-left: ' +
       paddingLeft +
       'px">' +
       chevron +
@@ -1984,8 +2004,13 @@
     StepperState.currentStep = stepNum
     updateStepperUI()
 
-    // Scroll to top
-    $('html, body').animate({ scrollTop: 0 }, CONSTANTS.SCROLL_SPEED)
+    // Scroll to top, then move focus to the new step's heading
+    $('html, body').animate({ scrollTop: 0 }, CONSTANTS.SCROLL_SPEED, function () {
+      var $stepHeading = $('.step-content[data-step="' + stepNum + '"] .step-title h2')
+      if ($stepHeading.length) {
+        $stepHeading.first().focus()
+      }
+    })
 
     // Update review summary if going to step 3
     if (stepNum === 3) {

@@ -66,7 +66,7 @@
         <!-- ====== STEP 1: Upload & Validate ====== -->
         <div class="step-content" data-step="1">
           <div class="step-title">
-            <h2><%= t('bulkrax.importer.guided_import.step1.title') %> <span class="text-danger">*</span></h2>
+            <h2 tabindex="-1"><%= t('bulkrax.importer.guided_import.step1.title') %> <span class="text-danger">*</span></h2>
             <p class="text-muted"><%= t('bulkrax.importer.guided_import.step1.description_html').html_safe %></p>
           </div>
 
@@ -186,7 +186,7 @@
           </div>
 
           <!-- File Upload Error Messages -->
-          <div id="file-upload-errors" class="file-upload-errors" style="display: none;"></div>
+          <div id="file-upload-errors" class="file-upload-errors" aria-live="polite" style="display: none;"></div>
 
           <!-- Admin Set -->
           <div class="form-group">
@@ -219,7 +219,7 @@
           </button>
 
           <!-- Validation Results (hidden initially) -->
-          <div class="validation-results" style="display: none;">
+          <div class="validation-results" aria-live="polite" style="display: none;">
 
             <!-- Validation Status Accordion -->
             <div class="accordion-wrapper">
@@ -290,7 +290,7 @@
         <!-- ====== STEP 2: Configure Settings ====== -->
         <div class="step-content" data-step="2" style="display: none;">
           <div class="step-title">
-            <h2><%= t('bulkrax.importer.guided_import.step2.title') %></h2>
+            <h2 tabindex="-1"><%= t('bulkrax.importer.guided_import.step2.title') %></h2>
             <p class="text-muted"><%= t('bulkrax.importer.guided_import.step2.description') %></p>
           </div>
 
@@ -432,7 +432,7 @@
         <!-- ====== STEP 3: Review & Start ====== -->
         <div class="step-content" data-step="3" style="display: none;">
           <div class="step-title">
-            <h2><%= t('bulkrax.importer.guided_import.step3.title') %></h2>
+            <h2 tabindex="-1"><%= t('bulkrax.importer.guided_import.step3.title') %></h2>
             <p class="text-muted"><%= t('bulkrax.importer.guided_import.step3.description') %></p>
           </div>
 
@@ -505,6 +505,9 @@
     </div>
   </div>
 </div>
+
+<!-- Toast notifications (announced to screen readers) -->
+<div id="upload-notifications" aria-live="polite"></div>
 
 <!-- Hidden fields for storing state -->
 <div id="stepper-state" style="display: none;"
