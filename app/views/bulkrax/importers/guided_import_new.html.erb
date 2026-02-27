@@ -21,24 +21,24 @@
     <div class="stepper-header">
       <div class="step-item" data-step="1">
         <div class="step-circle">
-          <span class="fa fa-cloud-upload"></span>
-          <span class="step-check fa fa-check"></span>
+          <span class="fa fa-cloud-upload" aria-hidden="true"></span>
+          <span class="step-check fa fa-check" aria-hidden="true"></span>
         </div>
         <span class="step-label"><%= t('bulkrax.importer.guided_import.steps.upload_validate') %></span>
       </div>
       <div class="step-connector"></div>
       <div class="step-item" data-step="2">
         <div class="step-circle">
-          <span class="fa fa-cog"></span>
-          <span class="step-check fa fa-check"></span>
+          <span class="fa fa-cog" aria-hidden="true"></span>
+          <span class="step-check fa fa-check" aria-hidden="true"></span>
         </div>
         <span class="step-label"><%= t('bulkrax.importer.guided_import.steps.configure_settings') %></span>
       </div>
       <div class="step-connector"></div>
       <div class="step-item" data-step="3">
         <div class="step-circle">
-          <span class="fa fa-play"></span>
-          <span class="step-check fa fa-check"></span>
+          <span class="fa fa-play" aria-hidden="true"></span>
+          <span class="step-check fa fa-check" aria-hidden="true"></span>
         </div>
         <span class="step-label"><%= t('bulkrax.importer.guided_import.steps.review_start') %></span>
       </div>
@@ -48,7 +48,7 @@
     <div class="import-success-state" style="display: none;">
       <div class="success-card text-center">
         <div class="success-icon">
-          <span class="fa fa-check-circle"></span>
+          <span class="fa fa-check-circle" aria-hidden="true"></span>
         </div>
         <h2><%= t('bulkrax.importer.guided_import.success.title') %></h2>
         <p><%= t('bulkrax.importer.guided_import.success.message') %></p>
@@ -75,10 +75,10 @@
             <!-- Upload Mode Tabs -->
             <div class="upload-mode-tabs">
               <button type="button" class="upload-mode-tab active" data-upload-mode="upload">
-                <span class="fa fa-cloud-upload"></span> <%= t('bulkrax.importer.guided_import.step1.upload_files') %>
+                <span class="fa fa-cloud-upload" aria-hidden="true"></span> <%= t('bulkrax.importer.guided_import.step1.upload_files') %>
               </button>
               <button type="button" class="upload-mode-tab" data-upload-mode="file_path">
-                <span class="fa fa-folder-open"></span> <%= t('bulkrax.importer.guided_import.step1.import_path') %>
+                <span class="fa fa-folder-open" aria-hidden="true"></span> <%= t('bulkrax.importer.guided_import.step1.import_path') %>
               </button>
             </div>
 
@@ -86,7 +86,7 @@
             <div class="upload-zone-empty">
               <div class="upload-dropzone">
                 <div class="upload-icon">
-                  <span class="fa fa-cloud-upload"></span>
+                  <span class="fa fa-cloud-upload" aria-hidden="true"></span>
                 </div>
                 <p><%= t('bulkrax.importer.guided_import.step1.dropzone_main_html').html_safe %></p>
                 <p class="text-muted small">
@@ -94,10 +94,10 @@
                 </p>
                 <div class="upload-accepted-types">
                   <p class="text-muted small">
-                    <span class="fa fa-file-text-o"></span> <%= t('bulkrax.importer.guided_import.step1.dropzone_csv_hint') %>
+                    <span class="fa fa-file-text-o" aria-hidden="true"></span> <%= t('bulkrax.importer.guided_import.step1.dropzone_csv_hint') %>
                   </p>
                   <p class="text-muted small">
-                    <span class="fa fa-file-archive-o"></span> <%= t('bulkrax.importer.guided_import.step1.dropzone_zip_hint') %>
+                    <span class="fa fa-file-archive-o" aria-hidden="true"></span> <%= t('bulkrax.importer.guided_import.step1.dropzone_zip_hint') %>
                   </p>
                 </div>
                 <input 
@@ -150,13 +150,13 @@
             <div class="add-another-dropzone" style="display: none;">
               <div class="upload-dropzone-small">
                 <div class="upload-icon">
-                  <span class="fa fa-cloud-upload"></span>
+                  <span class="fa fa-cloud-upload" aria-hidden="true"></span>
                 </div>
                 <p><%= t('bulkrax.importer.guided_import.step1.add_another') %></p>
                 <p class="text-muted small"><%= t('bulkrax.importer.guided_import.step1.add_another_hint_html').html_safe %></p>
                 <div class="upload-accepted-types">
-                  <p class="text-muted small"><span class="fa fa-file-text-o"></span> <%= t('bulkrax.importer.guided_import.step1.dropzone_csv_hint') %></p>
-                  <p class="text-muted small"><span class="fa fa-file-archive-o"></span> <%= t('bulkrax.importer.guided_import.step1.dropzone_zip_hint') %></p>
+                  <p class="text-muted small"><span class="fa fa-file-text-o" aria-hidden="true"></span> <%= t('bulkrax.importer.guided_import.step1.dropzone_csv_hint') %></p>
+                  <p class="text-muted small"><span class="fa fa-file-archive-o" aria-hidden="true"></span> <%= t('bulkrax.importer.guided_import.step1.dropzone_zip_hint') %></p>
                 </div>
               </div>
             </div>
@@ -165,7 +165,7 @@
             <div class="file-path-panel" style="display: none;">
               <div class="file-path-input-wrapper">
                 <div class="upload-icon">
-                  <span class="fa fa-folder-open"></span>
+                  <span class="fa fa-folder-open" aria-hidden="true"></span>
                 </div>
                 <label for="import-file-path" class="control-label">
                   <%= t('bulkrax.importer.guided_import.step1.file_path_label') %>
@@ -206,16 +206,16 @@
 
           <!-- Download Template Link -->
           <div class="download-template-link">
-            <span class="fa fa-download text-primary"></span>
+            <span class="fa fa-download text-primary" aria-hidden="true"></span>
             <a id="download-csv-template-link" href="<%= sample_csv_file_importers_path %>" class="text-primary" download data-sample-csv-url="<%= sample_csv_file_importers_path %>"><%= t('bulkrax.importer.guided_import.step1.download_template') %></a>
           </div>
 
           <!-- Validate Button (tab-scoped: only one is visible at a time) -->
           <button type="button" id="validate-upload-btn" class="validate-btn btn btn-primary btn-block btn-lg" disabled>
-            <span class="fa fa-file-text"></span> <%= t('bulkrax.importer.guided_import.step1.validate_upload') %>
+            <span class="fa fa-file-text" aria-hidden="true"></span> <%= t('bulkrax.importer.guided_import.step1.validate_upload') %>
           </button>
           <button type="button" id="validate-path-btn" class="validate-btn btn btn-primary btn-block btn-lg" style="display: none;" disabled>
-            <span class="fa fa-file-text"></span> <%= t('bulkrax.importer.guided_import.step1.validate_path') %>
+            <span class="fa fa-file-text" aria-hidden="true"></span> <%= t('bulkrax.importer.guided_import.step1.validate_path') %>
           </button>
 
           <!-- Validation Results (hidden initially) -->
@@ -273,7 +273,7 @@
           <!-- Step Navigation -->
           <div class="step-navigation">
             <button type="button" class="btn btn-outline-danger start-over-nav-btn">
-              <span class="fa fa-refresh"></span> <%= t('bulkrax.importer.guided_import.nav.clear_start_over') %>
+              <span class="fa fa-refresh" aria-hidden="true"></span> <%= t('bulkrax.importer.guided_import.nav.clear_start_over') %>
             </button>
             <div class="step-nav-right">
               <label class="skip-validation-label">
@@ -281,7 +281,7 @@
                 <span><%= t('bulkrax.importer.guided_import.nav.skip_validation') %></span>
               </label>
               <button type="button" class="btn btn-primary step-next-btn" data-next-step="2" disabled>
-                <%= t('bulkrax.importer.guided_import.nav.next_step') %> <span class="fa fa-arrow-right"></span>
+                <%= t('bulkrax.importer.guided_import.nav.next_step') %> <span class="fa fa-arrow-right" aria-hidden="true"></span>
               </button>
             </div>
           </div>
@@ -365,10 +365,10 @@
                   <h3 class="mb-0">
                     <button class="btn btn-link text-left w-100 d-flex justify-content-between align-items-center" type="button">
                       <span>
-                        <span class="fa fa-cog"></span>
+                        <span class="fa fa-cog" aria-hidden="true"></span>
                         <%= t('bulkrax.importer.guided_import.step2.optional_settings') %>
                       </span>
-                      <span class="fa fa-chevron-down"></span>
+                      <span class="fa fa-chevron-down" aria-hidden="true"></span>
                     </button>
                   </h3>
                 </div>
@@ -416,14 +416,14 @@
           <!-- Step Navigation -->
           <div class="step-navigation">
             <button type="button" class="btn btn-outline-danger start-over-nav-btn">
-              <span class="fa fa-refresh"></span> <%= t('bulkrax.importer.guided_import.nav.clear_start_over') %>
+              <span class="fa fa-refresh" aria-hidden="true"></span> <%= t('bulkrax.importer.guided_import.nav.clear_start_over') %>
             </button>
             <div>
               <button type="button" class="btn btn-secondary step-prev-btn" data-prev-step="1">
-                <span class="fa fa-arrow-left"></span> <%= t('bulkrax.importer.guided_import.nav.back') %>
+                <span class="fa fa-arrow-left" aria-hidden="true"></span> <%= t('bulkrax.importer.guided_import.nav.back') %>
               </button>
               <button type="button" class="btn btn-primary step-next-btn" data-next-step="3" disabled>
-                <%= t('bulkrax.importer.guided_import.nav.next_step') %> <span class="fa fa-arrow-right"></span>
+                <%= t('bulkrax.importer.guided_import.nav.next_step') %> <span class="fa fa-arrow-right" aria-hidden="true"></span>
               </button>
             </div>
           </div>
@@ -439,7 +439,7 @@
           <!-- Large Import Warning -->
           <div class="large-import-warning" style="display: none;">
             <div class="alert alert-danger">
-              <span class="fa fa-exclamation-triangle"></span>
+              <span class="fa fa-exclamation-triangle" aria-hidden="true"></span>
               <strong><%= t('bulkrax.importer.guided_import.step3.large_import_warning') %></strong>
               <p><%= t('bulkrax.importer.guided_import.step3.large_import_message_html', count: 0).html_safe %></p>
             </div>
@@ -449,7 +449,7 @@
           <div class="review-summary">
             <div class="alert alert-success">
               <div class="review-header">
-                <span class="fa fa-check-circle"></span>
+                <span class="fa fa-check-circle" aria-hidden="true"></span>
                 <h3><%= t('bulkrax.importer.guided_import.step3.ready_to_import') %></h3>
               </div>
 
@@ -488,11 +488,11 @@
           <!-- Step Navigation -->
           <div class="step-navigation">
             <button type="button" class="btn btn-outline-danger start-over-nav-btn">
-              <span class="fa fa-refresh"></span> <%= t('bulkrax.importer.guided_import.nav.clear_start_over') %>
+              <span class="fa fa-refresh" aria-hidden="true"></span> <%= t('bulkrax.importer.guided_import.nav.clear_start_over') %>
             </button>
             <div>
               <button type="button" class="btn btn-secondary step-prev-btn" data-prev-step="2">
-                <span class="fa fa-arrow-left"></span> <%= t('bulkrax.importer.guided_import.nav.back') %>
+                <span class="fa fa-arrow-left" aria-hidden="true"></span> <%= t('bulkrax.importer.guided_import.nav.back') %>
               </button>
               <button type="submit" class="btn btn-success" id="start-import-btn">
                 <%= t('bulkrax.importer.guided_import.nav.start_import') %>
