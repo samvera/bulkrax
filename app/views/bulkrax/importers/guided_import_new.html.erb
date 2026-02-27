@@ -96,31 +96,40 @@
 
             <!-- Empty State -->
             <div class="upload-zone-empty">
-              <div class="upload-dropzone">
+              <label
+                for="file-input"
+                class="upload-dropzone"
+                role="button"
+                tabindex="0"
+                aria-describedby="dropzone-hint"
+              >
                 <div class="upload-icon">
                   <span class="fa fa-cloud-upload" aria-hidden="true"></span>
                 </div>
                 <p><%= t('bulkrax.importer.guided_import.step1.dropzone_main_html').html_safe %></p>
-                <p class="text-muted small">
+                <p class="text-muted small" id="dropzone-hint">
                   <%= t('bulkrax.importer.guided_import.step1.dropzone_hint') %>
                 </p>
                 <div class="upload-accepted-types">
                   <p class="text-muted small">
-                    <span class="fa fa-file-text-o" aria-hidden="true"></span> <%= t('bulkrax.importer.guided_import.step1.dropzone_csv_hint') %>
+                    <span class="fa fa-file-text-o" aria-hidden="true"></span>
+                    <%= t('bulkrax.importer.guided_import.step1.dropzone_csv_hint') %>
                   </p>
                   <p class="text-muted small">
-                    <span class="fa fa-file-archive-o" aria-hidden="true"></span> <%= t('bulkrax.importer.guided_import.step1.dropzone_zip_hint') %>
+                    <span class="fa fa-file-archive-o" aria-hidden="true"></span>
+                    <%= t('bulkrax.importer.guided_import.step1.dropzone_zip_hint') %>
                   </p>
                 </div>
-                <input 
-                  type="file" 
-                  id="file-input"
-                  name="importer[parser_fields][files][]" 
-                  accept=".csv,.zip" 
-                  multiple style="display: none" 
-                  aria-label="<%= t('bulkrax.importer.guided_import.step1.upload_files') %>"
-                >
-              </div>
+              </label>
+              <input
+                type="file"
+                id="file-input"
+                name="importer[parser_fields][files][]"
+                accept=".csv,.zip"
+                multiple
+                class="sr-only"
+                aria-label="<%= t('bulkrax.importer.guided_import.step1.upload_files') %>"
+              >
 
               <!-- Demo Scenarios (for testing) -->
               <div class="demo-scenarios" style="display: none;">
@@ -160,17 +169,40 @@
 
             <!-- Add another file dropzone (shown when 1 file uploaded) -->
             <div class="add-another-dropzone" style="display: none;">
-              <div class="upload-dropzone-small">
+              <label
+                for="file-input-additional"
+                class="upload-dropzone-small"
+                role="button" 
+                tabindex="0"
+                aria-describedby="add-another-hint"
+              >
                 <div class="upload-icon">
                   <span class="fa fa-cloud-upload" aria-hidden="true"></span>
                 </div>
                 <p><%= t('bulkrax.importer.guided_import.step1.add_another') %></p>
-                <p class="text-muted small"><%= t('bulkrax.importer.guided_import.step1.add_another_hint_html').html_safe %></p>
+                <p class="text-muted small" id="add-another-hint">
+                  <%= t('bulkrax.importer.guided_import.step1.add_another_hint_html').html_safe %>
+                </p>
                 <div class="upload-accepted-types">
-                  <p class="text-muted small"><span class="fa fa-file-text-o" aria-hidden="true"></span> <%= t('bulkrax.importer.guided_import.step1.dropzone_csv_hint') %></p>
-                  <p class="text-muted small"><span class="fa fa-file-archive-o" aria-hidden="true"></span> <%= t('bulkrax.importer.guided_import.step1.dropzone_zip_hint') %></p>
+                  <p class="text-muted small">
+                    <span class="fa fa-file-text-o" aria-hidden="true"></span>
+                    <%= t('bulkrax.importer.guided_import.step1.dropzone_csv_hint') %>
+                  </p>
+                  <p class="text-muted small">
+                    <span class="fa fa-file-archive-o" aria-hidden="true"></span>
+                    <%= t('bulkrax.importer.guided_import.step1.dropzone_zip_hint') %>
+                  </p>
                 </div>
-              </div>
+              </label>
+              <input
+                type="file"
+                id="file-input-additional"
+                name="importer[parser_fields][files][]"
+                accept=".csv,.zip"
+                multiple
+                class="sr-only"
+                aria-label="<%= t('bulkrax.importer.guided_import.step1.add_another') %>"
+              >
             </div>
 
             <!-- File Path Input (hidden by default) -->

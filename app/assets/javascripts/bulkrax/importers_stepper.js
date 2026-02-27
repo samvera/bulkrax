@@ -160,11 +160,20 @@
     }
 
     // File upload - main dropzone
+    // <label for="file-input"> is needed for accessibility but also opens the file selector when clicked
+    // this will prevent that behavior while maintaining accessibility
     $('.upload-dropzone').on('click', function (e) {
       if (e.target.id === 'file-input') return
-
-      StepperState.isAddingFiles = false
-      $('#file-input').trigger('click')
+      e.preventDefault()
+      openMainFilePicker()
+    })
+    // role="button" in WCAG 2.1 AA requires keyboard interaction for enter and space key
+    // this allows user to open the file picker with the space key when the dropzone is focused
+    $('.upload-dropzone').on('keydown', function (e) {
+      if (e.key === ' ') {
+        e.preventDefault()
+        openMainFilePicker()
+      }
     })
 
     // Delegated event handlers for dynamic content
@@ -172,10 +181,19 @@
     bindDelegatedEvents()
 
     // File upload - add another dropzone
-    $('.upload-dropzone-small').on('click', function () {
-      StepperState.isAddingFiles = true
-      $('#file-input').val('') // Prevent upload of a duplicate file
-      $('#file-input').trigger('click')
+    // <label for="file-input-additional"> is needed for accessibility but also opens the file selector when clicked
+    // this will prevent that behavior while maintaining accessibility
+    $('.upload-dropzone-small').on('click', function (e) {
+      e.preventDefault()
+      openAdditionalFilePicker()
+    })
+    // role="button" in WCAG 2.1 AA requires keyboard interaction for enter and space key
+    // this allows user to open the file picker with the space key when the dropzone is focused
+    $('.upload-dropzone-small').on('keydown', function (e) {
+      if (e.key === ' ') {
+        e.preventDefault()
+        openAdditionalFilePicker()
+      }
     })
 
     $('#file-input').on('change', function () {
@@ -209,10 +227,7 @@
         // Try to set files on input element (with browser compatibility fallback)
         setInputFiles($('#file-input')[0], filesToAdd)
 
-        // Set flag based on whether we already have files
-        StepperState.isAddingFiles = false // Drag and drop replaces files
-
-        handleFileSelect(StepperState.isAddingFiles)
+        handleFileSelect(false) // Drag and drop replaces files
 
         // Show warning if more than MAX_FILES were dropped
         if (droppedFiles.length > CONSTANTS.MAX_FILES) {
@@ -245,11 +260,8 @@
         // Try to set files on input element (with browser compatibility fallback)
         setInputFiles($('#file-input')[0], filesToAdd)
 
-        // Set flag to indicate we're adding files
-        StepperState.isAddingFiles = true
-
-        handleFileSelect(StepperState.isAddingFiles)
-        StepperState.isAddingFiles = false
+        handleFileSelect(true)
+        StepperState.isAddingFiles = false // reset after handling
 
         // Show warning if more than 1 file was dropped
         if (droppedFiles.length > 1) {
@@ -549,6 +561,21 @@
     var val = $('.bulk-import-stepper-container').data('max-file-size')
     if (val == null || val === '') return null
     return parseInt(val, 10) || null
+  }
+
+  // Ensures the file picker opens in the correct mode (replace vs add)
+  // Ensures an invalid file is not added
+  function openMainFilePicker() {
+    StepperState.isAddingFiles = false
+    $('#file-input').val('')
+    $('#file-input').trigger('click')
+  }
+
+  // Open the file picker in "add" mode (appends to existing files)
+  function openAdditionalFilePicker() {
+    StepperState.isAddingFiles = true
+    $('#file-input').val('')
+    $('#file-input').trigger('click')
   }
 
   // Handle file selection
