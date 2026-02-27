@@ -310,6 +310,10 @@ zh:
           no_csv_uploaded: 未上传 CSV 元数据文件。
           no_files_uploaded: 未上传任何文件。
           no_zip_desc: 未上传 ZIP 文件。请确保服务器上的文件可访问，或上传 ZIP 文件。
+          parent_reference_validator:
+            errors:
+              message: "引用的父级 '%{value}' 在此 CSV 中不存在对应的 %{field}。"
+              suggestion: "请检查拼写错误或添加父级记录。"
           passed: 验证通过
           passed_warnings: 验证通过，但存在警告
           recognized_fields: 已识别字段：%{fields}

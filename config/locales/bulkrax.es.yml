@@ -311,6 +311,10 @@ es:
           no_csv_uploaded: No se cargó ningún archivo de metadatos CSV
           no_files_uploaded: No hay archivos subidos
           no_zip_desc: No se ha subido ningún archivo ZIP. Asegúrese de que los archivos estén accesibles en el servidor o suba un archivo ZIP.
+          parent_reference_validator:
+            errors:
+              message: "El elemento primario referenciado '%{value}' no existe como %{field} en este CSV."
+              suggestion: "Busque errores tipográficos o añada el registro primario."
           passed: Validación aprobada
           passed_warnings: Validación aprobada con advertencias
           recognized_fields: 'Campos reconocidos: %{fields}'

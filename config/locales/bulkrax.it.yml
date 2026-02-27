@@ -311,6 +311,10 @@ it:
           no_csv_uploaded: Nessun file di metadati CSV caricato
           no_files_uploaded: Nessun file caricato
           no_zip_desc: Nessun file ZIP caricato. Assicurarsi che i file siano accessibili sul server o caricare un file ZIP.
+          parent_reference_validator:
+            errors:
+              message: "Il genitore referenziato '%{value}' non esiste come %{field} in questo CSV."
+              suggestion: "Controllare eventuali errori di battitura o aggiungere il record genitore."
           passed: Validazione superata
           passed_warnings: Validazione superata con avvisi
           recognized_fields: 'Campi riconosciuti: %{fields}'

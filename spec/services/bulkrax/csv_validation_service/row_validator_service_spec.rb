@@ -48,6 +48,7 @@ RSpec.describe Bulkrax::CsvValidationService::RowValidatorService do
 
   before do
     allow(mapping_manager).to receive(:find_by_flag).with(:source_identifier, nil).and_return('source_identifier')
+    allow(mapping_manager).to receive(:split_value_for).with(:parent).and_return(Bulkrax::DEFAULT_MULTI_VALUE_ELEMENT_SPLIT_ON)
   end
 
   describe '.default_processor_chain' do
@@ -242,6 +243,39 @@ RSpec.describe Bulkrax::CsvValidationService::RowValidatorService do
         validator = described_class.new(data_with_bad_parents, field_metadata, mapping_manager)
         parent_errors = validator.errors.select { |e| e[:category] == 'invalid_parent_reference' }
         expect(parent_errors.length).to eq(2)
+      end
+
+      it 'does not split parent when split_value_for returns nil' do
+        allow(mapping_manager).to receive(:split_value_for).with(:parent).and_return(nil)
+
+        data = csv_data + [{
+          source_identifier: 'work3',
+          model: 'GenericWork',
+          parent: 'col1|col-missing',
+          children: nil,
+          raw_row: { 'title' => 'Work 3' }
+        }]
+        validator = described_class.new(data, field_metadata, mapping_manager)
+        parent_errors = validator.errors.select { |e| e[:category] == 'invalid_parent_reference' }
+        # treated as a single identifier, col1|col-missing is not in valid_identifiers
+        expect(parent_errors.length).to eq(1)
+        expect(parent_errors.first[:value]).to eq('col1|col-missing')
+      end
+
+      it 'splits parent when split_value_for returns a delimiter' do
+        allow(mapping_manager).to receive(:split_value_for).with(:parent).and_return('|')
+
+        data = csv_data + [{
+          source_identifier: 'work3',
+          model: 'GenericWork',
+          parent: 'col1|col-missing',
+          children: nil,
+          raw_row: { 'title' => 'Work 3' }
+        }]
+        validator = described_class.new(data, field_metadata, mapping_manager)
+        parent_errors = validator.errors.select { |e| e[:category] == 'invalid_parent_reference' }
+        expect(parent_errors.length).to eq(1)
+        expect(parent_errors.first[:value]).to eq('col-missing')
       end
     end
 

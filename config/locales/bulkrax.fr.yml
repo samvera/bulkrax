@@ -311,6 +311,10 @@ fr:
           no_csv_uploaded: Aucun fichier de métadonnées CSV n'a été téléchargé.
           no_files_uploaded: Aucun fichier téléchargé
           no_zip_desc: Aucun fichier ZIP n'a été téléchargé. Assurez-vous que les fichiers sont accessibles sur le serveur ou téléchargez un fichier ZIP.
+          parent_reference_validator:
+            errors:
+              message: "Le parent référencé « %{value} » n'existe pas en tant que %{field} dans ce CSV."
+              suggestion: "Vérifiez les fautes de frappe ou ajoutez l'enregistrement parent."
           passed: Validation réussie
           passed_warnings: Validation réussie avec avertissements
           recognized_fields: 'Champs reconnus : %{fields}'

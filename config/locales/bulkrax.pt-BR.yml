@@ -311,6 +311,10 @@ pt-BR:
           no_csv_uploaded: Nenhum arquivo de metadados CSV foi carregado.
           no_files_uploaded: Nenhum arquivo foi enviado.
           no_zip_desc: Nenhum arquivo ZIP foi enviado. Certifique-se de que os arquivos estejam acessíveis no servidor ou envie um arquivo ZIP.
+          parent_reference_validator:
+            errors:
+              message: "O pai referenciado '%{value}' não existe como %{field} neste CSV."
+              suggestion: "Verifique se há erros de digitação ou adicione o registro pai."
           passed: Validação aprovada
           passed_warnings: Validação aprovada com advertências.
           recognized_fields: 'Campos reconhecidos: %{fields}'

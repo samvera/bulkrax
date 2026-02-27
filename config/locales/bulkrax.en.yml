@@ -336,6 +336,10 @@ en:
           no_csv_uploaded: No CSV metadata file uploaded
           no_files_uploaded: No files uploaded
           no_zip_desc: No ZIP file uploaded. Ensure files are accessible on the server or upload a ZIP.
+          parent_reference_validator:
+            errors:
+              message: "Referenced parent '%{value}' does not exist as a %{field} in this CSV."
+              suggestion: "Check for typos or add the parent record."
           passed: Validation Passed
           passed_warnings: Validation Passed with Warnings
           recognized_fields: 'Recognized fields: %{fields}'

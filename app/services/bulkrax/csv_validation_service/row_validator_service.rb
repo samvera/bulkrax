@@ -40,7 +40,7 @@ module Bulkrax
     end
 
     def validate_parent_references(errors)
-      InvalidRelationshipValidator.new(csv_data).validate(errors)
+      InvalidRelationshipValidator.new(csv_data, manager_mapper).validate(errors)
     end
 
     def validate_required_values(errors)

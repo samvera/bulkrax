@@ -311,6 +311,10 @@ de:
           no_csv_uploaded: Es wurde keine CSV-Metadatendatei hochgeladen.
           no_files_uploaded: Es wurden keine Dateien hochgeladen.
           no_zip_desc: Es wurde keine ZIP-Datei hochgeladen. Stellen Sie sicher, dass die Dateien auf dem Server zugänglich sind, oder laden Sie eine ZIP-Datei hoch.
+          parent_reference_validator:
+            errors:
+              message: "Das referenzierte übergeordnete Element '%{value}' existiert nicht als %{field} in dieser CSV-Datei."
+              suggestion: "Prüfen Sie auf Tippfehler oder fügen Sie den Datensatz für das übergeordnete Element hinzu."
           passed: Validierung erfolgreich
           passed_warnings: Validierung mit Warnungen bestanden
           recognized_fields: 'Erkannte Felder: %{fields}'
