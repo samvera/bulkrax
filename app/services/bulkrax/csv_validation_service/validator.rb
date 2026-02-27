@@ -25,13 +25,17 @@ module Bulkrax
       # @param field_metadata [Hash] Metadata about fields for each model
       # @param mapping_manager [CsvValidationService::MappingManager] Field mapping manager
       # @param file_validator [CsvValidationService::FileValidator] Optional file validator for warnings
-      def initialize(csv_headers, valid_headers, field_metadata, mapping_manager, file_validator = nil)
+      # @param row_validator [CsvValidationService::RowsValidator] Row validator for row-level validation
+      # rubocop:disable Metrics/ParameterLists
+      def initialize(csv_headers, valid_headers, field_metadata, mapping_manager, file_validator = nil, row_validator = nil)
         @csv_headers = csv_headers || []
         @valid_headers = valid_headers || []
         @field_metadata = field_metadata || {}
         @mapping_manager = mapping_manager
         @file_validator = file_validator
+        @row_validator = row_validator
       end
+      # rubocop:enable Metrics/ParameterLists
 
       # Find required fields that are missing from the CSV
       # Headers with numeric suffixes (_1, _2, etc.) are normalized before checking
@@ -80,7 +84,7 @@ module Bulkrax
       end
 
       def errors?
-        missing_required_fields.any? || @csv_headers.blank? || (@file_validator&.missing_files&.any? || false)
+        missing_required_fields.any? || @csv_headers.blank? || (@file_validator&.missing_files&.any? || @row_validator&.errors? || false)
       end
 
       private

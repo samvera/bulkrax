@@ -271,6 +271,11 @@ zh:
           configure_settings: 配置设置
           review_start: 回顾与开始
           upload_validate: 上传并验证
+        stepper_response_formatter:
+          row_errors_issue:
+            description: "您的 CSV 数据中存在以下问题："
+            row_label: "第 %{row} 行 · %{column}"
+            title: 行校验错误
         success:
           message: 您的导入操作正在后台处理中。完成后您将收到通知。
           start_another: 开始另一次导入
@@ -278,8 +283,16 @@ zh:
           view_queue: 查看导入队列
         validation:
           columns_detected: 检测到 %{columns} 列 · 找到 %{records} 条记录
+          controlled_vocabulary_validator:
+            errors:
+              message: "'%{value}' 不是 '%{field}' 的认可术语。"
+              suggestion: "请检查受控词表以获取有效术语。"
           critical_errors: 导入前必须修复关键错误。
           did_you_mean: 您是不是想输入“%{suggestion}”？
+          duplicate_identifier_validator:
+            errors:
+              message: "重复的 %{field} '%{value}' — 也出现在第 %{original_row} 行。"
+              suggestion: "每个 %{field} 在 CSV 中必须是唯一的。"
           failed: 验证失败
           file_path_not_exist: 文件路径不存在
           file_references_title: 文件引用
@@ -297,9 +310,17 @@ zh:
           no_csv_uploaded: 未上传 CSV 元数据文件。
           no_files_uploaded: 未上传任何文件。
           no_zip_desc: 未上传 ZIP 文件。请确保服务器上的文件可访问，或上传 ZIP 文件。
+          parent_reference_validator:
+            errors:
+              message: "引用的父级 '%{value}' 在此 CSV 中不存在对应的 %{field}。"
+              suggestion: "请检查拼写错误或添加父级记录。"
           passed: 验证通过
           passed_warnings: 验证通过，但存在警告
           recognized_fields: 已识别字段：%{fields}
+          required_field_validator:
+            errors:
+              message: "字段 '%{field}' 是必填项，但此行中该字段为空。"
+              suggestion: "请为 '%{field}' 添加一个值。"
           unable_to_process: 无法处理文件进行验证
           unrecognized_desc: 导入过程中将忽略以下列：
           unrecognized_title: 未识别字段

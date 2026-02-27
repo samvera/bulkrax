@@ -272,6 +272,11 @@ fr:
           configure_settings: Configurer les paramètres
           review_start: Révision et démarrage
           upload_validate: Télécharger et valider
+        stepper_response_formatter:
+          row_errors_issue:
+            description: "Les problèmes suivants existent avec les données de votre CSV :"
+            row_label: "Ligne %{row} · %{column}"
+            title: Erreurs de validation de ligne
         success:
           message: Votre importation est en cours de traitement en arrière-plan. Vous serez averti(e) lorsqu'elle sera terminée.
           start_another: Lancer une autre importation
@@ -279,8 +284,16 @@ fr:
           view_queue: Afficher la file d'importation
         validation:
           columns_detected: "%{columns} colonnes détectées · %{records} enregistrements trouvés"
+          controlled_vocabulary_validator:
+            errors:
+              message: "« %{value} » n'est pas un terme reconnu pour « %{field} »."
+              suggestion: "Veuillez vérifier le vocabulaire contrôlé pour les termes valides."
           critical_errors: Les erreurs critiques doivent être corrigées avant l'importation.
           did_you_mean: Vouliez-vous dire « %{suggestion} » ?
+          duplicate_identifier_validator:
+            errors:
+              message: "%{field} en double « %{value} » — apparaît également à la ligne %{original_row}."
+              suggestion: "Chaque %{field} doit être unique dans le CSV."
           failed: Échec de la validation
           file_path_not_exist: Le chemin d'accès au fichier n'existe pas.
           file_references_title: Références de fichiers
@@ -298,9 +311,17 @@ fr:
           no_csv_uploaded: Aucun fichier de métadonnées CSV n'a été téléchargé.
           no_files_uploaded: Aucun fichier téléchargé
           no_zip_desc: Aucun fichier ZIP n'a été téléchargé. Assurez-vous que les fichiers sont accessibles sur le serveur ou téléchargez un fichier ZIP.
+          parent_reference_validator:
+            errors:
+              message: "Le parent référencé « %{value} » n'existe pas en tant que %{field} dans ce CSV."
+              suggestion: "Vérifiez les fautes de frappe ou ajoutez l'enregistrement parent."
           passed: Validation réussie
           passed_warnings: Validation réussie avec avertissements
           recognized_fields: 'Champs reconnus : %{fields}'
+          required_field_validator:
+            errors:
+              message: "Le champ « %{field} » est obligatoire mais il est vide pour cette ligne."
+              suggestion: "Ajoutez une valeur pour « %{field} »."
           unable_to_process: Impossible de traiter les fichiers pour validation
           unrecognized_desc: 'Ces colonnes seront ignorées lors de l''importation :'
           unrecognized_title: Champs non reconnus
