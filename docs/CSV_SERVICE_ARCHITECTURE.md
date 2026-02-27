@@ -54,11 +54,12 @@ CsvValidationService.validate(csv_file: csv_file, zip_file: zip_file, admin_set_
 
 ## Component Architecture
 
-The service is composed of 17 specialized subclasses organized by responsibility:
+The service is composed of 18 specialized subclasses (plus 5 row validator subclasses) organized by responsibility:
 
 ```
 ┌───────────────────────────────────────────────────────────────────┐
-│                    CsvValidationService (269 lines)               │
+│                    CsvValidationService 
+│
 │                                                                   │
 │  ┌─────────────────────────────────────────────────────────────┐  │
 │  │        Common Components (Both Modes)                       │  │
@@ -76,11 +77,11 @@ The service is composed of 17 specialized subclasses organized by responsibility
 │  │                          │  │                                │ │
 │  │  • CsvBuilder (82 lines) │  │  • CsvParser (109 lines)       │ │
 │  │  • RowBuilder (33 lines) │  │  • ColumnResolver (92 lines)   │ │
-│  │  • ExplanationBuilder    │  │  • Validator (108 lines)       │ │
+│  │  • ExplanationBuilder    │  │  • Validator (112 lines)       │ │
 │  │    (51 lines)            │  │  • FileValidator (103 lines)   │ │
 │  │  • ValueDeterminer       │  │  • ItemExtractor (177 lines)   │ │
-│  │    (67 lines)            │  │                                │ │
-│  │  • SplitFormatter        │  │                                │ │
+│  │    (67 lines)            │  │  • RowValidatorService         │ │
+│  │  • SplitFormatter        │  │    (54 lines + 5 subclasses)   │ │
 │  │    (42 lines)            │  │                                │ │
 │  │  • FilePathGenerator     │  │                                │ │
 │  │    (45 lines)            │  │                                │ │
@@ -447,6 +448,57 @@ work2,,
 ```
 Result: `col1` has `childIds: ['work1', 'work2']`, and both `work1` and `work2` have `parentIds: ['col1']` (inferred from col1's children column)
 
+#### 18. RowValidatorService
+**Location:** `app/services/bulkrax/csv_validation_service/row_validator_service.rb`
+
+**Responsibility:** Row-level validation via a configurable processor chain. Validates individual CSV rows for duplicate identifiers, broken parent references, missing required values, and invalid controlled vocabulary terms.
+
+**Key Methods:**
+- `self.default_processor_chain` (class attribute) - Ordered list of validation method symbols
+- `validate` - Runs all chain methods, collects and returns an array of error hashes
+- `each_row` (via `ValidatorHelpers`) - Iterates `csv_data` yielding `(row, row_number)` with correct 1-indexed row numbers
+
+**Default Processor Chain:**
+```ruby
+Bulkrax::CsvValidationService::RowValidatorService.default_processor_chain
+# => [:validate_duplicate_identifiers, :validate_parent_references, :validate_required_values, :validate_controlled_vocabulary]
+```
+
+**Sub-validator Classes (in `row_validator_service/` subdirectory):**
+
+| File | Responsibility |
+|------|----------------|
+| `duplicate_identifier_validator.rb` | Detects `source_identifier` values that appear more than once |
+| `invalid_relationship_validator.rb` | Detects `parent` references to `source_identifier` values not in the CSV |
+| `required_values_validator.rb` | Detects blank values in required fields per model |
+| `controlled_vocabulary_validator.rb` | Detects values not matching active QA vocabulary terms |
+| `validator_helpers.rb` | `ValidatorHelpers` module providing the `each_row` iterator |
+
+**Error Hash Structure:**
+Each error returned by the chain follows this structure:
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `row` | Integer | 1-indexed row number |
+| `source_identifier` | String | The record's source identifier |
+| `severity` | String | `'error'` or `'warning'` |
+| `category` | String | Machine-readable category (e.g. `'duplicate_source_identifier'`) |
+| `column` | String | CSV column name affected |
+| `value` | String | The cell value that triggered the issue |
+| `message` | String | Human-readable description |
+| `suggestion` | String\|nil | Actionable fix, or `nil` if not deterministic |
+
+**Built-in Error Categories:**
+
+| Category | Severity | Validator |
+|----------|----------|-----------|
+| `duplicate_source_identifier` | error | `DuplicateIdentifierValidator` |
+| `invalid_parent_reference` | error | `InvalidRelationshipValidator` |
+| `missing_required_value` | error | `RequiredValuesValidator` |
+| `invalid_controlled_value` | error | `ControlledVocabularyValidator` |
+
+**Configuration:** The active service class is configurable via `Bulkrax.config.row_validator_service`. See `STEPPER_IMPLEMENTATION.md` for details on extending or replacing the default chain.
+
 ## Field Mapping Resolution
 
 The service uses Bulkrax's field mapping system to handle customizable column names:
@@ -525,29 +577,35 @@ The controller:
 ## Files
 
 ### Service Files
-- `app/services/bulkrax/csv_validation_service.rb` - Main unified service (269 lines)
-- `app/services/bulkrax/csv_validation_service/mapping_manager.rb` - Field mapping resolution (78 lines)
-- `app/services/bulkrax/csv_validation_service/field_analyzer.rb` - Schema introspection (54 lines)
-- `app/services/bulkrax/csv_validation_service/schema_analyzer.rb` - Property extraction (72 lines)
-- `app/services/bulkrax/csv_validation_service/model_loader.rb` - Model loading (42 lines)
-- `app/services/bulkrax/csv_validation_service/column_builder.rb` - Column assembly (58 lines)
-- `app/services/bulkrax/csv_validation_service/column_descriptor.rb` - Core column definitions (56 lines)
-- `app/services/bulkrax/csv_validation_service/csv_builder.rb` - CSV file generation (82 lines)
-- `app/services/bulkrax/csv_validation_service/row_builder.rb` - Sample data rows (33 lines)
-- `app/services/bulkrax/csv_validation_service/value_determiner.rb` - Sample cell values (67 lines)
-- `app/services/bulkrax/csv_validation_service/explanation_builder.rb` - Field descriptions (51 lines)
-- `app/services/bulkrax/csv_validation_service/split_formatter.rb` - Split pattern formatting (42 lines)
-- `app/services/bulkrax/csv_validation_service/file_path_generator.rb` - Default file paths (45 lines)
-- `app/services/bulkrax/csv_validation_service/csv_parser.rb` - CSV parsing (109 lines)
-- `app/services/bulkrax/csv_validation_service/column_resolver.rb` - Column name resolution (92 lines)
-- `app/services/bulkrax/csv_validation_service/validator.rb` - Core validation logic (108 lines)
-- `app/services/bulkrax/csv_validation_service/file_validator.rb` - File/zip validation (103 lines)
-- `app/services/bulkrax/csv_validation_service/item_extractor.rb` - Item categorization (177 lines)
+- `app/services/bulkrax/csv_validation_service.rb` - Main unified service
+- `app/services/bulkrax/csv_validation_service/mapping_manager.rb` - Field mapping resolution
+- `app/services/bulkrax/csv_validation_service/field_analyzer.rb` - Schema introspection
+- `app/services/bulkrax/csv_validation_service/schema_analyzer.rb` - Property extraction
+- `app/services/bulkrax/csv_validation_service/model_loader.rb` - Model loading
+- `app/services/bulkrax/csv_validation_service/column_builder.rb` - Column assembly
+- `app/services/bulkrax/csv_validation_service/column_descriptor.rb` - Core column definitions
+- `app/services/bulkrax/csv_validation_service/csv_builder.rb` - CSV file generation
+- `app/services/bulkrax/csv_validation_service/row_builder.rb` - Sample data rows
+- `app/services/bulkrax/csv_validation_service/value_determiner.rb` - Sample cell values
+- `app/services/bulkrax/csv_validation_service/explanation_builder.rb` - Field descriptions
+- `app/services/bulkrax/csv_validation_service/split_formatter.rb` - Split pattern formatting
+- `app/services/bulkrax/csv_validation_service/file_path_generator.rb` - Default file paths
+- `app/services/bulkrax/csv_validation_service/csv_parser.rb` - CSV parsing
+- `app/services/bulkrax/csv_validation_service/column_resolver.rb` - Column name resolution
+- `app/services/bulkrax/csv_validation_service/validator.rb` - Core validation logic
+- `app/services/bulkrax/csv_validation_service/file_validator.rb` - File/zip validation
+- `app/services/bulkrax/csv_validation_service/item_extractor.rb` - Item categorization
+- `app/services/bulkrax/csv_validation_service/row_validator_service.rb` - Row-level validation processor chain
+- `app/services/bulkrax/csv_validation_service/row_validator_service/duplicate_identifier_validator.rb` - Duplicate source_identifier detection
+- `app/services/bulkrax/csv_validation_service/row_validator_service/invalid_relationship_validator.rb` - Broken parent reference detection
+- `app/services/bulkrax/csv_validation_service/row_validator_service/required_values_validator.rb` - Missing required value detection
+- `app/services/bulkrax/csv_validation_service/row_validator_service/controlled_vocabulary_validator.rb` - Invalid controlled vocabulary detection
+- `app/services/bulkrax/csv_validation_service/row_validator_service/validator_helpers.rb` - Shared `each_row` iterator module
 
 ### Related Files
 - `app/controllers/concerns/bulkrax/guided_import.rb` - Controller concern using CsvValidationService
 - `app/services/bulkrax/stepper_response_formatter.rb` - Formats validation results for the stepper UI
-- `spec/services/bulkrax/csv_validation_service_spec.rb` - Comprehensive tests (317 lines)
+- `spec/services/bulkrax/csv_validation_service_spec.rb` - Comprehensive tests
 
 ## Future Enhancements
 
