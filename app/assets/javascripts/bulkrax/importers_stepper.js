@@ -330,7 +330,7 @@
     })
 
     // Settings form changes
-    $('#bulkrax_importer_name').on('input', debounce(function () {
+    $('#importer_name').on('input', debounce(function () {
       StepperState.settings.name = $(this).val()
       updateStepNavigation()
     }, CONSTANTS.DEBOUNCE_DELAY))
@@ -1950,7 +1950,7 @@
     var dateStr =
       today.getMonth() + 1 + '/' + today.getDate() + '/' + today.getFullYear()
     var defaultName = t('import_name_prefix') + dateStr
-    $('#bulkrax_importer_name').val(defaultName)
+    $('importer_name').val(defaultName)
     StepperState.settings.name = defaultName
   }
 
