@@ -2,6 +2,8 @@
 
 module Bulkrax
   class CsvValidationService::RowValidatorService
+    include CsvValidationService::RowValidatorService::ValidatorHelpers
+
     class_attribute :default_processor_chain
     self.default_processor_chain = [
       :validate_duplicate_identifiers,
@@ -28,23 +30,25 @@ module Bulkrax
     end
 
     def errors
-      @errors ||= @processor_chain.flat_map { |method_name| send(method_name) }
+      @errors ||= [].tap do |errors|
+        @processor_chain.each { |method_name| send(method_name, errors) }
+      end
     end
 
-    def validate_duplicate_identifiers
-      DuplicateIdentifierValidator.new(csv_data, manager_mapper).validate
+    def validate_duplicate_identifiers(errors)
+      DuplicateIdentifierValidator.new(csv_data, manager_mapper).validate(errors)
     end
 
-    def validate_parent_references
-      InvalidRelationshipValidator.new(csv_data).validate
+    def validate_parent_references(errors)
+      InvalidRelationshipValidator.new(csv_data).validate(errors)
     end
 
-    def validate_required_values
-      RequiredValuesValidator.new(csv_data, field_metadata).validate
+    def validate_required_values(errors)
+      RequiredValuesValidator.new(csv_data, field_metadata).validate(errors)
     end
 
-    def validate_controlled_vocabulary
-      ControlledVocabularyValidator.new(csv_data, field_metadata).validate
+    def validate_controlled_vocabulary(errors)
+      ControlledVocabularyValidator.new(csv_data, field_metadata).validate(errors)
     end
   end
 end

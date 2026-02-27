@@ -2,6 +2,8 @@
 
 module Bulkrax
   class CsvValidationService::RowValidatorService::ControlledVocabularyValidator
+    include Bulkrax::CsvValidationService::RowValidatorService::ValidatorHelpers
+
     attr_reader :csv_data, :field_metadata
 
     def initialize(csv_data, field_metadata)
@@ -10,12 +12,10 @@ module Bulkrax
     end
 
     # rubocop:disable Metrics/MethodLength
-    def validate
-      return [] if @field_metadata.blank?
+    def validate(errors)
+      return if @field_metadata.blank?
 
-      errors = []
-
-      csv_data.each_with_index do |row, index|
+      each_row do |row, row_number|
         model = row[:model]
         metadata = @field_metadata[model]
         next if metadata.blank?
@@ -31,11 +31,10 @@ module Bulkrax
           next if authority.nil?
 
           term = authority.find(value)
-          term_invalid = term.blank? || term.dig('active') == false
-          next unless term_invalid
+          next unless term.blank? || term.dig('active') == false
 
           errors << {
-            row: index + 2, # index starts at 0 which is the first row, adding 2 to account for header row and 0-based index
+            row: row_number,
             source_identifier: row[:source_identifier],
             severity: 'error',
             category: 'invalid_controlled_value',
@@ -46,8 +45,6 @@ module Bulkrax
           }
         end
       end
-
-      errors
     end
     # rubocop:enable Metrics/MethodLength
 

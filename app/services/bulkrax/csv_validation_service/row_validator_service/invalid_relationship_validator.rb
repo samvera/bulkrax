@@ -2,17 +2,18 @@
 
 module Bulkrax
   class CsvValidationService::RowValidatorService::InvalidRelationshipValidator
+    include Bulkrax::CsvValidationService::RowValidatorService::ValidatorHelpers
+
     attr_reader :csv_data
 
     def initialize(csv_data)
       @csv_data = csv_data
     end
 
-    def validate
+    def validate(errors)
       valid_identifiers = csv_data.map { |row| row[:source_identifier] }.to_set
-      errors = []
 
-      csv_data.each_with_index do |row, index|
+      each_row do |row, row_number|
         next if row[:parent].blank?
 
         parents = row[:parent].to_s.split('|').map(&:strip).reject(&:blank?)
@@ -20,7 +21,7 @@ module Bulkrax
           next if valid_identifiers.include?(parent_id)
 
           errors << {
-            row: index + 2,
+            row: row_number,
             source_identifier: row[:source_identifier],
             severity: 'error',
             category: 'invalid_parent_reference',
@@ -31,8 +32,6 @@ module Bulkrax
           }
         end
       end
-
-      errors
     end
   end
 end

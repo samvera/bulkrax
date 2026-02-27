@@ -558,7 +558,150 @@ The stepper includes a demo mode for testing without real files:
 
 #### Customizing Validation
 
-Validation logic lives in `CsvValidationService` and its 17 subclasses (see `docs/CSV_SERVICE_ARCHITECTURE.md`). The controller delegates to the service and formats results through `StepperResponseFormatter`.
+Validation logic lives in `CsvValidationService` and its subclasses (see `docs/CSV_SERVICE_ARCHITECTURE.md`). The controller delegates to the service and formats results through `StepperResponseFormatter`.
+
+#### Extending Row Validation
+
+Row validation is powered by `CsvValidationService::RowValidatorService`, which uses a processor chain that runs four validators in order:
+
+```ruby
+Bulkrax::CsvValidationService::RowValidatorService.default_processor_chain
+# => [:validate_duplicate_identifiers, :validate_parent_references, :validate_required_values, :validate_controlled_vocabulary]
+```
+
+Each method in the chain receives a shared `errors` array and appends to it directly. All errors are collected and returned together.
+
+##### Registering a Custom Validator Service
+
+Tell Bulkrax to use your subclass via the initializer:
+
+```ruby
+# config/initializers/bulkrax.rb
+Bulkrax.config do |config|
+  config.row_validator_service = MyRowValidatorService
+end
+```
+
+##### Adding a Custom Validator
+
+Subclass `RowValidatorService` and append your method to the chain. Each method receives an `errors` array — append error hashes to it directly:
+
+```ruby
+class MyRowValidatorService < Bulkrax::CsvValidationService::RowValidatorService
+  self.default_processor_chain += [:validate_duplicate_titles]
+
+  def validate_duplicate_titles(errors)
+    seen = {}
+
+    each_row do |row, row_number|
+      title = row[:raw_row]['title']
+      next if title.blank?
+
+      if seen[title]
+        errors << {
+          row: row_number,
+          source_identifier: row[:source_identifier],
+          severity: 'error',
+          category: 'duplicate_title',
+          column: 'title',
+          value: title,
+          message: "Duplicate title '#{title}' — also appears in row #{seen[title]}.",
+          suggestion: 'Each record should have a unique title.'
+        }
+      else
+        seen[title] = row_number
+      end
+    end
+  end
+end
+```
+
+`each_row` is provided by `RowValidatorService` and yields each row along with the correct 1-indexed row number (accounting for the header row).
+
+For more complex validators, extract the logic into a dedicated class. The dedicated class should include `ValidatorHelpers` to get access to `each_row`:
+
+```ruby
+class DuplicateTitleValidator
+  include Bulkrax::CsvValidationService::RowValidatorService::ValidatorHelpers
+
+  def initialize(csv_data, field_metadata, manager_mapper)
+    @csv_data = csv_data
+    @field_metadata = field_metadata
+    @manager_mapper = manager_mapper
+  end
+
+  def validate(errors)
+    seen = {}
+
+    each_row do |row, row_number|
+      # ... validation logic appending to errors
+    end
+  end
+end
+
+class MyRowValidatorService < Bulkrax::CsvValidationService::RowValidatorService
+  self.default_processor_chain += [:validate_duplicate_titles]
+
+  def validate_duplicate_titles(errors)
+    DuplicateTitleValidator.new(csv_data, field_metadata, manager_mapper).validate(errors)
+  end
+end
+```
+
+##### Overriding a Built-in Validator
+
+To skip or replace a built-in validator, override its method:
+
+```ruby
+class MyRowValidatorService < Bulkrax::CsvValidationService::RowValidatorService
+  # Skip duplicate identifier checking entirely
+  def validate_duplicate_identifiers(errors)
+    # no-op
+  end
+
+  # Replace with custom implementation
+  def validate_controlled_vocabulary(errors)
+    each_row do |row, row_number|
+      # custom logic appending to errors
+    end
+  end
+end
+```
+
+##### Available Data in Chain Methods
+
+All chain methods have access to these readers inherited from `RowValidatorService`:
+
+| Reader | Type | Description |
+|--------|------|-------------|
+| `csv_data` | `Array<Hash>` | Parsed CSV rows with `:source_identifier`, `:model`, `:parent`, `:children`, `:raw_row` |
+| `field_metadata` | `Hash` | Model field metadata including `required_terms` and `controlled_vocab_terms` |
+| `manager_mapper` | `CsvValidationService::MappingManager` | Bulkrax field mapping resolver |
+| `each_row` | `method` | Iterates `csv_data` yielding `(row, row_number)` with correct 1-indexed row numbers |
+
+##### Error Hash Structure
+
+Each error appended to the `errors` array must follow this structure:
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `row` | Integer | 1-indexed row number (use `row_number` from `each_row`) |
+| `source_identifier` | String | The record's source identifier |
+| `severity` | String | `'error'` or `'warning'` |
+| `category` | String | Machine-readable category (e.g. `'duplicate_title'`) |
+| `column` | String | CSV column name affected |
+| `value` | String | The cell value that triggered the issue |
+| `message` | String | Human-readable description |
+| `suggestion` | String | Actionable fix, or `nil` if not deterministic |
+
+##### Built-in Validator Categories
+
+| Category | Severity | Description |
+|----------|----------|-------------|
+| `duplicate_source_identifier` | error | `source_identifier` appears more than once in the CSV |
+| `invalid_parent_reference` | error | `parent` references a `source_identifier` not found in the CSV |
+| `missing_required_value` | error | A required field is blank for a specific row |
+| `invalid_controlled_value` | error | Value does not match any active term in the configured QA vocabulary |
 
 #### Adding New Steps
 

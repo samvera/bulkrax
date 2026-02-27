@@ -53,11 +53,11 @@ RSpec.describe Bulkrax::CsvValidationService::RowValidatorService do
   describe '.default_processor_chain' do
     it 'contains the expected validators' do
       expect(described_class.default_processor_chain).to eq([
-        :validate_duplicate_identifiers,
-        :validate_parent_references,
-        :validate_required_values,
-        :validate_controlled_vocabulary
-      ])
+                                                              :validate_duplicate_identifiers,
+                                                              :validate_parent_references,
+                                                              :validate_required_values,
+                                                              :validate_controlled_vocabulary
+                                                            ])
     end
   end
 
@@ -66,8 +66,8 @@ RSpec.describe Bulkrax::CsvValidationService::RowValidatorService do
       custom_class = Class.new(described_class) do
         self.default_processor_chain += [:validate_custom]
 
-        def validate_custom
-          [{ category: 'custom_error', severity: 'error' }]
+        def validate_custom(errors)
+          errors << { category: 'custom_error', severity: 'error' }
         end
       end
 
@@ -77,9 +77,7 @@ RSpec.describe Bulkrax::CsvValidationService::RowValidatorService do
 
     it 'allows host apps to override a chain method' do
       custom_class = Class.new(described_class) do
-        def validate_duplicate_identifiers
-          []
-        end
+        def validate_duplicate_identifiers(errors); end
       end
 
       data_with_duplicate = csv_data + [{
@@ -100,11 +98,11 @@ RSpec.describe Bulkrax::CsvValidationService::RowValidatorService do
       end
 
       expect(described_class.default_processor_chain).to eq([
-        :validate_duplicate_identifiers,
-        :validate_parent_references,
-        :validate_required_values,
-        :validate_controlled_vocabulary
-      ])
+                                                              :validate_duplicate_identifiers,
+                                                              :validate_parent_references,
+                                                              :validate_required_values,
+                                                              :validate_controlled_vocabulary
+                                                            ])
     end
   end
 
@@ -358,9 +356,9 @@ RSpec.describe Bulkrax::CsvValidationService::RowValidatorService do
         allow(Qa::Authorities::Local).to receive(:subauthority_for).with('rights_statements').and_return(authority)
         allow(Qa::Authorities::Local).to receive(:subauthority_for).with('rights_statement').and_return(authority)
         allow(authority).to receive(:all).and_return([
-          { 'label' => 'In Copyright', 'active' => true },
-          { 'label' => 'No Copyright', 'active' => true }
-        ])
+                                                       { 'label' => 'In Copyright', 'active' => true },
+                                                       { 'label' => 'No Copyright', 'active' => true }
+                                                     ])
       end
 
       it 'returns an invalid_controlled_value error when term is not active' do
