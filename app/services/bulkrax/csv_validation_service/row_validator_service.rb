@@ -2,12 +2,21 @@
 
 module Bulkrax
   class CsvValidationService::RowValidatorService
-    attr_reader :csv_data, :manager_mapper
+    class_attribute :default_processor_chain
+    self.default_processor_chain = [
+      :validate_duplicate_identifiers,
+      :validate_parent_references,
+      :validate_required_values,
+      :validate_controlled_vocabulary
+    ]
+
+    attr_reader :csv_data, :field_metadata, :manager_mapper
 
     def initialize(csv_data, field_metadata = nil, manager_mapper = nil)
       @csv_data = csv_data
       @field_metadata = field_metadata
       @manager_mapper = manager_mapper
+      @processor_chain = default_processor_chain.dup
     end
 
     def valid?
@@ -19,34 +28,23 @@ module Bulkrax
     end
 
     def errors
-      @errors ||= validate
+      @errors ||= @processor_chain.flat_map { |method_name| send(method_name) }
     end
 
-    private
-
-    def validate
-      errors = []
-      errors += duplicate_identifier_validator.validate
-      errors += invalid_relationship_validator.validate
-      errors += required_values_validator.validate
-      errors += controlled_vocabulary_validator.validate
-      errors
+    def validate_duplicate_identifiers
+      DuplicateIdentifierValidator.new(csv_data, manager_mapper).validate
     end
 
-    def duplicate_identifier_validator
-      @duplicate_identifier_validator ||= DuplicateIdentifierValidator.new(csv_data, manager_mapper)
+    def validate_parent_references
+      InvalidRelationshipValidator.new(csv_data).validate
     end
 
-    def invalid_relationship_validator
-      @invalid_relationship_validator ||= InvalidRelationshipValidator.new(csv_data)
+    def validate_required_values
+      RequiredValuesValidator.new(csv_data, field_metadata).validate
     end
 
-    def required_values_validator
-      @required_values_validator ||= RequiredValuesValidator.new(csv_data, @field_metadata)
-    end
-
-    def controlled_vocabulary_validator
-      @controlled_vocabulary_validator ||= ControlledVocabularyValidator.new(csv_data, @field_metadata)
+    def validate_controlled_vocabulary
+      ControlledVocabularyValidator.new(csv_data, field_metadata).validate
     end
   end
 end

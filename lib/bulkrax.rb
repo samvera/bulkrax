@@ -172,6 +172,13 @@ module Bulkrax
       ENV.key?("REDIS_HOST")
     end
     alias use_locking? use_locking
+
+    attr_writer :row_validator_service
+    ##
+    # @return [Class] the class to use for row validation
+    def row_validator_service
+      @row_validator_service || Bulkrax::CsvValidationService::RowValidatorService
+    end
   end
 
   def config
@@ -228,6 +235,8 @@ module Bulkrax
                  :required_elements=,
                  :reserved_properties,
                  :reserved_properties=,
+                 :row_validator_service,
+                 :row_validator_service=,
                  :server_name,
                  :server_name=,
                  :solr_key_for_member_file_ids,

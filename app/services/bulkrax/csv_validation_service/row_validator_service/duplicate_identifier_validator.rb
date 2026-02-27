@@ -41,6 +41,8 @@ module Bulkrax
       errors
     end
 
+    private
+
     def source_identifier_label_lookup
       manager_mapper&.find_by_flag(:source_identifier, nil) || 'source_identifier'
     end

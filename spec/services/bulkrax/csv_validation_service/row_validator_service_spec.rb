@@ -50,6 +50,64 @@ RSpec.describe Bulkrax::CsvValidationService::RowValidatorService do
     allow(mapping_manager).to receive(:find_by_flag).with(:source_identifier, nil).and_return('source_identifier')
   end
 
+  describe '.default_processor_chain' do
+    it 'contains the expected validators' do
+      expect(described_class.default_processor_chain).to eq([
+        :validate_duplicate_identifiers,
+        :validate_parent_references,
+        :validate_required_values,
+        :validate_controlled_vocabulary
+      ])
+    end
+  end
+
+  describe 'processor chain extensibility' do
+    it 'allows host apps to add to the chain' do
+      custom_class = Class.new(described_class) do
+        self.default_processor_chain += [:validate_custom]
+
+        def validate_custom
+          [{ category: 'custom_error', severity: 'error' }]
+        end
+      end
+
+      validator = custom_class.new(csv_data, field_metadata, mapping_manager)
+      expect(validator.errors).to include(hash_including(category: 'custom_error'))
+    end
+
+    it 'allows host apps to override a chain method' do
+      custom_class = Class.new(described_class) do
+        def validate_duplicate_identifiers
+          []
+        end
+      end
+
+      data_with_duplicate = csv_data + [{
+        source_identifier: 'work1',
+        model: 'GenericWork',
+        parent: nil,
+        children: nil,
+        raw_row: { 'title' => 'Dupe' }
+      }]
+      validator = custom_class.new(data_with_duplicate, field_metadata, mapping_manager)
+      duplicate_errors = validator.errors.select { |e| e[:category] == 'duplicate_source_identifier' }
+      expect(duplicate_errors).to be_empty
+    end
+
+    it 'does not affect the default processor chain when a subclass modifies it' do
+      Class.new(described_class) do
+        self.default_processor_chain += [:validate_custom]
+      end
+
+      expect(described_class.default_processor_chain).to eq([
+        :validate_duplicate_identifiers,
+        :validate_parent_references,
+        :validate_required_values,
+        :validate_controlled_vocabulary
+      ])
+    end
+  end
+
   describe '#errors' do
     it 'returns empty array when data is valid' do
       validator = described_class.new(csv_data, field_metadata, mapping_manager)
