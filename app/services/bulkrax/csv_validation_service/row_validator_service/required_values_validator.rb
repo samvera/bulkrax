@@ -21,7 +21,7 @@ module Bulkrax
 
         required_terms = metadata[:required_terms] || []
         required_terms.each do |field|
-          next if row[:raw_row][field].present?
+          next if row[:raw_row].any? { |key, value| normalize_header(key) == field && value.present? }
 
           errors << {
             row: row_number,
@@ -35,6 +35,12 @@ module Bulkrax
           }
         end
       end
+    end
+
+    private
+
+    def normalize_header(header)
+      header.sub(/_\d+\z/, '')
     end
   end
 end
