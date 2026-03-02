@@ -359,6 +359,37 @@ RSpec.describe Bulkrax::CsvValidationService::RowValidatorService do
         expect(required_errors).to be_empty
       end
 
+      it 'does not error when required field is satisfied by a suffixed column (e.g. title_1)' do
+        data = [{
+          source_identifier: 'work1',
+          model: 'GenericWork',
+          parent: nil,
+          children: nil,
+          raw_row: { 'title_1' => 'Work 1' }
+        }]
+        validator = described_class.new(data, field_metadata, mapping_manager)
+        required_errors = validator.errors.select { |e| e[:category] == 'missing_required_value' }
+        expect(required_errors).to be_empty
+      end
+
+      it 'errors when required field is present only as a blank suffixed column (e.g. title_1 is empty)' do
+        data = [{
+          source_identifier: 'work1',
+          model: 'GenericWork',
+          parent: nil,
+          children: nil,
+          raw_row: { 'title_1' => '' }
+        }]
+        validator = described_class.new(data, field_metadata, mapping_manager)
+        expect(validator.errors).to include(
+          hash_including(
+            category: 'missing_required_value',
+            severity: 'error',
+            column: 'title'
+          )
+        )
+      end
+
       it 'skips required check when model is not in field_metadata' do
         data = [{
           source_identifier: 'work1',
