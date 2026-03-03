@@ -161,5 +161,98 @@ module Bulkrax
         expect(File.exist?('spec/fixtures/csv/files/no_space.jpg')).to eq(true)
       end
     end
+
+    describe '#unzip' do
+      let(:parser)    { described_class.new(importer) }
+      let(:unzip_dir) { File.realpath(Dir.mktmpdir) }
+
+      before do
+        dir = unzip_dir
+        importer.define_singleton_method(:importer_unzip_path) { |**| dir }
+      end
+      after { FileUtils.rm_rf(unzip_dir) }
+
+      def build_zip(zip_path, entries)
+        Zip::File.open(zip_path, create: true) do |zip|
+          entries.each do |name, content|
+            next if name.end_with?('/')
+            zip.get_output_stream(name) { |f| f.write(content) }
+          end
+        end
+      end
+
+      def with_zip(entries)
+        zip_file = Tempfile.new(['import', '.zip'])
+        build_zip(zip_file.path, entries)
+        yield zip_file.path
+      ensure
+        zip_file.close!
+      end
+
+      context 'when the zip contains a top-level wrapper directory (directory zipped, not contents)' do
+        it 'extracts files directly into the unzip path, stripping the wrapper directory' do
+          with_zip('directory/data.csv' => 'title,identifier',
+                   'directory/files/a.jpg' => 'jpg-content') do |zip_path|
+            parser.unzip(zip_path)
+
+            expect(File.exist?(File.join(unzip_dir, 'data.csv'))).to be true
+            expect(File.exist?(File.join(unzip_dir, 'files', 'a.jpg'))).to be true
+            expect(File.exist?(File.join(unzip_dir, 'directory', 'data.csv'))).to be false
+          end
+        end
+      end
+
+      context 'when the zip contains files at the root (contents zipped, not directory)' do
+        it 'extracts files directly into the unzip path without stripping any prefix' do
+          with_zip('data.csv' => 'title,identifier',
+                   'files/a.jpg' => 'jpg-content') do |zip_path|
+            parser.unzip(zip_path)
+
+            expect(File.exist?(File.join(unzip_dir, 'data.csv'))).to be true
+            expect(File.exist?(File.join(unzip_dir, 'files', 'a.jpg'))).to be true
+          end
+        end
+      end
+
+      context 'when the zip contains macOS junk entries (__MACOSX, .DS_Store, ._files)' do
+        it 'skips junk entries and extracts only real files' do
+          with_zip('directory/data.csv' => 'title,identifier',
+                   'directory/.DS_Store' => 'junk',
+                   'directory/files/a.jpg' => 'jpg-content',
+                   '__MACOSX/directory/._.DS_Store' => 'junk',
+                   '__MACOSX/directory/._data.csv' => 'junk',
+                   '__MACOSX/directory/._files' => 'junk',
+                   '__MACOSX/directory/files/._a.jpg' => 'junk') do |zip_path|
+            parser.unzip(zip_path)
+
+            expect(File.exist?(File.join(unzip_dir, 'data.csv'))).to be true
+            expect(File.exist?(File.join(unzip_dir, 'files', 'a.jpg'))).to be true
+            expect(Dir.exist?(File.join(unzip_dir, '__MACOSX'))).to be false
+            expect(File.exist?(File.join(unzip_dir, '.DS_Store'))).to be false
+          end
+        end
+      end
+    end
+
+    describe '#macos_junk_entry?' do
+      let(:parser) { described_class.new(importer) }
+
+      it 'returns true for __MACOSX entries' do
+        expect(parser.macos_junk_entry?('__MACOSX/directory/._file.csv')).to be true
+      end
+
+      it 'returns true for .DS_Store entries' do
+        expect(parser.macos_junk_entry?('directory/.DS_Store')).to be true
+      end
+
+      it 'returns true for ._ prefixed entries' do
+        expect(parser.macos_junk_entry?('directory/._file.csv')).to be true
+      end
+
+      it 'returns false for normal files' do
+        expect(parser.macos_junk_entry?('directory/data.csv')).to be false
+        expect(parser.macos_junk_entry?('directory/files/image.jpg')).to be false
+      end
+    end
   end
 end

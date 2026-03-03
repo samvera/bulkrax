@@ -434,17 +434,33 @@ module Bulkrax
       return untar(file_to_unzip) if file_to_unzip.end_with?('.tar.gz')
 
       Zip::File.open(file_to_unzip) do |zip_file|
+        real_entries = zip_file.reject { |e| macos_junk_entry?(e.name) }
+        top_level_dirs = real_entries.map { |e| e.name.split('/').first }.uniq
+        strip_prefix = top_level_dirs.size == 1 ? "#{top_level_dirs.first}/" : nil
+
+        dest_dir = importer_unzip_path(mkdir: true)
         zip_file.each do |entry|
           next unless entry.file?
-          entry_path = destination_path_for(entry.name)
-          FileUtils.mkdir_p(File.dirname(entry_path))
-          zip_file.extract(entry, entry_path) unless File.exist?(entry_path)
+          next if macos_junk_entry?(entry.name)
+          name = strip_prefix ? entry.name.delete_prefix(strip_prefix) : entry.name
+          next if name.empty?
+          dest_path = File.join(dest_dir, name)
+          FileUtils.mkdir_p(File.dirname(dest_path))
+          unless File.exist?(dest_path)
+            # rubyzip 2.x: extract(entry, absolute_dest_path)
+            # rubyzip 3.x: extract(entry, relative_name, destination_directory: dir)
+            if zip_file.method(:extract).arity == 2
+              zip_file.extract(entry, dest_path)
+            else
+              zip_file.extract(entry, name, destination_directory: dest_dir)
+            end
+          end
         end
       end
     end
 
-    def destination_path_for(entry)
-      File.join(importer_unzip_path(mkdir: true), entry)
+    def macos_junk_entry?(name)
+      name.start_with?('__MACOSX/') || name.split('/').any? { |part| part == '.DS_Store' || part.start_with?('._') }
     end
 
     def copy_file(file_to_copy)
