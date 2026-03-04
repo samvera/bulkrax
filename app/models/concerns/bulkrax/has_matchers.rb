@@ -131,7 +131,7 @@ module Bulkrax
       return false if excluded?(field)
       return true if supported_bulkrax_fields.include?(field)
 
-      Bulkrax.object_factory.field_supported?(field: field, model: factory_class, admin_set_id: importerexporter&.admin_set_id)
+      Bulkrax.object_factory.field_supported?(field: field, model: factory_class, admin_set_id: importerexporter.try(:admin_set_id))
     end
 
     def supported_bulkrax_fields
