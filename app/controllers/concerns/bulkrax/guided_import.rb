@@ -66,6 +66,8 @@ module Bulkrax
 
     # Serve demo scenario fixtures for frontend testing
     def guided_import_demo_scenarios
+      return head :not_found unless Bulkrax.config.guided_import_demo_scenarios_enabled
+
       file_path = Bulkrax::Engine.root.join('lib', 'bulkrax', 'data', 'demo_scenarios.json')
       if File.exist?(file_path)
         render json: File.read(file_path), status: :ok

@@ -285,22 +285,24 @@
     }, CONSTANTS.DEBOUNCE_DELAY))
 
     // Demo scenarios (for testing)
-    $('.step-circle').on('dblclick', function () {
-      var $panel = $('.demo-scenarios')
-      $panel.toggle()
-      if ($panel.is(':visible')) {
-        // Prefetch scenarios data
-        loadDemoScenariosData().catch(function () {
-          // Error already handled in loadDemoScenariosData
-        })
-      }
-    })
+    if ($('#stepper-state').data('demo-scenarios-enabled')) {
+      $('.step-circle').on('dblclick', function () {
+        var $panel = $('.demo-scenarios')
+        $panel.toggle()
+        if ($panel.is(':visible')) {
+          // Prefetch scenarios data
+          loadDemoScenariosData().catch(function () {
+            // Error already handled in loadDemoScenariosData
+          })
+        }
+      })
 
-    $('.scenario-btn').on('click', function () {
-      var scenario = $(this).data('scenario')
-      loadDemoScenario(scenario)
-      $('.demo-scenarios').hide()
-    })
+      $('.scenario-btn').on('click', function () {
+        var scenario = $(this).data('scenario')
+        loadDemoScenario(scenario)
+        $('.demo-scenarios').hide()
+      })
+    }
 
     // Start over
     $('.start-over-nav-btn').on('click', function () {

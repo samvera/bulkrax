@@ -132,6 +132,7 @@
               >
 
               <!-- Demo Scenarios (for testing) -->
+              <% if Bulkrax.config.guided_import_demo_scenarios_enabled %>
               <div class="demo-scenarios" style="display: none;">
                 <p class="small text-primary"><strong>Demo: Pick a validation scenario</strong></p>
                 <div style="margin-bottom: 10px;">
@@ -155,6 +156,7 @@
                   <button type="button" class="btn btn-sm btn-outline-danger btn-block scenario-btn" data-scenario="error_combined">Errors + warnings</button>
                 </div>
               </div>
+              <% end %>
             </div>
 
             <!-- Files Uploaded State (hidden initially) -->
@@ -560,5 +562,6 @@
      data-has-warnings="false"
      data-warnings-acked="false"
      data-upload-state="empty"
-     data-validation-data="">
+     data-validation-data=""
+     data-demo-scenarios-enabled="<%= Bulkrax.config.guided_import_demo_scenarios_enabled %>">
 </div>
