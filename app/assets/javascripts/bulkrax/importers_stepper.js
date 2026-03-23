@@ -1080,6 +1080,7 @@
     $('#warnings-acked').prop('checked', false)
     $('.validation-results').hide()
     $('.warning-acknowledgment').hide()
+    $('.skip-validation-label').show()
     $('#validate-upload-btn').html('<span class="fa fa-file-text"></span> ' + t('validate_upload'))
     $('#validate-path-btn').html('<span class="fa fa-file-text"></span> ' + t('validate_path'))
     renderUploadedFiles()
@@ -1282,8 +1283,9 @@
     // Clear all notifications
     $('#upload-notifications').empty()
 
-    // Reset skip validation checkbox
+    // Reset skip validation checkbox and label
     $('#skip-validation-checkbox').prop('checked', false)
+    $('.skip-validation-label').show()
 
     // Reset both validate buttons to original state
     $('#validate-upload-btn')
@@ -1395,6 +1397,7 @@
     try {
       renderValidationResults(normalized)
       renderUploadedFiles()
+      $('.skip-validation-label').hide()
       $btn.html('<span class="fa fa-check-circle"></span> ' + t('validated'))
       updateStepNavigation()
     } catch (e) {
@@ -1615,8 +1618,8 @@
     // Import summary
     renderImportSummary(data, hierarchyMap)
 
-    // Warning acknowledgment
-    if (data.hasWarnings) {
+    // Warning/error acknowledgment
+    if (data.hasWarnings || !data.isValid) {
       $('.warning-acknowledgment').show()
     }
   }
@@ -2143,7 +2146,7 @@
       var hasWarnings = data && data.hasWarnings
       var canProceed = StepperState.skipValidation ||
         (StepperState.validated &&
-          isValid &&
+          (isValid || StepperState.warningsAcked) &&
           (!hasWarnings || StepperState.warningsAcked))
 
       $('.step-content[data-step="1"] .step-next-btn').prop('disabled', !canProceed)

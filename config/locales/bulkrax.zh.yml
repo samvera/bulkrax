@@ -234,7 +234,7 @@ zh:
           file_input_label: 上传CSV或ZIP文件
           validate_path: 验证导入路径中的文件
           validate_upload: 验证上传的文件
-          warning_ack: 我已了解这些警告，并希望继续导入。
+          warning_ack: 我已了解这些警告或错误，并希望继续导入。
           works: 作品
         step2:
           default_rights: 默认权利声明

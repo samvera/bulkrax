@@ -235,7 +235,7 @@ it:
           file_input_label: Carica file CSV o ZIP
           validate_path: Convalida i file dal percorso di importazione
           validate_upload: Convalida i file dal caricamento
-          warning_ack: Prendo atto di questi avvertimenti e desidero procedere con l'importazione.
+          warning_ack: Prendo atto di questi avvertimenti o errori e desidero procedere con l'importazione.
           works: Lavori
         step2:
           default_rights: Dichiarazione sui diritti predefiniti

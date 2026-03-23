@@ -235,7 +235,7 @@ pt-BR:
           file_input_label: Enviar arquivo CSV ou ZIP
           validate_path: Validar arquivos do caminho de importação
           validate_upload: Validar arquivos enviados
-          warning_ack: Declaro estar ciente desses avisos e desejo prosseguir com a importação.
+          warning_ack: Declaro estar ciente desses avisos ou erros e desejo prosseguir com a importação.
           works: Funciona
         step2:
           default_rights: Declaração de Direitos Padrão

@@ -235,7 +235,7 @@ es:
           file_input_label: Subir archivo CSV o ZIP
           validate_path: Validar archivos desde la ruta de importación
           validate_upload: Validar archivos desde la carga
-          warning_ack: Reconozco estas advertencias y deseo continuar con la importación.
+          warning_ack: Reconozco estas advertencias o errores y deseo continuar con la importación.
           works: Obras
         step2:
           default_rights: Declaración de derechos por defecto

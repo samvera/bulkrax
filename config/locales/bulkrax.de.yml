@@ -235,7 +235,7 @@ de:
           file_input_label: CSV- oder ZIP-Datei hochladen
           validate_path: Dateien aus dem Importpfad validieren
           validate_upload: Dateien aus dem Upload prüfen
-          warning_ack: Ich nehme diese Warnungen zur Kenntnis und möchte mit dem Import fortfahren.
+          warning_ack: Ich nehme diese Warnungen oder Fehler zur Kenntnis und möchte mit dem Import fortfahren.
           works: Werke
         step2:
           default_rights: Erklärung zu Standardrechten
