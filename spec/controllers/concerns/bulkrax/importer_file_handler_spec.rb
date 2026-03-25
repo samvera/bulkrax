@@ -10,7 +10,7 @@ RSpec.describe Bulkrax::ImporterFileHandler do
     end.new
   end
 
-  describe '#find_csv_in_zip' do
+  describe '#locate_csv_entry_in_zip' do
     let(:zip_file) { Tempfile.new(['test', '.zip']) }
 
     after do
@@ -30,7 +30,7 @@ RSpec.describe Bulkrax::ImporterFileHandler do
         end
 
         open_zip do |zip|
-          result = controller.find_csv_in_zip(zip)
+          result = controller.locate_csv_entry_in_zip(zip)
           expect(result[:messages][:validationStatus][:severity]).to eq('error')
           expect(result[:messages][:validationStatus][:summary]).to include('No CSV files found in ZIP')
         end
@@ -44,7 +44,7 @@ RSpec.describe Bulkrax::ImporterFileHandler do
         end
 
         open_zip do |zip|
-          result = controller.find_csv_in_zip(zip)
+          result = controller.locate_csv_entry_in_zip(zip)
           expect(result).to be_a(Zip::Entry)
           expect(result.name).to eq('data.csv')
         end
@@ -58,7 +58,7 @@ RSpec.describe Bulkrax::ImporterFileHandler do
         end
 
         open_zip do |zip|
-          result = controller.find_csv_in_zip(zip)
+          result = controller.locate_csv_entry_in_zip(zip)
           expect(result).to be_a(Zip::Entry)
           expect(result.name).to eq('data/metadata.csv')
         end
@@ -74,7 +74,7 @@ RSpec.describe Bulkrax::ImporterFileHandler do
         end
 
         open_zip do |zip|
-          result = controller.find_csv_in_zip(zip)
+          result = controller.locate_csv_entry_in_zip(zip)
           expect(result).to be_a(Zip::Entry)
           expect(result.name).to eq('metadata.csv')
         end
@@ -87,7 +87,7 @@ RSpec.describe Bulkrax::ImporterFileHandler do
         end
 
         open_zip do |zip|
-          result = controller.find_csv_in_zip(zip)
+          result = controller.locate_csv_entry_in_zip(zip)
           expect(result).to be_a(Zip::Entry)
           expect(result.name).to eq('dir1/data.csv')
         end
@@ -102,7 +102,7 @@ RSpec.describe Bulkrax::ImporterFileHandler do
         end
 
         open_zip do |zip|
-          result = controller.find_csv_in_zip(zip)
+          result = controller.locate_csv_entry_in_zip(zip)
           expect(result[:messages][:validationStatus][:severity]).to eq('error')
           expect(result[:messages][:validationStatus][:summary]).to include('Multiple CSV files found in the same directory within ZIP')
         end
@@ -117,7 +117,7 @@ RSpec.describe Bulkrax::ImporterFileHandler do
         end
 
         open_zip do |zip|
-          result = controller.find_csv_in_zip(zip)
+          result = controller.locate_csv_entry_in_zip(zip)
           expect(result[:messages][:validationStatus][:severity]).to eq('error')
           expect(result[:messages][:validationStatus][:summary]).to include('Multiple CSV files found at the same level')
         end
@@ -131,7 +131,7 @@ RSpec.describe Bulkrax::ImporterFileHandler do
         end
 
         open_zip do |zip|
-          result = controller.find_csv_in_zip(zip)
+          result = controller.locate_csv_entry_in_zip(zip)
           expect(result[:messages][:validationStatus][:severity]).to eq('error')
           expect(result[:messages][:validationStatus][:summary]).to include('Multiple CSV files found at the same level')
         end
@@ -146,7 +146,7 @@ RSpec.describe Bulkrax::ImporterFileHandler do
         end
 
         open_zip do |zip|
-          result = controller.find_csv_in_zip(zip)
+          result = controller.locate_csv_entry_in_zip(zip)
           expect(result[:messages][:validationStatus][:severity]).to eq('error')
           expect(result[:messages][:validationStatus][:summary]).to include('Multiple CSV files found in the same directory within ZIP')
         end
@@ -161,7 +161,7 @@ RSpec.describe Bulkrax::ImporterFileHandler do
         end
 
         open_zip do |zip|
-          result = controller.find_csv_in_zip(zip)
+          result = controller.locate_csv_entry_in_zip(zip)
           expect(result).to be_a(Zip::Entry)
           expect(result.name).to eq('real.csv')
         end
@@ -175,7 +175,7 @@ RSpec.describe Bulkrax::ImporterFileHandler do
         end
 
         open_zip do |zip|
-          result = controller.find_csv_in_zip(zip)
+          result = controller.locate_csv_entry_in_zip(zip)
           expect(result).to be_a(Zip::Entry)
           expect(result.name).to eq('metadata.csv')
         end
@@ -188,7 +188,7 @@ RSpec.describe Bulkrax::ImporterFileHandler do
         end
 
         open_zip do |zip|
-          result = controller.find_csv_in_zip(zip)
+          result = controller.locate_csv_entry_in_zip(zip)
           expect(result).to be_a(Zip::Entry)
           expect(result.name).to eq('data/metadata.csv')
         end
@@ -201,7 +201,7 @@ RSpec.describe Bulkrax::ImporterFileHandler do
 
         open_zip do |zip|
           # Documents current behavior: case-sensitive match only finds lowercase .csv
-          result = controller.find_csv_in_zip(zip)
+          result = controller.locate_csv_entry_in_zip(zip)
           expect(result).to be_a(Hash).or(be_a(Zip::Entry))
         end
       end

@@ -132,9 +132,8 @@ module Bulkrax
         end
       end
 
-      let(:user) { FactoryBot.create(:user) }
       let(:file) { fixture_file_upload('./spec/fixtures/csv/ok.csv') }
-      let(:uploaded_file) { Hyrax::UploadedFile.create(file: file, user: user) }
+      let(:uploaded_file) { Hyrax::UploadedFile.create(file: file, user: User.first) }
 
       context 'with file uploads' do
         it 'assigns uploaded files correctly during creation' do
@@ -184,9 +183,8 @@ module Bulkrax
         end
       end
 
-      let(:user) { FactoryBot.create(:user) }
       let(:file) { fixture_file_upload('./spec/fixtures/csv/ok.csv') }
-      let(:uploaded_file) { Hyrax::UploadedFile.create(file: file, user: user) }
+      let(:uploaded_file) { Hyrax::UploadedFile.create(file: file, user: User.first) }
 
       context 'with file uploads' do
         it 'assigns uploaded files correctly during creation' do

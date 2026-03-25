@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Bulkrax
-  class GuidedImportsController < ApplicationController
+  class GuidedImportsController < ::Bulkrax::ApplicationController
     include Hyrax::ThemedLayoutController if defined?(::Hyrax)
     include Bulkrax::GuidedImportDemoScenarios if Bulkrax.config.guided_import_demo_scenarios_enabled
     include Bulkrax::ImporterFileHandler
@@ -27,7 +27,7 @@ module Bulkrax
       return render json: error, status: :ok if error
       return render json: StepperResponseFormatter.error(message: I18n.t('bulkrax.importer.guided_import.validation.no_files_uploaded')), status: :ok unless files.any?
 
-      csv_file, zip_file = find_csv_and_zip(files)
+      csv_file, zip_file = select_csv_and_zip(files)
 
       unless csv_file
         return render json: StepperResponseFormatter.error(message: I18n.t('bulkrax.importer.guided_import.validation.no_csv_uploaded')), status: :ok unless zip_file

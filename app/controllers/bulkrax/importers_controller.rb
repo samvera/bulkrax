@@ -8,6 +8,7 @@ module Bulkrax
     include Bulkrax::API
     include Bulkrax::DatatablesBehavior
     include Bulkrax::ValidationHelper
+    include Bulkrax::ImporterFileHandler
 
     protect_from_forgery unless: -> { api_request? }
     before_action :token_authenticate!, if: -> { api_request? }, only: [:create, :update, :delete]
@@ -95,7 +96,7 @@ module Bulkrax
       if api_request?
         return return_json_response unless valid_create_params?
       end
-      uploads = Hyrax::UploadedFile.find(params[:uploaded_files]) if params[:uploaded_files].present?
+      uploads = uploaded_files_scope
       file = file_param
       cloud_files = cloud_params
 
@@ -134,7 +135,7 @@ module Bulkrax
       if api_request?
         return return_json_response unless valid_update_params?
       end
-      uploads = Hyrax::UploadedFile.find(params[:uploaded_files]) if params[:uploaded_files].present?
+      uploads = uploaded_files_scope
       file = file_param
       cloud_files = cloud_params
 
@@ -247,28 +248,6 @@ module Bulkrax
     end
 
     private
-
-    def files_for_import(file, cloud_files, uploads)
-      return if file.blank? && cloud_files.blank? && uploads.blank?
-
-      @importer[:parser_fields]['import_file_path'] = @importer.parser.write_import_file(file) if file.present?
-      if cloud_files.present?
-        @importer[:parser_fields]['cloud_file_paths'] = cloud_files
-        # For BagIt, there will only be one bag, so we get the file_path back and set import_file_path
-        # For CSV, we expect only file uploads, so we won't get the file_path back
-        # and we expect the import_file_path to be set already
-        target = @importer.parser.retrieve_cloud_files(cloud_files, @importer)
-        @importer[:parser_fields]['import_file_path'] = target if target.present?
-      end
-
-      if uploads.present?
-        uploads.each do |upload|
-          @importer[:parser_fields]['import_file_path'] = @importer.parser.write_import_file(upload.file.file)
-        end
-      end
-
-      @importer.save
-    end
 
     # Use callbacks to share common setup or constraints between actions.
     def set_importer

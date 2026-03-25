@@ -76,7 +76,7 @@ module Bulkrax
     # Scans the given files for a CSV and a ZIP by file extension
     # @param files [Array<File, ActionDispatch::Http::UploadedFile>] the resolved files to search
     # @return [Array<(File, nil), (nil, File), (File, File), (nil, nil)>] a tuple of [csv_file, zip_file]; either may be nil
-    def find_csv_and_zip(files)
+    def select_csv_and_zip(files)
       csv_file = files.find { |f| filename_for(f)&.end_with?('.csv') }
       zip_file = files.find { |f| filename_for(f)&.end_with?('.zip') }
       [csv_file, zip_file]
@@ -99,7 +99,7 @@ module Bulkrax
       csv_file = nil
       error = nil
       Zip::File.open(zip_file.path) do |zip|
-        result = find_csv_in_zip(zip)
+        result = locate_csv_entry_in_zip(zip)
         if result.is_a?(Hash) && result[:messages]
           error = result
         elsif result
@@ -113,7 +113,7 @@ module Bulkrax
     # @param zip [Zip::File] the open ZIP archive to search
     # @return [Zip::Entry] the CSV entry on success
     # @return [Hash] an error response hash if no CSV is found or multiple CSVs are ambiguous
-    def find_csv_in_zip(zip)
+    def locate_csv_entry_in_zip(zip)
       csv_entries = group_entries_by_directory_level(zip)
 
       return StepperResponseFormatter.error(message: I18n.t('bulkrax.importer.guided_import.validation.no_csv_in_zip')) if csv_entries.empty?
@@ -144,8 +144,34 @@ module Bulkrax
       csv_by_depth[shallowest_depth]
     end
 
+    # Persists uploaded file(s) and/or cloud files onto the importer record.
+    # @param file [ActionDispatch::Http::UploadedFile, nil] a directly uploaded file
+    # @param cloud_files [Hash, nil] cloud file paths from browse-everything
+    # @param uploads [ActiveRecord::Relation, Array, nil] Hyrax::UploadedFile records
+    def files_for_import(file, cloud_files, uploads)
+      return if file.blank? && cloud_files.blank? && uploads.blank?
+
+      @importer[:parser_fields]['import_file_path'] = @importer.parser.write_import_file(file) if file.present?
+      if cloud_files.present?
+        @importer[:parser_fields]['cloud_file_paths'] = cloud_files
+        # For BagIt, there will only be one bag, so we get the file_path back and set import_file_path
+        # For CSV, we expect only file uploads, so we won't get the file_path back
+        # and we expect the import_file_path to be set already
+        target = @importer.parser.retrieve_cloud_files(cloud_files, @importer)
+        @importer[:parser_fields]['import_file_path'] = target if target.present?
+      end
+
+      if uploads.present?
+        uploads.each do |upload|
+          @importer[:parser_fields]['import_file_path'] = @importer.parser.write_import_file(upload.file.file)
+        end
+      end
+
+      @importer.save
+    end
+
     def write_files(files)
-      csv_file, zip_file = find_csv_and_zip(files)
+      csv_file, zip_file = select_csv_and_zip(files)
 
       csv_path = write_file_if_present(csv_file)
       zip_path = write_file_if_present(zip_file)
@@ -158,7 +184,7 @@ module Bulkrax
 
       @importer.save
     rescue StandardError => e
-      Rails.logger.error("Bulkrax::GuidedImportsController#write_files failed: #{e.message}")
+      Rails.logger.error("Bulkrax::ImporterFileHandler#write_files failed: #{e.message}")
       raise
     end
 
