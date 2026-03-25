@@ -422,12 +422,7 @@ module Bulkrax
       return file if File.exist?(file)
 
       # Relative path: resolve from CSV's directory (allows arbitrary subdirectory names, not just "files")
-      if file.include?('/')
-        base = File.dirname(importerexporter.parser.import_file_path)
-        candidate = File.join(base, file)
-        return candidate if File.exist?(candidate)
-        raise "File not found: #{candidate}. Check the file path in your CSV and ensure the file exists in the import package or directory."
-      end
+      return resolve_relative_file_path(file) if file.include?('/')
 
       # Bare filename: use legacy files/ directory for backward compatibility and round-tripping
       path = importerexporter.parser.path_to_files
@@ -437,6 +432,13 @@ module Bulkrax
     end
 
     private
+
+    def resolve_relative_file_path(file)
+      base = File.dirname(importerexporter.parser.import_file_path)
+      candidate = File.join(base, file)
+      return candidate if File.exist?(candidate)
+      raise "File not found: #{candidate}. Check the file path in your CSV and ensure the file exists in the import package or directory."
+    end
 
     def map_file_sets(file_sets)
       # rubocop:disable Rails/Presence

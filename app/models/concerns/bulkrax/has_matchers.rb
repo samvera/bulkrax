@@ -145,7 +145,7 @@ module Bulkrax
       return true if fields_that_are_always_singular.include?(field.to_s)
       return false if fields_that_are_always_multiple.include?(field.to_s)
 
-      Bulkrax.object_factory.field_multi_value?(field: field, model: factory_class, admin_set_id: importerexporter&.admin_set_id)
+      Bulkrax.object_factory.field_multi_value?(field: field, model: factory_class, admin_set_id: importerexporter.try(:admin_set_id))
     end
 
     def fields_that_are_always_multiple
