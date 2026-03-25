@@ -2,240 +2,219 @@
 
 require 'rails_helper'
 
-RSpec.describe Bulkrax::GuidedImportsController, type: :controller do
-  describe '#find_csv_in_zip' do
-    let(:zip_file) { Tempfile.new(['test', '.zip']) }
+module Bulkrax
+  RSpec.describe GuidedImportsController, type: :controller do
+    routes { Bulkrax::Engine.routes }
 
-    after do
-      zip_file.close
-      zip_file.unlink
+    let(:current_ability) { instance_double(Ability) }
+
+    let(:user) { FactoryBot.create(:user) }
+
+    before do
+      user # ensure user is created
+      module Bulkrax::Auth
+        def authenticate_user!
+          @current_user = User.first
+          true
+        end
+
+        def current_user
+          @current_user
+        end
+      end
+      described_class.prepend Bulkrax::Auth
+      allow(current_ability).to receive(:can_import_works?).and_return(true)
+      allow(controller).to receive(:current_ability).and_return(current_ability)
     end
 
-    context 'with no CSV files' do
-      it 'returns error when no CSV files exist' do
-        Zip::File.open(zip_file.path, create: true) do |zipfile|
-          zipfile.get_output_stream('readme.txt') { |f| f.write('text') }
-          zipfile.get_output_stream('image.jpg') { |f| f.write('image') }
-        end
+    # -------------------------------------------------------------------------
+    # POST #validate
+    # -------------------------------------------------------------------------
 
-        Zip::File.open(zip_file.path) do |zip|
-          result = controller.send(:find_csv_in_zip, zip)
-          expect(result).to be_a(Hash)
-          expect(result[:messages][:validationStatus][:severity]).to eq('error')
-          expect(result[:messages][:validationStatus][:summary]).to include('No CSV files found in ZIP')
-        end
-      end
-    end
-
-    context 'with single CSV at root level' do
-      it 'returns the CSV entry' do
-        Zip::File.open(zip_file.path, create: true) do |zipfile|
-          zipfile.get_output_stream('data.csv') { |f| f.write('csv content') }
-        end
-
-        Zip::File.open(zip_file.path) do |zip|
-          result = controller.send(:find_csv_in_zip, zip)
-          expect(result).to be_a(Zip::Entry)
-          expect(result.name).to eq('data.csv')
-        end
-      end
-    end
-
-    context 'with single CSV in subdirectory' do
-      it 'returns the CSV entry' do
-        Zip::File.open(zip_file.path, create: true) do |zipfile|
-          zipfile.get_output_stream('data/metadata.csv') { |f| f.write('csv content') }
-        end
-
-        Zip::File.open(zip_file.path) do |zip|
-          result = controller.send(:find_csv_in_zip, zip)
-          expect(result).to be_a(Zip::Entry)
-          expect(result.name).to eq('data/metadata.csv')
-        end
-      end
-    end
-
-    context 'with multiple CSVs at different depths' do
-      it 'returns the CSV at the shallowest level' do
-        Zip::File.open(zip_file.path, create: true) do |zipfile|
-          zipfile.get_output_stream('metadata.csv') { |f| f.write('root csv') }
-          zipfile.get_output_stream('data/nested.csv') { |f| f.write('nested csv') }
-          zipfile.get_output_stream('data/deep/deeper.csv') { |f| f.write('deep csv') }
-        end
-
-        Zip::File.open(zip_file.path) do |zip|
-          result = controller.send(:find_csv_in_zip, zip)
-          expect(result).to be_a(Zip::Entry)
-          expect(result.name).to eq('metadata.csv')
-        end
+    describe 'POST #validate' do
+      def post_validate(params)
+        post :validate, params: params, format: :json
       end
 
-      it 'returns CSV from shallowest subdirectory when no root CSV exists' do
-        Zip::File.open(zip_file.path, create: true) do |zipfile|
-          zipfile.get_output_stream('dir1/data.csv') { |f| f.write('csv 1') }
-          zipfile.get_output_stream('dir1/subdir/nested.csv') { |f| f.write('csv 2') }
-        end
-
-        Zip::File.open(zip_file.path) do |zip|
-          result = controller.send(:find_csv_in_zip, zip)
-          expect(result).to be_a(Zip::Entry)
-          expect(result.name).to eq('dir1/data.csv')
-        end
-      end
-    end
-
-    context 'with multiple CSVs at the same root level' do
-      it 'returns error when multiple CSVs exist at root' do
-        Zip::File.open(zip_file.path, create: true) do |zipfile|
-          zipfile.get_output_stream('data1.csv') { |f| f.write('csv 1') }
-          zipfile.get_output_stream('data2.csv') { |f| f.write('csv 2') }
-        end
-
-        Zip::File.open(zip_file.path) do |zip|
-          result = controller.send(:find_csv_in_zip, zip)
-          expect(result).to be_a(Hash)
-          expect(result[:messages][:validationStatus][:severity]).to eq('error')
-          expect(result[:messages][:validationStatus][:summary]).to include('Multiple CSV files found in the same directory within ZIP')
-        end
-      end
-    end
-
-    context 'with multiple CSVs in different directories at the same depth' do
-      it 'returns error when CSVs exist in multiple directories at same level' do
-        Zip::File.open(zip_file.path, create: true) do |zipfile|
-          zipfile.get_output_stream('dir1/data.csv') { |f| f.write('csv 1') }
-          zipfile.get_output_stream('dir2/metadata.csv') { |f| f.write('csv 2') }
-        end
-
-        Zip::File.open(zip_file.path) do |zip|
-          result = controller.send(:find_csv_in_zip, zip)
-          expect(result).to be_a(Hash)
-          expect(result[:messages][:validationStatus][:severity]).to eq('error')
-          expect(result[:messages][:validationStatus][:summary]).to include('Multiple CSV files found at the same level')
-        end
+      def json_response
+        JSON.parse(response.body, symbolize_names: true)
       end
 
-      it 'returns error with three CSVs across different directories at same depth' do
-        Zip::File.open(zip_file.path, create: true) do |zipfile|
-          zipfile.get_output_stream('dir1/data.csv') { |f| f.write('csv 1') }
-          zipfile.get_output_stream('dir2/metadata.csv') { |f| f.write('csv 2') }
-          zipfile.get_output_stream('dir3/info.csv') { |f| f.write('csv 3') }
-        end
-
-        Zip::File.open(zip_file.path) do |zip|
-          result = controller.send(:find_csv_in_zip, zip)
-          expect(result).to be_a(Hash)
-          expect(result[:messages][:validationStatus][:severity]).to eq('error')
-          expect(result[:messages][:validationStatus][:summary]).to include('Multiple CSV files found at the same level')
-        end
-      end
-    end
-
-    context 'with multiple CSVs in the same directory' do
-      it 'returns error when multiple CSVs exist in same subdirectory' do
-        Zip::File.open(zip_file.path, create: true) do |zipfile|
-          zipfile.get_output_stream('data/file1.csv') { |f| f.write('csv 1') }
-          zipfile.get_output_stream('data/file2.csv') { |f| f.write('csv 2') }
-        end
-
-        Zip::File.open(zip_file.path) do |zip|
-          result = controller.send(:find_csv_in_zip, zip)
-          expect(result).to be_a(Hash)
-          expect(result[:messages][:validationStatus][:severity]).to eq('error')
-          expect(result[:messages][:validationStatus][:summary]).to include('Multiple CSV files found in the same directory within ZIP')
-        end
-      end
-    end
-
-    context 'with complex directory structures' do
-      it 'correctly identifies shallowest level with nested structures' do
-        Zip::File.open(zip_file.path, create: true) do |zipfile|
-          zipfile.get_output_stream('a/b/c/deep.csv') { |f| f.write('deep csv') }
-          zipfile.get_output_stream('x/y/shallow.csv') { |f| f.write('shallow csv') }
-        end
-
-        Zip::File.open(zip_file.path) do |zip|
-          result = controller.send(:find_csv_in_zip, zip)
-          expect(result).to be_a(Zip::Entry)
-          expect(result.name).to eq('x/y/shallow.csv')
-        end
-      end
-
-      it 'handles CSV files alongside directories' do
-        Zip::File.open(zip_file.path, create: true) do |zipfile|
-          zipfile.get_output_stream('metadata.csv') { |f| f.write('root csv') }
-          zipfile.get_output_stream('images/photo1.jpg') { |f| f.write('image') }
-          zipfile.get_output_stream('documents/nested.csv') { |f| f.write('nested csv') }
-        end
-
-        Zip::File.open(zip_file.path) do |zip|
-          result = controller.send(:find_csv_in_zip, zip)
-          expect(result).to be_a(Zip::Entry)
-          expect(result.name).to eq('metadata.csv')
-        end
-      end
-    end
-
-    context 'with edge cases' do
-      it 'ignores directory entries that end with .csv' do
-        Zip::File.open(zip_file.path, create: true) do |zipfile|
-          zipfile.mkdir('fake.csv') # Directory with .csv extension
-          zipfile.get_output_stream('real.csv') { |f| f.write('real csv') }
-        end
-
-        Zip::File.open(zip_file.path) do |zip|
-          result = controller.send(:find_csv_in_zip, zip)
-          expect(result).to be_a(Zip::Entry)
-          expect(result.name).to eq('real.csv')
-        end
-      end
-
-      it 'handles CSV files with uppercase extension' do
-        Zip::File.open(zip_file.path, create: true) do |zipfile|
-          zipfile.get_output_stream('DATA.CSV') { |f| f.write('uppercase csv') }
-        end
-
-        Zip::File.open(zip_file.path) do |zip|
-          result = controller.send(:find_csv_in_zip, zip)
-          # Depending on implementation, this might fail if case-sensitive
-          # This documents current behavior
-          expect(result).to be_a(Hash).or(be_a(Zip::Entry))
-        end
-      end
-
-      it 'handles empty directories in path' do
-        Zip::File.open(zip_file.path, create: true) do |zipfile|
-          zipfile.mkdir('empty_dir')
-          zipfile.get_output_stream('data/metadata.csv') { |f| f.write('csv content') }
-        end
-
-        Zip::File.open(zip_file.path) do |zip|
-          result = controller.send(:find_csv_in_zip, zip)
-          expect(result).to be_a(Zip::Entry)
-          expect(result.name).to eq('data/metadata.csv')
-        end
-      end
-    end
-  end
-
-  describe '#importer_params' do
-    it 'permits override_rights_statement in parser_fields' do
-      params = ActionController::Parameters.new(
-        importer: {
-          name: 'Test Import',
-          admin_set_id: 'admin_set/default',
-          parser_fields: {
-            rights_statement: 'http://rightsstatements.org/vocab/NOC/1.0/',
-            override_rights_statement: '1'
-          }
+      let(:validation_success) do
+        {
+          headers: ['model', 'source_identifier', 'title'],
+          missingRequired: [], unrecognized: {}, rowCount: 4,
+          isValid: true, hasWarnings: false,
+          collections: [], works: [], fileSets: [],
+          totalItems: 0, fileReferences: 0, missingFiles: [], foundFiles: 0, zipIncluded: false
         }
-      )
-      allow(controller).to receive(:params).and_return(params)
+      end
 
-      permitted = controller.send(:importer_params)
-      parser_fields = permitted[:parser_fields] || permitted['parser_fields']
-      expect(parser_fields).to be_present
-      expect(parser_fields['override_rights_statement'] || parser_fields[:override_rights_statement]).to eq('1')
+      context 'with a CSV uploaded directly' do
+        let(:csv_upload) { fixture_file_upload('spec/fixtures/csv/good.csv', 'text/csv') }
+
+        before { allow(Bulkrax::CsvValidationService).to receive(:validate).and_return(validation_success) }
+
+        it 'calls CsvValidationService and returns a successful response' do
+          post_validate(importer: { parser_fields: { files: [csv_upload] } })
+          expect(response).to have_http_status(:ok)
+          expect(json_response[:isValid]).to eq(true)
+        end
+      end
+
+      context 'with a file path that exists' do
+        before { allow(Bulkrax::CsvValidationService).to receive(:validate).and_return(validation_success) }
+
+        it 'calls CsvValidationService and returns a successful response' do
+          post_validate(importer: { parser_fields: { import_file_path: 'spec/fixtures/csv/good.csv' } })
+          expect(response).to have_http_status(:ok)
+          expect(json_response[:isValid]).to eq(true)
+        end
+      end
+
+      context 'with a ZIP file containing a valid CSV' do
+        let(:zip_upload) do
+          t = Tempfile.new(['upload', '.zip'])
+          Zip::File.open(t.path, create: true) do |zip|
+            zip.get_output_stream('data.csv') { |f| f.write("model,source_identifier,title\nGenericWork,1,Test\n") }
+          end
+          Rack::Test::UploadedFile.new(t.path, 'application/zip', original_filename: 'upload.zip')
+        end
+
+        before { allow(Bulkrax::CsvValidationService).to receive(:validate).and_return(validation_success) }
+
+        it 'extracts the CSV and returns a successful response' do
+          post_validate(importer: { parser_fields: { files: [zip_upload] } })
+          expect(response).to have_http_status(:ok)
+          expect(json_response[:isValid]).to eq(true)
+        end
+      end
+
+      context 'with no files uploaded' do
+        it 'returns an error response' do
+          post_validate(importer: { parser_fields: { files: [] } })
+          expect(response).to have_http_status(:ok)
+          expect(json_response.dig(:messages, :validationStatus, :severity)).to eq('error')
+        end
+      end
+
+      context 'with a file path that does not exist' do
+        it 'returns an error response' do
+          post_validate(importer: { parser_fields: { import_file_path: '/nonexistent/path/data.csv' } })
+          expect(response).to have_http_status(:ok)
+          expect(json_response.dig(:messages, :validationStatus, :severity)).to eq('error')
+        end
+      end
+
+      context 'with a ZIP containing no CSV' do
+        let(:zip_upload) do
+          t = Tempfile.new(['upload', '.zip'])
+          Zip::File.open(t.path, create: true) { |zip| zip.get_output_stream('readme.txt') { |f| f.write('nothing') } }
+          Rack::Test::UploadedFile.new(t.path, 'application/zip', original_filename: 'upload.zip')
+        end
+
+        it 'returns an error response' do
+          post_validate(importer: { parser_fields: { files: [zip_upload] } })
+          expect(response).to have_http_status(:ok)
+          expect(json_response.dig(:messages, :validationStatus, :severity)).to eq('error')
+        end
+      end
+
+      context 'with a non-CSV, non-ZIP file' do
+        let(:png_upload) do
+          t = Tempfile.new(['image', '.png'])
+          t.write('fake image data')
+          t.flush
+          Rack::Test::UploadedFile.new(t.path, 'image/png', original_filename: 'image.png')
+        end
+
+        it 'returns an error response' do
+          post_validate(importer: { parser_fields: { files: [png_upload] } })
+          expect(response).to have_http_status(:ok)
+          expect(json_response.dig(:messages, :validationStatus, :severity)).to eq('error')
+        end
+      end
+    end
+
+    # -------------------------------------------------------------------------
+    # POST #create
+    # -------------------------------------------------------------------------
+
+    describe 'POST #create' do
+      let(:csv_upload) { fixture_file_upload('spec/fixtures/csv/good.csv', 'text/csv') }
+      let(:valid_importer_params) do
+        {
+          name: 'Test Guided Import',
+          admin_set_id: 'admin_set/default',
+          limit: '',
+          parser_fields: { visibility: 'open', rights_statement: '', override_rights_statement: '0', file_style: '' }
+        }
+      end
+
+      def post_create(extra_parser_fields = {})
+        post :create, params: {
+          importer: valid_importer_params.merge(
+            parser_fields: valid_importer_params[:parser_fields].merge(files: [csv_upload]).merge(extra_parser_fields)
+          )
+        }
+      end
+
+      before { allow(Bulkrax::ImporterJob).to receive(:perform_later) }
+
+      context 'with a valid CSV upload' do
+        it 'creates an importer' do
+          expect { post_create }.to change(Importer, :count).by(1)
+        end
+
+        it 'enqueues an import job' do
+          post_create
+          expect(Bulkrax::ImporterJob).to have_received(:perform_later)
+        end
+
+        it 'redirects to importers path' do
+          post_create
+          expect(response).to redirect_to(importers_path)
+        end
+      end
+
+      context 'with override_rights_statement in parser_fields' do
+        it 'permits the parameter and saves it on the importer' do
+          post_create(override_rights_statement: '1')
+          expect(Importer.last.parser_fields['override_rights_statement']).to eq('1')
+        end
+      end
+
+      context 'with invalid importer params' do
+        it 're-renders the new template' do
+          post :create, params: { importer: { name: '' } }
+          expect(response).to have_http_status(:unprocessable_entity)
+        end
+
+        it 'does not enqueue a job' do
+          post :create, params: { importer: { name: '' } }
+          expect(Bulkrax::ImporterJob).not_to have_received(:perform_later)
+        end
+      end
+
+      context 'when uploaded_files param is present but resolves to nothing' do
+        it 'returns unprocessable entity' do
+          allow(controller).to receive(:resolve_create_files).and_return([])
+          post :create, params: { uploaded_files: ['999'], importer: valid_importer_params }
+          expect(response).to have_http_status(:unprocessable_entity)
+        end
+      end
+
+      context 'with JSON format' do
+        it 'returns a created JSON response on success' do
+          post :create, params: {
+            importer: valid_importer_params.merge(
+              parser_fields: valid_importer_params[:parser_fields].merge(files: [csv_upload])
+            )
+          }, format: :json
+          expect(response).to have_http_status(:created)
+          expect(JSON.parse(response.body)['success']).to eq(true)
+        end
+      end
     end
   end
 end
