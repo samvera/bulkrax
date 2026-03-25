@@ -18,25 +18,25 @@
   <div class="stepper-wrapper">
 
     <!-- Stepper Header -->
-    <div class="stepper-header">
-      <div class="step-item" data-step="1">
-        <div class="step-circle">
+    <div class="stepper-header d-flex align-items-center justify-content-center">
+      <div class="step-item d-flex flex-column align-items-center" data-step="1">
+        <div class="step-circle d-flex align-items-center justify-content-center">
           <span class="fa fa-cloud-upload" aria-hidden="true"></span>
           <span class="step-check fa fa-check" aria-hidden="true"></span>
         </div>
         <span class="step-label"><%= t('bulkrax.importer.guided_import.steps.upload_validate') %></span>
       </div>
       <div class="step-connector"></div>
-      <div class="step-item" data-step="2">
-        <div class="step-circle">
+      <div class="step-item d-flex flex-column align-items-center" data-step="2">
+        <div class="step-circle d-flex align-items-center justify-content-center">
           <span class="fa fa-cog" aria-hidden="true"></span>
           <span class="step-check fa fa-check" aria-hidden="true"></span>
         </div>
         <span class="step-label"><%= t('bulkrax.importer.guided_import.steps.configure_settings') %></span>
       </div>
       <div class="step-connector"></div>
-      <div class="step-item" data-step="3">
-        <div class="step-circle">
+      <div class="step-item d-flex flex-column align-items-center" data-step="3">
+        <div class="step-circle d-flex align-items-center justify-content-center">
           <span class="fa fa-play" aria-hidden="true"></span>
           <span class="step-check fa fa-check" aria-hidden="true"></span>
         </div>
@@ -47,12 +47,12 @@
     <!-- Success State (Hidden by default) -->
     <div class="import-success-state" style="display: none;">
       <div class="success-card text-center">
-        <div class="success-icon">
+        <div class="success-icon d-flex align-items-center justify-content-center">
           <span class="fa fa-check-circle" aria-hidden="true"></span>
         </div>
         <h2><%= t('bulkrax.importer.guided_import.success.title') %></h2>
         <p><%= t('bulkrax.importer.guided_import.success.message') %></p>
-        <div class="success-actions">
+        <div class="success-actions d-flex justify-content-center">
           <a href="<%= importers_path %>" class="btn btn-secondary"><%= t('bulkrax.importer.guided_import.success.view_queue') %></a>
           <button type="button" class="btn btn-primary" id="start-another-import"><%= t('bulkrax.importer.guided_import.success.start_another') %></button>
         </div>
@@ -317,12 +317,12 @@
           </div>
 
           <!-- Step Navigation -->
-          <div class="step-navigation">
-            <button type="button" class="btn btn-outline-danger start-over-nav-btn">
+          <div class="step-navigation d-flex justify-content-between align-items-end">
+            <button type="button" class="btn btn-outline-danger start-over-nav-btn d-inline-flex align-items-center">
               <span class="fa fa-refresh" aria-hidden="true"></span> <%= t('bulkrax.importer.guided_import.nav.clear_start_over') %>
             </button>
-            <div class="step-nav-right">
-              <label class="skip-validation-label">
+            <div class="step-nav-right d-flex flex-column align-items-end">
+              <label class="skip-validation-label d-flex align-items-center">
                 <input type="checkbox" id="skip-validation-checkbox" disabled>
                 <span><%= t('bulkrax.importer.guided_import.nav.skip_validation') %></span>
               </label>
@@ -409,7 +409,7 @@
               <div class="card">
                 <div class="card-header" data-toggle="collapse" data-target="#optional-settings">
                   <h3 class="mb-0">
-                    <button class="btn btn-link text-left w-100 d-flex justify-content-between align-items-center" type="button">
+                    <button class="btn btn-link btn-block text-left" type="button">
                       <span>
                         <span class="fa fa-cog" aria-hidden="true"></span>
                         <%= t('bulkrax.importer.guided_import.step2.optional_settings') %>
@@ -460,11 +460,11 @@
           </div>
 
           <!-- Step Navigation -->
-          <div class="step-navigation">
-            <button type="button" class="btn btn-outline-danger start-over-nav-btn">
+          <div class="step-navigation d-flex justify-content-between align-items-end">
+            <button type="button" class="btn btn-outline-danger start-over-nav-btn d-inline-flex align-items-center">
               <span class="fa fa-refresh" aria-hidden="true"></span> <%= t('bulkrax.importer.guided_import.nav.clear_start_over') %>
             </button>
-            <div>
+            <div class="d-flex align-items-end">
               <button type="button" class="btn btn-secondary step-prev-btn" data-prev-step="1">
                 <span class="fa fa-arrow-left" aria-hidden="true"></span> <%= t('bulkrax.importer.guided_import.nav.back') %>
               </button>
@@ -532,11 +532,11 @@
           <p class="text-center text-muted small"><%= t('bulkrax.importer.guided_import.step3.background_note') %></p>
 
           <!-- Step Navigation -->
-          <div class="step-navigation">
-            <button type="button" class="btn btn-outline-danger start-over-nav-btn">
+          <div class="step-navigation d-flex justify-content-between align-items-end">
+            <button type="button" class="btn btn-outline-danger start-over-nav-btn d-inline-flex align-items-center">
               <span class="fa fa-refresh" aria-hidden="true"></span> <%= t('bulkrax.importer.guided_import.nav.clear_start_over') %>
             </button>
-            <div>
+            <div class="d-flex align-items-end">
               <button type="button" class="btn btn-secondary step-prev-btn" data-prev-step="2">
                 <span class="fa fa-arrow-left" aria-hidden="true"></span> <%= t('bulkrax.importer.guided_import.nav.back') %>
               </button>
