@@ -2,11 +2,7 @@
 
 require 'rails_helper'
 
-RSpec.describe Bulkrax::GuidedImport, type: :controller do
-  controller(ApplicationController) do
-    include Bulkrax::GuidedImport
-  end
-
+RSpec.describe Bulkrax::GuidedImportsController, type: :controller do
   describe '#find_csv_in_zip' do
     let(:zip_file) { Tempfile.new(['test', '.zip']) }
 
@@ -222,7 +218,7 @@ RSpec.describe Bulkrax::GuidedImport, type: :controller do
     end
   end
 
-  describe '#guided_import_params' do
+  describe '#importer_params' do
     it 'permits override_rights_statement in parser_fields' do
       params = ActionController::Parameters.new(
         importer: {
@@ -236,7 +232,7 @@ RSpec.describe Bulkrax::GuidedImport, type: :controller do
       )
       allow(controller).to receive(:params).and_return(params)
 
-      permitted = controller.send(:guided_import_params)
+      permitted = controller.send(:importer_params)
       parser_fields = permitted[:parser_fields] || permitted['parser_fields']
       expect(parser_fields).to be_present
       expect(parser_fields['override_rights_statement'] || parser_fields[:override_rights_statement]).to eq('1')

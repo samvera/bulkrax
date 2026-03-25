@@ -2290,7 +2290,7 @@
     $('#file-input').prop('disabled', true)
 
     // Only append uploaded file IDs in upload mode; in file_path mode the import_file_path
-    // param is used and appending IDs would cause guided_import_create to ignore the path.
+    // param is used and appending IDs would cause GuidedImportsController#create to ignore the path.
     if (StepperState.uploadMode === 'upload' && Array.isArray(StepperState.uploadedFiles)) {
       StepperState.uploadedFiles.forEach(function (f) {
         if (f.uploadId) {
@@ -2300,7 +2300,7 @@
       })
     }
 
-    // Submit the form so the request hits guided_import_create and creates the importer / enqueues job
+    // Submit the form so the request hits GuidedImportsController#create and creates the importer / enqueues job
     $form[0].submit()
   }
 

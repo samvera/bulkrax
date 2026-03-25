@@ -15,10 +15,10 @@ Bulkrax::Engine.routes.draw do
     get :entry_table
     get :export_errors
     collection do
-      get 'new/guided_import', action: :guided_import_new, as: :guided_import_new
-      post 'guided_import', action: :guided_import_create, as: :guided_import_create
-      post 'guided_import/validate', action: :guided_import_validate, as: :guided_import_validate
-      get 'guided_import/demo_scenarios', action: :guided_import_demo_scenarios, as: :guided_import_demo_scenarios if Bulkrax.config.guided_import_demo_scenarios_enabled
+      get 'new/guided_import', to: 'bulkrax/guided_imports#new', as: :guided_import_new
+      post 'guided_import', to: 'bulkrax/guided_imports#create', as: :guided_import_create
+      post 'guided_import/validate', to: 'bulkrax/guided_imports#validate', as: :guided_import_validate
+      get 'guided_import/demo_scenarios', to: 'bulkrax/guided_imports#demo_scenarios', as: :guided_import_demo_scenarios if Bulkrax.config.guided_import_demo_scenarios_enabled
       get :importer_table
       post :external_sets
       get :sample_csv_file
