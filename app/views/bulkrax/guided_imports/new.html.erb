@@ -61,7 +61,7 @@
 
     <!-- Main Form -->
     <div class="stepper-content-wrapper">
-      <%= form_for [:bulkrax, Bulkrax::Importer.new], url: guided_import_create_importers_path, method: :post, html: { id: 'bulk-import-stepper-form', multipart: true } do |f| %>
+      <%= form_for [:bulkrax, Bulkrax::Importer.new], url: guided_import_create_path, method: :post, html: { id: 'bulk-import-stepper-form', multipart: true } do |f| %>
         <%= hidden_field_tag 'locale', I18n.locale %>
         <!-- ====== STEP 1: Upload & Validate ====== -->
         <div class="step-content" data-step="1">
