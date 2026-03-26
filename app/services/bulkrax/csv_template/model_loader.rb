@@ -27,12 +27,18 @@ module Bulkrax
         when Array
           return all_available_models if models.empty?
           return all_available_models if models.include?('all')
-          models.map { |model| model.constantize ? model : nil }.compact
+          models.filter_map { |model| safe_constantize(model) }
         else
           all_available_models
         end
       rescue StandardError
         []
+      end
+
+      def safe_constantize(model_name)
+        model_name.constantize && model_name
+      rescue NameError
+        nil
       end
 
       def all_available_models
