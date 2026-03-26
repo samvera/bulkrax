@@ -17,13 +17,10 @@
   margin: 0 auto 20px;
   background: $bg-success;
   border-radius: 50%;
-  @include flex-center;
   color: $color-success;
   font-size: 40px;
 }
 
 .success-actions {
-  display: flex;
   gap: 15px;
-  justify-content: center;
 }
