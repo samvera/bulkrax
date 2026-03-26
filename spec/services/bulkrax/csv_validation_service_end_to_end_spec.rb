@@ -443,13 +443,7 @@ RSpec.describe Bulkrax::CsvValidationService, type: :service do
 
     include_examples 'returns the full result contract'
 
-    # BUG: the Validator normalises suffix-numbered headers (e.g. title_1 → title)
-    # before checking against valid headers, but the valid_headers_for_models list
-    # itself does not contain 'creator' for the Work model as loaded via ActiveFedora
-    # in the test app. After the refactor, sharing the parser's field-list logic
-    # should populate the valid headers list completely.
-    it 'does not treat numbered columns as unrecognized', :pending_fix do
-      pending 'creator_1 is flagged unrecognized because creator is absent from valid_headers — fix during refactor'
+    it 'does not treat numbered columns as unrecognized' do
       unrecognized_keys = result[:unrecognized].keys
       expect(unrecognized_keys).not_to include('title_1', 'title_2', 'creator_1')
     end

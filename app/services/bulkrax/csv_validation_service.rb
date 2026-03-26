@@ -213,8 +213,15 @@ module Bulkrax
         all_columns = column_builder.all_columns
 
         # Filter out ignored properties
-        filtered = all_columns - CsvValidationService::CsvBuilder::IGNORED_PROPERTIES
-        filtered
+        schema_headers = all_columns - CsvValidationService::CsvBuilder::IGNORED_PROPERTIES
+
+        # Add the suffixed multi-value variants (e.g. creator_1, title_2) that the
+        # parser has seen in this specific CSV. Only include entries that have a
+        # numeric suffix — base-form columns not in the schema remain unrecognized.
+        suffixed_parser_headers = (@real_parser&.import_fields&.map(&:to_s) || [])
+                                  .select { |h| h.match?(/_\d+\z/) }
+
+        (schema_headers + suffixed_parser_headers).uniq
                          rescue StandardError => e
                            Rails.logger.error("Error building valid headers: #{e.message}")
                            # Fallback: combine all properties from all models plus standard Bulkrax fields
