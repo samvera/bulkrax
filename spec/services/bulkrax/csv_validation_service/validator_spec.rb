@@ -3,7 +3,7 @@
 require 'rails_helper'
 
 RSpec.describe Bulkrax::CsvValidationService::Validator do
-  let(:mapping_manager) { instance_double(Bulkrax::CsvValidationService::MappingManager) }
+  let(:mapping_manager) { instance_double(Bulkrax::CsvTemplate::MappingManager) }
   let(:file_validator) { nil }
 
   let(:field_metadata) do
@@ -280,7 +280,7 @@ RSpec.describe Bulkrax::CsvValidationService::Validator do
     context 'with file validator' do
       let(:file_validator) do
         instance_double(
-          Bulkrax::CsvValidationService::FileValidator,
+          Bulkrax::CsvTemplate::FileValidator,
           possible_missing_files?: has_possible_missing_files
         )
       end

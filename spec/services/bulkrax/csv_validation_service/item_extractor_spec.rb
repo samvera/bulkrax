@@ -44,7 +44,7 @@ RSpec.describe Bulkrax::CsvValidationService::ItemExtractor do
     allow(Bulkrax).to receive(:collection_model_class).and_return(collection_class)
     allow(Bulkrax).to receive(:file_model_class).and_return(file_set_class)
 
-    allow(Bulkrax::CsvValidationService::ModelLoader).to receive(:determine_klass_for) do |model_name|
+    allow(Bulkrax::CsvTemplate::ModelLoader).to receive(:determine_klass_for) do |model_name|
       case model_name
       when 'GenericWork'
         generic_work_class

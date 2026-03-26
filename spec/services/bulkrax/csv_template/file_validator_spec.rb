@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-RSpec.describe Bulkrax::CsvValidationService::FileValidator do
+RSpec.describe Bulkrax::CsvTemplate::FileValidator do
   let(:csv_data) do
     [
       { file: 'image1.jpg', source_identifier: 'work1' },

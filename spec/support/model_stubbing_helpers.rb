@@ -107,7 +107,7 @@ module ModelStubbingHelpers
     allow(Bulkrax).to receive(:file_model_class).and_return(FileSet)
 
     # Stub ModelLoader to recognize these models
-    allow(Bulkrax::CsvValidationService::ModelLoader).to receive(:determine_klass_for) do |name|
+    allow(Bulkrax::CsvTemplate::ModelLoader).to receive(:determine_klass_for) do |name|
       case name
       when 'GenericWork' then GenericWork
       when 'Collection' then Collection

@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-RSpec.describe Bulkrax::CsvValidationService::SchemaAnalyzer, type: :service do
+RSpec.describe Bulkrax::CsvTemplate::SchemaAnalyzer, type: :service do
   describe '#required_terms' do
     context 'when schema is blank' do
       it 'returns an empty array' do

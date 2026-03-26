@@ -3,7 +3,7 @@
 require 'rails_helper'
 
 RSpec.describe Bulkrax::CsvValidationService::RowValidatorService do
-  let(:mapping_manager) { instance_double(Bulkrax::CsvValidationService::MappingManager) }
+  let(:mapping_manager) { instance_double(Bulkrax::CsvTemplate::MappingManager) }
 
   let(:field_metadata) do
     {

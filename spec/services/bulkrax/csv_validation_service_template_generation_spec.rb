@@ -90,7 +90,7 @@ RSpec.describe Bulkrax::CsvValidationService, type: :service do
       subject(:headers) { parse_csv_string(csv_string)[0] }
 
       it 'does not include ignored system properties' do
-        ignored = Bulkrax::CsvValidationService::CsvBuilder::IGNORED_PROPERTIES
+        ignored = Bulkrax::CsvTemplate::CsvBuilder::IGNORED_PROPERTIES
         expect(headers & ignored).to be_empty
       end
 
@@ -197,7 +197,7 @@ RSpec.describe Bulkrax::CsvValidationService, type: :service do
       model_rows = rows[2..]
 
       service = described_class.new(models: ['Work'])
-      column_builder = Bulkrax::CsvValidationService::ColumnBuilder.new(service)
+      column_builder = Bulkrax::CsvTemplate::ColumnBuilder.new(service)
       required_cols  = column_builder.required_columns
 
       headers.each_with_index do |header, col_index|

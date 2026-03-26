@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-RSpec.describe Bulkrax::CsvValidationService::FilePathGenerator do
+RSpec.describe Bulkrax::CsvTemplate::FilePathGenerator do
   describe '.default_path' do
     let(:admin_set_id) { nil }
     let(:timestamp) { '20260223_120000' }

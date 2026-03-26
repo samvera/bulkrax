@@ -2,10 +2,10 @@
 
 require 'rails_helper'
 
-RSpec.describe Bulkrax::CsvValidationService::ValueDeterminer do
+RSpec.describe Bulkrax::CsvTemplate::ValueDeterminer do
   let(:service) { instance_double(Bulkrax::CsvValidationService) }
   let(:value_determiner) { described_class.new(service) }
-  let(:mapping_manager) { instance_double(Bulkrax::CsvValidationService::MappingManager) }
+  let(:mapping_manager) { instance_double(Bulkrax::CsvTemplate::MappingManager) }
 
   let(:mappings) do
     {
@@ -68,7 +68,7 @@ RSpec.describe Bulkrax::CsvValidationService::ValueDeterminer do
 
       before do
         allow(mapping_manager).to receive(:mapped_to_key).with('work_type').and_return('model')
-        allow(Bulkrax::CsvValidationService::ModelLoader).to receive(:determine_klass_for)
+        allow(Bulkrax::CsvTemplate::ModelLoader).to receive(:determine_klass_for)
           .with(model_name).and_return(mock_klass)
       end
 

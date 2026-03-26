@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-RSpec.describe Bulkrax::CsvValidationService::ColumnDescriptor do
+RSpec.describe Bulkrax::CsvTemplate::ColumnDescriptor do
   let(:descriptor) { described_class.new }
 
   describe 'COLUMN_DESCRIPTIONS' do

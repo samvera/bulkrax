@@ -81,7 +81,7 @@ module Bulkrax
       def item_is_collection?(item)
         return false unless item[:model]
 
-        resolved_klass = CsvValidationService::ModelLoader.determine_klass_for(item[:model])
+        resolved_klass = CsvTemplate::ModelLoader.determine_klass_for(item[:model])
         return false unless resolved_klass
 
         collection_klass = Bulkrax.collection_model_class
@@ -97,7 +97,7 @@ module Bulkrax
       def item_is_file_set?(item)
         return false unless item[:model]
 
-        resolved_klass = CsvValidationService::ModelLoader.determine_klass_for(item[:model])
+        resolved_klass = CsvTemplate::ModelLoader.determine_klass_for(item[:model])
         return false unless resolved_klass
 
         file_klass = Bulkrax.file_model_class

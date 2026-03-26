@@ -97,11 +97,11 @@ module Bulkrax
       @admin_set_id = admin_set_id
 
       # Common initialization - load field mappings
-      @mapping_manager = CsvValidationService::MappingManager.new
+      @mapping_manager = CsvTemplate::MappingManager.new
       @mappings = @mapping_manager.mappings
 
       # Common components used by both modes (must be initialized before field_metadata_for_all_models is called)
-      @field_analyzer = CsvValidationService::FieldAnalyzer.new(@mappings, admin_set_id)
+      @field_analyzer = CsvTemplate::FieldAnalyzer.new(@mappings, admin_set_id)
 
       # Determine mode and load models accordingly
       if csv_file
@@ -118,13 +118,13 @@ module Bulkrax
 
         @all_models = @real_parser.records.filter_map { |r| r[:model] }.uniq
         @csv_data = build_csv_data_from_parser
-        @file_validator = CsvValidationService::FileValidator.new(@csv_data, zip_file, admin_set_id)
+        @file_validator = CsvTemplate::FileValidator.new(@csv_data, zip_file, admin_set_id)
         @item_extractor = CsvValidationService::ItemExtractor.new(@csv_data)
         @row_validator = Bulkrax.row_validator_service.new(@csv_data, field_metadata_for_all_models, @mapping_manager)
       else
         # Generation mode: use provided models
-        @all_models = CsvValidationService::ModelLoader.new(Array.wrap(models)).models
-        @csv_builder = CsvValidationService::CsvBuilder.new(self)
+        @all_models = CsvTemplate::ModelLoader.new(Array.wrap(models)).models
+        @csv_builder = CsvTemplate::CsvBuilder.new(self)
       end
     end
 
@@ -138,7 +138,7 @@ module Bulkrax
     # @return [String] Path to written file
     def to_file(file_path: nil)
       ensure_csv_builder
-      file_path ||= CsvValidationService::FilePathGenerator.default_path(@admin_set_id)
+      file_path ||= CsvTemplate::FilePathGenerator.default_path(@admin_set_id)
       @csv_builder.write_to_file(file_path)
       file_path
     end
@@ -208,11 +208,11 @@ module Bulkrax
     def valid_headers_for_models
       @valid_headers ||= begin
         # Use ColumnBuilder to get all valid columns (it expects a service object)
-        column_builder = CsvValidationService::ColumnBuilder.new(self)
+        column_builder = CsvTemplate::ColumnBuilder.new(self)
         all_columns = column_builder.all_columns
 
         # Filter out ignored properties
-        schema_headers = all_columns - CsvValidationService::CsvBuilder::IGNORED_PROPERTIES
+        schema_headers = all_columns - CsvTemplate::CsvBuilder::IGNORED_PROPERTIES
 
         # Add the suffixed multi-value variants (e.g. creator_1, title_2) that the
         # parser has seen in this specific CSV. Only include entries that have a
@@ -280,7 +280,7 @@ module Bulkrax
 
     # Ensure CSV builder is initialized (for generation mode)
     def ensure_csv_builder
-      @csv_builder ||= CsvValidationService::CsvBuilder.new(self)
+      @csv_builder ||= CsvTemplate::CsvBuilder.new(self)
     end
 
     # Headers as normalised strings, derived from the same CsvEntry.read_data call
