@@ -269,11 +269,7 @@ RSpec.describe Bulkrax::CsvValidationService, type: :service do
 
     include_examples 'returns the full result contract'
 
-    # BUG: the service's CsvParser uses plain CSV.read which does not filter blank
-    # rows. CsvEntry.read_data wraps the result in CsvWrapper which skips them.
-    # After the refactor both paths must use the same blank-row filtering logic.
-    it 'counts only non-blank rows', :pending_fix do
-      pending 'service does not yet skip blank rows — fix during refactor'
+    it 'counts only non-blank rows' do
       expect(result[:rowCount]).to eq(2)
     end
   end

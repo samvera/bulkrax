@@ -106,11 +106,19 @@ module Bulkrax
 
       # Determine mode and load models accordingly
       if csv_file
-        # Validation mode: initialize specialized components
-        @column_resolver = CsvValidationService::ColumnResolver.new(@mapping_manager)
-        @csv_parser = CsvValidationService::CsvParser.new(csv_file, @column_resolver)
-        @all_models = @csv_parser.extract_models
-        @csv_data = @csv_parser.parse_data
+        # Validation mode: use the real CsvParser (with side-effects suppressed via
+        # validation_mode) so CSV reading, blank-row filtering, header normalisation,
+        # and record categorisation are identical to an actual import.
+        @csv_file_path = csv_file.respond_to?(:path) ? csv_file.path : csv_file.to_s
+        validation_importer = CsvValidationService::ValidationImporter.new(
+          parser_fields: { 'import_file_path' => @csv_file_path },
+          field_mapping: Bulkrax.field_mappings.fetch('Bulkrax::CsvParser', {})
+        )
+        @real_parser = Bulkrax::CsvParser.new(validation_importer)
+        @real_parser.validation_mode = true
+
+        @all_models = @real_parser.records.filter_map { |r| r[:model] }.uniq
+        @csv_data = build_csv_data_from_parser
         @file_validator = CsvValidationService::FileValidator.new(@csv_data, zip_file, admin_set_id)
         @item_extractor = CsvValidationService::ItemExtractor.new(@csv_data)
         @row_validator = Bulkrax.row_validator_service.new(@csv_data, field_metadata_for_all_models, @mapping_manager)
@@ -223,7 +231,7 @@ module Bulkrax
 
     def build_validator
       Validator.new(
-        @csv_parser.headers,
+        validation_headers,
         valid_headers_for_models,
         field_metadata_for_all_models,
         @mapping_manager,
@@ -234,7 +242,7 @@ module Bulkrax
 
     def build_validation_result(validator, missing_required)
       {
-        headers: @csv_parser.headers,
+        headers: validation_headers,
         missingRequired: missing_required,
         unrecognized: validator.unrecognized_headers,
         rowCount: @item_extractor.total_count,
@@ -266,6 +274,34 @@ module Bulkrax
     # Ensure CSV builder is initialized (for generation mode)
     def ensure_csv_builder
       @csv_builder ||= CsvValidationService::CsvBuilder.new(self)
+    end
+
+    # Headers as normalised strings, derived from the same CsvEntry.read_data call
+    # that the real import uses — special chars stripped, consistent with parser keys.
+    def validation_headers
+      @validation_headers ||= CsvEntry.read_data(@csv_file_path).headers.map(&:to_s)
+    rescue StandardError
+      []
+    end
+
+    # Convert the parser's symbol-keyed records into the { source_identifier:, model:,
+    # parent:, children:, file:, raw_row: } shape that the downstream validators expect.
+    def build_csv_data_from_parser
+      source_id_key = @real_parser.source_identifier
+      parent_key    = @real_parser.related_parents_raw_mapping&.to_sym || :parents
+      children_key  = @real_parser.related_children_raw_mapping&.to_sym || :children
+      file_key      = Bulkrax.field_mappings.dig('Bulkrax::CsvParser', 'file', :from)&.first&.to_sym || :file
+
+      @real_parser.records.map do |r|
+        {
+          source_identifier: r[source_id_key],
+          model: r[:model],
+          parent: r[parent_key],
+          children: r[children_key],
+          file: r[file_key],
+          raw_row: r.transform_keys(&:to_s)
+        }
+      end
     end
   end
 end
