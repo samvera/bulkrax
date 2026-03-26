@@ -5,6 +5,7 @@ module Bulkrax
     include ErroredEntries
     include ExportBehavior
     attr_writer :collections, :file_sets, :works
+    attr_accessor :validation_mode
 
     def self.export_supported?
       true
@@ -15,8 +16,10 @@ module Bulkrax
 
       file_for_import = only_updates ? parser_fields['partial_import_file_path'] : import_file_path
       csv_data = entry_class.read_data(file_for_import)
-      importer.parser_fields['total'] = csv_data.count
-      importer.save
+      unless validation_mode
+        importer.parser_fields['total'] = csv_data.count
+        importer.save
+      end
 
       @records = csv_data.map { |record_data| entry_class.data_for_entry(record_data, nil, self) }
       @records
