@@ -262,7 +262,7 @@ module Bulkrax
     conf.server_name = 'bulkrax@example.com'
     conf.relationship_job_class = "Bulkrax::CreateRelationshipsJob"
     conf.required_elements = ['title']
-    conf.guided_import_enabled = ENV.fetch('BULKRAX_GUIDED_IMPORTER', 'true').casecmp('true').zero?
+    conf.guided_import_enabled = ActiveModel::Type::Boolean.new.cast(ENV.fetch('BULKRAX_GUIDED_IMPORTER', false))
     conf.guided_import_demo_scenarios_enabled = false
 
     # Hash of Generic field_mappings for use in the view
