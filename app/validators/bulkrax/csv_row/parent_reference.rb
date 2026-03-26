@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Bulkrax
-  module CsvRowValidators
+  module CsvRow
     ##
     # Validates that any parent references in a row point to source identifiers that exist
     # elsewhere in the same CSV.

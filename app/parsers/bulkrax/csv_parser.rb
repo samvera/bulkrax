@@ -679,7 +679,7 @@ end
 
 # Register the default row validators.  These are appended during class load so
 # any downstream app can call register_csv_row_validator to extend the chain.
-Bulkrax::CsvParser.register_csv_row_validator(Bulkrax::CsvRowValidators::DuplicateIdentifier)
-Bulkrax::CsvParser.register_csv_row_validator(Bulkrax::CsvRowValidators::ParentReference)
-Bulkrax::CsvParser.register_csv_row_validator(Bulkrax::CsvRowValidators::RequiredValues)
-Bulkrax::CsvParser.register_csv_row_validator(Bulkrax::CsvRowValidators::ControlledVocabulary)
+Bulkrax::CsvParser.register_csv_row_validator(Bulkrax::CsvRow::DuplicateIdentifier)
+Bulkrax::CsvParser.register_csv_row_validator(Bulkrax::CsvRow::ParentReference)
+Bulkrax::CsvParser.register_csv_row_validator(Bulkrax::CsvRow::RequiredValues)
+Bulkrax::CsvParser.register_csv_row_validator(Bulkrax::CsvRow::ControlledVocabulary)

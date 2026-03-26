@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Bulkrax
-  module CsvRowValidators
+  module CsvRow
     ##
     # Validates that each row provides a value for every required field of its model.
     # Numeric suffixes on column names are normalised before checking

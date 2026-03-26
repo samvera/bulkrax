@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-RSpec.describe Bulkrax::CsvRowValidators::DuplicateIdentifier do
+RSpec.describe Bulkrax::CsvRow::DuplicateIdentifier do
   def make_context
     { errors: [], warnings: [], seen_ids: {}, source_identifier: 'source_identifier' }
   end

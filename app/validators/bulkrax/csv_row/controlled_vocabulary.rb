@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Bulkrax
-  module CsvRowValidators
+  module CsvRow
     ##
     # Validates that controlled vocabulary values in each row are valid according to the
     # QA authority for that field.

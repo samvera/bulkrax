@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Bulkrax
-  module CsvRowValidators
+  module CsvRow
     ##
     # Validates that each row has a unique source_identifier.
     # Uses context[:seen_ids] (Hash: id => first_seen_row_number) to detect duplicates.

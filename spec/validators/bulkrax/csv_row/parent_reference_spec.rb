@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-RSpec.describe Bulkrax::CsvRowValidators::ParentReference do
+RSpec.describe Bulkrax::CsvRow::ParentReference do
   def make_context(all_ids: Set.new(%w[col1 work1]))
     { errors: [], warnings: [], all_ids: all_ids, parent_split_pattern: nil }
   end

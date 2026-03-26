@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-RSpec.describe Bulkrax::CsvRowValidators::RequiredValues do
+RSpec.describe Bulkrax::CsvRow::RequiredValues do
   def make_context(required_terms: ['title'])
     {
       errors: [],
