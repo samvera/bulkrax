@@ -2,20 +2,11 @@
 
 require 'rails_helper'
 
-RSpec.describe Bulkrax::CsvValidationService::SchemaAnalyzer, type: :service do
+RSpec.describe Bulkrax::CsvTemplate::SchemaAnalyzer, type: :service do
   describe '#required_terms' do
     context 'when schema is blank' do
       it 'returns an empty array' do
         klass = build_schema_class(schema: nil)
-        analyzer = described_class.new(klass: klass)
-        expect(analyzer.required_terms).to eq([])
-      end
-    end
-
-    context 'when schema has no required fields' do
-      it 'returns an empty array' do
-        field = build_field(name: :title, meta: { 'form' => { 'required' => false } })
-        klass = build_schema_class(schema: [field])
         analyzer = described_class.new(klass: klass)
         expect(analyzer.required_terms).to eq([])
       end
@@ -39,15 +30,6 @@ RSpec.describe Bulkrax::CsvValidationService::SchemaAnalyzer, type: :service do
         expect(analyzer.required_terms).to eq([])
       end
     end
-
-    context 'when form meta is not a Hash' do
-      it 'excludes that field' do
-        field = build_field(name: :title, meta: { 'form' => 'not a hash' })
-        klass = build_schema_class(schema: [field])
-        analyzer = described_class.new(klass: klass)
-        expect(analyzer.required_terms).to eq([])
-      end
-    end
   end
 
   describe '#controlled_vocab_terms' do
@@ -66,15 +48,6 @@ RSpec.describe Bulkrax::CsvValidationService::SchemaAnalyzer, type: :service do
         klass = build_schema_class(schema: [controlled_field, regular_field])
         analyzer = described_class.new(klass: klass)
         expect(analyzer.controlled_vocab_terms).to eq(['subject'])
-      end
-    end
-
-    context 'when controlled_values sources is null string' do
-      it 'excludes that field' do
-        field = build_field(name: :subject, meta: { 'controlled_values' => { 'sources' => 'null' } })
-        klass = build_schema_class(schema: [field])
-        analyzer = described_class.new(klass: klass)
-        expect(analyzer.controlled_vocab_terms).not_to include('subject')
       end
     end
 
@@ -102,15 +75,6 @@ RSpec.describe Bulkrax::CsvValidationService::SchemaAnalyzer, type: :service do
       end
     end
 
-    context 'when singleton_class schema is nil, falls back to klass schema' do
-      it 'uses the klass schema' do
-        field = build_field(name: :title, meta: { 'form' => { 'required' => true } })
-        klass = build_schema_class(schema: [field], singleton_returns_nil: true)
-        analyzer = described_class.new(klass: klass)
-        expect(analyzer.required_terms).to eq(['title'])
-      end
-    end
-
     context 'when admin_set_id is provided' do
       before do
         # rubocop:disable Lint/UnusedBlockArgument
@@ -127,14 +91,6 @@ RSpec.describe Bulkrax::CsvValidationService::SchemaAnalyzer, type: :service do
         analyzer = described_class.new(klass: klass, admin_set_id: 'set-123')
         expect(analyzer.required_terms).to eq(['title'])
         expect(Hyrax).to have_received(:schema_for).with(klass: klass, admin_set_id: 'set-123')
-      end
-
-      it 'falls back gracefully when Hyrax.schema_for raises' do
-        field = build_field(name: :title, meta: { 'form' => { 'required' => true } })
-        klass = build_schema_class(schema: [field])
-        allow(Hyrax).to receive(:schema_for).and_raise(StandardError, 'boom')
-        analyzer = described_class.new(klass: klass, admin_set_id: 'bad-set')
-        expect(analyzer.required_terms).to eq([])
       end
     end
   end

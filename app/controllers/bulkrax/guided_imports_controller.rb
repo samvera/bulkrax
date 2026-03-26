@@ -79,13 +79,13 @@ module Bulkrax
       end
     end
 
-    # Runs validation via the real service.
+    # Runs validation via the CSV parser.
     # @param csv_file [File, StringIO] the CSV to validate
     # @param zip_file [File, nil] an optional ZIP containing file attachments
     # @param admin_set_id [String, nil] optional admin set ID for validation context
     # @return [Hash] validation result data
     def run_validation(csv_file, zip_file, admin_set_id: nil)
-      CsvValidationService.validate(csv_file: csv_file, zip_file: zip_file, admin_set_id: admin_set_id)
+      CsvParser.validate_csv(csv_file: csv_file, zip_file: zip_file, admin_set_id: admin_set_id)
     end
 
     def importer_params

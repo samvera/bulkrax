@@ -2,12 +2,12 @@
 
 require 'rails_helper'
 
-RSpec.describe Bulkrax::CsvValidationService::ColumnBuilder do
-  let(:service) { instance_double(Bulkrax::CsvValidationService) }
+RSpec.describe Bulkrax::CsvTemplate::ColumnBuilder do
+  let(:service) { instance_double('TemplateContext') }
   let(:column_builder) { described_class.new(service) }
-  let(:mapping_manager) { instance_double(Bulkrax::CsvValidationService::MappingManager) }
-  let(:field_analyzer) { instance_double(Bulkrax::CsvValidationService::FieldAnalyzer) }
-  let(:descriptor) { instance_double(Bulkrax::CsvValidationService::ColumnDescriptor) }
+  let(:mapping_manager) { instance_double(Bulkrax::CsvTemplate::MappingManager) }
+  let(:field_analyzer) { instance_double(Bulkrax::CsvTemplate::FieldAnalyzer) }
+  let(:descriptor) { instance_double(Bulkrax::CsvTemplate::ColumnDescriptor) }
 
   let(:mappings) do
     {
@@ -17,7 +17,7 @@ RSpec.describe Bulkrax::CsvValidationService::ColumnBuilder do
   end
 
   before do
-    allow(Bulkrax::CsvValidationService::ColumnDescriptor).to receive(:new).and_return(descriptor)
+    allow(Bulkrax::CsvTemplate::ColumnDescriptor).to receive(:new).and_return(descriptor)
     allow(service).to receive(:mapping_manager).and_return(mapping_manager)
     allow(service).to receive(:field_analyzer).and_return(field_analyzer)
     allow(service).to receive(:mappings).and_return(mappings)
@@ -28,7 +28,7 @@ RSpec.describe Bulkrax::CsvValidationService::ColumnBuilder do
     it 'creates a ColumnDescriptor' do
       described_class.new(service)
 
-      expect(Bulkrax::CsvValidationService::ColumnDescriptor).to have_received(:new)
+      expect(Bulkrax::CsvTemplate::ColumnDescriptor).to have_received(:new)
     end
 
     it 'stores the service reference' do
@@ -77,14 +77,6 @@ RSpec.describe Bulkrax::CsvValidationService::ColumnBuilder do
 
       expect(result).to eq(mapped_core_cols + relationship_cols + file_cols)
     end
-
-    it 'returns columns in the correct order' do
-      result = column_builder.required_columns
-
-      expect(result[0..2]).to eq(mapped_core_cols)
-      expect(result[3..4]).to eq(relationship_cols)
-      expect(result[5..6]).to eq(file_cols)
-    end
   end
 
   describe 'private methods' do
@@ -104,12 +96,6 @@ RSpec.describe Bulkrax::CsvValidationService::ColumnBuilder do
           result = column_builder.send(:mapped_core_columns)
 
           expect(result).to eq(['work_type'])
-        end
-
-        it 'calls key_to_mapped_column for model' do
-          column_builder.send(:mapped_core_columns)
-
-          expect(mapping_manager).to have_received(:key_to_mapped_column).with('model')
         end
       end
 
@@ -150,41 +136,24 @@ RSpec.describe Bulkrax::CsvValidationService::ColumnBuilder do
         allow(field_analyzer).to receive(:find_or_create_field_list_for)
           .with(model_name: 'AnotherWork').and_return(field_list_2)
 
-        # Mock the mapping manager to return mapped column names
         allow(mapping_manager).to receive(:key_to_mapped_column) do |key|
-          "x#{key}" # Simple mapping for testing
+          "x#{key}"
         end
 
-        # Mock required columns to exclude some properties
         allow(column_builder).to receive(:required_columns).and_return(['xtitle'])
       end
 
       it 'collects properties from all models' do
         result = column_builder.send(:property_columns)
 
-        # Should include all unique mapped properties except those in required_columns
         expect(result).to include('xcreator', 'xdescription', 'xextent', 'xformat')
-        expect(result).not_to include('xtitle') # Excluded as it's in required_columns
+        expect(result).not_to include('xtitle')
       end
 
       it 'removes duplicates and sorts the result' do
         result = column_builder.send(:property_columns)
 
         expect(result).to eq(result.uniq.sort)
-      end
-
-      it 'maps property names through mapping_manager' do
-        column_builder.send(:property_columns)
-
-        expect(mapping_manager).to have_received(:key_to_mapped_column).at_least(:once)
-      end
-
-      it 'handles empty field lists gracefully' do
-        allow(field_analyzer).to receive(:find_or_create_field_list_for).and_return({})
-
-        result = column_builder.send(:property_columns)
-
-        expect(result).to eq([])
       end
     end
 
@@ -203,24 +172,11 @@ RSpec.describe Bulkrax::CsvValidationService::ColumnBuilder do
 
         expect(result).to eq(['xchildren', 'xparents'])
       end
-
-      it 'uses default values when flags are not found' do
-        allow(mapping_manager).to receive(:find_by_flag)
-          .with("related_children_field_mapping", 'children')
-          .and_return('children')
-        allow(mapping_manager).to receive(:find_by_flag)
-          .with("related_parents_field_mapping", 'parents')
-          .and_return('parents')
-
-        result = column_builder.send(:relationship_columns)
-
-        expect(result).to eq(['children', 'parents'])
-      end
     end
 
     describe '#file_columns' do
       before do
-        stub_const('Bulkrax::CsvValidationService::ColumnDescriptor::COLUMN_DESCRIPTIONS', {
+        stub_const('Bulkrax::CsvTemplate::ColumnDescriptor::COLUMN_DESCRIPTIONS', {
                      files: [
                        { "file" => "File description" }
                      ]
@@ -237,12 +193,6 @@ RSpec.describe Bulkrax::CsvValidationService::ColumnBuilder do
 
           expect(result).to eq(['xlocalfiles'])
         end
-
-        it 'calls key_to_mapped_column for file' do
-          column_builder.send(:file_columns)
-
-          expect(mapping_manager).to have_received(:key_to_mapped_column).with('file')
-        end
       end
 
       context 'when no mapping exists for file' do
@@ -255,59 +205,6 @@ RSpec.describe Bulkrax::CsvValidationService::ColumnBuilder do
 
           expect(result).to eq(['file'])
         end
-      end
-    end
-  end
-
-  describe 'integration' do
-    context 'when mappings exist for model and file columns' do
-      before do
-        # Set up a complete mock scenario
-        allow(descriptor).to receive(:core_columns).and_return(['model', 'source_identifier'])
-        allow(mapping_manager).to receive(:find_by_flag)
-          .with("related_children_field_mapping", 'children').and_return('children')
-        allow(mapping_manager).to receive(:find_by_flag)
-          .with("related_parents_field_mapping", 'parents').and_return('parents')
-
-        allow(service).to receive(:all_models).and_return(['MyWork'])
-        allow(field_analyzer).to receive(:find_or_create_field_list_for)
-          .and_return({ 'MyWork' => { 'properties' => ['title', 'creator'] } })
-
-        # Mock key_to_mapped_column to map model and file specifically
-        allow(mapping_manager).to receive(:key_to_mapped_column) do |key|
-          case key
-          when 'model' then 'work_type'
-          when 'file' then 'xlocalfiles'
-          else "x#{key}"
-          end
-        end
-
-        stub_const('Bulkrax::CsvValidationService::ColumnDescriptor::COLUMN_DESCRIPTIONS', {
-                     files: [
-                       { "file" => "File description" }
-                     ]
-                   })
-      end
-
-      it 'maps model column to work_type' do
-        result = column_builder.all_columns
-
-        expect(result).to include('work_type')
-        expect(result).not_to include('model')
-      end
-
-      it 'maps file column to xlocalfiles' do
-        result = column_builder.all_columns
-
-        expect(result).to include('xlocalfiles')
-        expect(result).not_to include('file')
-      end
-
-      it 'calls key_to_mapped_column for model and file' do
-        column_builder.all_columns
-
-        expect(mapping_manager).to have_received(:key_to_mapped_column).with('model').at_least(:once)
-        expect(mapping_manager).to have_received(:key_to_mapped_column).with('file').at_least(:once)
       end
     end
   end

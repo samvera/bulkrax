@@ -2,7 +2,7 @@
 
 module Bulkrax
   ##
-  # Formats validation data from CsvValidationService into the structure
+  # Formats validation data from CsvParser.validate_csv into the structure
   # expected by the importers_stepper.js frontend component.
   #
   # This service acts as a presentation layer, transforming raw validation data
@@ -10,7 +10,7 @@ module Bulkrax
   # and formatted issue lists that the JavaScript can render correctly.
   #
   # @example Basic usage
-  #   validation_data = CsvValidationService.validate(csv_file: file, zip_file: zip)
+  #   validation_data = CsvParser.validate_csv(csv_file: file, zip_file: zip)
   #   formatted_response = StepperResponseFormatter.format(validation_data)
   #   render json: formatted_response
   #
@@ -22,7 +22,7 @@ module Bulkrax
   class StepperResponseFormatter
     # Format validation data for the stepper frontend
     #
-    # @param data [Hash] Raw validation data from CsvValidationService containing:
+    # @param data [Hash] Raw validation data from CsvParser.validate_csv containing:
     #   - headers: Array of CSV column names
     #   - missingRequired: Array of hashes of missing required fields by model (e.g. {model: 'GenericWork', field: 'source_identifier'})
     #   - unrecognized: Array of unrecognized column names

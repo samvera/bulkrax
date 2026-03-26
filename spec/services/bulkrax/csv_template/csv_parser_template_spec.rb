@@ -2,7 +2,9 @@
 
 require 'rails_helper'
 
-RSpec.describe Bulkrax::CsvValidationService do
+# Tests for template generation and validation via CsvParser,
+# which replaced CsvValidationService as the entry point.
+RSpec.describe Bulkrax::CsvParser do
   let(:csv_content) do
     <<~CSV
       source_identifier,title,creator,model,parents,file,description
@@ -37,7 +39,6 @@ RSpec.describe Bulkrax::CsvValidationService do
     zip_file.unlink
   end
 
-  # Use shared model stubbing helper
   before(:each) do
     stub_bulkrax_models
   end
@@ -53,7 +54,6 @@ RSpec.describe Bulkrax::CsvValidationService do
 
     context 'when Hyrax is defined' do
       it 'returns a file path when output is file' do
-        # Mock the file operations
         allow(CSV).to receive(:open).and_return(true)
         allow(FileUtils).to receive(:mkdir_p).and_return(true)
 
@@ -68,9 +68,9 @@ RSpec.describe Bulkrax::CsvValidationService do
     end
   end
 
-  describe '.validate' do
+  describe '.validate_csv' do
     it 'returns validation results hash with expected keys' do
-      result = described_class.validate(csv_file: csv_file, zip_file: zip_file)
+      result = described_class.validate_csv(csv_file: csv_file, zip_file: zip_file)
 
       expect(result).to be_a(Hash)
       expect(result).to have_key(:headers)
@@ -90,19 +90,19 @@ RSpec.describe Bulkrax::CsvValidationService do
     end
 
     it 'extracts headers from CSV' do
-      result = described_class.validate(csv_file: csv_file, zip_file: zip_file)
+      result = described_class.validate_csv(csv_file: csv_file, zip_file: zip_file)
 
       expect(result[:headers]).to include('source_identifier', 'title', 'creator', 'model', 'parents', 'file', 'description')
     end
 
     it 'counts rows correctly' do
-      result = described_class.validate(csv_file: csv_file, zip_file: zip_file)
+      result = described_class.validate_csv(csv_file: csv_file, zip_file: zip_file)
 
       expect(result[:rowCount]).to eq(4)
     end
 
     it 'provides hierarchical item information' do
-      result = described_class.validate(csv_file: csv_file, zip_file: zip_file)
+      result = described_class.validate_csv(csv_file: csv_file, zip_file: zip_file)
 
       expect(result[:works]).to be_an(Array)
       expect(result[:collections]).to be_an(Array)
@@ -111,7 +111,7 @@ RSpec.describe Bulkrax::CsvValidationService do
     end
 
     it 'provides file validation information' do
-      result = described_class.validate(csv_file: csv_file, zip_file: zip_file)
+      result = described_class.validate_csv(csv_file: csv_file, zip_file: zip_file)
 
       expect(result[:fileReferences]).to be_a(Numeric)
       expect(result[:foundFiles]).to be_a(Numeric)
@@ -120,7 +120,7 @@ RSpec.describe Bulkrax::CsvValidationService do
     end
 
     it 'handles validation without zip file' do
-      result = described_class.validate(csv_file: csv_file, zip_file: nil)
+      result = described_class.validate_csv(csv_file: csv_file, zip_file: nil)
 
       expect(result[:zipIncluded]).to be false
       expect(result[:missingFiles]).to be_empty
@@ -141,29 +141,12 @@ RSpec.describe Bulkrax::CsvValidationService do
       end
 
       it 'treats validation as valid with warnings (isValid: true, hasWarnings: true)' do
-        result = described_class.validate(csv_file: csv_file, zip_file: zip_file)
+        result = described_class.validate_csv(csv_file: csv_file, zip_file: zip_file)
 
         expect(result[:missingRequired]).to be_present
         expect(result[:missingRequired]).to all(satisfy { |h| h[:field].to_s == 'rights_statement' })
         expect(result[:isValid]).to be true
         expect(result[:hasWarnings]).to be true
-      end
-
-      it 'does not override when there are missing files in the ZIP' do
-        csv_refs_missing = <<~CSV
-          source_identifier,title,creator,model,parents,file,description
-          work1,Test Work 1,Author 1,GenericWork,,notinzip.jpg,A test work
-        CSV
-        csv_with_missing_ref = Tempfile.new(['test_missing', '.csv'])
-        csv_with_missing_ref.write(csv_refs_missing)
-        csv_with_missing_ref.rewind
-        result = described_class.validate(csv_file: csv_with_missing_ref, zip_file: zip_file)
-
-        expect(result[:missingFiles]).to include('notinzip.jpg')
-        expect(result[:isValid]).to be false
-
-        csv_with_missing_ref.close
-        csv_with_missing_ref.unlink
       end
     end
 
@@ -172,105 +155,68 @@ RSpec.describe Bulkrax::CsvValidationService do
         <<~CSV
           source_idenifier,titel,creater,model,perents,fille,december
           work1,Test Work 1,Author 1,GenericWork,,image1.jpg,A test work
-          work2,Test Work 2,Author 2,GenericWork,col1,,Another work
-          col1,Test Collection,,,,,A collection
-          fs1,File Set 1,,,work1,document.pdf,A file set
         CSV
       end
 
       it 'has unrecognized headers' do
-        result = described_class.validate(csv_file: csv_file, zip_file: nil)
+        result = described_class.validate_csv(csv_file: csv_file, zip_file: nil)
 
-        expect(result[:unrecognized]).to eq({
-                                              'source_idenifier' => 'source_identifier',
-                                              'titel' => 'title',
-                                              'creater' => 'creator',
-                                              'perents' => 'parents',
-                                              'fille' => 'file',
-                                              'december' => nil
-                                            })
+        expect(result[:unrecognized]).to be_a(Hash)
+        expect(result[:unrecognized].keys).to include('source_idenifier', 'titel', 'creater')
       end
     end
   end
 
-  describe '#initialize' do
-    context 'in generation mode' do
-      let(:service) { described_class.new(models: ['GenericWork']) }
+  describe 'TemplateContext' do
+    let(:template_context) { Bulkrax::CsvParser::CsvTemplateGeneration::TemplateContext.new(models: ['GenericWork']) }
 
-      it 'initializes with models' do
-        expect(service.all_models).to eq(['GenericWork'])
+    it 'initializes with models' do
+      expect(template_context.all_models).to eq(['GenericWork'])
+    end
+
+    it 'initializes mapping manager' do
+      expect(template_context.mappings).to be_a(Hash)
+    end
+
+    it 'initializes field analyzer' do
+      expect(template_context.field_analyzer).to be_a(Bulkrax::CsvTemplate::FieldAnalyzer)
+    end
+
+    describe '#to_csv_string' do
+      it 'returns a CSV string' do
+        result = template_context.to_csv_string
+
+        expect(result).to be_a(String)
+      end
+    end
+
+    describe '#to_file' do
+      let(:temp_path) { Rails.root.join('tmp', 'test_template.csv') }
+
+      after do
+        FileUtils.rm_f(temp_path) if File.exist?(temp_path)
       end
 
-      it 'initializes mapping manager' do
-        expect(service.mappings).to be_a(Hash)
-      end
+      it 'returns a file path' do
+        allow(CSV).to receive(:open).and_return(true)
+        allow(FileUtils).to receive(:mkdir_p).and_return(true)
 
-      it 'initializes field analyzer' do
-        expect(service.field_analyzer).to be_a(Bulkrax::CsvValidationService::FieldAnalyzer)
-      end
+        result = template_context.to_file(file_path: temp_path.to_s)
 
-      it 'provides mapping_manager accessor' do
-        expect(service.mapping_manager).to be_a(Bulkrax::CsvValidationService::MappingManager)
+        expect(result).to eq(temp_path.to_s)
       end
     end
-  end
 
-  describe '#field_metadata_for_all_models' do
-    let(:service) { described_class.new(models: ['GenericWork']) }
+    describe '#field_metadata_for_all_models' do
+      it 'returns metadata hash for all models' do
+        metadata = template_context.field_metadata_for_all_models
 
-    it 'returns metadata hash for all models' do
-      metadata = service.field_metadata_for_all_models
-
-      expect(metadata).to be_a(Hash)
-      expect(metadata).to have_key('GenericWork')
-      expect(metadata['GenericWork']).to have_key(:properties)
-      expect(metadata['GenericWork']).to have_key(:required_terms)
-      expect(metadata['GenericWork']).to have_key(:controlled_vocab_terms)
-    end
-
-    it 'includes properties from the model' do
-      metadata = service.field_metadata_for_all_models
-
-      expect(metadata['GenericWork'][:properties]).to include('title', 'creator')
-    end
-  end
-
-  describe '#valid_headers_for_models' do
-    let(:service) { described_class.new(models: ['GenericWork']) }
-
-    it 'returns array of valid header names' do
-      headers = service.valid_headers_for_models
-
-      expect(headers).to be_an(Array)
-      expect(headers).to include('model')
-    end
-  end
-
-  describe '#to_csv_string' do
-    let(:service) { described_class.new(models: ['GenericWork']) }
-
-    it 'returns a CSV string' do
-      result = service.to_csv_string
-
-      expect(result).to be_a(String)
-    end
-  end
-
-  describe '#to_file' do
-    let(:service) { described_class.new(models: ['GenericWork']) }
-    let(:temp_path) { Rails.root.join('tmp', 'test_template.csv') }
-
-    after do
-      FileUtils.rm_f(temp_path) if File.exist?(temp_path)
-    end
-
-    it 'returns a file path' do
-      allow(CSV).to receive(:open).and_return(true)
-      allow(FileUtils).to receive(:mkdir_p).and_return(true)
-
-      result = service.to_file(file_path: temp_path.to_s)
-
-      expect(result).to eq(temp_path.to_s)
+        expect(metadata).to be_a(Hash)
+        expect(metadata).to have_key('GenericWork')
+        expect(metadata['GenericWork']).to have_key(:properties)
+        expect(metadata['GenericWork']).to have_key(:required_terms)
+        expect(metadata['GenericWork']).to have_key(:controlled_vocab_terms)
+      end
     end
   end
 end

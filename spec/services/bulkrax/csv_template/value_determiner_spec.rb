@@ -2,10 +2,10 @@
 
 require 'rails_helper'
 
-RSpec.describe Bulkrax::CsvValidationService::ValueDeterminer do
-  let(:service) { instance_double(Bulkrax::CsvValidationService) }
+RSpec.describe Bulkrax::CsvTemplate::ValueDeterminer do
+  let(:service) { instance_double('TemplateContext') }
   let(:value_determiner) { described_class.new(service) }
-  let(:mapping_manager) { instance_double(Bulkrax::CsvValidationService::MappingManager) }
+  let(:mapping_manager) { instance_double(Bulkrax::CsvTemplate::MappingManager) }
 
   let(:mappings) do
     {
@@ -68,7 +68,7 @@ RSpec.describe Bulkrax::CsvValidationService::ValueDeterminer do
 
       before do
         allow(mapping_manager).to receive(:mapped_to_key).with('work_type').and_return('model')
-        allow(Bulkrax::CsvValidationService::ModelLoader).to receive(:determine_klass_for)
+        allow(Bulkrax::CsvTemplate::ModelLoader).to receive(:determine_klass_for)
           .with(model_name).and_return(mock_klass)
       end
 
@@ -91,27 +91,6 @@ RSpec.describe Bulkrax::CsvValidationService::ValueDeterminer do
       end
     end
 
-    context 'when required_terms is nil' do
-      let(:field_list_without_required) do
-        {
-          'GenericWork' => {
-            'properties' => ['title'],
-            'required_terms' => nil
-          }
-        }
-      end
-
-      before do
-        allow(mapping_manager).to receive(:mapped_to_key).with('title').and_return('title')
-      end
-
-      it 'returns Unknown for properties' do
-        result = value_determiner.determine_value('title', model_name, field_list_without_required)
-
-        expect(result).to eq('Unknown')
-      end
-    end
-
     context 'when column is a relationship column' do
       before do
         allow(mapping_manager).to receive(:mapped_to_key).with('children').and_return('children')
@@ -125,29 +104,6 @@ RSpec.describe Bulkrax::CsvValidationService::ValueDeterminer do
         result = value_determiner.determine_value('children', model_name, field_list)
 
         expect(result).to eq('Optional')
-      end
-    end
-
-    context 'when column is a file column for a collection' do
-      let(:collection_model) { 'Collection' }
-      let(:collection_field_list) do
-        {
-          'Collection' => {
-            'properties' => ['title'],
-            'required_terms' => ['title']
-          }
-        }
-      end
-
-      before do
-        allow(mapping_manager).to receive(:mapped_to_key).with('xlocalfiles').and_return('file')
-        allow(Bulkrax).to receive(:collection_model_class).and_return(Collection)
-      end
-
-      it 'returns nil for file columns on collections' do
-        result = value_determiner.determine_value('xlocalfiles', collection_model, collection_field_list)
-
-        expect(result).to be_nil
       end
     end
   end

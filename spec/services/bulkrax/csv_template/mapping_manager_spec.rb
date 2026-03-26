@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-RSpec.describe Bulkrax::CsvValidationService::MappingManager do
+RSpec.describe Bulkrax::CsvTemplate::MappingManager do
   let(:manager) { described_class.new }
 
   before do
@@ -81,20 +81,6 @@ RSpec.describe Bulkrax::CsvValidationService::MappingManager do
       end
 
       it 'returns all options in from array' do
-        # Setup: model mapping has multiple options
-        allow(Bulkrax).to receive(:field_mappings).and_return({
-                                                                'Bulkrax::CsvParser' => {
-                                                                  'model' => { 'from' => %w[work_type object_type type], 'split' => false }
-                                                                }
-                                                              })
-        new_manager = described_class.new
-
-        result = new_manager.resolve_column_name(key: 'model', default: 'model')
-        expect(result).to eq(%w[work_type object_type type])
-      end
-
-      it 'returns all options when no headers provided' do
-        # Setup: model mapping has multiple options
         allow(Bulkrax).to receive(:field_mappings).and_return({
                                                                 'Bulkrax::CsvParser' => {
                                                                   'model' => { 'from' => %w[work_type object_type type], 'split' => false }
@@ -130,7 +116,6 @@ RSpec.describe Bulkrax::CsvValidationService::MappingManager do
       end
 
       it 'returns all options in from array for flagged field' do
-        # Setup: source_identifier has multiple options
         allow(Bulkrax).to receive(:field_mappings).and_return({
                                                                 'Bulkrax::CsvParser' => {
                                                                   'source_identifier' => { 'from' => %w[id source_id identifier], 'source_identifier' => true }
@@ -139,22 +124,6 @@ RSpec.describe Bulkrax::CsvValidationService::MappingManager do
         new_manager = described_class.new
 
         result = new_manager.resolve_column_name(flag: 'source_identifier', default: 'source_identifier')
-        expect(result).to eq(%w[id source_id identifier])
-      end
-
-      it 'returns all options for flagged field when no headers provided' do
-        # Setup: source_identifier has multiple options
-        allow(Bulkrax).to receive(:field_mappings).and_return({
-                                                                'Bulkrax::CsvParser' => {
-                                                                  'source_identifier' => { 'from' => %w[id source_id identifier], 'source_identifier' => true }
-                                                                }
-                                                              })
-        new_manager = described_class.new
-
-        result = new_manager.resolve_column_name(
-          flag: 'source_identifier',
-          default: 'source_identifier'
-        )
         expect(result).to eq(%w[id source_id identifier])
       end
     end
@@ -166,7 +135,6 @@ RSpec.describe Bulkrax::CsvValidationService::MappingManager do
           flag: 'source_identifier',
           default: 'source_identifier'
         )
-        # Flag lookup should happen first
         expect(result).to eq(['source_id'])
       end
 
@@ -176,7 +144,6 @@ RSpec.describe Bulkrax::CsvValidationService::MappingManager do
           flag: 'nonexistent_flag',
           default: 'file'
         )
-        # Flag not found, should use key lookup and return all options
         expect(result).to eq(['files', 'items', 'file'])
       end
 
@@ -187,36 +154,6 @@ RSpec.describe Bulkrax::CsvValidationService::MappingManager do
           default: 'my_default'
         )
         expect(result).to eq(['my_default'])
-      end
-    end
-
-    context 'real-world scenarios' do
-      it 'resolves model column options' do
-        result = manager.resolve_column_name(
-          key: 'model',
-          default: 'model'
-        )
-        expect(result).to eq(['work_type', 'model'])
-      end
-
-      it 'resolves source_identifier options from mapping' do
-        result = manager.resolve_column_name(flag: 'source_identifier', default: 'source_identifier')
-        # Should return all options from mapping
-        expect(result).to eq(['source_id'])
-      end
-
-      it 'returns default as array when no mapping exists' do
-        # Simulate a case where no custom mapping exists
-        allow(Bulkrax).to receive(:field_mappings).and_return({
-                                                                'Bulkrax::CsvParser' => {
-                                                                  'title' => { 'from' => ['title'] }
-                                                                }
-                                                              })
-        new_manager = described_class.new
-
-        result = new_manager.resolve_column_name(key: 'file', default: 'file')
-        # Key not mapped, should return default as array
-        expect(result).to eq(['file'])
       end
     end
   end

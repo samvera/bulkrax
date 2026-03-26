@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-RSpec.describe Bulkrax::CsvValidationService::ColumnDescriptor do
+RSpec.describe Bulkrax::CsvTemplate::ColumnDescriptor do
   let(:descriptor) { described_class.new }
 
   describe 'COLUMN_DESCRIPTIONS' do
@@ -24,7 +24,6 @@ RSpec.describe Bulkrax::CsvValidationService::ColumnDescriptor do
       result = descriptor.core_columns
 
       expect(result).to be_an(Array)
-      # Returns the raw keys from COLUMN_DESCRIPTIONS before mapping
       expect(result).to include('model', 'source_identifier', 'id', 'rights_statement')
       expect(result).to include('visibility', 'embargo_release_date', 'visibility_during_embargo')
     end
@@ -32,7 +31,6 @@ RSpec.describe Bulkrax::CsvValidationService::ColumnDescriptor do
     it 'returns columns in the correct order' do
       result = descriptor.core_columns
 
-      # Include_first columns should come first
       include_first_count = described_class::COLUMN_DESCRIPTIONS[:include_first].length
       visibility_start = include_first_count
 
@@ -57,8 +55,6 @@ RSpec.describe Bulkrax::CsvValidationService::ColumnDescriptor do
         description = descriptor.find_description_for('model')
 
         expect(description).to include('work types configured')
-        # The default work type is interpolated when the constant is defined
-        # so we just check that it includes the expected pattern
         expect(description).to match(/If left blank, your default work type, .+, is used/)
       end
     end

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Bulkrax
-  class CsvValidationService
+  module CsvTemplate
     ##
     # Validates file references in CSV against zip archive contents
     #

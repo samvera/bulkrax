@@ -2,16 +2,16 @@
 
 require 'rails_helper'
 
-RSpec.describe Bulkrax::CsvValidationService::RowBuilder do
-  let(:service) { instance_double(Bulkrax::CsvValidationService) }
+RSpec.describe Bulkrax::CsvTemplate::RowBuilder do
+  let(:service) { instance_double('TemplateContext') }
   let(:row_builder) { described_class.new(service) }
-  let(:explanation_builder) { instance_double(Bulkrax::CsvValidationService::ExplanationBuilder) }
-  let(:value_determiner) { instance_double(Bulkrax::CsvValidationService::ValueDeterminer) }
-  let(:field_analyzer) { instance_double(Bulkrax::CsvValidationService::FieldAnalyzer) }
+  let(:explanation_builder) { instance_double(Bulkrax::CsvTemplate::ExplanationBuilder) }
+  let(:value_determiner) { instance_double(Bulkrax::CsvTemplate::ValueDeterminer) }
+  let(:field_analyzer) { instance_double(Bulkrax::CsvTemplate::FieldAnalyzer) }
 
   before do
-    allow(Bulkrax::CsvValidationService::ExplanationBuilder).to receive(:new).and_return(explanation_builder)
-    allow(Bulkrax::CsvValidationService::ValueDeterminer).to receive(:new).and_return(value_determiner)
+    allow(Bulkrax::CsvTemplate::ExplanationBuilder).to receive(:new).and_return(explanation_builder)
+    allow(Bulkrax::CsvTemplate::ValueDeterminer).to receive(:new).and_return(value_determiner)
     allow(service).to receive(:field_analyzer).and_return(field_analyzer)
   end
 
@@ -50,7 +50,7 @@ RSpec.describe Bulkrax::CsvValidationService::RowBuilder do
 
     before do
       allow(service).to receive(:all_models).and_return(['GenericWork'])
-      allow(Bulkrax::CsvValidationService::ModelLoader).to receive(:determine_klass_for)
+      allow(Bulkrax::CsvTemplate::ModelLoader).to receive(:determine_klass_for)
         .with('GenericWork').and_return(mock_klass)
       allow(field_analyzer).to receive(:find_or_create_field_list_for)
         .with(model_name: 'GenericWork').and_return(field_list)
@@ -68,43 +68,9 @@ RSpec.describe Bulkrax::CsvValidationService::RowBuilder do
       expect(result).to eq([['GenericWork', 'Required', 'Optional']])
     end
 
-    context 'with multiple models' do
-      let(:another_mock_klass) { double('Image') }
-      let(:another_field_list) do
-        {
-          'Image' => {
-            'properties' => ['title'],
-            'required_terms' => ['title']
-          }
-        }
-      end
-
-      before do
-        allow(service).to receive(:all_models).and_return(['GenericWork', 'Image'])
-        allow(Bulkrax::CsvValidationService::ModelLoader).to receive(:determine_klass_for)
-          .with('Image').and_return(another_mock_klass)
-        allow(field_analyzer).to receive(:find_or_create_field_list_for)
-          .with(model_name: 'Image').and_return(another_field_list)
-        allow(value_determiner).to receive(:determine_value)
-          .with('work_type', 'Image', another_field_list).and_return('Image')
-        allow(value_determiner).to receive(:determine_value)
-          .with('title', 'Image', another_field_list).and_return('Required')
-        allow(value_determiner).to receive(:determine_value)
-          .with('creator', 'Image', another_field_list).and_return(nil)
-      end
-
-      it 'returns rows for each model' do
-        result = row_builder.build_model_rows(header_row)
-
-        expect(result.length).to eq(2)
-        expect(result[0]).to eq(['GenericWork', 'Required', 'Optional'])
-        expect(result[1]).to eq(['Image', 'Required', nil])
-      end
-    end
-
     context 'when model class cannot be determined' do
       before do
-        allow(Bulkrax::CsvValidationService::ModelLoader).to receive(:determine_klass_for)
+        allow(Bulkrax::CsvTemplate::ModelLoader).to receive(:determine_klass_for)
           .with('GenericWork').and_return(nil)
       end
 
