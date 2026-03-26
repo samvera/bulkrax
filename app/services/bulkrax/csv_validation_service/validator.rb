@@ -27,13 +27,14 @@ module Bulkrax
       # @param file_validator [CsvValidationService::FileValidator] Optional file validator for warnings
       # @param row_validator [CsvValidationService::RowsValidator] Row validator for row-level validation
       # rubocop:disable Metrics/ParameterLists
-      def initialize(csv_headers, valid_headers, field_metadata, mapping_manager, file_validator = nil, row_validator = nil)
+      def initialize(csv_headers, valid_headers, field_metadata, mapping_manager, file_validator = nil, row_validator = nil, row_count: nil)
         @csv_headers = csv_headers || []
         @valid_headers = valid_headers || []
         @field_metadata = field_metadata || {}
         @mapping_manager = mapping_manager
         @file_validator = file_validator
         @row_validator = row_validator
+        @row_count = row_count
       end
       # rubocop:enable Metrics/ParameterLists
 
@@ -84,7 +85,10 @@ module Bulkrax
       end
 
       def errors?
-        missing_required_fields.any? || @csv_headers.blank? || (@file_validator&.missing_files&.any? || @row_validator&.errors? || false)
+        missing_required_fields.any? ||
+          @csv_headers.blank? ||
+          (@row_count&.zero? || false) ||
+          (@file_validator&.missing_files&.any? || @row_validator&.errors? || false)
       end
 
       private

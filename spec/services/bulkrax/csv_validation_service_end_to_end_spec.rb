@@ -241,11 +241,7 @@ RSpec.describe Bulkrax::CsvValidationService, type: :service do
       expect(result[:totalItems]).to eq(0)
     end
 
-    # BUG: the service currently returns isValid: true for a header-only CSV because
-    # the Validator only checks for missing required fields and unrecognized headers —
-    # it does not check whether any rows exist. After the refactor this should be false.
-    it 'is not valid (nothing to import)', :pending_fix do
-      pending 'service does not yet treat an empty CSV as invalid — fix during refactor'
+    it 'is not valid (nothing to import)' do
       expect(result[:isValid]).to be false
     end
   end

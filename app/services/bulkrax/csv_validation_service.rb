@@ -236,7 +236,8 @@ module Bulkrax
         field_metadata_for_all_models,
         @mapping_manager,
         @file_validator,
-        @row_validator
+        @row_validator,
+        row_count: @csv_data.size
       )
     end
 
