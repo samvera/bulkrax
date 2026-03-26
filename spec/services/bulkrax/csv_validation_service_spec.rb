@@ -137,7 +137,11 @@ RSpec.describe Bulkrax::CsvValidationService do
       end
 
       before do
-        allow_any_instance_of(described_class).to receive(:field_metadata_for_all_models).and_return(metadata_only_rights_missing)
+        allow_any_instance_of(Bulkrax::CsvTemplate::FieldAnalyzer).to receive(:find_or_create_field_list_for) do |_instance, model_name:|
+          entry = metadata_only_rights_missing[model_name]
+          next {} unless entry
+          { model_name => { 'properties' => entry[:properties], 'required_terms' => entry[:required_terms], 'controlled_vocab_terms' => entry[:controlled_vocab_terms] } }
+        end
       end
 
       it 'treats validation as valid with warnings (isValid: true, hasWarnings: true)' do

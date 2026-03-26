@@ -60,11 +60,11 @@ module Bulkrax
             column_builder = CsvTemplate::ColumnBuilder.new(self)
             all_columns = column_builder.all_columns
             all_columns - CsvTemplate::CsvBuilder::IGNORED_PROPERTIES
-          rescue StandardError => e
-            Rails.logger.error("Error building valid headers: #{e.message}")
-            standard_fields = %w[model source_identifier parent parents file]
-            model_fields = field_metadata_for_all_models.values.flat_map { |m| m[:properties] }
-            (standard_fields + model_fields).uniq
+                             rescue StandardError => e
+                               Rails.logger.error("Error building valid headers: #{e.message}")
+                               standard_fields = %w[model source_identifier parent parents file]
+                               model_fields = field_metadata_for_all_models.values.flat_map { |m| m[:properties] }
+                               (standard_fields + model_fields).uniq
           end
         end
       end

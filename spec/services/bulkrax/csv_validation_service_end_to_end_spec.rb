@@ -371,13 +371,13 @@ RSpec.describe Bulkrax::CsvValidationService, type: :service do
 
     before do
       # Ensure rights_statement is the only missing required term so the
-      # override logic in CsvValidationService#apply_rights_statement_override!
-      # is exercised. We force it by telling the service exactly what's required.
-      allow_any_instance_of(described_class).to receive(:field_metadata_for_all_models).and_return(
+      # override logic in apply_rights_statement_validation_override! is exercised.
+      # Stub at the FieldAnalyzer level since validation now runs through CsvParser.
+      allow_any_instance_of(Bulkrax::CsvTemplate::FieldAnalyzer).to receive(:find_or_create_field_list_for).and_return(
         'Work' => {
-          properties: %w[title rights_statement],
-          required_terms: %w[title rights_statement],
-          controlled_vocab_terms: []
+          'properties' => %w[title rights_statement],
+          'required_terms' => %w[title rights_statement],
+          'controlled_vocab_terms' => []
         }
       )
     end

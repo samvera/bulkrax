@@ -196,7 +196,7 @@ RSpec.describe Bulkrax::CsvValidationService, type: :service do
       headers    = rows[0]
       model_rows = rows[2..]
 
-      service      = described_class.new(models: ['Work'])
+      service = described_class.new(models: ['Work'])
       column_builder = Bulkrax::CsvValidationService::ColumnBuilder.new(service)
       required_cols  = column_builder.required_columns
 

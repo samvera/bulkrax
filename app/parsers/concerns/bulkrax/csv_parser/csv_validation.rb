@@ -2,7 +2,7 @@
 
 module Bulkrax
   class CsvParser < ApplicationParser
-    module CsvValidation
+    module CsvValidation # rubocop:disable Metrics/ModuleLength
       extend ActiveSupport::Concern
 
       included do
@@ -118,16 +118,19 @@ module Bulkrax
         end
 
         # Parse rows from a CsvEntry.read_data result into the canonical record shape.
-        # CsvEntry.read_data already filters blank rows and uses symbol keys.
+        # CsvEntry.read_data returns CSV::Row objects with symbol headers; blank rows
+        # are already filtered by CsvWrapper.
         def parse_validation_rows(raw_csv, source_id_key, parent_key, children_key, file_key)
           raw_csv.map do |row|
+            # CSV::Row#to_h converts symbol headers → string-keyed hash
+            row_hash = row.to_h.transform_keys(&:to_s)
             {
               source_identifier: row[source_id_key],
               model: row[:model],
               parent: row[parent_key],
               children: row[children_key],
               file: row[file_key],
-              raw_row: row.transform_keys(&:to_s)
+              raw_row: row_hash
             }
           end
         rescue StandardError => e
@@ -189,45 +192,48 @@ module Bulkrax
         end
 
         def extract_validation_items(csv_data) # rubocop:disable Metrics/MethodLength
-          child_to_parents = Hash.new { |h, k| h[k] = [] }
-          csv_data.each do |item|
-            parent_id = item[:source_identifier]
-            parse_relationship_field(item[:children]).each do |child_id|
-              child_to_parents[child_id] << parent_id
-            end
-          end
-
+          child_to_parents = build_child_to_parents_map(csv_data)
           collections = []
           works       = []
           file_sets   = []
 
           csv_data.each do |item|
-            item_id   = item[:source_identifier]
-            title     = item[:raw_row]['title'] || item_id
-            model_str = item[:model].to_s
-
-            if model_str.casecmp('collection').zero? || model_str.casecmp('collectionresource').zero?
-              explicit = parse_relationship_field(item[:parent])
-              inferred = child_to_parents[item_id] || []
-              collections << {
-                id: item_id, title: title, type: 'collection',
-                parentIds: (explicit + inferred).uniq,
-                childIds: parse_relationship_field(item[:children])
-              }
-            elsif model_str.casecmp('fileset').zero? || model_str.casecmp('hyrax::fileset').zero?
-              file_sets << { id: item_id, title: title, type: 'file_set' }
-            else
-              explicit = parse_relationship_field(item[:parent])
-              inferred = child_to_parents[item_id] || []
-              works << {
-                id: item_id, title: title, type: 'work',
-                parentIds: (explicit + inferred).uniq,
-                childIds: parse_relationship_field(item[:children])
-              }
-            end
+            categorise_validation_item(item, child_to_parents, collections, works, file_sets)
           end
 
           [collections, works, file_sets]
+        end
+
+        def build_child_to_parents_map(csv_data)
+          Hash.new { |h, k| h[k] = [] }.tap do |map|
+            csv_data.each do |item|
+              parse_relationship_field(item[:children]).each do |child_id|
+                map[child_id] << item[:source_identifier]
+              end
+            end
+          end
+        end
+
+        def categorise_validation_item(item, child_to_parents, collections, works, file_sets)
+          item_id   = item[:source_identifier]
+          title     = item[:raw_row]['title'] || item_id
+          model_str = item[:model].to_s
+
+          if model_str.casecmp('collection').zero? || model_str.casecmp('collectionresource').zero?
+            explicit = parse_relationship_field(item[:parent])
+            inferred = child_to_parents[item_id] || []
+            collections << { id: item_id, title: title, type: 'collection',
+                             parentIds: (explicit + inferred).uniq,
+                             childIds: parse_relationship_field(item[:children]) }
+          elsif model_str.casecmp('fileset').zero? || model_str.casecmp('hyrax::fileset').zero?
+            file_sets << { id: item_id, title: title, type: 'file_set' }
+          else
+            explicit = parse_relationship_field(item[:parent])
+            inferred = child_to_parents[item_id] || []
+            works << { id: item_id, title: title, type: 'work',
+                       parentIds: (explicit + inferred).uniq,
+                       childIds: parse_relationship_field(item[:children]) }
+          end
         end
 
         def parse_relationship_field(value)
