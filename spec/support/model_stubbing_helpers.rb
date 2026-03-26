@@ -18,7 +18,7 @@ module ModelStubbingHelpers
   # - FileSet: properties = { 'title', 'file' }
   #
   # @example Basic usage in a spec
-  #   RSpec.describe Bulkrax::CsvValidationService do
+  #   RSpec.describe Bulkrax::CsvParser do
   #     before(:each) do
   #       stub_bulkrax_models
   #     end

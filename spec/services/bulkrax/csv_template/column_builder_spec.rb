@@ -3,7 +3,7 @@
 require 'rails_helper'
 
 RSpec.describe Bulkrax::CsvTemplate::ColumnBuilder do
-  let(:service) { instance_double(Bulkrax::CsvValidationService) }
+  let(:service) { instance_double(Bulkrax::CsvParser::TemplateContext) }
   let(:column_builder) { described_class.new(service) }
   let(:mapping_manager) { instance_double(Bulkrax::CsvTemplate::MappingManager) }
   let(:field_analyzer) { instance_double(Bulkrax::CsvTemplate::FieldAnalyzer) }

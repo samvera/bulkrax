@@ -3,7 +3,7 @@
 require 'rails_helper'
 
 RSpec.describe Bulkrax::CsvTemplate::ValueDeterminer do
-  let(:service) { instance_double(Bulkrax::CsvValidationService) }
+  let(:service) { instance_double(Bulkrax::CsvParser::TemplateContext) }
   let(:value_determiner) { described_class.new(service) }
   let(:mapping_manager) { instance_double(Bulkrax::CsvTemplate::MappingManager) }
 
