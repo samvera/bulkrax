@@ -79,8 +79,8 @@ module Bulkrax
     # @param csv_file [File, ActionDispatch::Http::UploadedFile] CSV file to validate
     # @param zip_file [File, ActionDispatch::Http::UploadedFile, nil] Optional zip archive with referenced files
     # @param admin_set_id [String, nil] Optional admin set ID for context
-    def self.validate(csv_file: nil, zip_file: nil, admin_set_id: nil)
-      new(csv_file: csv_file, zip_file: zip_file, admin_set_id: admin_set_id).validate
+    def self.validate(csv_file: nil, zip_file: nil, admin_set_id: nil, additional_validators: [])
+      new(csv_file: csv_file, zip_file: zip_file, admin_set_id: admin_set_id, additional_validators: additional_validators).validate
     end
 
     # ============================================================================
@@ -93,7 +93,7 @@ module Bulkrax
     # @param csv_file [File, nil] CSV file for validation mode
     # @param zip_file [File, nil] Zip archive for validation mode
     # @param admin_set_id [String, nil] Optional admin set ID for context
-    def initialize(models: nil, csv_file: nil, zip_file: nil, admin_set_id: nil)
+    def initialize(models: nil, csv_file: nil, zip_file: nil, admin_set_id: nil, additional_validators: [])
       # Store admin_set_id for later use
       @admin_set_id = admin_set_id
 
@@ -121,7 +121,7 @@ module Bulkrax
         @csv_data = build_csv_data_from_parser
         @file_validator = CsvValidationService::FileValidator.new(@csv_data, zip_file, admin_set_id)
         @item_extractor = CsvValidationService::ItemExtractor.new(@csv_data)
-        @row_validator = Bulkrax.row_validator_service.new(@csv_data, field_metadata_for_all_models, @mapping_manager)
+        @row_validator = Bulkrax.row_validator_service.new(@csv_data, field_metadata_for_all_models, @mapping_manager, additional_validators: additional_validators)
       else
         # Generation mode: use provided models
         @all_models = CsvValidationService::ModelLoader.new(Array.wrap(models)).models

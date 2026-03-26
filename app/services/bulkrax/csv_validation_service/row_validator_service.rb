@@ -14,11 +14,12 @@ module Bulkrax
 
     attr_reader :csv_data, :field_metadata, :manager_mapper
 
-    def initialize(csv_data, field_metadata = nil, manager_mapper = nil)
+    def initialize(csv_data, field_metadata = nil, manager_mapper = nil, additional_validators: [])
       @csv_data = csv_data
       @field_metadata = field_metadata
       @manager_mapper = manager_mapper
       @processor_chain = default_processor_chain.dup
+      @additional_validators = Array.wrap(additional_validators)
     end
 
     def valid?
@@ -32,6 +33,7 @@ module Bulkrax
     def errors
       @errors ||= [].tap do |errors|
         @processor_chain.each { |method_name| send(method_name, errors) }
+        @additional_validators.each { |validator| validator.call(csv_data, errors) }
       end
     end
 
