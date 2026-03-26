@@ -4,6 +4,7 @@ module Bulkrax
   class CsvParser < ApplicationParser # rubocop:disable Metrics/ClassLength
     include ErroredEntries
     include ExportBehavior
+    include CsvParser::CsvTemplateGeneration
     attr_writer :collections, :file_sets, :works
     attr_accessor :validation_mode
 

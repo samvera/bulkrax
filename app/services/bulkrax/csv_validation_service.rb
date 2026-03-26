@@ -70,8 +70,7 @@ module Bulkrax
     # @param admin_set_id [String, nil] Optional admin set ID for context
     # @return [String] File path (for 'file' output) or CSV string (for 'csv_string' output)
     def self.generate_template(models: [], output: 'file', admin_set_id: nil, **args)
-      raise NameError, "Hyrax is not defined" unless defined?(::Hyrax)
-      new(models: models, admin_set_id: admin_set_id).send("to_#{output}", **args)
+      CsvParser.generate_template(models: models, output: output, admin_set_id: admin_set_id, **args)
     end
 
     # Validate a CSV file and optional zip archive
