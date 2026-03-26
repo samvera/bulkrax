@@ -137,7 +137,7 @@ RSpec.describe Bulkrax::CsvValidationService do
       end
 
       before do
-        allow_any_instance_of(described_class).to receive(:field_metadata_for_all_models).and_return(metadata_only_rights_missing)
+        allow(Bulkrax::CsvParser).to receive(:build_validation_field_metadata).and_return(metadata_only_rights_missing)
       end
 
       it 'treats validation as valid with warnings (isValid: true, hasWarnings: true)' do
@@ -213,22 +213,6 @@ RSpec.describe Bulkrax::CsvValidationService do
         expect(service.mapping_manager).to be_a(Bulkrax::CsvValidationService::MappingManager)
       end
     end
-
-    context 'in validation mode' do
-      let(:service) { described_class.new(csv_file: csv_file, zip_file: zip_file) }
-
-      it 'extracts models from CSV' do
-        expect(service.all_models).to include('GenericWork')
-      end
-
-      it 'provides access to mappings' do
-        expect(service.mappings).to be_a(Hash)
-      end
-
-      it 'provides access to field analyzer' do
-        expect(service.field_analyzer).to be_a(Bulkrax::CsvValidationService::FieldAnalyzer)
-      end
-    end
   end
 
   describe '#field_metadata_for_all_models' do
@@ -259,30 +243,6 @@ RSpec.describe Bulkrax::CsvValidationService do
 
       expect(headers).to be_an(Array)
       expect(headers).to include('model')
-    end
-  end
-
-  describe '#validate' do
-    let(:service) { described_class.new(csv_file: csv_file, zip_file: zip_file) }
-
-    it 'returns a hash with validation results' do
-      result = service.validate
-
-      expect(result).to be_a(Hash)
-      expect(result).to have_key(:isValid)
-      expect(result).to have_key(:hasWarnings)
-    end
-
-    it 'includes all expected result keys' do
-      result = service.validate
-
-      expected_keys = [:headers, :missingRequired, :unrecognized, :rowCount, :isValid, :hasWarnings,
-                       :collections, :works, :fileSets, :totalItems,
-                       :fileReferences, :missingFiles, :foundFiles, :zipIncluded]
-
-      expected_keys.each do |key|
-        expect(result).to have_key(key), "Expected result to have key #{key}"
-      end
     end
   end
 

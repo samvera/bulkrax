@@ -176,9 +176,13 @@ module Bulkrax
 
     attr_writer :row_validator_service
     ##
-    # @return [Class] the class to use for row validation
+    # @return [Class, nil] an optional legacy row-validator class.
+    #   When non-nil, the class must respond to `.new(csv_data, field_metadata, mapping_manager)`
+    #   and expose an `#errors` method returning an Array of error hashes.
+    #   The default is nil; row validation is now handled via
+    #   CsvParser.register_csv_row_validator.
     def row_validator_service
-      @row_validator_service || Bulkrax::CsvValidationService::RowValidatorService
+      @row_validator_service
     end
   end
 
