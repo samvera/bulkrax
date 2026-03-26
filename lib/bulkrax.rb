@@ -174,15 +174,30 @@ module Bulkrax
     end
     alias use_locking? use_locking
 
-    attr_writer :row_validator_service
     ##
-    # @return [Class, nil] an optional legacy row-validator class.
-    #   When non-nil, the class must respond to `.new(csv_data, field_metadata, mapping_manager)`
-    #   and expose an `#errors` method returning an Array of error hashes.
-    #   The default is nil; row validation is now handled via
-    #   CsvParser.register_csv_row_validator.
-    def row_validator_service
-      @row_validator_service
+    # @return [Array<#call>] the list of row-level validator callables used during CSV validation.
+    #   Each callable receives (record, row_number, context).  Defaults to the four built-in
+    #   validators.  Host apps may replace or extend this list:
+    #
+    #   @example
+    #     Bulkrax.config do |c|
+    #       c.register_csv_row_validator(MyApp::CustomValidator)
+    #       # or replace entirely:
+    #       c.csv_row_validators = [MyApp::OnlyThisValidator]
+    #     end
+    def csv_row_validators
+      @csv_row_validators ||= [
+        Bulkrax::CsvRow::DuplicateIdentifier,
+        Bulkrax::CsvRow::ParentReference,
+        Bulkrax::CsvRow::RequiredValues,
+        Bulkrax::CsvRow::ControlledVocabulary
+      ]
+    end
+
+    attr_writer :csv_row_validators
+
+    def register_csv_row_validator(callable)
+      csv_row_validators << callable
     end
   end
 
@@ -240,8 +255,9 @@ module Bulkrax
                  :required_elements=,
                  :reserved_properties,
                  :reserved_properties=,
-                 :row_validator_service,
-                 :row_validator_service=,
+                 :csv_row_validators,
+                 :csv_row_validators=,
+                 :register_csv_row_validator,
                  :server_name,
                  :server_name=,
                  :solr_key_for_member_file_ids,

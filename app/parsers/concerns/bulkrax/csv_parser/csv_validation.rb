@@ -9,15 +9,9 @@ module Bulkrax
         # Lightweight struct used to satisfy the CsvTemplate::ColumnBuilder
         # interface without constructing a full template context.
         ValidationContext = Struct.new(:mapping_manager, :field_analyzer, :all_models, :mappings, keyword_init: true)
-
-        class_attribute :csv_row_validators, default: []
       end
 
       class_methods do
-        def register_csv_row_validator(callable)
-          self.csv_row_validators = csv_row_validators + [callable]
-        end
-
         # Validate a CSV (and optional zip) without a persisted Importer record.
         #
         # @param csv_file [File, ActionDispatch::Http::UploadedFile, String] path or file object
@@ -71,13 +65,7 @@ module Bulkrax
 
           csv_data.each_with_index do |record, index|
             row_number = index + 2 # 1-indexed header row + 1
-            csv_row_validators.each { |v| v.call(record, row_number, validator_context) }
-          end
-
-          # Also run legacy row_validator_service if the host app has configured one
-          if (rvs = Bulkrax.row_validator_service)
-            legacy = rvs.new(csv_data, field_metadata, mapping_manager)
-            validator_context[:errors].concat(legacy.errors)
+            Bulkrax.csv_row_validators.each { |v| v.call(record, row_number, validator_context) }
           end
 
           # 8. File validation
