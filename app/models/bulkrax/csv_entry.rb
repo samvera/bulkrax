@@ -45,7 +45,12 @@ module Bulkrax
         encoding: 'utf-8'
       }.merge(csv_read_data_options)
 
-      results = CSV.read(path, **options)
+      results = if path.respond_to?(:read)
+                  path.rewind if path.respond_to?(:rewind)
+                  CSV.parse(path.read, **options)
+                else
+                  CSV.read(path, **options)
+                end
       csv_wrapper_class.new(results)
     end
 

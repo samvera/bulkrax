@@ -19,11 +19,9 @@ module Bulkrax
         # @param admin_set_id [String, nil]
         # @return [Hash] validation result compatible with the guided import UI
         def validate_csv(csv_file:, zip_file: nil, admin_set_id: nil) # rubocop:disable Metrics/MethodLength, Metrics/AbcSize
-          file_path = csv_file.respond_to?(:path) ? csv_file.path : csv_file.to_s
-
           # 1. Read headers — use CsvEntry.read_data so header normalisation
           #    (special-char stripping, symbolisation) is identical to a real import.
-          raw_csv = CsvEntry.read_data(file_path)
+          raw_csv = CsvEntry.read_data(csv_file)
           headers = raw_csv.headers.map(&:to_s)
 
           # 2. Field mappings / column name resolution
