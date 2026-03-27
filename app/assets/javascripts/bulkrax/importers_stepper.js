@@ -1082,7 +1082,6 @@
     $('#warnings-acked').prop('checked', false)
     $('.validation-results').hide()
     $('.warning-acknowledgment').hide()
-    $('.skip-validation-label').show()
     $('#validate-upload-btn').html('<span class="fa fa-file-text"></span> ' + t('validate_upload'))
     $('#validate-path-btn').html('<span class="fa fa-file-text"></span> ' + t('validate_path'))
     renderUploadedFiles()
@@ -1111,7 +1110,11 @@
 
     var $validateBtn = StepperState.uploadMode === 'file_path' ? $('#validate-path-btn') : $('#validate-upload-btn')
     $validateBtn.prop('disabled', !canValidate)
-    $('#skip-validation-checkbox').prop('disabled', !canValidate && !StepperState.skipValidation)
+    if (canValidate || StepperState.skipValidation) {
+      $('.skip-validation-label').show()
+    } else {
+      $('.skip-validation-label').hide()
+    }
   }
 
   // Render uploaded files
@@ -1287,7 +1290,7 @@
 
     // Reset skip validation checkbox and label
     $('#skip-validation-checkbox').prop('checked', false)
-    $('.skip-validation-label').show()
+    // Visibility is controlled by updateValidateButtonState
 
     // Reset both validate buttons to original state
     $('#validate-upload-btn')

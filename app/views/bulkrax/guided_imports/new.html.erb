@@ -322,8 +322,8 @@
               <span class="fa fa-refresh" aria-hidden="true"></span> <%= t('bulkrax.importer.guided_import.nav.clear_start_over') %>
             </button>
             <div class="step-nav-right d-flex flex-column align-items-end">
-              <label class="skip-validation-label d-flex align-items-center">
-                <input type="checkbox" id="skip-validation-checkbox" disabled>
+              <label class="skip-validation-label" style="display: none">
+                <input type="checkbox" id="skip-validation-checkbox">
                 <span><%= t('bulkrax.importer.guided_import.nav.skip_validation') %></span>
               </label>
               <button type="button" class="btn btn-primary step-next-btn" data-next-step="2" disabled>
