@@ -36,17 +36,16 @@ The stepper wizard is a 3-step process for bulk importing CSV files and associat
 | Controller | `app/controllers/concerns/bulkrax/guided_import.rb` | 4 endpoints + helpers |
 | Formatter | `app/services/bulkrax/stepper_response_formatter.rb` | Validation response formatting |
 | Helper | `app/helpers/bulkrax/importers_helper.rb` | Admin set enumeration |
-| Row Validator | `app/services/bulkrax/csv_validation_service/row_validator_service.rb` | Row-level validation processor chain |
+| Row Validators | `app/validators/bulkrax/csv_row/` | Callable row validator modules |
 
 ### Routes
 
 Defined in `config/routes.rb` under the `importers` collection:
 
 ```ruby
-get 'new/guided_import', action: :guided_import_new, as: :guided_import_new        # GET /importers/new/guided_import
-post 'guided_import', action: :guided_import_create, as: :guided_import_create      # POST /importers/guided_import
-post 'guided_import/validate', action: :guided_import_validate, as: :guided_import_validate  # POST /importers/guided_import/validate
-get 'guided_import/demo_scenarios', action: :guided_import_demo_scenarios, as: :guided_import_demo_scenarios  # GET /importers/guided_import/demo_scenarios
+get  'guided_import/new',           to: 'guided_imports#new',      as: :guided_import_new
+post 'guided_import',               to: 'guided_imports#create',   as: :guided_import_create
+post 'guided_import/validate',      to: 'guided_imports#validate', as: :guided_import_validate
 ```
 
 ## Step 1: Upload & Validate
@@ -75,13 +74,13 @@ The JavaScript tracks 5 possible upload states:
 ### Admin Set Selection
 
 Before validation, users must select an admin set. The admin set ID is:
-- Passed to `CsvValidationService` for context-gated schema properties
+- Passed to `CsvParser.validate_csv` for context-gated schema properties
 - Used to update the CSV template download link
 - Stored in the importer on creation
 
 ### CSV Template Download
 
-A "Download a CSV template" link generates a template via `CsvValidationService.generate_template` for the selected admin set. The link URL updates dynamically when the admin set selection changes.
+A "Download a CSV template" link generates a template via `CsvParser.generate_template` for the selected admin set. The link URL updates dynamically when the admin set selection changes.
 
 ### Validation Flow
 
@@ -92,7 +91,7 @@ A "Download a CSV template" link generates a template via `CsvValidationService.
 4. JavaScript builds FormData (or file path params) + admin_set_id
 5. AJAX POST to /importers/guided_import/validate (60s timeout)
 6. Controller resolves files -> finds CSV and ZIP -> extracts CSV from ZIP if needed
-7. CsvValidationService.validate() processes CSV
+7. CsvParser.validate_csv() processes CSV
 8. StepperResponseFormatter.format() structures the response
 9. JavaScript normalizes response (snake_case -> camelCase, relationship resolution)
 10. JavaScript renders validation accordions, summary cards, hierarchy tree
@@ -147,29 +146,28 @@ The review step displays:
 - **Settings Summary** - Chosen visibility, rights statement, record limit
 - **Warnings Summary** - Any unresolved warnings from validation
 
-## Controller Concern: `GuidedImport`
+## Controller: `GuidedImportsController`
 
-**Location:** `app/controllers/concerns/bulkrax/guided_import.rb`
+**Location:** `app/controllers/bulkrax/guided_imports_controller.rb`
 
 ### Public Actions
 
 | Action | Method | Purpose |
 |--------|--------|---------|
-| `guided_import_new` | GET | Render the stepper form (with Hyrax breadcrumbs) |
-| `guided_import_validate` | POST | AJAX validation endpoint |
-| `guided_import_create` | POST | Create importer and start import job |
-| `guided_import_demo_scenarios` | GET | Serve demo scenarios JSON from `lib/bulkrax/data/demo_scenarios.json` |
+| `new` | GET | Render the stepper form (with Hyrax breadcrumbs) |
+| `validate` | POST | AJAX validation endpoint |
+| `create` | POST | Create importer and start import job |
 
-### `guided_import_validate` Details
+### `validate` Details
 
 1. Resolves files from either upload params or file path
 2. Finds CSV and ZIP from the file list (by extension)
 3. If no CSV found but ZIP exists, extracts CSV from the ZIP
-4. Calls `CsvValidationService.validate(csv_file:, zip_file:, admin_set_id:)`
+4. Calls `CsvParser.validate_csv(csv_file:, zip_file:, admin_set_id:)`
 5. Formats result through `StepperResponseFormatter.format()`
 6. Returns JSON response
 
-### `guided_import_create` Details
+### `create` Details
 
 1. Extracts uploaded files from params
 2. Creates `Importer` with guided import strong parameters:
@@ -186,22 +184,16 @@ The review step displays:
 Key helpers include:
 
 - `resolve_validation_files` - Returns `[files, error]` tuple from upload or file path
-- `find_csv_and_zip(files)` - Scans files by extension, returns `[csv_file, zip_file]`
+- `select_csv_and_zip(files)` - Scans files by extension, returns `[csv_file, zip_file]`
 - `extract_csv_from_zip(zip_file)` - Opens ZIP, finds CSV, returns `[csv_file, error]`
-- `find_csv_in_zip(zip)` - Smart CSV discovery preferring shallowest directory level
-- `run_validation(csv_file, zip_file, admin_set_id:)` - Delegates to `CsvValidationService` or demo mode
-- `write_guided_import_files(files)` - Writes CSV and ZIP to disk via parser methods
-- `generate_validation_response` - Mock data generator for demo mode
-- `build_validation_messages` - Format validation response structure
-- `validation_status` / `validation_status_level` - Determine severity, icon, and title
-- `missing_required_issue` / `unrecognized_fields_issue` / `file_references_issue` - Format individual issues
-- `import_via_file_path?` / `import_file_path` - File path mode helpers
+- `run_validation(csv_file, zip_file, admin_set_id:)` - Delegates to `CsvParser.validate_csv`
+- `write_files(files)` - Writes CSV and ZIP to disk via parser methods
 
 ## StepperResponseFormatter
 
 **Location:** `app/services/bulkrax/stepper_response_formatter.rb`
 
-Transforms raw `CsvValidationService` output into a structured response for the frontend.
+Transforms raw `CsvParser.validate_csv` output into a structured response for the frontend.
 
 ### Public API
 
@@ -217,7 +209,7 @@ StepperResponseFormatter.error(message: 'Something went wrong', summary: 'Error 
 
 ```ruby
 {
-  # Pass-through from CsvValidationService
+  # Pass-through from CsvParser.validate_csv
   headers: [...],
   missingRequired: [...],
   unrecognized: {...},
@@ -484,8 +476,8 @@ Browser                     Controller                  Services
   |                            |-- find_csv_and_zip        |
   |                            |-- extract_csv_from_zip?   |
   |                            |                           |
-  |                            |-- CsvValidationService -->|
-  |                            |  .validate(csv, zip, id)  |
+  |                            |-- CsvParser.validate_csv->|
+  |                            |  (csv, zip, admin_set_id) |
   |                            |                           |
   |                            |<-- validation result -----|
   |                            |                           |
@@ -563,150 +555,88 @@ The stepper includes a demo mode for testing without real files:
 
 #### Customizing Validation
 
-Validation logic lives in `CsvValidationService` and its subclasses (see `docs/CSV_SERVICE_ARCHITECTURE.md`). The controller delegates to the service and formats results through `StepperResponseFormatter`.
+Validation logic lives in `CsvParser::CsvValidation` and the `CsvTemplate::*` / `CsvRow::*` classes (see `docs/CSV_SERVICE_ARCHITECTURE.md`). The controller delegates to `CsvParser.validate_csv` and formats results through `StepperResponseFormatter`.
 
 #### Extending Row Validation
 
-Row validation is powered by `CsvValidationService::RowValidatorService`, which uses a processor chain that runs four validators in order:
+Row validation uses `Bulkrax.csv_row_validators` — a configurable array of callable objects. Each is called once per row with `(record, row_number, context)`.
+
+The default validators run in order:
 
 ```ruby
-Bulkrax::CsvValidationService::RowValidatorService.default_processor_chain
-# => [:validate_duplicate_identifiers, :validate_parent_references, :validate_required_values, :validate_controlled_vocabulary]
+Bulkrax.csv_row_validators
+# => [
+#   Bulkrax::CsvRow::DuplicateIdentifier,
+#   Bulkrax::CsvRow::ParentReference,
+#   Bulkrax::CsvRow::RequiredValues,
+#   Bulkrax::CsvRow::ControlledVocabulary
+# ]
 ```
 
-Each method in the chain receives a shared `errors` array and appends to it directly. All errors are collected and returned together.
-
-##### Registering a Custom Validator Service
-
-Tell Bulkrax to use your subclass via the initializer:
+##### Registering a Custom Validator
 
 ```ruby
 # config/initializers/bulkrax.rb
 Bulkrax.config do |config|
-  config.row_validator_service = MyRowValidatorService
+  config.register_csv_row_validator(MyCustomRowValidator)
 end
 ```
 
-##### Adding a Custom Validator
+##### Writing a Custom Validator
 
-Subclass `RowValidatorService` and append your method to the chain. Each method receives an `errors` array — append error hashes to it directly:
+A validator is any object responding to `.call(record, row_number, context)`. Errors are appended to `context[:errors]`.
 
 ```ruby
-class MyRowValidatorService < Bulkrax::CsvValidationService::RowValidatorService
-  self.default_processor_chain += [:validate_duplicate_titles]
+module MyCustomRowValidator
+  def self.call(record, row_number, context)
+    title = record[:raw_row]['title']
+    return if title.present?
 
-  def validate_duplicate_titles(errors)
-    seen = {}
-
-    each_row do |row, row_number|
-      title = row[:raw_row]['title']
-      next if title.blank?
-
-      if seen[title]
-        errors << {
-          row: row_number,
-          source_identifier: row[:source_identifier],
-          severity: 'error',
-          category: 'duplicate_title',
-          column: 'title',
-          value: title,
-          message: "Duplicate title '#{title}' — also appears in row #{seen[title]}.",
-          suggestion: 'Each record should have a unique title.'
-        }
-      else
-        seen[title] = row_number
-      end
-    end
+    context[:errors] << {
+      row: row_number,
+      source_identifier: record[:source_identifier],
+      severity: 'error',
+      category: 'missing_title',
+      column: 'title',
+      value: nil,
+      message: 'Title is blank.',
+      suggestion: 'All records must have a title.'
+    }
   end
 end
 ```
 
-`each_row` is provided by `RowValidatorService` and yields each row along with the correct 1-indexed row number (accounting for the header row).
-
-For more complex validators, extract the logic into a dedicated class. The dedicated class should include `ValidatorHelpers` to get access to `each_row`:
-
-```ruby
-class DuplicateTitleValidator
-  include Bulkrax::CsvValidationService::RowValidatorService::ValidatorHelpers
-
-  def initialize(csv_data, field_metadata, manager_mapper)
-    @csv_data = csv_data
-    @field_metadata = field_metadata
-    @manager_mapper = manager_mapper
-  end
-
-  def validate(errors)
-    seen = {}
-
-    each_row do |row, row_number|
-      # ... validation logic appending to errors
-    end
-  end
-end
-
-class MyRowValidatorService < Bulkrax::CsvValidationService::RowValidatorService
-  self.default_processor_chain += [:validate_duplicate_titles]
-
-  def validate_duplicate_titles(errors)
-    DuplicateTitleValidator.new(csv_data, field_metadata, manager_mapper).validate(errors)
-  end
-end
-```
-
-##### Overriding a Built-in Validator
-
-To skip or replace a built-in validator, override its method:
-
-```ruby
-class MyRowValidatorService < Bulkrax::CsvValidationService::RowValidatorService
-  # Skip duplicate identifier checking entirely
-  def validate_duplicate_identifiers(errors)
-    # no-op
-  end
-
-  # Replace with custom implementation
-  def validate_controlled_vocabulary(errors)
-    each_row do |row, row_number|
-      # custom logic appending to errors
-    end
-  end
-end
-```
-
-##### Available Data in Chain Methods
-
-All chain methods have access to these readers inherited from `RowValidatorService`:
-
-| Reader | Type | Description |
-|--------|------|-------------|
-| `csv_data` | `Array<Hash>` | Parsed CSV rows with `:source_identifier`, `:model`, `:parent`, `:children`, `:raw_row` |
-| `field_metadata` | `Hash` | Model field metadata including `required_terms` and `controlled_vocab_terms` |
-| `manager_mapper` | `CsvValidationService::MappingManager` | Bulkrax field mapping resolver |
-| `each_row` | `method` | Iterates `csv_data` yielding `(row, row_number)` with correct 1-indexed row numbers |
-
-##### Error Hash Structure
-
-Each error appended to the `errors` array must follow this structure:
+##### Available Context Keys
 
 | Key | Type | Description |
 |-----|------|-------------|
-| `row` | Integer | 1-indexed row number (use `row_number` from `each_row`) |
+| `:errors` | Array | Append error hashes here |
+| `:seen_ids` | Hash | `source_identifier => row_number` for duplicate detection |
+| `:all_ids` | Set | All source identifiers in the CSV |
+| `:field_metadata` | Hash | Per-model `required_terms` and `controlled_vocab_terms` |
+| `:mapping_manager` | `CsvTemplate::MappingManager` | Field mapping resolver |
+
+##### Error Hash Structure
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `row` | Integer | 1-indexed row number |
 | `source_identifier` | String | The record's source identifier |
 | `severity` | String | `'error'` or `'warning'` |
-| `category` | String | Machine-readable category (e.g. `'duplicate_title'`) |
+| `category` | String | Machine-readable category |
 | `column` | String | CSV column name affected |
 | `value` | String | The cell value that triggered the issue |
 | `message` | String | Human-readable description |
-| `suggestion` | String | Actionable fix, or `nil` if not deterministic |
+| `suggestion` | String\|nil | Actionable fix suggestion, or `nil` |
 
 ##### Built-in Validator Categories
 
-| Category | Severity | Description |
-|----------|----------|-------------|
-| `duplicate_source_identifier` | error | `source_identifier` appears more than once in the CSV |
-| `invalid_parent_reference` | error | `parent` references a `source_identifier` not found in the CSV |
-| `missing_required_value` | error | A required field is blank for a specific row |
-| `invalid_controlled_value` | error | Value does not match any active term in the configured QA vocabulary |
+| Category | Severity | Validator |
+|----------|----------|-----------|
+| `duplicate_source_identifier` | error | `CsvRow::DuplicateIdentifier` |
+| `invalid_parent_reference` | error | `CsvRow::ParentReference` |
+| `missing_required_value` | error | `CsvRow::RequiredValues` |
+| `invalid_controlled_value` | error | `CsvRow::ControlledVocabulary` |
 
 #### Adding New Steps
 
@@ -735,7 +665,7 @@ $border-error: #f5c6cb;    // Large zone
 
 #### Response Formatting
 
-To customize how validation results are presented, modify `StepperResponseFormatter`. It transforms raw `CsvValidationService` output into the `messages` structure consumed by the JavaScript rendering functions.
+To customize how validation results are presented, modify `StepperResponseFormatter`. It transforms raw `CsvParser.validate_csv` output into the `messages` structure consumed by the JavaScript rendering functions.
 
 ## Troubleshooting
 
@@ -756,7 +686,7 @@ rake assets:precompile
 
 - Check server logs for backend errors
 - Verify file upload size limits in your web server config
-- Ensure `CsvValidationService` can load the models referenced in the CSV
+- Ensure `CsvParser.validate_csv` can load the models referenced in the CSV
 - Check that the admin set exists and user has deposit permissions
 
 ### Styling Issues

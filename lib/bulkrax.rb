@@ -175,11 +175,23 @@ module Bulkrax
     end
     alias use_locking? use_locking
 
-    attr_writer :row_validator_service
     ##
-    # @return [Class] the class to use for row validation
-    def row_validator_service
-      @row_validator_service || Bulkrax::CsvValidationService::RowValidatorService
+    # @return [Array<#call>] callable validators invoked per-row during CSV validation.
+    #   Each callable receives (record, row_number, context).
+    #   Defaults to the four built-in CsvRow:: validators.
+    def csv_row_validators
+      @csv_row_validators ||= [
+        Bulkrax::CsvRow::DuplicateIdentifier,
+        Bulkrax::CsvRow::ParentReference,
+        Bulkrax::CsvRow::RequiredValues,
+        Bulkrax::CsvRow::ControlledVocabulary
+      ]
+    end
+
+    attr_writer :csv_row_validators
+
+    def register_csv_row_validator(callable)
+      csv_row_validators << callable
     end
   end
 
@@ -237,8 +249,9 @@ module Bulkrax
                  :required_elements=,
                  :reserved_properties,
                  :reserved_properties=,
-                 :row_validator_service,
-                 :row_validator_service=,
+                 :csv_row_validators,
+                 :csv_row_validators=,
+                 :register_csv_row_validator,
                  :server_name,
                  :server_name=,
                  :solr_key_for_member_file_ids,

@@ -53,9 +53,9 @@ module Bulkrax
       context 'with a CSV uploaded directly' do
         let(:csv_upload) { fixture_file_upload('spec/fixtures/csv/good.csv', 'text/csv') }
 
-        before { allow(Bulkrax::CsvValidationService).to receive(:validate).and_return(validation_success) }
+        before { allow(Bulkrax::CsvParser).to receive(:validate_csv).and_return(validation_success) }
 
-        it 'calls CsvValidationService and returns a successful response' do
+        it 'calls CsvParser.validate_csv and returns a successful response' do
           post_validate(importer: { parser_fields: { files: [csv_upload] } })
           expect(response).to have_http_status(:ok)
           expect(json_response[:isValid]).to eq(true)
@@ -63,9 +63,9 @@ module Bulkrax
       end
 
       context 'with a file path that exists' do
-        before { allow(Bulkrax::CsvValidationService).to receive(:validate).and_return(validation_success) }
+        before { allow(Bulkrax::CsvParser).to receive(:validate_csv).and_return(validation_success) }
 
-        it 'calls CsvValidationService and returns a successful response' do
+        it 'calls CsvParser.validate_csv and returns a successful response' do
           post_validate(importer: { parser_fields: { import_file_path: 'spec/fixtures/csv/good.csv' } })
           expect(response).to have_http_status(:ok)
           expect(json_response[:isValid]).to eq(true)
@@ -81,7 +81,7 @@ module Bulkrax
           Rack::Test::UploadedFile.new(t.path, 'application/zip', original_filename: 'upload.zip')
         end
 
-        before { allow(Bulkrax::CsvValidationService).to receive(:validate).and_return(validation_success) }
+        before { allow(Bulkrax::CsvParser).to receive(:validate_csv).and_return(validation_success) }
 
         it 'extracts the CSV and returns a successful response' do
           post_validate(importer: { parser_fields: { files: [zip_upload] } })

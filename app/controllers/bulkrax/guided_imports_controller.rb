@@ -85,7 +85,7 @@ module Bulkrax
     # @param admin_set_id [String, nil] optional admin set ID for validation context
     # @return [Hash] validation result data
     def run_validation(csv_file, zip_file, admin_set_id: nil)
-      CsvValidationService.validate(csv_file: csv_file, zip_file: zip_file, admin_set_id: admin_set_id)
+      CsvParser.validate_csv(csv_file: csv_file, zip_file: zip_file, admin_set_id: admin_set_id)
     end
 
     def importer_params
