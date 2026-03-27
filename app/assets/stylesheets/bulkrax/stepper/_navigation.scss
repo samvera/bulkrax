@@ -76,6 +76,8 @@
 }
 
 .skip-validation-label {
+  display: flex;
+  align-items: center;
   gap: 6px;
   margin: 0;
   font-weight: normal;
