@@ -27,10 +27,17 @@ module Bulkrax
     end
 
     def unzip_imported_file(parser)
-      return unless parser.file? && parser.zip?
-
-      parser.unzip(parser.parser_fields['import_file_path'])
-      parser.remove_spaces_from_filenames
+      return unless parser.file?
+      if parser.zip?
+        # we have a zip file, and we need to unzip it before we can import the files
+        parser.unzip(parser.parser_fields['import_file_path'])
+        parser.remove_spaces_from_filenames
+      elsif parser.zip_file?(parser.parser_fields['attachments_zip_path'])
+        # we have a separate csv and zip file. We need to unzip the zip file, and move the csv file to the unzip location before we can import the files
+        parser.unzip(parser.parser_fields['attachments_zip_path'])
+        parser.copy_file(parser.parser_fields['import_file_path'])
+        parser.remove_spaces_from_filenames
+      end
     end
 
     def update_current_run_counters(importer)

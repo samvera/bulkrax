@@ -1,0 +1,483 @@
+---
+pt-BR:
+  bulkrax:
+    admin:
+      sidebar:
+        exporters: Exportadores
+        importers: Importadores
+    cancel: Cancelar
+    entry:
+      labels:
+        item_link: Link do item
+        item_link_error: Não foi possível recuperar o item (%{message})
+        item_no_association: Nenhum item associado a esta entrada ou classe desconhecida
+        item_not_imported: O item ainda não foi importado com sucesso.
+        parsed_metadata: Metadados analisados
+        raw_metadata: Metadados brutos
+        record_link: Link %{record_type}
+        unknown: Desconhecido
+    exporter:
+      labels:
+        all: Todos
+        collection: Coleção
+        export_from: Exportar de
+        export_source: Fonte de exportação
+        export_type: Tipo de exportação
+        field_mapping: Mapeamento de Campo
+        full: Metadados e Arquivos
+        generated_metadata: Incluir metadados gerados?
+        importer: Importador
+        include_thumbnails: Incluir miniaturas?
+        limit: Limite
+        metadata: Somente metadados
+        name: Nome
+        parser_fields: Campos do analisador sintático
+        parser_klass: Analisador sintático
+        user: Usuário
+        worktype: Tipo de trabalho
+      prompts:
+        export_from: Por favor, selecione uma fonte de exportação.
+        export_type: Por favor, selecione um tipo de exportação.
+        select_from_list: Selecione na lista
+        start_typing: Comece a digitar...
+      validations:
+        errors_prohibited:
+          one: '1 erro impediu que este exportador fosse salvo:'
+          other: "%{count} erros impediram que este exportador fosse salvo:"
+    headings:
+      importers: Importadores
+      upload_corrected_entries: 'Enviar entradas corrigidas: %{name}'
+    importer:
+      bagit:
+        bags_to_import: 'Mala ou malas para importar:'
+        file_style:
+          cloud: Adicionar arquivo na nuvem
+          server_path: Especifique um caminho no servidor.
+          upload: Carregar um arquivo
+        file_upload_hint: O upload de arquivos e o upload de arquivos na nuvem devem ser um arquivo Zip contendo uma única BagIt Bag ou uma pasta contendo várias BagIt Bags.
+        server_path_hint: O caminho do servidor pode apontar para uma BagIt Bag, uma pasta contendo BagIt Bags ou um arquivo zip contendo qualquer um deles.
+        visibility:
+          institution: Instituição
+          private: Privado
+          public: Público
+      browse_everything:
+        add_cloud_files: Adicionar arquivos na nuvem
+      csv:
+        add_csv_to_import: 'Adicionar arquivo CSV ou ZIP para importação:'
+        add_files_hint: Selecione os arquivos para upload. Os nomes dos arquivos devem ser únicos e devem estar referenciados em uma coluna chamada 'arquivo' no arquivo CSV que acompanha o arquivo.
+        add_files_to_import: 'Adicionar arquivos para importação:'
+        file_style:
+          existing_entries: Inscrições existentes
+          server_path: Especifique um caminho no servidor.
+          upload: Carregar um arquivo
+        labels:
+          default_visibility: Visibilidade padrão
+        visibility:
+          institution: Instituição
+          private: Privado
+          public: Público
+      edit_form:
+        modal_title: Opções para atualizar o importador
+        remove_and_rerun_hint: Remova todos os trabalhos e execute a importação novamente a partir de um ponto de partida limpo. Isso removerá todos os arquivos e associações, e quaisquer edições feitas desde a última importação serão perdidas.
+        update_and_harvest_hint: Atualize os valores no formulário do importador e atualize os itens que foram alterados na origem.
+        update_and_import_hint: Atualize os valores no formulário do importador e execute o importador pela primeira vez.
+        update_and_re_harvest_hint: Atualize os valores no formulário do importador e recrie todos os itens da origem.
+        update_and_replace_files_hint: Atualize os valores no formulário do importador e atualize os metadados. Remove completamente todos os arquivos anexados a este importador e recria os arquivos do zero.
+        update_metadata_and_files_hint: Atualize os valores no formulário de importação e atualize os metadados e arquivos de todas as obras. Crie novas versões dos arquivos e mantenha as versões antigas.
+        update_metadata_hint: Atualize os valores no formulário de importação e atualize os metadados de todas as obras. Não atualize nenhum arquivo.
+        update_only_hint: Atualize apenas os valores no formulário de importação. Não importe metadados ou arquivos de obras ou coleções.
+        update_only_no_update_hint: Atualize apenas os valores no formulário de importação. Não atualize metadados ou arquivos de obras ou coleções.
+      file_uploader:
+        add_files: Adicionar arquivos
+        cancel_upload: Cancelar upload
+        dropzone: Arraste e solte os arquivos aqui para fazer o upload.
+      hints:
+        default_visibility: Se o seu arquivo CSV incluir o campo de visibilidade, ele substituirá a configuração padrão.
+        override_rights_statement: Se selecionada, sempre use a declaração de direitos escolhida. Se desmarcada, use os direitos ou a declaração de direitos do registro e utilize o valor fornecido somente se dc:rights estiver em branco.
+      labels:
+        admin_set: Conjunto administrativo
+        entry_id: ID de entrada
+        exporter: Exportador
+        frequency: Freqüência
+        identifier: Identificador
+        importer: Importador
+        limit: Limite
+        name: Nome
+        parser_klass: Analisador sintático
+        total_collections: Total de Coleções
+        total_file_sets: Conjuntos de arquivos totais
+        total_work_entries: Total Works
+        type: Tipo
+        user: Usuário
+      oai:
+        hints:
+          metadata_prefix: Como oai_dc, dcterms ou oai_qdc
+          override_rights_statement: Se selecionada, use sempre a declaração de direitos escolhida. Se desmarcada, use o valor de dc:rights do registro e utilize o valor fornecido somente se dc:rights estiver em branco.
+          thumbnail_url_html: |
+            <p>
+              A URL em miniatura permite a criação de modelos básicos e a substituição de qualquer informação identificada na URL. Por exemplo:
+            </p>
+            <p>
+               http://commons.ptsem.edu/?cover=<%= identifier.split(':').last %>&size=L
+            </p>
+            <p>
+               http://commons.ptsem.edu/?cover=<%= record.header.identifier.split(':').last %>&size=L
+            </p>
+        labels:
+          set: Conjunto (fonte)
+        refresh_sets: Atualizar conjuntos
+        visibility:
+          institution: Instituição
+          private: Privado
+          public: Público
+      upload_corrected_entries:
+        click_here: Clique aqui
+        csv_only: Somente arquivos CSV são permitidos.
+        instructions_html: Faça o upload <b>apenas</b> das entradas corrigidas para o importador <b>%{name}</b> . Para exportar as entradas com falha para correção,
+      guided_import:
+        breadcrumb: Importação Guiada
+        flash:
+          demo_not_available: Cenários de demonstração não disponíveis
+          import_started: A importação foi iniciada com sucesso.
+        js:
+          admin_set_prompt: Selecione um conjunto de administradores...
+          already_uploaded: 'Os seguintes arquivos já foram carregados:'
+          appears_in_collections: Aparece nas coleções %{count}
+          circular_reference: Referência circular detectada
+          csv_limit: 'Apenas 1 arquivo CSV permitido. Os seguintes arquivos não foram adicionados:'
+          demo_data_not_loaded: Os dados de demonstração não foram carregados. Tente selecionar um cenário novamente.
+          demo_load_failed: Falha ao carregar os cenários de demonstração.
+          demo_network_error: Erro de rede - verifique sua conexão.
+          demo_server_error: Erro do servidor ao carregar os cenários de demonstração.
+          demo_timeout: A solicitação expirou ao carregar os cenários de demonstração.
+          detected_in_zip: detectado em ZIP
+          file_upload_error: Erro ao carregar o arquivo
+          files_too_large: Os arquivos são muito grandes. Por favor, reduza o tamanho dos arquivos e tente novamente.
+          gauge_import_size: 'Tamanho da importação: %{count} itens'
+          gauge_large: Grande
+          gauge_large_msg: Importações grandes demoram mais e são mais difíceis de depurar. Recomendamos fortemente dividi-las em lotes de %{limit} ou menos.
+          gauge_moderate: Moderado
+          gauge_moderate_msg: Considere dividir em lotes menores para facilitar a resolução de erros.
+          gauge_optimal: Ótimo
+          gauge_optimal_msg: Ótimo! Importações menores são mais fáceis de validar e solucionar problemas.
+          hierarchy_too_deep: Hierarquia muito profunda (máximo de %{max} níveis)
+          import_hierarchy: Hierarquia de Importação
+          import_name_prefix: Importação de CSV -
+          invalid_file_format: Formato de arquivo inválido. Verifique seus arquivos e tente novamente.
+          invalid_format: Formato de arquivo inválido. Somente arquivos .csv e .zip são permitidos.
+          max_files: Máximo de %{count} arquivos atingido (1 CSV e 1 ZIP).
+          max_files_added: É permitido um máximo de %{count} arquivos (1 CSV e 1 ZIP). Apenas os primeiros %{added} arquivos foram adicionados.
+          network_error: Erro de rede - verifique sua conexão e tente novamente.
+          no_extension: sem prorrogação
+          not_selected: Não selecionado
+          only_first_files: Apenas os primeiros %{count} arquivos foram carregados. Você pode carregar até %{max} arquivos (1 CSV e 1 ZIP).
+          only_one_additional: Só é possível adicionar mais 1 arquivo. O primeiro arquivo já foi adicionado.
+          rejected_files: 'Os seguintes arquivos foram rejeitados:'
+          remove_file: Remover arquivo
+          render_error: A validação foi concluída, mas os resultados não puderam ser exibidos. Tente novamente.
+          review_admin_set: 'Conjunto de administrador:'
+          review_first_n_records: primeiros %{count} registros
+          review_limit: 'Limite:'
+          review_name: 'Nome:'
+          review_rights: 'Direitos:'
+          review_skipped: A validação foi ignorada — número de registros indisponível.
+          review_total: "%{total} total — %{collections} coleções, %{works} obras, %{file_sets} conjuntos de arquivos"
+          review_visibility: 'Visibilidade:'
+          server_error: Erro do servidor durante a validação. Tente novamente ou entre em contato com o suporte.
+          shared_badge: compartilhado
+          starting: Começando...
+          upload_csv_and_zip: Arquivos CSV + arquivos enviados separadamente
+          upload_csv_only: Nenhum arquivo ZIP foi enviado — os arquivos serão identificados pelos caminhos no servidor ou você pode adicionar mais arquivos.
+          upload_single_package: Pacote único com arquivos CSV e outros arquivos.
+          upload_zip_only: Arquivo ZIP carregado — a validação verificará o conteúdo em CSV.
+          uploaded_file: Arquivo enviado
+          uploaded_files: Arquivos enviados (%{count})
+          validate_path: Validar arquivos do caminho de importação
+          validate_upload: Validar arquivos enviados
+          validated: Validado
+          validating: Validando...
+          validation_failed: A validação falhou. Tente novamente.
+          validation_timeout: A validação expirou. Seus arquivos podem ser muito grandes. Tente com arquivos menores ou entre em contato com o suporte.
+          visibility_institution: Instituição
+          visibility_private: Privado
+          visibility_public: Público
+          zip_limit: 'Apenas 1 arquivo ZIP permitido. Os seguintes arquivos não foram adicionados:'
+        nav:
+          back: Voltar
+          clear_start_over: Limpar e começar de novo
+          next_step: Próximo
+          skip_validation: Ignorar validação
+          start_import: Iniciar Importação
+        feedback_link: Reportar um bug / Feedback
+        page_subtitle: Importe coleções, obras e arquivos via CSV.
+        page_title: Iniciar uma importação em massa
+        step1:
+          add_another: Adicionar outro arquivo
+          add_another_hint_html: Arraste e solte um arquivo CSV ou ZIP aqui, ou clique para <strong class="text-primary">navegar.</strong>
+          admin_set: Conjunto de administrador
+          admin_set_hint: Os conjuntos de administrador são necessários para importações e downloads de modelos CSV.
+          admin_set_prompt: Selecione um conjunto de administradores...
+          collections: Coleções
+          description_html: Faça o upload de um arquivo CSV com os metadados e um arquivo ZIP contendo seus arquivos (máximo de 2 uploads), ou um único arquivo ZIP contendo ambos — se usar um único arquivo ZIP, o arquivo CSV com os metadados deve ser o único arquivo <code>.csv</code> no nível superior.<br /> Você também pode usar o caminho de um arquivo no seu servidor.
+          download_template: Baixe um modelo CSV para o seu inquilino.
+          dropzone_csv_hint: ".csv — somente metadados"
+          dropzone_hint: Faça o upload de arquivos CSV e ZIP (máximo de 2 uploads).
+          dropzone_main_html: Arraste e solte seus arquivos aqui ou <strong class="text-primary">navegue até a seção desejada.</strong>
+          dropzone_zip_hint: ".zip — arquivos ou metadados CSV + arquivos"
+          file_path_hint: Arquivo CSV ou ZIP
+          file_path_label: Insira o caminho para os arquivos no seu servidor.
+          file_path_placeholder: "/caminho/para/importar.csv"
+          file_sets: Conjuntos de arquivos
+          import_path: Caminho de importação
+          import_summary: Resumo da Importação
+          title: Importe seus arquivos
+          upload_files: Enviar arquivos
+          file_input_label: Enviar arquivo CSV ou ZIP
+          validate_path: Validar arquivos do caminho de importação
+          validate_upload: Validar arquivos enviados
+          warning_ack: Declaro estar ciente desses avisos ou erros e desejo prosseguir com a importação.
+          works: Funciona
+        step2:
+          default_rights: Declaração de Direitos Padrão
+          default_visibility: Visibilidade padrão
+          description: Defina parâmetros que se aplicam a todos os registros nesta importação.
+          import_name: Nome da importação
+          import_name_prefix: Importação de CSV -
+          optional_settings: Configurações opcionais
+          rights_none: Nenhum
+          rights_required_alert_html: Seu arquivo CSV não inclui uma coluna <strong>"rights_statement"</strong> . Selecione uma Declaração de Direitos Padrão abaixo para aplicar a todos os registros.
+          rights_skipped_hint_html: A validação foi ignorada. Se o seu arquivo CSV não incluir uma coluna <strong>`rights_statement`</strong> , você pode selecionar uma Declaração de Direitos Padrão abaixo para aplicar a todos os registros.
+          test_limit: Registros de teste limitados
+          test_limit_placeholder: Importe apenas os primeiros N registros para teste.
+          title: Configurar as definições de importação
+          visibility_hint: Aplicado a registros que não especificam uma visibilidade.
+          visibility_institution: Instituição
+          visibility_institution_desc: Usuários conectados
+          visibility_private: Privado
+          visibility_private_desc: Apenas para administradores
+          visibility_public: Público
+          visibility_public_desc: Visível para todos
+        step3:
+          background_note: Este processo será executado em segundo plano. Você pode acompanhar o progresso na Fila de Importação.
+          description: Confirme os detalhes da sua importação antes de começar.
+          large_import_message_html: Você está prestes a importar <span class="total-items-count">%{count}</span> itens. Importações grandes levam mais tempo e são mais difíceis de solucionar problemas. Considere dividi-las em lotes menores.
+          large_import_warning: Aviso de Importação de Grande Porte
+          ready_to_import: Pronto para importar
+          section_files: Arquivos
+          section_records: Registros
+          section_settings: Configurações
+          section_warnings: Avisos
+          title: Analisar e iniciar a importação
+        steps:
+          configure_settings: Configurar configurações
+          review_start: Analisar e começar
+          upload_validate: Carregar e validar
+        stepper_response_formatter:
+          row_errors_issue:
+            description: "Existem os seguintes problemas com os dados no seu CSV:"
+            row_label: "Linha %{row} · %{column}"
+            title: Erros de validação de linha
+        success:
+          message: Sua importação está sendo processada em segundo plano. Você será notificado quando ela for concluída.
+          start_another: Iniciar outra importação
+          title: Importação iniciada
+          view_queue: Visualizar fila de importação
+        validation:
+          columns_detected: "%{columns} colunas detectadas · %{records} registros encontrados"
+          controlled_vocabulary_validator:
+            errors:
+              message: "'%{value}' não é um termo reconhecido para '%{field}'."
+              suggestion: "Verifique o vocabulário controlado para termos válidos."
+          critical_errors: Erros críticos devem ser corrigidos antes da importação.
+          did_you_mean: Você quis dizer "%{suggestion}"?
+          duplicate_identifier_validator:
+            errors:
+              message: "%{field} duplicado '%{value}' — também aparece na linha %{original_row}."
+              suggestion: "Cada %{field} deve ser exclusivo no CSV."
+          failed: Validação falhou
+          file_path_not_exist: O caminho do arquivo não existe.
+          file_references_title: Referências de arquivos
+          files_found_in_zip: "%{found} de %{total} arquivos encontrados no arquivo ZIP."
+          files_missing_from_zip: "%{count} %{files_word} referenciado no seu CSV, mas ausente no ZIP:"
+          files_referenced: "%{count} arquivos referenciados no CSV não foram encontrados na importação."
+          missing_from_zip: ausente do CEP
+          missing_required_desc: 'Estas colunas obrigatórias devem ser adicionadas ao seu arquivo CSV:'
+          missing_required_hint: Adicione esta coluna ao seu arquivo CSV.
+          missing_required_title: Campos obrigatórios ausentes
+          missing_rights_desc: Seu arquivo CSV não inclui uma coluna `rights_statement`. Você pode adicioná-la ao seu CSV ou selecionar uma Declaração de Direitos Padrão na próxima etapa.
+          multiple_csv_same_dir: Vários arquivos CSV encontrados no mesmo diretório dentro do arquivo ZIP.
+          multiple_csv_same_level: Vários arquivos CSV encontrados no mesmo nível dentro do arquivo ZIP.
+          no_csv_in_zip: Nenhum arquivo CSV encontrado no arquivo ZIP.
+          no_csv_uploaded: Nenhum arquivo de metadados CSV foi carregado.
+          no_files_uploaded: Nenhum arquivo foi enviado.
+          no_zip_desc: Nenhum arquivo ZIP foi enviado. Certifique-se de que os arquivos estejam acessíveis no servidor ou envie um arquivo ZIP.
+          parent_reference_validator:
+            errors:
+              message: "O pai referenciado '%{value}' não existe como %{field} neste CSV."
+              suggestion: "Verifique se há erros de digitação ou adicione o registro pai."
+          passed: Validação aprovada
+          passed_warnings: Validação aprovada com advertências.
+          recognized_fields: 'Campos reconhecidos: %{fields}'
+          required_field_validator:
+            errors:
+              message: "O campo '%{field}' é obrigatório, mas está vazio para esta linha."
+              suggestion: "Adicione um valor para '%{field}'."
+          unable_to_process: Não foi possível processar os arquivos para validação.
+          unrecognized_desc: 'Estas colunas serão ignoradas durante a importação:'
+          unrecognized_title: Campos não reconhecidos
+      validations:
+        errors_prohibited:
+          one: '1 erro impediu que este importador fosse salvo:'
+          other: "%{count} erros impediram que este importador fosse salvo:"
+      xml:
+        file_style:
+          cloud: Adicionar arquivo na nuvem
+          server_path: Especifique um caminho no servidor.
+          upload: Carregar um arquivo
+        hints:
+          file_upload_hint: O envio de arquivos e o envio de arquivos na nuvem DEVEM ser um único arquivo XML (para importação somente de metadados) OU um arquivo Zip contendo os arquivos XML e os arquivos de dados, cada um em uma pasta separada.
+          override_rights_statement: Se selecionada, sempre use a declaração de direitos escolhida. Se desmarcada, use os direitos ou a declaração de direitos do registro e utilize o valor fornecido somente se dc:rights estiver em branco.
+          record_element: Forneça o nome do elemento XML a ser usado para identificar o registro ou registros, por exemplo, ROW - cada registro no XML em anexo está envolvido em uma tag <ROW>.
+          server_path_hint: O caminho do servidor pode apontar para uma pasta que contenha arquivos XML e arquivos de dados para importação, ou direcionar diretamente para o próprio arquivo XML.
+        import_type:
+          multiple: Vários trabalhos por arquivo de metadados
+          single: Um único trabalho por arquivo de metadados
+        labels:
+          visibility: Visibilidade
+          xml_and_files: 'XML e arquivos para importar:'
+        visibility:
+          institution: Instituição
+          private: Privado
+          public: Público
+    shared:
+      errors:
+        error: 'Erro:'
+        error_trace: 'Rastreamento de erros:'
+        errored_at: 'Ocorreu um erro em:'
+        errors_heading: 'Erros:'
+        full: Completo
+        not_yet_exported: O item ainda não foi exportado com sucesso.
+        not_yet_imported: O item ainda não foi importado com sucesso.
+        raw: Cru
+        succeeded_at: 'Obteve sucesso em:'
+      field_mapping:
+        full: Completo
+        heading: 'Mapeamento de campo:'
+        raw: Cru
+    table_header:
+      labels:
+        actions: Ações
+        date_exported: Data de exportação
+        downloadable_files: Arquivos para download
+        entries_deleted_upstream: Entradas excluídas a montante
+        entries_enqueued: Entradas enfileiradas
+        entries_failed: Entradas falharam
+        entries_processed: Inscrições processadas
+        entry_id: ID de entrada
+        errors: Erros
+        identifier: Identificador
+        last_run: Última corrida
+        name: Nome
+        next_run: Próxima corrida
+        status: Status
+        total_collection_entries: Total de entradas da coleção
+        total_file_set_entries: Total de entradas do conjunto de arquivos
+        total_work_entries: Total de entradas de trabalho
+        type: Tipo
+        updated_at: Atualizado em
+  helpers:
+    action:
+      exporter:
+        back: Voltar
+        create: Criar
+        create_and_export: Criar e exportar
+        download: Download
+        edit: Editar
+        new: Novo
+        update: Atualizar exportador
+        update_and_re_export: Atualizar e reexportar todos os itens
+      importer:
+        add_file: Adicionar arquivo...
+        back: Voltar
+        build: Construir
+        continue: Continuar
+        create: Criar
+        create_and_import: Criar e importar
+        create_and_validate: Criar e validar
+        discard: Descartar
+        discard_confirm: Tem certeza?
+        download_original_file: Baixar arquivo original
+        download_original_files: Baixar arquivos originais
+        edit: Editar
+        edit_importer: Editar Importador
+        export_errored_entries: Exportar entradas com erros
+        generate_csv_template: Gerar modelo de importação CSV
+        import_corrected_works: Importar Obras Corrigidas
+        new: Importação avançada
+        guided_import_new: Importação guiada
+        remove_and_build: Remova e depois construa
+        remove_and_rerun: Remova e execute novamente.
+        remove_and_rerun_confirm: Tem certeza? Isso apagará todos os trabalhos, arquivos associados e seus relacionamentos antes de executar novamente.
+        update: Atualizar Importador
+        update_and_harvest_updated: Atualize e colete os itens atualizados.
+        update_and_import: Atualizar e importar
+        update_and_re_harvest: Atualize e colete novamente todos os itens.
+        update_and_replace_files: Atualizar e substituir arquivos
+        update_and_replace_files_confirm: Tem certeza? Isso removerá todos os arquivos antes de adicioná-los à importação.
+        update_metadata: Atualizar metadados
+        update_metadata_and_files: Atualizar metadados e arquivos
+        upload_corrected_entries: Enviar entradas corrigidas
+  simple_form:
+    hints:
+      defaults:
+        default_visibility: Se o seu arquivo CSV incluir o campo de visibilidade, ele substituirá a configuração padrão.
+        metadata_prefix: Como oai_dc, dcterms ou oai_qdc
+        override_rights_statement: Se selecionada, sempre use a declaração de direitos escolhida. Se desmarcada, use os direitos ou a declaração de direitos do registro e utilize o valor fornecido somente se dc:rights estiver em branco.
+        record_element: Forneça o nome do elemento XML a ser usado para identificar o registro ou registros, por exemplo, ROW - cada registro no XML em anexo está envolvido em uma tag <ROW>.
+      exporter:
+        generated_metadata?: Atualmente, esses campos exportados não podem ser importados.
+        include_thumbnails?: Atualmente, esses campos exportados não podem ser importados.
+        limit: Digite qualquer número para executar apenas um subconjunto de registros. Deixe em branco ou digite 0 para executar todos os registros.
+        name: Qualquer nome para identificar este importador.
+      importer:
+        admin_set_id: Selecione o Conjunto Administrativo cujas políticas (como fluxo de trabalho e controles de acesso) devem ser aplicadas a essas importações. Em caso de dúvida, selecione o Conjunto Administrativo Padrão.
+        frequency: A frequência com que este importador deve ser executado.
+        limit: Digite qualquer número para executar apenas um subconjunto de registros. Deixe em branco ou digite 0 para executar todos os registros.
+        name: Qualquer nome para identificar este importador.
+        parser_fields: Os campos específicos de cada analisador sintático só estão disponíveis quando um analisador sintático é selecionado.
+    labels:
+      defaults:
+        base_url: URL base
+        file_style: Estilo de arquivo
+        import_file_path: Caminho do arquivo de importação
+        import_type: Tipo de importação
+        metadata_format: Formato de metadados
+        metadata_prefix: Prefixo de metadados
+        override_rights_statement: Declaração de direitos de sobreposição
+        record_element: Elemento de registro
+        rights_statement: Declaração de Direitos
+        set: Conjunto (fonte)
+        thumbnail_url: URL da miniatura
+        visibility: Visibilidade
+      exporter:
+        date_filter: Filtrar por data
+        export_from: Exportar de
+        export_source_collection: Coleção
+        export_source_importer: Importador
+        export_source_worktype: Tipo de trabalho
+        export_type: Tipo de exportação
+        finish_date: Data de término
+        generated_metadata?: Incluir metadados gerados?
+        include_thumbnails?: Incluir miniaturas?
+        limit: Limite
+        name: Nome
+        parser_klass: Formato de exportação
+        start_date: Data de início
+        work_visibility: Visibilidade
+        workflow_status: Status
+      importer:
+        admin_set_id: Conjunto Administrativo
+        frequency: Freqüência
+        limit: Limite
+        name: Nome
+        parser_klass: Analisador sintático

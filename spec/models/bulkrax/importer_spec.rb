@@ -106,5 +106,90 @@ module Bulkrax
         it { is_expected.to be_truthy }
       end
     end
+
+    describe '#importer_unzip_path' do
+      context 'when parser_fields import_file_path is a string path to an existing zip file' do
+        it 'returns the directory containing the zip file' do
+          zip_tmp = Tempfile.new(['import', '.zip'])
+          zip_path = zip_tmp.path
+          Zip::File.open(zip_path, create: true) { |z| z.get_output_stream('dummy') { |f| f.write('x') } }
+          zip_tmp.close
+
+          importer = FactoryBot.build(:bulkrax_importer_csv, parser_fields: { 'import_file_path' => zip_path })
+          expect(importer.importer_unzip_path).to eq(File.dirname(zip_path))
+        ensure
+          zip_tmp&.unlink
+        end
+      end
+    end
+
+    describe '#original_files' do
+      let(:csv_file) { Tempfile.new(['metadata', '.csv']) }
+      let(:zip_file) { Tempfile.new(['attachments', '.zip']) }
+
+      after do
+        csv_file.close
+        csv_file.unlink
+        zip_file.close
+        zip_file.unlink
+      end
+
+      context 'when only CSV file exists' do
+        let(:importer) do
+          FactoryBot.build(:bulkrax_importer_csv, parser_fields: { 'import_file_path' => csv_file.path })
+        end
+
+        it 'returns only the CSV file' do
+          files = importer.original_files
+          expect(files.size).to eq(1)
+          expect(files.first[:type]).to eq(:csv)
+          expect(files.first[:path]).to eq(csv_file.path)
+          expect(files.first[:name]).to eq(File.basename(csv_file.path))
+        end
+      end
+
+      context 'when both CSV and ZIP files exist' do
+        let(:importer) do
+          FactoryBot.build(:bulkrax_importer_csv, parser_fields: {
+                             'import_file_path' => csv_file.path,
+                             'attachments_zip_path' => zip_file.path
+                           })
+        end
+
+        it 'returns both files in order' do
+          files = importer.original_files
+          expect(files.size).to eq(2)
+
+          expect(files[0][:type]).to eq(:csv)
+          expect(files[0][:path]).to eq(csv_file.path)
+          expect(files[0][:name]).to eq(File.basename(csv_file.path))
+
+          expect(files[1][:type]).to eq(:zip)
+          expect(files[1][:path]).to eq(zip_file.path)
+          expect(files[1][:name]).to eq(File.basename(zip_file.path))
+        end
+      end
+
+      context 'when no files exist' do
+        let(:importer) { FactoryBot.build(:bulkrax_importer_csv, parser_fields: {}) }
+
+        it 'returns an empty array' do
+          expect(importer.original_files).to eq([])
+        end
+      end
+
+      context 'when files are specified but do not exist on disk' do
+        let(:importer) do
+          FactoryBot.build(:bulkrax_importer_csv, parser_fields: {
+                             'import_file_path' => '/nonexistent/file.csv',
+                             'attachments_zip_path' => '/nonexistent/file.zip'
+                           })
+        end
+
+        it 'returns an empty array' do
+          expect(importer.original_files).to eq([])
+        end
+      end
+    end
   end
 end

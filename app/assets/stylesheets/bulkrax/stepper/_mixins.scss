@@ -1,0 +1,26 @@
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin dropzone-base($border-style, $padding-top, $padding-bottom) {
+  border: 2px $border-style $border-color;
+  border-radius: $border-radius;
+  width: 100%;
+  text-align: center;
+  margin: 25px 0 40px;
+  padding: $padding-top 20px $padding-bottom;
+  cursor: pointer;
+  transition: border-color 0.3s ease, background-color 0.3s ease;
+
+  &:hover {
+    border-color: $color-primary;
+    background: rgba($color-primary, 0.02);
+  }
+
+  &.dragover {
+    border-color: $color-primary;
+    background: rgba($color-primary, 0.05);
+  }
+}

@@ -1,122 +1,42 @@
+---
 en:
-  simple_form:
-    labels:
-      importer:
-        name: "Name"
-        admin_set_id: "Administrative Set"
-        frequency: "Frequency"
-        limit: "Limit"
-        parser_klass: "Parser"
-      exporter:
-        name: "Name"
-        export_type: "Type of Export"
-        export_from: "Export From"
-        export_source_importer: "Importer"
-        export_source_collection: "Collection"
-        export_source_worktype: "Work Type"
-        limit: "Limit"
-        generated_metadata?: "Include Generated Metadata?"
-        include_thumbnails?: "Include Thumbnails?"
-        date_filter: "Filter By Date"
-        start_date: "Start Date"
-        finish_date: "End Date"
-        work_visibility: "Visibility"
-        workflow_status: "Status"
-        parser_klass: "Export Format"
-      defaults:
-        visibility: "Visibility"
-        rights_statement: "Rights Statement"
-        override_rights_statement: "Override Rights Statement"
-        file_style: "File Style"
-        import_file_path: "Import File Path"
-        base_url: "Base URL"
-        metadata_prefix: "Metadata Prefix"
-        metadata_format: "Metadata Format"
-        record_element: "Record Element"
-        import_type: "Import Type"
-        thumbnail_url: "Thumbnail URL"
-        set: "Set (source)"
-    hints:
-      importer:
-        admin_set_id: "Select the Administrative Set whose policies (such as workflow and access controls) should apply to these imports. If unsure, select the Default Administrative Set."
-        limit: "Enter any number to run only a subset of records. Leave blank or enter 0 to run all records."
-        name: "Any name to identify this importer"
-        frequency: "The frequency with which to run this importer"
-        parser_fields: "Specific fields for each parser are available only when a parser is selected"
-      exporter:
-        generated_metadata?: "These exported fields currently cannot be imported."
-        include_thumbnails?: "These exported fields currently cannot be imported."
-        limit: "Enter any number to run only a subset of records. Leave blank or enter 0 to run all records."
-        name: "Any name to identify this importer"
-      defaults:
-        override_rights_statement: "If checked, always use the selected rights statement. If unchecked, use rights or rights_statement from the record and only use the provided value if dc:rights is blank."
-        default_visibility: "If your CSV includes the visibility field, it will override the default setting."
-        metadata_prefix: "Such as oai_dc, dcterms or oai_qdc"
-        record_element: "Provide the xml element name to use to identify the record, or records, eg. ROW - each record in the attached XML is wrapped in a <ROW> tag."
-  helpers:
-    action:
-      importer:
-        edit_importer: "Edit Importer"
-        new: "New"
-        create: "Create"
-        create_and_import: "Create and Import"
-        create_and_validate: "Create and Validate"
-        generate_csv_template: "Generate CSV Import Template"
-        download_original_file: "Download Original File"
-        export_errored_entries: "Export Errored Entries"
-        upload_corrected_entries: "Upload Corrected Entries"
-        import_corrected_works: "Import Corrected Works"
-        add_file: "Add file..."
-        edit: "Edit"
-        back: "Back"
-        continue: "Continue"
-        discard: "Discard"
-        discard_confirm: "Are you sure?"
-        build: "Build"
-        remove_and_build: "Remove and then Build"
-        update: "Update Importer"
-        update_and_import: "Update and Import"
-        update_and_harvest_updated: "Update and Harvest Updated Items"
-        update_and_re_harvest: "Update and Re-Harvest All Items"
-        update_metadata: "Update Metadata"
-        update_metadata_and_files: "Update Metadata and Files"
-        update_and_replace_files: "Update and Replace Files"
-        update_and_replace_files_confirm: "Are you sure? This will remove all files before adding them from the import."
-        remove_and_rerun: "Remove and Rerun"
-        remove_and_rerun_confirm: "Are you sure? This will delete all the works and any associated files and relationships before re running."
-      exporter:
-        new: "New"
-        create: "Create"
-        create_and_export: "Create and Export"
-        download: "Download"
-        edit: "Edit"
-        back: "Back"
-        update: "Update Exporter"
-        update_and_re_export: "Update and Re-Export All Items"
   bulkrax:
     admin:
       sidebar:
         exporters: Exporters
         importers: Importers
-    headings:
-      importers: Importers
-      upload_corrected_entries: "Upload Corrected Entries: %{name}"
-    cancel: "Cancel"
+    cancel: Cancel
+    entry:
+      labels:
+        item_link: Item Link
+        item_link_error: Unable to retrieve item (%{message})
+        item_no_association: No item associated with this entry or class unknown
+        item_not_imported: Item has not yet been imported successfully
+        parsed_metadata: Parsed Metadata
+        raw_metadata: Raw Metadata
+        record_link: "%{record_type} Link"
+        unknown: Unknown
     exporter:
+      hints:
+        generated_metadata: These exported fields currently cannot be imported.
+        include_thumbnails: These exported fields currently cannot be imported.
+        limit: leave blank or 0 for all records
       labels:
         all: All
         collection: Collection
+        collection_entries: Collection Entries
         export_format: Export Format
         export_from: Export From
         export_source: Export Source
         export_type: Type of Export
         field_mapping: Field Mapping
+        file_set_entries: File Set Entries
         filter_by_date: Filter By Date
         finish_date: End Date
         full: Metadata and Files
-        include_thumbnails: Include Thumbnails?
         generated_metadata: Include Generated Metadata?
         importer: Importer
+        include_thumbnails: Include Thumbnails?
         limit: Limit
         metadata: Metadata Only
         name: Name
@@ -124,39 +44,78 @@ en:
         parser_klass: Parser
         start_date: Start Date
         status: Status
-        total_work_entries: Total Works
         total_entries: Total Entries
+        total_work_entries: Total Works
         user: User
-        worktype: Work Type
         work_entries: Work Entries
-        collection_entries: Collection Entries
-        file_set_entries: File Set Entries
         workflow_status:
-          approved: "Approved"
-          deleted: "Deleted"
-          in_process: "In Process"
-          broken_url: "Broken Url"
-          ingested: "Ingested"
-          unapproved: "Unapproved"
-          needs_repair: "Needs Repair"
-      hints:
-        include_thumbnails: "These exported fields currently cannot be imported."
-        generated_metadata: "These exported fields currently cannot be imported."
-        limit: "leave blank or 0 for all records"
+          approved: Approved
+          broken_url: Broken Url
+          deleted: Deleted
+          in_process: In Process
+          ingested: Ingested
+          needs_repair: Needs Repair
+          unapproved: Unapproved
+        worktype: Work Type
       prompts:
-        export_type: "Please select an export type"
-        export_from: "Please select an export source"
-        select_from_list: "Select from the list"
-        start_typing: "Start typing ..."
+        export_from: Please select an export source
+        export_type: Please select an export type
+        select_from_list: Select from the list
+        start_typing: Start typing ...
       validations:
         errors_prohibited:
-          one: "1 error prohibited this exporter from being saved:"
+          one: '1 error prohibited this exporter from being saved:'
           other: "%{count} errors prohibited this exporter from being saved:"
+    headings:
+      importers: Importers
+      upload_corrected_entries: 'Upload Corrected Entries: %{name}'
     importer:
-      validations:
-        errors_prohibited:
-          one: "1 error prohibited this importer from being saved:"
-          other: "%{count} errors prohibited this importer from being saved:"
+      bagit:
+        bags_to_import: 'Bag or Bags to Import:'
+        file_style:
+          cloud: Add Cloud File
+          server_path: Specify a Path on the Server
+          upload: Upload a File
+        file_upload_hint: File upload and Cloud File upload must be a Zip file containing a single BagIt Bag, or a folder containing multiple BagIt Bags.
+        server_path_hint: The Server Path can point to a BagIt Bag, a folder containing BagIt Bags, or a zip file containing either.
+        visibility:
+          institution: Institution
+          private: Private
+          public: Public
+      browse_everything:
+        add_cloud_files: Add Cloud Files
+      csv:
+        add_csv_to_import: 'Add CSV or ZIP File to Import:'
+        add_files_hint: Choose files to upload. The filenames must be unique, and the filenames must be referenced in a column called 'file' in the accompanying CSV file.
+        add_files_to_import: 'Add Files to Import:'
+        file_style:
+          existing_entries: Existing Entries
+          server_path: Specify a Path on the Server
+          upload: Upload a File
+        labels:
+          default_visibility: Default Visibility
+        visibility:
+          institution: Institution
+          private: Private
+          public: Public
+      edit_form:
+        modal_title: Options for Updating the Importer
+        remove_and_rerun_hint: Remove all works and then run the import again from a clean slate. This will remove all files and associations and any edits made since the last import will be lost.
+        update_and_harvest_hint: Update the values in the importer form and update items that have changed at the source.
+        update_and_import_hint: Update the values in the importer form and run the importer for the first time.
+        update_and_re_harvest_hint: Update the values in the importer form and recreate all items from the source.
+        update_and_replace_files_hint: Update the values in the importer form and update the metadata. Completely removes all files attached to works for this importer and recreates the files from scratch.
+        update_metadata_and_files_hint: Update the values in the importer form and update the metadata and files for all works. Creates new versions of the files and retains the old versions.
+        update_metadata_hint: Update the values in the importer form and update the metadata for all works. Do not update any files.
+        update_only_hint: Only update the values in the importer form. Do not import metadata or files for any works or collections.
+        update_only_no_update_hint: Only update the values in the importer form. Do not update metadata or files for any works or collections.
+      file_uploader:
+        add_files: Add Files
+        cancel_upload: Cancel Upload
+        dropzone: Drop files here to upload
+      hints:
+        default_visibility: If your CSV includes the visibility field, it will override the default setting.
+        override_rights_statement: If checked, always use the selected rights statement. If unchecked, use rights or rights_statement from the record and only use the provided value if dc:rights is blank.
       labels:
         admin_set: Administrative set
         collection_entries: Collection Entries
@@ -175,30 +134,10 @@ en:
         type: Type
         user: User
         work_entries: Work Entries
-      xml:
-        hints:
-          record_element: "Provide the xml element name to use to identify the record, or records, eg. ROW - each record in the attached XML is wrapped in a <ROW> tag."
-          override_rights_statement: "If checked, always use the selected rights statement. If unchecked, use rights or rights_statement from the record and only use the provided value if dc:rights is blank."
-          file_upload_hint: "File upload and Cloud File upload MUST be a either a single XML file (for metadata only import) OR a Zip file containing the XML files and data files, each in a separate folder."
-          server_path_hint: "The Server Path can point to a folder containing XML files and data files to import, or direct to the XML file itself."
-        labels:
-          visibility: "Visibility"
-          xml_and_files: "XML and files to Import:"
-        import_type:
-          single: "Single Work per Metadata File"
-          multiple: "Multiple Works per Metadata File"
-        visibility:
-          public: "Public"
-          private: "Private"
-          institution: "Institution"
-        file_style:
-          upload: "Upload a File"
-          server_path: "Specify a Path on the Server"
-          cloud: "Add Cloud File"
       oai:
         hints:
-          metadata_prefix: "Such as oai_dc, dcterms or oai_qdc"
-          override_rights_statement: "If checked, always use the selected rights statement. If unchecked, use dc:rights from the record and only use the provided value if dc:rights is blank."
+          metadata_prefix: Such as oai_dc, dcterms or oai_qdc
+          override_rights_statement: If checked, always use the selected rights statement. If unchecked, use dc:rights from the record and only use the provided value if dc:rights is blank.
           thumbnail_url_html: |
             <p>
               The Thumbnail URL allows for basic templating and substitution on any identified information in to the url. For example:
@@ -210,106 +149,361 @@ en:
               http://commons.ptsem.edu/?cover=&lt;&#37;= record.header.identifier.split(':').last &#37;&gt;&amp;size=L
             </p>
         labels:
-          set: "Set (source)"
+          set: Set (source)
+        refresh_sets: Refresh Sets
         visibility:
-          public: "Public"
-          private: "Private"
-          institution: "Institution"
-        refresh_sets: "Refresh Sets"
-      bagit:
-        visibility:
-          public: "Public"
-          private: "Private"
-          institution: "Institution"
-        bags_to_import: "Bag or Bags to Import:"
-        file_upload_hint: "File upload and Cloud File upload must be a Zip file containing a single BagIt Bag, or a folder containing multiple BagIt Bags."
-        server_path_hint: "The Server Path can point to a BagIt Bag, a folder containing BagIt Bags, or a zip file containing either."
-        file_style:
-          upload: "Upload a File"
-          server_path: "Specify a Path on the Server"
-          cloud: "Add Cloud File"
-      hints:
-        override_rights_statement: "If checked, always use the selected rights statement. If unchecked, use rights or rights_statement from the record and only use the provided value if dc:rights is blank."
-        default_visibility: "If your CSV includes the visibility field, it will override the default setting."
-      browse_everything:
-        add_cloud_files: "Add Cloud Files"
-      edit_form:
-        modal_title: "Options for Updating the Importer"
-        update_only_hint: "Only update the values in the importer form. Do not import metadata or files for any works or collections."
-        update_only_no_update_hint: "Only update the values in the importer form. Do not update metadata or files for any works or collections."
-        update_and_import_hint: "Update the values in the importer form and run the importer for the first time."
-        update_and_harvest_hint: "Update the values in the importer form and update items that have changed at the source."
-        update_and_re_harvest_hint: "Update the values in the importer form and recreate all items from the source."
-        update_metadata_hint: "Update the values in the importer form and update the metadata for all works. Do not update any files."
-        update_metadata_and_files_hint: "Update the values in the importer form and update the metadata and files for all works. Creates new versions of the files and retains the old versions."
-        update_and_replace_files_hint: "Update the values in the importer form and update the metadata. Completely removes all files attached to works for this importer and recreates the files from scratch."
-        remove_and_rerun_hint: "Remove all works and then run the import again from a clean slate. This will remove all files and associations and any edits made since the last import will be lost."
-      csv:
-        labels:
-          default_visibility: "Default Visibility"
-        visibility:
-          public: "Public"
-          private: "Private"
-          institution: "Institution"
-        add_csv_to_import: "Add CSV or ZIP File to Import:"
-        file_style:
-          upload: "Upload a File"
-          server_path: "Specify a Path on the Server"
-          existing_entries: "Existing Entries"
-        add_files_to_import: "Add Files to Import:"
-        add_files_hint: "Choose files to upload. The filenames must be unique, and the filenames must be referenced in a column called 'file' in the accompanying CSV file."
-      file_uploader:
-        add_files: "Add Files"
-        cancel_upload: "Cancel Upload"
-        dropzone: "Drop files here to upload"
+          institution: Institution
+          private: Private
+          public: Public
       upload_corrected_entries:
-        instructions_html: "Upload <b>only</b> the corrected entries for the <b>%{name}</b> importer. To export failed entries for correction,"
-        click_here: "click here"
-        csv_only: "Only CSV files are allowed."
+        click_here: click here
+        csv_only: Only CSV files are allowed.
+        instructions_html: Upload <b>only</b> the corrected entries for the <b>%{name}</b> importer. To export failed entries for correction,
+      guided_import:
+        breadcrumb: Guided Import
+        flash:
+          demo_not_available: Demo scenarios not available
+          import_started: Import started successfully.
+        js:
+          admin_set_prompt: Select an admin set...
+          already_uploaded: 'The following files were already uploaded:'
+          appears_in_collections: Appears in %{count} collections
+          circular_reference: Circular reference detected
+          csv_limit: 'Only 1 CSV file allowed. The following files were not added:'
+          demo_data_not_loaded: Demo data not loaded. Try selecting a scenario again.
+          demo_load_failed: Failed to load demo scenarios
+          demo_network_error: Network error - please check your connection
+          demo_server_error: Server error while loading demo scenarios
+          demo_timeout: Request timed out while loading demo scenarios
+          detected_in_zip: detected in ZIP
+          file_upload_error: File Upload Error
+          files_too_large: Files are too large. Please reduce file size and try again.
+          gauge_import_size: 'Import Size: %{count} items'
+          gauge_large: Large
+          gauge_large_msg: Large imports take longer and are harder to debug. We strongly recommend splitting into batches of %{limit} or fewer.
+          gauge_moderate: Moderate
+          gauge_moderate_msg: Consider splitting into smaller batches for easier error resolution.
+          gauge_optimal: Optimal
+          gauge_optimal_msg: Great! Smaller imports are easier to validate and troubleshoot.
+          hierarchy_too_deep: Hierarchy too deep (max %{max} levels)
+          import_hierarchy: Import Hierarchy
+          import_name_prefix: 'CSV Import - '
+          invalid_file_format: Invalid file format. Please check your files and try again.
+          invalid_format: Invalid file format. Only .csv and .zip files are allowed.
+          max_files: Maximum of %{count} files reached (1 CSV and 1 ZIP).
+          max_files_added: Maximum of %{count} files allowed (1 CSV and 1 ZIP). Only the first %{added} file(s) were added.
+          network_error: Network error - please check your connection and try again.
+          no_extension: no extension
+          not_selected: Not selected
+          only_first_files: Only the first %{count} files have been uploaded. You can upload up to %{max} files (1 CSV and 1 ZIP).
+          only_one_additional: Only 1 additional file can be added. The first file has been added.
+          rejected_files: 'The following files were rejected:'
+          remove_file: Remove file
+          render_error: Validation completed but results could not be displayed. Please try again.
+          review_admin_set: 'Admin Set:'
+          review_first_n_records: first %{count} records
+          review_limit: 'Limit:'
+          review_name: 'Name:'
+          review_rights: 'Rights:'
+          review_skipped: Validation was skipped — record counts unavailable
+          review_total: "%{total} total — %{collections} collections, %{works} works, %{file_sets} file sets"
+          review_visibility: 'Visibility:'
+          server_error: Server error during validation. Please try again or contact support.
+          shared_badge: shared
+          starting: Starting...
+          upload_csv_and_zip: CSV + files uploaded separately
+          upload_csv_only: No ZIP uploaded — files will be matched from server paths or you can add more files
+          upload_single_package: Single package with CSV and files
+          upload_zip_only: ZIP file uploaded — validation will check for CSV content
+          uploaded_file: Uploaded File
+          uploaded_files: Uploaded Files (%{count})
+          validate_path: Validate Files from Import Path
+          validate_upload: Validate Files from Upload
+          validated: Validated
+          validating: Validating...
+          validation_failed: Validation failed. Please try again.
+          validation_timeout: Validation timed out. Your files may be too large. Please try with smaller files or contact support.
+          visibility_institution: Institution
+          visibility_private: Private
+          visibility_public: Public
+          zip_limit: 'Only 1 ZIP file allowed. The following files were not added:'
+        nav:
+          back: Back
+          clear_start_over: Clear & Start Over
+          next_step: Next
+          skip_validation: Skip validation
+          start_import: Start Import
+        feedback_link: Report a Bug / Feedback
+        page_subtitle: Import collections, works, and files via CSV
+        page_title: Start a Bulk Import
+        step1:
+          add_another: Add another file
+          add_another_hint_html: Drop a CSV or ZIP file here, or click to <strong class="text-primary">browse</strong>
+          admin_set: Admin Set
+          admin_set_hint: Admin sets are required for imports and CSV template downloads
+          admin_set_prompt: Select an admin set...
+          collections: Collections
+          description_html: Upload a metadata CSV and a ZIP file containing your files (max 2 uploads), or a single ZIP containing both — if using a single ZIP, the metadata CSV must be the only <code>.csv</code> file at the top level.<br />You can also use a file path on your server.
+          download_template: Download a CSV template for your tenant
+          dropzone_csv_hint: ".csv — metadata only"
+          dropzone_hint: Upload CSV and ZIP (max 2 uploads)
+          dropzone_main_html: Drag & drop your files here, or <strong class="text-primary">browse</strong>
+          dropzone_zip_hint: ".zip — files or metadata CSV + files"
+          file_path_hint: CSV or ZIP file
+          file_path_label: Enter the path to the files on your server
+          file_path_placeholder: "/path/to/import.csv"
+          file_sets: File Sets
+          import_path: Import Path
+          import_summary: Import Summary
+          title: Import Your Files
+          upload_files: Upload Files
+          file_input_label: Upload CSV or ZIP file
+          validate_path: Validate Files from Import Path
+          validate_upload: Validate Files from Upload
+          warning_ack: I acknowledge these warnings or errors and want to proceed with the import.
+          works: Works
+        step2:
+          default_rights: Default Rights Statement
+          default_visibility: Default Visibility
+          description: Set parameters that apply to all records in this import.
+          import_name: Import Name
+          import_name_prefix: 'CSV Import - '
+          optional_settings: Optional Settings
+          rights_none: None
+          rights_required_alert_html: Your CSV does not include a <strong>rights_statement</strong> column. Select a Default Rights Statement below to apply to all records.
+          rights_skipped_hint_html: Validation was skipped. If your CSV does not include a <strong>rights_statement</strong> column, you can select a Default Rights Statement below to apply to all records.
+          test_limit: Test Limited Records
+          test_limit_placeholder: Import only the first N records for testing
+          title: Configure Import Settings
+          visibility_hint: Applied to records that don't specify a visibility.
+          visibility_institution: Institution
+          visibility_institution_desc: Logged-in users
+          visibility_private: Private
+          visibility_private_desc: Administrators only
+          visibility_public: Public
+          visibility_public_desc: Visible to everyone
+        step3:
+          background_note: This process will run in the background. You can monitor progress in the Import Queue.
+          description: Confirm your import details before starting.
+          large_import_message_html: You're about to import <span class="total-items-count">%{count}</span> items. Large imports take longer and are harder to troubleshoot. Consider splitting into smaller batches.
+          large_import_warning: Large Import Warning
+          ready_to_import: Ready to Import
+          section_files: Files
+          section_records: Records
+          section_settings: Settings
+          section_warnings: Warnings
+          title: Review & Start Import
+        steps:
+          configure_settings: Configure Settings
+          review_start: Review & Start
+          upload_validate: Upload & Validate
+        stepper_response_formatter:
+          row_errors_issue:
+            description: "The following issues exist with data in your CSV:"
+            row_label: "Row %{row} · %{column}"
+            title: Row Validation Errors
+        success:
+          message: Your import is now processing in the background. You'll be notified when it's complete.
+          start_another: Start Another Import
+          title: Import Started
+          view_queue: View Import Queue
+        validation:
+          columns_detected: "%{columns} columns detected · %{records} records found"
+          controlled_vocabulary_validator:
+            errors:
+              message: "'%{value}' is not a recognized term for '%{field}'."
+              suggestion: Check the controlled vocabulary for valid terms.
+          critical_errors: Critical errors must be fixed before import.
+          did_you_mean: Did you mean "%{suggestion}"?
+          duplicate_identifier_validator:
+            errors:
+              message: "Duplicate %{field} '%{value}' — also appears in row %{original_row}."
+              suggestion: "Each %{field} must be unique within the CSV."
+          failed: Validation Failed
+          file_path_not_exist: File path does not exist
+          file_references_title: File References
+          files_found_in_zip: "%{found} of %{total} files found in ZIP."
+          files_missing_from_zip: "%{count} %{files_word} referenced in your CSV but missing from the ZIP:"
+          files_referenced: "%{count} files referenced in CSV not found in import."
+          missing_from_zip: missing from ZIP
+          missing_required_desc: 'These required columns must be added to your CSV:'
+          missing_required_hint: add this column to your CSV
+          missing_required_title: Missing Required Fields
+          missing_rights_desc: Your CSV does not include a rights_statement column. You can add it to your CSV or select a Default Rights Statement in the next step.
+          multiple_csv_same_dir: Multiple CSV files found in the same directory within ZIP
+          multiple_csv_same_level: Multiple CSV files found at the same level within ZIP
+          no_csv_in_zip: No CSV files found in ZIP
+          no_csv_uploaded: No CSV metadata file uploaded
+          no_files_uploaded: No files uploaded
+          no_zip_desc: No ZIP file uploaded. Ensure files are accessible on the server or upload a ZIP.
+          parent_reference_validator:
+            errors:
+              message: "Referenced parent '%{value}' does not exist as a %{field} in this CSV."
+              suggestion: "Check for typos or add the parent record."
+          passed: Validation Passed
+          passed_warnings: Validation Passed with Warnings
+          recognized_fields: 'Recognized fields: %{fields}'
+          required_field_validator:
+            errors:
+              message: "Field '%{field}' is required but is empty for this row."
+              suggestion: "Add a value for '%{field}'."
+          unable_to_process: Unable to process files for validation
+          unrecognized_desc: 'These columns will be ignored during import:'
+          unrecognized_title: Unrecognized Fields
+      validations:
+        errors_prohibited:
+          one: '1 error prohibited this importer from being saved:'
+          other: "%{count} errors prohibited this importer from being saved:"
+      xml:
+        file_style:
+          cloud: Add Cloud File
+          server_path: Specify a Path on the Server
+          upload: Upload a File
+        hints:
+          file_upload_hint: File upload and Cloud File upload MUST be a either a single XML file (for metadata only import) OR a Zip file containing the XML files and data files, each in a separate folder.
+          override_rights_statement: If checked, always use the selected rights statement. If unchecked, use rights or rights_statement from the record and only use the provided value if dc:rights is blank.
+          record_element: Provide the xml element name to use to identify the record, or records, eg. ROW - each record in the attached XML is wrapped in a <ROW> tag.
+          server_path_hint: The Server Path can point to a folder containing XML files and data files to import, or direct to the XML file itself.
+        import_type:
+          multiple: Multiple Works per Metadata File
+          single: Single Work per Metadata File
+        labels:
+          visibility: Visibility
+          xml_and_files: 'XML and files to Import:'
+        visibility:
+          institution: Institution
+          private: Private
+          public: Public
     shared:
-      field_mapping:
-        heading: "Field mapping:"
-        full: "Full"
-        raw: "Raw"
       errors:
-        errors_heading: "Errors:"
-        full: "Full"
-        raw: "Raw"
-        errored_at: "Errored at:"
-        error: "Error:"
-        error_trace: "Error Trace:"
-        succeeded_at: "Succeeded At:"
-        not_yet_imported: "Item has not yet been imported successfully"
-        not_yet_exported: "Item has not yet been exported successfully"
-    entry:
-      labels:
-        parsed_metadata: "Parsed Metadata"
-        raw_metadata: "Raw Metadata"
-        unknown: "Unknown"
-        item_link: "Item Link"
-        item_not_imported: "Item has not yet been imported successfully"
-        item_link_error: "Unable to retrieve item (%{message})"
-        item_no_association: "No item associated with this entry or class unknown"
-        record_link: "%{record_type} Link"
+        error: 'Error:'
+        error_trace: 'Error Trace:'
+        errored_at: 'Errored at:'
+        errors_heading: 'Errors:'
+        full: Full
+        not_yet_exported: Item has not yet been exported successfully
+        not_yet_imported: Item has not yet been imported successfully
+        raw: Raw
+        succeeded_at: 'Succeeded At:'
+      field_mapping:
+        full: Full
+        heading: 'Field mapping:'
+        raw: Raw
     table_header:
       labels:
-        identifier: Identifier
-        entry_id: Entry ID
-        status: Status
-        type: Type
-        updated_at: Updated At
-        errors: Errors
-        status_set_at: Status Set At
         actions: Actions
-        name: Name
         date_exported: Date Exported
         downloadable_files: Downloadable Files
-        last_run: Last Run
-        next_run: Next Run
-        entries_enqueued: Entries Enqueued
-        entries_processed: Entries Processed
-        entries_failed: Entries Failed
         entries_deleted_upstream: Entries Deleted Upstream
+        entries_enqueued: Entries Enqueued
+        entries_failed: Entries Failed
+        entries_processed: Entries Processed
+        entry_id: Entry ID
+        errors: Errors
+        identifier: Identifier
+        last_run: Last Run
+        name: Name
+        next_run: Next Run
+        status: Status
+        status_set_at: Status Set At
         total_collection_entries: Total Collection Entries
-        total_work_entries: Total Work Entries
         total_file_set_entries: Total File Set Entries
+        total_work_entries: Total Work Entries
+        type: Type
+        updated_at: Updated At
+  helpers:
+    action:
+      exporter:
+        back: Back
+        create: Create
+        create_and_export: Create and Export
+        download: Download
+        edit: Edit
+        new: New
+        update: Update Exporter
+        update_and_re_export: Update and Re-Export All Items
+      importer:
+        add_file: Add file...
+        back: Back
+        build: Build
+        continue: Continue
+        create: Create
+        create_and_import: Create and Import
+        create_and_validate: Create and Validate
+        discard: Discard
+        discard_confirm: Are you sure?
+        download_original_file: Download Original File
+        download_original_files: Download Original Files
+        edit: Edit
+        edit_importer: Edit Importer
+        export_errored_entries: Export Errored Entries
+        generate_csv_template: Generate CSV Import Template
+        import_corrected_works: Import Corrected Works
+        new: Advanced Import
+        guided_import_new: Guided Import
+        remove_and_build: Remove and then Build
+        remove_and_rerun: Remove and Rerun
+        remove_and_rerun_confirm: Are you sure? This will delete all the works and any associated files and relationships before re running.
+        update: Update Importer
+        update_and_harvest_updated: Update and Harvest Updated Items
+        update_and_import: Update and Import
+        update_and_re_harvest: Update and Re-Harvest All Items
+        update_and_replace_files: Update and Replace Files
+        update_and_replace_files_confirm: Are you sure? This will remove all files before adding them from the import.
+        update_metadata: Update Metadata
+        update_metadata_and_files: Update Metadata and Files
+        upload_corrected_entries: Upload Corrected Entries
+  simple_form:
+    hints:
+      defaults:
+        default_visibility: If your CSV includes the visibility field, it will override the default setting.
+        metadata_prefix: Such as oai_dc, dcterms or oai_qdc
+        override_rights_statement: If checked, always use the selected rights statement. If unchecked, use rights or rights_statement from the record and only use the provided value if dc:rights is blank.
+        record_element: Provide the xml element name to use to identify the record, or records, eg. ROW - each record in the attached XML is wrapped in a <ROW> tag.
+      exporter:
+        generated_metadata?: These exported fields currently cannot be imported.
+        include_thumbnails?: These exported fields currently cannot be imported.
+        limit: Enter any number to run only a subset of records. Leave blank or enter 0 to run all records.
+        name: Any name to identify this importer
+      importer:
+        admin_set_id: Select the Administrative Set whose policies (such as workflow and access controls) should apply to these imports. If unsure, select the Default Administrative Set.
+        frequency: The frequency with which to run this importer
+        limit: Enter any number to run only a subset of records. Leave blank or enter 0 to run all records.
+        name: Any name to identify this importer
+        parser_fields: Specific fields for each parser are available only when a parser is selected
+    labels:
+      defaults:
+        base_url: Base URL
+        file_style: File Style
+        import_file_path: Import File Path
+        import_type: Import Type
+        metadata_format: Metadata Format
+        metadata_prefix: Metadata Prefix
+        override_rights_statement: Override Rights Statement
+        record_element: Record Element
+        rights_statement: Rights Statement
+        set: Set (source)
+        thumbnail_url: Thumbnail URL
+        visibility: Visibility
+      exporter:
+        date_filter: Filter By Date
+        export_from: Export From
+        export_source_collection: Collection
+        export_source_importer: Importer
+        export_source_worktype: Work Type
+        export_type: Type of Export
+        finish_date: End Date
+        generated_metadata?: Include Generated Metadata?
+        include_thumbnails?: Include Thumbnails?
+        limit: Limit
+        name: Name
+        parser_klass: Export Format
+        start_date: Start Date
+        work_visibility: Visibility
+        workflow_status: Status
+      importer:
+        admin_set_id: Administrative Set
+        frequency: Frequency
+        limit: Limit
+        name: Name
+        parser_klass: Parser

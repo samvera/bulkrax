@@ -70,14 +70,15 @@ module Bulkrax
       properties.reject { |prop| Bulkrax.reserved_properties.include?(prop) }
     end
 
-    def self.field_multi_value?(field:, model:)
+    #  Unused admin set included to support flexible contexts in the Valkyrie version
+    def self.field_multi_value?(field:, model:, admin_set_id: nil) # rubocop:disable Lint/UnusedMethodArgument
       return false unless field_supported?(field: field, model: model)
       return false unless model.singleton_methods.include?(:properties)
 
       model&.properties&.[](field)&.[]("multiple")
     end
 
-    def self.field_supported?(field:, model:)
+    def self.field_supported?(field:, model:, admin_set_id: nil) # rubocop:disable Lint/UnusedMethodArgument
       model.method_defined?(field) && model.properties[field].present?
     end
 

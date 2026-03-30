@@ -1,0 +1,482 @@
+---
+zh:
+  bulkrax:
+    admin:
+      sidebar:
+        exporters: 出口商
+        importers: 进口商
+    cancel: 取消
+    entry:
+      labels:
+        item_link: 物品链接
+        item_link_error: 无法检索项目 (%{message})
+        item_no_association: 此条目或类别中未找到相关项目。
+        item_not_imported: 项目尚未成功导入。
+        parsed_metadata: 已解析的元数据
+        raw_metadata: 原始元数据
+        record_link: "%{record_type} 链接"
+        unknown: 未知
+    exporter:
+      labels:
+        all: 全部
+        collection: 收藏
+        export_from: 导出
+        export_source: 出口来源
+        export_type: 出口类型
+        field_mapping: 田间测绘
+        full: 元数据和文件
+        generated_metadata: 是否包含生成的元数据？
+        importer: 进口商
+        include_thumbnails: 是否包含缩略图？
+        limit: 限制
+        metadata: 仅元数据
+        name: 姓名
+        parser_fields: 解析器字段
+        parser_klass: 解析器
+        user: 用户
+        worktype: 工作类型
+      prompts:
+        export_from: 请选择导出源
+        export_type: 请选择导出类型
+        select_from_list: 从列表中选择
+        start_typing: 开始输入……
+      validations:
+        errors_prohibited:
+          one: 1 个错误导致此导出器无法保存：
+          other: "%{count} 错误导致无法保存此导出器："
+    headings:
+      importers: 进口商
+      upload_corrected_entries: 上传更正后的条目：%{name}
+    importer:
+      bagit:
+        bags_to_import: 进口袋或包：
+        file_style:
+          cloud: 添加云文件
+          server_path: 指定服务器上的路径
+          upload: 上传文件
+        file_upload_hint: 文件上传和云端文件上传必须是包含单个 BagIt Bag 的 Zip 文件，或者包含多个 BagIt Bag 的文件夹。
+        server_path_hint: 服务器路径可以指向 BagIt Bag、包含 BagIt Bag 的文件夹或包含 BagIt Bag 或 BagIt Bag 的 zip 文件。
+        visibility:
+          institution: 机构
+          private: 私人的
+          public: 民众
+      browse_everything:
+        add_cloud_files: 添加云文件
+      csv:
+        add_csv_to_import: 添加要导入的 CSV 或 ZIP 文件：
+        add_files_hint: 选择要上传的文件。文件名必须唯一，并且文件名必须在随附的 CSV 文件中名为“file”的列中引用。
+        add_files_to_import: 添加要导入的文件：
+        file_style:
+          existing_entries: 现有条目
+          server_path: 指定服务器上的路径
+          upload: 上传文件
+        labels:
+          default_visibility: 默认可见性
+        visibility:
+          institution: 机构
+          private: 私人的
+          public: 民众
+      edit_form:
+        modal_title: 更新导入程序的选项
+        remove_and_rerun_hint: 删除所有作品，然后从头开始重新导入。这将删除所有文件和关联关系，并且自上次导入以来所做的任何编辑都将丢失。
+        update_and_harvest_hint: 更新导入器表单中的值，并更新源中已更改的项目。
+        update_and_import_hint: 更新导入器表单中的值，并首次运行导入器。
+        update_and_re_harvest_hint: 更新导入器表单中的值，并从源重新创建所有项目。
+        update_and_replace_files_hint: 更新导入器表单中的值并更新元数据。彻底删除与此导入器关联的所有文件，并从头开始重新创建这些文件。
+        update_metadata_and_files_hint: 更新导入表单中的值，并更新所有作品的元数据和文件。创建文件的新版本并保留旧版本。
+        update_metadata_hint: 更新导入表单中的值，并更新所有作品的元数据。请勿更新任何文件。
+        update_only_hint: 仅更新导入表单中的值。请勿导入任何作品或收藏集的元数据或文件。
+        update_only_no_update_hint: 仅更新导入表单中的值。请勿更新任何作品或合集的元数据或文件。
+      file_uploader:
+        add_files: 添加文件
+        cancel_upload: 取消上传
+        dropzone: 文件拖放到这里即可上传
+      hints:
+        default_visibility: 如果您的 CSV 文件包含可见性字段，它将覆盖默认设置。
+        override_rights_statement: 如果选中，则始终使用选定的权限语句。如果未选中，则使用记录中的权限或权限语句，并且仅当 dc:rights 为空时才使用提供的值。
+      labels:
+        admin_set: 管理集
+        entry_id: 条目 ID
+        exporter: 出口商
+        frequency: 频率
+        identifier: 标识符
+        importer: 进口商
+        limit: 限制
+        name: 姓名
+        parser_klass: 解析器
+        total_collections: 总收藏
+        total_file_sets: 文件集总数
+        total_work_entries: 总作品
+        type: 类型
+        user: 用户
+      oai:
+        hints:
+          metadata_prefix: 例如 oai_dc、dcterms 或 oai_qdc
+          override_rights_statement: 如果选中，则始终使用选定的权限语句。如果未选中，则使用记录中的 dc:rights，并且仅当 dc:rights 为空时才使用提供的值。
+          thumbnail_url_html: |
+            <p>
+              缩略图 URL 允许对 URL 中的任何已识别信息进行基本模板化和替换。例如：
+            </p>
+            <p>
+               http://commons.ptsem.edu/?cover=<%= identifier.split(':').last %>&size=L
+            </p>
+            <p>
+               http://commons.ptsem.edu/?cover=<%= record.header.identifier.split(':').last %>&size=L
+            </p>
+        labels:
+          set: 设置（源）
+        refresh_sets: 刷新集
+        visibility:
+          institution: 机构
+          private: 私人的
+          public: 民众
+      upload_corrected_entries:
+        click_here: 点击这里
+        csv_only: 仅允许上传CSV文件。
+        instructions_html: "<b>仅</b>上传已更正的<b>%{name}</b>导入器条目。要导出失败的条目以进行更正，"
+      guided_import:
+        breadcrumb: 引导式导入
+        flash:
+          demo_not_available: 暂无演示场景
+          import_started: 导入操作已成功开始。
+        js:
+          admin_set_prompt: 选择一个管理员集...
+          already_uploaded: 以下文件已上传：
+          appears_in_collections: 出现在 %{count} 系列中
+          circular_reference: 检测到圆形参考
+          csv_limit: 仅允许添加一个 CSV 文件。以下文件未添加：
+          demo_data_not_loaded: 演示数据未加载。请尝试重新选择场景。
+          demo_load_failed: 演示场景加载失败
+          demo_network_error: 网络错误 - 请检查您的连接
+          demo_server_error: 加载演示场景时出现服务器错误
+          demo_timeout: 加载演示场景时请求超时
+          detected_in_zip: 在 ZIP 中检测到
+          file_upload_error: 文件上传错误
+          files_too_large: 文件过大。请减小文件大小后重试。
+          gauge_import_size: 导入尺寸：%{count} 件
+          gauge_large: 大的
+          gauge_large_msg: 大型导入操作耗时更长，调试难度也更大。我们强烈建议将导入操作拆分成若干批次，每批次不超过 %{limit} 个文件。
+          gauge_moderate: 缓和
+          gauge_moderate_msg: 为了便于排查错误，可以考虑分成更小的批次进行处理。
+          gauge_optimal: 最佳的
+          gauge_optimal_msg: 太好了！较小的导入操作更容易验证和排查问题。
+          hierarchy_too_deep: 层级过深（最多 %{max} 层）
+          import_hierarchy: 导入层级
+          import_name_prefix: CSV 导入 -
+          invalid_file_format: 文件格式无效。请检查您的文件并重试。
+          invalid_format: 文件格式无效。仅允许 .csv 和 .zip 文件格式。
+          max_files: 已达到 %{count} 个文件的最大数量（1 个 CSV 文件和 1 个 ZIP 文件）。
+          max_files_added: 最多允许添加 %{count} 个文件（1 个 CSV 文件和 1 个 ZIP 文件）。但只添加了前 %{added} 个文件。
+          network_error: 网络错误 - 请检查您的网络连接并重试。
+          no_extension: 没有扩展
+          not_selected: 未选择
+          only_first_files: 目前仅上传了前 %{count} 个文件。您最多可以上传 %{max} 个文件（1 个 CSV 文件和 1 个 ZIP 文件）。
+          only_one_additional: 只能添加一个文件。第一个文件已添加。
+          rejected_files: 以下文件已被拒绝：
+          remove_file: 删除文件
+          render_error: 验证已完成，但结果无法显示。请重试。
+          review_admin_set: 管理员设置：
+          review_first_n_records: 前 %{count} 条记录
+          review_limit: 限制：
+          review_name: 姓名：
+          review_rights: 权利：
+          review_skipped: 验证步骤已跳过——记录数不可用
+          review_total: 总计 %{total} — %{collections} 个收藏集，%{works} 个作品，%{file_sets} 个文件集
+          review_visibility: 能见度：
+          server_error: 验证过程中服务器出错。请重试或联系客服。
+          shared_badge: 共享
+          starting: 开始...
+          upload_csv_and_zip: CSV 文件和其他文件单独上传
+          upload_csv_only: 未上传 ZIP 文件——文件将从服务器路径匹配，或者您可以添加更多文件。
+          upload_single_package: 包含 CSV 和文件的单个软件包
+          upload_zip_only: 已上传 ZIP 文件——验证将检查 CSV 内容
+          uploaded_file: 已上传文件
+          uploaded_files: 已上传文件 (%{count})
+          validate_path: 验证导入路径中的文件
+          validate_upload: 验证上传的文件
+          validated: 已验证
+          validating: 正在验证……
+          validation_failed: 验证失败，请重试。
+          validation_timeout: 验证超时。您的文件可能过大。请尝试上传较小的文件或联系技术支持。
+          visibility_institution: 机构
+          visibility_private: 私人的
+          visibility_public: 民众
+          zip_limit: 仅允许上传 1 个 ZIP 文件。以下文件未添加：
+        nav:
+          back: 后退
+          clear_start_over: 清除并重新开始
+          next_step: 下一个
+          skip_validation: 跳过验证
+          start_import: 开始导入
+        page_subtitle: 通过 CSV 导入收藏集、作品和文件
+        page_title: 开始批量导入
+        step1:
+          add_another: 添加另一个文件
+          add_another_hint_html: 将 CSV 或 ZIP 文件拖放到此处，或点击<strong class="text-primary">浏览。</strong>
+          admin_set: 管理员设置
+          admin_set_hint: 导入和下载 CSV 模板需要管理员权限。
+          admin_set_prompt: 选择一个管理员集...
+          collections: 收藏
+          description_html: 上传一个元数据 CSV 文件和一个包含您的文件的 ZIP 文件（最多上传 2 个文件），或者上传一个包含两者的 ZIP 文件——如果使用单个 ZIP 文件，则元数据 CSV 文件必须是顶层唯一的<code>.csv</code>文件。<br />您也可以使用服务器上的文件路径。
+          download_template: 下载租户的 CSV 模板
+          dropzone_csv_hint: ".csv — 仅元数据"
+          dropzone_hint: 上传 CSV 和 ZIP 文件（最多上传 2 个文件）
+          dropzone_main_html: 将文件拖放到此处，或<strong class="text-primary">浏览</strong>
+          dropzone_zip_hint: ".zip 文件或元数据 CSV + 文件"
+          file_path_hint: CSV 或 ZIP 文件
+          file_path_label: 输入服务器上文件的路径
+          file_path_placeholder: "/path/to/import.csv"
+          file_sets: 文件集
+          import_path: 导入路径
+          import_summary: 导入摘要
+          title: 导入您的文件
+          upload_files: 上传文件
+          file_input_label: 上传CSV或ZIP文件
+          validate_path: 验证导入路径中的文件
+          validate_upload: 验证上传的文件
+          warning_ack: 我已了解这些警告或错误，并希望继续导入。
+          works: 作品
+        step2:
+          default_rights: 默认权利声明
+          default_visibility: 默认可见性
+          description: 设置适用于此导入中所有记录的参数。
+          import_name: 导入名称
+          import_name_prefix: CSV 导入 -
+          optional_settings: 可选设置
+          rights_none: 没有任何
+          rights_required_alert_html: 您的 CSV 文件不包含<strong>rights_statement</strong>列。请在下方选择默认权利声明，以应用于所有记录。
+          rights_skipped_hint_html: 已跳过验证。如果您的 CSV 文件不包含<strong>rights_statement</strong>列，您可以从下方选择默认权利声明，将其应用于所有记录。
+          test_limit: 测试限制记录
+          test_limit_placeholder: 仅导入前 N 条记录进行测试
+          title: 配置导入设置
+          visibility_hint: 适用于未指定可见性的记录。
+          visibility_institution: 机构
+          visibility_institution_desc: 已登录用户
+          visibility_private: 私人的
+          visibility_private_desc: 仅限管理员
+          visibility_public: 民众
+          visibility_public_desc: 所有人都能看到
+        step3:
+          background_note: 此过程将在后台运行。您可以在导入队列中监控进度。
+          description: 开始之前，请确认您的进口详情。
+          large_import_message_html: 您即将导入<span class="total-items-count">%{count}</span>个项目。大量导入操作耗时更长，且更难排查问题。建议您分批导入。
+          large_import_warning: 大量进口警告
+          ready_to_import: 准备进口
+          section_files: 文件
+          section_records: 记录
+          section_settings: 设置
+          section_warnings: 警告
+          title: 审核并开始导入
+        steps:
+          configure_settings: 配置设置
+          review_start: 回顾与开始
+          upload_validate: 上传并验证
+        stepper_response_formatter:
+          row_errors_issue:
+            description: "您的 CSV 数据中存在以下问题："
+            row_label: "第 %{row} 行 · %{column}"
+            title: 行校验错误
+        success:
+          message: 您的导入操作正在后台处理中。完成后您将收到通知。
+          start_another: 开始另一次导入
+          title: 导入开始
+          view_queue: 查看导入队列
+        validation:
+          columns_detected: 检测到 %{columns} 列 · 找到 %{records} 条记录
+          controlled_vocabulary_validator:
+            errors:
+              message: "'%{value}' 不是 '%{field}' 的认可术语。"
+              suggestion: "请检查受控词表以获取有效术语。"
+          critical_errors: 导入前必须修复关键错误。
+          did_you_mean: 您是不是想输入“%{suggestion}”？
+          duplicate_identifier_validator:
+            errors:
+              message: "重复的 %{field} '%{value}' — 也出现在第 %{original_row} 行。"
+              suggestion: "每个 %{field} 在 CSV 中必须是唯一的。"
+          failed: 验证失败
+          file_path_not_exist: 文件路径不存在
+          file_references_title: 文件引用
+          files_found_in_zip: 在 ZIP 文件中找到 %{found} 个文件（共 %{total} 个）。
+          files_missing_from_zip: CSV 文件中引用了 %{count} %{files_word}，但 ZIP 文件中缺少该 %{files_word}：
+          files_referenced: 导入时未找到 CSV 文件中引用的 %{count} 文件。
+          missing_from_zip: ZIP 文件中缺少
+          missing_required_desc: 您必须在 CSV 文件中添加以下必填列：
+          missing_required_hint: 将此列添加到您的 CSV 文件中
+          missing_required_title: 缺少必填字段
+          missing_rights_desc: 您的 CSV 文件不包含 rights_statement 列。您可以在下一步中将其添加到 CSV 文件中，或选择默认的权利声明。
+          multiple_csv_same_dir: ZIP 文件中的同一目录下发现了多个 CSV 文件
+          multiple_csv_same_level: 在 ZIP 文件中的同一层级发现了多个 CSV 文件
+          no_csv_in_zip: ZIP 文件中未找到 CSV 文件
+          no_csv_uploaded: 未上传 CSV 元数据文件。
+          no_files_uploaded: 未上传任何文件。
+          no_zip_desc: 未上传 ZIP 文件。请确保服务器上的文件可访问，或上传 ZIP 文件。
+          parent_reference_validator:
+            errors:
+              message: "引用的父级 '%{value}' 在此 CSV 中不存在对应的 %{field}。"
+              suggestion: "请检查拼写错误或添加父级记录。"
+          passed: 验证通过
+          passed_warnings: 验证通过，但存在警告
+          recognized_fields: 已识别字段：%{fields}
+          required_field_validator:
+            errors:
+              message: "字段 '%{field}' 是必填项，但此行中该字段为空。"
+              suggestion: "请为 '%{field}' 添加一个值。"
+          unable_to_process: 无法处理文件进行验证
+          unrecognized_desc: 导入过程中将忽略以下列：
+          unrecognized_title: 未识别字段
+      validations:
+        errors_prohibited:
+          one: 1 个错误导致此导入程序无法保存：
+          other: "%{count} 错误导致无法保存此导入程序："
+      xml:
+        file_style:
+          cloud: 添加云文件
+          server_path: 指定服务器上的路径
+          upload: 上传文件
+        hints:
+          file_upload_hint: 文件上传和云文件上传必须是一个单独的 XML 文件（仅用于导入元数据）或一个包含 XML 文件和数据文件的 Zip 文件，每个文件都位于单独的文件夹中。
+          override_rights_statement: 如果选中，则始终使用选定的权限语句。如果未选中，则使用记录中的权限或权限语句，并且仅当 dc:rights 为空时才使用提供的值。
+          record_element: 提供用于标识记录的 XML 元素名称，例如 ROW - 附加 XML 中的每个记录都包含在 <ROW> 标签中。
+          server_path_hint: 服务器路径可以指向包含要导入的 XML 文件和数据文件的文件夹，也可以直接指向 XML 文件本身。
+        import_type:
+          multiple: 每个元数据文件包含多个作品
+          single: 每个元数据文件对应一个工作
+        labels:
+          visibility: 能见度
+          xml_and_files: 要导入的 XML 和文件：
+        visibility:
+          institution: 机构
+          private: 私人的
+          public: 民众
+    shared:
+      errors:
+        error: 错误：
+        error_trace: 错误跟踪：
+        errored_at: 出错位置：
+        errors_heading: 错误：
+        full: 满的
+        not_yet_exported: 项目尚未成功导出。
+        not_yet_imported: 项目尚未成功导入。
+        raw: 生的
+        succeeded_at: 成功完成：
+      field_mapping:
+        full: 满的
+        heading: 字段映射：
+        raw: 生的
+    table_header:
+      labels:
+        actions: 行动
+        date_exported: 导出日期
+        downloadable_files: 可下载文件
+        entries_deleted_upstream: 上游已删除条目
+        entries_enqueued: 已入队的条目
+        entries_failed: 录入失败
+        entries_processed: 已处理条目
+        entry_id: 条目 ID
+        errors: 错误
+        identifier: 标识符
+        last_run: 最后一次
+        name: 姓名
+        next_run: 下一轮
+        status: 地位
+        total_collection_entries: 总收款条目
+        total_file_set_entries: 文件集条目总数
+        total_work_entries: 总工作条目
+        type: 类型
+        updated_at: 更新于
+  helpers:
+    action:
+      exporter:
+        back: 后退
+        create: 创造
+        create_and_export: 创建和导出
+        download: 下载
+        edit: 编辑
+        new: 新的
+        update: 更新导出器
+        update_and_re_export: 更新并重新导出所有项目
+      importer:
+        add_file: 添加文件...
+        back: 后退
+        build: 建造
+        continue: 继续
+        create: 创造
+        create_and_import: 创建和导入
+        create_and_validate: 创建并验证
+        discard: 丢弃
+        discard_confirm: 你确定吗？
+        download_original_file: 下载原始文件
+        download_original_files: 下载原始文件
+        edit: 编辑
+        edit_importer: 编辑导入器
+        export_errored_entries: 导出错误条目
+        generate_csv_template: 生成 CSV 导入模板
+        import_corrected_works: 导入修正作品
+        new: 高级导入
+        guided_import_new: 引导式进口
+        remove_and_build: 移除，然后构建
+        remove_and_rerun: 删除并重新运行
+        remove_and_rerun_confirm: 你确定吗？重新运行后，这将删除所有作品及其关联文件和关系。
+        update: 更新导入器
+        update_and_harvest_updated: 更新和收获更新后的物品
+        update_and_import: 更新和导入
+        update_and_re_harvest: 更新并重新收获所有物品
+        update_and_replace_files: 更新和替换文件
+        update_and_replace_files_confirm: 你确定吗？这样做会在导入之前删除所有文件。
+        update_metadata: 更新元数据
+        update_metadata_and_files: 更新元数据和文件
+        upload_corrected_entries: 上传更正后的条目
+  simple_form:
+    hints:
+      defaults:
+        default_visibility: 如果您的 CSV 文件包含可见性字段，它将覆盖默认设置。
+        metadata_prefix: 例如 oai_dc、dcterms 或 oai_qdc
+        override_rights_statement: 如果选中，则始终使用选定的权限语句。如果未选中，则使用记录中的权限或权限语句，并且仅当 dc:rights 为空时才使用提供的值。
+        record_element: 提供用于标识记录的 XML 元素名称，例如 ROW - 附加 XML 中的每个记录都包含在 <ROW> 标签中。
+      exporter:
+        generated_metadata?: 这些导出的字段目前无法导入。
+        include_thumbnails?: 这些导出的字段目前无法导入。
+        limit: 输入任意数字可仅运行部分记录。留空或输入 0 可运行所有记录。
+        name: 用于识别该进口商的任何名称
+      importer:
+        admin_set_id: 选择应将策略（例如工作流和访问控制）应用于这些导入的管理集。如果不确定，请选择默认管理集。
+        frequency: 运行此导入程序的频率
+        limit: 输入任意数字可仅运行部分记录。留空或输入 0 可运行所有记录。
+        name: 用于识别该进口商的任何名称
+        parser_fields: 只有在选定解析器后，每个解析器的特定字段才可用。
+    labels:
+      defaults:
+        base_url: 基本 URL
+        file_style: 文件样式
+        import_file_path: 导入文件路径
+        import_type: 进口类型
+        metadata_format: 元数据格式
+        metadata_prefix: 元数据前缀
+        override_rights_statement: 优先权声明
+        record_element: 记录元素
+        rights_statement: 权利声明
+        set: 设置（源）
+        thumbnail_url: 缩略图网址
+        visibility: 能见度
+      exporter:
+        date_filter: 按日期筛选
+        export_from: 导出
+        export_source_collection: 收藏
+        export_source_importer: 进口商
+        export_source_worktype: 工作类型
+        export_type: 出口类型
+        finish_date: 结束日期
+        generated_metadata?: 是否包含生成的元数据？
+        include_thumbnails?: 是否包含缩略图？
+        limit: 限制
+        name: 姓名
+        parser_klass: 导出格式
+        start_date: 开始日期
+        work_visibility: 能见度
+        workflow_status: 地位
+      importer:
+        admin_set_id: 行政集
+        frequency: 频率
+        limit: 限制
+        name: 姓名
+        parser_klass: 解析器

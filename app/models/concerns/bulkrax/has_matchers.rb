@@ -131,7 +131,7 @@ module Bulkrax
       return false if excluded?(field)
       return true if supported_bulkrax_fields.include?(field)
 
-      Bulkrax.object_factory.field_supported?(field: field, model: factory_class)
+      Bulkrax.object_factory.field_supported?(field: field, model: factory_class, admin_set_id: importerexporter.try(:admin_set_id))
     end
 
     def supported_bulkrax_fields
@@ -145,7 +145,7 @@ module Bulkrax
       return true if fields_that_are_always_singular.include?(field.to_s)
       return false if fields_that_are_always_multiple.include?(field.to_s)
 
-      Bulkrax.object_factory.field_multi_value?(field: field, model: factory_class)
+      Bulkrax.object_factory.field_multi_value?(field: field, model: factory_class, admin_set_id: importerexporter.try(:admin_set_id))
     end
 
     def fields_that_are_always_multiple

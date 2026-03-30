@@ -1,0 +1,567 @@
+<% provide :page_header do %>
+  <h1><span class="fa fa-cloud-upload" aria-hidden="true"></span> <%= t('bulkrax.importer.guided_import.page_title') %></h1>
+  <p><%= t('bulkrax.importer.guided_import.page_subtitle') %></p>
+  <p>
+    <%= link_to t('bulkrax.importer.guided_import.feedback_link'), 'https://github.com/samvera/bulkrax/issues/new?template=guided_import_bug_report.md', target: '_blank', rel: 'noopener noreferrer', class: 'feedback-link' %>
+  </p>
+<% end %>
+
+<% content_for(:head) do %>
+  <meta name="turbolinks-cache-control" content="no-cache">
+<% end %>
+
+<script>
+  window.BulkraxI18n = <%= raw I18n.t('bulkrax.importer.guided_import.js').to_json %>;
+</script>
+
+<div class="bulk-import-stepper-container" data-max-file-size="<%= (defined?(Hyrax) && Hyrax.config.uploader&.[](:maxFileSize)) || 524288000 %>">
+  <div class="stepper-wrapper">
+
+    <!-- Stepper Header -->
+    <div class="stepper-header d-flex align-items-center justify-content-center">
+      <div class="step-item d-flex flex-column align-items-center" data-step="1">
+        <div class="step-circle d-flex align-items-center justify-content-center">
+          <span class="fa fa-cloud-upload" aria-hidden="true"></span>
+          <span class="step-check fa fa-check" aria-hidden="true"></span>
+        </div>
+        <span class="step-label"><%= t('bulkrax.importer.guided_import.steps.upload_validate') %></span>
+      </div>
+      <div class="step-connector"></div>
+      <div class="step-item d-flex flex-column align-items-center" data-step="2">
+        <div class="step-circle d-flex align-items-center justify-content-center">
+          <span class="fa fa-cog" aria-hidden="true"></span>
+          <span class="step-check fa fa-check" aria-hidden="true"></span>
+        </div>
+        <span class="step-label"><%= t('bulkrax.importer.guided_import.steps.configure_settings') %></span>
+      </div>
+      <div class="step-connector"></div>
+      <div class="step-item d-flex flex-column align-items-center" data-step="3">
+        <div class="step-circle d-flex align-items-center justify-content-center">
+          <span class="fa fa-play" aria-hidden="true"></span>
+          <span class="step-check fa fa-check" aria-hidden="true"></span>
+        </div>
+        <span class="step-label"><%= t('bulkrax.importer.guided_import.steps.review_start') %></span>
+      </div>
+    </div>
+
+    <!-- Success State (Hidden by default) -->
+    <div class="import-success-state" style="display: none;">
+      <div class="success-card text-center">
+        <div class="success-icon d-flex align-items-center justify-content-center">
+          <span class="fa fa-check-circle" aria-hidden="true"></span>
+        </div>
+        <h2><%= t('bulkrax.importer.guided_import.success.title') %></h2>
+        <p><%= t('bulkrax.importer.guided_import.success.message') %></p>
+        <div class="success-actions d-flex justify-content-center">
+          <a href="<%= importers_path %>" class="btn btn-secondary"><%= t('bulkrax.importer.guided_import.success.view_queue') %></a>
+          <button type="button" class="btn btn-primary" id="start-another-import"><%= t('bulkrax.importer.guided_import.success.start_another') %></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Form -->
+    <div class="stepper-content-wrapper">
+      <%= form_for [:bulkrax, Bulkrax::Importer.new], url: guided_import_create_path, method: :post, html: { id: 'bulk-import-stepper-form', multipart: true } do |f| %>
+        <%= hidden_field_tag 'locale', I18n.locale %>
+        <!-- ====== STEP 1: Upload & Validate ====== -->
+        <div class="step-content" data-step="1">
+          <div class="step-title">
+            <h2 tabindex="-1"><%= t('bulkrax.importer.guided_import.step1.title') %> <span class="text-danger">*</span></h2>
+            <p class="text-muted"><%= t('bulkrax.importer.guided_import.step1.description_html').html_safe %></p>
+          </div>
+
+          <!-- Upload Area -->
+          <div class="upload-zone-wrapper">
+            <!-- Upload Mode Tabs -->
+            <div class="upload-mode-tabs" role="tablist">
+              <button 
+                type="button" 
+                class="upload-mode-tab active" 
+                data-upload-mode="upload" 
+                role="tab" 
+                aria-selected="true"
+              >
+                <span class="fa fa-cloud-upload" aria-hidden="true"></span> <%= t('bulkrax.importer.guided_import.step1.upload_files') %>
+              </button>
+              <button
+                type="button" 
+                class="upload-mode-tab" 
+                data-upload-mode="file_path"
+                role="tab" 
+                aria-selected="false"
+              >
+                <span class="fa fa-folder-open" aria-hidden="true"></span> <%= t('bulkrax.importer.guided_import.step1.import_path') %>
+              </button>
+            </div>
+
+            <!-- Empty State -->
+            <div class="upload-zone-empty">
+              <label
+                for="file-input"
+                class="upload-dropzone"
+                role="button"
+                tabindex="0"
+                aria-describedby="dropzone-hint"
+              >
+                <div class="upload-icon">
+                  <span class="fa fa-cloud-upload" aria-hidden="true"></span>
+                </div>
+                <p><%= t('bulkrax.importer.guided_import.step1.dropzone_main_html').html_safe %></p>
+                <p class="text-muted small" id="dropzone-hint">
+                  <%= t('bulkrax.importer.guided_import.step1.dropzone_hint') %>
+                </p>
+                <div class="upload-accepted-types">
+                  <p class="text-muted small">
+                    <span class="fa fa-file-text-o" aria-hidden="true"></span>
+                    <%= t('bulkrax.importer.guided_import.step1.dropzone_csv_hint') %>
+                  </p>
+                  <p class="text-muted small">
+                    <span class="fa fa-file-archive-o" aria-hidden="true"></span>
+                    <%= t('bulkrax.importer.guided_import.step1.dropzone_zip_hint') %>
+                  </p>
+                </div>
+              </label>
+              <input
+                type="file"
+                id="file-input"
+                name="importer[parser_fields][files][]"
+                accept=".csv,.zip"
+                multiple
+                class="sr-only"
+                aria-label="<%= t('bulkrax.importer.guided_import.step1.upload_files') %>"
+              >
+
+              <!-- Demo Scenarios (for testing) -->
+              <% if Bulkrax.config.guided_import_demo_scenarios_enabled %>
+              <div class="demo-scenarios" style="display: none;">
+                <p class="small text-primary"><strong>Demo: Pick a validation scenario</strong></p>
+                <div style="margin-bottom: 10px;">
+                  <p class="small text-muted mb-1"><strong>&#10003; Success</strong></p>
+                  <button type="button" class="btn btn-sm btn-outline-success btn-block scenario-btn" data-scenario="success_no_issues">CSV with Nested Collections and Works</button>
+                  <button type="button" class="btn btn-sm btn-outline-success btn-block scenario-btn" data-scenario="success_with_files">CSV and ZIP</button>
+                  <button type="button" class="btn btn-sm btn-outline-success btn-block scenario-btn" data-scenario="success_multi_parent">Multi-parent works</button>
+                  <button type="button" class="btn btn-sm btn-outline-success btn-block scenario-btn" data-scenario="success_children_ids">Children IDs define hierarchy</button>
+                  <button type="button" class="btn btn-sm btn-outline-success btn-block scenario-btn" data-scenario="success_with_mixed_hierarchy">Each collection defines hierarchy differently</button>
+                </div>
+                <div style="margin-bottom: 10px;">
+                  <p class="small text-muted mb-1"><strong>&#9888; Warnings</strong></p>
+                  <button type="button" class="btn btn-sm btn-outline-warning btn-block scenario-btn" data-scenario="warning_unrecognized">Unrecognized fields</button>
+                  <button type="button" class="btn btn-sm btn-outline-warning btn-block scenario-btn" data-scenario="warning_missing_files">Missing files from ZIP</button>
+                  <button type="button" class="btn btn-sm btn-outline-warning btn-block scenario-btn" data-scenario="warning_no_zip">Files referenced, no ZIP</button>
+                  <button type="button" class="btn btn-sm btn-outline-warning btn-block scenario-btn" data-scenario="warning_combined">Combined warnings</button>
+                </div>
+                <div>
+                  <p class="small text-muted mb-1"><strong>&#10007; Errors</strong></p>
+                  <button type="button" class="btn btn-sm btn-outline-danger btn-block scenario-btn" data-scenario="error_missing_required">Missing required fields</button>
+                  <button type="button" class="btn btn-sm btn-outline-danger btn-block scenario-btn" data-scenario="error_combined">Errors + warnings</button>
+                </div>
+              </div>
+              <% end %>
+            </div>
+
+            <!-- Files Uploaded State (hidden initially) -->
+            <div class="uploaded-files-container" style="display: none;">
+              <div class="uploaded-files-list">
+                <!-- File rows will be dynamically added here -->
+              </div>
+              <div class="upload-info-message">
+                <!-- Info messages will be added here based on upload state -->
+              </div>
+            </div>
+
+            <!-- Add another file dropzone (shown when 1 file uploaded) -->
+            <div class="add-another-dropzone" style="display: none;">
+              <label
+                for="file-input-additional"
+                class="upload-dropzone-small"
+                role="button" 
+                tabindex="0"
+                aria-describedby="add-another-hint"
+              >
+                <div class="upload-icon">
+                  <span class="fa fa-cloud-upload" aria-hidden="true"></span>
+                </div>
+                <p><%= t('bulkrax.importer.guided_import.step1.add_another') %></p>
+                <p class="text-muted small" id="add-another-hint">
+                  <%= t('bulkrax.importer.guided_import.step1.add_another_hint_html').html_safe %>
+                </p>
+                <div class="upload-accepted-types">
+                  <p class="text-muted small">
+                    <span class="fa fa-file-text-o" aria-hidden="true"></span>
+                    <%= t('bulkrax.importer.guided_import.step1.dropzone_csv_hint') %>
+                  </p>
+                  <p class="text-muted small">
+                    <span class="fa fa-file-archive-o" aria-hidden="true"></span>
+                    <%= t('bulkrax.importer.guided_import.step1.dropzone_zip_hint') %>
+                  </p>
+                </div>
+              </label>
+              <input
+                type="file"
+                id="file-input-additional"
+                name="importer[parser_fields][files][]"
+                accept=".csv,.zip"
+                multiple
+                class="sr-only"
+                aria-label="<%= t('bulkrax.importer.guided_import.step1.add_another') %>"
+              >
+            </div>
+
+            <!-- File Path Input (hidden by default) -->
+            <div class="file-path-panel" style="display: none;">
+              <div class="file-path-input-wrapper">
+                <div class="upload-icon">
+                  <span class="fa fa-folder-open" aria-hidden="true"></span>
+                </div>
+                <label for="import-file-path" class="control-label">
+                  <%= t('bulkrax.importer.guided_import.step1.file_path_label') %>
+                </label>
+                <p class="text-muted small"><%= t('bulkrax.importer.guided_import.step1.file_path_hint') %></p>
+                <input
+                  type="text"
+                  id="import-file-path"
+                  name="importer[parser_fields][import_file_path]"
+                  class="form-control"
+                  placeholder="<%= t('bulkrax.importer.guided_import.step1.file_path_placeholder') %>"
+                >
+                <!-- Params require file_style attribute -->
+                <%= hidden_field_tag 'importer[parser_fields][file_style]', I18n.t('bulkrax.importer.xml.file_style.server_path') %>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- File Upload Error Messages -->
+          <div id="file-upload-errors" class="file-upload-errors" aria-live="polite" style="display: none;"></div>
+
+          <!-- Admin Set -->
+          <div class="form-group">
+            <div class="step-title">
+              <%= f.label :admin_set_id, for: 'importer-admin-set', class: 'h2' do %>
+                <%= t('bulkrax.importer.guided_import.step1.admin_set') %> <span class="text-danger">*</span>
+              <% end %>
+              <p class="text-muted"><%= t('bulkrax.importer.guided_import.step1.admin_set_hint') %></p>
+            </div>
+            <% admin_sets = available_admin_sets %>
+            <% default_admin_set = admin_sets.find { |name, id| name.include?('Default') }&.last %>
+            <%= f.select :admin_set_id,
+                options_for_select([[t('bulkrax.importer.guided_import.step1.admin_set_prompt'), '']] + admin_sets, default_admin_set),
+                {},
+                { id: 'importer-admin-set', class: 'form-control', required: true } %>
+          </div>
+
+          <!-- Download Template Link -->
+          <div class="download-template-link">
+            <span class="fa fa-download text-primary" aria-hidden="true"></span>
+            <a id="download-csv-template-link" href="<%= sample_csv_file_importers_path %>" class="text-primary" download data-sample-csv-url="<%= sample_csv_file_importers_path %>"><%= t('bulkrax.importer.guided_import.step1.download_template') %></a>
+          </div>
+
+          <!-- Validate Button (tab-scoped: only one is visible at a time) -->
+          <button type="button" id="validate-upload-btn" class="validate-btn btn btn-primary btn-block btn-lg" disabled>
+            <span class="fa fa-file-text" aria-hidden="true"></span> <%= t('bulkrax.importer.guided_import.step1.validate_upload') %>
+          </button>
+          <button type="button" id="validate-path-btn" class="validate-btn btn btn-primary btn-block btn-lg" style="display: none;" disabled>
+            <span class="fa fa-file-text" aria-hidden="true"></span> <%= t('bulkrax.importer.guided_import.step1.validate_path') %>
+          </button>
+
+          <!-- Validation Results (hidden initially) -->
+          <div class="validation-results" aria-live="polite" style="display: none;">
+
+            <!-- Validation Status Accordion -->
+            <div class="accordion-wrapper">
+              <!-- Validation accordions will be added by JS -->
+            </div>
+
+            <!-- Import Size Gauge -->
+            <div class="import-size-gauge">
+              <!-- Will be populated by JS -->
+            </div>
+
+            <!-- Import Summary -->
+            <div class="import-summary">
+              <h3><%= t('bulkrax.importer.guided_import.step1.import_summary') %></h3>
+              <div class="row">
+                <div class="col-sm-4">
+                  <div class="summary-card summary-card-collections">
+                    <div class="summary-number">0</div>
+                    <div class="summary-label"><%= t('bulkrax.importer.guided_import.step1.collections') %></div>
+                  </div>
+                </div>
+                <div class="col-sm-4">
+                  <div class="summary-card summary-card-works">
+                    <div class="summary-number">0</div>
+                    <div class="summary-label"><%= t('bulkrax.importer.guided_import.step1.works') %></div>
+                  </div>
+                </div>
+                <div class="col-sm-4">
+                  <div class="summary-card summary-card-filesets">
+                    <div class="summary-number">0</div>
+                    <div class="summary-label"><%= t('bulkrax.importer.guided_import.step1.file_sets') %></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Collection/Work Trees -->
+              <div class="hierarchy-accordions">
+                <!-- Will be populated by JS -->
+              </div>
+            </div>
+
+            <!-- Warning Acknowledgment -->
+            <div class="warning-acknowledgment" style="display: none;">
+              <label class="acknowledgment-checkbox">
+                <input type="checkbox" id="warnings-acked">
+                <span><%= t('bulkrax.importer.guided_import.step1.warning_ack') %></span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Step Navigation -->
+          <div class="step-navigation d-flex justify-content-between align-items-end">
+            <button type="button" class="btn btn-outline-danger start-over-nav-btn d-inline-flex align-items-center">
+              <span class="fa fa-refresh" aria-hidden="true"></span> <%= t('bulkrax.importer.guided_import.nav.clear_start_over') %>
+            </button>
+            <div class="step-nav-right d-flex flex-column align-items-end">
+              <label class="skip-validation-label" style="display: none">
+                <input type="checkbox" id="skip-validation-checkbox">
+                <span><%= t('bulkrax.importer.guided_import.nav.skip_validation') %></span>
+              </label>
+              <button type="button" class="btn btn-primary step-next-btn" data-next-step="2" disabled>
+                <%= t('bulkrax.importer.guided_import.nav.next_step') %> <span class="fa fa-arrow-right" aria-hidden="true"></span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ====== STEP 2: Configure Settings ====== -->
+        <div class="step-content" data-step="2" style="display: none;">
+          <div class="step-title">
+            <h2 tabindex="-1"><%= t('bulkrax.importer.guided_import.step2.title') %></h2>
+            <p class="text-muted"><%= t('bulkrax.importer.guided_import.step2.description') %></p>
+          </div>
+
+          <div class="settings-form">
+            <!-- Import Name -->
+            <div class="form-group">
+              <%= f.label :name, t('bulkrax.importer.guided_import.step2.import_name'), class: 'control-label' do %>
+                <%= t('bulkrax.importer.guided_import.step2.import_name') %> <span class="text-danger">*</span>
+              <% end %>
+              <%= f.text_field :name, class: 'form-control', value: "#{t('bulkrax.importer.guided_import.step2.import_name_prefix')}#{Date.today.strftime('%m/%d/%Y')}", required: true %>
+            </div>
+
+            <!-- Default Visibility -->
+            <div class="form-group">
+              <fieldset>
+                <legend class="control-label"><%= t('bulkrax.importer.guided_import.step2.default_visibility') %> <span class="text-danger">*</span></legend>
+                <p class="text-muted small"><%= t('bulkrax.importer.guided_import.step2.visibility_hint') %></p>
+                <div class="visibility-options row">
+                  <div class="col-sm-4">
+                    <div class="visibility-card" data-visibility="open">
+                      <span class="fa fa-globe visibility-icon" aria-hidden="true"></span>
+                      <label class="visibility-label" for="visibility_open"><%= t('bulkrax.importer.guided_import.step2.visibility_public') %>
+                        <input
+                          type="radio"
+                          id="visibility_open"
+                          name="importer[parser_fields][visibility]"
+                          value="open"
+                          checked class="sr-only"
+                        >
+                      </label>
+                      <div class="visibility-desc"><%= t('bulkrax.importer.guided_import.step2.visibility_public_desc') %></div>
+                    </div>
+                  </div>
+                  <div class="col-sm-4">
+                    <div class="visibility-card" data-visibility="authenticated">
+                      <span class="fa fa-users visibility-icon" aria-hidden="true"></span>
+                      <label class="visibility-label" for="visibility_authenticated"><%= t('bulkrax.importer.guided_import.step2.visibility_institution') %>
+                        <input
+                          type="radio"
+                          id="visibility_authenticated"
+                          name="importer[parser_fields][visibility]"
+                          value="authenticated"
+                          class="sr-only"
+                        >
+                      </label>
+                      <div class="visibility-desc"><%= t('bulkrax.importer.guided_import.step2.visibility_institution_desc') %></div>
+                    </div>
+                  </div>
+                  <div class="col-sm-4">
+                    <div class="visibility-card" data-visibility="restricted">
+                      <span class="fa fa-lock visibility-icon" aria-hidden="true"></span>
+                      <label class="visibility-label" for="visibility_restricted"><%= t('bulkrax.importer.guided_import.step2.visibility_private') %>
+                        <input
+                          type="radio"
+                          id="visibility_restricted"
+                          name="importer[parser_fields][visibility]"
+                          value="restricted"
+                          class="sr-only"
+                        >
+                      </label>
+                      <div class="visibility-desc"><%= t('bulkrax.importer.guided_import.step2.visibility_private_desc') %></div>
+                    </div>
+                  </div>
+                </div>
+              </fieldset>
+            </div>
+
+            <!-- Optional Settings -->
+            <div class="optional-settings-accordion">
+              <div class="card">
+                <div class="card-header" data-toggle="collapse" data-target="#optional-settings">
+                  <h3 class="mb-0">
+                    <button class="btn btn-link btn-block text-left" type="button">
+                      <span>
+                        <span class="fa fa-cog" aria-hidden="true"></span>
+                        <%= t('bulkrax.importer.guided_import.step2.optional_settings') %>
+                      </span>
+                      <span class="fa fa-chevron-down" aria-hidden="true"></span>
+                    </button>
+                  </h3>
+                </div>
+                <div id="optional-settings" class="collapse">
+                  <div class="card-body">
+                    <div id="default-rights-required-alert" class="alert alert-info" style="display: none;" role="alert">
+                      <%= t('bulkrax.importer.guided_import.step2.rights_required_alert_html').html_safe %>
+                    </div>
+                    <div id="default-rights-skipped-hint" class="alert alert-secondary" style="display: none;" role="status">
+                      <%= t('bulkrax.importer.guided_import.step2.rights_skipped_hint_html').html_safe %>
+                    </div>
+                    <div class="form-group">
+                      <label class="control-label default-rights-statement-label" for="importer_parser_fields_rights_statement"><%= t('bulkrax.importer.guided_import.step2.default_rights') %></label>
+                      <% if defined?(::Hyrax) %>
+                        <% rights_statements = Hyrax.config.rights_statement_service_class.new %>
+                        <%= select_tag 'importer[parser_fields][rights_statement]',
+                            options_for_select([[t('bulkrax.importer.guided_import.step2.rights_none'), '']] + rights_statements.select_active_options),
+                            class: 'form-control' %>
+                      <% else %>
+                        <%= select_tag 'importer[parser_fields][rights_statement]',
+                            options_for_select([[t('bulkrax.importer.guided_import.step2.rights_none'), '']]),
+                            class: 'form-control' %>
+                      <% end %>
+                    </div>
+                    <div class="form-group">
+                      <div class="form-check">
+                        <%= check_box_tag 'importer[parser_fields][override_rights_statement]', '1', false, class: 'form-check-input', id: 'importer_parser_fields_override_rights_statement' %>
+                        <label class="form-check-label control-label" for="importer_parser_fields_override_rights_statement">
+                          <%= t('simple_form.labels.defaults.override_rights_statement') %>
+                        </label>
+                      </div>
+                      <small class="form-text text-muted"><%= t('bulkrax.importer.hints.override_rights_statement') %></small>
+                    </div>
+
+                    <div class="form-group">
+                      <%= f.label :limit, t('bulkrax.importer.guided_import.step2.test_limit'), class: 'control-label' %>
+                      <%= f.number_field :limit, class: 'form-control', placeholder: t('bulkrax.importer.guided_import.step2.test_limit_placeholder') %>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step Navigation -->
+          <div class="step-navigation d-flex justify-content-between align-items-end">
+            <button type="button" class="btn btn-outline-danger start-over-nav-btn d-inline-flex align-items-center">
+              <span class="fa fa-refresh" aria-hidden="true"></span> <%= t('bulkrax.importer.guided_import.nav.clear_start_over') %>
+            </button>
+            <div class="d-flex align-items-end">
+              <button type="button" class="btn btn-secondary step-prev-btn" data-prev-step="1">
+                <span class="fa fa-arrow-left" aria-hidden="true"></span> <%= t('bulkrax.importer.guided_import.nav.back') %>
+              </button>
+              <button type="button" class="btn btn-primary step-next-btn" data-next-step="3" disabled>
+                <%= t('bulkrax.importer.guided_import.nav.next_step') %> <span class="fa fa-arrow-right" aria-hidden="true"></span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ====== STEP 3: Review & Start ====== -->
+        <div class="step-content" data-step="3" style="display: none;">
+          <div class="step-title">
+            <h2 tabindex="-1"><%= t('bulkrax.importer.guided_import.step3.title') %></h2>
+            <p class="text-muted"><%= t('bulkrax.importer.guided_import.step3.description') %></p>
+          </div>
+
+          <!-- Large Import Warning -->
+          <div class="large-import-warning" style="display: none;">
+            <div class="alert alert-danger">
+              <span class="fa fa-exclamation-triangle" aria-hidden="true"></span>
+              <strong><%= t('bulkrax.importer.guided_import.step3.large_import_warning') %></strong>
+              <p><%= t('bulkrax.importer.guided_import.step3.large_import_message_html', count: 0).html_safe %></p>
+            </div>
+          </div>
+
+          <!-- Review Summary -->
+          <div class="review-summary">
+            <div class="alert alert-success">
+              <div class="review-header">
+                <span class="fa fa-check-circle" aria-hidden="true"></span>
+                <h3><%= t('bulkrax.importer.guided_import.step3.ready_to_import') %></h3>
+              </div>
+
+              <div class="review-section">
+                <h4><%= t('bulkrax.importer.guided_import.step3.section_files') %></h4>
+                <div class="review-files">
+                  <!-- Will be populated by JS -->
+                </div>
+              </div>
+
+              <div class="review-section">
+                <h4><%= t('bulkrax.importer.guided_import.step3.section_records') %></h4>
+                <div class="review-records">
+                  <!-- Will be populated by JS -->
+                </div>
+              </div>
+
+              <div class="review-section">
+                <h4><%= t('bulkrax.importer.guided_import.step3.section_settings') %></h4>
+                <div class="review-settings">
+                  <!-- Will be populated by JS -->
+                </div>
+              </div>
+
+              <div class="review-section review-warnings" style="display: none;">
+                <h4><%= t('bulkrax.importer.guided_import.step3.section_warnings') %></h4>
+                <div class="review-warnings-list">
+                  <!-- Will be populated by JS -->
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <p class="text-center text-muted small"><%= t('bulkrax.importer.guided_import.step3.background_note') %></p>
+
+          <!-- Step Navigation -->
+          <div class="step-navigation d-flex justify-content-between align-items-end">
+            <button type="button" class="btn btn-outline-danger start-over-nav-btn d-inline-flex align-items-center">
+              <span class="fa fa-refresh" aria-hidden="true"></span> <%= t('bulkrax.importer.guided_import.nav.clear_start_over') %>
+            </button>
+            <div class="d-flex align-items-end">
+              <button type="button" class="btn btn-secondary step-prev-btn" data-prev-step="2">
+                <span class="fa fa-arrow-left" aria-hidden="true"></span> <%= t('bulkrax.importer.guided_import.nav.back') %>
+              </button>
+              <button type="submit" class="btn btn-success" id="start-import-btn">
+                <%= t('bulkrax.importer.guided_import.nav.start_import') %>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<!-- Toast notifications (announced to screen readers) -->
+<div id="upload-notifications" aria-live="polite"></div>
+
+<!-- Hidden fields for storing state -->
+<div id="stepper-state" style="display: none;"
+     data-current-step="1"
+     data-validated="false"
+     data-has-warnings="false"
+     data-warnings-acked="false"
+     data-upload-state="empty"
+     data-validation-data=""
+     data-demo-scenarios-enabled="<%= Bulkrax.config.guided_import_demo_scenarios_enabled %>">
+</div>

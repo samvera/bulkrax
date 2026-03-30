@@ -17,3 +17,4 @@ tmp/**
 /vendor
 .tool-versions
 .ruby-version
+.claude/*

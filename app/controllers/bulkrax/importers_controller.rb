@@ -8,6 +8,7 @@ module Bulkrax
     include Bulkrax::API
     include Bulkrax::DatatablesBehavior
     include Bulkrax::ValidationHelper
+    include Bulkrax::ImporterFileHandler
 
     protect_from_forgery unless: -> { api_request? }
     before_action :token_authenticate!, if: -> { api_request? }, only: [:create, :update, :delete]
@@ -28,7 +29,8 @@ module Bulkrax
     end
 
     def importer_table
-      @importers = Importer.order(table_order).page(table_page).per(table_per_page)
+      order = table_order.presence || Arel.sql('last_imported_at DESC NULLS LAST')
+      @importers = Importer.order(order).page(table_page).per(table_per_page)
       @importers = @importers.where(importer_table_search) if importer_table_search.present?
       respond_to do |format|
         format.json { render json: format_importers(@importers) }
@@ -65,10 +67,11 @@ module Bulkrax
       end
     end
 
-    # POST /importers/sample_csv_file
+    # GET /importers/sample_csv_file
     def sample_csv_file
-      sample = Bulkrax::SampleCsvService.call(model_name: 'all', output: 'file')
-      send_file sample, filename: File.basename(sample), type: 'text/csv'
+      admin_set_id = params[:admin_set_id].presence
+      sample = Bulkrax::CsvParser.generate_template(models: 'all', output: 'file', admin_set_id: admin_set_id)
+      send_file sample, filename: File.basename(sample), type: 'text/csv', disposition: 'attachment'
     rescue StandardError => e
       flash[:error] = "Unable to generate sample CSV file: #{e.message}"
       redirect_back fallback_location: bulkrax.importers_path
@@ -93,7 +96,7 @@ module Bulkrax
       if api_request?
         return return_json_response unless valid_create_params?
       end
-      uploads = Hyrax::UploadedFile.find(params[:uploaded_files]) if params[:uploaded_files].present?
+      uploads = uploaded_files_scope
       file = file_param
       cloud_files = cloud_params
 
@@ -132,7 +135,7 @@ module Bulkrax
       if api_request?
         return return_json_response unless valid_update_params?
       end
-      uploads = Hyrax::UploadedFile.find(params[:uploaded_files]) if params[:uploaded_files].present?
+      uploads = uploaded_files_scope
       file = file_param
       cloud_files = cloud_params
 
@@ -214,10 +217,26 @@ module Bulkrax
     end
 
     def original_file
-      if @importer.original_file?
-        send_file @importer.original_file
-      else
+      file_type = params[:file_type]&.to_sym
+
+      files = @importer.original_files
+      if files.empty?
         redirect_to @importer, alert: 'Importer does not support file re-download or the imported file is not found on the server.'
+        return
+      end
+
+      # If file_type is specified, find that specific file
+      if file_type
+        file = files.find { |f| f[:type] == file_type }
+        if file
+          send_file file[:path], filename: file[:name], disposition: 'attachment'
+        else
+          redirect_to @importer, alert: "File type '#{file_type}' not found."
+        end
+      else
+        # Default behavior: send the first file (CSV) for backward compatibility
+        file = files.first
+        send_file file[:path], filename: file[:name], disposition: 'attachment'
       end
     end
 
@@ -229,28 +248,6 @@ module Bulkrax
     end
 
     private
-
-    def files_for_import(file, cloud_files, uploads)
-      return if file.blank? && cloud_files.blank? && uploads.blank?
-
-      @importer[:parser_fields]['import_file_path'] = @importer.parser.write_import_file(file) if file.present?
-      if cloud_files.present?
-        @importer[:parser_fields]['cloud_file_paths'] = cloud_files
-        # For BagIt, there will only be one bag, so we get the file_path back and set import_file_path
-        # For CSV, we expect only file uploads, so we won't get the file_path back
-        # and we expect the import_file_path to be set already
-        target = @importer.parser.retrieve_cloud_files(cloud_files, @importer)
-        @importer[:parser_fields]['import_file_path'] = target if target.present?
-      end
-
-      if uploads.present?
-        uploads.each do |upload|
-          @importer[:parser_fields]['import_file_path'] = @importer.parser.write_import_file(upload.file.file)
-        end
-      end
-
-      @importer.save
-    end
 
     # Use callbacks to share common setup or constraints between actions.
     def set_importer

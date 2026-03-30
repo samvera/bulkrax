@@ -12,7 +12,7 @@ module Bulkrax
              :seen, :increment_counters, :parser_fields, :user, :keys_without_numbers,
              :key_without_numbers, :status, :set_status_info, :status_info, :status_at,
              :exporter_export_path, :exporter_export_zip_path, :importer_unzip_path, :validate_only,
-             :zip?, :file?, :remove_and_rerun,
+             :zip?, :file?, :remove_and_rerun, :zip_file?,
              to: :importerexporter
 
     # @todo Convert to `class_attribute :parser_fiels, default: {}`
@@ -434,12 +434,38 @@ module Bulkrax
       return untar(file_to_unzip) if file_to_unzip.end_with?('.tar.gz')
 
       Zip::File.open(file_to_unzip) do |zip_file|
+        real_entries = zip_file.reject { |e| macos_junk_entry?(e.name) }
+        top_level_dirs = real_entries.map { |e| e.name.split('/').first }.uniq
+        strip_prefix = top_level_dirs.size == 1 ? "#{top_level_dirs.first}/" : nil
+
+        dest_dir = importer_unzip_path(mkdir: true)
         zip_file.each do |entry|
-          entry_path = File.join(importer_unzip_path(mkdir: true), entry.name)
-          FileUtils.mkdir_p(File.dirname(entry_path))
-          zip_file.extract(entry, entry_path) unless File.exist?(entry_path)
+          next unless entry.file?
+          next if macos_junk_entry?(entry.name)
+          name = strip_prefix ? entry.name.delete_prefix(strip_prefix) : entry.name
+          next if name.empty?
+          dest_path = File.join(dest_dir, name)
+          FileUtils.mkdir_p(File.dirname(dest_path))
+          unless File.exist?(dest_path)
+            # rubyzip 2.x: extract(entry, absolute_dest_path)
+            # rubyzip 3.x: extract(entry, relative_name, destination_directory: dir)
+            if zip_file.method(:extract).arity == 2
+              zip_file.extract(entry, dest_path)
+            else
+              zip_file.extract(entry, name, destination_directory: dest_dir)
+            end
+          end
         end
       end
+    end
+
+    def macos_junk_entry?(name)
+      name.start_with?('__MACOSX/') || name.split('/').any? { |part| part == '.DS_Store' || part.start_with?('._') }
+    end
+
+    def copy_file(file_to_copy)
+      destination = File.join(importer_unzip_path(mkdir: true), File.basename(file_to_copy))
+      FileUtils.cp(file_to_copy, destination)
     end
 
     def untar(file_to_untar)
@@ -452,7 +478,7 @@ module Bulkrax
     # File names referenced in CSVs have spaces replaced with underscores
     # @see Bulkrax::CsvParser#file_paths
     def remove_spaces_from_filenames
-      files = Dir.glob(File.join(importer_unzip_path, 'files', '*'))
+      files = Dir.glob(File.join(importer_unzip_path, 'files', '*')).uniq
       files_with_spaces = files.select { |f| f.split('/').last.match?(' ') }
       return if files_with_spaces.blank?
 

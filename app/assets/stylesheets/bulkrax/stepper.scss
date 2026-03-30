@@ -1,0 +1,32 @@
+/* Bulk Import Stepper Styles */
+
+@import 'stepper/variables';
+@import 'stepper/mixins';
+
+.bulk-import-stepper-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px 0;
+
+  .text-muted {
+    color: $color-text-muted !important;
+  }
+}
+
+.stepper-wrapper {
+  background: #fff;
+  border-radius: $border-radius;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: 30px;
+  margin-bottom: 20px;
+}
+
+@import 'stepper/header';
+@import 'stepper/success';
+@import 'stepper/upload';
+@import 'stepper/validation';
+@import 'stepper/summary';
+@import 'stepper/settings';
+@import 'stepper/review';
+@import 'stepper/navigation';
+@import 'stepper/responsive';

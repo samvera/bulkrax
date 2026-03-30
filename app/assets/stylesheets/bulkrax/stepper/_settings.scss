@@ -1,0 +1,106 @@
+/* ====== Settings Form ====== */
+.settings-form {
+  margin: 25px 0;
+
+  .form-group {
+    margin-bottom: 25px;
+
+    fieldset {
+      border: none;
+      padding: 0;
+      margin: 0;
+    }
+  }
+
+  .control-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: $color-text-dark;
+    margin-bottom: 8px;
+  }
+
+}
+
+/* ====== Visibility Options ====== */
+.visibility-options {
+  margin-top: 8px;
+}
+
+.visibility-card {
+  padding: 20px 15px;
+  border: 2px solid $border-color;
+  border-radius: $border-radius;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
+
+  &:hover {
+    border-color: $color-text-disabled;
+  }
+
+  &.active {
+    border-color: $color-primary;
+    background: $bg-primary-light;
+    box-shadow: 0 2px 4px rgba($color-primary, 0.1);
+
+    .visibility-icon,
+    .visibility-label {
+      color: $color-primary;
+    }
+  }
+}
+
+.visibility-icon {
+  font-size: 22px;
+  color: $color-text-disabled;
+  margin-bottom: 10px;
+  transition: color 0.3s ease;
+}
+
+.visibility-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: $color-text-dark;
+  margin-bottom: 4px;
+  display: block;
+}
+
+.visibility-desc {
+  font-size: 12px;
+  color: $color-text-muted;
+}
+
+/* ====== Optional Settings (Bootstrap 4 Card) ====== */
+.optional-settings-accordion {
+  .card {
+    margin-bottom: 0;
+    border: 1px solid $border-color;
+  }
+
+  .card-body {
+    padding: 20px;
+  }
+
+  .fa-cog {
+    margin-right: 8px;
+  }
+
+  .card-header {
+    cursor: pointer;
+    padding: 0;
+    background: $bg-light;
+
+    .btn-link {
+      text-decoration: none;
+      color: $color-text-dark;
+      font-size: 14px;
+      font-weight: 500;
+      padding: 12px 16px;
+
+      &:hover {
+        text-decoration: none;
+        background: $bg-muted;
+      }
+    }
+  }
+}

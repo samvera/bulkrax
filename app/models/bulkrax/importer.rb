@@ -169,6 +169,30 @@ module Bulkrax
       import_file_path if original_file?
     end
 
+    # Returns all available original files (CSV and ZIP if present)
+    # @return [Array<Hash>] Array of hashes with :path and :name keys
+    def original_files
+      files = []
+
+      if import_file_path && File.exist?(import_file_path)
+        files << {
+          path: import_file_path,
+          name: File.basename(import_file_path),
+          type: :csv
+        }
+      end
+
+      if parser_fields['attachments_zip_path'] && File.exist?(parser_fields['attachments_zip_path'])
+        files << {
+          path: parser_fields['attachments_zip_path'],
+          name: File.basename(parser_fields['attachments_zip_path']),
+          type: :zip
+        }
+      end
+
+      files
+    end
+
     def replace_files
       self.parser_fields['replace_files']
     end
@@ -241,8 +265,14 @@ module Bulkrax
     #   [['Single Metadata File for all works', 'single'], ['Multiple Files, one per Work', 'multi']]
     # end
 
-    # If the import data is zipped, unzip it to this path
     def importer_unzip_path(mkdir: false)
+      entry = parser_fields&.[]('import_file_path')
+      if entry.is_a?(String) && entry.end_with?('.zip') && File.file?(entry) && parser_fields["file_style"] != I18n.t('bulkrax.importer.xml.file_style.server_path')
+        unzip_dir = File.dirname(entry)
+        FileUtils.mkdir_p(unzip_dir) if mkdir
+        return unzip_dir
+      end
+
       @importer_unzip_path ||= File.join(parser.base_path, "import_#{path_string}")
       return @importer_unzip_path if Dir.exist?(@importer_unzip_path) || mkdir == true
 

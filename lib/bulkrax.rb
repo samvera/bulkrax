@@ -39,6 +39,8 @@ module Bulkrax
                   :default_work_type,
                   :export_path,
                   :field_mappings,
+                  :guided_import_enabled,
+                  :guided_import_demo_scenarios_enabled,
                   :generated_metadata_mapping,
                   :import_path,
                   :multi_value_element_join_on,
@@ -172,6 +174,25 @@ module Bulkrax
       ENV.key?("REDIS_HOST")
     end
     alias use_locking? use_locking
+
+    ##
+    # @return [Array<#call>] callable validators invoked per-row during CSV validation.
+    #   Each callable receives (record, row_number, context).
+    #   Defaults to the four built-in CsvRow:: validators.
+    def csv_row_validators
+      @csv_row_validators ||= [
+        Bulkrax::CsvRow::DuplicateIdentifier,
+        Bulkrax::CsvRow::ParentReference,
+        Bulkrax::CsvRow::RequiredValues,
+        Bulkrax::CsvRow::ControlledVocabulary
+      ]
+    end
+
+    attr_writer :csv_row_validators
+
+    def register_csv_row_validator(callable)
+      csv_row_validators << callable
+    end
   end
 
   def config
@@ -228,6 +249,9 @@ module Bulkrax
                  :required_elements=,
                  :reserved_properties,
                  :reserved_properties=,
+                 :csv_row_validators,
+                 :csv_row_validators=,
+                 :register_csv_row_validator,
                  :server_name,
                  :server_name=,
                  :solr_key_for_member_file_ids,
@@ -251,6 +275,8 @@ module Bulkrax
     conf.server_name = 'bulkrax@example.com'
     conf.relationship_job_class = "Bulkrax::CreateRelationshipsJob"
     conf.required_elements = ['title']
+    conf.guided_import_enabled = ActiveModel::Type::Boolean.new.cast(ENV.fetch('BULKRAX_GUIDED_IMPORTER', false))
+    conf.guided_import_demo_scenarios_enabled = false
 
     # Hash of Generic field_mappings for use in the view
     # There must be one field_mappings hash per view partial

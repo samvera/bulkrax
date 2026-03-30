@@ -45,6 +45,7 @@ Blacklight.onLoad(function() {
       "ajax": window.location.href.replace(/(\/importers)/, "$1/importer_table.json"),
       "pageLength": 30,
       "lengthMenu": [[30, 100, 200], [30, 100, 200]],
+      "order": [[2, 'desc']],
       "columns": [
         { "data": "name" },
         { "data": "status_message" },

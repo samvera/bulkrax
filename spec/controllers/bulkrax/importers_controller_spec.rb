@@ -132,9 +132,8 @@ module Bulkrax
         end
       end
 
-      let(:user) { FactoryBot.create(:user) }
       let(:file) { fixture_file_upload('./spec/fixtures/csv/ok.csv') }
-      let(:uploaded_file) { Hyrax::UploadedFile.create(file: file, user: user) }
+      let(:uploaded_file) { Hyrax::UploadedFile.create(file: file, user: User.first) }
 
       context 'with file uploads' do
         it 'assigns uploaded files correctly during creation' do
@@ -184,9 +183,8 @@ module Bulkrax
         end
       end
 
-      let(:user) { FactoryBot.create(:user) }
       let(:file) { fixture_file_upload('./spec/fixtures/csv/ok.csv') }
-      let(:uploaded_file) { Hyrax::UploadedFile.create(file: file, user: user) }
+      let(:uploaded_file) { Hyrax::UploadedFile.create(file: file, user: User.first) }
 
       context 'with file uploads' do
         it 'assigns uploaded files correctly during creation' do
@@ -243,7 +241,7 @@ module Bulkrax
       end
     end
 
-    describe 'POST #sample_csv_file', clean_downloads: true do
+    describe 'GET #sample_csv_file', clean_downloads: true do
       context 'when CSV generation succeeds' do
         let(:sample_csv_path) { Rails.root.join('tmp', 'sample_csv_import_template.csv').to_s }
 
@@ -257,21 +255,32 @@ module Bulkrax
         end
 
         it 'sends a CSV file' do
-          allow(Bulkrax::SampleCsvService).to receive(:call).and_return(sample_csv_path)
+          allow(Bulkrax::CsvParser).to receive(:generate_template).and_return(sample_csv_path)
 
-          post :sample_csv_file, session: valid_session
+          get :sample_csv_file, session: valid_session
 
           expect(response.headers['Content-Type']).to include('text/csv')
+          expect(Bulkrax::CsvParser).to have_received(:generate_template)
+            .with(models: 'all', output: 'file', admin_set_id: nil)
+        end
+
+        it 'passes admin_set_id to the service for context-aware template when provided' do
+          allow(Bulkrax::CsvParser).to receive(:generate_template).and_return(sample_csv_path)
+
+          get :sample_csv_file, params: { admin_set_id: 'admin-set-123' }, session: valid_session
+
+          expect(Bulkrax::CsvParser).to have_received(:generate_template)
+            .with(models: 'all', output: 'file', admin_set_id: 'admin-set-123')
         end
       end
 
       context 'when CSV generation fails' do
         before do
-          allow(Bulkrax::SampleCsvService).to receive(:call).and_raise(StandardError, 'Test error')
+          allow(Bulkrax::CsvParser).to receive(:generate_template).and_raise(StandardError, 'Test error')
         end
 
         it 'redirects back with an error message' do
-          post :sample_csv_file, session: valid_session
+          get :sample_csv_file, session: valid_session
 
           expect(response).to redirect_to(importers_path)
           expect(flash[:error]).to include('Unable to generate sample CSV file')
@@ -508,6 +517,96 @@ module Bulkrax
             expect(entry_ids_in_response).to include(matching_entry.id)
             expect(entry_ids_in_response).not_to include(non_matching_entry1.id, non_matching_entry2.id)
           end
+        end
+      end
+    end
+
+    describe 'GET #original_file' do
+      let!(:csv_file) { Tempfile.new(['metadata', '.csv']) }
+      let!(:zip_file) { Tempfile.new(['attachments', '.zip']) }
+      let!(:importer) { Importer.create!(valid_attributes) }
+
+      before do
+        csv_file.write('test,data')
+        csv_file.rewind
+        zip_file.write('test zip content')
+        zip_file.rewind
+      end
+
+      after do
+        csv_file.close
+        csv_file.unlink
+        zip_file.close
+        zip_file.unlink
+      end
+
+      context 'when only CSV file exists' do
+        before do
+          importer.parser_fields['import_file_path'] = csv_file.path
+          importer.save!
+          importer.reload
+        end
+
+        it 'sends the CSV file' do
+          get :original_file, params: { importer_id: importer.to_param }, session: valid_session
+          expect(response).to be_successful
+          expect(response.headers['Content-Disposition']).to include("attachment")
+          expect(response.headers['Content-Disposition']).to include(File.basename(csv_file.path))
+        end
+
+        it 'sends the CSV file when file_type is specified' do
+          get :original_file, params: { importer_id: importer.to_param, file_type: :csv }, session: valid_session
+          expect(response).to be_successful
+          expect(response.headers['Content-Disposition']).to include(File.basename(csv_file.path))
+        end
+      end
+
+      context 'when both CSV and ZIP files exist' do
+        before do
+          importer.parser_fields['import_file_path'] = csv_file.path
+          importer.parser_fields['attachments_zip_path'] = zip_file.path
+          importer.save!
+          importer.reload
+        end
+
+        it 'sends the CSV file by default' do
+          get :original_file, params: { importer_id: importer.to_param }, session: valid_session
+          expect(response).to be_successful
+          expect(response.headers['Content-Disposition']).to include(File.basename(csv_file.path))
+        end
+
+        it 'sends the CSV file when file_type is csv' do
+          get :original_file, params: { importer_id: importer.to_param, file_type: :csv }, session: valid_session
+          expect(response).to be_successful
+          expect(response.headers['Content-Disposition']).to include(File.basename(csv_file.path))
+        end
+
+        it 'sends the ZIP file when file_type is zip' do
+          get :original_file, params: { importer_id: importer.to_param, file_type: :zip }, session: valid_session
+          expect(response).to be_successful
+          expect(response.headers['Content-Disposition']).to include(File.basename(zip_file.path))
+        end
+      end
+
+      context 'when no files exist' do
+        it 'redirects with an alert' do
+          get :original_file, params: { importer_id: importer.to_param }, session: valid_session
+          expect(response).to redirect_to(importer)
+          expect(flash[:alert]).to eq('Importer does not support file re-download or the imported file is not found on the server.')
+        end
+      end
+
+      context 'when file_type does not exist' do
+        before do
+          importer.parser_fields['import_file_path'] = csv_file.path
+          importer.save!
+          importer.reload
+        end
+
+        it 'redirects with an alert when requesting non-existent file type' do
+          get :original_file, params: { importer_id: importer.to_param, file_type: :zip }, session: valid_session
+          expect(response).to redirect_to(importer)
+          expect(flash[:alert]).to eq("File type 'zip' not found.")
         end
       end
     end

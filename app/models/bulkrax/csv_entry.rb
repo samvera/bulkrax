@@ -45,7 +45,12 @@ module Bulkrax
         encoding: 'utf-8'
       }.merge(csv_read_data_options)
 
-      results = CSV.read(path, **options)
+      results = if path.respond_to?(:read)
+                  path.rewind if path.respond_to?(:rewind)
+                  CSV.parse(path.read, **options)
+                else
+                  CSV.read(path, **options)
+                end
       csv_wrapper_class.new(results)
     end
 
@@ -416,17 +421,29 @@ module Bulkrax
       self.collection_ids
     end
 
-    # If only filename is given, construct the path (/files/my_file)
+    # If only filename is given, construct the path (/files/my_file).
+    # If file contains a path separator (e.g. attachments/cat_scan.jpg), resolve relative to the CSV's directory.
     def path_to_file(file)
-      # return if we already have the full file path
       return file if File.exist?(file)
+
+      # Relative path: resolve from CSV's directory (allows arbitrary subdirectory names, not just "files")
+      return resolve_relative_file_path(file) if file.include?('/')
+
+      # Bare filename: use legacy files/ directory for backward compatibility and round-tripping
       path = importerexporter.parser.path_to_files
       f = File.join(path, file)
       return f if File.exist?(f)
-      raise "File #{f} does not exist"
+      raise "File not found: #{f}. Check the file column in your CSV and ensure the file exists in the import package or path_to_files directory."
     end
 
     private
+
+    def resolve_relative_file_path(file)
+      base = File.dirname(importerexporter.parser.import_file_path)
+      candidate = File.join(base, file)
+      return candidate if File.exist?(candidate)
+      raise "File not found: #{candidate}. Check the file path in your CSV and ensure the file exists in the import package or directory."
+    end
 
     def map_file_sets(file_sets)
       # rubocop:disable Rails/Presence

@@ -1,0 +1,281 @@
+{
+  "_comment": "Quick Reference - JSON Response Structure for POST /importers/guided_import/validate",
+  "_version": "1.0",
+  "_required_fields": "All fields marked with * are required",
+  "structure": {
+    "headers*": [
+      "string - CSV column names"
+    ],
+    "missingRequired*": [
+      "string|object - Missing required columns (legacy: strings, new: {model, field})"
+    ],
+    "unrecognized*": {
+      "column_name": "string|null - Spell-check suggestion, or null if no suggestion"
+    },
+    "rowCount*": "integer - Number of data rows",
+    "isValid*": "boolean - Validation passed?",
+    "hasWarnings*": "boolean - Non-critical warnings exist?",
+    "collections*": [
+      {
+        "id": "string",
+        "title": "string",
+        "type": "collection",
+        "parentIds": [
+          "string - Parent IDs (empty array if top-level)"
+        ],
+        "childrenIds": [
+          "string - (Optional) Child IDs defined on this parent"
+        ]
+      }
+    ],
+    "works*": [
+      {
+        "id": "string",
+        "title": "string",
+        "type": "work",
+        "parentIds": [
+          "string - Parent IDs (empty array if standalone)"
+        ],
+        "childrenIds": [
+          "string - (Optional) Child IDs defined on this parent"
+        ]
+      }
+    ],
+    "fileSets*": [
+      {
+        "id": "string",
+        "title": "string",
+        "type": "file_set"
+      }
+    ],
+    "totalItems*": "integer - collections + works + fileSets count",
+    "fileReferences*": "integer - Files referenced in CSV",
+    "missingFiles*": [
+      "string - Filenames missing from ZIP"
+    ],
+    "foundFiles*": "integer - Files found in ZIP",
+    "zipIncluded*": "boolean - ZIP file uploaded?",
+    "messages*": {
+      "validationStatus*": {
+        "severity*": "success|warning|error",
+        "icon*": "string - FontAwesome class (e.g., fa-check-circle)",
+        "title*": "string - Main heading",
+        "summary*": "string - Brief summary",
+        "details*": "string - Additional details",
+        "defaultOpen*": "boolean - Start expanded?"
+      },
+      "issues*": [
+        {
+          "type*": "string - Issue type identifier",
+          "severity*": "error|warning|info",
+          "icon*": "string - FontAwesome class",
+          "title*": "string - Issue heading",
+          "count*": "integer - Count badge",
+          "description": "string|null - Explanatory text (optional)",
+          "summary": "string|null - Summary line (optional)",
+          "items*": [
+            {
+              "field*": "string - Field/file name",
+              "model": "string - Model name (for missing_required_fields type, used for grouping)",
+              "message": "string|null - Additional message (optional, used for non-grouped issue types)"
+            }
+          ],
+          "details": "string|null - Additional details (optional)",
+          "defaultOpen*": "boolean - Start expanded?"
+        }
+      ]
+    }
+  },
+  "severity_options": {
+    "validationStatus": [
+      "success",
+      "warning",
+      "error"
+    ],
+    "issues": [
+      "error",
+      "warning",
+      "info"
+    ]
+  },
+  "common_icons": {
+    "success": "fa-check-circle",
+    "warning": "fa-exclamation-triangle",
+    "error": "fa-times-circle",
+    "info": "fa-info-circle"
+  },
+  "issue_types": {
+    "missing_required_fields": "Required columns missing from CSV (each item includes model name to show which models need which fields)",
+    "unrecognized_fields": "CSV columns not mapped to properties",
+    "file_references": "File validation results"
+  },
+  "missing_required_fields_notes": {
+    "description": "Missing required fields are grouped by model for better readability",
+    "display_format": "Fields are displayed under model name headings (e.g., 'GenericWork:', 'Collection:')",
+    "example": "If GenericWork needs 'title' and 'rights_statement', both appear under 'GenericWork:' heading",
+    "benefits": [
+      "Clear visual grouping by model eliminates redundant model names",
+      "Users can quickly scan which models need which fields",
+      "Supports multi-model CSV files with different requirements per model",
+      "Cleaner, more compact display than listing model name with each field"
+    ]
+  },
+  "validation_rules": {
+    "isValid_false_when": [
+      "Required fields are missing",
+      "CSV is malformed/unreadable",
+      "Critical validation errors"
+    ],
+    "hasWarnings_true_when": [
+      "Unrecognized columns exist",
+      "Files referenced but missing from ZIP",
+      "Files referenced but no ZIP uploaded"
+    ]
+  },
+  "minimal_success_example": {
+    "headers": [
+      "source_identifier",
+      "title",
+      "model"
+    ],
+    "missingRequired": [],
+    "unrecognized": {},
+    "rowCount": 10,
+    "isValid": true,
+    "hasWarnings": false,
+    "collections": [],
+    "works": [],
+    "fileSets": [],
+    "totalItems": 0,
+    "fileReferences": 0,
+    "missingFiles": [],
+    "foundFiles": 0,
+    "zipIncluded": false,
+    "messages": {
+      "validationStatus": {
+        "severity": "success",
+        "icon": "fa-check-circle",
+        "title": "Validation Passed",
+        "summary": "3 columns detected · 10 records found",
+        "details": "Recognized fields: source_identifier, title, model",
+        "defaultOpen": true
+      },
+      "issues": []
+    }
+  },
+  "minimal_warning_example": {
+    "headers": [
+      "source_identifier",
+      "title",
+      "model",
+      "legacy_id"
+    ],
+    "missingRequired": [],
+    "unrecognized": {
+      "legacy_id": null
+    },
+    "rowCount": 25,
+    "isValid": true,
+    "hasWarnings": true,
+    "collections": [],
+    "works": [],
+    "fileSets": [],
+    "totalItems": 0,
+    "fileReferences": 0,
+    "missingFiles": [],
+    "foundFiles": 0,
+    "zipIncluded": false,
+    "messages": {
+      "validationStatus": {
+        "severity": "warning",
+        "icon": "fa-exclamation-triangle",
+        "title": "Validation Passed with Warnings",
+        "summary": "4 columns detected · 25 records found",
+        "details": "Recognized fields: source_identifier, title, model",
+        "defaultOpen": true
+      },
+      "issues": [
+        {
+          "type": "unrecognized_fields",
+          "severity": "warning",
+          "icon": "fa-exclamation-triangle",
+          "title": "Unrecognized Fields",
+          "count": 1,
+          "description": "These columns will be ignored during import:",
+          "summary": null,
+          "items": [
+            {
+              "field": "legacy_id",
+              "message": null
+            }
+          ],
+          "details": null,
+          "defaultOpen": false
+        }
+      ]
+    }
+  },
+  "minimal_error_example": {
+    "headers": [
+      "title",
+      "description"
+    ],
+    "missingRequired": [
+      "source_identifier",
+      "rights_statement"
+    ],
+    "unrecognized": {},
+    "rowCount": 15,
+    "isValid": false,
+    "hasWarnings": false,
+    "collections": [],
+    "works": [],
+    "fileSets": [],
+    "totalItems": 0,
+    "fileReferences": 0,
+    "missingFiles": [],
+    "foundFiles": 0,
+    "zipIncluded": false,
+    "messages": {
+      "validationStatus": {
+        "severity": "error",
+        "icon": "fa-times-circle",
+        "title": "Validation Failed",
+        "summary": "2 columns detected · 15 records found",
+        "details": "Critical errors must be fixed before import.",
+        "defaultOpen": true
+      },
+      "issues": [
+        {
+          "type": "missing_required_fields",
+          "severity": "error",
+          "icon": "fa-times-circle",
+          "title": "Missing Required Fields",
+          "count": 4,
+          "description": "These required columns must be added to your CSV:",
+          "summary": null,
+          "items": [
+            {
+              "model": "GenericWork",
+              "field": "source_identifier"
+            },
+            {
+              "model": "GenericWork",
+              "field": "rights_statement"
+            },
+            {
+              "model": "Collection",
+              "field": "source_identifier"
+            },
+            {
+              "model": "Collection",
+              "field": "rights_statement"
+            }
+          ],
+          "details": null,
+          "defaultOpen": false
+        }
+      ]
+    }
+  }
+}
