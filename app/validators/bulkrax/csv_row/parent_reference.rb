@@ -4,8 +4,10 @@ module Bulkrax
   module CsvRow
     ##
     # Validates that any parent references in a row point to source identifiers
-    # that exist elsewhere in the same CSV.
-    # Uses context[:all_ids] (Set of all source identifiers) to validate references.
+    # that exist either elsewhere in the same CSV or as existing repository records.
+    # Uses context[:all_ids] (Set of all source identifiers) to validate references
+    # within the CSV, and context[:find_record_by_source_identifier] (callable) to
+    # look up existing records in the same way the importer does at runtime.
     # Uses context[:parent_split_pattern] (String/Regexp, may be nil) for multi-value splitting.
     module ParentReference
       def self.call(record, row_index, context)
@@ -14,6 +16,7 @@ module Bulkrax
 
         all_ids = context[:all_ids]
         split_pattern = context[:parent_split_pattern]
+        find_record = context[:find_record_by_source_identifier]
 
         parent_ids = if split_pattern
                        parents.to_s.split(split_pattern).map(&:strip).reject(&:blank?)
@@ -23,6 +26,7 @@ module Bulkrax
 
         parent_ids.each do |parent_id|
           next if all_ids.include?(parent_id)
+          next if find_record&.call(parent_id)
 
           context[:errors] << {
             row: row_index,

@@ -65,7 +65,8 @@ module Bulkrax
             source_identifier: source_id_key.to_s,
             parent_split_pattern: parent_split,
             mappings: mappings,
-            field_metadata: field_metadata
+            field_metadata: field_metadata,
+            find_record_by_source_identifier: method(:find_record_by_source_identifier)
           }
 
           csv_data.each_with_index do |record, index|
@@ -260,6 +261,24 @@ module Bulkrax
 
         def resolvable_ids(ids, all_ids)
           ids.select { |id| all_ids.include?(id) }
+        end
+
+        # Attempt to locate an existing repository record by its source identifier.
+        # Mirrors the fallback logic in DynamicRecordLookup#find_record without
+        # requiring a persisted Importer or ImporterRun at validation time.
+        #
+        # @param identifier [String]
+        # @return [Boolean] true if a matching Entry or repository object is found
+        def find_record_by_source_identifier(identifier)
+          return false if identifier.blank?
+
+          # Check if a Bulkrax::Entry already tracks this identifier (any importer).
+          return true if Entry.exists?(identifier: identifier, importerexporter_type: 'Bulkrax::Importer')
+
+          # Fall back to a direct repository lookup (by object ID or source identifier).
+          Bulkrax.object_factory.find_or_nil(identifier).present?
+        rescue StandardError
+          false
         end
 
         def apply_rights_statement_validation_override!(result, missing_required)
