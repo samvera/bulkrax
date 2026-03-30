@@ -340,6 +340,10 @@ en:
             errors:
               message: "Referenced parent '%{value}' does not exist as a %{field} in this CSV."
               suggestion: "Check for typos or add the parent record."
+          child_reference_validator:
+            errors:
+              message: "Referenced child '%{value}' does not exist as a %{field} in this CSV."
+              suggestion: "Check for typos or add the child record."
           passed: Validation Passed
           passed_warnings: Validation Passed with Warnings
           recognized_fields: 'Recognized fields: %{fields}'
