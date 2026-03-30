@@ -93,6 +93,10 @@ module Bulkrax
       parser.related_parents_parsed_mapping
     end
 
+    def self.child_field(parser)
+      parser.related_children_parsed_mapping
+    end
+
     def build
       return if type.nil?
       self.save if self.new_record? # must be saved for statuses
