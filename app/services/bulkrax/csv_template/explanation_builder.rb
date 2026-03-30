@@ -21,7 +21,7 @@ module Bulkrax
       def build_explanation(column)
         mapping_key = @service.mapping_manager.mapped_to_key(column)
 
-        column_description = @descriptor.find_description_for(column)
+        column_description = source_identifier_description(column) || @descriptor.find_description_for(column)
         controlled_vocab_info = controlled_vocab_text(mapping_key)
         split_info = split_text(mapping_key, controlled_vocab_info)
 
@@ -32,6 +32,12 @@ module Bulkrax
         ].compact
 
         components.join("\n")
+      end
+
+      def source_identifier_description(column)
+        return unless @service.mapping_manager.mapped_to_key(column) == 'source_identifier'
+        return if Bulkrax.fill_in_blank_source_identifiers.blank?
+        "Will be auto-generated if left blank.\nProviding one allows round-tripping and deduplication across imports."
       end
 
       def controlled_vocab_text(field_name)

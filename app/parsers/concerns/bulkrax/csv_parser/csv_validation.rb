@@ -76,9 +76,16 @@ module Bulkrax
           file_validator = CsvTemplate::FileValidator.new(csv_data, zip_file, admin_set_id)
 
           # 10. Item hierarchy for UI display
-          collections, works, file_sets = extract_validation_items(csv_data)
+          collections, works, file_sets = extract_validation_items(csv_data, all_ids)
 
           # 11. Assemble result
+          source_id_missing = !headers.map(&:to_s).include?(source_id_key.to_s)
+          if source_id_missing && Bulkrax.fill_in_blank_source_identifiers.blank?
+            all_models.each do |model|
+              missing_required << { model: model, field: source_id_key.to_s }
+            end
+          end
+
           row_errors  = validator_context[:errors]
           has_errors  = missing_required.any? || headers.blank? || csv_data.empty? ||
                         file_validator.missing_files.any? || row_errors.any?
@@ -189,14 +196,14 @@ module Bulkrax
           split_val
         end
 
-        def extract_validation_items(csv_data) # rubocop:disable Metrics/MethodLength
+        def extract_validation_items(csv_data, all_ids = Set.new) # rubocop:disable Metrics/MethodLength
           child_to_parents = build_child_to_parents_map(csv_data)
           collections = []
           works       = []
           file_sets   = []
 
           csv_data.each do |item|
-            categorise_validation_item(item, child_to_parents, collections, works, file_sets)
+            categorise_validation_item(item, child_to_parents, all_ids, collections, works, file_sets)
           end
 
           [collections, works, file_sets]
@@ -205,6 +212,8 @@ module Bulkrax
         def build_child_to_parents_map(csv_data)
           Hash.new { |h, k| h[k] = [] }.tap do |map|
             csv_data.each do |item|
+              next if item[:source_identifier].blank?
+
               parse_relationship_field(item[:children]).each do |child_id|
                 map[child_id] << item[:source_identifier]
               end
@@ -212,31 +221,35 @@ module Bulkrax
           end
         end
 
-        def categorise_validation_item(item, child_to_parents, collections, works, file_sets)
+        def categorise_validation_item(item, child_to_parents, all_ids, collections, works, file_sets) # rubocop:disable Metrics/ParameterLists
           item_id   = item[:source_identifier]
           title     = item[:raw_row]['title'] || item_id
           model_str = item[:model].to_s
 
           if model_str.casecmp('collection').zero? || model_str.casecmp('collectionresource').zero?
-            explicit = parse_relationship_field(item[:parent])
-            inferred = child_to_parents[item_id] || []
+            explicit = resolvable_ids(parse_relationship_field(item[:parent]), all_ids)
+            inferred = resolvable_ids(child_to_parents[item_id] || [], all_ids)
             collections << { id: item_id, title: title, type: 'collection',
                              parentIds: (explicit + inferred).uniq,
-                             childIds: parse_relationship_field(item[:children]) }
+                             childIds: resolvable_ids(parse_relationship_field(item[:children]), all_ids) }
           elsif model_str.casecmp('fileset').zero? || model_str.casecmp('hyrax::fileset').zero?
             file_sets << { id: item_id, title: title, type: 'file_set' }
           else
-            explicit = parse_relationship_field(item[:parent])
-            inferred = child_to_parents[item_id] || []
+            explicit = resolvable_ids(parse_relationship_field(item[:parent]), all_ids)
+            inferred = resolvable_ids(child_to_parents[item_id] || [], all_ids)
             works << { id: item_id, title: title, type: 'work',
                        parentIds: (explicit + inferred).uniq,
-                       childIds: parse_relationship_field(item[:children]) }
+                       childIds: resolvable_ids(parse_relationship_field(item[:children]), all_ids) }
           end
         end
 
         def parse_relationship_field(value)
           return [] if value.blank?
           value.to_s.split('|').map(&:strip).reject(&:blank?)
+        end
+
+        def resolvable_ids(ids, all_ids)
+          ids.select { |id| all_ids.include?(id) }
         end
 
         def apply_rights_statement_validation_override!(result, missing_required)
