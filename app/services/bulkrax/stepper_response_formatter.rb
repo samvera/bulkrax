@@ -119,7 +119,7 @@ module Bulkrax
     def build_messages
       issues = []
       issues << missing_required_issue if @data[:missingRequired]&.any?
-      issues << unrecognized_fields_issue if @data[:unrecognized]&.any?
+      issues << unrecognized_fields_issue if @data[:unrecognized]&.any? || @data[:emptyColumns]&.any?
       issues << file_references_issue if @data[:fileReferences]&.positive?
       issues << row_errors_issue if @data[:rowErrors]&.any?
 
@@ -134,7 +134,7 @@ module Bulkrax
     # @return [Hash] Validation status with severity, icon, title, summary, details
     def validation_status
       severity, icon, title = determine_severity_level
-      recognized = @data[:headers] - (@data[:unrecognized].keys || [])
+      recognized = @data[:headers].reject(&:blank?) - (@data[:unrecognized].keys || [])
 
       {
         severity: severity,
@@ -206,22 +206,27 @@ module Bulkrax
     #
     # @return [Hash] Unrecognized fields issue structure
     def unrecognized_fields_issue
+      all_items = unrecognized_fields_issue_items
       {
         type: 'unrecognized_fields',
         severity: 'warning',
         icon: 'fa-exclamation-triangle',
         title: I18n.t('bulkrax.importer.guided_import.validation.unrecognized_title'),
-        count: @data[:unrecognized].length,
+        count: all_items.length,
         description: I18n.t('bulkrax.importer.guided_import.validation.unrecognized_desc'),
-        items: unrecognized_fields_issue_items,
+        items: all_items,
         defaultOpen: false
       }
     end
 
     def unrecognized_fields_issue_items
-      @data[:unrecognized].partition(&:last)
-                          .flatten(1)
-                          .map { |field| { field: field.first, message: field.last ? I18n.t('bulkrax.importer.guided_import.validation.did_you_mean', suggestion: field.last) : nil } }
+      named = (@data[:unrecognized] || {}).partition(&:last)
+              .flatten(1)
+              .map { |field| { field: field.first, message: field.last ? I18n.t('bulkrax.importer.guided_import.validation.did_you_mean', suggestion: field.last) : nil } }
+      empty = (@data[:emptyColumns] || []).map do |col|
+        { field: I18n.t('bulkrax.importer.guided_import.validation.empty_column', column: col), message: nil }
+      end
+      named + empty
     end
 
     # Format file references issue
