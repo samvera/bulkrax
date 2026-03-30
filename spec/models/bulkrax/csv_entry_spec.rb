@@ -38,6 +38,58 @@ module Bulkrax
       end
     end
 
+    describe '.data_for_entry' do
+      let(:importer) { FactoryBot.create(:bulkrax_importer_csv, :with_relationships_mappings) }
+      let(:parser) { importer.parser }
+
+      # Simulate a CSV::Row with a custom-named column mapped to 'parents'/'children'
+      def make_row(hash)
+        headers = hash.keys
+        CSV::Row.new(headers, hash.values_at(*headers))
+      end
+
+      context 'when the parents column uses the default name "parents"' do
+        it 'does not alias raw_data[:parents] (already correct key)' do
+          row = make_row({ source_identifier: '1', title: 'test', parents: 'parent_1' })
+          result = described_class.data_for_entry(row, nil, parser)
+          expect(result[:parents]).to eq('parent_1')
+        end
+      end
+
+      context 'when the parents column uses a custom name matching the field mapping' do
+        it 'aliases the custom column to raw_data[:parents]' do
+          row = make_row({ source_identifier: '1', title: 'test', parents_column: 'parent_1' })
+          result = described_class.data_for_entry(row, nil, parser)
+          expect(result[:parents]).to eq('parent_1')
+        end
+      end
+
+      context 'when the children column uses the default name "children"' do
+        it 'does not alias raw_data[:children] (already correct key)' do
+          row = make_row({ source_identifier: '1', title: 'test', children: 'child_1' })
+          result = described_class.data_for_entry(row, nil, parser)
+          expect(result[:children]).to eq('child_1')
+        end
+      end
+
+      context 'when the children column uses a custom name matching the field mapping' do
+        it 'aliases the custom column to raw_data[:children]' do
+          row = make_row({ source_identifier: '1', title: 'test', children_column: 'child_1' })
+          result = described_class.data_for_entry(row, nil, parser)
+          expect(result[:children]).to eq('child_1')
+        end
+      end
+
+      context 'when both parents and children use custom column names' do
+        it 'aliases both to their standard keys' do
+          row = make_row({ source_identifier: '1', title: 'test', parents_column: 'parent_1', children_column: 'child_1' })
+          result = described_class.data_for_entry(row, nil, parser)
+          expect(result[:parents]).to eq('parent_1')
+          expect(result[:children]).to eq('child_1')
+        end
+      end
+    end
+
     context 'AttributeBuilderMethod.for' do
       # Why is this spec here?  Because we have a LOT of before blocks that are saying stubbing and
       # allowing different things.  When I had this method in a more logical place, it was getting

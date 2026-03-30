@@ -88,9 +88,10 @@ module Bulkrax
       # model has to be separated so that it doesn't get mistranslated by to_h
       raw_data = data.to_h
       raw_data[:model] = data[:model] if data[:model].present?
-      # If the collection field mapping is not 'collection', add 'collection' - the parser needs it
-      # TODO: change to :parents
-      raw_data[:parents] = raw_data[parent_field(parser).to_sym] if raw_data.keys.include?(parent_field(parser).to_sym) && parent_field(parser) != 'parents'
+      # If the parents/children field mapping uses a custom column name, alias it to the standard key
+      # so downstream code can find it regardless of what the CSV column is named.
+      raw_data[:parents] = raw_data[parser.related_parents_raw_mapping.to_sym] if parser.related_parents_raw_mapping.present? && raw_data.key?(parser.related_parents_raw_mapping.to_sym) && parser.related_parents_raw_mapping != 'parents'
+      raw_data[:children] = raw_data[parser.related_children_raw_mapping.to_sym] if parser.related_children_raw_mapping.present? && raw_data.key?(parser.related_children_raw_mapping.to_sym) && parser.related_children_raw_mapping != 'children'
       return raw_data
     end
 
