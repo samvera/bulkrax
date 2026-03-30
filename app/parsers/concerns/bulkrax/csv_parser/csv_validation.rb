@@ -52,6 +52,7 @@ module Bulkrax
           # 7. Header-level checks
           missing_required = find_missing_required_headers(headers, field_metadata, mapping_manager)
           unrecognized     = find_unrecognized_validation_headers(headers, valid_headers)
+          empty_columns    = find_empty_column_positions(headers, raw_csv)
 
           # 8. Row-level validators
           parent_split      = resolve_parent_split_pattern(mappings)
@@ -82,12 +83,13 @@ module Bulkrax
           row_errors  = validator_context[:errors]
           has_errors  = missing_required.any? || headers.blank? || csv_data.empty? ||
                         file_validator.missing_files.any? || row_errors.any?
-          has_warnings = unrecognized.any? || file_validator.possible_missing_files?
+          has_warnings = unrecognized.any? || empty_columns.any? || file_validator.possible_missing_files?
 
           result = {
             headers: headers,
             missingRequired: missing_required,
             unrecognized: unrecognized,
+            emptyColumns: empty_columns,
             rowCount: csv_data.length,
             isValid: !has_errors,
             hasWarnings: has_warnings,
@@ -177,8 +179,16 @@ module Bulkrax
         def find_unrecognized_validation_headers(headers, valid_headers)
           checker = DidYouMean::SpellChecker.new(dictionary: valid_headers)
           headers
-            .reject { |h| valid_headers.include?(h) || valid_headers.include?(h.sub(/_\d+\z/, '')) }
+            .reject { |h| h.blank? || valid_headers.include?(h) || valid_headers.include?(h.sub(/_\d+\z/, '')) }
             .index_with { |h| checker.correct(h).first }
+        end
+
+        def find_empty_column_positions(headers, raw_csv)
+          headers.each_with_index.filter_map do |h, i|
+            next unless h.blank?
+            has_data = raw_csv.any? { |row| row.fields[i].present? }
+            i + 1 if has_data
+          end
         end
 
         def resolve_parent_split_pattern(mappings)
