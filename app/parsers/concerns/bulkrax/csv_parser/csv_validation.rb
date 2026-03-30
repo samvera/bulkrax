@@ -185,7 +185,7 @@ module Bulkrax
 
         def find_empty_column_positions(headers, raw_csv)
           headers.each_with_index.filter_map do |h, i|
-            next unless h.blank?
+            next if h.present?
             has_data = raw_csv.any? { |row| row.fields[i].present? }
             i + 1 if has_data
           end

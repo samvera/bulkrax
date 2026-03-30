@@ -221,8 +221,8 @@ module Bulkrax
 
     def unrecognized_fields_issue_items
       named = (@data[:unrecognized] || {}).partition(&:last)
-                                          .flatten(1)
-                                          .map { |field| { field: field.first, message: field.last ? I18n.t('bulkrax.importer.guided_import.validation.did_you_mean', suggestion: field.last) : nil } }
+              .flatten(1)
+              .map { |field| { field: field.first, message: field.last ? I18n.t('bulkrax.importer.guided_import.validation.did_you_mean', suggestion: field.last) : nil } }
       empty = (@data[:emptyColumns] || []).map do |col|
         { field: I18n.t('bulkrax.importer.guided_import.validation.empty_column', column: col), message: nil }
       end
