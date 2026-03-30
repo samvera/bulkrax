@@ -8,6 +8,8 @@ module Bulkrax
     module DuplicateIdentifier
       def self.call(record, row_index, context)
         source_id = record[:source_identifier]
+        return if source_id.blank? && Bulkrax.fill_in_blank_source_identifiers.present?
+
         source_id_label = context[:source_identifier] || 'source_identifier'
         first_row = context[:seen_ids][source_id]
 

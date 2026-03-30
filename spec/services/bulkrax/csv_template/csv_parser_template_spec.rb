@@ -158,6 +158,58 @@ RSpec.describe Bulkrax::CsvParser do
         expect(result[:unrecognized].keys).to include('source_idenifier', 'titel', 'creater')
       end
     end
+
+    context 'source_identifier generation' do
+      context 'when fill_in_blank_source_identifiers is not configured' do
+        before { allow(Bulkrax).to receive(:fill_in_blank_source_identifiers).and_return(nil) }
+
+        it 'does not include source_identifier in missingRequired when the column is present' do
+          result = described_class.validate_csv(csv_file: csv_file, zip_file: nil)
+          source_id_missing = result[:missingRequired].any? { |h| h[:field].to_s == 'source_identifier' }
+          expect(source_id_missing).to be false
+        end
+
+        it 'treats a missing source_identifier column as an error' do
+          csv_without_source_id = Tempfile.new(['no_source_id', '.csv'])
+          csv_without_source_id.write("title,model\nTest Work,GenericWork\n")
+          csv_without_source_id.rewind
+
+          result = described_class.validate_csv(csv_file: csv_without_source_id, zip_file: nil)
+          expect(result[:isValid]).to be false
+          expect(result[:missingRequired]).to include(a_hash_including(field: 'source_identifier'))
+        ensure
+          csv_without_source_id.close
+          csv_without_source_id.unlink
+        end
+      end
+
+      context 'when fill_in_blank_source_identifiers is configured' do
+        before do
+          allow(Bulkrax).to receive(:fill_in_blank_source_identifiers)
+            .and_return(->(_parser, _index) { SecureRandom.uuid })
+        end
+
+        it 'does not include source_identifier in missingRequired even when the column is present' do
+          result = described_class.validate_csv(csv_file: csv_file, zip_file: nil)
+          source_id_missing = result[:missingRequired].any? { |h| h[:field].to_s == 'source_identifier' }
+          expect(source_id_missing).to be false
+        end
+
+        it 'does not treat a missing source_identifier column as an error' do
+          csv_without_source_id = Tempfile.new(['no_source_id', '.csv'])
+          csv_without_source_id.write("title,model\nTest Work,GenericWork\n")
+          csv_without_source_id.rewind
+
+          result = described_class.validate_csv(csv_file: csv_without_source_id, zip_file: nil)
+          expect(result[:isValid]).to be true
+          source_id_missing = result[:missingRequired].any? { |h| h[:field].to_s == 'source_identifier' }
+          expect(source_id_missing).to be false
+        ensure
+          csv_without_source_id.close
+          csv_without_source_id.unlink
+        end
+      end
+    end
   end
 
   describe 'TemplateContext' do
