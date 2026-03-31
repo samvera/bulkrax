@@ -144,6 +144,8 @@ module Bulkrax
 
       # Attempt to locate an existing repository record by its identifier.
       # The identifier may be a Bulkrax source_identifier or a repository object ID.
+      # This mimics the find behavior of the actual import process, which checks for existing records to determine whether to create or update.
+      # Since we don't have the full importer context here, we check both the Entry model and the repository directly.
       #
       # @param identifier [String]
       # @param work_identifier [String] the source_identifier property name (e.g. "source")

@@ -1,0 +1,207 @@
+# frozen_string_literal: true
+
+require 'rails_helper'
+
+RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
+  # Minimal host object that mixes in the concern under test.
+  let(:host) do
+    Object.new.tap { |o| o.extend(described_class) }
+  end
+
+  # All specs in this file exercise the Valkyrie path. ActiveFedora / Wings is
+  # not verified to work with this feature, so we configure the factory
+  # globally for the file rather than repeating it in every context.
+  before { Bulkrax.object_factory = Bulkrax::ValkyrieObjectFactory }
+  after  { Bulkrax.object_factory = Bulkrax::ObjectFactory }
+
+  describe '#find_record_by_source_identifier' do
+    let(:work_identifier)        { 'source' }
+    let(:work_identifier_search) { 'source_sim' }
+
+    def find(id)
+      host.find_record_by_source_identifier(id, work_identifier, work_identifier_search)
+    end
+
+    context 'when the identifier is blank' do
+      it 'returns false for nil' do
+        expect(find(nil)).to be false
+      end
+
+      it 'returns false for an empty string' do
+        expect(find('')).to be false
+      end
+    end
+
+    context 'when a matching Bulkrax::Entry exists in the database' do
+      let!(:importer) { FactoryBot.create(:bulkrax_importer) }
+      let!(:entry)    { FactoryBot.create(:bulkrax_csv_entry, identifier: 'entry_id_001', importerexporter: importer) }
+
+      it 'returns true without querying the repository' do
+        # ValkyrieObjectFactory.find delegates to Hyrax.query_service.find_by;
+        # the Entry short-circuit means it should never be reached.
+        expect(Hyrax.query_service).not_to receive(:find_by)
+        expect(find('entry_id_001')).to be true
+      end
+    end
+
+    context 'when no Entry exists but the repository has a matching object by ID' do
+      # ValkyrieObjectFactory.find_or_nil calls ValkyrieObjectFactory.find which
+      # calls Hyrax.query_service.find_by(id:). Stub at that level so we verify
+      # the full Valkyrie call chain.
+      before do
+        allow(Hyrax.query_service).to receive(:find_by)
+          .with(id: 'repo-uuid-001')
+          .and_return(instance_double(Hyrax::Work))
+      end
+
+      it 'returns true' do
+        expect(find('repo-uuid-001')).to be true
+      end
+
+      it 'does not fall through to search_by_property' do
+        expect(Bulkrax::ValkyrieObjectFactory).not_to receive(:search_by_property)
+        find('repo-uuid-001')
+      end
+    end
+
+    context 'when no Entry exists and find_or_nil returns nil' do
+      # ValkyrieObjectFactory.find raises ObjectNotFoundError when the object
+      # does not exist; find_or_nil rescues that to nil.
+      before do
+        allow(Hyrax.query_service).to receive(:find_by)
+          .and_raise(Hyrax::ObjectNotFoundError)
+      end
+
+      context 'when search_by_property finds a match on one of the model classes' do
+        before do
+          allow(Bulkrax).to receive(:collection_model_class).and_return(Collection)
+          allow(Bulkrax).to receive(:curation_concerns).and_return([Work])
+
+          # Collection misses, Work hits.
+          allow(Bulkrax::ValkyrieObjectFactory).to receive(:search_by_property)
+            .with(value: 'custom_source_001', klass: Collection,
+                  search_field: work_identifier_search, name_field: work_identifier)
+            .and_return(nil)
+          allow(Bulkrax::ValkyrieObjectFactory).to receive(:search_by_property)
+            .with(value: 'custom_source_001', klass: Work,
+                  search_field: work_identifier_search, name_field: work_identifier)
+            .and_return(instance_double(Hyrax::Work))
+        end
+
+        it 'returns true' do
+          expect(find('custom_source_001')).to be true
+        end
+      end
+
+      context 'when search_by_property finds nothing across all model classes' do
+        before do
+          allow(Bulkrax).to receive(:collection_model_class).and_return(Collection)
+          allow(Bulkrax).to receive(:curation_concerns).and_return([Work])
+          allow(Bulkrax::ValkyrieObjectFactory).to receive(:search_by_property).and_return(nil)
+        end
+
+        it 'returns false' do
+          expect(find('nonexistent_id')).to be false
+        end
+      end
+
+      context 'when search_by_property is called with the correct field arguments' do
+        let(:work_identifier)        { 'local_id' }
+        let(:work_identifier_search) { 'local_id_sim' }
+
+        before do
+          allow(Bulkrax).to receive(:collection_model_class).and_return(Collection)
+          allow(Bulkrax).to receive(:curation_concerns).and_return([])
+          allow(Bulkrax::ValkyrieObjectFactory).to receive(:search_by_property).and_return(nil)
+        end
+
+        it 'passes the resolved work_identifier and search field through to search_by_property' do
+          expect(Bulkrax::ValkyrieObjectFactory).to receive(:search_by_property).with(
+            value: 'some_local_id',
+            klass: Collection,
+            search_field: 'local_id_sim',
+            name_field: 'local_id'
+          )
+          find('some_local_id')
+        end
+      end
+    end
+
+    context 'when an exception is raised during lookup' do
+      before do
+        allow(Bulkrax::Entry).to receive(:exists?).and_raise(StandardError, 'DB unavailable')
+      end
+
+      it 'returns false instead of propagating the error' do
+        expect(find('some_id')).to be false
+      end
+    end
+  end
+
+  describe '#build_find_record' do
+    let(:mapping_manager) { instance_double(Bulkrax::CsvTemplate::MappingManager) }
+    let(:mappings)        { {} }
+
+    before do
+      allow(Hyrax.query_service).to receive(:find_by).and_raise(Hyrax::ObjectNotFoundError)
+      allow(Bulkrax).to receive(:collection_model_class).and_return(Collection)
+      allow(Bulkrax).to receive(:curation_concerns).and_return([Work])
+      allow(Bulkrax::ValkyrieObjectFactory).to receive(:search_by_property).and_return(nil)
+    end
+
+    context 'with default source_identifier mapping' do
+      before do
+        allow(mapping_manager).to receive(:resolve_column_name)
+          .with(flag: 'source_identifier', default: 'source')
+          .and_return(['source'])
+      end
+
+      it 'returns a callable lambda' do
+        lam = host.build_find_record(mapping_manager, mappings)
+        expect(lam).to respond_to(:call)
+      end
+
+      it 'defaults the search field to <identifier>_sim when no search_field mapping is present' do
+        lam = host.build_find_record(mapping_manager, mappings)
+        expect(Bulkrax::ValkyrieObjectFactory).to receive(:search_by_property).with(
+          hash_including(search_field: 'source_sim', name_field: 'source')
+        ).and_return(nil)
+        lam.call('anything')
+      end
+    end
+
+    context 'when the mapping provides a custom search_field' do
+      let(:mappings) { { 'local_id' => { 'search_field' => 'local_id_tesim' } } }
+
+      before do
+        allow(mapping_manager).to receive(:resolve_column_name)
+          .with(flag: 'source_identifier', default: 'source')
+          .and_return(['local_id'])
+      end
+
+      it 'uses the mapped search_field instead of the default _sim suffix' do
+        lam = host.build_find_record(mapping_manager, mappings)
+        expect(Bulkrax::ValkyrieObjectFactory).to receive(:search_by_property).with(
+          hash_including(search_field: 'local_id_tesim', name_field: 'local_id')
+        ).and_return(nil)
+        lam.call('anything')
+      end
+    end
+
+    context 'when resolve_column_name returns nothing' do
+      before do
+        allow(mapping_manager).to receive(:resolve_column_name)
+          .with(flag: 'source_identifier', default: 'source')
+          .and_return([])
+      end
+
+      it 'falls back to "source" as the work_identifier' do
+        lam = host.build_find_record(mapping_manager, mappings)
+        expect(Bulkrax::ValkyrieObjectFactory).to receive(:search_by_property).with(
+          hash_including(search_field: 'source_sim', name_field: 'source')
+        ).and_return(nil)
+        lam.call('anything')
+      end
+    end
+  end
+end
