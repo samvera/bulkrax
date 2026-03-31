@@ -111,7 +111,7 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHierarchy do
         item = make_item(source_identifier: 'work1',
                          parent: nil,
                          raw_row: { 'title' => 'Work One', 'parents_1' => 'col1' })
-        hash = host.build_item_hash(item, {}, all_ids, nil, type: 'work')
+        hash = host.build_item_hash(item, {}, all_ids, type: 'work')
         expect(hash[:parentIds]).to include('col1')
       end
 
@@ -121,7 +121,7 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHierarchy do
                          raw_row: { 'title' => 'Work One',
                                     'parents_1' => 'col1',
                                     'parents_2' => 'col2' })
-        hash = host.build_item_hash(item, {}, Set.new(%w[col1 col2 work1]), nil, type: 'work')
+        hash = host.build_item_hash(item, {}, Set.new(%w[col1 col2 work1]), type: 'work')
         expect(hash[:parentIds]).to contain_exactly('col1', 'col2')
       end
 
@@ -129,7 +129,7 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHierarchy do
         item = make_item(source_identifier: 'work1',
                          parent: 'col1',
                          raw_row: { 'title' => 'Work One', 'parents_2' => 'col2' })
-        hash = host.build_item_hash(item, {}, Set.new(%w[col1 col2 work1]), nil, type: 'work')
+        hash = host.build_item_hash(item, {}, Set.new(%w[col1 col2 work1]), type: 'work')
         expect(hash[:parentIds]).to contain_exactly('col1', 'col2')
       end
     end
@@ -139,7 +139,7 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHierarchy do
         item = make_item(source_identifier: 'col1', model: 'Collection',
                          children: nil,
                          raw_row: { 'title' => 'Coll', 'children_1' => 'work1' })
-        hash = host.build_item_hash(item, {}, all_ids, nil, type: 'collection')
+        hash = host.build_item_hash(item, {}, all_ids, type: 'collection')
         expect(hash[:childIds]).to include('work1')
       end
 
@@ -149,7 +149,7 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHierarchy do
                          raw_row: { 'title' => 'Coll',
                                     'children_1' => 'work1',
                                     'children_2' => 'work2' })
-        hash = host.build_item_hash(item, {}, all_ids, nil, type: 'collection')
+        hash = host.build_item_hash(item, {}, all_ids, type: 'collection')
         expect(hash[:childIds]).to contain_exactly('work1', 'work2')
       end
 
@@ -157,7 +157,7 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHierarchy do
         item = make_item(source_identifier: 'col1', model: 'Collection',
                          children: 'work1',
                          raw_row: { 'title' => 'Coll', 'children_2' => 'work2' })
-        hash = host.build_item_hash(item, {}, all_ids, nil, type: 'collection')
+        hash = host.build_item_hash(item, {}, all_ids, type: 'collection')
         expect(hash[:childIds]).to contain_exactly('work1', 'work2')
       end
     end
@@ -173,8 +173,8 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHierarchy do
                                            'parents_1' => 'col1',
                                            'parents_2' => 'col2' })
         ids = Set.new(%w[col1 col2 work1])
-        split_hash  = host.build_item_hash(split_item,  {}, ids, nil, type: 'work', parent_split_pattern: '|')
-        suffix_hash = host.build_item_hash(suffix_item, {}, ids, nil, type: 'work')
+        split_hash  = host.build_item_hash(split_item,  {}, ids, type: 'work', parent: '|')
+        suffix_hash = host.build_item_hash(suffix_item, {}, ids, type: 'work')
         expect(split_hash[:parentIds]).to eq(suffix_hash[:parentIds])
       end
 
@@ -188,8 +188,8 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHierarchy do
                                            'children_1' => 'work1',
                                            'children_2' => 'work2' })
         ids = Set.new(%w[col1 work1 work2])
-        split_hash  = host.build_item_hash(split_item,  {}, ids, nil, type: 'collection')
-        suffix_hash = host.build_item_hash(suffix_item, {}, ids, nil, type: 'collection')
+        split_hash  = host.build_item_hash(split_item,  {}, ids, type: 'collection')
+        suffix_hash = host.build_item_hash(suffix_item, {}, ids, type: 'collection')
         expect(split_hash[:childIds]).to eq(suffix_hash[:childIds])
       end
     end
@@ -200,7 +200,7 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHierarchy do
         item = make_item(source_identifier: 'work1',
                          parent: nil,
                          raw_row: { 'title' => 'Work', 'parents_1' => 'repo_col' })
-        hash = host.build_item_hash(item, {}, Set.new(['work1']), find_record, type: 'work')
+        hash = host.build_item_hash(item, {}, Set.new(['work1']), type: 'work', find_record: find_record)
         expect(hash[:existingParentIds]).to include('repo_col')
       end
     end
@@ -238,8 +238,8 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHierarchy do
         item = make_item(source_identifier: 'work1',
                          parent: 'col1;col2',
                          raw_row: { 'title' => 'Work' })
-        hash = host.build_item_hash(item, {}, Set.new(%w[col1 col2 work1]), nil,
-                                    type: 'work', parent_split_pattern: ';')
+        hash = host.build_item_hash(item, {}, Set.new(%w[col1 col2 work1]),
+                                    type: 'work', parent: ';')
         expect(hash[:parentIds]).to contain_exactly('col1', 'col2')
       end
 
@@ -247,8 +247,8 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHierarchy do
         item = make_item(source_identifier: 'col1', model: 'Collection',
                          children: 'work1;work2',
                          raw_row: { 'title' => 'Coll' })
-        hash = host.build_item_hash(item, {}, all_ids, nil,
-                                    type: 'collection', child_split_pattern: ';')
+        hash = host.build_item_hash(item, {}, all_ids,
+                                    type: 'collection', child: ';')
         expect(hash[:childIds]).to contain_exactly('work1', 'work2')
       end
     end

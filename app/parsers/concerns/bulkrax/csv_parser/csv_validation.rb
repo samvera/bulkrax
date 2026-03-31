@@ -31,11 +31,7 @@ module Bulkrax
           find_record      = build_find_record(mapping_manager, mappings)
           row_errors       = run_row_validators(csv_data, all_ids, source_id_key, mappings, field_metadata, find_record)
           file_validator   = CsvTemplate::FileValidator.new(csv_data, zip_file, admin_set_id)
-          collections, works, file_sets = extract_validation_items(
-            csv_data, all_ids, find_record,
-            parent_split_pattern: resolve_parent_split_pattern(mappings),
-            child_split_pattern: resolve_children_split_pattern(mappings) || '|'
-          )
+          collections, works, file_sets = extract_hierarchy_items(csv_data, all_ids, find_record, mappings)
 
           append_missing_source_id!(missing_required, headers, source_id_key, csv_data.map { |r| r[:model] }.compact.uniq)
 
@@ -92,6 +88,14 @@ module Bulkrax
             unrecognized: find_unrecognized_validation_headers(headers, valid_headers),
             empty_columns: find_empty_column_positions(headers, raw_csv)
           }
+        end
+
+        def extract_hierarchy_items(csv_data, all_ids, find_record, mappings)
+          extract_validation_items(
+            csv_data, all_ids, find_record,
+            parent_split_pattern: resolve_parent_split_pattern(mappings),
+            child_split_pattern: resolve_children_split_pattern(mappings) || '|'
+          )
         end
 
         # Runs all registered row validators and returns the collected errors.

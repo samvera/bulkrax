@@ -35,22 +35,23 @@ module Bulkrax
         item_id   = item[:source_identifier]
         model_str = item[:model].to_s
 
+        opts = { type: nil, find_record: find_record, parent: parent_split_pattern, child: child_split_pattern }
         if model_str.casecmp('collection').zero? || model_str.casecmp('collectionresource').zero?
-          collections << build_item_hash(item, child_to_parents, all_ids, find_record, type: 'collection',
-                                         parent_split_pattern: parent_split_pattern, child_split_pattern: child_split_pattern)
+          collections << build_item_hash(item, child_to_parents, all_ids, opts.merge(type: 'collection'))
         elsif model_str.casecmp('fileset').zero? || model_str.casecmp('hyrax::fileset').zero?
           file_sets << { id: item_id, title: item[:raw_row]['title'] || item_id, type: 'file_set' }
         else
-          works << build_item_hash(item, child_to_parents, all_ids, find_record, type: 'work',
-                                   parent_split_pattern: parent_split_pattern, child_split_pattern: child_split_pattern)
+          works << build_item_hash(item, child_to_parents, all_ids, opts.merge(type: 'work'))
         end
       end
 
-      def build_item_hash(item, child_to_parents, all_ids, find_record, type:, parent_split_pattern: nil, child_split_pattern: '|')
+      def build_item_hash(item, child_to_parents, all_ids, opts = {}) # rubocop:disable Metrics/MethodLength
+        type = opts[:type]
+        find_record = opts[:find_record]
         item_id  = item[:source_identifier]
         title    = item[:raw_row]['title'] || item_id
-        parents  = collect_relationship_ids(item[:parent],   item[:raw_row], 'parents',  split_pattern: parent_split_pattern)
-        children = collect_relationship_ids(item[:children], item[:raw_row], 'children', split_pattern: child_split_pattern)
+        parents  = collect_relationship_ids(item[:parent],   item[:raw_row], 'parents',  split_pattern: opts[:parent])
+        children = collect_relationship_ids(item[:children], item[:raw_row], 'children', split_pattern: opts[:child] || '|')
 
         {
           id: item_id,
