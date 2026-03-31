@@ -55,8 +55,12 @@ module Bulkrax
           empty_columns    = find_empty_column_positions(headers, raw_csv)
 
           # 8. Row-level validators
-          parent_split      = resolve_parent_split_pattern(mappings)
-          all_ids           = csv_data.map { |r| r[:source_identifier] }.compact.to_set
+          parent_split           = resolve_parent_split_pattern(mappings)
+          all_ids                = csv_data.map { |r| r[:source_identifier] }.compact.to_set
+          work_identifier        = mapping_manager.resolve_column_name(flag: 'source_identifier', default: 'source').first&.to_s || 'source'
+          work_identifier_search = Array.wrap(mappings.dig(work_identifier, 'search_field')).first&.to_s ||
+                                   "#{work_identifier}_sim"
+          find_record            = ->(id) { find_record_by_source_identifier(id, work_identifier, work_identifier_search) }
           validator_context = {
             errors: [],
             warnings: [],
@@ -66,7 +70,7 @@ module Bulkrax
             parent_split_pattern: parent_split,
             mappings: mappings,
             field_metadata: field_metadata,
-            find_record_by_source_identifier: method(:find_record_by_source_identifier)
+            find_record_by_source_identifier: find_record
           }
 
           csv_data.each_with_index do |record, index|
@@ -78,7 +82,7 @@ module Bulkrax
           file_validator = CsvTemplate::FileValidator.new(csv_data, zip_file, admin_set_id)
 
           # 10. Item hierarchy for UI display
-          collections, works, file_sets = extract_validation_items(csv_data, all_ids)
+          collections, works, file_sets = extract_validation_items(csv_data, all_ids, find_record)
 
           # 11. Assemble result
           source_id_missing = !headers.map(&:to_s).include?(source_id_key.to_s)
@@ -207,14 +211,14 @@ module Bulkrax
           split_val
         end
 
-        def extract_validation_items(csv_data, all_ids = Set.new) # rubocop:disable Metrics/MethodLength
+        def extract_validation_items(csv_data, all_ids = Set.new, find_record = nil) # rubocop:disable Metrics/MethodLength
           child_to_parents = build_child_to_parents_map(csv_data)
           collections = []
           works       = []
           file_sets   = []
 
           csv_data.each do |item|
-            categorise_validation_item(item, child_to_parents, all_ids, collections, works, file_sets)
+            categorise_validation_item(item, child_to_parents, all_ids, collections, works, file_sets, find_record)
           end
 
           [collections, works, file_sets]
@@ -232,7 +236,7 @@ module Bulkrax
           end
         end
 
-        def categorise_validation_item(item, child_to_parents, all_ids, collections, works, file_sets) # rubocop:disable Metrics/ParameterLists
+        def categorise_validation_item(item, child_to_parents, all_ids, collections, works, file_sets, find_record = nil) # rubocop:disable Metrics/ParameterLists
           item_id   = item[:source_identifier]
           title     = item[:raw_row]['title'] || item_id
           model_str = item[:model].to_s
@@ -240,17 +244,25 @@ module Bulkrax
           if model_str.casecmp('collection').zero? || model_str.casecmp('collectionresource').zero?
             explicit = resolvable_ids(parse_relationship_field(item[:parent]), all_ids)
             inferred = resolvable_ids(child_to_parents[item_id] || [], all_ids)
+            existing_parents = external_ids(parse_relationship_field(item[:parent]), all_ids, find_record)
+            existing_children = external_ids(parse_relationship_field(item[:children]), all_ids, find_record)
             collections << { id: item_id, title: title, type: 'collection',
                              parentIds: (explicit + inferred).uniq,
-                             childIds: resolvable_ids(parse_relationship_field(item[:children]), all_ids) }
+                             childIds: resolvable_ids(parse_relationship_field(item[:children]), all_ids),
+                             existingParentIds: existing_parents,
+                             existingChildIds: existing_children }
           elsif model_str.casecmp('fileset').zero? || model_str.casecmp('hyrax::fileset').zero?
             file_sets << { id: item_id, title: title, type: 'file_set' }
           else
             explicit = resolvable_ids(parse_relationship_field(item[:parent]), all_ids)
             inferred = resolvable_ids(child_to_parents[item_id] || [], all_ids)
+            existing_parents = external_ids(parse_relationship_field(item[:parent]), all_ids, find_record)
+            existing_children = external_ids(parse_relationship_field(item[:children]), all_ids, find_record)
             works << { id: item_id, title: title, type: 'work',
                        parentIds: (explicit + inferred).uniq,
-                       childIds: resolvable_ids(parse_relationship_field(item[:children]), all_ids) }
+                       childIds: resolvable_ids(parse_relationship_field(item[:children]), all_ids),
+                       existingParentIds: existing_parents,
+                       existingChildIds: existing_children }
           end
         end
 
@@ -263,20 +275,39 @@ module Bulkrax
           ids.select { |id| all_ids.include?(id) }
         end
 
-        # Attempt to locate an existing repository record by its source identifier.
-        # Mirrors the fallback logic in DynamicRecordLookup#find_record without
-        # requiring a persisted Importer or ImporterRun at validation time.
+        # Returns ids from the list that are NOT in the CSV but exist in the repository.
+        def external_ids(ids, all_ids, find_record)
+          return [] if find_record.nil?
+
+          ids.reject { |id| all_ids.include?(id) }
+             .select { |id| find_record.call(id) }
+        end
+
+        # Attempt to locate an existing repository record by its identifier.
+        # The identifier may be a Bulkrax source_identifier or a repository object ID.
         #
         # @param identifier [String]
+        # @param work_identifier [String] the source_identifier property name (e.g. "source")
+        # @param work_identifier_search [String] the Solr field for source_identifier (e.g. "source_sim")
         # @return [Boolean] true if a matching Entry or repository object is found
-        def find_record_by_source_identifier(identifier)
+        def find_record_by_source_identifier(identifier, work_identifier, work_identifier_search)
           return false if identifier.blank?
 
-          # Check if a Bulkrax::Entry already tracks this identifier (any importer).
+          # Identifier may be a Bulkrax source_identifier tracked by a prior import.
           return true if Entry.exists?(identifier: identifier, importerexporter_type: 'Bulkrax::Importer')
 
-          # Fall back to a direct repository lookup (by object ID or source identifier).
-          Bulkrax.object_factory.find_or_nil(identifier).present?
+          # Try as a repository object ID first.
+          return true if Bulkrax.object_factory.find_or_nil(identifier).present?
+
+          # Fall back to searching by source_identifier across all work and collection types.
+          [Bulkrax.collection_model_class, *Bulkrax.curation_concerns].any? do |klass|
+            Bulkrax.object_factory.search_by_property(
+              value: identifier,
+              klass: klass,
+              search_field: work_identifier_search,
+              name_field: work_identifier
+            ).present?
+          end
         rescue StandardError
           false
         end
