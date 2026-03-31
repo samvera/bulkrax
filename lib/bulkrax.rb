@@ -183,6 +183,7 @@ module Bulkrax
       @csv_row_validators ||= [
         Bulkrax::CsvRow::DuplicateIdentifier,
         Bulkrax::CsvRow::ParentReference,
+        Bulkrax::CsvRow::ChildReference,
         Bulkrax::CsvRow::RequiredValues,
         Bulkrax::CsvRow::ControlledVocabulary
       ]

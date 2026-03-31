@@ -1579,8 +1579,8 @@
     })
 
     allItems.forEach(function (item) {
-      if (item.childrenIds && item.childrenIds.length > 0) {
-        item.childrenIds.forEach(function (childId) {
+      if (item.childIds && item.childIds.length > 0) {
+        item.childIds.forEach(function (childId) {
           var child = itemMap[childId]
           if (child) {
             if (child.parentIds.indexOf(item.id) === -1) {
@@ -1591,12 +1591,38 @@
       }
     })
 
-    // Build hierarchy lookup map from normalized parentIds
-    var hierarchyMap = {}
+    // Inject stub nodes for existing-record relationships so the tree can
+    // render them as children/parents even though they are not in the CSV.
     allItems.forEach(function (item) {
+      // existingChildIds → the item in the CSV has a child that lives in the repo
+      ;(item.existingChildIds || []).forEach(function (childId) {
+        if (!itemMap[childId]) {
+          itemMap[childId] = { id: childId, title: childId, type: 'existing', parentIds: [], existing: true }
+        }
+        if (itemMap[childId].parentIds.indexOf(item.id) === -1) {
+          itemMap[childId].parentIds.push(item.id)
+        }
+      })
+      // existingParentIds → the item in the CSV has a parent that lives in the repo
+      ;(item.existingParentIds || []).forEach(function (parentId) {
+        if (!itemMap[parentId]) {
+          itemMap[parentId] = { id: parentId, title: parentId, type: 'existing', parentIds: [], existing: true }
+        }
+        if (item.parentIds.indexOf(parentId) === -1) {
+          item.parentIds.push(parentId)
+        }
+      })
+    })
+
+    // Build hierarchy lookup map from normalized parentIds (including existing stubs)
+    var hierarchyMap = {}
+    Object.keys(itemMap).forEach(function (id) {
+      var item = itemMap[id]
       item.parentIds.forEach(function (parentId) {
         if (!hierarchyMap[parentId]) { hierarchyMap[parentId] = [] }
-        hierarchyMap[parentId].push(item)
+        if (hierarchyMap[parentId].indexOf(item) === -1) {
+          hierarchyMap[parentId].push(item)
+        }
       })
     })
 
@@ -1870,9 +1896,23 @@
     var orphanWorks = data.works.filter(function (w) {
       return !w.parentIds || w.parentIds.length === 0
     })
+    // Existing-record stubs that are top-level parents (not themselves children of anything)
+    var existingRoots = Object.keys(hierarchyMap)
+      .filter(function (id) {
+        var allCsvIds = data.collections.concat(data.works).map(function (i) { return i.id })
+        return allCsvIds.indexOf(id) === -1
+      })
+      .map(function (id) {
+        return { id: id, title: id, type: 'existing', parentIds: [], existing: true }
+      })
     var visited = new Set()
     var hierarchyContent =
       '<div class="hierarchy-tree">' +
+      existingRoots
+        .map(function (e) {
+          return renderTreeItem(e, hierarchyMap, 0, visited)
+        })
+        .join('') +
       topLevelCollections
         .map(function (c) {
           return renderTreeItem(c, hierarchyMap, 0, visited)
@@ -1925,8 +1965,9 @@
 
     var children = hierarchyMap[item.id] || []
     var hasChildren = children.length > 0
+    var isExisting = !!item.existing
     var icon = item.type === 'collection' ? 'fa-folder' : 'fa-file-o'
-    var iconColor = item.type === 'collection' ? 'text-primary' : 'text-muted'
+    var iconColor = isExisting ? 'text-muted' : (item.type === 'collection' ? 'text-primary' : 'text-muted')
     // Hidden chevron still takes up space (via fixed width in CSS) to prevent icon shifting
     var chevronClass = hasChildren ? 'tree-chevron' : 'tree-chevron tree-chevron-hidden'
     var chevron = '<span class="fa fa-chevron-right ' + chevronClass + '"></span>'
@@ -1944,8 +1985,13 @@
       ? ' tabindex="0" role="treeitem" aria-expanded="false"'
       : ''
 
+    var existingBadge = isExisting
+      ? '<span class="tree-existing-badge" title="' + t('existing_record_title') + '">' +
+        t('existing_record_badge') + '</span>'
+      : ''
+
     var html =
-      '<div class="tree-item" data-item-id="' +
+      '<div class="tree-item' + (isExisting ? ' tree-item-existing' : '') + '" data-item-id="' +
       safeId +
       '"' + treeItemAttrs + ' style="padding-left: ' +
       paddingLeft +
@@ -1956,7 +2002,7 @@
       ' ' +
       iconColor +
       '"></span>' +
-      '<span class="tree-label">' +
+      '<span class="tree-label' + (isExisting ? ' tree-label-existing' : '') + '">' +
       safeTitle +
       '</span>' +
       (item.parentIds && item.parentIds.length > 1
@@ -1965,6 +2011,7 @@
         '<span class="fa fa-link"></span> ' + t('shared_badge') + '</span>'
         : '') +
       count +
+      existingBadge +
       '</div>'
 
     if (hasChildren) {

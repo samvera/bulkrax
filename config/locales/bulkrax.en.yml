@@ -209,6 +209,8 @@ en:
           review_total: "%{total} total — %{collections} collections, %{works} works, %{file_sets} file sets"
           review_visibility: 'Visibility:'
           server_error: Server error during validation. Please try again or contact support.
+          existing_record_badge: existing
+          existing_record_title: This record already exists in the repository and will be linked during import
           shared_badge: shared
           starting: Starting...
           upload_csv_and_zip: CSV + files uploaded separately
@@ -340,6 +342,10 @@ en:
             errors:
               message: "Referenced parent '%{value}' does not exist as a %{field} in this CSV."
               suggestion: "Check for typos or add the parent record."
+          child_reference_validator:
+            errors:
+              message: "Referenced child '%{value}' does not exist as a %{field} in this CSV."
+              suggestion: "Check for typos or add the child record."
           passed: Validation Passed
           passed_warnings: Validation Passed with Warnings
           recognized_fields: 'Recognized fields: %{fields}'

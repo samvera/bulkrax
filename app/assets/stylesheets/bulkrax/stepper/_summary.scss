@@ -100,6 +100,28 @@ $summary-variants: (
   color: $color-text-dark;
 }
 
+.tree-item-existing {
+  opacity: 0.7;
+}
+
+.tree-label-existing {
+  color: $color-text-muted;
+  font-style: italic;
+}
+
+.tree-existing-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  color: $color-text-muted;
+  background: $bg-muted;
+  border-radius: 10px;
+  padding: 1px 7px;
+  margin-left: 6px;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
 .tree-shared-badge {
   display: inline-flex;
   align-items: center;
