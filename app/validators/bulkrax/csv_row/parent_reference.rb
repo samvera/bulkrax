@@ -11,20 +11,10 @@ module Bulkrax
     # Uses context[:parent_split_pattern] (String/Regexp, may be nil) for multi-value splitting.
     module ParentReference
       def self.call(record, row_index, context)
-        parents = record[:parent]
-        return if parents.blank?
-
         all_ids = context[:all_ids]
-        split_pattern = context[:parent_split_pattern]
         find_record = context[:find_record_by_source_identifier]
 
-        parent_ids = if split_pattern
-                       parents.to_s.split(split_pattern).map(&:strip).reject(&:blank?)
-                     else
-                       [parents.to_s.strip]
-                     end
-
-        parent_ids.each do |parent_id|
+        collect_parent_ids(record, context).each do |parent_id|
           next if all_ids.include?(parent_id)
           next if find_record&.call(parent_id)
 
@@ -42,6 +32,28 @@ module Bulkrax
           }
         end
       end
+
+      def self.collect_parent_ids(record, context)
+        split_pattern = context[:parent_split_pattern]
+        parent_column = context[:parent_column] || 'parents'
+
+        base_ids = if split_pattern
+                     record[:parent].to_s.split(split_pattern).map(&:strip).reject(&:blank?)
+                   elsif record[:parent].present?
+                     [record[:parent].to_s.strip]
+                   else
+                     []
+                   end
+
+        suffix_pattern = /\A#{Regexp.escape(parent_column)}_\d+\z/
+        suffix_ids = record[:raw_row]
+                     .select { |k, _| k.to_s.match?(suffix_pattern) }
+                     .values
+                     .map(&:to_s).map(&:strip).reject(&:blank?)
+
+        (base_ids + suffix_ids).uniq
+      end
+      private_class_method :collect_parent_ids
     end
   end
 end

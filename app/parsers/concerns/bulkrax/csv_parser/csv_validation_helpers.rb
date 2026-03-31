@@ -56,7 +56,7 @@ module Bulkrax
         all_cols - CsvTemplate::CsvBuilder::IGNORED_PROPERTIES
       rescue StandardError => e
         Rails.logger.error("CsvParser.validate_csv: error building valid headers – #{e.message}")
-        standard = %w[model source_identifier parent parents file]
+        standard = %w[model source_identifier parents children file]
         model_fields = field_metadata.values.flat_map { |m| m[:properties] }
         (standard + model_fields).uniq
       end
@@ -169,8 +169,24 @@ module Bulkrax
         false
       end
 
+      # Returns the raw CSV column name (String) for a relationship field.
+      # Looks for the mapping entry flagged with +flag+ and returns its first +from+ value,
+      # falling back to +default+ when none is found.
+      def resolve_relationship_column(mappings, flag, default)
+        entry = mappings.find { |_k, v| v.is_a?(Hash) && v[flag] }
+        entry&.last&.dig('from')&.first || default
+      end
+
       def resolve_parent_split_pattern(mappings)
         split_val = mappings.dig('parents', 'split') || mappings.dig(:parents, :split)
+        return nil if split_val.blank?
+        return Bulkrax::DEFAULT_MULTI_VALUE_ELEMENT_SPLIT_ON if split_val == true
+
+        split_val
+      end
+
+      def resolve_children_split_pattern(mappings)
+        split_val = mappings.dig('children', 'split') || mappings.dig(:children, :split)
         return nil if split_val.blank?
         return Bulkrax::DEFAULT_MULTI_VALUE_ELEMENT_SPLIT_ON if split_val == true
 

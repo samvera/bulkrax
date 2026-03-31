@@ -1905,22 +1905,21 @@
       .map(function (id) {
         return { id: id, title: id, type: 'existing', parentIds: [], existing: true }
       })
-    var visited = new Set()
     var hierarchyContent =
       '<div class="hierarchy-tree">' +
       existingRoots
         .map(function (e) {
-          return renderTreeItem(e, hierarchyMap, 0, visited)
+          return renderTreeItem(e, hierarchyMap, 0, new Set())
         })
         .join('') +
       topLevelCollections
         .map(function (c) {
-          return renderTreeItem(c, hierarchyMap, 0, visited)
+          return renderTreeItem(c, hierarchyMap, 0, new Set())
         })
         .join('') +
       orphanWorks
         .map(function (w) {
-          return renderTreeItem(w, hierarchyMap, 0, visited)
+          return renderTreeItem(w, hierarchyMap, 0, new Set())
         })
         .join('') +
       '</div>'
@@ -2019,7 +2018,7 @@
         '<div class="tree-children" style="display: none;">' +
         children
           .map(function (c) {
-            return renderTreeItem(c, hierarchyMap, depth + 1, visited)
+            return renderTreeItem(c, hierarchyMap, depth + 1, new Set(visited))
           })
           .join('') +
         '</div>'

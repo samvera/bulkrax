@@ -12,16 +12,12 @@ module Bulkrax
     # configured, since generated identifiers cannot be cross-referenced at validation time.
     module ChildReference
       def self.call(record, row_index, context)
-        children = record[:children]
-        return if children.blank?
-
         all_ids = context[:all_ids]
         return if all_ids.empty? && Bulkrax.fill_in_blank_source_identifiers.present?
 
         find_record = context[:find_record_by_source_identifier]
-        child_ids = children.to_s.split('|').map(&:strip).reject(&:blank?)
 
-        child_ids.each do |child_id|
+        collect_child_ids(record, context).each do |child_id|
           next if all_ids.include?(child_id)
           next if find_record&.call(child_id)
 
@@ -39,6 +35,22 @@ module Bulkrax
           }
         end
       end
+
+      def self.collect_child_ids(record, context)
+        split_pattern = context[:child_split_pattern] || '|'
+        children_column = context[:children_column] || 'children'
+
+        base_ids = record[:children].to_s.split(split_pattern).map(&:strip).reject(&:blank?)
+
+        suffix_pattern = /\A#{Regexp.escape(children_column)}_\d+\z/
+        suffix_ids = record[:raw_row]
+                     .select { |k, _| k.to_s.match?(suffix_pattern) }
+                     .values
+                     .map(&:to_s).map(&:strip).reject(&:blank?)
+
+        (base_ids + suffix_ids).uniq
+      end
+      private_class_method :collect_child_ids
     end
   end
 end

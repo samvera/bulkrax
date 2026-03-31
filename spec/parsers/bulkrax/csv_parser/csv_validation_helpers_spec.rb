@@ -138,6 +138,57 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
     end
   end
 
+  describe '#build_valid_validation_headers' do
+    let(:mapping_manager) { instance_double(Bulkrax::CsvTemplate::MappingManager) }
+    let(:field_analyzer)  { instance_double(Bulkrax::CsvTemplate::FieldAnalyzer) }
+    let(:field_metadata)  { { 'GenericWork' => { properties: %w[title creator] } } }
+    let(:mappings)        { {} }
+
+    context 'when ColumnBuilder raises' do
+      before do
+        allow(Bulkrax::CsvTemplate::ColumnBuilder).to receive(:new).and_raise(StandardError, 'boom')
+      end
+
+      it 'falls back to a standard header list that includes both parents and children' do
+        result = host.build_valid_validation_headers(mapping_manager, field_analyzer, [], mappings, field_metadata)
+        expect(result).to include('parents', 'children')
+      end
+
+      it 'does not include the legacy singular parent column in the fallback' do
+        result = host.build_valid_validation_headers(mapping_manager, field_analyzer, [], mappings, field_metadata)
+        expect(result).not_to include('parent')
+      end
+
+      it 'includes model fields from field_metadata in the fallback' do
+        result = host.build_valid_validation_headers(mapping_manager, field_analyzer, [], mappings, field_metadata)
+        expect(result).to include('title', 'creator')
+      end
+    end
+  end
+
+  describe '#resolve_children_split_pattern' do
+    it 'returns nil when no split is configured for children' do
+      mappings = {}
+      expect(host.resolve_children_split_pattern(mappings)).to be_nil
+    end
+
+    it 'returns nil when children mapping has no split key' do
+      mappings = { 'children' => { 'from' => ['children'] } }
+      expect(host.resolve_children_split_pattern(mappings)).to be_nil
+    end
+
+    it 'returns DEFAULT_MULTI_VALUE_ELEMENT_SPLIT_ON when split is true' do
+      mappings = { 'children' => { 'split' => true } }
+      expect(host.resolve_children_split_pattern(mappings))
+        .to eq(Bulkrax::DEFAULT_MULTI_VALUE_ELEMENT_SPLIT_ON)
+    end
+
+    it 'returns the custom split string when split is a string' do
+      mappings = { 'children' => { 'split' => ';' } }
+      expect(host.resolve_children_split_pattern(mappings)).to eq(';')
+    end
+  end
+
   describe '#build_find_record' do
     let(:mapping_manager) { instance_double(Bulkrax::CsvTemplate::MappingManager) }
     let(:mappings)        { {} }
