@@ -192,6 +192,64 @@ module Bulkrax
 
         split_val
       end
+
+      # Builds a graph of { source_identifier => [parent_ids] } from all CSV records.
+      # Used by CircularReference validator to detect cycles across the whole CSV.
+      #
+      # Parent edges are collected from both directions:
+      #   - explicit parent declarations (parents / parents_N columns)
+      #   - inverted child declarations (children / children_N columns), mirroring
+      #     the normalisation done in importers_stepper.js#normalizeRelationships
+      def build_relationship_graph(csv_data, mappings)
+        parent_column   = resolve_relationship_column(mappings, 'related_parents_field_mapping', 'parents')
+        children_column = resolve_relationship_column(mappings, 'related_children_field_mapping', 'children')
+        parent_suffix   = /\A#{Regexp.escape(parent_column)}_\d+\z/
+        children_suffix = /\A#{Regexp.escape(children_column)}_\d+\z/
+
+        graph = build_parent_edges(csv_data, parent_suffix, resolve_parent_split_pattern(mappings))
+        invert_child_edges(graph, csv_data, children_suffix, resolve_children_split_pattern(mappings))
+        graph
+      end
+
+      def build_parent_edges(csv_data, suffix_pattern, split_pattern)
+        csv_data.each_with_object({}) do |record, graph|
+          id = record[:source_identifier]
+          next if id.blank?
+
+          base_ids = split_or_single(record[:parent], split_pattern)
+          suffix_ids = suffixed_values(record[:raw_row], suffix_pattern)
+          graph[id] = (base_ids + suffix_ids).uniq
+        end
+      end
+
+      def invert_child_edges(graph, csv_data, suffix_pattern, split_pattern)
+        csv_data.each do |record|
+          id = record[:source_identifier]
+          next if id.blank?
+
+          child_ids = split_or_single(record[:children], split_pattern) +
+                      suffixed_values(record[:raw_row], suffix_pattern)
+          child_ids.each do |child_id|
+            graph[child_id] ||= []
+            graph[child_id] << id unless graph[child_id].include?(id)
+          end
+        end
+      end
+
+      def split_or_single(value, split_pattern)
+        if split_pattern
+          value.to_s.split(split_pattern).map(&:strip).reject(&:blank?)
+        elsif value.present?
+          [value.to_s.strip]
+        else
+          []
+        end
+      end
+
+      def suffixed_values(raw_row, suffix_pattern)
+        raw_row.select { |k, _| k.to_s.match?(suffix_pattern) }
+               .values.map(&:to_s).map(&:strip).reject(&:blank?)
+      end
     end
   end
 end
