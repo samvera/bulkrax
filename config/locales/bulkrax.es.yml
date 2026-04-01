@@ -158,6 +158,7 @@ es:
           gauge_large_msg: Las importaciones grandes tardan más y son más difíciles de depurar. Recomendamos encarecidamente dividirlas en lotes de %{limit} o menos.
           gauge_moderate: Moderado
           gauge_moderate_msg: Considere dividirlo en lotes más pequeños para facilitar la resolución de errores.
+          download_validation_errors_csv: Descargar CSV de errores
           gauge_optimal: Óptimo
           gauge_optimal_msg: "¡Genial! Las importaciones más pequeñas son más fáciles de validar y solucionar."
           hierarchy_too_deep: Jerarquía demasiado profunda (máximo %{max} niveles)

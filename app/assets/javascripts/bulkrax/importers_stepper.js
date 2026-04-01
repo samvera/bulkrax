@@ -94,7 +94,8 @@
     // API endpoints
     ENDPOINTS: {
       DEMO_SCENARIOS: '/importers/guided_import/demo_scenarios',
-      VALIDATE: '/importers/guided_import/validate'
+      VALIDATE: '/importers/guided_import/validate',
+      DOWNLOAD_VALIDATION_ERRORS: '/importers/guided_import/download_validation_errors'
     }
   }
 
@@ -1560,7 +1561,8 @@
       missingFiles: data.missingFiles || data.missing_files,
       foundFiles: data.foundFiles != null ? data.foundFiles : data.found_files,
       zipIncluded: data.zipIncluded != null ? data.zipIncluded : data.zip_included,
-      messages: data.messages
+      messages: data.messages,
+      validationErrorsCacheKey: data.validationErrorsCacheKey || null
     }
   }
 
@@ -1652,6 +1654,24 @@
     // Warning/error acknowledgment
     if (data.hasWarnings || !data.isValid) {
       $('.warning-acknowledgment').show()
+    }
+
+    // Download errors button
+    if (data.validationErrorsCacheKey) {
+      var downloadUrl =
+        CONSTANTS.ENDPOINTS.DOWNLOAD_VALIDATION_ERRORS + '?key=' + encodeURIComponent(data.validationErrorsCacheKey)
+      var $btn = $(
+        '<a class="btn btn-outline-secondary btn-sm mt-2" href="' +
+          downloadUrl +
+          '" download>' +
+          '<i class="fa fa-download"></i> ' +
+          t('download_validation_errors_csv') +
+          '</a>'
+      )
+      $('.validation-results .download-errors-container').remove()
+      $('.validation-results').append($('<div class="download-errors-container mt-2"></div>').append($btn))
+    } else {
+      $('.validation-results .download-errors-container').remove()
     }
   }
 

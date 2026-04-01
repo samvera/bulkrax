@@ -47,6 +47,7 @@ module Bulkrax
             file_sets: file_sets
           )
           apply_rights_statement_validation_override!(result, missing_required)
+          result[:raw_csv_data] = csv_data
           result
         end
 
