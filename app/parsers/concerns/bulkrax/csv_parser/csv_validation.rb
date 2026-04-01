@@ -112,7 +112,8 @@ module Bulkrax
             children_column: resolve_relationship_column(mappings, 'related_children_field_mapping', 'children'),
             mappings: mappings,
             field_metadata: field_metadata,
-            find_record_by_source_identifier: find_record
+            find_record_by_source_identifier: find_record,
+            relationship_graph: build_relationship_graph(csv_data, mappings)
           }
           csv_data.each_with_index do |record, index|
             row_number = index + 2 # 1-indexed, plus header row

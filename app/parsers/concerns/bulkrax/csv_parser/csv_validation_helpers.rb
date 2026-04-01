@@ -192,6 +192,64 @@ module Bulkrax
 
         split_val
       end
+
+      # Builds a graph of { source_identifier => [parent_ids] } from all CSV records.
+      # Used by CircularReference validator to detect cycles across the whole CSV.
+      #
+      # Parent edges are collected from both directions:
+      #   - explicit parent declarations (parents / parents_N columns)
+      #   - inverted child declarations (children / children_N columns), mirroring
+      #     the normalisation done in importers_stepper.js#normalizeRelationships
+      def build_relationship_graph(csv_data, mappings)
+        parent_column        = resolve_relationship_column(mappings, 'related_parents_field_mapping', 'parents')
+        children_column      = resolve_relationship_column(mappings, 'related_children_field_mapping', 'children')
+        parent_split_pattern = resolve_parent_split_pattern(mappings)
+        child_split_pattern  = resolve_children_split_pattern(mappings)
+        parent_suffix        = /\A#{Regexp.escape(parent_column)}_\d+\z/
+        children_suffix      = /\A#{Regexp.escape(children_column)}_\d+\z/
+
+        graph = csv_data.each_with_object({}) do |record, g|
+          id = record[:source_identifier]
+          next if id.blank?
+
+          base_ids = if parent_split_pattern
+                       record[:parent].to_s.split(parent_split_pattern).map(&:strip).reject(&:blank?)
+                     elsif record[:parent].present?
+                       [record[:parent].to_s.strip]
+                     else
+                       []
+                     end
+          suffix_ids = record[:raw_row]
+                       .select { |k, _| k.to_s.match?(parent_suffix) }
+                       .values.map(&:to_s).map(&:strip).reject(&:blank?)
+
+          g[id] = (base_ids + suffix_ids).uniq
+        end
+
+        # Invert child declarations into parent edges
+        csv_data.each do |record|
+          id = record[:source_identifier]
+          next if id.blank?
+
+          base_child_ids = if child_split_pattern
+                             record[:children].to_s.split(child_split_pattern).map(&:strip).reject(&:blank?)
+                           elsif record[:children].present?
+                             [record[:children].to_s.strip]
+                           else
+                             []
+                           end
+          suffix_child_ids = record[:raw_row]
+                             .select { |k, _| k.to_s.match?(children_suffix) }
+                             .values.map(&:to_s).map(&:strip).reject(&:blank?)
+
+          (base_child_ids + suffix_child_ids).each do |child_id|
+            graph[child_id] ||= []
+            graph[child_id] << id unless graph[child_id].include?(id)
+          end
+        end
+
+        graph
+      end
     end
   end
 end

@@ -184,6 +184,7 @@ module Bulkrax
         Bulkrax::CsvRow::DuplicateIdentifier,
         Bulkrax::CsvRow::ParentReference,
         Bulkrax::CsvRow::ChildReference,
+        Bulkrax::CsvRow::CircularReference,
         Bulkrax::CsvRow::RequiredValues,
         Bulkrax::CsvRow::ControlledVocabulary
       ]

@@ -346,6 +346,10 @@ en:
             errors:
               message: "Referenced child '%{value}' does not exist as a %{field} in this CSV."
               suggestion: "Check for typos or add the child record."
+          circular_reference_validator:
+            errors:
+              message: "'%{value}' is part of a circular parent-child relationship."
+              suggestion: "Review the parent/child columns and remove the incorrect references."
           passed: Validation Passed
           passed_warnings: Validation Passed with Warnings
           recognized_fields: 'Recognized fields: %{fields}'
