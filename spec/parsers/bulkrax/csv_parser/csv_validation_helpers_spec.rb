@@ -189,6 +189,93 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
     end
   end
 
+  describe '#build_relationship_graph' do
+    let(:mappings) { {} }
+
+    def record(source_identifier, parent: nil, children: nil, raw_row: {})
+      { source_identifier: source_identifier, parent: parent, children: children, raw_row: raw_row }
+    end
+
+    def graph(csv_data)
+      host.build_relationship_graph(csv_data, mappings)
+    end
+
+    context 'with only parent declarations' do
+      it 'maps each record to its declared parents' do
+        data = [record('child', parent: 'parent1'), record('parent1')]
+        expect(graph(data)).to include('child' => ['parent1'], 'parent1' => [])
+      end
+    end
+
+    context 'with suffixed parent columns (parents_1, parents_2)' do
+      it 'includes all suffixed parent values' do
+        data = [
+          record('child', raw_row: { 'parents_1' => 'p1', 'parents_2' => 'p2' }),
+          record('p1'),
+          record('p2')
+        ]
+        result = graph(data)
+        expect(result['child']).to contain_exactly('p1', 'p2')
+      end
+    end
+
+    context 'with only children declarations' do
+      it 'inverts children into parent edges on the child records' do
+        data = [record('parent1', children: 'child1'), record('child1')]
+        result = graph(data)
+        expect(result['child1']).to include('parent1')
+      end
+    end
+
+    context 'with suffixed children columns (children_1, children_2)' do
+      it 'inverts all suffixed children into parent edges' do
+        data = [
+          record('parent1', raw_row: { 'children_1' => 'c1', 'children_2' => 'c2' }),
+          record('c1'),
+          record('c2')
+        ]
+        result = graph(data)
+        expect(result['c1']).to include('parent1')
+        expect(result['c2']).to include('parent1')
+      end
+    end
+
+    context 'with a cycle declared via children columns (matching rel-circular-ref.csv pattern)' do
+      # child1 declares children=child2; child2 declares children=child1
+      # After inversion: child1 → [child2] and child2 → [child1]
+      it 'builds a graph that allows cycle detection to flag both nodes' do
+        data = [
+          record('parent1'),
+          record('parent2'),
+          record('child1', children: 'child2', raw_row: { 'parents_1' => 'parent1', 'parents_2' => 'parent2' }),
+          record('child2', children: 'child1')
+        ]
+        result = graph(data)
+        expect(result['child1']).to include('child2')
+        expect(result['child2']).to include('child1')
+      end
+    end
+
+    context 'when a child is already declared as a parent of the same record' do
+      it 'does not add duplicate edges' do
+        data = [
+          record('a', parent: 'b'),
+          record('b', children: 'a')
+        ]
+        result = graph(data)
+        expect(result['a'].count('b')).to eq(1)
+      end
+    end
+
+    context 'with blank source_identifier' do
+      it 'skips the record' do
+        data = [record(nil, parent: 'p1'), record('p1')]
+        result = graph(data)
+        expect(result.keys).not_to include(nil)
+      end
+    end
+  end
+
   describe '#build_find_record' do
     let(:mapping_manager) { instance_double(Bulkrax::CsvTemplate::MappingManager) }
     let(:mappings)        { {} }
