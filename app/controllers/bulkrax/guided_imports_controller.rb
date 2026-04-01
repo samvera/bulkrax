@@ -37,9 +37,30 @@ module Bulkrax
       end
 
       admin_set_id = params[:importer]&.[](:admin_set_id)
-      render json: StepperResponseFormatter.format(run_validation(csv_file, zip_file, admin_set_id: admin_set_id)), status: :ok
+      validation_result = run_validation(csv_file, zip_file, admin_set_id: admin_set_id)
+      raw_csv_data = validation_result.delete(:raw_csv_data)
+      cache_key = cache_validation_errors(validation_result, raw_csv_data)
+      formatted = StepperResponseFormatter.format(validation_result)
+      formatted[:validationErrorsCacheKey] = cache_key
+      render json: formatted, status: :ok
     ensure
       close_file_handles(files)
+    end
+
+    def download_validation_errors
+      cache_key = params[:key].to_s
+      expected_prefix = "guided_import_errors:#{session.id}:"
+      return head :not_found unless cache_key.start_with?(expected_prefix)
+
+      cached = Rails.cache.read(cache_key)
+      return head :not_found unless cached
+
+      csv = ValidationErrorCsvBuilder.build(
+        headers: cached[:headers],
+        csv_data: cached[:csv_data],
+        row_errors: cached[:row_errors]
+      )
+      send_data csv, filename: 'import_validation_errors.csv', type: 'text/csv', disposition: 'attachment'
     end
 
     def create
@@ -84,6 +105,18 @@ module Bulkrax
     # @param zip_file [File, nil] an optional ZIP containing file attachments
     # @param admin_set_id [String, nil] optional admin set ID for validation context
     # @return [Hash] validation result data
+    def cache_validation_errors(validation_result, raw_csv_data)
+      return nil unless validation_result[:rowErrors]&.any?
+
+      key = "guided_import_errors:#{session.id}:#{Time.now.to_i}"
+      Rails.cache.write(
+        key,
+        { headers: validation_result[:headers], csv_data: raw_csv_data, row_errors: validation_result[:rowErrors] },
+        expires_in: 1.hour
+      )
+      key
+    end
+
     def run_validation(csv_file, zip_file, admin_set_id: nil)
       CsvParser.validate_csv(csv_file: csv_file, zip_file: zip_file, admin_set_id: admin_set_id)
     end

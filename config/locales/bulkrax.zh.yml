@@ -158,6 +158,7 @@ zh:
           gauge_large_msg: 大型导入操作耗时更长，调试难度也更大。我们强烈建议将导入操作拆分成若干批次，每批次不超过 %{limit} 个文件。
           gauge_moderate: 缓和
           gauge_moderate_msg: 为了便于排查错误，可以考虑分成更小的批次进行处理。
+          download_validation_errors_csv: 下载错误 CSV
           gauge_optimal: 最佳的
           gauge_optimal_msg: 太好了！较小的导入操作更容易验证和排查问题。
           hierarchy_too_deep: 层级过深（最多 %{max} 层）

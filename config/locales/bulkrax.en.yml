@@ -183,6 +183,7 @@ en:
           gauge_large_msg: Large imports take longer and are harder to debug. We strongly recommend splitting into batches of %{limit} or fewer.
           gauge_moderate: Moderate
           gauge_moderate_msg: Consider splitting into smaller batches for easier error resolution.
+          download_validation_errors_csv: Download errors CSV
           gauge_optimal: Optimal
           gauge_optimal_msg: Great! Smaller imports are easier to validate and troubleshoot.
           hierarchy_too_deep: Hierarchy too deep (max %{max} levels)
