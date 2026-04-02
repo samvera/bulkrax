@@ -30,6 +30,22 @@ module Bulkrax
           }
         else
           context[:seen_ids][source_id] = row_index
+          find_record = context[:find_record_by_source_identifier]
+          if find_record&.call(source_id)
+            context[:errors] << {
+              row: row_index,
+              source_identifier: source_id,
+              severity: 'warning',
+              category: 'existing_source_identifier',
+              column: source_id_label,
+              value: source_id,
+              message: I18n.t('bulkrax.importer.guided_import.validation.existing_source_identifier_validator.warnings.message',
+                              value: source_id,
+                              field: source_id_label),
+              suggestion: I18n.t('bulkrax.importer.guided_import.validation.existing_source_identifier_validator.warnings.suggestion',
+                                 field: source_id_label)
+            }
+          end
         end
       end
     end

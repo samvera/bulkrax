@@ -295,6 +295,10 @@ fr:
             errors:
               message: "%{field} en double « %{value} » — apparaît également à la ligne %{original_row}."
               suggestion: "Chaque %{field} doit être unique dans le CSV."
+          existing_source_identifier_validator:
+            warnings:
+              message: "« %{value} » correspond à un enregistrement existant dans le dépôt — cette ligne le mettra à jour."
+              suggestion: "Si vous ne souhaitiez pas mettre à jour un enregistrement existant, modifiez la valeur de %{field}."
           failed: Échec de la validation
           file_path_not_exist: Le chemin d'accès au fichier n'existe pas.
           file_references_title: Références de fichiers
@@ -302,6 +306,10 @@ fr:
           files_missing_from_zip: "%{count} %{files_word} référencé dans votre fichier CSV mais absent du fichier ZIP :"
           files_referenced: "%{count} fichiers référencés dans le fichier CSV sont introuvables lors de l'importation."
           missing_from_zip: manquant dans le fichier ZIP
+          missing_source_identifier_validator:
+            errors:
+              message: "Il manque une valeur pour '%{field}' dans cette ligne."
+              suggestion: "Ajoutez une valeur '%{field}' à cette ligne ou configurez Bulkrax pour générer automatiquement des identifiants source."
           missing_required_desc: 'Les colonnes suivantes doivent être ajoutées à votre fichier CSV :'
           missing_required_hint: Ajoutez cette colonne à votre fichier CSV.
           missing_required_title: Champs obligatoires manquants

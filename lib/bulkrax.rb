@@ -181,6 +181,7 @@ module Bulkrax
     #   Defaults to the four built-in CsvRow:: validators.
     def csv_row_validators
       @csv_row_validators ||= [
+        Bulkrax::CsvRow::MissingSourceIdentifier,
         Bulkrax::CsvRow::DuplicateIdentifier,
         Bulkrax::CsvRow::ParentReference,
         Bulkrax::CsvRow::ChildReference,

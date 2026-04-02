@@ -295,6 +295,10 @@ es:
             errors:
               message: "%{field} duplicado '%{value}': también aparece en la fila %{original_row}."
               suggestion: "Cada %{field} debe ser único dentro del CSV."
+          existing_source_identifier_validator:
+            warnings:
+              message: "'%{value}' coincide con un registro existente en el repositorio — esta fila lo actualizará."
+              suggestion: "Si no tenía intención de actualizar un registro existente, cambie el valor de %{field}."
           failed: Validación fallida
           file_path_not_exist: La ruta del archivo no existe
           file_references_title: Referencias de archivos
@@ -302,6 +306,10 @@ es:
           files_missing_from_zip: "%{count} %{files_word} referenciado en su CSV pero falta en el ZIP:"
           files_referenced: Los archivos %{count} referenciados en CSV no se encontraron en la importación.
           missing_from_zip: Falta en el código postal
+          missing_source_identifier_validator:
+            errors:
+              message: "Falta un valor para '%{field}' en esta fila."
+              suggestion: "Añada un valor de '%{field}' a esta fila o configure Bulkrax para generar identificadores de origen automáticamente."
           missing_required_desc: 'Estas columnas obligatorias deben agregarse a su CSV:'
           missing_required_hint: Añade esta columna a tu CSV
           missing_required_title: Campos obligatorios faltantes

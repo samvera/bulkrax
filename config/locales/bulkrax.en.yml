@@ -322,6 +322,10 @@ en:
             errors:
               message: "Duplicate %{field} '%{value}' — also appears in row %{original_row}."
               suggestion: "Each %{field} must be unique within the CSV."
+          existing_source_identifier_validator:
+            warnings:
+              message: "'%{value}' matches an existing repository record — this row will update it."
+              suggestion: "If you did not intend to update an existing record, change the %{field} value."
           failed: Validation Failed
           file_path_not_exist: File path does not exist
           file_references_title: File References
@@ -329,6 +333,10 @@ en:
           files_missing_from_zip: "%{count} %{files_word} referenced in your CSV but missing from the ZIP:"
           files_referenced: "%{count} files referenced in CSV not found in import."
           missing_from_zip: missing from ZIP
+          missing_source_identifier_validator:
+            errors:
+              message: "Row is missing a value for '%{field}'."
+              suggestion: "Add a '%{field}' value to this row, or configure Bulkrax to generate source identifiers automatically."
           missing_required_desc: 'These required columns must be added to your CSV:'
           missing_required_hint: add this column to your CSV
           missing_required_title: Missing Required Fields

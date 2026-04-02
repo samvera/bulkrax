@@ -294,6 +294,10 @@ zh:
             errors:
               message: "重复的 %{field} '%{value}' — 也出现在第 %{original_row} 行。"
               suggestion: "每个 %{field} 在 CSV 中必须是唯一的。"
+          existing_source_identifier_validator:
+            warnings:
+              message: "'%{value}' 与仓库中的现有记录匹配 — 此行将更新该记录。"
+              suggestion: "如果您不打算更新现有记录，请更改 %{field} 的值。"
           failed: 验证失败
           file_path_not_exist: 文件路径不存在
           file_references_title: 文件引用
@@ -301,6 +305,10 @@ zh:
           files_missing_from_zip: CSV 文件中引用了 %{count} %{files_word}，但 ZIP 文件中缺少该 %{files_word}：
           files_referenced: 导入时未找到 CSV 文件中引用的 %{count} 文件。
           missing_from_zip: ZIP 文件中缺少
+          missing_source_identifier_validator:
+            errors:
+              message: "该行缺少 '%{field}' 的值。"
+              suggestion: "为此行添加 '%{field}' 值，或配置 Bulkrax 以自动生成源标识符。"
           missing_required_desc: 您必须在 CSV 文件中添加以下必填列：
           missing_required_hint: 将此列添加到您的 CSV 文件中
           missing_required_title: 缺少必填字段
