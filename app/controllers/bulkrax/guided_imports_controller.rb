@@ -39,7 +39,7 @@ module Bulkrax
       admin_set_id = params[:importer]&.[](:admin_set_id)
       validation_result = run_validation(csv_file, zip_file, admin_set_id: admin_set_id)
       raw_csv_data = validation_result.delete(:raw_csv_data)
-      cache_key = cache_validation_errors(validation_result, raw_csv_data)
+      cache_key = cache_validation_errors(validation_result, raw_csv_data, csv_file)
       formatted = StepperResponseFormatter.format(validation_result)
       formatted[:validationErrorsCacheKey] = cache_key
       render json: formatted, status: :ok
@@ -58,9 +58,10 @@ module Bulkrax
       csv = ValidationErrorCsvBuilder.build(
         headers: cached[:headers],
         csv_data: cached[:csv_data],
-        row_errors: cached[:row_errors]
+        row_errors: cached[:row_errors],
+        file_errors: cached[:file_errors]
       )
-      send_data csv, filename: 'import_validation_errors.csv', type: 'text/csv', disposition: 'attachment'
+      send_data csv, filename: error_csv_filename(cached[:original_filename]), type: 'text/csv', disposition: 'attachment'
     end
 
     def create
@@ -105,13 +106,29 @@ module Bulkrax
     # @param zip_file [File, nil] an optional ZIP containing file attachments
     # @param admin_set_id [String, nil] optional admin set ID for validation context
     # @return [Hash] validation result data
-    def cache_validation_errors(validation_result, raw_csv_data)
-      return nil unless validation_result[:rowErrors]&.any?
+    def cache_validation_errors(validation_result, raw_csv_data, csv_file)
+      has_errors = validation_result[:rowErrors]&.any? ||
+                   validation_result[:missingRequired]&.any? ||
+                   validation_result[:unrecognized]&.any? ||
+                   validation_result[:emptyColumns]&.any? ||
+                   validation_result[:missingFiles]&.any?
+      return nil unless has_errors
 
       key = "guided_import_errors:#{session.id}:#{Time.now.to_i}"
       Rails.cache.write(
         key,
-        { headers: validation_result[:headers], csv_data: raw_csv_data, row_errors: validation_result[:rowErrors] },
+        {
+          headers: validation_result[:headers],
+          csv_data: raw_csv_data,
+          row_errors: validation_result[:rowErrors] || [],
+          file_errors: {
+            missing_required: validation_result[:missingRequired] || [],
+            unrecognized: validation_result[:unrecognized] || {},
+            empty_columns: validation_result[:emptyColumns] || [],
+            missing_files: validation_result[:missingFiles] || []
+          },
+          original_filename: filename_for(csv_file)
+        },
         expires_in: 1.hour
       )
       key
@@ -132,6 +149,13 @@ module Bulkrax
 
     def apply_field_mapping
       @importer.field_mapping = Bulkrax.field_mappings['Bulkrax::CsvParser']
+    end
+
+    def error_csv_filename(original_filename)
+      return 'import_errors.csv' if original_filename.blank?
+
+      base = File.basename(original_filename, '.*')
+      "#{base}_errors.csv"
     end
 
     def set_locale_from_params
