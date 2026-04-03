@@ -363,12 +363,23 @@ en:
           passed: Validation Passed
           passed_warnings: Validation Passed with Warnings
           recognized_fields: 'Recognized fields: %{fields}'
+          default_work_type_notice:
+            message_column_missing: "No model column found — all rows will be imported as '%{default_work_type}'."
+            message_column_empty: "No model provided — all rows will be imported as '%{default_work_type}'."
+            suggestion_column_empty: "Add model values to the 'model' column in your CSV if you want to use a different work type for some rows."
+            suggestion_column_missing: "Add a 'model' column to your CSV if you want to use a different work type for some rows."
+          default_work_type_validator:
+            warnings:
+              message: "No model specified — this row will be imported as '%{default_work_type}'."
+              suggestion: "Specify a model value in the 'model' column for this row if you want to use a different work type."
           required_field_validator:
             errors:
               message: "Field '%{field}' is required but is empty for this row."
               suggestion: "Add a value for '%{field}'."
           unable_to_process: Unable to process files for validation
           empty_column: 'Column %{column} (no header)'
+          notices_desc: 'These notices may affect how your CSV is imported:'
+          notices_title: Import Notices
           unrecognized_desc: 'These columns will be ignored during import:'
           unrecognized_title: Unrecognized Fields
       validations:

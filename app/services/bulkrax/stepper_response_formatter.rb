@@ -119,6 +119,7 @@ module Bulkrax
     def build_messages
       issues = []
       issues << missing_required_issue if @data[:missingRequired]&.any?
+      issues << notices_issue if @data[:notices]&.any?
       issues << unrecognized_fields_issue if @data[:unrecognized]&.any? || @data[:emptyColumns]&.any?
       issues << file_references_issue if @data[:fileReferences]&.positive?
       issues << row_errors_issue if @data[:rowErrors]&.any? { |e| e[:severity] == 'error' }
@@ -311,9 +312,24 @@ module Bulkrax
       }
     end
 
+    def notices_issue
+      {
+        type: 'notices',
+        severity: 'warning',
+        icon: 'fa-info-circle',
+        title: I18n.t('bulkrax.importer.guided_import.validation.notices_title'),
+        count: @data[:notices].length,
+        description: I18n.t('bulkrax.importer.guided_import.validation.notices_desc'),
+        items: @data[:notices].map { |n| { field: n[:field], message: [n[:message], n[:suggestion]].compact.join(' ') } },
+        defaultOpen: false
+      }
+    end
+
     def filtered_row_errors
       missing_required_columns = @data[:missingRequired]&.map { |h| h[:field].to_s } || []
-      @data[:rowErrors].reject { |e| missing_required_columns.include?(e[:column].to_s) }
+      notice_columns = @data[:notices]&.map { |n| n[:field].to_s } || []
+      suppressed_columns = (missing_required_columns + notice_columns).uniq
+      @data[:rowErrors].reject { |e| suppressed_columns.include?(e[:column].to_s) }
     end
 
     def row_error_items(errors)

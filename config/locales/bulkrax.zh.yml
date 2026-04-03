@@ -327,11 +327,22 @@ zh:
           passed: 验证通过
           passed_warnings: 验证通过，但存在警告
           recognized_fields: 已识别字段：%{fields}
+          default_work_type_validator:
+            warnings:
+              message: "未指定模型 — 此行将以 '%{default_work_type}' 导入。"
+              suggestion: "如果要为此行使用不同的作品类型，请在 'model' 列中指定一个模型值。"
+          default_work_type_notice:
+            message_column_missing: "未找到模型列 — 所有行将以 '%{default_work_type}' 导入。"
+            message_column_empty: "未提供模型 — 所有行将以 '%{default_work_type}' 导入。"
+            suggestion_column_empty: "如果您想为某些行使用不同的作品类型，请在 CSV 的 'model' 列中添加模型值。"
+            suggestion_column_missing: "如果您想为某些行使用不同的作品类型，请在 CSV 中添加 'model' 列。"
           required_field_validator:
             errors:
               message: "字段 '%{field}' 是必填项，但此行中该字段为空。"
               suggestion: "请为 '%{field}' 添加一个值。"
           unable_to_process: 无法处理文件进行验证
+          notices_desc: '这些通知可能会影响您的 CSV 的导入方式：'
+          notices_title: 导入通知
           unrecognized_desc: 导入过程中将忽略以下列：
           unrecognized_title: 未识别字段
       validations:

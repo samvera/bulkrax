@@ -11,12 +11,35 @@ module Bulkrax
         field_metadata = context[:field_metadata]
         return if field_metadata.blank?
 
-        model = record[:model]
-        metadata = field_metadata[model]
+        using_default = record[:model].blank?
+        model         = record[:model].presence || Bulkrax.default_work_type
+        metadata      = field_metadata[model]
         return if metadata.blank?
 
-        required_terms = metadata[:required_terms] || []
-        required_terms.each do |field|
+        add_default_work_type_warning(context, record, row_index, model) if using_default
+        add_missing_required_value_errors(context, record, row_index, metadata)
+      end
+
+      def self.add_default_work_type_warning(context, record, row_index, model)
+        # Suppress per-row warning when a file-level notice already covers all rows.
+        return if context[:notices]&.any? { |n| n[:field] == 'model' }
+
+        context[:errors] << {
+          row: row_index,
+          source_identifier: record[:source_identifier],
+          severity: 'warning',
+          category: 'default_work_type_used',
+          column: 'model',
+          value: nil,
+          message: I18n.t('bulkrax.importer.guided_import.validation.default_work_type_validator.warnings.message',
+                          default_work_type: model),
+          suggestion: I18n.t('bulkrax.importer.guided_import.validation.default_work_type_validator.warnings.suggestion')
+        }
+      end
+      private_class_method :add_default_work_type_warning
+
+      def self.add_missing_required_value_errors(context, record, row_index, metadata)
+        (metadata[:required_terms] || []).each do |field|
           next if record[:raw_row].any? { |key, value| normalize_header(key.to_s) == field && value.present? }
 
           context[:errors] << {
@@ -31,6 +54,7 @@ module Bulkrax
           }
         end
       end
+      private_class_method :add_missing_required_value_errors
 
       def self.normalize_header(header)
         header.sub(/_\d+\z/, '')
