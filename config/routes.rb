@@ -14,8 +14,11 @@ Bulkrax::Engine.routes.draw do
     get  'new/guided_import',          to: 'guided_imports#new',      as: :guided_import_new
     post 'guided_import',              to: 'guided_imports#create',   as: :guided_import_create
     post 'guided_import/validate',     to: 'guided_imports#validate', as: :guided_import_validate
+    post 'guided_import/metrics',      to: 'import_metrics#record_metric', as: :guided_import_metrics
     get  'guided_import/download_validation_errors', to: 'guided_imports#download_validation_errors', as: :guided_import_download_validation_errors
     get 'guided_import/demo_scenarios', to: 'guided_imports#demo_scenarios', as: :guided_import_demo_scenarios if Bulkrax.config.guided_import_demo_scenarios_enabled
+    get 'metrics',        to: 'import_metrics#index',  as: :import_metrics
+    get 'metrics/export', to: 'import_metrics#export', as: :import_metrics_export
   end
 
   resources :importers do
