@@ -95,7 +95,8 @@
     ENDPOINTS: {
       DEMO_SCENARIOS: '/importers/guided_import/demo_scenarios',
       VALIDATE: '/importers/guided_import/validate',
-      DOWNLOAD_VALIDATION_ERRORS: '/importers/guided_import/download_validation_errors'
+      DOWNLOAD_VALIDATION_ERRORS: '/importers/guided_import/download_validation_errors',
+      METRICS: null // set from data-metrics-url on container init
     }
   }
 
@@ -140,6 +141,9 @@
     }
 
     eventsInitialized = false
+
+    var metricsUrl = $('.bulk-import-stepper-container').data('metrics-url')
+    MetricsTracker.init(metricsUrl)
 
     bindEvents()
     initAdminSetState()
@@ -1397,6 +1401,7 @@
   // Update UI after successful validation
   function handleValidationSuccess(data, $btn) {
     var normalized = normalizeValidationData(data)
+    MetricsTracker.recordValidation(normalized)
     StepperState.validated = true
     StepperState.validationData = normalized
 
@@ -1459,6 +1464,7 @@
 
   // Validate files (AJAX call to backend)
   function validateFiles() {
+    MetricsTracker.recordValidationStart()
     var $btn = StepperState.uploadMode === 'file_path' ? $('#validate-path-btn') : $('#validate-upload-btn')
     $btn
       .prop('disabled', true)
@@ -2105,6 +2111,7 @@
   // Navigate to step
   function goToStep(stepNum) {
     StepperState.currentStep = stepNum
+    MetricsTracker.recordStep(stepNum)
     updateStepperUI()
 
     // Scroll to top, then move focus to the new step's heading
@@ -2369,6 +2376,9 @@
       })
     }
 
+    // Record timing before submit
+    MetricsTracker.recordSubmit()
+
     // Submit the form so the request hits GuidedImportsController#create and creates the importer / enqueues job
     $form[0].submit()
   }
@@ -2413,6 +2423,90 @@
         $(this).remove()
       })
     })
+  }
+
+  // ============================================================================
+  // METRICS TRACKER
+  // ============================================================================
+
+  var MetricsTracker = {
+    sessionId: null,
+    stepTimestamps: {},
+
+    init: function (metricsEndpoint) {
+      CONSTANTS.ENDPOINTS.METRICS = metricsEndpoint || null
+      this.sessionId = 'gi_' + Math.random().toString(36).substr(2, 9)
+      this.stepTimestamps = {}
+      this.stepTimestamps.step1 = Date.now()
+      this.send('funnel', 'step_reached', { step: 1 })
+    },
+
+    recordStep: function (stepNum) {
+      this.stepTimestamps['step' + stepNum] = Date.now()
+      this.send('funnel', 'step_reached', { step: stepNum })
+    },
+
+    recordValidationStart: function () {
+      this.stepTimestamps.validationStart = Date.now()
+    },
+
+    recordValidation: function (validationData) {
+      var start = this.stepTimestamps.validationStart || Date.now()
+      this.send('validation', 'validation_complete', {
+        outcome: validationData.isValid
+          ? (validationData.hasWarnings ? 'pass_with_warnings' : 'pass')
+          : 'fail',
+        row_count:   validationData.rowCount || 0,
+        duration_ms: Date.now() - start,
+        has_zip:     !!validationData.zipIncluded
+      })
+    },
+
+    recordSubmit: function () {
+      var now = Date.now()
+      var timings = { total_session_ms: now - (this.stepTimestamps.step1 || now) }
+      var steps = ['step1', 'step2', 'step3']
+      var nexts = ['step2', 'step3', null]
+      steps.forEach(function (step, i) {
+        var nextStep = nexts[i]
+        if (MetricsTracker.stepTimestamps[step]) {
+          var end = nextStep && MetricsTracker.stepTimestamps[nextStep]
+            ? MetricsTracker.stepTimestamps[nextStep]
+            : now
+          timings[step + '_duration_ms'] = end - MetricsTracker.stepTimestamps[step]
+        }
+      })
+      this.send('timing', 'session_complete', timings)
+    },
+
+    recordFeedback: function (rating, comment, importerId) {
+      this.send('feedback', 'seq_rating', {
+        seq_rating:  rating,
+        comment:     comment || '',
+        importer_id: importerId
+      })
+    },
+
+    send: function (metricType, event, payload) {
+      if (!CONSTANTS.ENDPOINTS.METRICS) return
+      var data = JSON.stringify({
+        metric_type: metricType,
+        event:       event,
+        session_id:  this.sessionId,
+        payload:     payload
+      })
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon(CONSTANTS.ENDPOINTS.METRICS, new Blob([data], { type: 'application/json' }))
+      } else {
+        $.ajax({
+          url:         CONSTANTS.ENDPOINTS.METRICS,
+          method:      'POST',
+          data:        data,
+          contentType: 'application/json',
+          headers:     { 'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content') }
+        })
+      }
+    }
   }
 
   // Initialize on document ready and turbolinks load
