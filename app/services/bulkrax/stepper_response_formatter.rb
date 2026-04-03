@@ -121,7 +121,8 @@ module Bulkrax
       issues << missing_required_issue if @data[:missingRequired]&.any?
       issues << unrecognized_fields_issue if @data[:unrecognized]&.any? || @data[:emptyColumns]&.any?
       issues << file_references_issue if @data[:fileReferences]&.positive?
-      issues << row_errors_issue if @data[:rowErrors]&.any?
+      issues << row_errors_issue if @data[:rowErrors]&.any? { |e| e[:severity] == 'error' }
+      issues << row_warnings_issue if @data[:rowErrors]&.any? { |e| e[:severity] == 'warning' }
 
       {
         validationStatus: validation_status,
@@ -279,20 +280,33 @@ module Bulkrax
     end
 
     def row_errors_issue
-      filtered = filtered_row_errors
-      return nil if filtered.empty?
-
-      severity = filtered.any? { |e| e[:severity] == 'error' } ? 'error' : 'warning'
-      icon = severity == 'error' ? 'fa-times-circle' : 'fa-exclamation-triangle'
+      entries = filtered_row_errors.select { |e| e[:severity] == 'error' }
+      return nil if entries.empty?
 
       {
         type: 'row_level_errors',
-        severity: severity,
-        icon: icon,
-        title: I18n.t('bulkrax.importer.guided_import.stepper_response_formatter.row_errors_issue.title'),
-        count: filtered.length,
+        severity: 'error',
+        icon: 'fa-times-circle',
+        title: I18n.t('bulkrax.importer.guided_import.stepper_response_formatter.row_errors_issue.title_errors'),
+        count: entries.length,
         description: I18n.t('bulkrax.importer.guided_import.stepper_response_formatter.row_errors_issue.description'),
-        items: row_error_items(filtered),
+        items: row_error_items(entries),
+        defaultOpen: false
+      }
+    end
+
+    def row_warnings_issue
+      entries = filtered_row_errors.select { |e| e[:severity] == 'warning' }
+      return nil if entries.empty?
+
+      {
+        type: 'row_level_warnings',
+        severity: 'warning',
+        icon: 'fa-exclamation-triangle',
+        title: I18n.t('bulkrax.importer.guided_import.stepper_response_formatter.row_errors_issue.title_warnings'),
+        count: entries.length,
+        description: I18n.t('bulkrax.importer.guided_import.stepper_response_formatter.row_errors_issue.description'),
+        items: row_error_items(entries),
         defaultOpen: false
       }
     end

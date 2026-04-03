@@ -466,12 +466,12 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
         expect(issue[:items]).to be_empty
       end
 
-      it 'generates row errors issue with error severity when any row error is an error' do
+      it 'generates separate error and warning boxes when both are present' do
         data = {
           headers: ['source_identifier', 'title', 'creator', 'model'],
           rowCount: 5,
           isValid: false,
-          hasWarnings: false,
+          hasWarnings: true,
           missingRequired: [],
           unrecognized: {},
           fileReferences: 0,
@@ -479,26 +479,31 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
             { row: 1, source_identifier: 'ABC', severity: 'error', category: 'missing_required_value',
               column: 'creator', value: nil, message: "Field 'creator' is required but is empty for this row.",
               suggestion: "Add a value for 'creator' in row 1." },
-            { row: 2, source_identifier: 'DEF', severity: 'warning', category: 'missing_required_value',
-              column: 'title', value: nil, message: "Field 'title' is recommended.",
-              suggestion: "Add a value for 'title' in row 2." }
+            { row: 2, source_identifier: 'DEF', severity: 'warning', category: 'existing_source_identifier',
+              column: 'source_identifier', value: 'DEF', message: "'DEF' matches an existing repository record.",
+              suggestion: "If you did not intend to update an existing record, change the source_identifier value." }
           ]
         }
 
         result = described_class.new(data).format
-        issue = result[:messages][:issues].find { |i| i[:type] == 'row_level_errors' }
+        error_issue   = result[:messages][:issues].find { |i| i[:type] == 'row_level_errors' }
+        warning_issue = result[:messages][:issues].find { |i| i[:type] == 'row_level_warnings' }
 
-        expect(issue[:severity]).to eq('error')
-        expect(issue[:icon]).to eq('fa-times-circle')
-        expect(issue[:title]).to eq('Row Validation Errors')
-        expect(issue[:count]).to eq(2)
-        expect(issue[:items]).to contain_exactly(
-          { field: 'Row 1 · creator', message: "Field 'creator' is required but is empty for this row. Add a value for 'creator' in row 1." },
-          { field: 'Row 2 · title', message: "Field 'title' is recommended. Add a value for 'title' in row 2." }
+        expect(error_issue[:severity]).to eq('error')
+        expect(error_issue[:icon]).to eq('fa-times-circle')
+        expect(error_issue[:title]).to eq('Row Validation Errors')
+        expect(error_issue[:count]).to eq(1)
+        expect(error_issue[:items]).to contain_exactly(
+          { field: 'Row 1 · creator', message: "Field 'creator' is required but is empty for this row. Add a value for 'creator' in row 1." }
         )
+
+        expect(warning_issue[:severity]).to eq('warning')
+        expect(warning_issue[:icon]).to eq('fa-exclamation-triangle')
+        expect(warning_issue[:title]).to eq('Row Validation Warnings')
+        expect(warning_issue[:count]).to eq(1)
       end
 
-      it 'generates row errors issue with warning severity when all row errors are warnings' do
+      it 'generates only a warnings box when all row entries are warnings' do
         data = {
           headers: ['source_identifier', 'title', 'creator', 'model'],
           rowCount: 5,
@@ -508,18 +513,21 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
           unrecognized: {},
           fileReferences: 0,
           rowErrors: [
-            { row: 1, source_identifier: 'ABC', severity: 'warning', category: 'missing_recommended_value',
-              column: 'creator', value: nil, message: "Field 'creator' is recommended.",
-              suggestion: "Add a value for 'creator' in row 1." }
+            { row: 1, source_identifier: 'ABC', severity: 'warning', category: 'existing_source_identifier',
+              column: 'source_identifier', value: 'ABC', message: "'ABC' matches an existing repository record.",
+              suggestion: "If you did not intend to update an existing record, change the source_identifier value." }
           ]
         }
 
         result = described_class.new(data).format
-        issue = result[:messages][:issues].find { |i| i[:type] == 'row_level_errors' }
+        error_issue   = result[:messages][:issues].find { |i| i[:type] == 'row_level_errors' }
+        warning_issue = result[:messages][:issues].find { |i| i[:type] == 'row_level_warnings' }
 
-        expect(issue[:severity]).to eq('warning')
-        expect(issue[:icon]).to eq('fa-exclamation-triangle')
-        expect(issue[:count]).to eq(1)
+        expect(error_issue).to be_nil
+        expect(warning_issue[:severity]).to eq('warning')
+        expect(warning_issue[:icon]).to eq('fa-exclamation-triangle')
+        expect(warning_issue[:title]).to eq('Row Validation Warnings')
+        expect(warning_issue[:count]).to eq(1)
       end
 
       it 'suppresses row errors for columns already flagged in missingRequired' do
@@ -550,7 +558,7 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
         )
       end
 
-      it 'omits row errors issue entirely when all row errors are suppressed by missingRequired' do
+      it 'omits row issues entirely when all row entries are suppressed by missingRequired' do
         data = {
           headers: ['source_identifier', 'title', 'model'],
           rowCount: 3,
@@ -567,9 +575,9 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
         }
 
         result = described_class.new(data).format
-        issue = result[:messages][:issues].find { |i| i[:type] == 'row_level_errors' }
 
-        expect(issue).to be_nil
+        expect(result[:messages][:issues].find { |i| i[:type] == 'row_level_errors' }).to be_nil
+        expect(result[:messages][:issues].find { |i| i[:type] == 'row_level_warnings' }).to be_nil
       end
 
       it 'does not generate file references issue when no files are referenced' do

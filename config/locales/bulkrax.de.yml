@@ -277,7 +277,8 @@ de:
           row_errors_issue:
             description: "Die folgenden Probleme bestehen bei den Daten in Ihrer CSV-Datei:"
             row_label: "Zeile %{row} · %{column}"
-            title: Zeilenvalidierungsfehler
+            title_errors: Zeilenvalidierungsfehler
+            title_warnings: Zeilenvalidierungswarnungen
         success:
           message: Ihr Importvorgang wird derzeit im Hintergrund verarbeitet. Sie werden benachrichtigt, sobald er abgeschlossen ist.
           start_another: Einen weiteren Import starten
@@ -295,6 +296,10 @@ de:
             errors:
               message: "Doppelter %{field} '%{value}' — erscheint auch in Zeile %{original_row}."
               suggestion: "Jeder %{field} muss innerhalb der CSV-Datei eindeutig sein."
+          existing_source_identifier_validator:
+            warnings:
+              message: "'%{value}' entspricht einem vorhandenen Repository-Datensatz — diese Zeile wird ihn aktualisieren."
+              suggestion: "Falls Sie keinen bestehenden Datensatz aktualisieren wollten, ändern Sie den Wert für %{field}."
           failed: Validierung fehlgeschlagen
           file_path_not_exist: Der Dateipfad existiert nicht.
           file_references_title: Dateiverweise
@@ -302,6 +307,10 @@ de:
           files_missing_from_zip: "%{count} %{files_word} werden in Ihrer CSV-Datei referenziert, fehlen aber in der ZIP-Datei:"
           files_referenced: Die in der CSV-Datei referenzierten %{count}-Dateien wurden beim Import nicht gefunden.
           missing_from_zip: fehlt in der Postleitzahl
+          missing_source_identifier_validator:
+            errors:
+              message: "In der Zeile fehlt ein Wert für '%{field}'."
+              suggestion: "Fügen Sie dieser Zeile einen '%{field}'-Wert hinzu oder konfigurieren Sie Bulkrax, um Quellkennungen automatisch zu generieren."
           missing_required_desc: 'Folgende erforderliche Spalten müssen Ihrer CSV-Datei hinzugefügt werden:'
           missing_required_hint: Fügen Sie diese Spalte zu Ihrer CSV-Datei hinzu.
           missing_required_title: Fehlende Pflichtfelder
