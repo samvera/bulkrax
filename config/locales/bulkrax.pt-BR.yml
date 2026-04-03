@@ -328,11 +328,22 @@ pt-BR:
           passed: Validação aprovada
           passed_warnings: Validação aprovada com advertências.
           recognized_fields: 'Campos reconhecidos: %{fields}'
+          default_work_type_validator:
+            warnings:
+              message: "Nenhum modelo especificado — esta linha será importada como '%{default_work_type}'."
+              suggestion: "Especifique um valor de modelo na coluna 'model' para esta linha se quiser usar um tipo de trabalho diferente."
+          default_work_type_notice:
+            message_column_missing: "Nenhuma coluna de modelo encontrada — todas as linhas serão importadas como '%{default_work_type}'."
+            message_column_empty: "Nenhum modelo fornecido — todas as linhas serão importadas como '%{default_work_type}'."
+            suggestion_column_empty: "Adicione valores de modelo à coluna 'model' do seu CSV se quiser usar um tipo de trabalho diferente para algumas linhas."
+            suggestion_column_missing: "Adicione uma coluna 'model' ao seu CSV se quiser usar um tipo de trabalho diferente para algumas linhas."
           required_field_validator:
             errors:
               message: "O campo '%{field}' é obrigatório, mas está vazio para esta linha."
               suggestion: "Adicione um valor para '%{field}'."
           unable_to_process: Não foi possível processar os arquivos para validação.
+          notices_desc: 'Estes avisos podem afetar como o seu CSV é importado:'
+          notices_title: Avisos de importação
           unrecognized_desc: 'Estas colunas serão ignoradas durante a importação:'
           unrecognized_title: Campos não reconhecidos
       validations:

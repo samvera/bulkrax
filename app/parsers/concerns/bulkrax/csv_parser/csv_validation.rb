@@ -24,27 +24,16 @@ module Bulkrax
           raw_csv, headers, mapping_manager, mappings, source_id_key, csv_data, field_metadata, field_analyzer =
             parse_csv_inputs(csv_file, admin_set_id)
 
-          all_ids = csv_data.map { |r| r[:source_identifier] }.compact.to_set
-
+          all_ids          = csv_data.map { |r| r[:source_identifier] }.compact.to_set
           header_issues    = check_headers(headers, raw_csv, mapping_manager, mappings, field_metadata, field_analyzer)
           missing_required = header_issues[:missing_required]
-          find_record      = build_find_record
-          row_errors       = run_row_validators(csv_data, all_ids, source_id_key, mappings, field_metadata, find_record)
-          file_validator   = CsvTemplate::FileValidator.new(csv_data, zip_file, admin_set_id)
-          collections, works, file_sets = extract_hierarchy_items(csv_data, all_ids, find_record, mappings)
-
-          append_missing_source_id!(missing_required, headers, source_id_key, csv_data.map { |r| r[:model] }.compact.uniq)
+          notices, row_errors, file_validator, collections, works, file_sets =
+            run_validations(csv_data, all_ids, headers, source_id_key, mappings, field_metadata, missing_required, zip_file, admin_set_id)
 
           result = assemble_result(
-            headers: headers,
-            missing_required: missing_required,
-            header_issues: header_issues,
-            row_errors: row_errors,
-            csv_data: csv_data,
-            file_validator: file_validator,
-            collections: collections,
-            works: works,
-            file_sets: file_sets
+            headers: headers, missing_required: missing_required, header_issues: header_issues,
+            row_errors: row_errors, csv_data: csv_data, file_validator: file_validator,
+            collections: collections, works: works, file_sets: file_sets, notices: notices
           )
           apply_rights_statement_validation_override!(result, missing_required)
           result[:raw_csv_data] = csv_data
@@ -52,6 +41,20 @@ module Bulkrax
         end
 
         private
+
+        # Builds notices, runs row validators, file validator, and hierarchy extraction.
+        # Returns [notices, row_errors, file_validator, collections, works, file_sets].
+        def run_validations(csv_data, all_ids, headers, source_id_key, mappings, field_metadata, missing_required, zip_file, admin_set_id) # rubocop:disable Metrics/ParameterLists
+          find_record = build_find_record
+          notices     = []
+          append_missing_source_id!(missing_required, headers, source_id_key, csv_data.map { |r| r[:model] }.compact.uniq)
+          append_missing_model_notice!(notices, headers, csv_data)
+
+          row_errors                       = run_row_validators(csv_data, all_ids, source_id_key, mappings, field_metadata, find_record, notices)
+          file_validator                   = CsvTemplate::FileValidator.new(csv_data, zip_file, admin_set_id)
+          collections, works, file_sets    = extract_hierarchy_items(csv_data, all_ids, find_record, mappings)
+          [notices, row_errors, file_validator, collections, works, file_sets]
+        end
 
         # Reads the CSV, resolves mappings, parses rows, and builds field metadata.
         # Returns the values needed by all subsequent validation steps.
@@ -70,6 +73,7 @@ module Bulkrax
 
           csv_data       = parse_validation_rows(raw_csv, source_id_key, parent_key, children_key, file_key)
           all_models     = csv_data.map { |r| r[:model] }.compact.uniq
+          all_models    |= [Bulkrax.default_work_type] if Bulkrax.default_work_type.present?
           field_analyzer = CsvTemplate::FieldAnalyzer.new(mappings, admin_set_id)
           field_metadata = build_validation_field_metadata(all_models, field_analyzer)
 
@@ -100,7 +104,7 @@ module Bulkrax
         end
 
         # Runs all registered row validators and returns the collected errors.
-        def run_row_validators(csv_data, all_ids, source_id_key, mappings, field_metadata, find_record) # rubocop:disable Metrics/ParameterLists
+        def run_row_validators(csv_data, all_ids, source_id_key, mappings, field_metadata, find_record, notices = []) # rubocop:disable Metrics/ParameterLists
           context = {
             errors: [],
             warnings: [],
@@ -114,7 +118,8 @@ module Bulkrax
             mappings: mappings,
             field_metadata: field_metadata,
             find_record_by_source_identifier: find_record,
-            relationship_graph: build_relationship_graph(csv_data, mappings)
+            relationship_graph: build_relationship_graph(csv_data, mappings),
+            notices: notices
           }
           csv_data.each_with_index do |record, index|
             row_number = index + 2 # 1-indexed, plus header row

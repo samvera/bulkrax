@@ -328,11 +328,22 @@ de:
           passed: Validierung erfolgreich
           passed_warnings: Validierung mit Warnungen bestanden
           recognized_fields: 'Erkannte Felder: %{fields}'
+          default_work_type_validator:
+            warnings:
+              message: "Kein Modell angegeben — diese Zeile wird als '%{default_work_type}' importiert."
+              suggestion: "Geben Sie in der 'model'-Spalte für diese Zeile einen Modellwert an, wenn Sie einen anderen Werktyp verwenden möchten."
+          default_work_type_notice:
+            message_column_missing: "Keine Modellspalte gefunden — alle Zeilen werden als '%{default_work_type}' importiert."
+            message_column_empty: "Kein Modell angegeben — alle Zeilen werden als '%{default_work_type}' importiert."
+            suggestion_column_empty: "Fügen Sie Modellwerte in die 'model'-Spalte Ihrer CSV-Datei ein, wenn Sie für einige Zeilen einen anderen Werktyp verwenden möchten."
+            suggestion_column_missing: "Fügen Sie Ihrer CSV-Datei eine 'model'-Spalte hinzu, wenn Sie für einige Zeilen einen anderen Werktyp verwenden möchten."
           required_field_validator:
             errors:
               message: "Das Feld '%{field}' ist erforderlich, ist aber für diese Zeile leer."
               suggestion: "Geben Sie einen Wert für '%{field}' ein."
           unable_to_process: Die Validierungsdateien konnten nicht verarbeitet werden.
+          notices_desc: 'Diese Hinweise können Auswirkungen auf den Import Ihrer CSV-Datei haben:'
+          notices_title: Importhinweise
           unrecognized_desc: 'Diese Spalten werden beim Import ignoriert:'
           unrecognized_title: Nicht anerkannte Felder
       validations:

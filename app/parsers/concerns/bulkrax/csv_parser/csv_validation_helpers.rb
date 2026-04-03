@@ -96,6 +96,29 @@ module Bulkrax
         all_models.each { |model| missing_required << { model: model, field: source_id_key.to_s } }
       end
 
+      # Adds a file-level notice when the model column is absent or every row has a blank
+      # model value, indicating that the default work type will be used for all rows.
+      # When this notice is present the per-row default_work_type_used warnings are
+      # suppressed in the formatter — no need to repeat the same message for every row.
+      def append_missing_model_notice!(notices, headers, csv_data)
+        default_model = Bulkrax.default_work_type
+        return if default_model.blank?
+
+        model_column_present = headers.map(&:to_s).include?('model')
+        all_rows_blank = model_column_present && csv_data.all? { |r| r[:model].blank? }
+
+        return if model_column_present && !all_rows_blank
+
+        key_suffix = all_rows_blank ? 'column_empty' : 'column_missing'
+        base_key   = 'bulkrax.importer.guided_import.validation.default_work_type_notice'
+        notices << {
+          field: 'model',
+          default_work_type: default_model,
+          message: I18n.t("#{base_key}.message_#{key_suffix}", default_work_type: default_model),
+          suggestion: I18n.t("#{base_key}.suggestion_#{key_suffix}")
+        }
+      end
+
       def apply_rights_statement_validation_override!(result, missing_required)
         only_rights = missing_required.present? &&
                       missing_required.all? { |h| h[:field].to_s == 'rights_statement' }
@@ -108,17 +131,18 @@ module Bulkrax
       end
 
       # Assembles the final result hash returned to the guided import UI.
-      def assemble_result(headers:, missing_required:, header_issues:, row_errors:, csv_data:, file_validator:, collections:, works:, file_sets:) # rubocop:disable Metrics/ParameterLists
+      def assemble_result(headers:, missing_required:, header_issues:, row_errors:, csv_data:, file_validator:, collections:, works:, file_sets:, notices: []) # rubocop:disable Metrics/ParameterLists
         row_error_entries   = row_errors.select { |e| e[:severity] == 'error' }
         row_warning_entries = row_errors.select { |e| e[:severity] == 'warning' }
         has_errors   = missing_required.any? || headers.blank? || csv_data.empty? ||
                        file_validator.missing_files.any? || row_error_entries.any?
         has_warnings = header_issues[:unrecognized].any? || header_issues[:empty_columns].any? ||
-                       file_validator.possible_missing_files? || row_warning_entries.any?
+                       file_validator.possible_missing_files? || row_warning_entries.any? || notices.any?
 
         {
           headers: headers,
           missingRequired: missing_required,
+          notices: notices,
           unrecognized: header_issues[:unrecognized],
           emptyColumns: header_issues[:empty_columns],
           rowCount: csv_data.length,
