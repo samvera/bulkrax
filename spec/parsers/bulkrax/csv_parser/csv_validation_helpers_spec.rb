@@ -32,15 +32,19 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
       end
     end
 
-    context 'when a matching Bulkrax::Entry exists in the database' do
+    context 'when a matching Bulkrax::Entry exists in the database but no repository object does' do
       let!(:importer) { FactoryBot.create(:bulkrax_importer) }
       let!(:entry)    { FactoryBot.create(:bulkrax_csv_entry, identifier: 'entry_id_001', importerexporter: importer) }
 
-      it 'returns true without querying the repository' do
-        # ValkyrieObjectFactory.find delegates to Hyrax.query_service.find_by;
-        # the Entry short-circuit means it should never be reached.
-        expect(Hyrax.query_service).not_to receive(:find_by)
-        expect(find('entry_id_001')).to be true
+      before do
+        allow(Hyrax.query_service).to receive(:find_by).and_raise(Hyrax::ObjectNotFoundError)
+        allow(Bulkrax).to receive(:collection_model_class).and_return(Collection)
+        allow(Bulkrax).to receive(:curation_concerns).and_return([Work])
+        allow(Bulkrax::ValkyrieObjectFactory).to receive(:search_by_property).and_return(nil)
+      end
+
+      it 'returns false — a Bulkrax Entry alone does not confirm the object exists in the repo' do
+        expect(find('entry_id_001')).to be false
       end
     end
 
@@ -129,7 +133,7 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
 
     context 'when an exception is raised during lookup' do
       before do
-        allow(Bulkrax::Entry).to receive(:exists?).and_raise(StandardError, 'DB unavailable')
+        allow(Hyrax.query_service).to receive(:find_by).and_raise(StandardError, 'DB unavailable')
       end
 
       it 'returns false instead of propagating the error' do
@@ -277,9 +281,6 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
   end
 
   describe '#build_find_record' do
-    let(:mapping_manager) { instance_double(Bulkrax::CsvTemplate::MappingManager) }
-    let(:mappings)        { {} }
-
     before do
       allow(Hyrax.query_service).to receive(:find_by).and_raise(Hyrax::ObjectNotFoundError)
       allow(Bulkrax).to receive(:collection_model_class).and_return(Collection)
@@ -287,20 +288,17 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
       allow(Bulkrax::ValkyrieObjectFactory).to receive(:search_by_property).and_return(nil)
     end
 
-    context 'with default source_identifier mapping' do
+    context 'when no source_identifier entry exists in the raw mappings' do
       before do
-        allow(mapping_manager).to receive(:resolve_column_name)
-          .with(flag: 'source_identifier', default: 'source')
-          .and_return(['source'])
+        allow(Bulkrax).to receive(:field_mappings).and_return({ 'Bulkrax::CsvParser' => {} })
       end
 
       it 'returns a callable lambda' do
-        lam = host.build_find_record(mapping_manager, mappings)
-        expect(lam).to respond_to(:call)
+        expect(host.build_find_record).to respond_to(:call)
       end
 
-      it 'defaults the search field to <identifier>_sim when no search_field mapping is present' do
-        lam = host.build_find_record(mapping_manager, mappings)
+      it 'falls back to "source" with "source_sim" search field' do
+        lam = host.build_find_record
         expect(Bulkrax::ValkyrieObjectFactory).to receive(:search_by_property).with(
           hash_including(search_field: 'source_sim', name_field: 'source')
         ).and_return(nil)
@@ -308,17 +306,17 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
       end
     end
 
-    context 'when the mapping provides a custom search_field' do
-      let(:mappings) { { 'local_id' => { 'search_field' => 'local_id_tesim' } } }
-
+    context 'when a non-generated source_identifier mapping exists' do
       before do
-        allow(mapping_manager).to receive(:resolve_column_name)
-          .with(flag: 'source_identifier', default: 'source')
-          .and_return(['local_id'])
+        allow(Bulkrax).to receive(:field_mappings).and_return({
+                                                                'Bulkrax::CsvParser' => {
+                                                                  'local_id' => { 'from' => ['source_identifier'], 'source_identifier' => true, 'search_field' => 'local_id_tesim' }
+                                                                }
+                                                              })
       end
 
-      it 'uses the mapped search_field instead of the default _sim suffix' do
-        lam = host.build_find_record(mapping_manager, mappings)
+      it 'uses the mapped search_field' do
+        lam = host.build_find_record
         expect(Bulkrax::ValkyrieObjectFactory).to receive(:search_by_property).with(
           hash_including(search_field: 'local_id_tesim', name_field: 'local_id')
         ).and_return(nil)
@@ -326,19 +324,24 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
       end
     end
 
-    context 'when resolve_column_name returns nothing' do
+    context 'when the source_identifier mapping is a generated entry (e.g. bulkrax_identifier)' do
       before do
-        allow(mapping_manager).to receive(:resolve_column_name)
-          .with(flag: 'source_identifier', default: 'source')
-          .and_return([])
+        allow(Bulkrax).to receive(:field_mappings).and_return({
+                                                                'Bulkrax::CsvParser' => {
+                                                                  'bulkrax_identifier' => {
+                                                                    'from' => ['source_identifier'], 'source_identifier' => true,
+                                                                    'generated' => true, 'search_field' => 'bulkrax_identifier_tesim'
+                                                                  }
+                                                                }
+                                                              })
       end
 
-      it 'falls back to "source" as the work_identifier' do
-        lam = host.build_find_record(mapping_manager, mappings)
+      it 'resolves the identifier and search_field despite generated:true' do
+        lam = host.build_find_record
         expect(Bulkrax::ValkyrieObjectFactory).to receive(:search_by_property).with(
-          hash_including(search_field: 'source_sim', name_field: 'source')
+          hash_including(search_field: 'bulkrax_identifier_tesim', name_field: 'bulkrax_identifier')
         ).and_return(nil)
-        lam.call('anything')
+        lam.call('star_wars_movie_collection')
       end
     end
   end

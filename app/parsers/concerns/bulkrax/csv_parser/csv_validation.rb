@@ -28,7 +28,7 @@ module Bulkrax
 
           header_issues    = check_headers(headers, raw_csv, mapping_manager, mappings, field_metadata, field_analyzer)
           missing_required = header_issues[:missing_required]
-          find_record      = build_find_record(mapping_manager, mappings)
+          find_record      = build_find_record
           row_errors       = run_row_validators(csv_data, all_ids, source_id_key, mappings, field_metadata, find_record)
           file_validator   = CsvTemplate::FileValidator.new(csv_data, zip_file, admin_set_id)
           collections, works, file_sets = extract_hierarchy_items(csv_data, all_ids, find_record, mappings)

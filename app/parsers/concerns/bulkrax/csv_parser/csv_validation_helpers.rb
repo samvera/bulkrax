@@ -135,26 +135,30 @@ module Bulkrax
       end
 
       # Builds the find_record lambda used by row validators and hierarchy extraction.
-      def build_find_record(mapping_manager, mappings)
-        work_identifier        = mapping_manager.resolve_column_name(flag: 'source_identifier', default: 'source').first&.to_s || 'source'
-        work_identifier_search = Array.wrap(mappings.dig(work_identifier, 'search_field')).first&.to_s ||
+      # Builds the find_record lambda used by row validators and hierarchy extraction.
+      # Reads the full (unfiltered) field mappings directly since MappingManager strips
+      # entries with "generated"=>true (e.g. bulkrax_identifier), which is typically the
+      # entry flagged with source_identifier:true and carries the correct search_field.
+      def build_find_record
+        all_mappings = Bulkrax.field_mappings['Bulkrax::CsvParser'] || {}
+        work_identifier = all_mappings.find { |_k, v| v['source_identifier'] == true }&.first || 'source'
+        work_identifier_search = Array.wrap(all_mappings.dig(work_identifier, 'search_field')).first&.to_s ||
                                  "#{work_identifier}_sim"
         ->(id) { find_record_by_source_identifier(id, work_identifier, work_identifier_search) }
       end
 
       # Attempt to locate an existing repository record by its identifier.
-      # The identifier may be a Bulkrax source_identifier or a repository object ID.
-      # This mimics the find behavior of the actual import process, which checks for existing records to determine whether to create or update.
-      # Since we don't have the full importer context here, we check both the Entry model and the repository directly.
+      # The identifier may be a repository object ID or a source_identifier property value.
+      # Checks the repository directly (by ID, then by Solr property search) — a Bulkrax
+      # Entry record alone is not sufficient, as the object may never have been created.
       #
       # @param identifier [String]
       # @param work_identifier [String] the source_identifier property name (e.g. "source")
       # @param work_identifier_search [String] the Solr field for source_identifier (e.g. "source_sim")
-      # @return [Boolean] true if a matching Entry or repository object is found
+      # @return [Boolean] true if a matching repository object is found
       def find_record_by_source_identifier(identifier, work_identifier, work_identifier_search)
         return false if identifier.blank?
 
-        return true if Entry.exists?(identifier: identifier, importerexporter_type: 'Bulkrax::Importer')
         return true if Bulkrax.object_factory.find_or_nil(identifier).present?
 
         [Bulkrax.collection_model_class, *Bulkrax.curation_concerns].any? do |klass|

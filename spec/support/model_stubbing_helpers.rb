@@ -37,6 +37,14 @@ module ModelStubbingHelpers
         # Just return the properties as-is
         klass.properties.keys.map(&:to_s)
       end
+
+      def self.find_or_nil(_id)
+        nil
+      end
+
+      def self.search_by_property(**_kwargs)
+        nil
+      end
     end)
 
     # Create GenericWork model (commonly used in examples)
