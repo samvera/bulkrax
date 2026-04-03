@@ -37,7 +37,12 @@ module Bulkrax
       end
 
       admin_set_id = params[:importer]&.[](:admin_set_id)
+      validation_start = Time.now.to_f
       validation_result = run_validation(csv_file, zip_file, admin_set_id: admin_set_id)
+      duration_ms = ((Time.now.to_f - validation_start) * 1000).round
+
+      record_validation_metric(validation_result, duration_ms)
+
       raw_csv_data = validation_result.delete(:raw_csv_data)
       cache_key = cache_validation_errors(validation_result, raw_csv_data, csv_file)
       formatted = StepperResponseFormatter.format(validation_result)
@@ -72,6 +77,7 @@ module Bulkrax
       @importer = Importer.new(importer_params)
       @importer.parser_klass = 'Bulkrax::CsvParser'
       @importer.user = current_user if respond_to?(:current_user) && current_user.present?
+      @importer.parser_fields = (@importer.parser_fields || {}).merge('guided_import' => true)
       apply_field_mapping
 
       if @importer.save
@@ -149,6 +155,40 @@ module Bulkrax
 
     def apply_field_mapping
       @importer.field_mapping = Bulkrax.field_mappings['Bulkrax::CsvParser']
+    end
+
+    def record_validation_metric(result, duration_ms)
+      outcome = if result[:isValid]
+                  result[:hasWarnings] ? 'pass_with_warnings' : 'pass'
+                else
+                  'fail'
+                end
+
+      Bulkrax::ImportMetric.record(
+        metric_type: 'validation',
+        event:       'validation_complete',
+        user:        current_user,
+        payload:     {
+          outcome:                outcome,
+          row_count:              result[:rowCount].to_i,
+          duration_ms:            duration_ms,
+          missing_required_count: Array(result[:missingRequired]).size,
+          unrecognized_count:     result[:unrecognized]&.size || 0,
+          row_error_count:        Array(result[:rowErrors]).size,
+          has_zip:                !!result[:zipIncluded],
+          missing_files_count:    Array(result[:missingFiles]).size,
+          error_types:            extract_error_types(result)
+        }
+      )
+    end
+
+    def extract_error_types(result)
+      types = []
+      types << 'missing_required_fields' if Array(result[:missingRequired]).any?
+      types << 'unrecognized_fields'     if result[:unrecognized]&.any?
+      types << 'missing_files'           if Array(result[:missingFiles]).any?
+      types << 'row_errors'              if Array(result[:rowErrors]).any?
+      types
     end
 
     def error_csv_filename(original_filename)
