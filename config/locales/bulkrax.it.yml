@@ -277,7 +277,8 @@ it:
           row_errors_issue:
             description: "Sussistono i seguenti problemi con i dati nel file CSV:"
             row_label: "Riga %{row} · %{column}"
-            title: Errori di validazione delle righe
+            title_errors: Errori di validazione delle righe
+            title_warnings: Avvisi di validazione delle righe
         success:
           message: L'importazione è in corso di elaborazione in background. Riceverai una notifica al termine dell'operazione.
           start_another: Avvia un'altra importazione

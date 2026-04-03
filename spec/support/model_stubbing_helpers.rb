@@ -109,6 +109,10 @@ module ModelStubbingHelpers
     stub_const('Collection', collection_model)
     stub_const('FileSet', fileset_model)
 
+    # Redirect object_factory to the stubbed ValkyrieObjectFactory so that
+    # find_record_by_source_identifier does not hit the real ObjectFactory.
+    allow(Bulkrax).to receive(:object_factory).and_return(Bulkrax::ValkyrieObjectFactory)
+
     # Stub Hyrax configuration
     allow(Hyrax).to receive(:config).and_return(double(curation_concerns: [GenericWork]))
     allow(Bulkrax).to receive(:collection_model_class).and_return(Collection)

@@ -277,7 +277,8 @@ de:
           row_errors_issue:
             description: "Die folgenden Probleme bestehen bei den Daten in Ihrer CSV-Datei:"
             row_label: "Zeile %{row} · %{column}"
-            title: Zeilenvalidierungsfehler
+            title_errors: Zeilenvalidierungsfehler
+            title_warnings: Zeilenvalidierungswarnungen
         success:
           message: Ihr Importvorgang wird derzeit im Hintergrund verarbeitet. Sie werden benachrichtigt, sobald er abgeschlossen ist.
           start_another: Einen weiteren Import starten

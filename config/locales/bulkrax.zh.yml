@@ -276,7 +276,8 @@ zh:
           row_errors_issue:
             description: "您的 CSV 数据中存在以下问题："
             row_label: "第 %{row} 行 · %{column}"
-            title: 行校验错误
+            title_errors: 行校验错误
+            title_warnings: 行校验警告
         success:
           message: 您的导入操作正在后台处理中。完成后您将收到通知。
           start_another: 开始另一次导入

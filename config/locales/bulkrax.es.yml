@@ -277,7 +277,8 @@ es:
           row_errors_issue:
             description: "Existen los siguientes problemas con los datos en su CSV:"
             row_label: "Fila %{row} · %{column}"
-            title: Errores de validación de filas
+            title_errors: Errores de validación de filas
+            title_warnings: Advertencias de validación de filas
         success:
           message: Tu importación se está procesando en segundo plano. Recibirás una notificación cuando finalice.
           start_another: Iniciar otra importación

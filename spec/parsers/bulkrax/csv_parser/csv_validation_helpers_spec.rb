@@ -133,7 +133,11 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
 
     context 'when an exception is raised during lookup' do
       before do
-        allow(Hyrax.query_service).to receive(:find_by).and_raise(StandardError, 'DB unavailable')
+        allow(Bulkrax).to receive(:collection_model_class).and_return(Collection)
+        allow(Bulkrax).to receive(:curation_concerns).and_return([Work])
+        # Simulate an unexpected error in search_by_property that bypasses find_or_nil's rescue
+        allow(Bulkrax::ValkyrieObjectFactory).to receive(:search_by_property).and_raise(StandardError, 'Solr unavailable')
+        allow(Hyrax.query_service).to receive(:find_by).and_raise(Hyrax::ObjectNotFoundError)
       end
 
       it 'returns false instead of propagating the error' do

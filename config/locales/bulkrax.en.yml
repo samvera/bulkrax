@@ -304,7 +304,8 @@ en:
           row_errors_issue:
             description: "The following issues exist with data in your CSV:"
             row_label: "Row %{row} · %{column}"
-            title: Row Validation Errors
+            title_errors: Row Validation Errors
+            title_warnings: Row Validation Warnings
         success:
           message: Your import is now processing in the background. You'll be notified when it's complete.
           start_another: Start Another Import

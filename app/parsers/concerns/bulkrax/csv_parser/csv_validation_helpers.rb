@@ -109,10 +109,12 @@ module Bulkrax
 
       # Assembles the final result hash returned to the guided import UI.
       def assemble_result(headers:, missing_required:, header_issues:, row_errors:, csv_data:, file_validator:, collections:, works:, file_sets:) # rubocop:disable Metrics/ParameterLists
+        row_error_entries   = row_errors.select { |e| e[:severity] == 'error' }
+        row_warning_entries = row_errors.select { |e| e[:severity] == 'warning' }
         has_errors   = missing_required.any? || headers.blank? || csv_data.empty? ||
-                       file_validator.missing_files.any? || row_errors.any?
+                       file_validator.missing_files.any? || row_error_entries.any?
         has_warnings = header_issues[:unrecognized].any? || header_issues[:empty_columns].any? ||
-                       file_validator.possible_missing_files?
+                       file_validator.possible_missing_files? || row_warning_entries.any?
 
         {
           headers: headers,
@@ -135,10 +137,6 @@ module Bulkrax
       end
 
       # Builds the find_record lambda used by row validators and hierarchy extraction.
-      # Builds the find_record lambda used by row validators and hierarchy extraction.
-      # Reads the full (unfiltered) field mappings directly since MappingManager strips
-      # entries with "generated"=>true (e.g. bulkrax_identifier), which is typically the
-      # entry flagged with source_identifier:true and carries the correct search_field.
       def build_find_record
         all_mappings = Bulkrax.field_mappings['Bulkrax::CsvParser'] || {}
         work_identifier = all_mappings.find { |_k, v| v['source_identifier'] == true }&.first || 'source'

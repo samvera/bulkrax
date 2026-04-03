@@ -277,7 +277,8 @@ fr:
           row_errors_issue:
             description: "Les problèmes suivants existent avec les données de votre CSV :"
             row_label: "Ligne %{row} · %{column}"
-            title: Erreurs de validation de ligne
+            title_errors: Erreurs de validation de ligne
+            title_warnings: Avertissements de validation de ligne
         success:
           message: Votre importation est en cours de traitement en arrière-plan. Vous serez averti(e) lorsqu'elle sera terminée.
           start_another: Lancer une autre importation
