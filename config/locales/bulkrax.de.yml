@@ -280,7 +280,7 @@ de:
             title_errors: Zeilenvalidierungsfehler
             title_warnings: Zeilenvalidierungswarnungen
         success:
-          message: Ihr Importvorgang wird derzeit im Hintergrund verarbeitet. Sie werden benachrichtigt, sobald er abgeschlossen ist.
+          message: Ihr Import wird jetzt im Hintergrund verarbeitet. Sie können den Fortschritt in der Importwarteschlange verfolgen.
           start_another: Einen weiteren Import starten
           title: Import gestartet
           view_queue: Importwarteschlange anzeigen

@@ -280,7 +280,7 @@ pt-BR:
             title_errors: Erros de validação de linha
             title_warnings: Avisos de validação de linha
         success:
-          message: Sua importação está sendo processada em segundo plano. Você será notificado quando ela for concluída.
+          message: Sua importação está sendo processada em segundo plano. Você pode acompanhar o progresso na Fila de importação.
           start_another: Iniciar outra importação
           title: Importação iniciada
           view_queue: Visualizar fila de importação

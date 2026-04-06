@@ -307,7 +307,7 @@ en:
             title_errors: Row Validation Errors
             title_warnings: Row Validation Warnings
         success:
-          message: Your import is now processing in the background. You'll be notified when it's complete.
+          message: Your import is now processing in the background. You can monitor progress in the Import Queue.
           start_another: Start Another Import
           title: Import Started
           view_queue: View Import Queue

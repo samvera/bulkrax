@@ -280,7 +280,7 @@ fr:
             title_errors: Erreurs de validation de ligne
             title_warnings: Avertissements de validation de ligne
         success:
-          message: Votre importation est en cours de traitement en arrière-plan. Vous serez averti(e) lorsqu'elle sera terminée.
+          message: Votre import est en cours de traitement en arrière-plan. Vous pouvez suivre la progression dans la File d'attente d'import.
           start_another: Lancer une autre importation
           title: Importation commencée
           view_queue: Afficher la file d'importation

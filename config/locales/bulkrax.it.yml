@@ -280,7 +280,7 @@ it:
             title_errors: Errori di validazione delle righe
             title_warnings: Avvisi di validazione delle righe
         success:
-          message: L'importazione è in corso di elaborazione in background. Riceverai una notifica al termine dell'operazione.
+          message: L'importazione è ora in elaborazione in background. È possibile monitorare l'avanzamento nella Coda di importazione.
           start_another: Avvia un'altra importazione
           title: Importazione avviata
           view_queue: Visualizza coda di importazione

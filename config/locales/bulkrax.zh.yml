@@ -279,7 +279,7 @@ zh:
             title_errors: 行校验错误
             title_warnings: 行校验警告
         success:
-          message: 您的导入操作正在后台处理中。完成后您将收到通知。
+          message: 您的导入正在后台处理中。您可以在导入队列中监控进度。
           start_another: 开始另一次导入
           title: 导入开始
           view_queue: 查看导入队列
