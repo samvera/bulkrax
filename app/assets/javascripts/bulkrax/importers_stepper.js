@@ -2365,13 +2365,14 @@
     // Disable the file input so raw files aren't sent with the form
     $('#file-input').prop('disabled', true)
 
+    var formData = new FormData($form[0])
+
     // Only append uploaded file IDs in upload mode; in file_path mode the import_file_path
     // param is used and appending IDs would cause GuidedImportsController#create to ignore the path.
     if (StepperState.uploadMode === 'upload' && Array.isArray(StepperState.uploadedFiles)) {
       StepperState.uploadedFiles.forEach(function (f) {
         if (f.uploadId) {
-          var $input = $('<input>', { type: 'hidden', name: 'uploaded_files[]' }).val(f.uploadId)
-          $form.append($input)
+          formData.append('uploaded_files[]', f.uploadId)
         }
       })
     }
@@ -2379,8 +2380,74 @@
     // Record timing before submit
     MetricsTracker.recordSubmit()
 
-    // Submit the form so the request hits GuidedImportsController#create and creates the importer / enqueues job
-    $form[0].submit()
+    $.ajax({
+      url:         $form.attr('action'),
+      method:      'POST',
+      data:        formData,
+      processData: false,
+      contentType: false,
+      dataType:    'json',
+      headers:     { 'Accept': 'application/json' }
+    }).done(function (data) {
+      if (data && data.success) {
+        showImportSuccess(data.importer_id)
+      } else {
+        handleImportSubmitError()
+      }
+    }).fail(function () {
+      handleImportSubmitError()
+    })
+  }
+
+  function showImportSuccess(importerId) {
+    $('.stepper-content-wrapper').hide()
+    $('.stepper-header').hide()
+    $('.import-success-state').show()
+
+    // Reveal SEQ after short delay
+    setTimeout(function () {
+      $('#seq-feedback').fadeIn(300)
+    }, 400)
+
+    // Store importer ID for SEQ submission
+    StepperState.importerId = importerId
+
+    initSeqHandlers()
+  }
+
+  function handleImportSubmitError() {
+    var $btn = $('#start-import-btn')
+    $btn
+      .prop('disabled', false)
+      .html(t('start_import') || 'Start Import')
+    showNotification(t('import_submit_error') || 'Import submission failed. Please try again.', 'error')
+  }
+
+  function initSeqHandlers() {
+    // Rating selection
+    $('#seq-feedback').on('click', '.seq-scale-circle', function () {
+      $('.seq-scale-circle').removeClass('active')
+      $(this).addClass('active')
+      $('input[name="seq_score"][value="' + $(this).data('value') + '"]').prop('checked', true)
+      $('.seq-comment-group').slideDown(200)
+      $('.seq-actions').slideDown(200)
+    })
+
+    // Form submit
+    $('#seq-feedback-form').on('submit', function (e) {
+      e.preventDefault()
+      var rating = parseInt($('input[name="seq_score"]:checked').val(), 10)
+      if (!rating) return
+      var comment = $('#seq-comment').val()
+      MetricsTracker.recordFeedback(rating, comment, StepperState.importerId)
+      $('#seq-feedback-form').hide()
+      $('.seq-thank-you').show()
+    })
+
+    // Skip or dismiss
+    $('#seq-skip-btn, #seq-dismiss').on('click', function () {
+      $('#seq-feedback').fadeOut(200)
+    })
   }
 
   // Look up mock validation data from cached demo scenarios JSON
