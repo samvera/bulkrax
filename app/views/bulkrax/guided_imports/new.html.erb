@@ -79,15 +79,19 @@
           <form id="seq-feedback-form" novalidate>
             <fieldset class="seq-scale-fieldset">
               <legend class="sr-only">Ease of use rating from 1 (Very Difficult) to 7 (Very Easy)</legend>
-              <div class="seq-scale" role="radiogroup" aria-label="<%= t('bulkrax.importer.guided_import.seq.aria_label', default: 'Ease rating') %>">
-                <span class="seq-anchor-label"><%= t('bulkrax.importer.guided_import.seq.very_difficult', default: 'Very Difficult') %></span>
-                <% (1..7).each do |n| %>
-                  <label class="seq-scale-option">
-                    <input type="radio" name="seq_score" value="<%= n %>" class="sr-only">
-                    <span class="seq-scale-circle" data-value="<%= n %>"><%= n %></span>
-                  </label>
-                <% end %>
-                <span class="seq-anchor-label"><%= t('bulkrax.importer.guided_import.seq.very_easy', default: 'Very Easy') %></span>
+              <div class="seq-scale-wrapper">
+                <div class="seq-scale" role="radiogroup" aria-label="<%= t('bulkrax.importer.guided_import.seq.aria_label', default: 'Ease rating') %>">
+                  <% (1..7).each do |n| %>
+                    <label class="seq-scale-option">
+                      <input type="radio" name="seq_score" value="<%= n %>" class="sr-only">
+                      <span class="seq-scale-circle" data-value="<%= n %>"><%= n %></span>
+                    </label>
+                  <% end %>
+                </div>
+                <div class="seq-anchor-labels">
+                  <span class="seq-anchor-label"><%= t('bulkrax.importer.guided_import.seq.very_difficult', default: 'Very Difficult') %></span>
+                  <span class="seq-anchor-label"><%= t('bulkrax.importer.guided_import.seq.very_easy', default: 'Very Easy') %></span>
+                </div>
               </div>
             </fieldset>
 
