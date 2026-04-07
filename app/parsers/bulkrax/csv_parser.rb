@@ -365,8 +365,11 @@ module Bulkrax
                         else
                           Bulkrax.multi_value_element_split_on
                         end
+        files_dir = path_to_files
+        next if files_dir.nil?
+
         r[file_mapping].split(split_pattern).map do |f|
-          file = File.join(path_to_files, f.tr(' ', '_'))
+          file = File.join(files_dir, f.strip.tr(' ', '_'))
           if File.exist?(file) # rubocop:disable Style/GuardClause
             file
           else

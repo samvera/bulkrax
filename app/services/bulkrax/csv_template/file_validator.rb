@@ -43,7 +43,11 @@ module Bulkrax
       private
 
       def referenced_files
-        @referenced_files ||= @csv_data.map { |item| File.basename(item[:file]) if item[:file].present? }.compact
+        @referenced_files ||= @csv_data.flat_map do |item|
+          next [] if item[:file].blank?
+
+          item[:file].split(Bulkrax.multi_value_element_split_on).map { |f| File.basename(f.strip) }
+        end.compact
       end
 
       def zip_file_list

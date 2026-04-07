@@ -214,6 +214,20 @@ module Bulkrax
         end
       end
 
+      context 'when the zip is flat (image files at root, no files/ subdirectory)' do
+        it 'moves extracted files into a files/ subdirectory' do
+          with_zip('Cornus_drummondii.jpg' => 'jpg-content',
+                   'ArtThumbnail.JPG' => 'jpg-content') do |zip_path|
+            parser.unzip(zip_path)
+
+            expect(File.exist?(File.join(unzip_dir, 'files', 'Cornus_drummondii.jpg'))).to be true
+            expect(File.exist?(File.join(unzip_dir, 'files', 'ArtThumbnail.JPG'))).to be true
+            expect(File.exist?(File.join(unzip_dir, 'Cornus_drummondii.jpg'))).to be false
+            expect(File.exist?(File.join(unzip_dir, 'ArtThumbnail.JPG'))).to be false
+          end
+        end
+      end
+
       context 'when the zip contains macOS junk entries (__MACOSX, .DS_Store, ._files)' do
         it 'skips junk entries and extracts only real files' do
           with_zip('directory/data.csv' => 'title,identifier',

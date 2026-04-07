@@ -567,6 +567,61 @@ module Bulkrax
       end
     end
 
+    describe '#file_paths' do
+      let(:importer) do
+        FactoryBot.build(:bulkrax_importer_csv,
+                         parser_fields: { 'import_file_path' => 'spec/fixtures/csv/good.csv' })
+      end
+
+      context 'when metadata_only is true' do
+        it 'returns an empty array without raising' do
+          allow(importer).to receive(:metadata_only?).and_return(true)
+          expect(subject.file_paths).to eq([])
+        end
+      end
+
+      context 'when path_to_files returns nil' do
+        before do
+          allow(subject).to receive(:records).and_return([{ file: 'image.jpg' }])
+          allow(subject).to receive(:path_to_files).and_return(nil)
+        end
+
+        it 'does not raise a TypeError' do
+          expect { subject.file_paths }.not_to raise_error
+        end
+
+        it 'returns an empty array' do
+          expect(subject.file_paths).to eq([])
+        end
+      end
+
+      context 'when a record has multiple files separated by a delimiter' do
+        before do
+          allow(subject).to receive(:records).and_return([{ file: 'sun.jpg|moon.jpg' }])
+          allow(subject).to receive(:path_to_files).and_return('spec/fixtures/csv/files')
+          allow(File).to receive(:exist?).and_return(true)
+        end
+
+        it 'returns a path for each individual file' do
+          result = subject.file_paths
+          expect(result.length).to eq(2)
+          expect(result).to include('spec/fixtures/csv/files/sun.jpg', 'spec/fixtures/csv/files/moon.jpg')
+        end
+      end
+
+      context 'when a record file value is blank' do
+        before do
+          allow(subject).to receive(:records).and_return([{ file: '' }, { file: nil }])
+          allow(subject).to receive(:path_to_files).and_return('spec/fixtures/csv/files')
+        end
+
+        it 'skips blank file entries without raising' do
+          expect { subject.file_paths }.not_to raise_error
+          expect(subject.file_paths).to eq([])
+        end
+      end
+    end
+
     describe '#missing_elements' do
       let(:entry_no_title) { FactoryBot.create(:bulkrax_csv_entry_missing_title, raw_metadata: { title: '', source_identifier: "12345" }) }
 
