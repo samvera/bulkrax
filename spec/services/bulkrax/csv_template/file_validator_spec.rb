@@ -56,6 +56,49 @@ RSpec.describe Bulkrax::CsvTemplate::FileValidator do
       expect(validator.missing_files).to be_empty
     end
 
+    context 'with delimiter-separated file references in a single cell' do
+      let(:csv_data_multi) do
+        [{ file: 'Cornus_drummondii.jpg|ArtThumbnail.JPG', source_identifier: 'work1' }]
+      end
+
+      let(:zip_with_both) do
+        zip = Tempfile.new(['test', '.zip'])
+        Zip::File.open(zip.path, create: true) do |zipfile|
+          zipfile.get_output_stream('Cornus_drummondii.jpg') { |f| f.write('img') }
+          zipfile.get_output_stream('ArtThumbnail.JPG') { |f| f.write('thumb') }
+        end
+        zip.rewind
+        zip
+      end
+
+      after do
+        zip_with_both.close
+        zip_with_both.unlink
+      end
+
+      it 'splits on the delimiter and reports no missing files when both are present' do
+        validator = described_class.new(csv_data_multi, zip_with_both)
+        expect(validator.missing_files).to be_empty
+      end
+
+      it 'counts each individual file reference' do
+        validator = described_class.new(csv_data_multi, zip_with_both)
+        expect(validator.found_files_count).to eq(2)
+      end
+
+      it 'reports only the truly missing file when one is absent from the zip' do
+        zip = Tempfile.new(['test', '.zip'])
+        Zip::File.open(zip.path, create: true) do |zipfile|
+          zipfile.get_output_stream('Cornus_drummondii.jpg') { |f| f.write('img') }
+        end
+        zip.rewind
+        validator = described_class.new(csv_data_multi, zip)
+        expect(validator.missing_files).to eq(['ArtThumbnail.JPG'])
+        zip.close
+        zip.unlink
+      end
+    end
+
     context 'with paths in file references' do
       let(:csv_data_with_paths) do
         [

@@ -365,8 +365,11 @@ module Bulkrax
                         else
                           Bulkrax.multi_value_element_split_on
                         end
+        files_dir = path_to_files
+        raise StandardError, "Record references local files but no files directory could be resolved from the import path" if files_dir.nil?
+
         r[file_mapping].split(split_pattern).map do |f|
-          file = File.join(path_to_files, f.tr(' ', '_'))
+          file = File.join(files_dir, f.strip.tr(' ', '_'))
           if File.exist?(file) # rubocop:disable Style/GuardClause
             file
           else
@@ -394,7 +397,28 @@ module Bulkrax
       File.join(importer_unzip_path, 'files', filename) if file? && zip?
     end
 
+    def unzip(file_to_unzip)
+      super
+      normalize_unzipped_files_structure(importer_unzip_path)
+    end
+
     private
+
+    # Ensure files extracted from a zip always land in a `files/` subdirectory
+    # regardless of how the zip was structured. If files were extracted directly
+    # into dest_dir (flat zip with no `files/` folder), move them into
+    # dest_dir/files/ so that path_to_files can reliably locate them.
+    def normalize_unzipped_files_structure(dest_dir)
+      flat_files = Dir.glob(File.join(dest_dir, '*')).select { |f| File.file?(f) && !f.end_with?('.csv') }
+      return if flat_files.empty?
+
+      files_dir = File.join(dest_dir, 'files')
+      FileUtils.mkdir_p(files_dir)
+      flat_files.each do |f|
+        dest = File.join(files_dir, File.basename(f))
+        FileUtils.mv(f, dest) unless File.exist?(dest)
+      end
+    end
 
     def unique_collection_identifier(collection_hash)
       entry_uid = collection_hash[source_identifier]

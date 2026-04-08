@@ -290,4 +290,63 @@ module Bulkrax
       end
     end
   end
+
+  describe '#convert_based_near_to_attributes' do
+    subject(:factory) { build(:valkyrie_object_factory) }
+
+    context 'when based_near is absent' do
+      it 'returns attrs unchanged' do
+        attrs = { title: ['A Title'] }
+        result = factory.send(:convert_based_near_to_attributes, attrs)
+        expect(result).to eq(title: ['A Title'])
+        expect(result).not_to have_key(:based_near_attributes)
+      end
+    end
+
+    context 'when based_near is blank' do
+      it 'removes based_near and returns attrs without based_near_attributes' do
+        attrs = { based_near: [] }
+        result = factory.send(:convert_based_near_to_attributes, attrs)
+        expect(result).not_to have_key(:based_near)
+        expect(result).not_to have_key(:based_near_attributes)
+      end
+    end
+
+    context 'when based_near contains valid URIs' do
+      let(:uri1) { 'http://sws.geonames.org/5128581/' }
+      let(:uri2) { 'http://sws.geonames.org/4930956/' }
+
+      it 'removes based_near and adds based_near_attributes' do
+        attrs = { based_near: [uri1, uri2] }
+        result = factory.send(:convert_based_near_to_attributes, attrs)
+        expect(result).not_to have_key(:based_near)
+        expect(result[:based_near_attributes]).to eq(
+          '0' => { 'id' => uri1, '_destroy' => 'false' },
+          '1' => { 'id' => uri2, '_destroy' => 'false' }
+        )
+      end
+
+      it 'works with a single URI' do
+        attrs = { based_near: [uri1] }
+        result = factory.send(:convert_based_near_to_attributes, attrs)
+        expect(result[:based_near_attributes]).to eq(
+          '0' => { 'id' => uri1, '_destroy' => 'false' }
+        )
+      end
+    end
+
+    context 'when based_near contains invalid (non-URI) values' do
+      it 'raises a StandardError with a helpful message' do
+        attrs = { based_near: ['not-a-uri'] }
+        expect { factory.send(:convert_based_near_to_attributes, attrs) }
+          .to raise_error(StandardError, /Invalid value\(s\) for location \(based_near\).*not-a-uri/)
+      end
+
+      it 'raises even when mixed with valid URIs' do
+        attrs = { based_near: ['http://sws.geonames.org/5128581/', 'plaintext'] }
+        expect { factory.send(:convert_based_near_to_attributes, attrs) }
+          .to raise_error(StandardError, /plaintext/)
+      end
+    end
+  end
 end

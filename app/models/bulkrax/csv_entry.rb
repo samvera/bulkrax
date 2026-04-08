@@ -432,6 +432,8 @@ module Bulkrax
 
       # Bare filename: use legacy files/ directory for backward compatibility and round-tripping
       path = importerexporter.parser.path_to_files
+      raise "Could not determine path to files directory. Ensure the import package contains a zip or a valid import_file_path." if path.nil?
+
       f = File.join(path, file)
       return f if File.exist?(f)
       raise "File not found: #{f}. Check the file column in your CSV and ensure the file exists in the import package or path_to_files directory."
