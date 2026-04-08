@@ -567,6 +567,98 @@ module Bulkrax
       end
     end
 
+    describe '#unzip' do
+      let(:unzip_dir) { File.realpath(Dir.mktmpdir) }
+
+      before do
+        dir = unzip_dir
+        importer.define_singleton_method(:importer_unzip_path) { |**| dir }
+      end
+      after { FileUtils.rm_rf(unzip_dir) }
+
+      def build_zip(zip_path, entries)
+        Zip::File.open(zip_path, create: true) do |zip|
+          entries.each do |name, content|
+            next if name.end_with?('/')
+            zip.get_output_stream(name) { |f| f.write(content) }
+          end
+        end
+      end
+
+      def with_zip(entries)
+        zip_file = Tempfile.new(['import', '.zip'])
+        build_zip(zip_file.path, entries)
+        yield zip_file.path
+      ensure
+        zip_file.close!
+      end
+
+      context 'when the zip is flat (image files at root, no files/ subdirectory)' do
+        it 'moves extracted files into a files/ subdirectory' do
+          with_zip('Cornus_drummondii.jpg' => 'jpg-content',
+                   'ArtThumbnail.JPG' => 'jpg-content') do |zip_path|
+            subject.unzip(zip_path)
+
+            expect(File.exist?(File.join(unzip_dir, 'files', 'Cornus_drummondii.jpg'))).to be true
+            expect(File.exist?(File.join(unzip_dir, 'files', 'ArtThumbnail.JPG'))).to be true
+            expect(File.exist?(File.join(unzip_dir, 'Cornus_drummondii.jpg'))).to be false
+            expect(File.exist?(File.join(unzip_dir, 'ArtThumbnail.JPG'))).to be false
+          end
+        end
+      end
+    end
+
+    describe '#file_paths' do
+      let(:importer) do
+        FactoryBot.build(:bulkrax_importer_csv,
+                         parser_fields: { 'import_file_path' => 'spec/fixtures/csv/good.csv' })
+      end
+
+      context 'when metadata_only is true' do
+        it 'returns an empty array without raising' do
+          allow(importer).to receive(:metadata_only?).and_return(true)
+          expect(subject.file_paths).to eq([])
+        end
+      end
+
+      context 'when path_to_files returns nil and a record references local files' do
+        before do
+          allow(subject).to receive(:records).and_return([{ file: 'image.jpg' }])
+          allow(subject).to receive(:path_to_files).and_return(nil)
+        end
+
+        it 'raises a descriptive error instead of silently dropping the attachment' do
+          expect { subject.file_paths }.to raise_error(StandardError, /no files directory could be resolved/)
+        end
+      end
+
+      context 'when a record has multiple files separated by a delimiter' do
+        before do
+          allow(subject).to receive(:records).and_return([{ file: 'sun.jpg|moon.jpg' }])
+          allow(subject).to receive(:path_to_files).and_return('spec/fixtures/csv/files')
+          allow(File).to receive(:exist?).and_return(true)
+        end
+
+        it 'returns a path for each individual file' do
+          result = subject.file_paths
+          expect(result.length).to eq(2)
+          expect(result).to include('spec/fixtures/csv/files/sun.jpg', 'spec/fixtures/csv/files/moon.jpg')
+        end
+      end
+
+      context 'when a record file value is blank' do
+        before do
+          allow(subject).to receive(:records).and_return([{ file: '' }, { file: nil }])
+          allow(subject).to receive(:path_to_files).and_return('spec/fixtures/csv/files')
+        end
+
+        it 'skips blank file entries without raising' do
+          expect { subject.file_paths }.not_to raise_error
+          expect(subject.file_paths).to eq([])
+        end
+      end
+    end
+
     describe '#missing_elements' do
       let(:entry_no_title) { FactoryBot.create(:bulkrax_csv_entry_missing_title, raw_metadata: { title: '', source_identifier: "12345" }) }
 

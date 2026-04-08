@@ -1373,6 +1373,41 @@ module Bulkrax
         expect(entry.parsed_metadata['visibility_after_lease']).to eq('open')
       end
     end
+    describe '#path_to_file' do
+      let(:importer) { FactoryBot.create(:bulkrax_importer_csv) }
+      subject(:entry) { described_class.new(importerexporter: importer) }
+      let(:parser) { importer.parser }
+
+      context 'when path_to_files returns nil' do
+        before { allow(parser).to receive(:path_to_files).and_return(nil) }
+
+        it 'raises a descriptive error rather than a TypeError' do
+          expect { entry.send(:path_to_file, 'image.jpg') }
+            .to raise_error(RuntimeError, /Could not determine path to files directory/)
+        end
+      end
+
+      context 'when the file exists at the constructed path' do
+        let(:files_dir) { 'spec/fixtures/csv/files' }
+
+        before { allow(parser).to receive(:path_to_files).and_return(files_dir) }
+
+        it 'returns the full path without raising' do
+          result = entry.send(:path_to_file, 'sun.jpg')
+          expect(result).to eq(File.join(files_dir, 'sun.jpg'))
+        end
+      end
+
+      context 'when the file does not exist at the constructed path' do
+        before { allow(parser).to receive(:path_to_files).and_return('spec/fixtures/csv/files') }
+
+        it 'raises a descriptive error' do
+          expect { entry.send(:path_to_file, 'missing.jpg') }
+            .to raise_error(RuntimeError, /File not found/)
+        end
+      end
+    end
+
     describe '#validate_record' do
       context 'with no raw_metadata' do
         before do

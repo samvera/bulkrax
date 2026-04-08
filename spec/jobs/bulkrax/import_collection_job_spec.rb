@@ -34,7 +34,10 @@ module Bulkrax
           expect { perform }.not_to change { entry.importerexporter.current_run.reload.enqueued_records }
         end
 
-        it 'decrements the number of enqueued records'
+        it 'decrements the number of enqueued records' do
+          entry.importerexporter.current_run.update!(enqueued_records: 1)
+          expect { perform }.to change { entry.importerexporter.current_run.reload.enqueued_records }.by(-1)
+        end
       end
       context 'a run with an error' do
         before do
@@ -58,7 +61,11 @@ module Bulkrax
           expect { perform }.to raise_error(StandardError)
           expect(ImporterRun).not_to have_received(:decrement_counter).with(:enqueued_records, current_run_id)
         end
-        it 'decrements the number of enqueued records'
+        it 'decrements the number of enqueued records' do
+          entry.importerexporter.current_run.update!(enqueued_records: 1)
+          expect { perform }.to raise_error(StandardError)
+          expect(entry.importerexporter.current_run.reload.enqueued_records).to eq(0)
+        end
       end
     end
   end

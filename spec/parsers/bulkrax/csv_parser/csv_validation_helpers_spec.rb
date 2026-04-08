@@ -155,6 +155,7 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
     context 'when ColumnBuilder raises' do
       before do
         allow(Bulkrax::CsvTemplate::ColumnBuilder).to receive(:new).and_raise(StandardError, 'boom')
+        allow(mapping_manager).to receive(:key_to_mapped_column) { |prop| prop }
       end
 
       it 'falls back to a standard header list that includes both parents and children' do
