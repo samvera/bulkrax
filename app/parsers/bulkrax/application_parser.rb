@@ -457,24 +457,6 @@ module Bulkrax
           end
         end
       end
-
-      normalize_unzipped_files_structure(importer_unzip_path)
-    end
-
-    # Ensure files extracted from a zip always land in a `files/` subdirectory
-    # regardless of how the zip was structured. If files were extracted directly
-    # into dest_dir (flat zip with no `files/` folder), move them into
-    # dest_dir/files/ so that path_to_files can reliably locate them.
-    def normalize_unzipped_files_structure(dest_dir)
-      flat_files = Dir.glob(File.join(dest_dir, '*')).select { |f| File.file?(f) && !f.end_with?('.csv') }
-      return if flat_files.empty?
-
-      files_dir = File.join(dest_dir, 'files')
-      FileUtils.mkdir_p(files_dir)
-      flat_files.each do |f|
-        dest = File.join(files_dir, File.basename(f))
-        FileUtils.mv(f, dest) unless File.exist?(dest)
-      end
     end
 
     def macos_junk_entry?(name)
