@@ -619,7 +619,8 @@ module Bulkrax
     # (BasedNearFieldBehavior#deserialize calls params.except('based_near')).
     # Values must be passed as `based_near_attributes` — a numbered hash of
     # { "0" => { "id" => uri, "_destroy" => "false" } } — so the populator
-    # can set them. CSV values in the `location` column must be GeoNames URIs.
+    # can set them. Hyrax accepts any valid URI; note that only GeoNames URIs
+    # will resolve to a display label via LocationService.
     def convert_based_near_to_attributes(attrs)
       values = Array.wrap(attrs.delete(:based_near)).reject(&:blank?)
       return attrs if values.empty?
@@ -627,7 +628,7 @@ module Bulkrax
       invalid = values.reject { |v| v.to_s.match?(::URI::DEFAULT_PARSER.make_regexp) }
       if invalid.any?
         raise ::StandardError, "Invalid value(s) for location (based_near): #{invalid.join(', ')}. " \
-                               "Values must be GeoNames URIs (e.g. http://sws.geonames.org/5128581/)."
+                               "Values must be valid URIs (e.g. http://sws.geonames.org/5128581/)."
       end
 
       attrs[:based_near_attributes] = values.each_with_index.to_h do |uri, i|
