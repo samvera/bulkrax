@@ -366,7 +366,7 @@ module Bulkrax
                           Bulkrax.multi_value_element_split_on
                         end
         files_dir = path_to_files
-        next if files_dir.nil?
+        raise StandardError, "Record references local files but no files directory could be resolved from the import path" if files_dir.nil?
 
         r[file_mapping].split(split_pattern).map do |f|
           file = File.join(files_dir, f.strip.tr(' ', '_'))

@@ -621,18 +621,14 @@ module Bulkrax
         end
       end
 
-      context 'when path_to_files returns nil' do
+      context 'when path_to_files returns nil and a record references local files' do
         before do
           allow(subject).to receive(:records).and_return([{ file: 'image.jpg' }])
           allow(subject).to receive(:path_to_files).and_return(nil)
         end
 
-        it 'does not raise a TypeError' do
-          expect { subject.file_paths }.not_to raise_error
-        end
-
-        it 'returns an empty array' do
-          expect(subject.file_paths).to eq([])
+        it 'raises a descriptive error instead of silently dropping the attachment' do
+          expect { subject.file_paths }.to raise_error(StandardError, /no files directory could be resolved/)
         end
       end
 
