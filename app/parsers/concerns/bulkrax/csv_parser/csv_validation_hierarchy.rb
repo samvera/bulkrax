@@ -57,6 +57,7 @@ module Bulkrax
           id: item_id,
           title: title,
           type: type,
+          existing: find_record&.call(item_id) || false,
           parentIds: (resolvable_ids(parents, all_ids) + resolvable_ids(child_to_parents[item_id] || [], all_ids)).uniq,
           childIds: resolvable_ids(children, all_ids),
           existingParentIds: external_ids(parents, all_ids, find_record),
