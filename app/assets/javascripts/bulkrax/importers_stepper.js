@@ -1378,7 +1378,8 @@
           },
           admin_set_id: StepperState.adminSetId
         },
-        locale: $('input[name="locale"]').val()
+        locale: $('input[name="locale"]').val(),
+        metrics_session_id: MetricsTracker.sessionId
       },
       timeout: CONSTANTS.AJAX_TIMEOUT_LONG
     })
@@ -1492,7 +1493,8 @@
         importer: {
           admin_set_id: StepperState.adminSetId
         },
-        locale: $('input[name="locale"]').val()
+        locale: $('input[name="locale"]').val(),
+        metrics_session_id: MetricsTracker.sessionId
       }
     }
 
@@ -2377,7 +2379,8 @@
       })
     }
 
-    // Record timing before submit
+    // Record funnel event and timing before submit
+    MetricsTracker.send('funnel', 'step_reached', { step: 'submitted' })
     MetricsTracker.recordSubmit()
 
     $.ajax({
@@ -2503,6 +2506,7 @@
     init: function (metricsEndpoint) {
       CONSTANTS.ENDPOINTS.METRICS = metricsEndpoint || null
       this.sessionId = 'gi_' + Math.random().toString(36).substr(2, 9)
+      $('#metrics-session-id').val(this.sessionId)
       this.stepTimestamps = {}
       this.stepTimestamps.step1 = Date.now()
       this.send('funnel', 'step_reached', { step: 1 })

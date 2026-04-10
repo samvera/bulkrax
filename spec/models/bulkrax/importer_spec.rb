@@ -123,6 +123,31 @@ module Bulkrax
       end
     end
 
+    describe '#record_import_outcome_metric' do
+      let(:importer) do
+        FactoryBot.create(:bulkrax_importer_csv, parser_fields: {
+                            'import_file_path' => 'spec/fixtures/csv/good.csv',
+                            'guided_import' => true,
+                            'metrics_session_id' => 'gi_test123'
+                          })
+      end
+
+      let(:run) { importer.last_run }
+
+      before { allow(Bulkrax.config).to receive(:guided_import_metrics_enabled).and_return(true) }
+
+      it 'passes session_id from parser_fields to ImportMetric.record' do
+        expect(Bulkrax::ImportMetric).to receive(:record).with(hash_including(session_id: 'gi_test123')).and_return(nil)
+        importer.send(:record_import_outcome_metric, run)
+      end
+
+      it 'does not record a metric when metrics are disabled' do
+        allow(Bulkrax.config).to receive(:guided_import_metrics_enabled).and_return(false)
+        expect(Bulkrax::ImportMetric).not_to receive(:record)
+        importer.send(:record_import_outcome_metric, run)
+      end
+    end
+
     describe '#original_files' do
       let(:csv_file) { Tempfile.new(['metadata', '.csv']) }
       let(:zip_file) { Tempfile.new(['attachments', '.zip']) }

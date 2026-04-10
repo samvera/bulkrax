@@ -299,34 +299,40 @@ module Bulkrax
 
     def record_import_outcome_metric(run)
       return unless run
+      return unless Bulkrax.config.guided_import_metrics_enabled
 
+      Bulkrax::ImportMetric.record(
+        metric_type: 'import_outcome',
+        event: 'import_complete',
+        importer: self,
+        user: self.user,
+        session_id: self.parser_fields&.dig('metrics_session_id'),
+        payload: import_outcome_payload(run)
+      )
+    end
+
+    def import_outcome_payload(run)
       total = run.total_work_entries.to_i + run.total_collection_entries.to_i + run.total_file_set_entries.to_i
       outcome = if run.failed_records.zero?
                   'complete'
-                elsif total > 0 && run.failed_records >= total
+                elsif total.positive? && run.failed_records >= total
                   'failed'
                 else
                   'partial'
                 end
 
-      Bulkrax::ImportMetric.record(
-        metric_type: 'import_outcome',
-        event:       'import_complete',
-        importer:    self,
-        user:        self.user,
-        payload:     {
-          outcome:                    outcome,
-          total_work_entries:         run.total_work_entries.to_i,
-          total_collection_entries:   run.total_collection_entries.to_i,
-          total_file_set_entries:     run.total_file_set_entries.to_i,
-          processed_works:            run.processed_works.to_i,
-          failed_works:               run.failed_works.to_i,
-          failed_records:             run.failed_records.to_i,
-          duration_seconds:           run.updated_at && run.created_at ? (run.updated_at - run.created_at).to_i : 0,
-          is_first_attempt:           self.importer_runs.count == 1,
-          used_guided_import:         self.parser_fields&.dig('guided_import') == true
-        }
-      )
+      {
+        outcome: outcome,
+        total_work_entries: run.total_work_entries.to_i,
+        total_collection_entries: run.total_collection_entries.to_i,
+        total_file_set_entries: run.total_file_set_entries.to_i,
+        processed_works: run.processed_works.to_i,
+        failed_works: run.failed_works.to_i,
+        failed_records: run.failed_records.to_i,
+        duration_seconds: run.updated_at && run.created_at ? (run.updated_at - run.created_at).to_i : 0,
+        is_first_attempt: self.importer_runs.count == 1,
+        used_guided_import: self.parser_fields&.dig('guided_import') == true
+      }
     end
 
     # Adding this here since we can update the importer without running the importer.

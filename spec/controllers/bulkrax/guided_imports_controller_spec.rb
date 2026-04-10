@@ -60,6 +60,24 @@ module Bulkrax
           expect(response).to have_http_status(:ok)
           expect(json_response[:isValid]).to eq(true)
         end
+
+        it 'passes metrics_session_id to the validation metric' do
+          allow(Bulkrax.config).to receive(:guided_import_metrics_enabled).and_return(true)
+          expect(Bulkrax::ImportMetric).to receive(:record).with(hash_including(session_id: 'gi_abc123')).and_return(nil)
+          post_validate(importer: { parser_fields: { files: [csv_upload] } }, metrics_session_id: 'gi_abc123')
+        end
+
+        it 'records a nil session_id when metrics_session_id is absent' do
+          allow(Bulkrax.config).to receive(:guided_import_metrics_enabled).and_return(true)
+          expect(Bulkrax::ImportMetric).to receive(:record).with(hash_including(session_id: nil)).and_return(nil)
+          post_validate(importer: { parser_fields: { files: [csv_upload] } })
+        end
+
+        it 'does not record a validation metric when metrics are disabled' do
+          allow(Bulkrax.config).to receive(:guided_import_metrics_enabled).and_return(false)
+          expect(Bulkrax::ImportMetric).not_to receive(:record)
+          post_validate(importer: { parser_fields: { files: [csv_upload] } }, metrics_session_id: 'gi_abc123')
+        end
       end
 
       context 'with a file path that exists' do
@@ -174,6 +192,41 @@ module Bulkrax
         it 'redirects to importers path' do
           post_create
           expect(response).to redirect_to(importers_path)
+        end
+      end
+
+      context 'with metrics_session_id param' do
+        before { allow(Bulkrax.config).to receive(:guided_import_metrics_enabled).and_return(true) }
+
+        it 'persists metrics_session_id in parser_fields' do
+          post :create, params: {
+            importer: valid_importer_params.merge(
+              parser_fields: valid_importer_params[:parser_fields].merge(files: [csv_upload])
+            ),
+            metrics_session_id: 'gi_xyz789'
+          }
+          expect(Importer.last.parser_fields['metrics_session_id']).to eq('gi_xyz789')
+        end
+
+        it 'does not persist metrics_session_id when param is blank' do
+          post :create, params: {
+            importer: valid_importer_params.merge(
+              parser_fields: valid_importer_params[:parser_fields].merge(files: [csv_upload])
+            ),
+            metrics_session_id: ''
+          }
+          expect(Importer.last.parser_fields).not_to have_key('metrics_session_id')
+        end
+
+        it 'does not persist metrics_session_id when metrics are disabled' do
+          allow(Bulkrax.config).to receive(:guided_import_metrics_enabled).and_return(false)
+          post :create, params: {
+            importer: valid_importer_params.merge(
+              parser_fields: valid_importer_params[:parser_fields].merge(files: [csv_upload])
+            ),
+            metrics_session_id: 'gi_xyz789'
+          }
+          expect(Importer.last.parser_fields).not_to have_key('metrics_session_id')
         end
       end
 

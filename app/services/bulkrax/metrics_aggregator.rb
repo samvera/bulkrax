@@ -92,17 +92,37 @@ module Bulkrax
                   .includes(:importer, :user)
     end
 
+    def validation_to_outcome_correlation
+      sql = <<-SQL
+        SELECT
+          v.payload->>'outcome' AS validation_outcome,
+          o.payload->>'outcome' AS import_outcome,
+          COUNT(*) AS cnt
+        FROM bulkrax_import_metrics v
+        JOIN bulkrax_import_metrics o ON v.session_id = o.session_id
+        WHERE v.metric_type = 'validation'
+          AND v.event = 'validation_complete'
+          AND o.metric_type = 'import_outcome'
+          AND o.event = 'import_complete'
+          AND v.session_id IS NOT NULL
+          AND v.created_at BETWEEN ? AND ?
+        GROUP BY v.payload->>'outcome', o.payload->>'outcome'
+        ORDER BY validation_outcome, import_outcome
+      SQL
+      ImportMetric.find_by_sql([sql, from, to])
+    end
+
     def export_rows
       ImportMetric.in_range(from, to).order(:created_at).map do |m|
         {
-          id:          m.id,
+          id: m.id,
           metric_type: m.metric_type,
-          event:       m.event,
+          event: m.event,
           importer_id: m.importer_id,
-          user_id:     m.user_id,
-          session_id:  m.session_id,
-          created_at:  m.created_at.iso8601,
-          payload:     m.payload.to_json
+          user_id: m.user_id,
+          session_id: m.session_id,
+          created_at: m.created_at.iso8601,
+          payload: m.payload.to_json
         }
       end
     end

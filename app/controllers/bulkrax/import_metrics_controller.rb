@@ -5,6 +5,7 @@ module Bulkrax
     include Hyrax::ThemedLayoutController if defined?(::Hyrax)
     with_themed_layout 'dashboard' if defined?(::Hyrax)
 
+    before_action :check_metrics_enabled
     before_action :authenticate_user!, only: [:index, :export]
     before_action :check_permissions,  only: [:index, :export]
 
@@ -15,10 +16,10 @@ module Bulkrax
     def record_metric
       Bulkrax::ImportMetric.record(
         metric_type: params[:metric_type],
-        event:       params[:event],
-        user:        current_user,
-        session_id:  params[:session_id],
-        payload:     (params[:payload] || {}).to_unsafe_h
+        event: params[:event],
+        user: current_user,
+        session_id: params[:session_id],
+        payload: (params[:payload] || {}).to_unsafe_h
       )
       head :no_content
     end
@@ -31,10 +32,10 @@ module Bulkrax
 
     def export
       aggregator = MetricsAggregator.new(from: date_from, to: date_to)
-      csv_data    = generate_csv(aggregator)
+      csv_data = generate_csv(aggregator)
       send_data csv_data,
-                filename:    "bulkrax_import_metrics_#{Date.today.iso8601}.csv",
-                type:        'text/csv',
+                filename: "bulkrax_import_metrics_#{Time.zone.today.iso8601}.csv",
+                type: 'text/csv',
                 disposition: 'attachment'
     end
 
@@ -50,6 +51,10 @@ module Bulkrax
       params[:to].present? ? Date.parse(params[:to]).end_of_day : Time.current
     rescue Date::Error
       Time.current
+    end
+
+    def check_metrics_enabled
+      head :not_found unless Bulkrax.config.guided_import_metrics_enabled
     end
 
     def check_permissions

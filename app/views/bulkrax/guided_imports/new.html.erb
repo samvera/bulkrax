@@ -16,7 +16,7 @@
 
 <div class="bulk-import-stepper-container"
      data-max-file-size="<%= (defined?(Hyrax) && Hyrax.config.uploader&.[](:maxFileSize)) || 524288000 %>"
-     data-metrics-url="<%= guided_import_metrics_path %>">
+     <%= "data-metrics-url=#{guided_import_metrics_path}" if Bulkrax.config.guided_import_metrics_enabled %>>
   <div class="stepper-wrapper">
 
     <!-- Stepper Header -->
@@ -128,6 +128,9 @@
     <div class="stepper-content-wrapper">
       <%= form_for [:bulkrax, Bulkrax::Importer.new], url: guided_import_create_path, method: :post, html: { id: 'bulk-import-stepper-form', multipart: true } do |f| %>
         <%= hidden_field_tag 'locale', I18n.locale %>
+        <% if Bulkrax.config.guided_import_metrics_enabled %>
+          <%= hidden_field_tag 'metrics_session_id', '', id: 'metrics-session-id' %>
+        <% end %>
         <!-- ====== STEP 1: Upload & Validate ====== -->
         <div class="step-content" data-step="1">
           <div class="step-title">
