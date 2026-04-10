@@ -19,7 +19,7 @@ module Bulkrax
         event: params[:event],
         user: current_user,
         session_id: params[:session_id],
-        payload: (params[:payload] || {}).to_unsafe_h
+        payload: params[:payload].respond_to?(:to_unsafe_h) ? params[:payload].to_unsafe_h : (params[:payload] || {})
       )
       head :no_content
     end
