@@ -59,6 +59,7 @@ module Bulkrax
       else
         importer_run.importer.set_status_info('Complete')
       end
+      record_import_outcome_metric(importer_run)
     end
 
     # If field_mapping is empty, setup a default based on the export_properties
@@ -239,6 +240,7 @@ module Bulkrax
       mark_unseen_as_skipped
     rescue StandardError => e
       set_status_info(e)
+      record_import_outcome_metric(current_run) if current_run
     end
 
     # After an import any entries we did not touch are skipped.
@@ -295,6 +297,35 @@ module Bulkrax
     end
 
     private
+
+    def record_import_outcome_metric(run)
+      return unless run
+      return unless Bulkrax.config.guided_import_metrics_enabled
+
+      Bulkrax::ImportMetric.record(
+        metric_type: 'import_outcome',
+        event: 'import_complete',
+        importer: self,
+        user: self.user,
+        session_id: self.parser_fields&.dig('metrics_session_id'),
+        payload: import_outcome_payload(run)
+      )
+    end
+
+    def import_outcome_payload(run)
+      {
+        total_work_entries: run.total_work_entries.to_i,
+        total_collection_entries: run.total_collection_entries.to_i,
+        total_file_set_entries: run.total_file_set_entries.to_i,
+        processed_works: run.processed_works.to_i,
+        failed_works: run.failed_works.to_i,
+        failed_records: run.failed_records.to_i,
+        duration_seconds: run.updated_at && run.created_at ? (run.updated_at - run.created_at).to_i : 0,
+        is_first_attempt: self.importer_runs.count == 1,
+        run_number: self.importer_runs.count,
+        used_guided_import: self.parser_fields&.dig('guided_import') == true
+      }
+    end
 
     # Adding this here since we can update the importer without running the importer.
     # When we simply save the importer (as in just updating the importer from the options),

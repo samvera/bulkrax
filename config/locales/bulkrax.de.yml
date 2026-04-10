@@ -5,7 +5,63 @@ de:
       sidebar:
         exporters: Exporteure
         importers: Importeure
+        import_metrics: Metriken für geführten Import
     cancel: Stornieren
+    import_metrics:
+      breadcrumb: Metriken für geführten Import
+      page_title: Metriken für geführten Import
+      page_subtitle: Verfolgen Sie Erfolgsraten, Validierungsleistung und Nutzerfeedback für den geführten Importer.
+      date_filter:
+        from: Von
+        to: Bis
+        all: Alle
+        apply: Anwenden
+        export_csv: CSV exportieren
+      summary_cards:
+        total_imports: Importe gesamt
+        success_rate: Erfolgsrate beim ersten Versuch
+        avg_validation: Durchschn. Validierungszeit
+        seq_average: "SEQ-Durchschnitt (1–7)"
+      empty_state:
+        title: Noch keine Metriken
+        message: Daten werden hier angezeigt, sobald Nutzer geführte Importe durchführen.
+      tabs:
+        trends: Trends
+        funnel: Trichter
+        errors: Fehler
+        feedback: Nutzerfeedback
+        recent: Letzte Importe
+      trends:
+        title: Importe im Zeitverlauf
+        hint: "Grün = erfolgreiche Importe, Rot = fehlgeschlagene/unvollständige Importe."
+      funnel:
+        title: Import-Trichter
+        description: Wie viele Nutzer jeden Schritt des geführten Import-Assistenten erreichen.
+        step1: "Schritt 1: Hochladen & Validieren"
+        step2: "Schritt 2: Konfigurieren"
+        step3: "Schritt 3: Überprüfen"
+        step4: Abgesendet
+        no_data: Keine Trichterdaten in diesem Zeitraum.
+        hint: Abbrüche zwischen den Schritten zeigen, wo Nutzer den Importvorgang abbrechen.
+      errors:
+        title: Häufigste Fehlertypen
+        error_type: Fehlertyp
+        count: Anzahl
+        no_data: Keine Validierungsfehler in diesem Zeitraum.
+      feedback:
+        distribution_title: SEQ-Score-Verteilung
+        summary_title: Antwortübersicht
+        average_score: "Durchschnittlicher Score:"
+        total_responses: "Antworten gesamt:"
+        recent_comments: Neueste Kommentare
+        no_data: Keine Feedbackantworten in diesem Zeitraum.
+      recent_imports:
+        title: Letzte geführte Importe
+        importer: Importer
+        outcome: Ergebnis
+        records: Datensätze
+        first_attempt: Erster Versuch
+        date: Datum
     entry:
       labels:
         item_link: Artikel-Link
@@ -280,7 +336,7 @@ de:
             title_errors: Zeilenvalidierungsfehler
             title_warnings: Zeilenvalidierungswarnungen
         success:
-          message: Ihr Importvorgang wird derzeit im Hintergrund verarbeitet. Sie werden benachrichtigt, sobald er abgeschlossen ist.
+          message: Ihr Import wird jetzt im Hintergrund verarbeitet. Sie können den Fortschritt in der Importwarteschlange verfolgen.
           start_another: Einen weiteren Import starten
           title: Import gestartet
           view_queue: Importwarteschlange anzeigen

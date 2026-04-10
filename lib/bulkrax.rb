@@ -41,6 +41,7 @@ module Bulkrax
                   :field_mappings,
                   :guided_import_enabled,
                   :guided_import_demo_scenarios_enabled,
+                  :guided_import_metrics_enabled,
                   :generated_metadata_mapping,
                   :import_path,
                   :multi_value_element_join_on,
@@ -280,6 +281,7 @@ module Bulkrax
     conf.required_elements = ['title']
     conf.guided_import_enabled = ActiveModel::Type::Boolean.new.cast(ENV.fetch('BULKRAX_GUIDED_IMPORTER', false))
     conf.guided_import_demo_scenarios_enabled = false
+    conf.guided_import_metrics_enabled = ActiveModel::Type::Boolean.new.cast(ENV.fetch('BULKRAX_GUIDED_IMPORT_METRICS', false))
 
     # Hash of Generic field_mappings for use in the view
     # There must be one field_mappings hash per view partial

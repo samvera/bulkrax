@@ -1,0 +1,416 @@
+<% provide :page_header do %>
+  <h1><span class="fa fa-line-chart" aria-hidden="true"></span> <%= t('bulkrax.import_metrics.page_title') %></h1>
+  <p><%= t('bulkrax.import_metrics.page_subtitle') %></p>
+<% end %>
+
+<% content_for(:head) do %>
+  <meta name="turbolinks-cache-control" content="no-cache">
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap4.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flot@4.2.6/dist/es5/jquery.flot.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flot@4.2.6/dist/es5/jquery.flot.time.js"></script>
+  <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap4.min.js"></script>
+  <style>
+    .metrics-stat-card {
+      background: #fff;
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      height: 100%;
+    }
+    .metrics-stat-card .metrics-stat-icon { font-size: 28px; color: #6c757d; margin-bottom: 8px; }
+    .metrics-stat-card .metrics-stat-number { font-size: 32px; font-weight: 700; color: #333; line-height: 1; margin-bottom: 4px; }
+    .metrics-stat-card .metrics-stat-label { font-size: 13px; color: #595f64; }
+    .metrics-stat-card-success .metrics-stat-icon,
+    .metrics-stat-card-success .metrics-stat-number { color: #5cb85c; }
+    .metrics-stat-card-info .metrics-stat-icon,
+    .metrics-stat-card-info .metrics-stat-number { color: #17a2b8; }
+    .metrics-stat-card-primary .metrics-stat-icon,
+    .metrics-stat-card-primary .metrics-stat-number { color: #2b6da5; }
+    .metrics-tabs-card { border: 1px solid #dee2e6; border-radius: 8px; overflow: hidden; margin-top: 24px; }
+    .metrics-tabs-card .nav-tabs { border-bottom: 1px solid #dee2e6; background: #f8f9fa; padding: 0 8px; }
+    .metrics-tabs-card .nav-link { font-size: 14px; color: #595f64; border: none; padding: 12px 16px; border-bottom: 2px solid transparent; }
+    .metrics-tabs-card .nav-link.active { color: #2b6da5; background: #fff; border-bottom-color: #2b6da5; }
+    .metrics-tabs-card .nav-link .fa { margin-right: 4px; }
+    .metrics-tabs-card .tab-content { padding: 24px; background: #fff; }
+    .chart-title { font-size: 16px; font-weight: 600; color: #333; margin-bottom: 16px; }
+    .metrics-range-btn.active { background: #2b6da5; border-color: #2b6da5; color: #fff; }
+    .funnel-row { display: flex; align-items: center; margin-bottom: 10px; }
+    .funnel-label { width: 130px; font-size: 13px; color: #595f64; text-align: right; padding-right: 12px; flex-shrink: 0; }
+    .funnel-bar-wrapper { flex: 1; height: 28px; background: #f8f9fa; border-radius: 4px; overflow: hidden; }
+    .funnel-bar { height: 100%; border-radius: 4px; background: #2b6da5; display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; font-size: 12px; font-weight: 600; color: #fff; min-width: 32px; }
+    .funnel-count { margin-left: 8px; font-size: 13px; font-weight: 600; color: #333; min-width: 60px; }
+    .seq-comment-item { padding: 10px 0; border-bottom: 1px solid #dee2e6; display: flex; gap: 10px; align-items: flex-start; }
+    .seq-comment-item:last-child { border-bottom: none; }
+    .seq-comment-text { font-size: 13px; color: #333; flex: 1; }
+    .seq-comments-list { max-height: 320px; overflow-y: auto; }
+    .metrics-empty-state { text-align: center; padding: 48px 24px; color: #595f64; }
+    .metrics-empty-state .fa { font-size: 48px; margin-bottom: 16px; opacity: 0.3; }
+    .legendColorBox > div { border: none !important; border-radius: 2px; }
+  </style>
+<% end %>
+
+<%# Date filter bar %>
+<div class="card mb-3">
+  <div class="card-body py-2">
+    <%= form_tag import_metrics_path, method: :get, class: 'form-inline flex-wrap' do %>
+      <div class="form-group mr-3 mb-2">
+        <label for="metrics-date-from" class="mr-2 small"><%= t('bulkrax.import_metrics.date_filter.from') %></label>
+        <input type="date" id="metrics-date-from" name="from" class="form-control form-control-sm"
+               value="<%= @date_from.to_date.iso8601 %>">
+      </div>
+      <div class="form-group mr-3 mb-2">
+        <label for="metrics-date-to" class="mr-2 small"><%= t('bulkrax.import_metrics.date_filter.to') %></label>
+        <input type="date" id="metrics-date-to" name="to" class="form-control form-control-sm"
+               value="<%= @date_to.to_date.iso8601 %>">
+      </div>
+      <div class="form-group mr-3 mb-2">
+        <div class="btn-group btn-group-sm" role="group" aria-label="Quick date ranges">
+          <button type="button" class="btn btn-outline-secondary metrics-range-btn" data-range="7">7d</button>
+          <button type="button" class="btn btn-outline-secondary metrics-range-btn" data-range="30">30d</button>
+          <button type="button" class="btn btn-outline-secondary metrics-range-btn" data-range="90">90d</button>
+          <button type="button" class="btn btn-outline-secondary metrics-range-btn" data-range="365">365d</button>
+        </div>
+      </div>
+      <%= submit_tag t('bulkrax.import_metrics.date_filter.apply'), class: 'btn btn-primary btn-sm mr-2 mb-2' %>
+      <%= link_to import_metrics_export_path(from: @date_from.to_date.iso8601, to: @date_to.to_date.iso8601),
+            class: 'btn btn-outline-secondary btn-sm mb-2' do %>
+        <span class="fa fa-download" aria-hidden="true"></span> <%= t('bulkrax.import_metrics.date_filter.export_csv') %>
+      <% end %>
+    <% end %>
+  </div>
+</div>
+
+<%# Summary cards %>
+<div class="row mb-4">
+  <div class="col-sm-6 col-lg-3 mb-3">
+    <div class="metrics-stat-card">
+      <div class="metrics-stat-icon"><span class="fa fa-cloud-upload" aria-hidden="true"></span></div>
+      <div class="metrics-stat-number"><%= @aggregator.total_imports %></div>
+      <div class="metrics-stat-label"><%= t('bulkrax.import_metrics.summary_cards.total_imports') %></div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3 mb-3">
+    <div class="metrics-stat-card metrics-stat-card-success">
+      <div class="metrics-stat-icon"><span class="fa fa-check-circle" aria-hidden="true"></span></div>
+      <div class="metrics-stat-number"><%= @aggregator.first_attempt_success_rate %>%</div>
+      <div class="metrics-stat-label"><%= t('bulkrax.import_metrics.summary_cards.success_rate') %></div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3 mb-3">
+    <div class="metrics-stat-card metrics-stat-card-info">
+      <div class="metrics-stat-icon"><span class="fa fa-clock-o" aria-hidden="true"></span></div>
+      <% avg_ms = @aggregator.avg_validation_duration_ms %>
+      <div class="metrics-stat-number"><%= avg_ms > 0 ? "#{(avg_ms / 1000.0).round(1)}s" : '--' %></div>
+      <div class="metrics-stat-label"><%= t('bulkrax.import_metrics.summary_cards.avg_validation') %></div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3 mb-3">
+    <div class="metrics-stat-card metrics-stat-card-primary">
+      <div class="metrics-stat-icon"><span class="fa fa-star" aria-hidden="true"></span></div>
+      <% seq_avg = @aggregator.avg_seq_rating %>
+      <div class="metrics-stat-number"><%= seq_avg > 0 ? seq_avg : '--' %></div>
+      <div class="metrics-stat-label"><%= t('bulkrax.import_metrics.summary_cards.seq_average') %></div>
+    </div>
+  </div>
+</div>
+
+<%# Tabbed content %>
+<% if @aggregator.total_imports.zero? && @aggregator.seq_response_count.zero? %>
+  <div class="metrics-empty-state">
+    <div class="fa fa-line-chart"></div>
+    <h3><%= t('bulkrax.import_metrics.empty_state.title') %></h3>
+    <p><%= t('bulkrax.import_metrics.empty_state.message') %></p>
+  </div>
+<% else %>
+  <div class="metrics-tabs-card">
+    <ul class="nav nav-tabs" role="tablist">
+      <li class="nav-item">
+        <a class="nav-link active" href="#tab-trends" role="tab" data-toggle="tab">
+          <span class="fa fa-line-chart" aria-hidden="true"></span> <%= t('bulkrax.import_metrics.tabs.trends') %>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="#tab-funnel" role="tab" data-toggle="tab">
+          <span class="fa fa-filter" aria-hidden="true"></span> <%= t('bulkrax.import_metrics.tabs.funnel') %>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="#tab-errors" role="tab" data-toggle="tab">
+          <span class="fa fa-exclamation-triangle" aria-hidden="true"></span> <%= t('bulkrax.import_metrics.tabs.errors') %>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="#tab-feedback" role="tab" data-toggle="tab">
+          <span class="fa fa-comment" aria-hidden="true"></span> <%= t('bulkrax.import_metrics.tabs.feedback') %>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="#tab-imports" role="tab" data-toggle="tab">
+          <span class="fa fa-list" aria-hidden="true"></span> <%= t('bulkrax.import_metrics.tabs.recent') %>
+        </a>
+      </li>
+    </ul>
+
+    <div class="tab-content">
+
+      <%# Trends tab %>
+      <div class="tab-pane active" id="tab-trends" role="tabpanel">
+        <h2 class="chart-title"><%= t('bulkrax.import_metrics.trends.title') %></h2>
+        <div id="chart-imports-trend" style="height: 300px;"></div>
+        <p class="text-muted small mt-2">
+          <span class="fa fa-info-circle"></span>
+          <%= t('bulkrax.import_metrics.trends.hint') %>
+        </p>
+      </div>
+
+      <%# Funnel tab %>
+      <div class="tab-pane" id="tab-funnel" role="tabpanel">
+        <h2 class="chart-title"><%= t('bulkrax.import_metrics.funnel.title') %></h2>
+        <p class="text-muted small mb-3"><%= t('bulkrax.import_metrics.funnel.description') %></p>
+        <% funnel = @aggregator.funnel_data %>
+        <% if funnel.any? %>
+          <% max_count = funnel.values.max.to_f %>
+          <% funnel_steps = [
+               [1, t('bulkrax.import_metrics.funnel.step1')],
+               [2, t('bulkrax.import_metrics.funnel.step2')],
+               [3, t('bulkrax.import_metrics.funnel.step3')],
+               [4, t('bulkrax.import_metrics.funnel.step4')]
+             ] %>
+          <% funnel_steps.each do |step_num, label| %>
+            <% count = funnel[step_num] || 0 %>
+            <% pct = max_count > 0 ? (count / max_count * 100).round : 0 %>
+            <div class="funnel-row">
+              <div class="funnel-label"><%= label %></div>
+              <div class="funnel-bar-wrapper">
+                <div class="funnel-bar" style="width: <%= pct %>%;"><%= pct %>%</div>
+              </div>
+              <div class="funnel-count"><%= count %></div>
+            </div>
+          <% end %>
+        <% else %>
+          <p class="text-muted"><%= t('bulkrax.import_metrics.funnel.no_data') %></p>
+        <% end %>
+        <p class="text-muted small mt-3">
+          <span class="fa fa-info-circle"></span>
+          <%= t('bulkrax.import_metrics.funnel.hint') %>
+        </p>
+      </div>
+
+      <%# Errors tab %>
+      <div class="tab-pane" id="tab-errors" role="tabpanel">
+        <h2 class="chart-title"><%= t('bulkrax.import_metrics.errors.title') %></h2>
+        <% error_types = @aggregator.error_type_frequencies %>
+        <% if error_types.any? %>
+          <div id="chart-errors" style="height: 250px;"></div>
+          <div class="table-responsive mt-3">
+            <table class="table table-striped table-sm">
+              <thead>
+                <tr>
+                  <th><%= t('bulkrax.import_metrics.errors.error_type') %></th>
+                  <th style="width: 80px;"><%= t('bulkrax.import_metrics.errors.count') %></th>
+                </tr>
+              </thead>
+              <tbody>
+                <% error_types.each do |row| %>
+                  <tr>
+                    <td><%= row.error_type.humanize %></td>
+                    <td><strong><%= row.cnt %></strong></td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        <% else %>
+          <p class="text-muted"><%= t('bulkrax.import_metrics.errors.no_data') %></p>
+        <% end %>
+      </div>
+
+      <%# Feedback tab %>
+      <div class="tab-pane" id="tab-feedback" role="tabpanel">
+        <% comments = @aggregator.recent_comments %>
+        <% seq_dist = @aggregator.seq_distribution %>
+        <div class="row">
+          <div class="col-lg-7 mb-4">
+            <h2 class="chart-title"><%= t('bulkrax.import_metrics.feedback.distribution_title') %></h2>
+            <% if seq_dist.any? %>
+              <div id="chart-seq" style="height: 250px;"></div>
+            <% else %>
+              <p class="text-muted"><%= t('bulkrax.import_metrics.feedback.no_data') %></p>
+            <% end %>
+          </div>
+          <div class="col-lg-5">
+            <h2 class="chart-title"><%= t('bulkrax.import_metrics.feedback.summary_title') %></h2>
+            <div class="mb-3">
+              <p class="mb-1"><strong><%= t('bulkrax.import_metrics.feedback.average_score') %></strong> <%= @aggregator.avg_seq_rating > 0 ? "#{@aggregator.avg_seq_rating} / 7" : '--' %></p>
+              <p class="mb-1"><strong><%= t('bulkrax.import_metrics.feedback.total_responses') %></strong> <%= @aggregator.seq_response_count %></p>
+            </div>
+            <% if comments.any? %>
+              <h3 style="font-size: 14px; font-weight: 600;" class="mb-2"><%= t('bulkrax.import_metrics.feedback.recent_comments') %></h3>
+              <div class="seq-comments-list">
+                <% comments.each do |c| %>
+                  <% badge_class = c[:rating].to_i >= 6 ? 'badge-success' : (c[:rating].to_i >= 4 ? 'badge-warning' : 'badge-danger') %>
+                  <div class="seq-comment-item">
+                    <span class="badge <%= badge_class %>"><%= c[:rating] %></span>
+                    <div class="seq-comment-text">"<%= c[:comment] %>"</div>
+                    <small class="text-muted text-nowrap"><%= c[:date].strftime('%b %-d') %></small>
+                  </div>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+
+      <%# Recent imports tab %>
+      <div class="tab-pane" id="tab-imports" role="tabpanel">
+        <h2 class="chart-title"><%= t('bulkrax.import_metrics.recent_imports.title') %></h2>
+        <div class="table-responsive">
+          <table id="metrics-imports-table" class="table table-striped table-sm" style="width: 100%;">
+            <thead>
+              <tr>
+                <th><%= t('bulkrax.import_metrics.recent_imports.importer') %></th>
+                <th><%= t('bulkrax.import_metrics.recent_imports.outcome') %></th>
+                <th><%= t('bulkrax.import_metrics.recent_imports.records') %></th>
+                <th><%= t('bulkrax.import_metrics.recent_imports.first_attempt') %></th>
+                <th><%= t('bulkrax.import_metrics.recent_imports.date') %></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @aggregator.recent_imports.each do |metric| %>
+                <% payload = metric.payload %>
+                <% live_status = metric.importer&.status_message %>
+                <% run_number = payload['run_number'] %>
+                <tr>
+                  <td>
+                    <% if metric.importer %>
+                      <%= link_to bulkrax.importer_path(metric.importer) do %>
+                        <%= metric.importer.name %><% if run_number %> (Run #<%= run_number %>)<% end %>
+                      <% end %>
+                    <% else %>
+                      <span class="text-muted">#<%= metric.importer_id %></span>
+                    <% end %>
+                  </td>
+                  <td><%= status_badge(live_status) %></td>
+                  <td><%= payload['total_work_entries'].to_i + payload['total_collection_entries'].to_i %></td>
+                  <td><%= payload['is_first_attempt'] ? 'Yes' : 'No' %></td>
+                  <td data-order="<%= metric.created_at.iso8601 %>"><%= metric.created_at.strftime('%b %-d, %Y') %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+<% end %>
+
+<script>
+    (function($) {
+      // Quick range buttons
+      var $fromInput = $('#metrics-date-from');
+      var $toInput   = $('#metrics-date-to');
+      function localDateString(date) {
+        var y = date.getFullYear();
+        var m = ('0' + (date.getMonth() + 1)).slice(-2);
+        var d = ('0' + date.getDate()).slice(-2);
+        return y + '-' + m + '-' + d;
+      }
+      $('.metrics-range-btn').on('click', function() {
+        var days = parseInt($(this).data('range'), 10);
+        var to   = new Date();
+        var from = new Date();
+        from.setDate(from.getDate() - days);
+        $toInput.val(localDateString(to));
+        $fromInput.val(localDateString(from));
+        $(this).closest('form').submit();
+      });
+
+      // Trends chart — data pre-shaped server-side into [{date, outcome, count}]
+      var trendsData = <%= raw @aggregator.imports_over_time.map { |(date, outcome), count|
+        { date: date.to_i * 1000, outcome: outcome, count: count }
+      }.to_json %>;
+      function renderTrends() {
+        if (!$('#chart-imports-trend').length) return;
+        var successes = [], failures = [];
+        trendsData.forEach(function(row) {
+          if (row.outcome === 'Complete') successes.push([row.date, row.count]);
+          else failures.push([row.date, row.count]);
+        });
+        $.plot('#chart-imports-trend', [
+          { label: 'Complete',       data: successes, color: '#5cb85c', lines: { show: true, fill: 0.1, lineWidth: 2 }, points: { show: false } },
+          { label: 'Failed/Partial', data: failures,  color: '#dc3545', lines: { show: true, fill: 0.05, lineWidth: 2 }, points: { show: false } }
+        ], {
+          xaxis: { mode: 'time', timeBase: 'milliseconds', tickLength: 0 },
+          yaxis: { min: 0, tickDecimals: 0, tickLength: 0 },
+          grid:  { borderWidth: 0, hoverable: true, backgroundColor: { colors: ['#fff', '#f9fafb'] } },
+          legend: { show: true, position: 'nw', backgroundOpacity: 0.8 }
+        });
+      }
+      renderTrends();
+
+      // Error chart
+      var errorData = <%= raw @aggregator.error_type_frequencies.map { |r| { type: r.error_type, cnt: r.cnt.to_i } }.to_json %>;
+      function renderErrors() {
+        if (!$('#chart-errors').length || !errorData.length) return;
+        var top5  = errorData.slice(0, 5);
+        var ticks = [], bars = [];
+        top5.forEach(function(item, i) {
+          var idx = top5.length - 1 - i;
+          bars.push([item.cnt, idx]);
+          ticks.push([idx, item.type.replace(/_/g, ' ')]);
+        });
+        $.plot('#chart-errors', [{
+          data: bars, color: '#ffc107',
+          bars: { show: true, horizontal: true, barWidth: 0.6, align: 'center', fill: 0.85 }
+        }], {
+          xaxis: { min: 0, tickDecimals: 0 },
+          yaxis: { ticks: ticks, tickLength: 0 },
+          grid:  { borderWidth: 0 }
+        });
+      }
+      renderErrors();
+
+      // SEQ chart
+      var seqDist = <%= raw @aggregator.seq_distribution.to_json %>;
+      function renderSeq() {
+        if (!$('#chart-seq').length) return;
+        var colors   = ['#dc3545', '#dc3545', '#ffc107', '#ffc107', '#ffc107', '#5cb85c', '#5cb85c'];
+        var datasets = [];
+        for (var rating = 1; rating <= 7; rating++) {
+          var count = seqDist[rating] || seqDist[rating.toString()] || 0;
+          datasets.push({
+            data:  [[rating - 0.5, count]],
+            color: colors[rating - 1],
+            bars:  { show: true, barWidth: 0.7, align: 'center', fill: 0.85 }
+          });
+        }
+        $.plot('#chart-seq', datasets, {
+          xaxis: { ticks: [[0.5,'1'],[1.5,'2'],[2.5,'3'],[3.5,'4'],[4.5,'5'],[5.5,'6'],[6.5,'7']], tickLength: 0, min: -0.2, max: 7.2 },
+          yaxis: { min: 0, tickDecimals: 0, tickLength: 0 },
+          grid:  { borderWidth: 0 }
+        });
+      }
+      renderSeq();
+
+      // Re-render charts on tab show (Flot needs a visible container)
+      $('a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
+        var target = $(e.target).attr('href');
+        if (target === '#tab-trends') renderTrends();
+        if (target === '#tab-errors') renderErrors();
+        if (target === '#tab-feedback') renderSeq();
+      });
+
+      // DataTable for recent imports
+      if ($('#metrics-imports-table tbody tr').length) {
+        $('#metrics-imports-table').DataTable({
+          pageLength: 10,
+          lengthMenu: [[10, 25, 50], [10, 25, 50]],
+          order: [[4, 'desc']],
+          language: { emptyTable: '<%= t("bulkrax.import_metrics.errors.no_data") %>' }
+        });
+      }
+    })(jQuery);
+  </script>

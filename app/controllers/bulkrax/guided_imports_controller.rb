@@ -5,6 +5,7 @@ module Bulkrax
     include Hyrax::ThemedLayoutController if defined?(::Hyrax)
     include Bulkrax::GuidedImportDemoScenarios if Bulkrax.config.guided_import_demo_scenarios_enabled
     include Bulkrax::ImporterFileHandler
+    include Bulkrax::GuidedImportMetrics
     helper Bulkrax::ImportersHelper
 
     before_action :authenticate_user!
@@ -37,7 +38,12 @@ module Bulkrax
       end
 
       admin_set_id = params[:importer]&.[](:admin_set_id)
+      validation_start = Time.now.to_f
       validation_result = run_validation(csv_file, zip_file, admin_set_id: admin_set_id)
+      duration_ms = ((Time.now.to_f - validation_start) * 1000).round
+
+      record_validation_metric(validation_result, duration_ms)
+
       raw_csv_data = validation_result.delete(:raw_csv_data)
       cache_key = cache_validation_errors(validation_result, raw_csv_data, csv_file)
       formatted = StepperResponseFormatter.format(validation_result)
@@ -69,10 +75,7 @@ module Bulkrax
       files = resolve_create_files
       return render_invalid_uploaded_files_response if params[:uploaded_files].present? && files.empty?
 
-      @importer = Importer.new(importer_params)
-      @importer.parser_klass = 'Bulkrax::CsvParser'
-      @importer.user = current_user if respond_to?(:current_user) && current_user.present?
-      apply_field_mapping
+      @importer = build_guided_importer
 
       if @importer.save
         write_files(files)
@@ -94,44 +97,21 @@ module Bulkrax
 
     private
 
+    def build_guided_importer
+      @importer = Importer.new(importer_params)
+      @importer.parser_klass = 'Bulkrax::CsvParser'
+      @importer.user = current_user if respond_to?(:current_user) && current_user.present?
+      @importer.parser_fields = (@importer.parser_fields || {}).merge('guided_import' => true)
+      @importer.parser_fields['metrics_session_id'] = params[:metrics_session_id] if Bulkrax.config.guided_import_metrics_enabled && params[:metrics_session_id].present?
+      apply_field_mapping
+      @importer
+    end
+
     def render_invalid_uploaded_files_response
       respond_to do |format|
         format.html { render :new, status: :unprocessable_entity }
         format.json { render json: { errors: ['No valid uploaded files found'] }, status: :unprocessable_entity }
       end
-    end
-
-    # Runs validation via the real service.
-    # @param csv_file [File, StringIO] the CSV to validate
-    # @param zip_file [File, nil] an optional ZIP containing file attachments
-    # @param admin_set_id [String, nil] optional admin set ID for validation context
-    # @return [Hash] validation result data
-    def cache_validation_errors(validation_result, raw_csv_data, csv_file)
-      has_errors = validation_result[:rowErrors]&.any? ||
-                   validation_result[:missingRequired]&.any? ||
-                   validation_result[:unrecognized]&.any? ||
-                   validation_result[:emptyColumns]&.any? ||
-                   validation_result[:missingFiles]&.any?
-      return nil unless has_errors
-
-      key = "guided_import_errors:#{session.id}:#{Time.now.to_i}"
-      Rails.cache.write(
-        key,
-        {
-          headers: validation_result[:headers],
-          csv_data: raw_csv_data,
-          row_errors: validation_result[:rowErrors] || [],
-          file_errors: {
-            missing_required: validation_result[:missingRequired] || [],
-            unrecognized: validation_result[:unrecognized] || {},
-            empty_columns: validation_result[:emptyColumns] || [],
-            missing_files: validation_result[:missingFiles] || []
-          },
-          original_filename: filename_for(csv_file)
-        },
-        expires_in: 1.hour
-      )
-      key
     end
 
     def run_validation(csv_file, zip_file, admin_set_id: nil)

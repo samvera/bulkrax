@@ -5,7 +5,63 @@ es:
       sidebar:
         exporters: Exportadores
         importers: Importadores
+        import_metrics: Métricas de importación guiada
     cancel: Cancelar
+    import_metrics:
+      breadcrumb: Métricas de importación guiada
+      page_title: Métricas de importación guiada
+      page_subtitle: Seguimiento de tasas de éxito, rendimiento de validación y comentarios de usuarios del importador guiado.
+      date_filter:
+        from: Desde
+        to: Hasta
+        all: Todos
+        apply: Aplicar
+        export_csv: Exportar CSV
+      summary_cards:
+        total_imports: Importaciones totales
+        success_rate: Tasa de éxito en el primer intento
+        avg_validation: Tiempo medio de validación
+        seq_average: "Promedio SEQ (1–7)"
+      empty_state:
+        title: Aún no hay métricas
+        message: Los datos aparecerán aquí una vez que los usuarios comiencen a ejecutar importaciones guiadas.
+      tabs:
+        trends: Tendencias
+        funnel: Embudo
+        errors: Errores
+        feedback: Comentarios de usuarios
+        recent: Importaciones recientes
+      trends:
+        title: Importaciones a lo largo del tiempo
+        hint: "Verde = importaciones exitosas, Rojo = importaciones fallidas/parciales."
+      funnel:
+        title: Embudo de importación
+        description: Cuántos usuarios llegan a cada paso del asistente de importación guiada.
+        step1: "Paso 1: Cargar y validar"
+        step2: "Paso 2: Configurar"
+        step3: "Paso 3: Revisar"
+        step4: Enviado
+        no_data: No hay datos del embudo en este rango de fechas.
+        hint: La caída entre pasos muestra dónde los usuarios abandonan el proceso de importación.
+      errors:
+        title: Principales tipos de error
+        error_type: Tipo de error
+        count: Cantidad
+        no_data: No hay errores de validación en este rango de fechas.
+      feedback:
+        distribution_title: Distribución de puntuaciones SEQ
+        summary_title: Resumen de respuestas
+        average_score: "Puntuación media:"
+        total_responses: "Respuestas totales:"
+        recent_comments: Comentarios recientes
+        no_data: No hay respuestas de comentarios en este rango de fechas.
+      recent_imports:
+        title: Importaciones guiadas recientes
+        importer: Importador
+        outcome: Resultado
+        records: Registros
+        first_attempt: Primer intento
+        date: Fecha
     entry:
       labels:
         item_link: Enlace del artículo
@@ -280,7 +336,7 @@ es:
             title_errors: Errores de validación de filas
             title_warnings: Advertencias de validación de filas
         success:
-          message: Tu importación se está procesando en segundo plano. Recibirás una notificación cuando finalice.
+          message: Su importación se está procesando en segundo plano. Puede supervisar el progreso en la Cola de importación.
           start_another: Iniciar otra importación
           title: Importación iniciada
           view_queue: Ver cola de importación

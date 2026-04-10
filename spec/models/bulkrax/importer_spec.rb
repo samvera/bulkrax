@@ -123,6 +123,96 @@ module Bulkrax
       end
     end
 
+    describe '#record_import_outcome_metric' do
+      let(:importer) do
+        FactoryBot.create(:bulkrax_importer_csv, parser_fields: {
+                            'import_file_path' => 'spec/fixtures/csv/good.csv',
+                            'guided_import' => true,
+                            'metrics_session_id' => 'gi_test123'
+                          })
+      end
+
+      let(:run) { importer.last_run }
+
+      before { allow(Bulkrax.config).to receive(:guided_import_metrics_enabled).and_return(true) }
+
+      it 'passes session_id from parser_fields to ImportMetric.record' do
+        expect(Bulkrax::ImportMetric).to receive(:record).with(hash_including(session_id: 'gi_test123')).and_return(nil)
+        importer.send(:record_import_outcome_metric, run)
+      end
+
+      it 'does not record a metric when metrics are disabled' do
+        allow(Bulkrax.config).to receive(:guided_import_metrics_enabled).and_return(false)
+        expect(Bulkrax::ImportMetric).not_to receive(:record)
+        importer.send(:record_import_outcome_metric, run)
+      end
+
+      it 'does not record a metric when run is nil' do
+        expect(Bulkrax::ImportMetric).not_to receive(:record)
+        importer.send(:record_import_outcome_metric, nil)
+      end
+
+      it 'passes importer and user to ImportMetric.record' do
+        expect(Bulkrax::ImportMetric).to receive(:record).with(
+          hash_including(importer: importer, user: importer.user)
+        ).and_return(nil)
+        importer.send(:record_import_outcome_metric, run)
+      end
+
+      context 'payload content' do
+        it 'includes record counts' do
+          allow(run).to receive(:total_work_entries).and_return(10)
+          allow(run).to receive(:total_collection_entries).and_return(2)
+          allow(run).to receive(:total_file_set_entries).and_return(5)
+          allow(run).to receive(:processed_works).and_return(10)
+          allow(run).to receive(:failed_works).and_return(0)
+          allow(run).to receive(:failed_records).and_return(0)
+          expect(Bulkrax::ImportMetric).to receive(:record) do |args|
+            payload = args[:payload]
+            expect(payload[:total_work_entries]).to eq(10)
+            expect(payload[:total_collection_entries]).to eq(2)
+            expect(payload[:total_file_set_entries]).to eq(5)
+            expect(payload[:processed_works]).to eq(10)
+            expect(payload[:failed_works]).to eq(0)
+            expect(payload[:failed_records]).to eq(0)
+          end
+          importer.send(:record_import_outcome_metric, run)
+        end
+
+        it 'includes is_first_attempt as true on first run' do
+          expect(Bulkrax::ImportMetric).to receive(:record) do |args|
+            expect(args[:payload][:is_first_attempt]).to eq(true)
+          end
+          importer.send(:record_import_outcome_metric, run)
+        end
+
+        it 'includes is_first_attempt as false on subsequent runs' do
+          # Create a second run
+          importer.importer_runs.create!
+          expect(Bulkrax::ImportMetric).to receive(:record) do |args|
+            expect(args[:payload][:is_first_attempt]).to eq(false)
+          end
+          importer.send(:record_import_outcome_metric, run)
+        end
+
+        it 'includes used_guided_import flag' do
+          expect(Bulkrax::ImportMetric).to receive(:record) do |args|
+            expect(args[:payload][:used_guided_import]).to eq(true)
+          end
+          importer.send(:record_import_outcome_metric, run)
+        end
+
+        it 'includes duration_seconds' do
+          allow(run).to receive(:created_at).and_return(10.minutes.ago)
+          allow(run).to receive(:updated_at).and_return(Time.current)
+          expect(Bulkrax::ImportMetric).to receive(:record) do |args|
+            expect(args[:payload][:duration_seconds]).to be_within(2).of(600)
+          end
+          importer.send(:record_import_outcome_metric, run)
+        end
+      end
+    end
+
     describe '#original_files' do
       let(:csv_file) { Tempfile.new(['metadata', '.csv']) }
       let(:zip_file) { Tempfile.new(['attachments', '.zip']) }

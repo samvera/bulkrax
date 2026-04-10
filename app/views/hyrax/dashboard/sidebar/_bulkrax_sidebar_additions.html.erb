@@ -18,3 +18,13 @@
     <span class="fa fa-cloud-download" aria-hidden="true"></span> <span class="sidebar-action-text"><%= t('bulkrax.admin.sidebar.exporters') %></span>
   <% end %>
 <% end %>
+<% if Bulkrax.config.guided_import_metrics_enabled && current_ability.can_read_bulkrax_metrics? %>
+  <%= menu.nav_link(
+    bulkrax.import_metrics_path,
+    title: t('bulkrax.admin.sidebar.import_metrics', default: 'Guided Import Metrics'),
+    class: "nav-link",
+    onclick: "dontChangeAccordion(event);"
+  ) do %>
+    <span class="fa fa-line-chart" aria-hidden="true"></span> <span class="sidebar-action-text"><%= t('bulkrax.admin.sidebar.import_metrics', default: 'Guided Import Metrics') %></span>
+  <% end %>
+<% end %>

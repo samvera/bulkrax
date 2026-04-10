@@ -14,7 +14,9 @@
   window.BulkraxI18n = <%= raw I18n.t('bulkrax.importer.guided_import.js').to_json %>;
 </script>
 
-<div class="bulk-import-stepper-container" data-max-file-size="<%= (defined?(Hyrax) && Hyrax.config.uploader&.[](:maxFileSize)) || 524288000 %>">
+<div class="bulk-import-stepper-container"
+     data-max-file-size="<%= (defined?(Hyrax) && Hyrax.config.uploader&.[](:maxFileSize)) || 524288000 %>"
+     <%= "data-metrics-url=#{guided_import_metrics_path}" if Bulkrax.config.guided_import_metrics_enabled %>>
   <div class="stepper-wrapper">
 
     <!-- Stepper Header -->
@@ -57,12 +59,78 @@
           <button type="button" class="btn btn-primary" id="start-another-import"><%= t('bulkrax.importer.guided_import.success.start_another') %></button>
         </div>
       </div>
+
+      <!-- SEQ Feedback Section -->
+      <div class="seq-feedback-section" id="seq-feedback" style="display: none;"
+           role="complementary" aria-label="<%= t('bulkrax.importer.guided_import.seq.aria_label', default: 'Import experience feedback') %>">
+        <div class="seq-card">
+          <div class="seq-header">
+            <span class="fa fa-comment-o seq-header-icon" aria-hidden="true"></span>
+            <div class="seq-header-text">
+              <h3 class="seq-title"><%= t('bulkrax.importer.guided_import.seq.title', default: 'How easy was it to complete this import?') %></h3>
+              <p class="seq-subtitle"><%= t('bulkrax.importer.guided_import.seq.subtitle', default: 'Your feedback helps us improve this experience.') %></p>
+            </div>
+            <button type="button" class="seq-dismiss-btn" id="seq-dismiss"
+                    aria-label="<%= t('bulkrax.importer.guided_import.seq.dismiss', default: 'Dismiss feedback form') %>">
+              <span class="fa fa-times" aria-hidden="true"></span>
+            </button>
+          </div>
+
+          <form id="seq-feedback-form" novalidate>
+            <fieldset class="seq-scale-fieldset">
+              <legend class="sr-only">Ease of use rating from 1 (Very Difficult) to 7 (Very Easy)</legend>
+              <div class="seq-scale-wrapper">
+                <div class="seq-scale" role="radiogroup" aria-label="<%= t('bulkrax.importer.guided_import.seq.aria_label', default: 'Ease rating') %>">
+                  <% (1..7).each do |n| %>
+                    <label class="seq-scale-option">
+                      <input type="radio" name="seq_score" value="<%= n %>" class="sr-only">
+                      <span class="seq-scale-circle" data-value="<%= n %>"><%= n %></span>
+                    </label>
+                  <% end %>
+                </div>
+                <div class="seq-anchor-labels">
+                  <span class="seq-anchor-label"><%= t('bulkrax.importer.guided_import.seq.very_difficult', default: 'Very Difficult') %></span>
+                  <span class="seq-anchor-label"><%= t('bulkrax.importer.guided_import.seq.very_easy', default: 'Very Easy') %></span>
+                </div>
+              </div>
+            </fieldset>
+
+            <div class="seq-comment-group" style="display: none;">
+              <label for="seq-comment" class="seq-comment-label">
+                <%= t('bulkrax.importer.guided_import.seq.comment_label', default: 'What could be improved?') %>
+                <span class="text-muted">(<%= t('bulkrax.importer.guided_import.seq.optional', default: 'optional') %>)</span>
+              </label>
+              <textarea id="seq-comment" name="seq_comment" class="form-control"
+                        rows="3" maxlength="1000"
+                        placeholder="<%= t('bulkrax.importer.guided_import.seq.comment_placeholder', default: 'Tell us about your experience...') %>"></textarea>
+            </div>
+
+            <div class="seq-actions" style="display: none;">
+              <button type="submit" class="btn btn-primary btn-sm" id="seq-submit-btn">
+                <span class="fa fa-paper-plane" aria-hidden="true"></span>
+                <%= t('bulkrax.importer.guided_import.seq.send_feedback', default: 'Send Feedback') %>
+              </button>
+              <button type="button" class="btn btn-link btn-sm text-muted" id="seq-skip-btn">
+                <%= t('bulkrax.importer.guided_import.seq.skip', default: 'Skip') %>
+              </button>
+            </div>
+          </form>
+
+          <div class="seq-thank-you" style="display: none;" aria-live="polite">
+            <span class="fa fa-check-circle seq-thank-you-icon" aria-hidden="true"></span>
+            <p><%= t('bulkrax.importer.guided_import.seq.thank_you', default: 'Thank you for your feedback!') %></p>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Main Form -->
     <div class="stepper-content-wrapper">
       <%= form_for [:bulkrax, Bulkrax::Importer.new], url: guided_import_create_path, method: :post, html: { id: 'bulk-import-stepper-form', multipart: true } do |f| %>
         <%= hidden_field_tag 'locale', I18n.locale %>
+        <% if Bulkrax.config.guided_import_metrics_enabled %>
+          <%= hidden_field_tag 'metrics_session_id', '', id: 'metrics-session-id' %>
+        <% end %>
         <!-- ====== STEP 1: Upload & Validate ====== -->
         <div class="step-content" data-step="1">
           <div class="step-title">

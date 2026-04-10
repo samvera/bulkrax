@@ -5,7 +5,63 @@ it:
       sidebar:
         exporters: Esportatori
         importers: Importatori
+        import_metrics: Metriche di importazione guidata
     cancel: Cancellare
+    import_metrics:
+      breadcrumb: Metriche di importazione guidata
+      page_title: Metriche di importazione guidata
+      page_subtitle: Monitora i tassi di successo, le prestazioni di validazione e il feedback degli utenti per l'importatore guidato.
+      date_filter:
+        from: Da
+        to: A
+        all: Tutti
+        apply: Applica
+        export_csv: Esporta CSV
+      summary_cards:
+        total_imports: Importazioni totali
+        success_rate: Tasso di successo al primo tentativo
+        avg_validation: Tempo medio di validazione
+        seq_average: "Media SEQ (1–7)"
+      empty_state:
+        title: Nessuna metrica disponibile
+        message: I dati appariranno qui quando gli utenti inizieranno a eseguire importazioni guidate.
+      tabs:
+        trends: Tendenze
+        funnel: Imbuto
+        errors: Errori
+        feedback: Feedback utenti
+        recent: Importazioni recenti
+      trends:
+        title: Importazioni nel tempo
+        hint: "Verde = importazioni riuscite, Rosso = importazioni fallite/parziali."
+      funnel:
+        title: Imbuto di importazione
+        description: Quanti utenti raggiungono ogni fase della procedura guidata di importazione.
+        step1: "Fase 1: Caricamento e validazione"
+        step2: "Fase 2: Configurazione"
+        step3: "Fase 3: Revisione"
+        step4: Inviato
+        no_data: Nessun dato dell'imbuto in questo intervallo di date.
+        hint: "L'abbandono tra le fasi mostra dove gli utenti interrompono il processo di importazione."
+      errors:
+        title: Principali tipi di errore
+        error_type: Tipo di errore
+        count: Conteggio
+        no_data: Nessun errore di validazione in questo intervallo di date.
+      feedback:
+        distribution_title: Distribuzione dei punteggi SEQ
+        summary_title: Riepilogo delle risposte
+        average_score: "Punteggio medio:"
+        total_responses: "Risposte totali:"
+        recent_comments: Commenti recenti
+        no_data: Nessuna risposta di feedback in questo intervallo di date.
+      recent_imports:
+        title: Importazioni guidate recenti
+        importer: Importatore
+        outcome: Esito
+        records: Record
+        first_attempt: Primo tentativo
+        date: Data
     entry:
       labels:
         item_link: Collegamento all'articolo
@@ -280,7 +336,7 @@ it:
             title_errors: Errori di validazione delle righe
             title_warnings: Avvisi di validazione delle righe
         success:
-          message: L'importazione è in corso di elaborazione in background. Riceverai una notifica al termine dell'operazione.
+          message: L'importazione è ora in elaborazione in background. È possibile monitorare l'avanzamento nella Coda di importazione.
           start_another: Avvia un'altra importazione
           title: Importazione avviata
           view_queue: Visualizza coda di importazione

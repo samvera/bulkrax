@@ -10,8 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2024_12_05_212513) do
-
+ActiveRecord::Schema[7.2].define(version: 2026_04_03_000000) do
   create_table "accounts", force: :cascade do |t|
     t.string "name"
   end
@@ -82,6 +81,23 @@ ActiveRecord::Schema.define(version: 2024_12_05_212513) do
     t.string "status_message", default: "Pending"
     t.string "error_class"
     t.index ["user_id"], name: "index_bulkrax_exporters_on_user_id"
+  end
+
+  create_table "bulkrax_import_metrics", force: :cascade do |t|
+    t.string "metric_type", null: false
+    t.string "event", null: false
+    t.integer "importer_id"
+    t.integer "user_id"
+    t.string "session_id"
+    t.json "payload", default: {}
+    t.datetime "created_at", precision: nil, null: false
+    t.datetime "updated_at", precision: nil, null: false
+    t.index ["created_at"], name: "index_bulkrax_import_metrics_on_created_at"
+    t.index ["event"], name: "index_bulkrax_import_metrics_on_event"
+    t.index ["importer_id"], name: "index_bulkrax_import_metrics_on_importer_id"
+    t.index ["metric_type", "created_at"], name: "index_bulkrax_import_metrics_on_metric_type_and_created_at"
+    t.index ["metric_type"], name: "index_bulkrax_import_metrics_on_metric_type"
+    t.index ["user_id"], name: "index_bulkrax_import_metrics_on_user_id"
   end
 
   create_table "bulkrax_importer_runs", force: :cascade do |t|
@@ -655,6 +671,7 @@ ActiveRecord::Schema.define(version: 2024_12_05_212513) do
   end
 
   add_foreign_key "bulkrax_exporter_runs", "bulkrax_exporters", column: "exporter_id"
+  add_foreign_key "bulkrax_import_metrics", "bulkrax_importers", column: "importer_id"
   add_foreign_key "bulkrax_importer_runs", "bulkrax_importers", column: "importer_id"
   add_foreign_key "bulkrax_pending_relationships", "bulkrax_importer_runs", column: "importer_run_id"
   add_foreign_key "collection_type_participants", "hyrax_collection_types"
