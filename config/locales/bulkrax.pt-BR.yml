@@ -5,7 +5,63 @@ pt-BR:
       sidebar:
         exporters: Exportadores
         importers: Importadores
+        import_metrics: Métricas de importação guiada
     cancel: Cancelar
+    import_metrics:
+      breadcrumb: Métricas de importação guiada
+      page_title: Métricas de importação guiada
+      page_subtitle: Acompanhe taxas de sucesso, desempenho de validação e feedback dos usuários do importador guiado.
+      date_filter:
+        from: De
+        to: Até
+        all: Todos
+        apply: Aplicar
+        export_csv: Exportar CSV
+      summary_cards:
+        total_imports: Total de importações
+        success_rate: Taxa de sucesso na primeira tentativa
+        avg_validation: Tempo médio de validação
+        seq_average: "Média SEQ (1–7)"
+      empty_state:
+        title: Nenhuma métrica ainda
+        message: Os dados aparecerão aqui assim que os usuários começarem a executar importações guiadas.
+      tabs:
+        trends: Tendências
+        funnel: Funil
+        errors: Erros
+        feedback: Feedback de usuários
+        recent: Importações recentes
+      trends:
+        title: Importações ao longo do tempo
+        hint: "Verde = importações bem-sucedidas, Vermelho = importações com falha/parciais."
+      funnel:
+        title: Funil de importação
+        description: Quantos usuários chegam a cada etapa do assistente de importação guiada.
+        step1: "Etapa 1: Upload e validação"
+        step2: "Etapa 2: Configuração"
+        step3: "Etapa 3: Revisão"
+        step4: Enviado
+        no_data: Nenhum dado de funil neste intervalo de datas.
+        hint: A desistência entre etapas mostra onde os usuários abandonam o processo de importação.
+      errors:
+        title: Principais tipos de erro
+        error_type: Tipo de erro
+        count: Quantidade
+        no_data: Nenhum erro de validação neste intervalo de datas.
+      feedback:
+        distribution_title: Distribuição de pontuações SEQ
+        summary_title: Resumo das respostas
+        average_score: "Pontuação média:"
+        total_responses: "Total de respostas:"
+        recent_comments: Comentários recentes
+        no_data: Nenhuma resposta de feedback neste intervalo de datas.
+      recent_imports:
+        title: Importações guiadas recentes
+        importer: Importador
+        outcome: Resultado
+        records: Registros
+        first_attempt: Primeira tentativa
+        date: Data
     entry:
       labels:
         item_link: Link do item

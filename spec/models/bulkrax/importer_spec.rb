@@ -159,38 +159,6 @@ module Bulkrax
         importer.send(:record_import_outcome_metric, run)
       end
 
-      context 'outcome determination' do
-        it 'records complete when no records failed' do
-          allow(run).to receive(:failed_records).and_return(0)
-          expect(Bulkrax::ImportMetric).to receive(:record) do |args|
-            expect(args[:payload][:outcome]).to eq('complete')
-          end
-          importer.send(:record_import_outcome_metric, run)
-        end
-
-        it 'records failed when all records failed' do
-          allow(run).to receive(:total_work_entries).and_return(5)
-          allow(run).to receive(:total_collection_entries).and_return(0)
-          allow(run).to receive(:total_file_set_entries).and_return(0)
-          allow(run).to receive(:failed_records).and_return(5)
-          expect(Bulkrax::ImportMetric).to receive(:record) do |args|
-            expect(args[:payload][:outcome]).to eq('failed')
-          end
-          importer.send(:record_import_outcome_metric, run)
-        end
-
-        it 'records partial when some records failed' do
-          allow(run).to receive(:total_work_entries).and_return(10)
-          allow(run).to receive(:total_collection_entries).and_return(0)
-          allow(run).to receive(:total_file_set_entries).and_return(0)
-          allow(run).to receive(:failed_records).and_return(3)
-          expect(Bulkrax::ImportMetric).to receive(:record) do |args|
-            expect(args[:payload][:outcome]).to eq('partial')
-          end
-          importer.send(:record_import_outcome_metric, run)
-        end
-      end
-
       context 'payload content' do
         it 'includes record counts' do
           allow(run).to receive(:total_work_entries).and_return(10)

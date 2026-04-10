@@ -148,11 +148,11 @@ RSpec.describe Bulkrax::ImportersController, type: :controller do
       expect(result).to include('<span class=\'fa fa-remove\' style=\'color: red;\'></span> Error')
     end
 
-    it 'returns a string of HTML with a red "remove" icon when status_message is "Deleted"' do
+    it 'returns a string of HTML with a green "remove" icon when status_message is "Deleted"' do
       entry = FactoryBot.create(:bulkrax_entry, importerexporter: item, status_message: 'Deleted')
       get :index
       result = controller.status_message_for(entry)
-      expect(result).to include('<span class=\'fa fa-remove\' style=\'color: red;\'></span> Deleted')
+      expect(result).to include('<span class=\'fa fa-remove\' style=\'color: green;\'></span> Deleted')
     end
   end
 end

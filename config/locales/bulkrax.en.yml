@@ -4,7 +4,62 @@ en:
     admin:
       sidebar:
         exporters: Exporters
+        import_metrics: Guided Import Metrics
         importers: Importers
+    import_metrics:
+      breadcrumb: Guided Import Metrics
+      page_title: Guided Import Metrics
+      page_subtitle: Track import success rates, validation performance, and user feedback for the guided importer.
+      date_filter:
+        from: From
+        to: To
+        apply: Apply
+        export_csv: Export CSV
+      summary_cards:
+        total_imports: Total Imports
+        success_rate: First-Attempt Success Rate
+        avg_validation: Avg Validation Time
+        seq_average: SEQ Average (1–7)
+      empty_state:
+        title: No metrics yet
+        message: Data will appear here once users start running guided imports.
+      tabs:
+        trends: Trends
+        funnel: Funnel
+        errors: Errors
+        feedback: User Feedback
+        recent: Recent Imports
+      trends:
+        title: Imports Over Time
+        hint: Green = successful imports, Red = failed/partial imports.
+      funnel:
+        title: Import Funnel
+        description: How many users reach each step of the guided import wizard.
+        step1: "Step 1: Upload & Validate"
+        step2: "Step 2: Configure"
+        step3: "Step 3: Review"
+        step4: Submitted
+        no_data: No funnel data in this date range.
+        hint: Drop-off between steps shows where users abandon the import process.
+      errors:
+        title: Top Error Types
+        error_type: Error Type
+        count: Count
+        no_data: No validation errors in this date range.
+      feedback:
+        distribution_title: SEQ Score Distribution
+        summary_title: Response Summary
+        average_score: "Average Score:"
+        total_responses: "Total Responses:"
+        recent_comments: Recent Comments
+        no_data: No feedback responses in this date range.
+      recent_imports:
+        title: Recent Guided Imports
+        importer: Importer
+        outcome: Outcome
+        records: Records
+        first_attempt: First Attempt
+        date: Date
     cancel: Cancel
     entry:
       labels:

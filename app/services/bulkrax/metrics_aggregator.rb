@@ -15,10 +15,11 @@ module Bulkrax
 
     def first_attempt_success_rate
       outcomes = ImportMetric.import_outcomes.in_range(from, to)
+                             .joins("INNER JOIN bulkrax_importers ON bulkrax_importers.id = bulkrax_import_metrics.importer_id")
                              .where("payload->>'is_first_attempt' = ?", 'true')
       total = outcomes.count
       return 0.0 if total.zero?
-      successes = outcomes.where("payload->>'outcome' = ?", 'complete').count
+      successes = outcomes.where(bulkrax_importers: { status_message: 'Complete' }).count
       (successes.to_f / total * 100).round(1)
     end
 
@@ -80,8 +81,9 @@ module Bulkrax
 
     def imports_over_time
       ImportMetric.import_outcomes.in_range(from, to)
-                  .group("date_trunc('day', created_at)")
-                  .group("payload->>'outcome'")
+                  .joins("INNER JOIN bulkrax_importers ON bulkrax_importers.id = bulkrax_import_metrics.importer_id")
+                  .group("date_trunc('day', bulkrax_import_metrics.created_at)")
+                  .group("bulkrax_importers.status_message")
                   .count
     end
 
@@ -96,17 +98,18 @@ module Bulkrax
       sql = <<-SQL
         SELECT
           v.payload->>'outcome' AS validation_outcome,
-          o.payload->>'outcome' AS import_outcome,
+          i.status_message AS import_outcome,
           COUNT(*) AS cnt
         FROM bulkrax_import_metrics v
         JOIN bulkrax_import_metrics o ON v.session_id = o.session_id
+        JOIN bulkrax_importers i ON i.id = o.importer_id
         WHERE v.metric_type = 'validation'
           AND v.event = 'validation_complete'
           AND o.metric_type = 'import_outcome'
           AND o.event = 'import_complete'
           AND v.session_id IS NOT NULL
           AND v.created_at BETWEEN ? AND ?
-        GROUP BY v.payload->>'outcome', o.payload->>'outcome'
+        GROUP BY v.payload->>'outcome', i.status_message
         ORDER BY validation_outcome, import_outcome
       SQL
       ImportMetric.find_by_sql([sql, from, to])

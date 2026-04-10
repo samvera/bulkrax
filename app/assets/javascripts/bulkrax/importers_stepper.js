@@ -2380,7 +2380,7 @@
     }
 
     // Record funnel event and timing before submit
-    MetricsTracker.send('funnel', 'step_reached', { step: 'submitted' })
+    MetricsTracker.send('funnel', 'step_reached', { step: 4 })
     MetricsTracker.recordSubmit()
 
     $.ajax({

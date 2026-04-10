@@ -22,8 +22,7 @@ module Bulkrax
         end
       end
       described_class.prepend Bulkrax::MetricsAuth
-      allow(current_ability).to receive(:can?).with(:read, :admin_dashboard).and_return(true)
-      allow(current_ability).to receive(:authorize!).with(:read, :admin_dashboard).and_return(true)
+      allow(current_ability).to receive(:can_read_bulkrax_metrics?).and_return(true)
       allow(controller).to receive(:current_ability).and_return(current_ability)
       allow(Bulkrax.config).to receive(:guided_import_metrics_enabled).and_return(true)
     end
@@ -91,8 +90,7 @@ module Bulkrax
       end
 
       it 'returns 403 for non-admin users' do
-        allow(current_ability).to receive(:can?).with(:read, :admin_dashboard).and_return(false)
-        allow(controller).to receive(:authorize!).with(:read, :admin_dashboard).and_raise(CanCan::AccessDenied)
+        allow(current_ability).to receive(:can_read_bulkrax_metrics?).and_return(false)
         expect { get :index }.to raise_error(CanCan::AccessDenied)
       end
 

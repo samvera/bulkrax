@@ -25,6 +25,7 @@ module Bulkrax
     end
 
     def index
+      add_breadcrumbs
       @aggregator = MetricsAggregator.new(from: date_from, to: date_to)
       @date_from   = date_from
       @date_to     = date_to
@@ -53,12 +54,21 @@ module Bulkrax
       Time.current
     end
 
+    def add_breadcrumbs
+      return unless defined?(::Hyrax)
+
+      add_breadcrumb t(:'hyrax.controls.home'), main_app.root_path
+      add_breadcrumb t(:'hyrax.dashboard.breadcrumbs.admin'), hyrax.dashboard_path
+      add_breadcrumb t('bulkrax.admin.sidebar.importers'), bulkrax.importers_path
+      add_breadcrumb t('bulkrax.import_metrics.breadcrumb')
+    end
+
     def check_metrics_enabled
       head :not_found unless Bulkrax.config.guided_import_metrics_enabled
     end
 
     def check_permissions
-      authorize! :read, :admin_dashboard if defined?(CanCan)
+      raise CanCan::AccessDenied unless current_ability.can_read_bulkrax_metrics?
     end
 
     def generate_csv(aggregator)

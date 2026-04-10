@@ -41,7 +41,7 @@ module DatabaseHelpers
 
   def build_chainable_relation
     relation = double('ImportMetric::Relation') # rubocop:disable RSpec/VerifiedDoubles
-    %i[in_range where group order limit includes].each do |method|
+    %i[in_range where group order limit includes joins].each do |method|
       allow(relation).to receive(method).and_return(relation)
     end
     relation

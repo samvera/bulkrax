@@ -240,6 +240,7 @@ module Bulkrax
       mark_unseen_as_skipped
     rescue StandardError => e
       set_status_info(e)
+      record_import_outcome_metric(current_run) if current_run
     end
 
     # After an import any entries we did not touch are skipped.
@@ -312,17 +313,7 @@ module Bulkrax
     end
 
     def import_outcome_payload(run)
-      total = run.total_work_entries.to_i + run.total_collection_entries.to_i + run.total_file_set_entries.to_i
-      outcome = if run.failed_records.zero?
-                  'complete'
-                elsif total.positive? && run.failed_records >= total
-                  'failed'
-                else
-                  'partial'
-                end
-
       {
-        outcome: outcome,
         total_work_entries: run.total_work_entries.to_i,
         total_collection_entries: run.total_collection_entries.to_i,
         total_file_set_entries: run.total_file_set_entries.to_i,
@@ -331,6 +322,7 @@ module Bulkrax
         failed_records: run.failed_records.to_i,
         duration_seconds: run.updated_at && run.created_at ? (run.updated_at - run.created_at).to_i : 0,
         is_first_attempt: self.importer_runs.count == 1,
+        run_number: self.importer_runs.count,
         used_guided_import: self.parser_fields&.dig('guided_import') == true
       }
     end

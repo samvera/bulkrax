@@ -4,8 +4,64 @@ fr:
     admin:
       sidebar:
         exporters: Exportateurs
+        import_metrics: "Métriques d'import guidé"
         importers: Importateurs
     cancel: Annuler
+    import_metrics:
+      breadcrumb: "Métriques d'import guidé"
+      page_title: "Métriques d'import guidé"
+      page_subtitle: "Suivez les taux de réussite, les performances de validation et les retours utilisateurs de l'importateur guidé."
+      date_filter:
+        from: Du
+        to: Au
+        all: Tout
+        apply: Appliquer
+        export_csv: Exporter en CSV
+      summary_cards:
+        total_imports: Imports totaux
+        success_rate: Taux de réussite au premier essai
+        avg_validation: Temps moyen de validation
+        seq_average: "Moyenne SEQ (1–7)"
+      empty_state:
+        title: Aucune métrique pour le moment
+        message: "Les données apparaîtront ici dès que les utilisateurs lanceront des imports guidés."
+      tabs:
+        trends: Tendances
+        funnel: Entonnoir
+        errors: Erreurs
+        feedback: Retours utilisateurs
+        recent: Imports récents
+      trends:
+        title: Imports au fil du temps
+        hint: "Vert = imports réussis, Rouge = imports échoués/partiels."
+      funnel:
+        title: "Entonnoir d'import"
+        description: "Combien d'utilisateurs atteignent chaque étape de l'assistant d'import guidé."
+        step1: "Étape 1 : Téléverser et valider"
+        step2: "Étape 2 : Configurer"
+        step3: "Étape 3 : Vérifier"
+        step4: Soumis
+        no_data: Aucune donnée d'entonnoir pour cette période.
+        hint: "Les abandons entre les étapes montrent où les utilisateurs quittent le processus d'import."
+      errors:
+        title: "Principaux types d'erreurs"
+        error_type: "Type d'erreur"
+        count: Nombre
+        no_data: Aucune erreur de validation pour cette période.
+      feedback:
+        distribution_title: Distribution des scores SEQ
+        summary_title: Résumé des réponses
+        average_score: "Score moyen :"
+        total_responses: "Réponses totales :"
+        recent_comments: Commentaires récents
+        no_data: Aucune réponse de retour pour cette période.
+      recent_imports:
+        title: Imports guidés récents
+        importer: Importateur
+        outcome: Résultat
+        records: Enregistrements
+        first_attempt: Premier essai
+        date: Date
     entry:
       labels:
         item_link: Lien vers l'article

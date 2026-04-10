@@ -4,8 +4,64 @@ zh:
     admin:
       sidebar:
         exporters: 出口商
+        import_metrics: 引导式导入指标
         importers: 进口商
     cancel: 取消
+    import_metrics:
+      breadcrumb: 引导式导入指标
+      page_title: 引导式导入指标
+      page_subtitle: 跟踪引导式导入器的成功率、验证性能和用户反馈。
+      date_filter:
+        from: 从
+        to: 至
+        all: 全部
+        apply: 应用
+        export_csv: 导出 CSV
+      summary_cards:
+        total_imports: 导入总数
+        success_rate: 首次成功率
+        avg_validation: 平均验证时间
+        seq_average: "SEQ 平均分（1–7）"
+      empty_state:
+        title: 暂无指标数据
+        message: 用户开始执行引导式导入后，数据将在此处显示。
+      tabs:
+        trends: 趋势
+        funnel: 漏斗
+        errors: 错误
+        feedback: 用户反馈
+        recent: 近期导入
+      trends:
+        title: 导入趋势
+        hint: "绿色 = 成功导入，红色 = 失败/部分导入。"
+      funnel:
+        title: 导入漏斗
+        description: 引导式导入向导各步骤的用户到达情况。
+        step1: "第 1 步：上传与验证"
+        step2: "第 2 步：配置"
+        step3: "第 3 步：审核"
+        step4: 已提交
+        no_data: 该日期范围内无漏斗数据。
+        hint: 步骤间的流失表明用户在何处放弃了导入流程。
+      errors:
+        title: 主要错误类型
+        error_type: 错误类型
+        count: 数量
+        no_data: 该日期范围内无验证错误。
+      feedback:
+        distribution_title: SEQ 评分分布
+        summary_title: 反馈摘要
+        average_score: "平均分："
+        total_responses: "总响应数："
+        recent_comments: 近期评论
+        no_data: 该日期范围内无反馈数据。
+      recent_imports:
+        title: 近期引导式导入
+        importer: 导入器
+        outcome: 结果
+        records: 记录数
+        first_attempt: 首次尝试
+        date: 日期
     entry:
       labels:
         item_link: 物品链接

@@ -152,15 +152,7 @@ module Bulkrax
     end
 
     def status_message_for(e)
-      if e.status_message == "Complete"
-        "<td><span class='fa fa-check' style='color: green;'></span> #{e.status_message}</td>"
-      elsif e.status_message == "Pending"
-        "<td><span class='fa fa-ellipsis-h' style='color: blue;'></span> #{e.status_message}</td>"
-      elsif e.status_message == "Skipped"
-        "<td><span class='fa fa-step-forward' style='color: yellow;'></span> #{e.status_message}</td>"
-      else
-        "<td><span class='fa fa-remove' style='color: #{e.status == 'Deleted' ? 'green' : 'red'};'></span> #{e.status_message}</td>"
-      end
+      "<td>#{view_context.status_badge(e.status_message)}</td>"
     end
 
     def importer_util_links(i)

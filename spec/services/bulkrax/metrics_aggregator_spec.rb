@@ -27,22 +27,17 @@ module Bulkrax
 
     describe '#first_attempt_success_rate' do
       it 'returns 0.0 with no data' do
-        stub_postgres_scope(:import_outcomes, 0)
+        relation = stub_postgres_scope(:import_outcomes, 0)
+        allow(relation).to receive(:joins).and_return(relation) if relation
         expect(aggregator.first_attempt_success_rate).to eq(0.0)
       end
 
       it 'returns correct percentage with mixed outcomes' do
-        create_metric(metric_type: 'import_outcome', event: 'import_complete',
-                      payload: { outcome: 'complete', is_first_attempt: true })
-        create_metric(metric_type: 'import_outcome', event: 'import_complete',
-                      payload: { outcome: 'complete', is_first_attempt: true })
-        create_metric(metric_type: 'import_outcome', event: 'import_complete',
-                      payload: { outcome: 'failed', is_first_attempt: true })
-
         unless DatabaseHelpers.postgres?
           relation = double('ImportMetric::Relation') # rubocop:disable RSpec/VerifiedDoubles
           allow(ImportMetric).to receive(:import_outcomes).and_return(relation)
           allow(relation).to receive(:in_range).and_return(relation)
+          allow(relation).to receive(:joins).and_return(relation)
           allow(relation).to receive(:where).and_return(relation)
           allow(relation).to receive(:count).and_return(3, 2)
         end
@@ -51,15 +46,11 @@ module Bulkrax
       end
 
       it 'only counts first attempts' do
-        create_metric(metric_type: 'import_outcome', event: 'import_complete',
-                      payload: { outcome: 'complete', is_first_attempt: true })
-        create_metric(metric_type: 'import_outcome', event: 'import_complete',
-                      payload: { outcome: 'failed', is_first_attempt: false })
-
         unless DatabaseHelpers.postgres?
           relation = double('ImportMetric::Relation') # rubocop:disable RSpec/VerifiedDoubles
           allow(ImportMetric).to receive(:import_outcomes).and_return(relation)
           allow(relation).to receive(:in_range).and_return(relation)
+          allow(relation).to receive(:joins).and_return(relation)
           allow(relation).to receive(:where).and_return(relation)
           allow(relation).to receive(:count).and_return(1, 1)
         end
