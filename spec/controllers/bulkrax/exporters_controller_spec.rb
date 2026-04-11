@@ -165,5 +165,72 @@ module Bulkrax
         expect(response).to redirect_to(exporters_url)
       end
     end
+
+    describe 'ownership enforcement' do
+      let(:owner) { FactoryBot.create(:user) }
+      let(:other_user) { FactoryBot.create(:user) }
+      let(:owned_exporter) do
+        Exporter.create!(
+          name: 'Owned Exporter',
+          user_id: owner.id,
+          parser_klass: 'Bulkrax::CsvParser'
+        )
+      end
+      let(:non_admin_ability) do
+        double('ability', can_export_works?: true, can_admin_exporters?: false)
+      end
+      let(:admin_ability) do
+        double('ability', can_export_works?: true, can_admin_exporters?: true)
+      end
+
+      context 'when current user is not the owner and lacks admin ability' do
+        before do
+          allow(controller).to receive(:current_user).and_return(other_user)
+          allow(controller).to receive(:current_ability).and_return(non_admin_ability)
+        end
+
+        it 'raises RecordNotFound for show' do
+          expect {
+            get :show, params: { id: owned_exporter.to_param }, session: {}
+          }.to raise_error(ActiveRecord::RecordNotFound)
+        end
+
+        it 'raises RecordNotFound for edit' do
+          expect {
+            get :edit, params: { id: owned_exporter.to_param }, session: {}
+          }.to raise_error(ActiveRecord::RecordNotFound)
+        end
+
+        it 'raises RecordNotFound for destroy' do
+          expect {
+            delete :destroy, params: { id: owned_exporter.to_param }, session: {}
+          }.to raise_error(ActiveRecord::RecordNotFound)
+        end
+      end
+
+      context 'when current user is the owner' do
+        before do
+          allow(controller).to receive(:current_user).and_return(owner)
+          allow(controller).to receive(:current_ability).and_return(non_admin_ability)
+        end
+
+        it 'allows show' do
+          get :show, params: { id: owned_exporter.to_param }, session: {}
+          expect(response).to be_successful
+        end
+      end
+
+      context 'when current user has can_admin_exporters?' do
+        before do
+          allow(controller).to receive(:current_user).and_return(other_user)
+          allow(controller).to receive(:current_ability).and_return(admin_ability)
+        end
+
+        it 'allows show for any exporter' do
+          get :show, params: { id: owned_exporter.to_param }, session: {}
+          expect(response).to be_successful
+        end
+      end
+    end
   end
 end

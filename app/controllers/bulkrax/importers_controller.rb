@@ -30,7 +30,7 @@ module Bulkrax
 
     def importer_table
       order = table_order.presence || Arel.sql('last_imported_at DESC NULLS LAST')
-      @importers = Importer.order(order).page(table_page).per(table_per_page)
+      @importers = accessible_importers.order(order).page(table_page).per(table_per_page)
       @importers = @importers.where(importer_table_search) if importer_table_search.present?
       respond_to do |format|
         format.json { render json: format_importers(@importers) }
@@ -177,7 +177,7 @@ module Bulkrax
 
     # PUT /importers/1
     def continue
-      @importer = Importer.find(params[:importer_id])
+      @importer = accessible_importers.find(params[:importer_id])
       params[:importer] = { name: @importer.name }
       @importer.validate_only = false
       update
@@ -185,7 +185,7 @@ module Bulkrax
 
     # GET /importer/1/upload_corrected_entries
     def upload_corrected_entries
-      @importer = Importer.find(params[:importer_id])
+      @importer = accessible_importers.find(params[:importer_id])
       return unless defined?(::Hyrax)
       add_breadcrumb t(:'hyrax.controls.home'), main_app.root_path
       add_breadcrumb t(:'hyrax.dashboard.breadcrumbs.admin'), hyrax.dashboard_path
@@ -197,7 +197,7 @@ module Bulkrax
     # POST /importer/1/upload_corrected_entries_file
     def upload_corrected_entries_file
       file = params[:importer][:parser_fields].delete(:file)
-      @importer = Importer.find(params[:importer_id])
+      @importer = accessible_importers.find(params[:importer_id])
       if file.present?
         @importer[:parser_fields]['partial_import_file_path'] = @importer.parser.write_partial_import_file(file)
         @importer.save
@@ -242,7 +242,7 @@ module Bulkrax
 
     # GET /importers/1/export_errors
     def export_errors
-      @importer = Importer.find(params[:importer_id])
+      @importer = accessible_importers.find(params[:importer_id])
       @importer.write_errored_entries_file
       send_content
     end
@@ -251,7 +251,13 @@ module Bulkrax
 
     # Use callbacks to share common setup or constraints between actions.
     def set_importer
-      @importer = Importer.find(params[:id] || params[:importer_id])
+      @importer = accessible_importers.find(params[:id] || params[:importer_id])
+    end
+
+    # API requests bypass per-user scoping so existing API consumers are unaffected.
+    def accessible_importers
+      return Importer.all if api_request?
+      super
     end
 
     def importable_params

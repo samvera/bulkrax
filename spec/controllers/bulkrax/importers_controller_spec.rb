@@ -294,6 +294,9 @@ module Bulkrax
       let(:import_file_path) { importer.errored_entries_csv_path }
 
       before do
+        # Ensure current_user is the importer's owner so ownership scoping works
+        # regardless of creation order from chained factories.
+        allow(controller).to receive(:current_user).and_return(importer.user)
         importer.parser_fields.merge!(import_file_path: import_file_path)
       end
 
@@ -607,6 +610,75 @@ module Bulkrax
           get :original_file, params: { importer_id: importer.to_param, file_type: :zip }, session: valid_session
           expect(response).to redirect_to(importer)
           expect(flash[:alert]).to eq("File type 'zip' not found.")
+        end
+      end
+    end
+
+    describe 'ownership enforcement' do
+      let(:owner) { FactoryBot.create(:user) }
+      let(:other_user) { FactoryBot.create(:user) }
+      let(:owned_importer) do
+        Importer.create!(
+          name: 'Owned Importer',
+          admin_set_id: 'admin_set/default',
+          user_id: owner.id,
+          parser_klass: 'Bulkrax::CsvParser',
+          parser_fields: { some_attribute: 'something' }
+        )
+      end
+      let(:non_admin_ability) do
+        double('ability', can_import_works?: true, can_admin_importers?: false)
+      end
+      let(:admin_ability) do
+        double('ability', can_import_works?: true, can_admin_importers?: true)
+      end
+
+      context 'when current user is not the owner and lacks admin ability' do
+        before do
+          allow(controller).to receive(:current_user).and_return(other_user)
+          allow(controller).to receive(:current_ability).and_return(non_admin_ability)
+        end
+
+        it 'raises RecordNotFound for show' do
+          expect {
+            get :show, params: { id: owned_importer.to_param }, session: {}
+          }.to raise_error(ActiveRecord::RecordNotFound)
+        end
+
+        it 'raises RecordNotFound for edit' do
+          expect {
+            get :edit, params: { id: owned_importer.to_param }, session: {}
+          }.to raise_error(ActiveRecord::RecordNotFound)
+        end
+
+        it 'raises RecordNotFound for destroy' do
+          expect {
+            delete :destroy, params: { id: owned_importer.to_param }, session: {}
+          }.to raise_error(ActiveRecord::RecordNotFound)
+        end
+      end
+
+      context 'when current user is the owner' do
+        before do
+          allow(controller).to receive(:current_user).and_return(owner)
+          allow(controller).to receive(:current_ability).and_return(non_admin_ability)
+        end
+
+        it 'allows show' do
+          get :show, params: { id: owned_importer.to_param }, session: {}
+          expect(response).to be_successful
+        end
+      end
+
+      context 'when current user has can_admin_importers?' do
+        before do
+          allow(controller).to receive(:current_user).and_return(other_user)
+          allow(controller).to receive(:current_ability).and_return(admin_ability)
+        end
+
+        it 'allows show for any importer' do
+          get :show, params: { id: owned_importer.to_param }, session: {}
+          expect(response).to be_successful
         end
       end
     end

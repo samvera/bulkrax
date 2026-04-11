@@ -17,6 +17,9 @@ module Bulkrax
 
     def update
       @entry = Entry.find(params[:id])
+      item = @entry.importerexporter
+      raise CanCan::AccessDenied unless item_accessible?(item)
+
       type = case @entry.type.downcase
              when /fileset/
                'file_set'
@@ -25,7 +28,6 @@ module Bulkrax
              else
                'work'
              end
-      item = @entry.importerexporter
       # do not run counters as it loads the whole parser
       current_run = item.current_run(skip_counts: true)
       @entry.set_status_info('Pending', current_run)
@@ -44,6 +46,9 @@ module Bulkrax
 
     def destroy
       @entry = Entry.find(params[:id])
+      item = @entry.importerexporter
+      raise CanCan::AccessDenied unless item_accessible?(item)
+
       @status = ""
       begin
         work = @entry.factory&.find
@@ -59,7 +64,6 @@ module Bulkrax
         @status = "Error: #{e.message}"
       end
 
-      item = @entry.importerexporter
       entry_path = item.class.to_s.include?('Importer') ? bulkrax.importer_entry_path(item.id, @entry.id) : bulkrax.exporter_entry_path(item.id, @entry.id)
 
       redirect_back fallback_location: entry_path, notice: @status
@@ -69,7 +73,7 @@ module Bulkrax
 
     # GET /importers/1/entries/1
     def show_importer
-      @importer = Importer.find(params[:importer_id])
+      @importer = accessible_importers.find(params[:importer_id])
       @entry = Entry.find(params[:id])
 
       return unless defined?(::Hyrax)
@@ -82,7 +86,7 @@ module Bulkrax
 
     # GET /exporters/1/entries/1
     def show_exporter
-      @exporter = Exporter.find(params[:exporter_id])
+      @exporter = accessible_exporters.find(params[:exporter_id])
       @entry = Entry.find(params[:id])
 
       return unless defined?(::Hyrax)

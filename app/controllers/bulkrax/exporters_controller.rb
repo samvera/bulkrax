@@ -13,13 +13,13 @@ module Bulkrax
     # GET /exporters
     def index
       # NOTE: We're paginating this in the browser.
-      @exporters = Exporter.order(created_at: :desc).all
+      @exporters = accessible_exporters.order(created_at: :desc)
 
       add_exporter_breadcrumbs if defined?(::Hyrax)
     end
 
     def exporter_table
-      @exporters = Exporter.order(table_order).page(table_page).per(table_per_page)
+      @exporters = accessible_exporters.order(table_order).page(table_page).per(table_per_page)
       @exporters = @exporters.where(exporter_table_search) if exporter_table_search.present?
       respond_to do |format|
         format.json { render json: format_exporters(@exporters) }
@@ -106,7 +106,7 @@ module Bulkrax
 
     # GET /exporters/1/download
     def download
-      @exporter = Exporter.find(params[:exporter_id])
+      @exporter = accessible_exporters.find(params[:exporter_id])
       send_content
     end
 
@@ -114,7 +114,7 @@ module Bulkrax
 
     # Use callbacks to share common setup or constraints between actions.
     def set_exporter
-      @exporter = Exporter.find(params[:id] || params[:exporter_id])
+      @exporter = accessible_exporters.find(params[:id] || params[:exporter_id])
     end
 
     # Only allow a trusted parameters through.
