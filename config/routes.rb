@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 Bulkrax::Engine.routes.draw do
+  resource :field_mappings, only: [:edit, :update]
+
   resources :exporters do
     get :download
     get :entry_table

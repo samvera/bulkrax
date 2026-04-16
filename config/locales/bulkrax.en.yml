@@ -4,8 +4,57 @@ en:
     admin:
       sidebar:
         exporters: Exporters
+        field_mappings: Field Mappings
         importers: Importers
     cancel: Cancel
+    field_mappings:
+      actions: Actions
+      add_field: Add Field
+      breadcrumb: Field Mappings
+      errors_heading: 'Errors:'
+      excluded: Excluded
+      flash:
+        reset: Mappings reset to defaults.
+        updated: Field mappings updated.
+      from: From (sources)
+      generated: Generated
+      page_title: Field Mappings
+      placeholders:
+        field_name: field_name
+        from: "source1, source2"
+        method_name: method name
+        models: "Model1, Model2"
+        nested_object: nested object name
+        nested_type_example: "e.g. Array"
+        regex_optional: regex (optional)
+        regex_pattern: regex pattern
+        solr_field: Solr field name
+      reset_confirm: "Reset %{parser} mappings to defaults?"
+      reset_to_defaults: Reset to Defaults
+      save: Save
+      source_id: Source ID
+      split: Split
+      field_name: Field Name
+      labels:
+        if: If
+        join: Join
+        nested_type: Nested Type
+        object: Object
+        parsed: Parsed
+        related_children: Related Children
+        related_parents: Related Parents
+        search_field: Search Field
+        skip_object_for_models: Skip Object for Models
+      titles:
+        advanced_properties: Show advanced properties
+        remove_field: Remove field
+      validations:
+        duplicate_field: "Duplicate field name '%{name}'."
+        from_or_generated: "Field '%{name}' must have a source (from) or be marked as generated."
+        if_incomplete: "Field '%{name}': both 'if' method and regex must be provided together."
+        invalid_field_name: "Invalid field name '%{name}': only alphanumeric characters and underscores allowed."
+        nested_type_without_object: "Field '%{name}': nested_type requires object to be set."
+        single_source_identifier: "Only one field may be marked as source_identifier (found: %{fields})."
     entry:
       labels:
         item_link: Item Link
