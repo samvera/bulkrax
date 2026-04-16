@@ -16,7 +16,9 @@ module Bulkrax
     def edit
       @all_mappings = load_mappings
       @parsers = @all_mappings.keys
-      @selected_parser = params[:parser].presence || @parsers.first || "Bulkrax::CsvParser"
+      @selected_parser = params[:parser].presence ||
+                         (@parsers.include?("Bulkrax::CsvParser") ? "Bulkrax::CsvParser" : @parsers.first) ||
+                         "Bulkrax::CsvParser"
 
       if params[:reset].present?
         defaults = default_mappings
@@ -26,7 +28,9 @@ module Bulkrax
         return
       end
 
-      @mappings = @all_mappings[@selected_parser] || {}
+      @mappings = (@all_mappings[@selected_parser] || {}).sort.to_h
+      @valid_field_names = valid_field_names
+      @missing_fields = @valid_field_names - @mappings.keys
       add_breadcrumbs
     end
 
@@ -61,11 +65,30 @@ module Bulkrax
           next
         end
 
+        split_regex = field_data[:split_regex].to_s.strip
+        if split_regex.present?
+          begin
+            Regexp.new(split_regex)
+          rescue RegexpError => e
+            errors << t('bulkrax.field_mappings.validations.invalid_regex', name: name, field: 'split', error: e.message)
+            next
+          end
+        end
+
         if_method = field_data[:if_method].to_s.strip
         if_regex = field_data[:if_regex].to_s.strip
         if (if_method.present? && if_regex.blank?) || (if_method.blank? && if_regex.present?)
           errors << t('bulkrax.field_mappings.validations.if_incomplete', name: name)
           next
+        end
+
+        if if_regex.present?
+          begin
+            Regexp.new(if_regex)
+          rescue RegexpError => e
+            errors << t('bulkrax.field_mappings.validations.invalid_regex', name: name, field: 'if', error: e.message)
+            next
+          end
         end
 
         if field_data[:nested_type].to_s.strip.present? && field_data[:object].to_s.strip.blank?
@@ -80,19 +103,35 @@ module Bulkrax
         errors << t('bulkrax.field_mappings.validations.single_source_identifier', fields: source_id_fields.join(', '))
       end
 
+      # Warn about unrecognized field names (non-blocking)
+      warnings = []
+      valid_names = valid_field_names
+      parser_mappings.each_key do |name|
+        unless valid_names.include?(name)
+          warnings << t('bulkrax.field_mappings.validations.unrecognized_field', name: name)
+        end
+      end
+
       if errors.any?
         @all_mappings = all_mappings
         @parsers = all_mappings.keys
         @selected_parser = parser
-        @mappings = parser_mappings
+        @mappings = parser_mappings.sort.to_h
         @errors = errors
+        @warnings = warnings
+        @valid_field_names = valid_names
+        @missing_fields = valid_names - parser_mappings.keys
         add_breadcrumbs
         render :edit
         return
       end
 
-      all_mappings[parser] = parser_mappings
+      all_mappings[parser] = parser_mappings.sort.to_h
       save_mappings(all_mappings)
+
+      if warnings.any?
+        flash[:warning] = warnings.join(' ')
+      end
 
       redirect_to edit_field_mappings_path(parser: parser), notice: t('bulkrax.field_mappings.flash.updated')
     end
@@ -153,6 +192,32 @@ module Bulkrax
       entry[:skip_object_for_model_names] = skip_models.split(',').map(&:strip) if skip_models.present?
 
       entry
+    end
+
+    def valid_field_names
+      context = Bulkrax::CsvParser::CsvTemplateGeneration::TemplateContext.new
+
+      # Get raw model property names (before mapping)
+      property_names = context.all_models.flat_map do |model|
+        field_list = context.field_analyzer.find_or_create_field_list_for(model_name: model)
+        field_list.values.flat_map { |config| config["properties"] || [] }
+      end.uniq
+
+      # Add core/special field names used as mapping keys
+      core_names = %w[
+        model source_identifier id rights_statement
+        visibility embargo_release_date visibility_during_embargo visibility_after_embargo
+        lease_expiration_date visibility_during_lease visibility_after_lease
+        parents children file remote_files
+      ]
+
+      # Include existing mapping keys from Bulkrax config as valid
+      configured_keys = (Bulkrax.field_mappings["Bulkrax::CsvParser"] || {}).keys
+
+      (property_names + core_names + configured_keys).uniq.sort
+    rescue StandardError => e
+      Rails.logger.error("FieldMappingsController: could not compute valid headers – #{e.class}: #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}")
+      []
     end
 
     def add_breadcrumbs

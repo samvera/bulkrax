@@ -15,16 +15,28 @@
       </div>
     <% end %>
 
-    <% if flash[:notice].present? %>
-      <div class="alert alert-success"><%= flash[:notice] %></div>
+    <% if flash[:warning].present? %>
+      <div class="alert alert-warning"><%= flash[:warning] %></div>
+    <% end %>
+
+    <% if @warnings.present? %>
+      <div class="alert alert-warning">
+        <strong><%= t('bulkrax.field_mappings.warnings_heading') %></strong>
+        <ul>
+          <% @warnings.each do |warning| %>
+            <li><%= warning %></li>
+          <% end %>
+        </ul>
+      </div>
     <% end %>
 
     <!-- Parser Tabs -->
     <ul class="nav nav-tabs" role="tablist">
       <% @parsers.each do |parser| %>
-        <li role="presentation" class="<%= 'active' if parser == @selected_parser %>">
+        <li class="nav-item">
           <%= link_to parser.demodulize.underscore.humanize.titleize,
                       edit_field_mappings_path(parser: parser),
+                      class: "nav-link #{'active' if parser == @selected_parser}",
                       role: "tab" %>
         </li>
       <% end %>
@@ -40,12 +52,12 @@
             <table class="table table-striped" id="field-mappings-table">
               <thead>
                 <tr>
-                  <th><%= t('bulkrax.field_mappings.field_name') %></th>
-                  <th><%= t('bulkrax.field_mappings.from') %></th>
-                  <th><%= t('bulkrax.field_mappings.split') %></th>
-                  <th><%= t('bulkrax.field_mappings.generated') %></th>
-                  <th><%= t('bulkrax.field_mappings.source_id') %></th>
-                  <th><%= t('bulkrax.field_mappings.excluded') %></th>
+                  <th><%= t('bulkrax.field_mappings.field_name') %> <span class="fa fa-question-circle text-muted" data-toggle="tooltip" title="<%= t('bulkrax.field_mappings.help.field_name') %>"></span></th>
+                  <th><%= t('bulkrax.field_mappings.from') %> <span class="fa fa-question-circle text-muted" data-toggle="tooltip" title="<%= t('bulkrax.field_mappings.help.from') %>"></span></th>
+                  <th><%= t('bulkrax.field_mappings.split') %> <span class="fa fa-question-circle text-muted" data-toggle="tooltip" title="<%= t('bulkrax.field_mappings.help.split') %>"></span></th>
+                  <th class="text-center"><%= t('bulkrax.field_mappings.generated') %> <span class="fa fa-question-circle text-muted" data-toggle="tooltip" title="<%= t('bulkrax.field_mappings.help.generated') %>"></span></th>
+                  <th class="text-center"><%= t('bulkrax.field_mappings.source_id') %> <span class="fa fa-question-circle text-muted" data-toggle="tooltip" title="<%= t('bulkrax.field_mappings.help.source_id') %>"></span></th>
+                  <th class="text-center"><%= t('bulkrax.field_mappings.excluded') %> <span class="fa fa-question-circle text-muted" data-toggle="tooltip" title="<%= t('bulkrax.field_mappings.help.excluded') %>"></span></th>
                   <th><%= t('bulkrax.field_mappings.actions') %></th>
                 </tr>
               </thead>
@@ -58,13 +70,20 @@
           </div>
 
           <div class="form-actions" style="margin-top: 15px;">
-            <button type="button" class="btn btn-default" id="add-field-btn">
+            <button type="button" class="btn btn-outline-secondary" id="add-field-btn">
               <span class="fa fa-plus"></span> <%= t('bulkrax.field_mappings.add_field') %>
             </button>
+            <% if @missing_fields.present? && @selected_parser == "Bulkrax::CsvParser" %>
+              <button type="button" class="btn btn-outline-primary" id="add-missing-fields-btn"
+                      data-missing-fields="<%= @missing_fields.sort.to_json %>">
+                <span class="fa fa-plus-circle"></span>
+                <%= t('bulkrax.field_mappings.add_missing_fields', count: @missing_fields.size) %>
+              </button>
+            <% end %>
           </div>
 
           <div class="panel-footer card-footer" style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #ddd;">
-            <div class="pull-right">
+            <div class="float-right">
               <%= submit_tag t('bulkrax.field_mappings.save'), class: "btn btn-primary" %>
               <%= link_to t('bulkrax.field_mappings.reset_to_defaults'),
                           edit_field_mappings_path(parser: @selected_parser, reset: true),

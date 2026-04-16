@@ -3,7 +3,11 @@
   from_value = Array(properties[:from] || properties["from"]).join(', ')
   split_val = properties[:split] || properties["split"]
   split_checked = split_val.present? && split_val != false
-  split_regex = split_val.is_a?(String) ? split_val : ''
+  split_regex = case split_val
+                when String then split_val
+                when Regexp then split_val.source
+                else ''
+                end
   generated = properties[:generated] || properties["generated"] || false
   source_id = properties[:source_identifier] || properties["source_identifier"] || false
   excluded = properties[:excluded] || properties["excluded"] || false
@@ -25,125 +29,168 @@
 <tr class="field-row" data-index="<%= index %>">
   <td>
     <input type="text" name="mappings[<%= index %>][name]" value="<%= field_name %>"
-           class="form-control input-sm field-name-input"
+           class="form-control form-control-sm field-name-input"
            placeholder="<%= t('bulkrax.field_mappings.placeholders.field_name') %>"
            pattern="[a-zA-Z0-9_]+" title="<%= t('bulkrax.field_mappings.validations.invalid_field_name', name: '') %>">
   </td>
   <td>
     <input type="text" name="mappings[<%= index %>][from]" value="<%= from_value %>"
-           class="form-control input-sm"
+           class="form-control form-control-sm"
            placeholder="<%= t('bulkrax.field_mappings.placeholders.from') %>">
   </td>
   <td class="split-cell">
-    <label class="checkbox-inline">
-      <input type="hidden" name="mappings[<%= index %>][split]" value="0">
-      <input type="checkbox" name="mappings[<%= index %>][split]" value="1"
-             class="split-checkbox" <%= 'checked' if split_checked %>>
-    </label>
-    <div class="split-regex-wrapper" style="<%= 'display:none' unless split_checked %>">
-      <input type="text" name="mappings[<%= index %>][split_regex]" value="<%= split_regex %>"
-             class="form-control input-sm regex-input"
-             placeholder="<%= t('bulkrax.field_mappings.placeholders.regex_optional') %>">
-      <small class="regex-preview text-muted"></small>
+    <div class="d-flex align-items-start">
+      <label class="mb-0 mr-2" style="padding-top: 5px;">
+        <input type="hidden" name="mappings[<%= index %>][split]" value="0">
+        <input type="checkbox" name="mappings[<%= index %>][split]" value="1"
+               class="split-checkbox" <%= 'checked' if split_checked %>>
+      </label>
+      <div class="split-regex-wrapper" style="max-width: 120px; <%= 'display:none' unless split_checked %>">
+        <input type="text" name="mappings[<%= index %>][split_regex]" value="<%= split_regex %>"
+               class="form-control form-control-sm regex-input">
+        <small class="regex-preview text-muted d-block"><%= t('bulkrax.field_mappings.default_split_explanation') if split_checked && split_regex.blank? %></small>
+      </div>
     </div>
   </td>
-  <td>
+  <td class="text-center">
     <input type="hidden" name="mappings[<%= index %>][generated]" value="0">
     <input type="checkbox" name="mappings[<%= index %>][generated]" value="1" <%= 'checked' if generated %>>
   </td>
-  <td>
+  <td class="text-center">
     <input type="hidden" name="mappings[<%= index %>][source_identifier]" value="0">
     <input type="checkbox" name="mappings[<%= index %>][source_identifier]" value="1" <%= 'checked' if source_id %>>
   </td>
-  <td>
+  <td class="text-center">
     <input type="hidden" name="mappings[<%= index %>][excluded]" value="0">
     <input type="checkbox" name="mappings[<%= index %>][excluded]" value="1" <%= 'checked' if excluded %>>
   </td>
   <td>
-    <button type="button" class="btn btn-xs btn-default expand-toggle <%= 'has-advanced' if has_advanced %>"
-            title="<%= t('bulkrax.field_mappings.titles.advanced_properties') %>">
-      <span class="fa fa-chevron-down"></span>
-    </button>
-    <button type="button" class="btn btn-xs btn-danger remove-field-btn"
-            title="<%= t('bulkrax.field_mappings.titles.remove_field') %>">
-      <span class="fa fa-times"></span>
-    </button>
+    <div class="d-flex align-items-center">
+      <a role="button" class="expand-toggle mr-2 <%= 'has-advanced' if has_advanced %>"
+         title="<%= t('bulkrax.field_mappings.titles.advanced_properties') %>">
+        <span class="fa fa-chevron-down" aria-hidden="true"></span>
+      </a>
+      <a role="button" class="remove-field-btn"
+         title="<%= t('bulkrax.field_mappings.titles.remove_field') %>">
+        <span class="fa fa-times-circle" aria-hidden="true"></span>
+      </a>
+    </div>
   </td>
 </tr>
 <tr class="advanced-row" style="display: none;" data-index="<%= index %>">
   <td colspan="7">
-    <div class="well well-sm" style="margin: 0;">
-      <div class="row">
-        <div class="col-md-6">
-          <div class="form-group form-group-sm">
-            <label><%= t('bulkrax.field_mappings.labels.search_field') %></label>
-            <input type="text" name="mappings[<%= index %>][search_field]" value="<%= search_field %>"
-                   class="form-control input-sm"
-                   placeholder="<%= t('bulkrax.field_mappings.placeholders.solr_field') %>">
-          </div>
-          <div class="form-group form-group-sm">
-            <label><%= t('bulkrax.field_mappings.labels.object') %></label>
-            <input type="text" name="mappings[<%= index %>][object]" value="<%= object %>"
-                   class="form-control input-sm"
-                   placeholder="<%= t('bulkrax.field_mappings.placeholders.nested_object') %>">
-          </div>
-          <div class="form-group form-group-sm">
-            <label class="checkbox-inline">
-              <input type="hidden" name="mappings[<%= index %>][join]" value="0">
-              <input type="checkbox" name="mappings[<%= index %>][join]" value="1" <%= 'checked' if join %>>
-              <%= t('bulkrax.field_mappings.labels.join') %>
-            </label>
-          </div>
-          <div class="form-group form-group-sm">
-            <label class="checkbox-inline">
-              <input type="hidden" name="mappings[<%= index %>][related_parents_field_mapping]" value="0">
-              <input type="checkbox" name="mappings[<%= index %>][related_parents_field_mapping]" value="1" <%= 'checked' if related_parents %>>
-              <%= t('bulkrax.field_mappings.labels.related_parents') %>
-            </label>
-          </div>
-        </div>
-        <div class="col-md-6">
-          <div class="form-group form-group-sm">
-            <label class="checkbox-inline">
+    <div class="card card-body bg-light p-3" style="margin: 0;">
+      <%# === Value Handling === %>
+      <h6 class="text-muted font-weight-bold mb-2"><%= t('bulkrax.field_mappings.section_headings.value_handling') %></h6>
+      <div class="row mb-3">
+        <div class="col-md-4">
+          <div class="form-group form-group-sm mb-2">
+            <label class="d-flex align-items-center">
               <input type="hidden" name="mappings[<%= index %>][parsed]" value="0">
-              <input type="checkbox" name="mappings[<%= index %>][parsed]" value="1" <%= 'checked' if parsed %>>
+              <input type="checkbox" name="mappings[<%= index %>][parsed]" value="1" class="mr-2" <%= 'checked' if parsed %>>
               <%= t('bulkrax.field_mappings.labels.parsed') %>
             </label>
+            <small class="text-muted"><%= t('bulkrax.field_mappings.help.parsed') %></small>
           </div>
-          <div class="form-group form-group-sm">
+        </div>
+        <div class="col-md-4">
+          <div class="form-group form-group-sm mb-2">
+            <label class="d-flex align-items-center">
+              <input type="hidden" name="mappings[<%= index %>][join]" value="0">
+              <input type="checkbox" name="mappings[<%= index %>][join]" value="1" class="mr-2" <%= 'checked' if join %>>
+              <%= t('bulkrax.field_mappings.labels.join') %>
+            </label>
+            <small class="text-muted"><%= t('bulkrax.field_mappings.help.join') %></small>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="form-group form-group-sm mb-2">
+            <label><%= t('bulkrax.field_mappings.labels.search_field') %></label>
+            <input type="text" name="mappings[<%= index %>][search_field]" value="<%= search_field %>"
+                   class="form-control form-control-sm"
+                   placeholder="<%= t('bulkrax.field_mappings.placeholders.solr_field') %>">
+            <small class="text-muted"><%= t('bulkrax.field_mappings.help.search_field') %></small>
+          </div>
+        </div>
+      </div>
+
+      <%# === Nested Objects === %>
+      <h6 class="text-muted font-weight-bold mb-2"><%= t('bulkrax.field_mappings.section_headings.nested_objects') %></h6>
+      <div class="row mb-3">
+        <div class="col-md-4">
+          <div class="form-group form-group-sm mb-2">
+            <label><%= t('bulkrax.field_mappings.labels.object') %></label>
+            <input type="text" name="mappings[<%= index %>][object]" value="<%= object %>"
+                   class="form-control form-control-sm"
+                   placeholder="<%= t('bulkrax.field_mappings.placeholders.nested_object') %>">
+            <small class="text-muted"><%= t('bulkrax.field_mappings.help.object') %></small>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="form-group form-group-sm mb-2">
             <label><%= t('bulkrax.field_mappings.labels.nested_type') %></label>
             <input type="text" name="mappings[<%= index %>][nested_type]" value="<%= nested_type %>"
-                   class="form-control input-sm"
+                   class="form-control form-control-sm"
                    placeholder="<%= t('bulkrax.field_mappings.placeholders.nested_type_example') %>">
+            <small class="text-muted"><%= t('bulkrax.field_mappings.help.nested_type') %></small>
           </div>
-          <div class="form-group form-group-sm">
-            <label class="checkbox-inline">
+        </div>
+        <div class="col-md-4">
+          <div class="form-group form-group-sm mb-2">
+            <label><%= t('bulkrax.field_mappings.labels.skip_object_for_models') %></label>
+            <input type="text" name="mappings[<%= index %>][skip_object_for_model_names]" value="<%= skip_models %>"
+                   class="form-control form-control-sm"
+                   placeholder="<%= t('bulkrax.field_mappings.placeholders.models') %>">
+            <small class="text-muted"><%= t('bulkrax.field_mappings.help.skip_object_for_models') %></small>
+          </div>
+        </div>
+      </div>
+
+      <%# === Relationships === %>
+      <h6 class="text-muted font-weight-bold mb-2"><%= t('bulkrax.field_mappings.section_headings.relationships') %></h6>
+      <div class="row mb-3">
+        <div class="col-md-4">
+          <div class="form-group form-group-sm mb-2">
+            <label class="d-flex align-items-center">
+              <input type="hidden" name="mappings[<%= index %>][related_parents_field_mapping]" value="0">
+              <input type="checkbox" name="mappings[<%= index %>][related_parents_field_mapping]" value="1" class="mr-2" <%= 'checked' if related_parents %>>
+              <%= t('bulkrax.field_mappings.labels.related_parents') %>
+            </label>
+            <small class="text-muted"><%= t('bulkrax.field_mappings.help.related_parents') %></small>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="form-group form-group-sm mb-2">
+            <label class="d-flex align-items-center">
               <input type="hidden" name="mappings[<%= index %>][related_children_field_mapping]" value="0">
-              <input type="checkbox" name="mappings[<%= index %>][related_children_field_mapping]" value="1" <%= 'checked' if related_children %>>
+              <input type="checkbox" name="mappings[<%= index %>][related_children_field_mapping]" value="1" class="mr-2" <%= 'checked' if related_children %>>
               <%= t('bulkrax.field_mappings.labels.related_children') %>
             </label>
+            <small class="text-muted"><%= t('bulkrax.field_mappings.help.related_children') %></small>
           </div>
-          <div class="form-group form-group-sm">
+        </div>
+      </div>
+
+      <%# === Conditions === %>
+      <h6 class="text-muted font-weight-bold mb-2"><%= t('bulkrax.field_mappings.section_headings.conditions') %></h6>
+      <div class="row">
+        <div class="col-md-8">
+          <div class="form-group form-group-sm mb-2">
             <label><%= t('bulkrax.field_mappings.labels.if') %></label>
+            <small class="text-muted d-block mb-1"><%= t('bulkrax.field_mappings.help.if_condition') %></small>
             <div class="row">
-              <div class="col-xs-6">
+              <div class="col-6">
                 <input type="text" name="mappings[<%= index %>][if_method]" value="<%= if_method %>"
-                       class="form-control input-sm"
+                       class="form-control form-control-sm"
                        placeholder="<%= t('bulkrax.field_mappings.placeholders.method_name') %>">
               </div>
-              <div class="col-xs-6">
+              <div class="col-6">
                 <input type="text" name="mappings[<%= index %>][if_regex]" value="<%= if_regex %>"
-                       class="form-control input-sm regex-input"
+                       class="form-control form-control-sm regex-input"
                        placeholder="<%= t('bulkrax.field_mappings.placeholders.regex_pattern') %>">
                 <small class="regex-preview text-muted"></small>
               </div>
             </div>
-          </div>
-          <div class="form-group form-group-sm">
-            <label><%= t('bulkrax.field_mappings.labels.skip_object_for_models') %></label>
-            <input type="text" name="mappings[<%= index %>][skip_object_for_model_names]" value="<%= skip_models %>"
-                   class="form-control input-sm"
-                   placeholder="<%= t('bulkrax.field_mappings.placeholders.models') %>">
           </div>
         </div>
       </div>

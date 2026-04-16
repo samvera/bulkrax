@@ -4,21 +4,25 @@ en:
     admin:
       sidebar:
         exporters: Exporters
-        field_mappings: Field Mappings
         importers: Importers
     cancel: Cancel
     field_mappings:
       actions: Actions
       add_field: Add Field
-      breadcrumb: Field Mappings
+      add_missing_fields:
+        one: "Add %{count} missing field"
+        other: "Add %{count} missing fields"
+      breadcrumb: Bulkrax Field Mappings
+      default_split_explanation: "Uses default delimiters"
       errors_heading: 'Errors:'
+      warnings_heading: 'Warnings:'
       excluded: Excluded
       flash:
         reset: Mappings reset to defaults.
         updated: Field mappings updated.
       from: From (sources)
       generated: Generated
-      page_title: Field Mappings
+      page_title: Bulkrax Field Mappings
       placeholders:
         field_name: field_name
         from: "source1, source2"
@@ -32,19 +36,40 @@ en:
       reset_confirm: "Reset %{parser} mappings to defaults?"
       reset_to_defaults: Reset to Defaults
       save: Save
-      source_id: Source ID
+      source_id: Source Identifier
       split: Split
       field_name: Field Name
       labels:
-        if: If
-        join: Join
+        if: Conditional Processing
+        join: Join multi-values on export
         nested_type: Nested Type
-        object: Object
-        parsed: Parsed
-        related_children: Related Children
-        related_parents: Related Parents
-        search_field: Search Field
+        object: Object Property
+        parsed: Apply value transformation
+        related_children: Contains child work identifiers
+        related_parents: Contains parent work identifiers
+        search_field: Solr Search Field
         skip_object_for_models: Skip Object for Models
+      help:
+        field_name: "The metadata property name in the repository (e.g. title, creator, description)"
+        from: "Source column(s) or field(s) in the import file that map to this property (comma-separated)"
+        split: "Split a single source value into multiple values using a delimiter or regex pattern. The default is to split on colon, semicolon, or pipe (with surrounding whitespace)"
+        generated: "This field is system-generated during import and does not come from the source data"
+        source_id: "Mark this field as the unique source identifier used to match records across imports"
+        excluded: "Keep this field in the mapping but skip it during import and export"
+        parsed: "Run values through a parse method (e.g. parse_language, parse_subject)"
+        join: "Export multi-value fields as a single delimited string instead of numbered columns"
+        search_field: "Custom Solr field used to look up existing records by this identifier"
+        object: "Map this field to a nested object property (e.g. creator maps to authorship)"
+        nested_type: "Set to Array if the object contains multiple entries"
+        related_parents: "Values in this field are identifiers of parent works to link during import"
+        related_children: "Values in this field are identifiers of child works to link during import"
+        if_condition: "Only process this field when its value matches: method (e.g. match?) + regex pattern"
+        skip_object_for_models: "Bypass object mapping for these model types, using simple values instead (comma-separated)"
+      section_headings:
+        value_handling: Value Handling
+        nested_objects: Nested Objects
+        relationships: Relationships
+        conditions: Conditions
       titles:
         advanced_properties: Show advanced properties
         remove_field: Remove field
@@ -53,8 +78,10 @@ en:
         from_or_generated: "Field '%{name}' must have a source (from) or be marked as generated."
         if_incomplete: "Field '%{name}': both 'if' method and regex must be provided together."
         invalid_field_name: "Invalid field name '%{name}': only alphanumeric characters and underscores allowed."
+        invalid_regex: "Field '%{name}': invalid %{field} regex pattern — %{error}"
         nested_type_without_object: "Field '%{name}': nested_type requires object to be set."
         single_source_identifier: "Only one field may be marked as source_identifier (found: %{fields})."
+        unrecognized_field: "'%{name}' is not a recognized model property and may not import/export correctly."
     entry:
       labels:
         item_link: Item Link
