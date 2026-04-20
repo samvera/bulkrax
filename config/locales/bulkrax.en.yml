@@ -385,6 +385,7 @@ en:
         errors:
           multiple_csv: Multiple CSV files share the shallowest directory level in the ZIP, so the primary CSV cannot be determined. Keep exactly one CSV at that level; any additional CSVs must be nested deeper.
           no_csv: No CSV file found in the ZIP
+          unsafe_entry: "The ZIP contains an entry with an unsafe path (%{name}). Entries must not use absolute paths or parent-directory references."
       validations:
         errors_prohibited:
           one: '1 error prohibited this importer from being saved:'

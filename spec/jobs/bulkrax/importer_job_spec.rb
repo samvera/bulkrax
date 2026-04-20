@@ -91,6 +91,134 @@ module Bulkrax
       end
     end
 
+    # Dispatch tests for `#unzip_imported_file`. The full extraction
+    # contracts are pinned in spec/parsers/bulkrax/csv_parser/unzip_spec.rb
+    # and spec/parsers/bulkrax/application_parser_spec.rb; these specs
+    # verify that the job calls the right method on the right parser for
+    # each upload shape and parser type.
+    describe '#unzip_imported_file dispatch' do
+      let(:job) { described_class.new }
+
+      # Shared setup for CsvParser-backed doubles. Not pulled out to a
+      # `before` block at the `describe` level because one of the contexts
+      # below uses an XmlParser double, and `instance_double` would reject
+      # stubs for methods XmlParser doesn't implement (e.g.
+      # `#remove_spaces_from_filenames`).
+      def stub_csv_parser_defaults(parser)
+        allow(parser).to receive(:file?).and_return(true)
+        allow(parser).to receive(:importer_unzip_path).and_return(Dir.mktmpdir)
+        allow(parser).to receive(:remove_spaces_from_filenames)
+      end
+
+      def stub_xml_parser_defaults(parser)
+        allow(parser).to receive(:file?).and_return(true)
+        allow(parser).to receive(:importer_unzip_path).and_return(Dir.mktmpdir)
+      end
+
+      context 'when the parser is a CsvParser with a zip upload' do
+        let(:parser) { instance_double('Bulkrax::CsvParser') }
+
+        it 'calls #unzip_with_primary_csv' do
+          stub_csv_parser_defaults(parser)
+          allow(parser).to receive(:zip?).and_return(true)
+          allow(parser).to receive(:parser_fields).and_return('import_file_path' => '/tmp/bundle.zip')
+
+          expect(parser).to receive(:unzip_with_primary_csv).with('/tmp/bundle.zip')
+
+          job.send(:unzip_imported_file, parser)
+        end
+      end
+
+      context 'when the parser is a CsvParser with a CSV + separate attachments zip' do
+        let(:parser) { instance_double('Bulkrax::CsvParser') }
+
+        it 'copies the CSV then calls #unzip_attachments_only' do
+          stub_csv_parser_defaults(parser)
+          allow(parser).to receive(:zip?).and_return(false)
+          allow(parser).to receive(:zip_file?).with('/tmp/attach.zip').and_return(true)
+          allow(parser).to receive(:parser_fields).and_return(
+            'import_file_path' => '/tmp/metadata.csv',
+            'attachments_zip_path' => '/tmp/attach.zip'
+          )
+
+          expect(parser).to receive(:copy_file).with('/tmp/metadata.csv').ordered
+          expect(parser).to receive(:unzip_attachments_only).with('/tmp/attach.zip').ordered
+
+          job.send(:unzip_imported_file, parser)
+        end
+      end
+
+      context 'when the parser is CSV-only (no zip at all)' do
+        let(:parser) { instance_double('Bulkrax::CsvParser') }
+
+        it 'just copies the CSV' do
+          stub_csv_parser_defaults(parser)
+          allow(parser).to receive(:zip?).and_return(false)
+          allow(parser).to receive(:zip_file?).with(nil).and_return(false)
+          allow(parser).to receive(:parser_fields).and_return('import_file_path' => '/tmp/metadata.csv')
+
+          expect(parser).to receive(:copy_file).with('/tmp/metadata.csv')
+
+          job.send(:unzip_imported_file, parser)
+        end
+      end
+
+      context 'when the parser does not implement CSV-specific unzip methods (e.g. XmlParser)' do
+        # XmlParser inherits `#unzip` from ApplicationParser for verbatim
+        # extraction. It must not receive `#unzip_with_primary_csv`, which
+        # only exists on CsvParser. XmlParser also doesn't implement
+        # `#remove_spaces_from_filenames`, so the `respond_to?` guard in
+        # the job skips that post-step.
+        let(:parser) { instance_double('Bulkrax::XmlParser') }
+
+        it 'falls back to verbatim #unzip for a zip upload' do
+          stub_xml_parser_defaults(parser)
+          allow(parser).to receive(:zip?).and_return(true)
+          allow(parser).to receive(:parser_fields).and_return('import_file_path' => '/tmp/bundle.zip')
+
+          expect(parser).to receive(:unzip).with('/tmp/bundle.zip')
+
+          job.send(:unzip_imported_file, parser)
+        end
+
+        it 'never takes the attachments-zip branch for an XML parser' do
+          stub_xml_parser_defaults(parser)
+          allow(parser).to receive(:zip?).and_return(false)
+          # An XmlParser would never have `attachments_zip_path` set in
+          # practice, but guard anyway — the branch should be skipped
+          # because the parser doesn't respond to `#unzip_attachments_only`.
+          allow(parser).to receive(:parser_fields).and_return(
+            'import_file_path' => '/tmp/metadata.xml',
+            'attachments_zip_path' => '/tmp/attach.zip'
+          )
+
+          expect(parser).to receive(:copy_file).with('/tmp/metadata.xml')
+
+          job.send(:unzip_imported_file, parser)
+        end
+      end
+
+      context 'when the parser is a BagitParser with a zip upload' do
+        # BagitParser < CsvParser, so it inherits `#unzip_with_primary_csv`.
+        # But BagIt archives do not contain a primary CSV — the method is
+        # overridden on BagitParser to delegate to verbatim `#unzip`. The
+        # job dispatches to the overridden method, which ends up calling
+        # `#unzip` under the hood. We verify by stubbing `#unzip` on the
+        # double and expecting the override to forward to it.
+        let(:parser) { instance_double('Bulkrax::BagitParser') }
+
+        it 'receives unzip_with_primary_csv which ultimately extracts verbatim via #unzip' do
+          stub_csv_parser_defaults(parser)
+          allow(parser).to receive(:zip?).and_return(true)
+          allow(parser).to receive(:parser_fields).and_return('import_file_path' => '/tmp/bag.zip')
+
+          expect(parser).to receive(:unzip_with_primary_csv).with('/tmp/bag.zip')
+
+          job.send(:unzip_imported_file, parser)
+        end
+      end
+    end
+
     describe 'schedulable' do
       before do
         allow(importer).to receive(:schedulable?).and_return(true)

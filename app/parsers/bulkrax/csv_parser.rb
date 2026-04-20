@@ -3,8 +3,7 @@
 module Bulkrax
   # Raised when a zip cannot be interpreted during CSV import — for example,
   # when a single upload zip has no CSV or has ambiguous CSVs at its
-  # shallowest level, or when an attachments-only zip unexpectedly contains
-  # a CSV.
+  # shallowest level.
   class UnzipError < StandardError; end
 
   class CsvParser < ApplicationParser # rubocop:disable Metrics/ClassLength
@@ -391,17 +390,22 @@ module Bulkrax
     # import (the user specified a CSV file path with a sibling `files/`
     # directory on disk), resolve relative to the CSV's directory instead.
     #
-    # Returns nil when the computed path does not exist on disk so callers
-    # (e.g. `Bulkrax::FileSetEntryBehavior#add_path_to_file`) can fall back
-    # to the raw filename in their error messages.
+    # When called with `filename:`, returns the full path to that file if
+    # it exists on disk, or `nil` otherwise — callers like
+    # `Bulkrax::FileSetEntryBehavior#add_path_to_file` rely on the nil
+    # sentinel to fall back to the raw filename in their error messages.
+    #
+    # When called with no filename, returns the `files/` directory itself
+    # (only when that directory exists on disk — else `nil` so callers can
+    # raise a clear "no files directory" error).
     def path_to_files(**args)
       filename = args.fetch(:filename, '')
-      return @path_to_files if @path_to_files.present? && filename.blank?
+      base_dir = files_dir
+      return base_dir if filename.blank? && Dir.exist?(base_dir)
+      return nil if filename.blank?
 
-      has_attachments_zip = parser_fields['attachments_zip_path'].present? && zip_file?(parser_fields['attachments_zip_path'])
-      base = zip? || has_attachments_zip ? importer_unzip_path : File.dirname(import_file_path)
-      candidate = File.join(base, 'files', filename)
-      @path_to_files = candidate if File.exist?(candidate)
+      candidate = File.join(base_dir, filename)
+      candidate if File.exist?(candidate)
     end
 
     # Extracts a zip that contains a primary CSV. The primary CSV lands at
@@ -471,10 +475,24 @@ module Bulkrax
 
     private
 
+    # Memoized base directory under which import attachments live. Kept
+    # separate from `#path_to_files`' per-filename return value to avoid
+    # cross-contamination between directory lookups and file lookups.
+    def files_dir
+      @files_dir ||= begin
+        has_attachments_zip = parser_fields['attachments_zip_path'].present? && zip_file?(parser_fields['attachments_zip_path'])
+        base = zip? || has_attachments_zip ? importer_unzip_path : File.dirname(import_file_path)
+        File.join(base, 'files')
+      end
+    end
+
     # Returns zip entries filtered down to real files (no directories, no
-    # macOS junk).
+    # macOS junk). Raises {Bulkrax::UnzipError} if any entry's name would
+    # escape the destination directory (Zip Slip).
     def real_zip_entries(zip_file)
-      zip_file.entries.select { |e| e.file? && !macos_junk_entry?(e.name) }
+      entries = zip_file.entries.select { |e| e.file? && !macos_junk_entry?(e.name) }
+      entries.each { |e| reject_unsafe_entry!(e.name) }
+      entries
     end
 
     # Picks the single primary CSV from zip entries, enforcing the
@@ -512,8 +530,10 @@ module Bulkrax
 
     # Extracts a zip entry to `dest_dir/relative_dest`. Creates intermediate
     # directories and honors the rubyzip 2/3 extract-method signature.
+    # The destination path is validated by {#safe_extract_path} — an unsafe
+    # `relative_dest` raises {Bulkrax::UnzipError} before any write.
     def extract_to(zip_file, entry, dest_dir, relative_dest)
-      dest_path = File.join(dest_dir, relative_dest)
+      dest_path = safe_extract_path(dest_dir, relative_dest)
       FileUtils.mkdir_p(File.dirname(dest_path))
       return if File.exist?(dest_path)
       extract_zip_entry(zip_file, entry, dest_dir, relative_dest, dest_path)

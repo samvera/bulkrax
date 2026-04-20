@@ -349,6 +349,7 @@ es:
         errors:
           multiple_csv: Hay varios archivos CSV en el nivel menos profundo del ZIP, por lo que no se puede determinar el CSV principal. Mantén exactamente un CSV en ese nivel; cualquier CSV adicional debe estar anidado más profundamente.
           no_csv: No se encontraron archivos CSV en ZIP
+          unsafe_entry: "El ZIP contiene una entrada con una ruta no segura (%{name}). Las entradas no deben usar rutas absolutas ni referencias al directorio padre."
       validations:
         errors_prohibited:
           one: '1 error impidió que se guardara este importador:'

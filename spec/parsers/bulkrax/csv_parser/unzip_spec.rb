@@ -187,6 +187,24 @@ RSpec.describe Bulkrax::CsvParser do
         end
       end
     end
+
+    # Zip Slip defense (https://security.snyk.io/research/zip-slip-vulnerability).
+    # A malicious zip can include entries whose names use `..` to escape
+    # the extraction directory, or absolute paths that point elsewhere on
+    # disk. Extraction must refuse such entries before writing anything.
+    context 'when a zip contains a path-traversal entry (..)' do
+      it 'raises UnzipError and writes nothing outside the extraction dir' do
+        outside_dir = File.realpath(Dir.mktmpdir)
+        with_zip('metadata.csv' => 'h1,h2', "../#{File.basename(outside_dir)}/evil.txt" => 'pwned') do |zip_path|
+          expect { parser.unzip_with_primary_csv(zip_path) }
+            .to raise_error(Bulkrax::UnzipError, /unsafe/i)
+
+          expect(File).not_to exist(File.join(outside_dir, 'evil.txt'))
+        end
+      ensure
+        FileUtils.rm_rf(outside_dir) if outside_dir
+      end
+    end
   end
 
   describe '#unzip_attachments_only' do
@@ -275,6 +293,21 @@ RSpec.describe Bulkrax::CsvParser do
           expect(File).to exist(File.join(unzip_dir, 'files', 'extra.csv'))
           expect(File).to exist(File.join(unzip_dir, 'files', 'foo.jpg'))
         end
+      end
+    end
+
+    # Zip Slip defense — same protection as unzip_with_primary_csv.
+    context 'when the zip contains a path-traversal entry (..)' do
+      it 'raises UnzipError and writes nothing outside the extraction dir' do
+        outside_dir = File.realpath(Dir.mktmpdir)
+        with_zip('foo.jpg' => 'jpg', "../#{File.basename(outside_dir)}/evil.txt" => 'pwned') do |zip_path|
+          expect { parser.unzip_attachments_only(zip_path) }
+            .to raise_error(Bulkrax::UnzipError, /unsafe/i)
+
+          expect(File).not_to exist(File.join(outside_dir, 'evil.txt'))
+        end
+      ensure
+        FileUtils.rm_rf(outside_dir) if outside_dir
       end
     end
   end

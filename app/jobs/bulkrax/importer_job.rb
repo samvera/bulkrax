@@ -26,9 +26,17 @@ module Bulkrax
       importer.import_objects
     end
 
-    # Populates `importer_unzip_path` with the primary CSV at its root and
-    # any attachment files under `files/`, regardless of how the user
-    # uploaded them. See docs/UNZIP_FIX_PLAN.md for the full contract.
+    # Populates `importer_unzip_path` with the uploaded file(s), leaving
+    # the working directory in the shape each parser expects.
+    #
+    # Dispatch by parser capability rather than class name:
+    # - CsvParser (and subclasses that replicate its shape) implements
+    #   `#unzip_with_primary_csv` and `#unzip_attachments_only`, which
+    #   place the primary CSV at root and attachments under `files/`.
+    # - Other parsers (XML, raw BagIt) inherit the base-class `#unzip`,
+    #   which extracts the zip verbatim.
+    # - The separate attachments-zip flow is CSV-only (guided import is
+    #   the only UI that produces it).
     #
     # A retry of this job gets a clean working directory: any prior
     # extraction state from an earlier attempt is wiped, so nothing runs
@@ -38,13 +46,20 @@ module Bulkrax
 
       reset_unzip_path(parser)
 
+      import_file_path = parser.parser_fields['import_file_path']
+      attachments_zip_path = parser.parser_fields['attachments_zip_path']
+
       if parser.zip?
-        parser.unzip_with_primary_csv(parser.parser_fields['import_file_path'])
-      elsif parser.zip_file?(parser.parser_fields['attachments_zip_path'])
-        parser.copy_file(parser.parser_fields['import_file_path'])
-        parser.unzip_attachments_only(parser.parser_fields['attachments_zip_path'])
+        if parser.respond_to?(:unzip_with_primary_csv)
+          parser.unzip_with_primary_csv(import_file_path)
+        else
+          parser.unzip(import_file_path)
+        end
+      elsif parser.respond_to?(:unzip_attachments_only) && parser.zip_file?(attachments_zip_path)
+        parser.copy_file(import_file_path)
+        parser.unzip_attachments_only(attachments_zip_path)
       else
-        parser.copy_file(parser.parser_fields['import_file_path'])
+        parser.copy_file(import_file_path)
       end
 
       parser.remove_spaces_from_filenames if parser.respond_to?(:remove_spaces_from_filenames)

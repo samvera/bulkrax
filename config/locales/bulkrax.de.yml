@@ -349,6 +349,7 @@ de:
         errors:
           multiple_csv: Mehrere CSV-Dateien befinden sich auf der obersten Ebene des ZIP-Archivs, sodass die primäre CSV nicht bestimmt werden kann. Belassen Sie genau eine CSV auf dieser Ebene; weitere CSVs müssen tiefer verschachtelt sein.
           no_csv: Es wurden keine CSV-Dateien im ZIP-Archiv gefunden.
+          unsafe_entry: "Das ZIP enthält einen Eintrag mit unsicherem Pfad (%{name}). Einträge dürfen weder absolute Pfade noch Referenzen auf übergeordnete Verzeichnisse verwenden."
       validations:
         errors_prohibited:
           one: 'Ein Fehler verhinderte das Speichern dieses Importers:'

@@ -201,6 +201,23 @@ module Bulkrax
           end
         end
       end
+
+      # Zip Slip defense — a malicious zip entry with `..` must not write
+      # outside the extraction directory. Base-class unzip is inherited
+      # by BagIt and any other parsers, so this defense protects them too.
+      context 'when the zip contains a path-traversal entry (..)' do
+        it 'raises UnzipError and writes nothing outside the extraction dir' do
+          outside_dir = File.realpath(Dir.mktmpdir)
+          with_zip('data.csv' => 'title', "../#{File.basename(outside_dir)}/evil.txt" => 'pwned') do |zip_path|
+            expect { parser.unzip(zip_path) }
+              .to raise_error(Bulkrax::UnzipError, /unsafe/i)
+
+            expect(File).not_to exist(File.join(outside_dir, 'evil.txt'))
+          end
+        ensure
+          FileUtils.rm_rf(outside_dir) if outside_dir
+        end
+      end
     end
 
     describe '#macos_junk_entry?' do

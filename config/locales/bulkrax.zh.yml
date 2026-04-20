@@ -348,6 +348,7 @@ zh:
         errors:
           multiple_csv: ZIP 文件中的同一最浅层级下发现了多个 CSV 文件，无法确定主 CSV。请在该层级仅保留一个 CSV，其他 CSV 必须位于更深的目录中。
           no_csv: ZIP 文件中未找到 CSV 文件
+          unsafe_entry: "ZIP 文件包含路径不安全的条目（%{name}）。条目不得使用绝对路径或父目录引用。"
       validations:
         errors_prohibited:
           one: 1 个错误导致此导入程序无法保存：

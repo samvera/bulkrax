@@ -443,7 +443,8 @@ module Bulkrax
         zip_file.each do |entry|
           next unless entry.file?
           next if macos_junk_entry?(entry.name)
-          dest_path = File.join(dest_dir, entry.name)
+          reject_unsafe_entry!(entry.name)
+          dest_path = safe_extract_path(dest_dir, entry.name)
           FileUtils.mkdir_p(File.dirname(dest_path))
           next if File.exist?(dest_path)
           extract_zip_entry(zip_file, entry, dest_dir, entry.name, dest_path)
@@ -453,9 +454,12 @@ module Bulkrax
 
     # rubyzip 2.x: extract(entry, absolute_dest_path)
     # rubyzip 3.x: extract(entry, relative_name, destination_directory: dir)
-    def extract_zip_entry(zip_file, entry, dest_dir, relative_name, absolute_path)
+    #
+    # Callers are responsible for passing a `dest_path` produced by
+    # {#safe_extract_path} so the write can't escape `dest_dir`.
+    def extract_zip_entry(zip_file, entry, dest_dir, relative_name, dest_path)
       if zip_file.method(:extract).arity == 2
-        zip_file.extract(entry, absolute_path)
+        zip_file.extract(entry, dest_path)
       else
         zip_file.extract(entry, relative_name, destination_directory: dest_dir)
       end
@@ -463,6 +467,33 @@ module Bulkrax
 
     def macos_junk_entry?(name)
       name.start_with?('__MACOSX/') || name.split('/').any? { |part| part == '.DS_Store' || part.start_with?('._') }
+    end
+
+    # Zip Slip preflight — reject entries whose names are obviously unsafe
+    # (absolute paths, `..` segments) before we touch the filesystem.
+    # {#safe_extract_path} is the final line of defense; this check just
+    # fails fast with a clear message.
+    #
+    # @raise [Bulkrax::UnzipError] if the entry name is unsafe
+    def reject_unsafe_entry!(name)
+      return unless name.start_with?('/') || name.split('/').include?('..')
+      raise Bulkrax::UnzipError, I18n.t('bulkrax.importer.unzip.errors.unsafe_entry', name: name)
+    end
+
+    # Zip Slip chokepoint. Resolves `relative_dest` against `dest_dir` and
+    # returns the absolute destination path — but only if it stays inside
+    # `dest_dir`. Callers must use this value rather than building their
+    # own path with `File.join`, so the path returned is always safe by
+    # construction.
+    #
+    # @return [String] absolute destination path, validated to be inside `dest_dir`
+    # @raise  [Bulkrax::UnzipError] if `relative_dest` escapes `dest_dir`
+    def safe_extract_path(dest_dir, relative_dest)
+      expanded_dest_dir = File.expand_path(dest_dir)
+      dest_path = File.expand_path(relative_dest.to_s, expanded_dest_dir)
+      return dest_path if dest_path == expanded_dest_dir
+      return dest_path if dest_path.start_with?("#{expanded_dest_dir}#{File::SEPARATOR}")
+      raise Bulkrax::UnzipError, I18n.t('bulkrax.importer.unzip.errors.unsafe_entry', name: relative_dest)
     end
 
     def copy_file(file_to_copy)

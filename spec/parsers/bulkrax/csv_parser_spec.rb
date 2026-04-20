@@ -561,8 +561,20 @@ module Bulkrax
       end
 
       context 'when an argument is not passed' do
-        it 'returns the correct path' do
-          expect(subject.path_to_files).to eq('spec/fixtures/csv/files/')
+        it 'returns the files directory' do
+          expect(subject.path_to_files).to eq('spec/fixtures/csv/files')
+        end
+      end
+
+      # `path_to_files` previously memoized into `@path_to_files`
+      # for both directory lookups (filename blank) and file lookups
+      # (filename present). If it was first called with a filename and
+      # then later called without one, it returned the stale per-file path
+      # instead of the directory.
+      context 'when called first with a filename then without' do
+        it 'returns the directory on the no-filename call, not the memoized file path' do
+          expect(subject.path_to_files(filename: 'sun.jpg')).to eq('spec/fixtures/csv/files/sun.jpg')
+          expect(subject.path_to_files).to eq('spec/fixtures/csv/files')
         end
       end
     end
