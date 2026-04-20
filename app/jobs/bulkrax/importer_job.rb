@@ -13,7 +13,7 @@ module Bulkrax
       import(importer, only_updates_since_last_import)
       update_current_run_counters(importer)
       schedule(importer) if importer.schedulable?
-    rescue ::CSV::MalformedCSVError => e
+    rescue ::CSV::MalformedCSVError, Bulkrax::UnzipError => e
       importer.set_status_info(e)
     end
 
@@ -26,18 +26,34 @@ module Bulkrax
       importer.import_objects
     end
 
+    # Populates `importer_unzip_path` with the primary CSV at its root and
+    # any attachment files under `files/`, regardless of how the user
+    # uploaded them. See docs/UNZIP_FIX_PLAN.md for the full contract.
+    #
+    # A retry of this job gets a clean working directory: any prior
+    # extraction state from an earlier attempt is wiped, so nothing runs
+    # against partially-populated state.
     def unzip_imported_file(parser)
       return unless parser.file?
+
+      reset_unzip_path(parser)
+
       if parser.zip?
-        # we have a zip file, and we need to unzip it before we can import the files
-        parser.unzip(parser.parser_fields['import_file_path'])
-        parser.remove_spaces_from_filenames
+        parser.unzip_with_primary_csv(parser.parser_fields['import_file_path'])
       elsif parser.zip_file?(parser.parser_fields['attachments_zip_path'])
-        # we have a separate csv and zip file. We need to unzip the zip file, and move the csv file to the unzip location before we can import the files
-        parser.unzip(parser.parser_fields['attachments_zip_path'])
         parser.copy_file(parser.parser_fields['import_file_path'])
-        parser.remove_spaces_from_filenames
+        parser.unzip_attachments_only(parser.parser_fields['attachments_zip_path'])
+      else
+        parser.copy_file(parser.parser_fields['import_file_path'])
       end
+
+      parser.remove_spaces_from_filenames if parser.respond_to?(:remove_spaces_from_filenames)
+    end
+
+    def reset_unzip_path(parser)
+      path = parser.importer_unzip_path
+      FileUtils.rm_rf(path) if Dir.exist?(path)
+      FileUtils.mkdir_p(path)
     end
 
     def update_current_run_counters(importer)

@@ -430,32 +430,34 @@ module Bulkrax
       zip
     end
 
+    # Extracts a zip verbatim into {#importer_unzip_path}, preserving the zip's
+    # internal structure. Filters macOS junk (`__MACOSX/`, `.DS_Store`, `._*`).
+    # Parser subclasses that need to interpret the zip's structure (e.g.
+    # {Bulkrax::CsvParser#unzip_with_primary_csv}) should call a more specific
+    # method rather than this one.
     def unzip(file_to_unzip)
       return untar(file_to_unzip) if file_to_unzip.end_with?('.tar.gz')
 
+      dest_dir = importer_unzip_path(mkdir: true)
       Zip::File.open(file_to_unzip) do |zip_file|
-        real_entries = zip_file.reject { |e| macos_junk_entry?(e.name) }
-        top_level_dirs = real_entries.map { |e| e.name.split('/').first }.uniq
-        strip_prefix = top_level_dirs.size == 1 ? "#{top_level_dirs.first}/" : nil
-
-        dest_dir = importer_unzip_path(mkdir: true)
         zip_file.each do |entry|
           next unless entry.file?
           next if macos_junk_entry?(entry.name)
-          name = strip_prefix ? entry.name.delete_prefix(strip_prefix) : entry.name
-          next if name.empty?
-          dest_path = File.join(dest_dir, name)
+          dest_path = File.join(dest_dir, entry.name)
           FileUtils.mkdir_p(File.dirname(dest_path))
-          unless File.exist?(dest_path)
-            # rubyzip 2.x: extract(entry, absolute_dest_path)
-            # rubyzip 3.x: extract(entry, relative_name, destination_directory: dir)
-            if zip_file.method(:extract).arity == 2
-              zip_file.extract(entry, dest_path)
-            else
-              zip_file.extract(entry, name, destination_directory: dest_dir)
-            end
-          end
+          next if File.exist?(dest_path)
+          extract_zip_entry(zip_file, entry, dest_dir, entry.name, dest_path)
         end
+      end
+    end
+
+    # rubyzip 2.x: extract(entry, absolute_dest_path)
+    # rubyzip 3.x: extract(entry, relative_name, destination_directory: dir)
+    def extract_zip_entry(zip_file, entry, dest_dir, relative_name, absolute_path)
+      if zip_file.method(:extract).arity == 2
+        zip_file.extract(entry, absolute_path)
+      else
+        zip_file.extract(entry, relative_name, destination_directory: dest_dir)
       end
     end
 
@@ -473,21 +475,6 @@ module Bulkrax
       command = "tar -xzf #{Shellwords.escape(file_to_untar)} -C #{Shellwords.escape(importer_unzip_path)}"
       result = system(command)
       raise "Failed to extract #{file_to_untar}" unless result
-    end
-
-    # File names referenced in CSVs have spaces replaced with underscores
-    # @see Bulkrax::CsvParser#file_paths
-    def remove_spaces_from_filenames
-      files = Dir.glob(File.join(importer_unzip_path, 'files', '*')).uniq
-      files_with_spaces = files.select { |f| f.split('/').last.match?(' ') }
-      return if files_with_spaces.blank?
-
-      files_with_spaces.map! { |path| Pathname.new(path) }
-      files_with_spaces.each do |path|
-        filename = path.basename
-        filename_without_spaces = filename.to_s.tr(' ', '_')
-        path.rename(File.join(path.dirname, filename_without_spaces))
-      end
     end
 
     def zip
@@ -515,7 +502,6 @@ module Bulkrax
 
     # @return [String]
     def real_import_file_path
-      return importer_unzip_path if file? && zip?
       parser_fields['import_file_path']
     end
   end

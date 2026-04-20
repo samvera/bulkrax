@@ -382,6 +382,10 @@ en:
           notices_title: Import Notices
           unrecognized_desc: 'These columns will be ignored during import:'
           unrecognized_title: Unrecognized Fields
+      unzip:
+        errors:
+          multiple_csv: Multiple CSV files share the shallowest directory level in the ZIP, so the primary CSV cannot be determined. Keep exactly one CSV at that level; any additional CSVs must be nested deeper.
+          no_csv: No CSV file found in the ZIP
       validations:
         errors_prohibited:
           one: '1 error prohibited this importer from being saved:'
