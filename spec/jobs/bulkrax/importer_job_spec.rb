@@ -99,6 +99,12 @@ module Bulkrax
     describe '#unzip_imported_file dispatch' do
       let(:job) { described_class.new }
 
+      # Memoized per example so the helpers below return the same path
+      # consistently, and so the `after` hook cleans up exactly one dir
+      # per example rather than leaving a trail of stray tmpdirs.
+      let(:unzip_tmpdir) { Dir.mktmpdir }
+      after { FileUtils.rm_rf(unzip_tmpdir) }
+
       # Shared setup for CsvParser-backed doubles. Not pulled out to a
       # `before` block at the `describe` level because one of the contexts
       # below uses an XmlParser double, and `instance_double` would reject
@@ -106,13 +112,13 @@ module Bulkrax
       # `#remove_spaces_from_filenames`).
       def stub_csv_parser_defaults(parser)
         allow(parser).to receive(:file?).and_return(true)
-        allow(parser).to receive(:importer_unzip_path).and_return(Dir.mktmpdir)
+        allow(parser).to receive(:importer_unzip_path).and_return(unzip_tmpdir)
         allow(parser).to receive(:remove_spaces_from_filenames)
       end
 
       def stub_xml_parser_defaults(parser)
         allow(parser).to receive(:file?).and_return(true)
-        allow(parser).to receive(:importer_unzip_path).and_return(Dir.mktmpdir)
+        allow(parser).to receive(:importer_unzip_path).and_return(unzip_tmpdir)
       end
 
       context 'when the parser is a CsvParser with a zip upload' do

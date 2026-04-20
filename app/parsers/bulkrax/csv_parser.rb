@@ -1,11 +1,6 @@
 # frozen_string_literal: true
 
 module Bulkrax
-  # Raised when a zip cannot be interpreted during CSV import — for example,
-  # when a single upload zip has no CSV or has ambiguous CSVs at its
-  # shallowest level.
-  class UnzipError < StandardError; end
-
   class CsvParser < ApplicationParser # rubocop:disable Metrics/ClassLength
     include ErroredEntries
     include ExportBehavior
@@ -463,7 +458,7 @@ module Bulkrax
     # @see #file_paths
     def remove_spaces_from_filenames
       files = Dir.glob(File.join(importer_unzip_path, 'files', '*'))
-      files_with_spaces = files.select { |f| f.split('/').last.match?(' ') }
+      files_with_spaces = files.select { |f| f.split('/').last.include?(' ') }
       return if files_with_spaces.blank?
 
       files_with_spaces.map! { |path| Pathname.new(path) }
