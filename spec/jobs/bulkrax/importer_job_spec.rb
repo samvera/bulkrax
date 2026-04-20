@@ -62,6 +62,33 @@ module Bulkrax
           importer_job.perform(importer.id)
         end
       end
+
+      context 'when the zip cannot be interpreted (e.g. no CSV inside)' do
+        let(:zip_tmp) { Tempfile.new(['import', '.zip']) }
+        let(:importer) do
+          FactoryBot.create(:bulkrax_importer_csv, parser_fields: { 'import_file_path' => zip_tmp.path })
+        end
+
+        before do
+          Zip::File.open(zip_tmp.path, create: true) do |z|
+            z.get_output_stream('foo.jpg') { |f| f.write('jpg-bytes') }
+          end
+          zip_tmp.close
+        end
+
+        after { zip_tmp.unlink }
+
+        it 'rescues the UnzipError and sets the importer status to Failed' do
+          importer_job.perform(importer.id)
+          expect(importer.reload.status).to eq('Failed')
+        end
+
+        it 'records the error message on the importer status' do
+          importer_job.perform(importer.id)
+          expect(importer.reload.current_status.error_message).to match(/no csv/i)
+          expect(importer.current_status.error_class).to eq('Bulkrax::UnzipError')
+        end
+      end
     end
 
     describe 'schedulable' do

@@ -315,8 +315,7 @@ de:
           missing_required_hint: Fügen Sie diese Spalte zu Ihrer CSV-Datei hinzu.
           missing_required_title: Fehlende Pflichtfelder
           missing_rights_desc: Ihre CSV-Datei enthält keine Spalte „rights_statement“. Sie können diese entweder Ihrer CSV-Datei hinzufügen oder im nächsten Schritt eine Standard-Rechteerklärung auswählen.
-          multiple_csv_same_dir: Mehrere CSV-Dateien im selben Verzeichnis innerhalb der ZIP-Datei gefunden
-          multiple_csv_same_level: Mehrere CSV-Dateien auf derselben Ebene innerhalb der ZIP-Datei gefunden
+          multiple_csv: Mehrere CSV-Dateien befinden sich auf der obersten Ebene des ZIP-Archivs, sodass die primäre CSV nicht bestimmt werden kann. Belassen Sie genau eine CSV auf dieser Ebene; weitere CSVs müssen tiefer verschachtelt sein.
           no_csv_in_zip: Es wurden keine CSV-Dateien im ZIP-Archiv gefunden.
           no_csv_uploaded: Es wurde keine CSV-Metadatendatei hochgeladen.
           no_files_uploaded: Es wurden keine Dateien hochgeladen.
@@ -346,6 +345,10 @@ de:
           notices_title: Importhinweise
           unrecognized_desc: 'Diese Spalten werden beim Import ignoriert:'
           unrecognized_title: Nicht anerkannte Felder
+      unzip:
+        errors:
+          multiple_csv: Mehrere CSV-Dateien befinden sich auf der obersten Ebene des ZIP-Archivs, sodass die primäre CSV nicht bestimmt werden kann. Belassen Sie genau eine CSV auf dieser Ebene; weitere CSVs müssen tiefer verschachtelt sein.
+          no_csv: Es wurden keine CSV-Dateien im ZIP-Archiv gefunden.
       validations:
         errors_prohibited:
           one: 'Ein Fehler verhinderte das Speichern dieses Importers:'
