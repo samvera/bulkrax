@@ -94,63 +94,63 @@ RSpec.describe Bulkrax::ImporterFileHandler do
       end
     end
 
+    # The cases below all fail the same constraint — the CSV at the shallowest
+    # depth in the zip must be unique — and surface the same error message.
+    # Kept as separate contexts so we exercise each structural shape that
+    # triggers the ambiguity.
+    shared_examples 'ambiguous primary CSV' do
+      it 'returns an error indicating multiple CSVs share the shallowest level' do
+        open_zip do |zip|
+          result = controller.locate_csv_entry_in_zip(zip)
+          expect(result[:messages][:validationStatus][:severity]).to eq('error')
+          expect(result[:messages][:validationStatus][:summary]).to match(/multiple CSV/i)
+        end
+      end
+    end
+
     context 'with multiple CSVs at the same root level' do
-      it 'returns an error' do
+      before do
         Zip::File.open(zip_file.path, create: true) do |zip|
           zip.get_output_stream('data1.csv') { |f| f.write('csv 1') }
           zip.get_output_stream('data2.csv') { |f| f.write('csv 2') }
         end
-
-        open_zip do |zip|
-          result = controller.locate_csv_entry_in_zip(zip)
-          expect(result[:messages][:validationStatus][:severity]).to eq('error')
-          expect(result[:messages][:validationStatus][:summary]).to include('Multiple CSV files found in the same directory within ZIP')
-        end
       end
+
+      include_examples 'ambiguous primary CSV'
     end
 
     context 'with multiple CSVs in different directories at the same depth' do
-      it 'returns an error' do
+      before do
         Zip::File.open(zip_file.path, create: true) do |zip|
           zip.get_output_stream('dir1/data.csv') { |f| f.write('csv 1') }
           zip.get_output_stream('dir2/metadata.csv') { |f| f.write('csv 2') }
-        end
-
-        open_zip do |zip|
-          result = controller.locate_csv_entry_in_zip(zip)
-          expect(result[:messages][:validationStatus][:severity]).to eq('error')
-          expect(result[:messages][:validationStatus][:summary]).to include('Multiple CSV files found at the same level')
         end
       end
 
-      it 'returns an error with three CSVs across different directories' do
-        Zip::File.open(zip_file.path, create: true) do |zip|
-          zip.get_output_stream('dir1/data.csv') { |f| f.write('csv 1') }
-          zip.get_output_stream('dir2/metadata.csv') { |f| f.write('csv 2') }
-          zip.get_output_stream('dir3/info.csv') { |f| f.write('csv 3') }
+      include_examples 'ambiguous primary CSV'
+
+      context 'with three CSVs across different directories' do
+        before do
+          Zip::File.open(zip_file.path, create: true) do |zip|
+            zip.get_output_stream('dir1/data.csv') { |f| f.write('csv 1') }
+            zip.get_output_stream('dir2/metadata.csv') { |f| f.write('csv 2') }
+            zip.get_output_stream('dir3/info.csv') { |f| f.write('csv 3') }
+          end
         end
 
-        open_zip do |zip|
-          result = controller.locate_csv_entry_in_zip(zip)
-          expect(result[:messages][:validationStatus][:severity]).to eq('error')
-          expect(result[:messages][:validationStatus][:summary]).to include('Multiple CSV files found at the same level')
-        end
+        include_examples 'ambiguous primary CSV'
       end
     end
 
     context 'with multiple CSVs in the same subdirectory' do
-      it 'returns an error' do
+      before do
         Zip::File.open(zip_file.path, create: true) do |zip|
           zip.get_output_stream('data/file1.csv') { |f| f.write('csv 1') }
           zip.get_output_stream('data/file2.csv') { |f| f.write('csv 2') }
         end
-
-        open_zip do |zip|
-          result = controller.locate_csv_entry_in_zip(zip)
-          expect(result[:messages][:validationStatus][:severity]).to eq('error')
-          expect(result[:messages][:validationStatus][:summary]).to include('Multiple CSV files found in the same directory within ZIP')
-        end
       end
+
+      include_examples 'ambiguous primary CSV'
     end
 
     context 'with edge cases' do

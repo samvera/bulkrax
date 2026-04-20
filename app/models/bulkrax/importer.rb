@@ -266,22 +266,9 @@ module Bulkrax
     # end
 
     def importer_unzip_path(mkdir: false)
-      entry = parser_fields&.[]('import_file_path')
-      if entry.is_a?(String) && entry.end_with?('.zip') && File.file?(entry) && parser_fields["file_style"] != I18n.t('bulkrax.importer.xml.file_style.server_path')
-        unzip_dir = File.dirname(entry)
-        FileUtils.mkdir_p(unzip_dir) if mkdir
-        return unzip_dir
-      end
-
-      @importer_unzip_path ||= File.join(parser.base_path, "import_#{path_string}")
-      return @importer_unzip_path if Dir.exist?(@importer_unzip_path) || mkdir == true
-
-      # turns "tmp/imports/tenant/import_1_20250122035229_1" to "tmp/imports/tenant/import_1_20250122035229"
-      base_importer_unzip_path = @importer_unzip_path.split('_')[0...-1].join('_')
-
-      # If we don't have an existing unzip path, we'll try and find it.
-      # Just in case there are multiple paths, we sort by the number at the end of the path and get the last one
-      @importer_unzip_path = Dir.glob(base_importer_unzip_path + '*').sort_by { |path| path.split(base_importer_unzip_path).last[1..-1].to_i }.last
+      path = File.join(parser.base_path, "import_#{path_string}")
+      FileUtils.mkdir_p(path) if mkdir
+      path
     end
 
     def errored_entries_csv_path

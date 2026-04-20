@@ -561,52 +561,28 @@ module Bulkrax
       end
 
       context 'when an argument is not passed' do
-        it 'returns the correct path' do
-          expect(subject.path_to_files).to eq('spec/fixtures/csv/files/')
+        it 'returns the files directory' do
+          expect(subject.path_to_files).to eq('spec/fixtures/csv/files')
+        end
+      end
+
+      # `path_to_files` previously memoized into `@path_to_files`
+      # for both directory lookups (filename blank) and file lookups
+      # (filename present). If it was first called with a filename and
+      # then later called without one, it returned the stale per-file path
+      # instead of the directory.
+      context 'when called first with a filename then without' do
+        it 'returns the directory on the no-filename call, not the memoized file path' do
+          expect(subject.path_to_files(filename: 'sun.jpg')).to eq('spec/fixtures/csv/files/sun.jpg')
+          expect(subject.path_to_files).to eq('spec/fixtures/csv/files')
         end
       end
     end
 
-    describe '#unzip' do
-      let(:unzip_dir) { File.realpath(Dir.mktmpdir) }
-
-      before do
-        dir = unzip_dir
-        importer.define_singleton_method(:importer_unzip_path) { |**| dir }
-      end
-      after { FileUtils.rm_rf(unzip_dir) }
-
-      def build_zip(zip_path, entries)
-        Zip::File.open(zip_path, create: true) do |zip|
-          entries.each do |name, content|
-            next if name.end_with?('/')
-            zip.get_output_stream(name) { |f| f.write(content) }
-          end
-        end
-      end
-
-      def with_zip(entries)
-        zip_file = Tempfile.new(['import', '.zip'])
-        build_zip(zip_file.path, entries)
-        yield zip_file.path
-      ensure
-        zip_file.close!
-      end
-
-      context 'when the zip is flat (image files at root, no files/ subdirectory)' do
-        it 'moves extracted files into a files/ subdirectory' do
-          with_zip('Cornus_drummondii.jpg' => 'jpg-content',
-                   'ArtThumbnail.JPG' => 'jpg-content') do |zip_path|
-            subject.unzip(zip_path)
-
-            expect(File.exist?(File.join(unzip_dir, 'files', 'Cornus_drummondii.jpg'))).to be true
-            expect(File.exist?(File.join(unzip_dir, 'files', 'ArtThumbnail.JPG'))).to be true
-            expect(File.exist?(File.join(unzip_dir, 'Cornus_drummondii.jpg'))).to be false
-            expect(File.exist?(File.join(unzip_dir, 'ArtThumbnail.JPG'))).to be false
-          end
-        end
-      end
-    end
+    # NOTE: CSV-specific unzip behavior is pinned in
+    # spec/parsers/bulkrax/csv_parser/unzip_spec.rb, which covers
+    # `#unzip_with_primary_csv` and `#unzip_attachments_only` against the
+    # accepted zip shapes from guided-import validation.
 
     describe '#file_paths' do
       let(:importer) do

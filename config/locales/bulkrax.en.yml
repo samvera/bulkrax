@@ -342,8 +342,7 @@ en:
           missing_required_hint: add this column to your CSV
           missing_required_title: Missing Required Fields
           missing_rights_desc: Your CSV does not include a rights_statement column. You can add it to your CSV or select a Default Rights Statement in the next step.
-          multiple_csv_same_dir: Multiple CSV files found in the same directory within ZIP
-          multiple_csv_same_level: Multiple CSV files found at the same level within ZIP
+          multiple_csv: Multiple CSV files share the shallowest directory level in the ZIP, so the primary CSV cannot be determined. Keep exactly one CSV at that level; any additional CSVs must be nested deeper.
           no_csv_in_zip: No CSV files found in ZIP
           no_csv_uploaded: No CSV metadata file uploaded
           no_files_uploaded: No files uploaded
@@ -382,6 +381,11 @@ en:
           notices_title: Import Notices
           unrecognized_desc: 'These columns will be ignored during import:'
           unrecognized_title: Unrecognized Fields
+      unzip:
+        errors:
+          multiple_csv: Multiple CSV files share the shallowest directory level in the ZIP, so the primary CSV cannot be determined. Keep exactly one CSV at that level; any additional CSVs must be nested deeper.
+          no_csv: No CSV file found in the ZIP
+          unsafe_entry: "The ZIP contains an entry with an unsafe path (%{name}). Entries must not use absolute paths or parent-directory references."
       validations:
         errors_prohibited:
           one: '1 error prohibited this importer from being saved:'

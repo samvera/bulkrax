@@ -314,8 +314,7 @@ zh:
           missing_required_hint: 将此列添加到您的 CSV 文件中
           missing_required_title: 缺少必填字段
           missing_rights_desc: 您的 CSV 文件不包含 rights_statement 列。您可以在下一步中将其添加到 CSV 文件中，或选择默认的权利声明。
-          multiple_csv_same_dir: ZIP 文件中的同一目录下发现了多个 CSV 文件
-          multiple_csv_same_level: 在 ZIP 文件中的同一层级发现了多个 CSV 文件
+          multiple_csv: ZIP 文件中的同一最浅层级下发现了多个 CSV 文件，无法确定主 CSV。请在该层级仅保留一个 CSV，其他 CSV 必须位于更深的目录中。
           no_csv_in_zip: ZIP 文件中未找到 CSV 文件
           no_csv_uploaded: 未上传 CSV 元数据文件。
           no_files_uploaded: 未上传任何文件。
@@ -345,6 +344,11 @@ zh:
           notices_title: 导入通知
           unrecognized_desc: 导入过程中将忽略以下列：
           unrecognized_title: 未识别字段
+      unzip:
+        errors:
+          multiple_csv: ZIP 文件中的同一最浅层级下发现了多个 CSV 文件，无法确定主 CSV。请在该层级仅保留一个 CSV，其他 CSV 必须位于更深的目录中。
+          no_csv: ZIP 文件中未找到 CSV 文件
+          unsafe_entry: "ZIP 文件包含路径不安全的条目（%{name}）。条目不得使用绝对路径或父目录引用。"
       validations:
         errors_prohibited:
           one: 1 个错误导致此导入程序无法保存：

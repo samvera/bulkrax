@@ -315,8 +315,7 @@ es:
           missing_required_hint: Añade esta columna a tu CSV
           missing_required_title: Campos obligatorios faltantes
           missing_rights_desc: Su archivo CSV no incluye la columna "rights_statement". Puede añadirla o seleccionar una "Declaración de derechos predeterminada" en el siguiente paso.
-          multiple_csv_same_dir: Se encontraron varios archivos CSV en el mismo directorio dentro de ZIP
-          multiple_csv_same_level: Se encontraron varios archivos CSV en el mismo nivel dentro de ZIP
+          multiple_csv: Hay varios archivos CSV en el nivel menos profundo del ZIP, por lo que no se puede determinar el CSV principal. Mantén exactamente un CSV en ese nivel; cualquier CSV adicional debe estar anidado más profundamente.
           no_csv_in_zip: No se encontraron archivos CSV en ZIP
           no_csv_uploaded: No se cargó ningún archivo de metadatos CSV
           no_files_uploaded: No hay archivos subidos
@@ -346,6 +345,11 @@ es:
           notices_title: Avisos de importación
           unrecognized_desc: 'Estas columnas se ignorarán durante la importación:'
           unrecognized_title: Campos no reconocidos
+      unzip:
+        errors:
+          multiple_csv: Hay varios archivos CSV en el nivel menos profundo del ZIP, por lo que no se puede determinar el CSV principal. Mantén exactamente un CSV en ese nivel; cualquier CSV adicional debe estar anidado más profundamente.
+          no_csv: No se encontraron archivos CSV en ZIP
+          unsafe_entry: "El ZIP contiene una entrada con una ruta no segura (%{name}). Las entradas no deben usar rutas absolutas ni referencias al directorio padre."
       validations:
         errors_prohibited:
           one: '1 error impidió que se guardara este importador:'
