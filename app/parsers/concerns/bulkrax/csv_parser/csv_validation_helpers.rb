@@ -46,7 +46,7 @@ module Bulkrax
       end
 
       def build_valid_validation_headers(mapping_manager, field_analyzer, all_models, mappings, field_metadata)
-        svc = ValidationContext.new(
+        svc = Bulkrax::CsvParser::ValidationContext.new(
           mapping_manager: mapping_manager,
           field_analyzer: field_analyzer,
           all_models: all_models,
