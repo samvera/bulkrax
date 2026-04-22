@@ -175,6 +175,52 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
     end
   end
 
+  describe '#find_unrecognized_validation_headers (respects all `from` aliases)' do
+    let(:mappings) do
+      {
+        'creator' => { 'from' => %w[author creator], 'split' => '\\|' },
+        'resource_type' => { 'from' => ['type', 'resource type'], 'split' => '\\|' },
+        'title' => { 'from' => ['title'], 'split' => '\\|' }
+      }
+    end
+    let(:mapping_manager) { Bulkrax::CsvTemplate::MappingManager.new }
+    let(:field_analyzer)  { instance_double(Bulkrax::CsvTemplate::FieldAnalyzer) }
+    let(:field_metadata)  do
+      { 'GenericWorkResource' =>
+        { properties: %w[title creator resource_type], required_terms: [], controlled_vocab_terms: [] } }
+    end
+
+    before do
+      allow(Bulkrax).to receive(:field_mappings).and_return('Bulkrax::CsvParser' => mappings)
+      allow(field_analyzer).to receive(:find_or_create_field_list_for)
+        .with(model_name: 'GenericWorkResource')
+        .and_return('GenericWorkResource' => { 'properties' => %w[title creator resource_type] })
+    end
+
+    def valid_headers
+      host.build_valid_validation_headers(mapping_manager, field_analyzer,
+                                          %w[GenericWorkResource], mappings, field_metadata)
+    end
+
+    it 'does not flag a header matching a non-first `from` alias ("creator")' do
+      headers = %w[title creator]
+      result  = host.find_unrecognized_validation_headers(headers, valid_headers)
+      expect(result).not_to have_key('creator')
+    end
+
+    it 'does not flag a header matching a non-first `from` alias ("resource_type")' do
+      headers = %w[title resource_type]
+      result  = host.find_unrecognized_validation_headers(headers, valid_headers)
+      expect(result).not_to have_key('resource_type')
+    end
+
+    it 'still flags a header that matches no alias of any known property' do
+      headers = %w[title totally_made_up]
+      result  = host.find_unrecognized_validation_headers(headers, valid_headers)
+      expect(result).to have_key('totally_made_up')
+    end
+  end
+
   describe '#resolve_children_split_pattern' do
     it 'returns nil when no split is configured for children' do
       mappings = {}
@@ -196,6 +242,46 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
       mappings = { 'children' => { 'split' => ';' } }
       expect(host.resolve_children_split_pattern(mappings)).to eq(';')
     end
+  end
+
+  # Hyku persists field_mapping as JSON; a Regexp configured via the UI
+  # serialises to its `Regexp#to_s` form (e.g. "(?-mix:\\s*[;|]\\s*)",
+  # "(?i-mx:foo)", etc. — any valid Regexp is fair game) and round-trips
+  # back as a String. Callers pass the result of these resolvers into
+  # String#split, which treats a String argument as a literal substring,
+  # so a serialised Regexp never matches real content and cells are never
+  # split. The resolver must coerce any `Regexp#to_s`-shaped String back
+  # into an equivalent Regexp.
+  #
+  # We exercise a representative set of Regexp forms rather than pinning to
+  # one particular delimiter, so the fix is general rather than tailored to
+  # the one pattern that prompted this bug report.
+  shared_examples 'coerces a serialised Regexp back into a Regexp' do |resolver, key|
+    [
+      /\s*[;|]\s*/,      # whitespace + pipe/semicolon (original bug repro)
+      /\|/,              # plain pipe
+      /,\s*/,            # comma + optional space
+      /\A\s*foo\s*\z/i   # flagged (case-insensitive) regex
+    ].each do |original|
+      it "rebuilds an equivalent Regexp for #{original.inspect} (serialised as #{original.to_s.inspect})" do
+        mappings = { key.to_s => { 'split' => original.to_s } }
+        result   = host.public_send(resolver, mappings)
+        expect(result).to be_a(Regexp)
+        # Pattern body + options should match the original so split/match behaviour is preserved.
+        expect(result.source).to eq(original.source)
+        expect(result.options).to eq(original.options)
+      end
+    end
+  end
+
+  describe '#resolve_parent_split_pattern (JSON-serialised Regexp)' do
+    include_examples 'coerces a serialised Regexp back into a Regexp',
+                     :resolve_parent_split_pattern, :parents
+  end
+
+  describe '#resolve_children_split_pattern (JSON-serialised Regexp)' do
+    include_examples 'coerces a serialised Regexp back into a Regexp',
+                     :resolve_children_split_pattern, :children
   end
 
   describe '#build_relationship_graph' do
