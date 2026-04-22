@@ -13,8 +13,9 @@ module Bulkrax
       true
     end
 
-    # Returns the Regexp used to split a record's `file` cell into filenames,
-    # honouring the `file` mapping's `split:` when set.
+    # @return [Regexp] the pattern String#split should use on a `file` cell.
+    #   Honours the `file` mapping's `split:` when set, otherwise falls back
+    #   to {Bulkrax.multi_value_element_split_on}.
     def self.file_split_pattern
       file_mapping = Bulkrax.field_mappings.dig(to_s, 'file') ||
                      Bulkrax.field_mappings.dig(to_s, :file) || {}
@@ -361,14 +362,16 @@ module Bulkrax
       raise StandardError, 'No records were found' if records.blank?
       return [] if importerexporter.metadata_only?
 
-      @file_paths ||= records.map do |r|
-        file_mapping = Bulkrax.field_mappings.dig(self.class.to_s, 'file', :from)&.first&.to_sym || :file
-        next if r[file_mapping].blank?
+      # Compute once — these don't vary per record.
+      file_mapping  = Bulkrax.field_mappings.dig(self.class.to_s, 'file', :from)&.first&.to_sym || :file
+      split_pattern = self.class.file_split_pattern
+      files_dir     = path_to_files
 
-        files_dir = path_to_files
+      @file_paths ||= records.map do |r|
+        next if r[file_mapping].blank?
         raise StandardError, "Record references local files but no files directory could be resolved from the import path" if files_dir.nil?
 
-        r[file_mapping].split(self.class.file_split_pattern).map do |f|
+        r[file_mapping].split(split_pattern).map do |f|
           file = File.join(files_dir, f.strip.tr(' ', '_'))
           if File.exist?(file) # rubocop:disable Style/GuardClause
             file

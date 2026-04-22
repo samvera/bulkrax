@@ -21,9 +21,13 @@ RSpec.describe Bulkrax::SplitPatternCoercion do
       expect(described_class.coerce(pattern)).to equal(pattern)
     end
 
-    it 'returns non-string, non-regexp values unchanged' do
-      # Defensive: unusual values (Arrays, Symbols, etc.) shouldn't blow up.
-      expect(described_class.coerce(:some_symbol)).to eq(:some_symbol)
+    it 'returns nil for values String#split could not accept (Symbol, Integer, Array, ...)' do
+      # The coercion's contract is "nil or Regexp", so unusual mapping values
+      # round-trip to nil rather than being handed straight to String#split
+      # (which would raise TypeError).
+      expect(described_class.coerce(:some_symbol)).to be_nil
+      expect(described_class.coerce(42)).to be_nil
+      expect(described_class.coerce([',', ';'])).to be_nil
     end
 
     context 'when given a String' do
@@ -43,10 +47,10 @@ RSpec.describe Bulkrax::SplitPatternCoercion do
         end
       end
 
-      it 'returns the original String when the source is not a valid Regexp' do
-        # e.g. a stray unclosed group. We don't raise, we just pass it through.
-        bad = '('
-        expect(described_class.coerce(bad)).to eq(bad)
+      it 'returns nil for a String that is not a valid Regexp source' do
+        # e.g. a stray unclosed group. We neither raise nor return an
+        # unusable String — callers can treat nil as "no split".
+        expect(described_class.coerce('(')).to be_nil
       end
     end
   end
