@@ -21,10 +21,25 @@ RSpec.describe Bulkrax::CsvTemplate::MappingManager do
   end
 
   describe '#initialize' do
-    it 'loads mappings and filters out generated fields' do
+    it 'loads all mappings including ones flagged generated: true by default' do
+      # The import/validation path needs the FULL mapping so that aliases on
+      # a `generated: true` entry (e.g. `rights` → `rights_statement`) are
+      # still recognised.
       expect(manager.mappings).to be_a(Hash)
       expect(manager.mappings).to have_key('title')
-      expect(manager.mappings).not_to have_key('generated_field')
+      expect(manager.mappings).to have_key('generated_field')
+    end
+
+    context 'when initialized with include_generated: false' do
+      # Template-generation passes this so the downloadable CSV template
+      # doesn't expose system-maintained columns (date_uploaded, depositor,
+      # source_identifier, etc.).
+      let(:filtered_manager) { described_class.new(include_generated: false) }
+
+      it 'excludes mapping entries flagged generated: true' do
+        expect(filtered_manager.mappings).to have_key('title')
+        expect(filtered_manager.mappings).not_to have_key('generated_field')
+      end
     end
   end
 

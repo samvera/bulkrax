@@ -6,8 +6,16 @@ module Bulkrax
     class MappingManager
       attr_reader :mappings
 
-      def initialize
-        @mappings = load_mappings
+      # @param include_generated [Boolean] when false, excludes mapping entries
+      #   flagged `generated: true` (system-maintained fields like
+      #   date_uploaded, depositor, source_identifier). Template generation
+      #   passes +false+ so the downloadable template doesn't expose
+      #   system columns; import validation uses the default +true+ so that
+      #   user-configured mappings like `rights_statement` (which Bulkrax
+      #   ships with `generated: true`) are still recognised when the CSV
+      #   uses one of their `from:` aliases.
+      def initialize(include_generated: true)
+        @mappings = load_mappings(include_generated: include_generated)
       end
 
       def mapped_to_key(column_str)
@@ -45,10 +53,11 @@ module Bulkrax
 
       private
 
-      def load_mappings
-        Bulkrax.field_mappings["Bulkrax::CsvParser"].reject do |_key, value|
-          value["generated"] == true
-        end
+      def load_mappings(include_generated:)
+        raw = Bulkrax.field_mappings["Bulkrax::CsvParser"]
+        return raw if include_generated
+
+        raw.reject { |_key, value| value["generated"] == true }
       end
     end
   end

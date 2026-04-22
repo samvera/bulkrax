@@ -219,6 +219,38 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
     it 'still flags a header that matches no alias of any known property' do
       expect(unrecognized(%w[title totally_made_up])).to have_key('totally_made_up')
     end
+
+    # Bulkrax ships `rights_statement` with `generated: true`. The validator
+    # must still honour its `from:` aliases so a CSV with a `rights` column
+    # isn't flagged as unrecognised (and, via #find_missing_required_headers,
+    # `rights_statement` isn't reported missing when `rights` is present).
+    context 'when a mapping is flagged generated: true' do
+      let(:mappings) do
+        {
+          'title' => { 'from' => ['title'], 'split' => '\\|' },
+          'rights_statement' => { 'from' => %w[rights rights_statement], 'split' => '\\|', 'generated' => true }
+        }
+      end
+      let(:field_metadata) do
+        { 'GenericWorkResource' =>
+          { properties: %w[title rights_statement], required_terms: ['rights_statement'], controlled_vocab_terms: [] } }
+      end
+
+      before do
+        allow(field_analyzer).to receive(:find_or_create_field_list_for)
+          .with(model_name: 'GenericWorkResource')
+          .and_return('GenericWorkResource' => { 'properties' => %w[title rights_statement] })
+      end
+
+      it 'does not flag a `from:` alias ("rights") as unrecognised' do
+        expect(unrecognized(%w[title rights])).not_to have_key('rights')
+      end
+
+      it 'does not report rights_statement as missing when `rights` alias is present' do
+        missing = host.find_missing_required_headers(%w[title rights], field_metadata, mapping_manager)
+        expect(missing).to be_empty
+      end
+    end
   end
 
   describe '#resolve_children_split_pattern' do
