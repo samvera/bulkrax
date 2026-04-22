@@ -205,19 +205,11 @@ module Bulkrax
       end
 
       def resolve_parent_split_pattern(mappings)
-        split_val = mappings.dig('parents', 'split') || mappings.dig(:parents, :split)
-        return nil if split_val.blank?
-        return Bulkrax::DEFAULT_MULTI_VALUE_ELEMENT_SPLIT_ON if split_val == true
-
-        split_val
+        Bulkrax::SplitPatternCoercion.coerce(mappings.dig('parents', 'split') || mappings.dig(:parents, :split))
       end
 
       def resolve_children_split_pattern(mappings)
-        split_val = mappings.dig('children', 'split') || mappings.dig(:children, :split)
-        return nil if split_val.blank?
-        return Bulkrax::DEFAULT_MULTI_VALUE_ELEMENT_SPLIT_ON if split_val == true
-
-        split_val
+        Bulkrax::SplitPatternCoercion.coerce(mappings.dig('children', 'split') || mappings.dig(:children, :split))
       end
 
       # Builds a graph of { source_identifier => [parent_ids] } from all CSV records.
@@ -264,8 +256,9 @@ module Bulkrax
       end
 
       def split_or_single(value, split_pattern)
-        if split_pattern
-          value.to_s.split(split_pattern).map(&:strip).reject(&:blank?)
+        coerced = Bulkrax::SplitPatternCoercion.coerce(split_pattern)
+        if coerced
+          value.to_s.split(coerced).map(&:strip).reject(&:blank?)
         elsif value.present?
           [value.to_s.strip]
         else

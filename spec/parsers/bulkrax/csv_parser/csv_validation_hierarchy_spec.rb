@@ -173,7 +173,8 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHierarchy do
                                            'parents_1' => 'col1',
                                            'parents_2' => 'col2' })
         ids = Set.new(%w[col1 col2 work1])
-        split_hash  = host.build_item_hash(split_item,  {}, ids, type: 'work', parent: '|')
+        # Pattern is a regex source; escape '|' so it's not empty-alternation.
+        split_hash  = host.build_item_hash(split_item,  {}, ids, type: 'work', parent: '\\|')
         suffix_hash = host.build_item_hash(suffix_item, {}, ids, type: 'work')
         expect(split_hash[:parentIds]).to eq(suffix_hash[:parentIds])
       end

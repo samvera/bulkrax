@@ -99,7 +99,7 @@ module Bulkrax
           extract_validation_items(
             csv_data, all_ids, find_record,
             parent_split_pattern: resolve_parent_split_pattern(mappings),
-            child_split_pattern: resolve_children_split_pattern(mappings) || '|'
+            child_split_pattern: resolve_children_split_pattern(mappings) || Bulkrax::DEFAULT_MULTI_VALUE_ELEMENT_SPLIT_ON
           )
         end
 

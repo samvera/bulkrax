@@ -52,7 +52,8 @@ RSpec.describe Bulkrax::CsvRow::ParentReference do
       split_context = make_context
       split_record = { source_identifier: 'work2', model: 'GenericWork',
                        parent: 'col1|missing_parent', raw_row: {} }
-      described_class.call(split_record, 2, split_context.merge(parent_split_pattern: '|'))
+      # Pattern is a regex source; '|' would be empty-alternation, so escape it.
+      described_class.call(split_record, 2, split_context.merge(parent_split_pattern: '\\|'))
 
       suffix_context = make_context
       suffix_record = { source_identifier: 'work2', model: 'GenericWork',

@@ -5,7 +5,7 @@ module Bulkrax
     # Hierarchy-building helpers for CsvValidation. Handles extracting and
     # categorising items from parsed CSV data for the guided import tree view.
     module CsvValidationHierarchy
-      def extract_validation_items(csv_data, all_ids = Set.new, find_record = nil, parent_split_pattern: nil, child_split_pattern: '|')
+      def extract_validation_items(csv_data, all_ids = Set.new, find_record = nil, parent_split_pattern: nil, child_split_pattern: Bulkrax::DEFAULT_MULTI_VALUE_ELEMENT_SPLIT_ON)
         child_to_parents = build_child_to_parents_map(csv_data, child_split_pattern: child_split_pattern)
         collections = []
         works       = []
@@ -19,7 +19,7 @@ module Bulkrax
         [collections, works, file_sets]
       end
 
-      def build_child_to_parents_map(csv_data, child_split_pattern: '|')
+      def build_child_to_parents_map(csv_data, child_split_pattern: Bulkrax::DEFAULT_MULTI_VALUE_ELEMENT_SPLIT_ON)
         Hash.new { |h, k| h[k] = [] }.tap do |map|
           csv_data.each do |item|
             next if item[:source_identifier].blank?
@@ -31,7 +31,7 @@ module Bulkrax
         end
       end
 
-      def categorise_validation_item(item, child_to_parents, all_ids, collections, works, file_sets, find_record = nil, parent_split_pattern: nil, child_split_pattern: '|') # rubocop:disable Metrics/ParameterLists
+      def categorise_validation_item(item, child_to_parents, all_ids, collections, works, file_sets, find_record = nil, parent_split_pattern: nil, child_split_pattern: Bulkrax::DEFAULT_MULTI_VALUE_ELEMENT_SPLIT_ON) # rubocop:disable Metrics/ParameterLists
         item_id   = item[:source_identifier]
         model_str = item[:model].to_s
 
@@ -51,7 +51,7 @@ module Bulkrax
         item_id  = item[:source_identifier]
         title    = item[:raw_row]['title'] || item_id
         parents  = collect_relationship_ids(item[:parent],   item[:raw_row], 'parents',  split_pattern: opts[:parent])
-        children = collect_relationship_ids(item[:children], item[:raw_row], 'children', split_pattern: opts[:child] || '|')
+        children = collect_relationship_ids(item[:children], item[:raw_row], 'children', split_pattern: opts[:child] || Bulkrax::DEFAULT_MULTI_VALUE_ELEMENT_SPLIT_ON)
 
         {
           id: item_id,
@@ -65,12 +65,14 @@ module Bulkrax
         }
       end
 
-      def parse_relationship_field(value, split_pattern: '|')
+      def parse_relationship_field(value, split_pattern: Bulkrax::DEFAULT_MULTI_VALUE_ELEMENT_SPLIT_ON)
         return [] if value.blank?
-        value.to_s.split(split_pattern).map(&:strip).reject(&:blank?)
+
+        pattern = Bulkrax::SplitPatternCoercion.coerce(split_pattern) || Bulkrax::DEFAULT_MULTI_VALUE_ELEMENT_SPLIT_ON
+        value.to_s.split(pattern).map(&:strip).reject(&:blank?)
       end
 
-      def collect_relationship_ids(base_value, raw_row, column, split_pattern: '|')
+      def collect_relationship_ids(base_value, raw_row, column, split_pattern: Bulkrax::DEFAULT_MULTI_VALUE_ELEMENT_SPLIT_ON)
         base_ids = parse_relationship_field(base_value, split_pattern: split_pattern)
         suffix_pattern = /\A#{Regexp.escape(column)}_\d+\z/
         suffix_ids = raw_row

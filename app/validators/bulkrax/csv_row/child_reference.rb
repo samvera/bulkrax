@@ -37,7 +37,8 @@ module Bulkrax
       end
 
       def self.collect_child_ids(record, context)
-        split_pattern = context[:child_split_pattern] || '|'
+        split_pattern = Bulkrax::SplitPatternCoercion.coerce(context[:child_split_pattern]) ||
+                        Bulkrax::DEFAULT_MULTI_VALUE_ELEMENT_SPLIT_ON
         children_column = context[:children_column] || 'children'
 
         base_ids = record[:children].to_s.split(split_pattern).map(&:strip).reject(&:blank?)

@@ -238,9 +238,14 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
         .to eq(Bulkrax::DEFAULT_MULTI_VALUE_ELEMENT_SPLIT_ON)
     end
 
-    it 'returns the custom split string when split is a string' do
+    it 'treats a String split value as a regex source (matching ApplicationMatcher)' do
+      # The shared SplitPatternCoercion.coerce contract: any String becomes
+      # Regexp.new(str). This keeps relationship-field splitting consistent
+      # with the long-standing ApplicationMatcher#process_split behaviour.
       mappings = { 'children' => { 'split' => ';' } }
-      expect(host.resolve_children_split_pattern(mappings)).to eq(';')
+      result   = host.resolve_children_split_pattern(mappings)
+      expect(result).to be_a(Regexp)
+      expect('a;b;c'.split(result)).to eq(%w[a b c])
     end
   end
 
@@ -256,20 +261,24 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
   # We exercise a representative set of Regexp forms rather than pinning to
   # one particular delimiter, so the fix is general rather than tailored to
   # the one pattern that prompted this bug report.
+  # Each case pairs an original Regexp with a sample String whose split
+  # result we can predict. We only care that the coerced Regexp splits the
+  # same way as the original — the internal `.source` / `.options` may
+  # legitimately differ (Regexp.new of a "(?-mix:...)" string keeps the
+  # wrapper), so assert behaviour rather than internal representation.
   shared_examples 'coerces a serialised Regexp back into a Regexp' do |resolver, key|
-    [
-      /\s*[;|]\s*/,      # whitespace + pipe/semicolon (original bug repro)
-      /\|/,              # plain pipe
-      /,\s*/,            # comma + optional space
-      /\A\s*foo\s*\z/i   # flagged (case-insensitive) regex
-    ].each do |original|
-      it "rebuilds an equivalent Regexp for #{original.inspect} (serialised as #{original.to_s.inspect})" do
+    {
+      /\s*[;|]\s*/     => ['coll1 | coll2', %w[coll1 coll2]],      # original bug repro
+      /\|/             => ['a|b|c',         %w[a b c]],             # plain pipe
+      /,\s*/           => ['a, b, c',       %w[a b c]],             # comma + optional space
+      /\A\s*foo\s*\z/i => ['FOO',           []]                     # flagged (case-insensitive): split consumes entire string
+    }.each do |original, (sample, expected_split)|
+      it "rebuilds a Regexp that splits like #{original.inspect} (serialised as #{original.to_s.inspect})" do
         mappings = { key.to_s => { 'split' => original.to_s } }
         result   = host.public_send(resolver, mappings)
         expect(result).to be_a(Regexp)
-        # Pattern body + options should match the original so split/match behaviour is preserved.
-        expect(result.source).to eq(original.source)
-        expect(result.options).to eq(original.options)
+        expect(sample.split(result)).to eq(sample.split(original))
+        expect(sample.split(result)).to eq(expected_split)
       end
     end
   end
