@@ -317,4 +317,49 @@ RSpec.describe Bulkrax::CsvTemplate::FileValidator do
       end
     end
   end
+
+  # Characterisation coverage for how the `file` cell is split when counting
+  # references. These specs pin the current behaviour (always uses
+  # Bulkrax.multi_value_element_split_on, ignoring any configured `file`
+  # split) so the change is visible when the implementation is refactored.
+  describe 'split behaviour for the file column' do
+    let(:csv_data) { [{ file: 'sun.jpg;moon.jpg', source_identifier: 'work1' }] }
+
+    context 'with no `file` mapping configured' do
+      it 'splits on Bulkrax.multi_value_element_split_on' do
+        validator = described_class.new(csv_data, nil)
+        expect(validator.count_references).to eq(1)
+        expect(validator.possible_missing_files?).to be true
+      end
+    end
+
+    context 'when the `file` mapping configures a non-default split' do
+      around do |spec|
+        old = Bulkrax.field_mappings['Bulkrax::CsvParser']
+        Bulkrax.field_mappings['Bulkrax::CsvParser'] = { 'file' => { split: ',' } }
+        spec.run
+        Bulkrax.field_mappings['Bulkrax::CsvParser'] = old
+      end
+
+      it 'currently ignores the configured split and uses the default (pre-refactor behaviour)' do
+        # Default /\s*[:;|]\s*/ splits the ";" from csv_data. A correctly-
+        # configured split would be `,` and would NOT split "sun.jpg;moon.jpg".
+        zip = Tempfile.new(['test', '.zip'])
+        Zip::File.open(zip.path, create: true) do |zipfile|
+          zipfile.get_output_stream('sun.jpg') { |f| f.write('a') }
+          zipfile.get_output_stream('moon.jpg') { |f| f.write('b') }
+        end
+        zip.rewind
+        validator = described_class.new(csv_data, zip)
+        # Default split pattern splits on ';' → 2 files found, 0 missing.
+        # When the refactor lands, the `,` configuration will keep
+        # "sun.jpg;moon.jpg" as a single token and neither filename will
+        # match the zip entries.
+        expect(validator.found_files_count).to eq(2)
+        expect(validator.missing_files).to eq([])
+        zip.close
+        zip.unlink
+      end
+    end
+  end
 end

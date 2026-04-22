@@ -1373,6 +1373,62 @@ module Bulkrax
         expect(entry.parsed_metadata['visibility_after_lease']).to eq('open')
       end
     end
+    # Characterisation coverage for how the `file` column is split during
+    # ingestion (writing to parsed_metadata['file']). These specs pin the
+    # current behaviour so it stays visible if the implementation is later
+    # refactored to honour the `file` mapping's `split:` value.
+    describe '#add_file' do
+      let(:importer) { FactoryBot.create(:bulkrax_importer_csv) }
+      subject(:entry) do
+        described_class.new(importerexporter: importer, raw_metadata: raw_metadata, identifier: 'id-1')
+      end
+      let(:parser) { importer.parser }
+
+      before do
+        allow(parser).to receive(:path_to_files).and_return('spec/fixtures/csv/files')
+        allow(entry).to receive(:path_to_file) { |name| "spec/fixtures/csv/files/#{name}" }
+        entry.parsed_metadata = {}
+      end
+
+      context 'with a pipe-separated `file` cell' do
+        let(:raw_metadata) { { 'source_identifier' => 'id-1', 'file' => 'sun.jpg|moon.jpg' } }
+
+        it 'splits on the Bulkrax default pattern and writes an array' do
+          entry.send(:add_file)
+          expect(entry.parsed_metadata['file']).to eq(%w[spec/fixtures/csv/files/sun.jpg spec/fixtures/csv/files/moon.jpg])
+        end
+      end
+
+      context 'when the `file` mapping configures a non-default split' do
+        let(:raw_metadata) { { 'source_identifier' => 'id-1', 'file' => 'sun.jpg;moon.jpg' } }
+
+        around do |spec|
+          old = Bulkrax.field_mappings['Bulkrax::CsvParser']
+          Bulkrax.field_mappings['Bulkrax::CsvParser'] = { 'file' => { split: ';' } }
+          spec.run
+          Bulkrax.field_mappings['Bulkrax::CsvParser'] = old
+        end
+
+        it 'currently ignores the configured split and uses the default (pre-refactor behaviour)' do
+          entry.send(:add_file)
+          # Default pattern /\s*[:;|]\s*/ happens to include `;`, so this splits
+          # "correctly" here — but the point of this characterisation is that
+          # the value of the `file` mapping's `split:` is NOT consulted at all.
+          expect(entry.parsed_metadata['file'])
+            .to eq(%w[spec/fixtures/csv/files/sun.jpg spec/fixtures/csv/files/moon.jpg])
+        end
+      end
+
+      context 'when the `file` cell is already an Array' do
+        let(:raw_metadata) { { 'source_identifier' => 'id-1', 'file' => ['sun.jpg', 'moon.jpg'] } }
+
+        it 'passes the array through without splitting' do
+          entry.send(:add_file)
+          expect(entry.parsed_metadata['file']).to eq(%w[spec/fixtures/csv/files/sun.jpg spec/fixtures/csv/files/moon.jpg])
+        end
+      end
+    end
+
     describe '#path_to_file' do
       let(:importer) { FactoryBot.create(:bulkrax_importer_csv) }
       subject(:entry) { described_class.new(importerexporter: importer) }
