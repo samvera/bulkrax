@@ -1373,10 +1373,9 @@ module Bulkrax
         expect(entry.parsed_metadata['visibility_after_lease']).to eq('open')
       end
     end
-    # Characterisation coverage for how the `file` column is split during
-    # ingestion (writing to parsed_metadata['file']). These specs pin the
-    # current behaviour so it stays visible if the implementation is later
-    # refactored to honour the `file` mapping's `split:` value.
+    # Ingestion writes to parsed_metadata['file'] via Bulkrax::CsvParser.
+    # file_split_pattern, so any `split:` configured on the `file` mapping is
+    # honoured — matching #file_paths and FileValidator#referenced_files.
     describe '#add_file' do
       let(:importer) { FactoryBot.create(:bulkrax_importer_csv) }
       subject(:entry) do
@@ -1390,30 +1389,30 @@ module Bulkrax
         entry.parsed_metadata = {}
       end
 
-      context 'with a pipe-separated `file` cell' do
+      context 'with a pipe-separated `file` cell and no configured split' do
         let(:raw_metadata) { { 'source_identifier' => 'id-1', 'file' => 'sun.jpg|moon.jpg' } }
 
-        it 'splits on the Bulkrax default pattern and writes an array' do
+        it 'falls back to Bulkrax.multi_value_element_split_on and writes an array' do
           entry.send(:add_file)
           expect(entry.parsed_metadata['file']).to eq(%w[spec/fixtures/csv/files/sun.jpg spec/fixtures/csv/files/moon.jpg])
         end
       end
 
+      # Use a delimiter (`,`) that the default pattern /\s*[:;|]\s*/ does NOT
+      # match, so this spec genuinely distinguishes honouring-the-config from
+      # falling back to the default.
       context 'when the `file` mapping configures a non-default split' do
-        let(:raw_metadata) { { 'source_identifier' => 'id-1', 'file' => 'sun.jpg;moon.jpg' } }
+        let(:raw_metadata) { { 'source_identifier' => 'id-1', 'file' => 'sun.jpg,moon.jpg' } }
 
         around do |spec|
           old = Bulkrax.field_mappings['Bulkrax::CsvParser']
-          Bulkrax.field_mappings['Bulkrax::CsvParser'] = { 'file' => { split: ';' } }
+          Bulkrax.field_mappings['Bulkrax::CsvParser'] = { 'file' => { split: ',' } }
           spec.run
           Bulkrax.field_mappings['Bulkrax::CsvParser'] = old
         end
 
-        it 'currently ignores the configured split and uses the default (pre-refactor behaviour)' do
+        it 'honours the configured split' do
           entry.send(:add_file)
-          # Default pattern /\s*[:;|]\s*/ happens to include `;`, so this splits
-          # "correctly" here — but the point of this characterisation is that
-          # the value of the `file` mapping's `split:` is NOT consulted at all.
           expect(entry.parsed_metadata['file'])
             .to eq(%w[spec/fixtures/csv/files/sun.jpg spec/fixtures/csv/files/moon.jpg])
         end

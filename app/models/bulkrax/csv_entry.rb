@@ -165,7 +165,7 @@ module Bulkrax
     def add_file
       self.parsed_metadata['file'] ||= []
       if record['file']&.is_a?(String)
-        self.parsed_metadata['file'] = record['file'].split(Bulkrax.multi_value_element_split_on)
+        self.parsed_metadata['file'] = record['file'].split(Bulkrax::CsvParser.file_split_pattern)
       elsif record['file'].is_a?(Array)
         self.parsed_metadata['file'] = record['file']
       end
