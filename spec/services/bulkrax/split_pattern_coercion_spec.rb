@@ -30,11 +30,11 @@ RSpec.describe Bulkrax::SplitPatternCoercion do
       # String is treated as a regex source to match the long-standing
       # contract in Bulkrax::ApplicationMatcher#process_split.
       {
-        '\\|'                      => ['a|b',           %w[a b]],           # plain pipe
-        ','                        => ['a,b,c',         %w[a b c]],
-        '\\s*;\\s*'                => ['a ; b ;c',      %w[a b c]],
-        '(?-mix:\\s*[;|]\\s*)'     => ['coll1 | coll2', %w[coll1 coll2]],   # serialised Regexp
-        '(?i-mx:\\AFOO\\z)'        => ['FOO',           []]                 # serialised flagged Regexp
+        '\\|' => ['a|b', %w[a b]], # plain pipe
+        ',' => ['a,b,c', %w[a b c]],
+        '\\s*;\\s*' => ['a ; b ;c', %w[a b c]],
+        '(?-mix:\\s*[;|]\\s*)' => ['coll1 | coll2', %w[coll1 coll2]], # serialised Regexp
+        '(?i-mx:\\AFOO\\z)' => ['FOO', []] # serialised flagged Regexp
       }.each do |src, (sample, expected)|
         it "builds a Regexp from #{src.inspect} that splits #{sample.inspect} → #{expected.inspect}" do
           result = described_class.coerce(src)

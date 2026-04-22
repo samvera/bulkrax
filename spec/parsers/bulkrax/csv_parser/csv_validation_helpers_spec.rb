@@ -202,22 +202,22 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
                                           %w[GenericWorkResource], mappings, field_metadata)
     end
 
+    def unrecognized(headers)
+      host.find_unrecognized_validation_headers(headers, valid_headers,
+                                                mapping_manager: mapping_manager,
+                                                field_metadata: field_metadata)
+    end
+
     it 'does not flag a header matching a non-first `from` alias ("creator")' do
-      headers = %w[title creator]
-      result  = host.find_unrecognized_validation_headers(headers, valid_headers)
-      expect(result).not_to have_key('creator')
+      expect(unrecognized(%w[title creator])).not_to have_key('creator')
     end
 
     it 'does not flag a header matching a non-first `from` alias ("resource_type")' do
-      headers = %w[title resource_type]
-      result  = host.find_unrecognized_validation_headers(headers, valid_headers)
-      expect(result).not_to have_key('resource_type')
+      expect(unrecognized(%w[title resource_type])).not_to have_key('resource_type')
     end
 
     it 'still flags a header that matches no alias of any known property' do
-      headers = %w[title totally_made_up]
-      result  = host.find_unrecognized_validation_headers(headers, valid_headers)
-      expect(result).to have_key('totally_made_up')
+      expect(unrecognized(%w[title totally_made_up])).to have_key('totally_made_up')
     end
   end
 
@@ -268,10 +268,10 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
   # wrapper), so assert behaviour rather than internal representation.
   shared_examples 'coerces a serialised Regexp back into a Regexp' do |resolver, key|
     {
-      /\s*[;|]\s*/     => ['coll1 | coll2', %w[coll1 coll2]],      # original bug repro
-      /\|/             => ['a|b|c',         %w[a b c]],             # plain pipe
-      /,\s*/           => ['a, b, c',       %w[a b c]],             # comma + optional space
-      /\A\s*foo\s*\z/i => ['FOO',           []]                     # flagged (case-insensitive): split consumes entire string
+      /\s*[;|]\s*/ => ['coll1 | coll2', %w[coll1 coll2]], # original bug repro
+      /\|/ => ['a|b|c',         %w[a b c]], # plain pipe
+      /,\s*/ => ['a, b, c', %w[a b c]], # comma + optional space
+      /\A\s*foo\s*\z/i => ['FOO', []] # flagged (case-insensitive): split consumes entire string
     }.each do |original, (sample, expected_split)|
       it "rebuilds a Regexp that splits like #{original.inspect} (serialised as #{original.to_s.inspect})" do
         mappings = { key.to_s => { 'split' => original.to_s } }

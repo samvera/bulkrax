@@ -90,7 +90,9 @@ module Bulkrax
 
           {
             missing_required: find_missing_required_headers(headers, field_metadata, mapping_manager),
-            unrecognized: find_unrecognized_validation_headers(headers, valid_headers),
+            unrecognized: find_unrecognized_validation_headers(headers, valid_headers,
+                                                               mapping_manager: mapping_manager,
+                                                               field_metadata: field_metadata),
             empty_columns: find_empty_column_positions(headers, raw_csv)
           }
         end

@@ -73,11 +73,23 @@ module Bulkrax
         missing.uniq
       end
 
-      def find_unrecognized_validation_headers(headers, valid_headers)
+      # A header is considered recognised if it appears in valid_headers or
+      # if it matches any alias in a known property's `from` array. The real
+      # importer (CsvParser#missing_elements) scans every `from` entry when
+      # matching incoming columns, so the validator has to use the same rule
+      # — otherwise a CSV that imports cleanly gets flagged for columns like
+      # `creator` when the mapping declares `creator: { from: ['author', 'creator'] }`.
+      def find_unrecognized_validation_headers(headers, valid_headers, mapping_manager: nil, field_metadata: nil)
+        known_property_keys = (field_metadata || {}).values.flat_map { |m| Array(m[:properties]) }.to_set
         checker = DidYouMean::SpellChecker.new(dictionary: valid_headers)
-        headers
-          .reject { |h| h.blank? || valid_headers.include?(h) || valid_headers.include?(h.sub(/_\d+\z/, '')) }
-          .index_with { |h| checker.correct(h).first }
+        unrecognized = headers.reject do |h|
+          next true if h.blank?
+          base = h.sub(/_\d+\z/, '')
+          next true if valid_headers.include?(h) || valid_headers.include?(base)
+          mapped_key = mapping_manager&.mapped_to_key(base)
+          mapped_key && known_property_keys.include?(mapped_key)
+        end
+        unrecognized.index_with { |h| checker.correct(h).first }
       end
 
       def find_empty_column_positions(headers, raw_csv)

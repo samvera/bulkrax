@@ -639,7 +639,7 @@ module Bulkrax
       # #file_paths so the behaviour is preserved when the inline block is
       # later refactored into a shared helper.
       context 'when the `file` mapping configures a split:' do
-        let(:base_mappings) { { 'Bulkrax::CsvParser' => { :file => { split: split_value } } } }
+        let(:base_mappings) { { 'Bulkrax::CsvParser' => { file: { split: split_value } } } }
 
         before do
           allow(subject).to receive(:records).and_return([{ file: 'sun.jpg;moon.jpg' }])
