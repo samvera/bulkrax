@@ -17,7 +17,7 @@ module Bulkrax
         return if metadata.blank?
 
         add_default_work_type_warning(context, record, row_index, model) if using_default
-        add_missing_required_value_errors(context, record, row_index, metadata)
+        add_missing_required_value_errors(context, record, row_index, metadata, context[:mapping_manager])
       end
 
       def self.add_default_work_type_warning(context, record, row_index, model)
@@ -38,9 +38,9 @@ module Bulkrax
       end
       private_class_method :add_default_work_type_warning
 
-      def self.add_missing_required_value_errors(context, record, row_index, metadata)
+      def self.add_missing_required_value_errors(context, record, row_index, metadata, mapping_manager)
         (metadata[:required_terms] || []).each do |field|
-          next if record[:raw_row].any? { |key, value| normalize_header(key.to_s) == field && value.present? }
+          next if record[:raw_row].any? { |key, value| resolve_header(key.to_s, mapping_manager) == field && value.present? }
 
           context[:errors] << {
             row: row_index,
@@ -55,6 +55,18 @@ module Bulkrax
         end
       end
       private_class_method :add_missing_required_value_errors
+
+      # Resolves a raw CSV header into its mapping key so that `from:` aliases
+      # are honoured (e.g. a column named `rights` satisfies the requirement
+      # for `rights_statement` when the mapping declares
+      # `rights_statement: { from: ['rights', 'rights_statement', ...] }`).
+      # Numeric suffixes (e.g. `title_1`) are stripped before lookup so they
+      # satisfy the unsuffixed required field.
+      def self.resolve_header(header, mapping_manager)
+        base = normalize_header(header)
+        mapping_manager ? mapping_manager.mapped_to_key(base) : base
+      end
+      private_class_method :resolve_header
 
       def self.normalize_header(header)
         header.sub(/_\d+\z/, '')

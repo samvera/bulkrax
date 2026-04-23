@@ -105,4 +105,45 @@ RSpec.describe Bulkrax::CsvRow::RequiredValues do
       end
     end
   end
+
+  # When the CSV uses an alias for a required field (e.g. `rights` satisfying
+  # `rights_statement` because `rights_statement: { from: ['rights', ...] }`),
+  # the validator must honour the mapping — otherwise the header-level check
+  # passes but every row still gets flagged as missing the value.
+  context 'when the CSV header uses a from: alias for a required field' do
+    let(:mapping_manager) do
+      mappings = {
+        'rights_statement' => { 'from' => ['rights', 'rights_statement', 'rights statement'], 'generated' => true },
+        'title' => { 'from' => ['title'] }
+      }
+      allow(Bulkrax).to receive(:field_mappings).and_return('Bulkrax::CsvParser' => mappings)
+      Bulkrax::CsvTemplate::MappingManager.new
+    end
+
+    def alias_context
+      make_context(required_terms: %w[title rights_statement]).merge(mapping_manager: mapping_manager)
+    end
+
+    it 'treats `rights` as satisfying the `rights_statement` requirement' do
+      record = make_record('title' => 'My Title', 'rights' => 'http://rightsstatements.org/vocab/CNE/1.0/')
+      described_class.call(record, 2, alias_context)
+      expect(alias_context[:errors]).to be_empty
+    end
+
+    it 'still flags rights_statement as missing when the `rights` column is blank' do
+      record = make_record('title' => 'My Title', 'rights' => '')
+      context = alias_context
+      described_class.call(record, 2, context)
+      expect(context[:errors].map { |e| e[:column] }).to contain_exactly('rights_statement')
+    end
+
+    it 'falls back to exact-header matching when no mapping_manager is provided' do
+      # Back-compat: callers that do not pass a mapping_manager (e.g. existing
+      # specs) still work because we short-circuit to the normalised header.
+      record = make_record('title' => 'My Title', 'rights_statement' => 'CNE')
+      context = make_context(required_terms: %w[title rights_statement])
+      described_class.call(record, 2, context)
+      expect(context[:errors]).to be_empty
+    end
+  end
 end

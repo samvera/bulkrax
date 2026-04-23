@@ -28,7 +28,7 @@ module Bulkrax
           header_issues    = check_headers(headers, raw_csv, mapping_manager, mappings, field_metadata, field_analyzer)
           missing_required = header_issues[:missing_required]
           notices, row_errors, file_validator, collections, works, file_sets =
-            run_validations(csv_data, all_ids, headers, source_id_key, mappings, field_metadata, missing_required, zip_file, admin_set_id)
+            run_validations(csv_data, all_ids, headers, source_id_key, mappings, field_metadata, missing_required, zip_file, admin_set_id, mapping_manager: mapping_manager)
 
           result = assemble_result(
             headers: headers, missing_required: missing_required, header_issues: header_issues,
@@ -44,13 +44,13 @@ module Bulkrax
 
         # Builds notices, runs row validators, file validator, and hierarchy extraction.
         # Returns [notices, row_errors, file_validator, collections, works, file_sets].
-        def run_validations(csv_data, all_ids, headers, source_id_key, mappings, field_metadata, missing_required, zip_file, admin_set_id) # rubocop:disable Metrics/ParameterLists
+        def run_validations(csv_data, all_ids, headers, source_id_key, mappings, field_metadata, missing_required, zip_file, admin_set_id, mapping_manager: nil) # rubocop:disable Metrics/ParameterLists
           find_record = build_find_record
           notices     = []
           append_missing_source_id!(missing_required, headers, source_id_key, csv_data.map { |r| r[:model] }.compact.uniq)
           append_missing_model_notice!(notices, headers, csv_data)
 
-          row_errors                       = run_row_validators(csv_data, all_ids, source_id_key, mappings, field_metadata, find_record, notices)
+          row_errors                       = run_row_validators(csv_data, all_ids, source_id_key, mappings, field_metadata, find_record, notices, mapping_manager: mapping_manager)
           file_validator                   = CsvTemplate::FileValidator.new(csv_data, zip_file, admin_set_id)
           collections, works, file_sets    = extract_hierarchy_items(csv_data, all_ids, find_record, mappings)
           [notices, row_errors, file_validator, collections, works, file_sets]
@@ -106,7 +106,7 @@ module Bulkrax
         end
 
         # Runs all registered row validators and returns the collected errors.
-        def run_row_validators(csv_data, all_ids, source_id_key, mappings, field_metadata, find_record, notices = []) # rubocop:disable Metrics/ParameterLists
+        def run_row_validators(csv_data, all_ids, source_id_key, mappings, field_metadata, find_record, notices = [], mapping_manager: nil) # rubocop:disable Metrics/ParameterLists
           context = {
             errors: [],
             warnings: [],
@@ -118,6 +118,7 @@ module Bulkrax
             parent_column: resolve_relationship_column(mappings, 'related_parents_field_mapping', 'parents'),
             children_column: resolve_relationship_column(mappings, 'related_children_field_mapping', 'children'),
             mappings: mappings,
+            mapping_manager: mapping_manager,
             field_metadata: field_metadata,
             find_record_by_source_identifier: find_record,
             relationship_graph: build_relationship_graph(csv_data, mappings),
