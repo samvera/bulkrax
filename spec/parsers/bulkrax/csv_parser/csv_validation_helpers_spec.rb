@@ -548,4 +548,66 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
       end
     end
   end
+
+  describe '#assemble_result' do
+    let(:file_validator) do
+      instance_double(
+        'Bulkrax::CsvTemplate::FileValidator',
+        missing_files: [],
+        possible_missing_files?: false,
+        count_references: 0,
+        found_files_count: 0,
+        zip_included?: false
+      )
+    end
+    let(:header_issues) { { unrecognized: {}, empty_columns: [] } }
+    let(:csv_data) { [{ source_identifier: 'w1' }] }
+    let(:headers) { %w[source_identifier title] }
+
+    def assemble(missing_required:, row_errors: [], notices: [])
+      host.send(
+        :assemble_result,
+        headers: headers, missing_required: missing_required, header_issues: header_issues,
+        row_errors: row_errors, csv_data: csv_data, file_validator: file_validator,
+        collections: [], works: [], file_sets: [], notices: notices
+      )
+    end
+
+    context 'when only rights_statement is missing' do
+      let(:missing_required) { [{ model: 'Work', field: 'rights_statement' }] }
+
+      it 'is valid-with-warnings since rights_statement can be supplied on Step 2' do
+        result = assemble(missing_required: missing_required)
+        expect(result[:isValid]).to be true
+        expect(result[:hasWarnings]).to be true
+      end
+
+      it 'is not valid when a row-level error is also present' do
+        result = assemble(
+          missing_required: missing_required,
+          row_errors: [{ severity: 'error', column: 'parent', row: 2 }]
+        )
+        expect(result[:isValid]).to be false
+      end
+
+      it 'stays valid-with-warnings when only row-level warnings are present' do
+        result = assemble(
+          missing_required: missing_required,
+          row_errors: [{ severity: 'warning', column: 'source_identifier', row: 2 }]
+        )
+        expect(result[:isValid]).to be true
+        expect(result[:hasWarnings]).to be true
+      end
+    end
+
+    context 'when another required field is missing alongside rights_statement' do
+      it 'is not valid — the Step 2 fallback only covers rights_statement' do
+        result = assemble(missing_required: [
+                            { model: 'Work', field: 'rights_statement' },
+                            { model: 'Work', field: 'title' }
+                          ])
+        expect(result[:isValid]).to be false
+      end
+    end
+  end
 end

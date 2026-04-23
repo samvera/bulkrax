@@ -199,9 +199,20 @@ it:
           validating: Convalida in corso...
           validation_failed: Convalida non riuscita. Riprova.
           validation_timeout: Validazione scaduta. I file potrebbero essere troppo grandi. Prova con file più piccoli o contatta l'assistenza.
+          validation_truncated_note: troncato a %{shown} — scarica il CSV degli errori per l'elenco completo
+          validation_truncated_tooltip: Questo elenco è limitato per mantenere la pagina leggibile. L'elenco completo si trova nel file CSV degli errori scaricabile.
           visibility_institution: Istituzione
           visibility_private: Privato
           visibility_public: Pubblico
+          warning_category_circular_reference: Riferimento circolare
+          warning_category_default_work_type_used: Tipo di opera predefinito utilizzato
+          warning_category_duplicate_source_identifier: Identificatore di origine duplicato nel CSV
+          warning_category_existing_source_identifier: Identificatore di origine esistente (verrà aggiornato)
+          warning_category_invalid_child_reference: Riferimento figlio non valido
+          warning_category_invalid_controlled_value: Valore di vocabolario controllato non valido
+          warning_category_invalid_parent_reference: Riferimento genitore non valido
+          warning_category_missing_required_value: Valore obbligatorio mancante
+          warning_category_missing_source_identifier: Identificatore di origine mancante
           zip_limit: 'È consentito un solo file ZIP. I seguenti file non sono stati aggiunti:'
         nav:
           back: Indietro
@@ -264,6 +275,7 @@ it:
           large_import_message_html: Stai per importare <span class="total-items-count">%{count}</span> articoli. Le importazioni di grandi dimensioni richiedono più tempo e sono più difficili da risolvere. Valuta la possibilità di suddividere i lotti in lotti più piccoli.
           large_import_warning: Avviso di importazione di grandi dimensioni
           ready_to_import: Pronto per l'importazione
+          section_errors: Errori
           section_files: File
           section_records: Registrazioni
           section_settings: Impostazioni

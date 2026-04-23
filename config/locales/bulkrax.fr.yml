@@ -199,9 +199,20 @@ fr:
           validating: Validation en cours...
           validation_failed: La validation a échoué. Veuillez réessayer.
           validation_timeout: La validation a expiré. Vos fichiers sont peut-être trop volumineux. Veuillez essayer avec des fichiers plus petits ou contacter l'assistance.
+          validation_truncated_note: tronqué à %{shown} — téléchargez le CSV des erreurs pour la liste complète
+          validation_truncated_tooltip: Cette liste est limitée pour garder la page lisible. La liste complète se trouve dans le fichier CSV des erreurs téléchargeable.
           visibility_institution: Institution
           visibility_private: Privé
           visibility_public: Publique
+          warning_category_circular_reference: Référence circulaire
+          warning_category_default_work_type_used: Type d'œuvre par défaut utilisé
+          warning_category_duplicate_source_identifier: Identifiant source en double dans le CSV
+          warning_category_existing_source_identifier: Identifiant source existant (sera mis à jour)
+          warning_category_invalid_child_reference: Référence enfant non valide
+          warning_category_invalid_controlled_value: Valeur de vocabulaire contrôlé non valide
+          warning_category_invalid_parent_reference: Référence parente non valide
+          warning_category_missing_required_value: Valeur obligatoire manquante
+          warning_category_missing_source_identifier: Identifiant source manquant
           zip_limit: 'Un seul fichier ZIP est autorisé. Les fichiers suivants n''ont pas été ajoutés :'
         nav:
           back: Dos
@@ -264,6 +275,7 @@ fr:
           large_import_message_html: Vous allez importer <span class="total-items-count">%{count}</span> articles. Les importations volumineuses sont plus longues et plus difficiles à dépanner. Pensez à les fractionner en lots plus petits.
           large_import_warning: Avertissement concernant les importations importantes
           ready_to_import: Prêt à importer
+          section_errors: Erreurs
           section_files: Fichiers
           section_records: Archives
           section_settings: Paramètres

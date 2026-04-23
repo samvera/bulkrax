@@ -47,17 +47,19 @@ module Bulkrax
       blank_data    = Array.new(@headers.length)
 
       CSV.generate(force_quotes: false) do |csv|
-        csv << ['row', 'errors'] + @headers
+        csv << ['row', 'errors', 'categories'] + @headers
 
         file_level_error_rows.each do |message|
-          csv << [nil, message] + blank_data
+          csv << [nil, message, nil] + blank_data
         end
 
         @csv_data.each_with_index do |record, index|
           row_number = index + 2 # header is row 1; first data row is row 2
-          error_messages = errors_by_row[row_number]&.map { |e| e[:message] }&.join(' | ')
+          row_errors = errors_by_row[row_number]
+          error_messages   = row_errors&.map { |e| e[:message] }&.join(' | ')
+          error_categories = row_errors&.map { |e| e[:category] }&.compact&.uniq&.join(' | ')
           raw_row = record[:raw_row] || {}
-          csv << [row_number, error_messages] + @headers.map { |h| raw_row[h] }
+          csv << [row_number, error_messages, error_categories] + @headers.map { |h| raw_row[h] }
         end
       end
     end

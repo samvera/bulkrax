@@ -226,9 +226,20 @@ en:
           validating: Validating...
           validation_failed: Validation failed. Please try again.
           validation_timeout: Validation timed out. Your files may be too large. Please try with smaller files or contact support.
+          validation_truncated_note: truncated to %{shown} — download errors CSV for full list
+          validation_truncated_tooltip: This list is capped to keep the page readable. The full list is in the Download errors CSV file.
           visibility_institution: Institution
           visibility_private: Private
           visibility_public: Public
+          warning_category_circular_reference: Circular reference
+          warning_category_default_work_type_used: Default work type used
+          warning_category_duplicate_source_identifier: Duplicate source identifier in CSV
+          warning_category_existing_source_identifier: Existing source identifier (will update)
+          warning_category_invalid_child_reference: Invalid child reference
+          warning_category_invalid_controlled_value: Invalid controlled vocabulary value
+          warning_category_invalid_parent_reference: Invalid parent reference
+          warning_category_missing_required_value: Missing required value
+          warning_category_missing_source_identifier: Missing source identifier
           zip_limit: 'Only 1 ZIP file allowed. The following files were not added:'
         nav:
           back: Back
@@ -291,6 +302,7 @@ en:
           large_import_message_html: You're about to import <span class="total-items-count">%{count}</span> items. Large imports take longer and are harder to troubleshoot. Consider splitting into smaller batches.
           large_import_warning: Large Import Warning
           ready_to_import: Ready to Import
+          section_errors: Errors
           section_files: Files
           section_records: Records
           section_settings: Settings

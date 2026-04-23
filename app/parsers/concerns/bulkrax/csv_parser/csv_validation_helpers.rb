@@ -152,25 +152,12 @@ module Bulkrax
         }
       end
 
-      def apply_rights_statement_validation_override!(result, missing_required)
-        only_rights = missing_required.present? &&
-                      missing_required.all? { |h| h[:field].to_s == 'rights_statement' }
-        return unless only_rights && !result[:isValid]
-        return if result[:headers].blank?
-        return if result[:missingFiles]&.any?
-
-        result[:isValid]     = true
-        result[:hasWarnings] = true
-      end
-
       # Assembles the final result hash returned to the guided import UI.
       def assemble_result(headers:, missing_required:, header_issues:, row_errors:, csv_data:, file_validator:, collections:, works:, file_sets:, notices: []) # rubocop:disable Metrics/ParameterLists
-        row_error_entries   = row_errors.select { |e| e[:severity] == 'error' }
-        row_warning_entries = row_errors.select { |e| e[:severity] == 'warning' }
-        has_errors   = missing_required.any? || headers.blank? || csv_data.empty? ||
-                       file_validator.missing_files.any? || row_error_entries.any?
-        has_warnings = header_issues[:unrecognized].any? || header_issues[:empty_columns].any? ||
-                       file_validator.possible_missing_files? || row_warning_entries.any? || notices.any?
+        is_valid, has_warnings = determine_validity(
+          headers: headers, missing_required: missing_required, header_issues: header_issues,
+          row_errors: row_errors, csv_data: csv_data, file_validator: file_validator, notices: notices
+        )
 
         {
           headers: headers,
@@ -179,7 +166,7 @@ module Bulkrax
           unrecognized: header_issues[:unrecognized],
           emptyColumns: header_issues[:empty_columns],
           rowCount: csv_data.length,
-          isValid: !has_errors,
+          isValid: is_valid,
           hasWarnings: has_warnings,
           rowErrors: row_errors,
           collections: collections,
@@ -191,6 +178,27 @@ module Bulkrax
           foundFiles: file_validator.found_files_count,
           zipIncluded: file_validator.zip_included?
         }
+      end
+
+      # Returns [is_valid, has_warnings] for the assembled result.
+      # rights_statement can be supplied on Step 2, so a CSV missing ONLY the
+      # rights_statement column is valid-with-warnings rather than a blocker;
+      # the display formatter styles that case as a warning accordion.
+      def determine_validity(headers:, missing_required:, header_issues:, row_errors:, csv_data:, file_validator:, notices:) # rubocop:disable Metrics/ParameterLists
+        row_error_entries   = row_errors.select { |e| e[:severity] == 'error' }
+        row_warning_entries = row_errors.select { |e| e[:severity] == 'warning' }
+
+        only_rights_missing = missing_required.present? &&
+                              missing_required.all? { |h| h[:field].to_s == 'rights_statement' }
+        blocking_missing_required = missing_required.any? && !only_rights_missing
+
+        has_errors   = blocking_missing_required || headers.blank? || csv_data.empty? ||
+                       file_validator.missing_files.any? || row_error_entries.any?
+        has_warnings = header_issues[:unrecognized].any? || header_issues[:empty_columns].any? ||
+                       file_validator.possible_missing_files? || row_warning_entries.any? ||
+                       notices.any? || only_rights_missing
+
+        [!has_errors, has_warnings]
       end
 
       # Builds the find_record lambda used by row validators and hierarchy extraction.

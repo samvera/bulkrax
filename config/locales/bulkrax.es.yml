@@ -199,9 +199,20 @@ es:
           validating: Validando...
           validation_failed: Error en la validación. Inténtalo de nuevo.
           validation_timeout: Se agotó el tiempo de validación. Es posible que sus archivos sean demasiado grandes. Intente con archivos más pequeños o contacte con el soporte técnico.
+          validation_truncated_note: truncado a %{shown} — descargue el CSV de errores para ver la lista completa
+          validation_truncated_tooltip: Esta lista está limitada para mantener la página legible. La lista completa está en el archivo CSV de errores descargable.
           visibility_institution: Institución
           visibility_private: Privado
           visibility_public: Público
+          warning_category_circular_reference: Referencia circular
+          warning_category_default_work_type_used: Tipo de obra predeterminado utilizado
+          warning_category_duplicate_source_identifier: Identificador de origen duplicado en el CSV
+          warning_category_existing_source_identifier: Identificador de origen existente (se actualizará)
+          warning_category_invalid_child_reference: Referencia secundaria no válida
+          warning_category_invalid_controlled_value: Valor de vocabulario controlado no válido
+          warning_category_invalid_parent_reference: Referencia principal no válida
+          warning_category_missing_required_value: Falta un valor obligatorio
+          warning_category_missing_source_identifier: Falta el identificador de origen
           zip_limit: 'Solo se permite un archivo ZIP. No se agregaron los siguientes archivos:'
         nav:
           back: Atrás
@@ -264,6 +275,7 @@ es:
           large_import_message_html: Está a punto de importar <span class="total-items-count">%{count}</span> artículos. Las importaciones grandes tardan más y son más difíciles de solucionar. Considere dividir el proceso en lotes más pequeños.
           large_import_warning: Advertencia sobre grandes importaciones
           ready_to_import: Listo para importar
+          section_errors: Errores
           section_files: Archivos
           section_records: Archivos
           section_settings: Ajustes

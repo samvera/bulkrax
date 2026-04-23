@@ -199,9 +199,20 @@ pt-BR:
           validating: Validando...
           validation_failed: A validação falhou. Tente novamente.
           validation_timeout: A validação expirou. Seus arquivos podem ser muito grandes. Tente com arquivos menores ou entre em contato com o suporte.
+          validation_truncated_note: truncado para %{shown} — baixe o CSV de erros para ver a lista completa
+          validation_truncated_tooltip: Esta lista é limitada para manter a página legível. A lista completa está no arquivo CSV de erros para download.
           visibility_institution: Instituição
           visibility_private: Privado
           visibility_public: Público
+          warning_category_circular_reference: Referência circular
+          warning_category_default_work_type_used: Tipo de obra padrão utilizado
+          warning_category_duplicate_source_identifier: Identificador de origem duplicado no CSV
+          warning_category_existing_source_identifier: Identificador de origem existente (será atualizado)
+          warning_category_invalid_child_reference: Referência filha inválida
+          warning_category_invalid_controlled_value: Valor de vocabulário controlado inválido
+          warning_category_invalid_parent_reference: Referência-pai inválida
+          warning_category_missing_required_value: Valor obrigatório ausente
+          warning_category_missing_source_identifier: Identificador de origem ausente
           zip_limit: 'Apenas 1 arquivo ZIP permitido. Os seguintes arquivos não foram adicionados:'
         nav:
           back: Voltar
@@ -264,6 +275,7 @@ pt-BR:
           large_import_message_html: Você está prestes a importar <span class="total-items-count">%{count}</span> itens. Importações grandes levam mais tempo e são mais difíceis de solucionar problemas. Considere dividi-las em lotes menores.
           large_import_warning: Aviso de Importação de Grande Porte
           ready_to_import: Pronto para importar
+          section_errors: Erros
           section_files: Arquivos
           section_records: Registros
           section_settings: Configurações

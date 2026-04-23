@@ -199,9 +199,20 @@ de:
           validating: Validierung läuft...
           validation_failed: Die Validierung ist fehlgeschlagen. Bitte versuchen Sie es erneut.
           validation_timeout: Die Validierung ist fehlgeschlagen. Ihre Dateien sind möglicherweise zu groß. Bitte versuchen Sie es mit kleineren Dateien oder kontaktieren Sie den Support.
+          validation_truncated_note: auf %{shown} gekürzt – laden Sie die Fehler-CSV für die vollständige Liste herunter
+          validation_truncated_tooltip: Diese Liste ist begrenzt, damit die Seite übersichtlich bleibt. Die vollständige Liste finden Sie in der heruntergeladenen Fehler-CSV-Datei.
           visibility_institution: Institution
           visibility_private: Privat
           visibility_public: Öffentlich
+          warning_category_circular_reference: Zirkelbezug
+          warning_category_default_work_type_used: Standard-Werktyp verwendet
+          warning_category_duplicate_source_identifier: Doppelter Quell-Identifikator in CSV
+          warning_category_existing_source_identifier: Vorhandener Quell-Identifikator (wird aktualisiert)
+          warning_category_invalid_child_reference: Ungültige Kind-Referenz
+          warning_category_invalid_controlled_value: Ungültiger Wert aus kontrolliertem Vokabular
+          warning_category_invalid_parent_reference: Ungültige Eltern-Referenz
+          warning_category_missing_required_value: Erforderlicher Wert fehlt
+          warning_category_missing_source_identifier: Quell-Identifikator fehlt
           zip_limit: 'Es ist nur eine ZIP-Datei zulässig. Folgende Dateien wurden nicht hinzugefügt:'
         nav:
           back: Zurück
@@ -264,6 +275,7 @@ de:
           large_import_message_html: Sie sind im Begriff, <span class="total-items-count">%{count}</span> Artikel zu importieren. Große Importe dauern länger und sind schwieriger zu beheben. Erwägen Sie, den Import in kleinere Pakete aufzuteilen.
           large_import_warning: Warnung vor großen Importen
           ready_to_import: Bereit zum Importieren
+          section_errors: Fehler
           section_files: Dateien
           section_records: Aufzeichnungen
           section_settings: Einstellungen

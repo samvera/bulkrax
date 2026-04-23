@@ -35,7 +35,6 @@ module Bulkrax
             row_errors: row_errors, csv_data: csv_data, file_validator: file_validator,
             collections: collections, works: works, file_sets: file_sets, notices: notices
           )
-          apply_rights_statement_validation_override!(result, missing_required)
           result[:raw_csv_data] = csv_data
           result
         end
@@ -72,9 +71,8 @@ module Bulkrax
           file_key      = resolve_validation_key(mapping_manager, key: 'file',                            default: :file)
 
           csv_data       = parse_validation_rows(raw_csv, source_id_key, parent_key, children_key, file_key)
-          # Ensure all models are Strings for FieldAnalyzer lookup
           all_models     = csv_data.map { |r| r[:model].to_s }.reject(&:blank?).uniq
-          all_models    |= [Bulkrax.default_work_type.to_s] if Bulkrax.default_work_type.present?
+          all_models    |= [Bulkrax.default_work_type] if Bulkrax.default_work_type.present?
           field_analyzer = CsvTemplate::FieldAnalyzer.new(mappings, admin_set_id)
           field_metadata = build_validation_field_metadata(all_models, field_analyzer)
 

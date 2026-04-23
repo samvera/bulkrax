@@ -199,9 +199,20 @@ zh:
           validating: 正在验证……
           validation_failed: 验证失败，请重试。
           validation_timeout: 验证超时。您的文件可能过大。请尝试上传较小的文件或联系技术支持。
+          validation_truncated_note: 已截断至 %{shown} 条 — 请下载错误 CSV 以查看完整列表
+          validation_truncated_tooltip: 为保持页面整洁，此列表已限制显示条数。完整列表包含在可下载的错误 CSV 文件中。
           visibility_institution: 机构
           visibility_private: 私人的
           visibility_public: 民众
+          warning_category_circular_reference: 循环引用
+          warning_category_default_work_type_used: 使用了默认的作品类型
+          warning_category_duplicate_source_identifier: CSV 中的源标识符重复
+          warning_category_existing_source_identifier: 已存在的源标识符（将被更新）
+          warning_category_invalid_child_reference: 无效的子引用
+          warning_category_invalid_controlled_value: 无效的受控词汇值
+          warning_category_invalid_parent_reference: 无效的父引用
+          warning_category_missing_required_value: 缺少必填值
+          warning_category_missing_source_identifier: 缺少源标识符
           zip_limit: 仅允许上传 1 个 ZIP 文件。以下文件未添加：
         nav:
           back: 后退
@@ -263,6 +274,7 @@ zh:
           large_import_message_html: 您即将导入<span class="total-items-count">%{count}</span>个项目。大量导入操作耗时更长，且更难排查问题。建议您分批导入。
           large_import_warning: 大量进口警告
           ready_to_import: 准备进口
+          section_errors: 错误
           section_files: 文件
           section_records: 记录
           section_settings: 设置

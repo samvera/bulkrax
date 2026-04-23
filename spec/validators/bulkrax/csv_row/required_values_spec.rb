@@ -26,12 +26,18 @@ RSpec.describe Bulkrax::CsvRow::RequiredValues do
     expect(context[:errors]).to be_empty
   end
 
-  it 'adds an error when a required field is missing' do
+  it 'adds an error when the required column is present but blank' do
     context = make_context
-    described_class.call(make_record({}), 2, context)
+    described_class.call(make_record('title' => ''), 2, context)
     expect(context[:errors].length).to eq(1)
     expect(context[:errors].first[:category]).to eq('missing_required_value')
     expect(context[:errors].first[:column]).to eq('title')
+  end
+
+  it 'does not add a row-level error when the required column is absent from the CSV entirely' do
+    context = make_context
+    described_class.call(make_record({}), 2, context)
+    expect(context[:errors]).to be_empty
   end
 
   it 'accepts a numbered column for a required field (title_1 satisfies title)' do
@@ -63,9 +69,9 @@ RSpec.describe Bulkrax::CsvRow::RequiredValues do
         expect(warning[:column]).to eq('model')
       end
 
-      it 'also emits a missing_required_value error when a required field is absent' do
+      it 'also emits a missing_required_value error when a required column is present but blank' do
         context = make_context
-        described_class.call(make_blank_model_record({}), 2, context)
+        described_class.call(make_blank_model_record('title' => ''), 2, context)
         categories = context[:errors].map { |e| e[:category] }
         expect(categories).to include('default_work_type_used', 'missing_required_value')
       end
@@ -86,9 +92,9 @@ RSpec.describe Bulkrax::CsvRow::RequiredValues do
         expect(context[:errors]).to be_empty
       end
 
-      it 'still emits missing_required_value errors for blank required fields' do
+      it 'still emits missing_required_value errors for blank required fields whose columns are present' do
         context = make_context(notices: [{ field: 'model', default_work_type: 'GenericWork' }])
-        described_class.call(make_blank_model_record({}), 2, context)
+        described_class.call(make_blank_model_record('title' => ''), 2, context)
         expect(context[:errors].map { |e| e[:category] }).to eq(['missing_required_value'])
       end
     end
