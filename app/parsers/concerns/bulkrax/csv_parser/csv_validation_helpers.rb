@@ -53,13 +53,33 @@ module Bulkrax
           mappings: mappings
         )
         all_cols = CsvTemplate::ColumnBuilder.new(svc).all_columns
-        all_cols - CsvTemplate::CsvBuilder::IGNORED_PROPERTIES
+        # ColumnBuilder only emits the first `from:` alias per non-property key
+        # (core/file/relationship). Accept every alias so a CSV using a
+        # non-primary alias like `file` (when mappings are `from: ['item', 'file']`)
+        # isn't flagged unrecognised. Property-level aliases are handled
+        # separately by find_unrecognized_validation_headers via mapped_to_key.
+        non_property_aliases = non_property_mapping_aliases(mappings)
+        (all_cols + non_property_aliases).uniq - CsvTemplate::CsvBuilder::IGNORED_PROPERTIES
       rescue StandardError => e
         Rails.logger.error("CsvParser.validate_csv: error building valid headers – #{e.message}")
         standard = %w[model source_identifier parents children file]
         model_fields = field_metadata.values.flat_map { |m| m[:properties] }
                                             .map { |prop| mapping_manager.key_to_mapped_column(prop) }
         (standard + model_fields).uniq
+      end
+
+      # Returns every `from:` alias for mapping keys that describe non-property
+      # columns (core/file/relationship). These keys are fixed by the descriptor
+      # rather than discovered per-model, so every alias is unambiguously valid.
+      def non_property_mapping_aliases(mappings)
+        descriptor = CsvTemplate::ColumnDescriptor.new
+        non_property_keys = descriptor.core_columns +
+                            CsvTemplate::ColumnDescriptor::COLUMN_DESCRIPTIONS[:files].flat_map(&:keys) +
+                            CsvTemplate::ColumnDescriptor::COLUMN_DESCRIPTIONS[:relationships].flat_map(&:keys)
+        non_property_keys.flat_map do |key|
+          entry = mappings[key]
+          entry.is_a?(Hash) ? Array(entry["from"]) : []
+        end
       end
 
       def find_missing_required_headers(headers, field_metadata, mapping_manager)
@@ -73,11 +93,23 @@ module Bulkrax
         missing.uniq
       end
 
-      def find_unrecognized_validation_headers(headers, valid_headers)
+      # A header is considered recognised if it appears in valid_headers or
+      # if it matches any alias in a known property's `from` array. The real
+      # importer (CsvParser#missing_elements) scans every `from` entry when
+      # matching incoming columns, so the validator has to use the same rule
+      # — otherwise a CSV that imports cleanly gets flagged for columns like
+      # `creator` when the mapping declares `creator: { from: ['author', 'creator'] }`.
+      def find_unrecognized_validation_headers(headers, valid_headers, mapping_manager: nil, field_metadata: nil)
+        known_property_keys = (field_metadata || {}).values.flat_map { |m| Array(m[:properties]) }.to_set
         checker = DidYouMean::SpellChecker.new(dictionary: valid_headers)
-        headers
-          .reject { |h| h.blank? || valid_headers.include?(h) || valid_headers.include?(h.sub(/_\d+\z/, '')) }
-          .index_with { |h| checker.correct(h).first }
+        unrecognized = headers.reject do |h|
+          next true if h.blank?
+          base = h.sub(/_\d+\z/, '')
+          next true if valid_headers.include?(h) || valid_headers.include?(base)
+          mapped_key = mapping_manager&.mapped_to_key(base)
+          mapped_key && known_property_keys.include?(mapped_key)
+        end
+        unrecognized.index_with { |h| checker.correct(h).first }
       end
 
       def find_empty_column_positions(headers, raw_csv)
@@ -205,19 +237,11 @@ module Bulkrax
       end
 
       def resolve_parent_split_pattern(mappings)
-        split_val = mappings.dig('parents', 'split') || mappings.dig(:parents, :split)
-        return nil if split_val.blank?
-        return Bulkrax::DEFAULT_MULTI_VALUE_ELEMENT_SPLIT_ON if split_val == true
-
-        split_val
+        Bulkrax::SplitPatternCoercion.coerce(mappings.dig('parents', 'split') || mappings.dig(:parents, :split))
       end
 
       def resolve_children_split_pattern(mappings)
-        split_val = mappings.dig('children', 'split') || mappings.dig(:children, :split)
-        return nil if split_val.blank?
-        return Bulkrax::DEFAULT_MULTI_VALUE_ELEMENT_SPLIT_ON if split_val == true
-
-        split_val
+        Bulkrax::SplitPatternCoercion.coerce(mappings.dig('children', 'split') || mappings.dig(:children, :split))
       end
 
       # Builds a graph of { source_identifier => [parent_ids] } from all CSV records.
@@ -264,8 +288,9 @@ module Bulkrax
       end
 
       def split_or_single(value, split_pattern)
-        if split_pattern
-          value.to_s.split(split_pattern).map(&:strip).reject(&:blank?)
+        coerced = Bulkrax::SplitPatternCoercion.coerce(split_pattern)
+        if coerced
+          value.to_s.split(coerced).map(&:strip).reject(&:blank?)
         elsif value.present?
           [value.to_s.strip]
         else

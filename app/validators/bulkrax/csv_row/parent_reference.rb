@@ -34,7 +34,7 @@ module Bulkrax
       end
 
       def self.collect_parent_ids(record, context)
-        split_pattern = context[:parent_split_pattern]
+        split_pattern = Bulkrax::SplitPatternCoercion.coerce(context[:parent_split_pattern])
         parent_column = context[:parent_column] || 'parents'
 
         base_ids = if split_pattern

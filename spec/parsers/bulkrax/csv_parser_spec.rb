@@ -633,6 +633,54 @@ module Bulkrax
           expect(subject.file_paths).to eq([])
         end
       end
+
+      # Characterisation coverage for how the `file` mapping's `split:` value
+      # is interpreted. These lock in each branch of the case statement in
+      # #file_paths so the behaviour is preserved when the inline block is
+      # later refactored into a shared helper.
+      context 'when the `file` mapping configures a split:' do
+        let(:base_mappings) { { 'Bulkrax::CsvParser' => { file: { split: split_value } } } }
+
+        before do
+          allow(subject).to receive(:records).and_return([{ file: 'sun.jpg;moon.jpg' }])
+          allow(subject).to receive(:path_to_files).and_return('spec/fixtures/csv/files')
+          allow(File).to receive(:exist?).and_return(true)
+          allow(Bulkrax).to receive(:field_mappings).and_return(base_mappings)
+        end
+
+        context 'as a Regexp' do
+          let(:split_value) { /;/ }
+
+          it 'splits on the configured Regexp' do
+            result = subject.file_paths
+            expect(result).to include('spec/fixtures/csv/files/sun.jpg', 'spec/fixtures/csv/files/moon.jpg')
+          end
+        end
+
+        context 'as a regex-source String' do
+          let(:split_value) { ';' }
+
+          it 'builds a Regexp from the String and splits on it' do
+            result = subject.file_paths
+            expect(result).to include('spec/fixtures/csv/files/sun.jpg', 'spec/fixtures/csv/files/moon.jpg')
+          end
+        end
+      end
+
+      context 'when no `file` split: is configured' do
+        before do
+          # Explicit — no `file` key in the mappings, so split_value is nil.
+          allow(Bulkrax).to receive(:field_mappings).and_return('Bulkrax::CsvParser' => {})
+          allow(subject).to receive(:records).and_return([{ file: 'sun.jpg|moon.jpg' }])
+          allow(subject).to receive(:path_to_files).and_return('spec/fixtures/csv/files')
+          allow(File).to receive(:exist?).and_return(true)
+        end
+
+        it 'falls back to Bulkrax.multi_value_element_split_on' do
+          result = subject.file_paths
+          expect(result).to include('spec/fixtures/csv/files/sun.jpg', 'spec/fixtures/csv/files/moon.jpg')
+        end
+      end
     end
 
     describe '#missing_elements' do

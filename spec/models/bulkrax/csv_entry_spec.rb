@@ -1373,6 +1373,61 @@ module Bulkrax
         expect(entry.parsed_metadata['visibility_after_lease']).to eq('open')
       end
     end
+    # Ingestion writes to parsed_metadata['file'] via Bulkrax::CsvParser.
+    # file_split_pattern, so any `split:` configured on the `file` mapping is
+    # honoured — matching #file_paths and FileValidator#referenced_files.
+    describe '#add_file' do
+      let(:importer) { FactoryBot.create(:bulkrax_importer_csv) }
+      subject(:entry) do
+        described_class.new(importerexporter: importer, raw_metadata: raw_metadata, identifier: 'id-1')
+      end
+      let(:parser) { importer.parser }
+
+      before do
+        allow(parser).to receive(:path_to_files).and_return('spec/fixtures/csv/files')
+        allow(entry).to receive(:path_to_file) { |name| "spec/fixtures/csv/files/#{name}" }
+        entry.parsed_metadata = {}
+      end
+
+      context 'with a pipe-separated `file` cell and no configured split' do
+        let(:raw_metadata) { { 'source_identifier' => 'id-1', 'file' => 'sun.jpg|moon.jpg' } }
+
+        it 'falls back to Bulkrax.multi_value_element_split_on and writes an array' do
+          entry.send(:add_file)
+          expect(entry.parsed_metadata['file']).to eq(%w[spec/fixtures/csv/files/sun.jpg spec/fixtures/csv/files/moon.jpg])
+        end
+      end
+
+      # Use a delimiter (`,`) that the default pattern /\s*[:;|]\s*/ does NOT
+      # match, so this spec genuinely distinguishes honouring-the-config from
+      # falling back to the default.
+      context 'when the `file` mapping configures a non-default split' do
+        let(:raw_metadata) { { 'source_identifier' => 'id-1', 'file' => 'sun.jpg,moon.jpg' } }
+
+        around do |spec|
+          old = Bulkrax.field_mappings['Bulkrax::CsvParser']
+          Bulkrax.field_mappings['Bulkrax::CsvParser'] = { 'file' => { split: ',' } }
+          spec.run
+          Bulkrax.field_mappings['Bulkrax::CsvParser'] = old
+        end
+
+        it 'honours the configured split' do
+          entry.send(:add_file)
+          expect(entry.parsed_metadata['file'])
+            .to eq(%w[spec/fixtures/csv/files/sun.jpg spec/fixtures/csv/files/moon.jpg])
+        end
+      end
+
+      context 'when the `file` cell is already an Array' do
+        let(:raw_metadata) { { 'source_identifier' => 'id-1', 'file' => ['sun.jpg', 'moon.jpg'] } }
+
+        it 'passes the array through without splitting' do
+          entry.send(:add_file)
+          expect(entry.parsed_metadata['file']).to eq(%w[spec/fixtures/csv/files/sun.jpg spec/fixtures/csv/files/moon.jpg])
+        end
+      end
+    end
+
     describe '#path_to_file' do
       let(:importer) { FactoryBot.create(:bulkrax_importer_csv) }
       subject(:entry) { described_class.new(importerexporter: importer) }

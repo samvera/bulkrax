@@ -166,4 +166,27 @@ RSpec.describe Bulkrax::CsvRow::ChildReference do
       expect(context[:errors].first[:value]).to eq('missing_child')
     end
   end
+
+  context 'when child_split_pattern is a Regexp serialised as a String' do
+    let(:serialised_split) { '(?-mix:\\s*[;|]\\s*)' }
+    let(:all_ids)          { Set.new(%w[col1 work1 work2]) }
+
+    def make_context_with_split(split_pattern)
+      { errors: [], warnings: [], all_ids: all_ids, child_split_pattern: split_pattern,
+        find_record_by_source_identifier: nil }
+    end
+
+    it 'splits on | and validates each id individually' do
+      context = make_context_with_split(serialised_split)
+      described_class.call(make_record(children: 'work1 | work2'), 2, context)
+      expect(context[:errors]).to be_empty
+    end
+
+    it 'reports only the missing id when the String regex splits correctly' do
+      context = make_context_with_split(serialised_split)
+      described_class.call(make_record(children: 'work1 | missing_child'), 2, context)
+      expect(context[:errors].length).to eq(1)
+      expect(context[:errors].first[:value]).to eq('missing_child')
+    end
+  end
 end

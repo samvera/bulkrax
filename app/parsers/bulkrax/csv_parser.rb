@@ -13,6 +13,16 @@ module Bulkrax
       true
     end
 
+    # @return [Regexp] the pattern String#split should use on a `file` cell.
+    #   Honours the `file` mapping's `split:` when set, otherwise falls back
+    #   to {Bulkrax.multi_value_element_split_on}.
+    def self.file_split_pattern
+      file_mapping = Bulkrax.field_mappings.dig(to_s, 'file') ||
+                     Bulkrax.field_mappings.dig(to_s, :file) || {}
+      split_value  = file_mapping['split'] || file_mapping[:split]
+      Bulkrax::SplitPatternCoercion.coerce(split_value) || Bulkrax.multi_value_element_split_on
+    end
+
     def records(_opts = {})
       return @records if @records.present?
 
@@ -352,20 +362,13 @@ module Bulkrax
       raise StandardError, 'No records were found' if records.blank?
       return [] if importerexporter.metadata_only?
 
-      @file_paths ||= records.map do |r|
-        file_mapping = Bulkrax.field_mappings.dig(self.class.to_s, 'file', :from)&.first&.to_sym || :file
-        next if r[file_mapping].blank?
+      # Compute once — these don't vary per record.
+      file_mapping  = Bulkrax.field_mappings.dig(self.class.to_s, 'file', :from)&.first&.to_sym || :file
+      split_pattern = self.class.file_split_pattern
+      files_dir     = path_to_files
 
-        split_value = Bulkrax.field_mappings.dig(self.class.to_s, :file, :split)
-        split_pattern = case split_value
-                        when Regexp
-                          split_value
-                        when String
-                          Regexp.new(split_value)
-                        else
-                          Bulkrax.multi_value_element_split_on
-                        end
-        files_dir = path_to_files
+      @file_paths ||= records.map do |r|
+        next if r[file_mapping].blank?
         raise StandardError, "Record references local files but no files directory could be resolved from the import path" if files_dir.nil?
 
         r[file_mapping].split(split_pattern).map do |f|
