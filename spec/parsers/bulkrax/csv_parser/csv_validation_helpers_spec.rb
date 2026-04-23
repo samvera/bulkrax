@@ -173,6 +173,77 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
         expect(result).to include('title', 'creator')
       end
     end
+
+    context 'when ColumnBuilder succeeds (happy path)' do
+      let(:mapping_manager) { Bulkrax::CsvTemplate::MappingManager.new }
+      let(:field_analyzer)  { instance_double(Bulkrax::CsvTemplate::FieldAnalyzer) }
+      let(:mappings) do
+        {
+          'title' => { 'from' => ['title'] },
+          'file' => { 'from' => ['file'] },
+          'parents' => { 'from' => ['parents'], 'related_parents_field_mapping' => true },
+          'children' => { 'from' => ['children'], 'related_children_field_mapping' => true }
+        }
+      end
+      let(:field_metadata) do
+        { 'GenericWorkResource' =>
+          { properties: %w[title], required_terms: [], controlled_vocab_terms: [] } }
+      end
+
+      before do
+        allow(Bulkrax).to receive(:field_mappings).and_return('Bulkrax::CsvParser' => mappings)
+        allow(field_analyzer).to receive(:find_or_create_field_list_for)
+          .with(model_name: 'GenericWorkResource')
+          .and_return('GenericWorkResource' => { 'properties' => %w[title] })
+      end
+
+      it 'does not hit the rescue branch' do
+        expect(Rails.logger).not_to receive(:error).with(/error building valid headers/)
+        host.build_valid_validation_headers(mapping_manager, field_analyzer,
+                                            %w[GenericWorkResource], mappings, field_metadata)
+      end
+
+      it 'includes the core visibility and embargo columns' do
+        result = host.build_valid_validation_headers(mapping_manager, field_analyzer,
+                                                    %w[GenericWorkResource], mappings, field_metadata)
+        expect(result).to include('visibility', 'embargo_release_date',
+                                  'visibility_during_embargo', 'visibility_after_embargo')
+      end
+    end
+
+    # Regression: ColumnBuilder emits only the first `from:` alias per
+    # non-property key (core/file/relationship). When a tenant maps `file`
+    # as `from: ['item', 'file']`, a CSV header `file` was wrongly flagged
+    # unrecognised because only `item` made it into valid_headers.
+    context 'when a non-property mapping has multiple `from:` aliases' do
+      let(:mapping_manager) { Bulkrax::CsvTemplate::MappingManager.new }
+      let(:field_analyzer)  { instance_double(Bulkrax::CsvTemplate::FieldAnalyzer) }
+      let(:mappings) do
+        {
+          'title' => { 'from' => ['title'] },
+          'file' => { 'from' => %w[item file], 'split' => '\\|' },
+          'parents' => { 'from' => ['parents'], 'related_parents_field_mapping' => true },
+          'children' => { 'from' => ['children'], 'related_children_field_mapping' => true }
+        }
+      end
+      let(:field_metadata) do
+        { 'GenericWorkResource' =>
+          { properties: %w[title], required_terms: [], controlled_vocab_terms: [] } }
+      end
+
+      before do
+        allow(Bulkrax).to receive(:field_mappings).and_return('Bulkrax::CsvParser' => mappings)
+        allow(field_analyzer).to receive(:find_or_create_field_list_for)
+          .with(model_name: 'GenericWorkResource')
+          .and_return('GenericWorkResource' => { 'properties' => %w[title] })
+      end
+
+      it 'includes every `from:` alias for the file mapping' do
+        result = host.build_valid_validation_headers(mapping_manager, field_analyzer,
+                                                    %w[GenericWorkResource], mappings, field_metadata)
+        expect(result).to include('item', 'file')
+      end
+    end
   end
 
   describe '#find_unrecognized_validation_headers (respects all `from` aliases)' do

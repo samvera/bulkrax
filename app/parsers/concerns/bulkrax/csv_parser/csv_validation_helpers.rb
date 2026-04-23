@@ -53,13 +53,33 @@ module Bulkrax
           mappings: mappings
         )
         all_cols = CsvTemplate::ColumnBuilder.new(svc).all_columns
-        all_cols - CsvTemplate::CsvBuilder::IGNORED_PROPERTIES
+        # ColumnBuilder only emits the first `from:` alias per non-property key
+        # (core/file/relationship). Accept every alias so a CSV using a
+        # non-primary alias like `file` (when mappings are `from: ['item', 'file']`)
+        # isn't flagged unrecognised. Property-level aliases are handled
+        # separately by find_unrecognized_validation_headers via mapped_to_key.
+        non_property_aliases = non_property_mapping_aliases(mappings)
+        (all_cols + non_property_aliases).uniq - CsvTemplate::CsvBuilder::IGNORED_PROPERTIES
       rescue StandardError => e
         Rails.logger.error("CsvParser.validate_csv: error building valid headers – #{e.message}")
         standard = %w[model source_identifier parents children file]
         model_fields = field_metadata.values.flat_map { |m| m[:properties] }
                                             .map { |prop| mapping_manager.key_to_mapped_column(prop) }
         (standard + model_fields).uniq
+      end
+
+      # Returns every `from:` alias for mapping keys that describe non-property
+      # columns (core/file/relationship). These keys are fixed by the descriptor
+      # rather than discovered per-model, so every alias is unambiguously valid.
+      def non_property_mapping_aliases(mappings)
+        descriptor = CsvTemplate::ColumnDescriptor.new
+        non_property_keys = descriptor.core_columns +
+                            CsvTemplate::ColumnDescriptor::COLUMN_DESCRIPTIONS[:files].flat_map(&:keys) +
+                            CsvTemplate::ColumnDescriptor::COLUMN_DESCRIPTIONS[:relationships].flat_map(&:keys)
+        non_property_keys.flat_map do |key|
+          entry = mappings[key]
+          entry.is_a?(Hash) ? Array(entry["from"]) : []
+        end
       end
 
       def find_missing_required_headers(headers, field_metadata, mapping_manager)
