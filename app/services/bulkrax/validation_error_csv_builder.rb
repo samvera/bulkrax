@@ -4,9 +4,18 @@ require 'csv'
 
 module Bulkrax
   # Builds a CSV string containing all validation errors from a guided import.
+  #
+  # Output columns, in order:
+  #   1. row        — 1-based row number from the source CSV (blank for file-level rows)
+  #   2. errors     — all error messages for that row, joined with " | "
+  #   3. categories — distinct validator categories for that row's errors (e.g.
+  #                   "missing_required_value | invalid_parent_reference"),
+  #                   joined with " | "; blank for file-level rows
+  #   4..N. the original CSV headers, carrying the raw cell values
+  #
   # File-level errors (missing required columns, unrecognized headers, empty
   # columns, missing files) appear first as summary rows with a blank `row`
-  # cell. Row-level errors follow, one output row per errored data row.
+  # and `categories` cell. Row-level errors follow, one output row per data row.
   #
   # Usage:
   #   csv = Bulkrax::ValidationErrorCsvBuilder.build(
@@ -21,10 +30,21 @@ module Bulkrax
   #     }
   #   )
   class ValidationErrorCsvBuilder
+    I18N_BASE = 'bulkrax.importer.guided_import.validation.validation_error_csv_builder'
+    private_constant :I18N_BASE
+
     # @param headers [Array<String>] original CSV headers in order
     # @param csv_data [Array<Hash>] one entry per data row; each hash has
     #   :raw_row (String-keyed hash of column=>value)
-    # @param row_errors [Array<Hash>] each hash has :row (Integer) and :message (String)
+    # @param row_errors [Array<Hash>] each hash describes a single row-level
+    #   validation result with the following keys:
+    #   - :row [Integer] 1-based source row number (header is row 1)
+    #   - :message [String] human-readable error/warning message
+    #   - :category [String, nil] validator category slug used to populate the
+    #     `categories` output column (e.g. 'missing_required_value',
+    #     'invalid_parent_reference'); omitted/nil categories are dropped
+    #   - :severity, :column, :value, :suggestion, :source_identifier — not
+    #     emitted by this builder but commonly present on the same hash
     # @param file_errors [Hash] file-level issues:
     #   - :missing_required [Array<Hash>] each hash has :model and :field
     #   - :unrecognized [Hash] column_name => suggestion_or_nil
@@ -78,21 +98,23 @@ module Bulkrax
       messages = []
 
       Array(@file_errors[:missing_required]).each do |entry|
-        messages << "Missing required column '#{entry[:field]}' (#{entry[:model]})"
+        messages << I18n.t("#{I18N_BASE}.missing_required_column", field: entry[:field], model: entry[:model])
       end
 
       Hash(@file_errors[:unrecognized]).each do |col, suggestion|
-        msg = "Unrecognized column '#{col}'"
-        msg += " (did you mean '#{suggestion}'?)" if suggestion.present?
-        messages << msg
+        messages << if suggestion.present?
+                      I18n.t("#{I18N_BASE}.unrecognized_column_with_suggestion", column: col, suggestion: suggestion)
+                    else
+                      I18n.t("#{I18N_BASE}.unrecognized_column", column: col)
+                    end
       end
 
       Array(@file_errors[:empty_columns]).each do |pos|
-        messages << "Column #{pos + 2} has no header and will be ignored during import"
+        messages << I18n.t("#{I18N_BASE}.empty_column", column: pos + 2)
       end
 
       Array(@file_errors[:missing_files]).each do |filename|
-        messages << "Missing file: #{filename}"
+        messages << I18n.t("#{I18N_BASE}.missing_file", filename: filename)
       end
 
       messages

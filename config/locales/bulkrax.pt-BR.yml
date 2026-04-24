@@ -398,6 +398,12 @@ pt-BR:
             errors:
               message: "O campo '%{field}' é obrigatório, mas está vazio para esta linha."
               suggestion: "Adicione um valor para '%{field}'."
+          validation_error_csv_builder:
+            empty_column: "A coluna %{column} não tem cabeçalho e será ignorada durante a importação"
+            missing_file: "Arquivo ausente: %{filename}"
+            missing_required_column: "Falta a coluna obrigatória '%{field}' (%{model})"
+            unrecognized_column: "Coluna não reconhecida '%{column}'"
+            unrecognized_column_with_suggestion: "Coluna não reconhecida '%{column}' (você quis dizer '%{suggestion}'?)"
           unable_to_process: Não foi possível processar os arquivos para validação.
           empty_column: 'Coluna %{column} (sem cabeçalho)'
           notices_desc: 'Estes avisos podem afetar como o seu CSV é importado:'

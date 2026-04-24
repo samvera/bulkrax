@@ -398,6 +398,12 @@ en:
             errors:
               message: "Field '%{field}' is required but is empty for this row."
               suggestion: "Add a value for '%{field}'."
+          validation_error_csv_builder:
+            empty_column: "Column %{column} has no header and will be ignored during import"
+            missing_file: "Missing file: %{filename}"
+            missing_required_column: "Missing required column '%{field}' (%{model})"
+            unrecognized_column: "Unrecognized column '%{column}'"
+            unrecognized_column_with_suggestion: "Unrecognized column '%{column}' (did you mean '%{suggestion}'?)"
           unable_to_process: Unable to process files for validation
           empty_column: 'Column %{column} (no header)'
           notices_desc: 'These notices may affect how your CSV is imported:'

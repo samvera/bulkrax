@@ -398,6 +398,12 @@ fr:
             errors:
               message: "Le champ « %{field} » est obligatoire mais il est vide pour cette ligne."
               suggestion: "Ajoutez une valeur pour « %{field} »."
+          validation_error_csv_builder:
+            empty_column: "La colonne %{column} n'a pas d'en-tête et sera ignorée lors de l'importation"
+            missing_file: "Fichier manquant : %{filename}"
+            missing_required_column: "Colonne obligatoire manquante « %{field} » (%{model})"
+            unrecognized_column: "Colonne non reconnue « %{column} »"
+            unrecognized_column_with_suggestion: "Colonne non reconnue « %{column} » (vouliez-vous dire « %{suggestion} » ?)"
           unable_to_process: Impossible de traiter les fichiers pour validation
           empty_column: 'Colonne %{column} (sans en-tête)'
           notices_desc: 'Ces avis peuvent affecter la façon dont votre CSV est importé :'
