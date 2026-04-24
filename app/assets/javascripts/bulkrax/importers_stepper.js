@@ -1663,8 +1663,11 @@
 
     // Download errors button
     if (data.validationErrorsCacheKey) {
+      var locale = $('input[name="locale"]').val()
       var downloadUrl =
-        CONSTANTS.ENDPOINTS.DOWNLOAD_VALIDATION_ERRORS + '?key=' + encodeURIComponent(data.validationErrorsCacheKey)
+        CONSTANTS.ENDPOINTS.DOWNLOAD_VALIDATION_ERRORS +
+        '?key=' + encodeURIComponent(data.validationErrorsCacheKey) +
+        (locale ? '&locale=' + encodeURIComponent(locale) : '')
       var $btn = $(
         '<a class="btn btn-outline-secondary btn-sm mt-2" href="' +
           downloadUrl +

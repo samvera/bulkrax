@@ -48,6 +48,8 @@ module Bulkrax
     end
 
     def download_validation_errors
+      set_locale_from_params
+
       cache_key = params[:key].to_s
       expected_prefix = "guided_import_errors:#{session.id}:"
       return head :not_found unless cache_key.start_with?(expected_prefix)
