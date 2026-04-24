@@ -134,6 +134,135 @@ module Bulkrax
           expect(json_response.dig(:messages, :validationStatus, :severity)).to eq('error')
         end
       end
+
+      context 'file-column validation parity with import' do
+        before do
+          stub_bulkrax_models
+          allow(Bulkrax).to receive(:field_mappings).and_return(
+            'Bulkrax::CsvParser' => {
+              'title' => { 'from' => ['title'] },
+              'model' => { 'from' => ['model'] },
+              'parents' => { 'from' => ['parents'], 'related_parents_field_mapping' => true },
+              'file' => { 'from' => %w[item file], 'split' => '\\|' },
+              'source_identifier' => { 'from' => ['source_identifier'], 'source_identifier' => true }
+            }
+          )
+        end
+
+        let(:csv_upload) do
+          t = Tempfile.new(['data', '.csv'])
+          t.write(csv_content)
+          t.flush
+          Rack::Test::UploadedFile.new(t.path, 'text/csv', original_filename: 'data.csv')
+        end
+
+        let(:zip_upload) do
+          t = Tempfile.new(['upload', '.zip'])
+          Zip::File.open(t.path, create: true) do |zip|
+            present_in_zip.each { |name| zip.get_output_stream(name) { |f| f.write('fake') } }
+          end
+          Rack::Test::UploadedFile.new(t.path, 'application/zip', original_filename: 'upload.zip')
+        end
+
+        shared_examples 'reports the missing file' do |missing_name|
+          it "reports #{missing_name} as missing in the JSON response" do
+            post_validate(importer: { parser_fields: { files: [csv_upload, zip_upload] } })
+
+            expect(response).to have_http_status(:ok)
+            expect(json_response[:zipIncluded]).to eq(true)
+            expect(json_response[:missingFiles]).to include(missing_name)
+
+            file_issue = json_response.dig(:messages, :issues).find { |i| i[:type] == 'file_references' }
+            expect(file_issue).to be_present
+            expect(file_issue[:items]).to include(a_hash_including(field: missing_name))
+          end
+        end
+
+        context 'when the CSV uses the canonical `file` column' do
+          let(:csv_content) do
+            <<~CSV
+              source_identifier,title,model,file
+              work1,Work 1,GenericWork,present.jpg
+              work2,Work 2,GenericWork,missing.jpg
+            CSV
+          end
+          let(:present_in_zip) { %w[present.jpg] }
+
+          include_examples 'reports the missing file', 'missing.jpg'
+        end
+
+        context 'when the CSV uses an aliased column (`item` only)' do
+          let(:csv_content) do
+            <<~CSV
+              source_identifier,title,model,item
+              work1,Work 1,GenericWork,present.jpg
+              work2,Work 2,GenericWork,missing.jpg
+            CSV
+          end
+          let(:present_in_zip) { %w[present.jpg] }
+
+          include_examples 'reports the missing file', 'missing.jpg'
+        end
+
+        context 'when `from:` lists the canonical name first and the CSV uses only the alias' do
+          before do
+            allow(Bulkrax).to receive(:field_mappings).and_return(
+              'Bulkrax::CsvParser' => {
+                'title' => { 'from' => ['title'] },
+                'model' => { 'from' => ['model'] },
+                'parents' => { 'from' => ['parents'], 'related_parents_field_mapping' => true },
+                'file' => { 'from' => %w[file item], 'split' => '\\|' },
+                'source_identifier' => { 'from' => ['source_identifier'], 'source_identifier' => true }
+              }
+            )
+          end
+          let(:csv_content) do
+            <<~CSV
+              source_identifier,title,model,item
+              work1,Work 1,GenericWork,present.jpg
+              work2,Work 2,GenericWork,missing.jpg
+            CSV
+          end
+          let(:present_in_zip) { %w[present.jpg] }
+
+          include_examples 'reports the missing file', 'missing.jpg'
+        end
+
+        context 'when a single cell lists multiple files separated by `|`' do
+          let(:csv_content) do
+            <<~CSV
+              source_identifier,title,model,file
+              work1,Work 1,GenericWork,present.jpg|missing.jpg
+            CSV
+          end
+          let(:present_in_zip) { %w[present.jpg] }
+
+          include_examples 'reports the missing file', 'missing.jpg'
+        end
+
+        context 'when the mapping configures `split:` as a serialised Regexp' do
+          before do
+            allow(Bulkrax).to receive(:field_mappings).and_return(
+              'Bulkrax::CsvParser' => {
+                'title' => { 'from' => ['title'] },
+                'model' => { 'from' => ['model'] },
+                'parents' => { 'from' => ['parents'], 'related_parents_field_mapping' => true },
+                'file' => { 'from' => %w[item file], 'split' => '(?-mix:\\s*[;|]\\s*)' },
+                'source_identifier' => { 'from' => ['source_identifier'], 'source_identifier' => true }
+              }
+            )
+          end
+          let(:csv_content) do
+            <<~CSV
+              source_identifier,title,model,file
+              work1,Work 1,GenericWork,present.jpg | missing.jpg
+            CSV
+          end
+          let(:present_in_zip) { %w[present.jpg] }
+
+          include_examples 'reports the missing file', 'missing.jpg'
+        end
+      end
     end
 
     # -------------------------------------------------------------------------

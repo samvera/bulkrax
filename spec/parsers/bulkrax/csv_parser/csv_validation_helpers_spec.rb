@@ -246,6 +246,39 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
     end
   end
 
+  # Regression: `resolve_validation_key` blindly took `options.first` from
+  # the mapping's `from:` array. When a tenant configures a mapping like
+  # `file: { from: ['item', 'file'] }`, the validator picked `:item` as the
+  # lookup key — so `row[:item]` was always nil, every row's `:file` came
+  # out nil, and `FileValidator` saw zero file references (no missing-file
+  # report even when files were missing from the uploaded ZIP).
+  describe '#resolve_validation_key' do
+    let(:mapping_manager) { Bulkrax::CsvTemplate::MappingManager.new }
+    let(:mappings) do
+      {
+        'title' => { 'from' => ['title'] },
+        'file' => { 'from' => %w[item file], 'split' => '\\|' },
+        'parents' => { 'from' => %w[collection parents], 'related_parents_field_mapping' => true },
+        'children' => { 'from' => ['children'], 'related_children_field_mapping' => true },
+        'source_identifier' => { 'from' => ['source_identifier'], 'source_identifier' => true }
+      }
+    end
+
+    before { allow(Bulkrax).to receive(:field_mappings).and_return('Bulkrax::CsvParser' => mappings) }
+
+    context 'when the mapping has multiple `from:` aliases' do
+      it 'resolves the file key to :file, not the first alias :item' do
+        key = host.resolve_validation_key(mapping_manager, key: 'file', default: :file)
+        expect(key).to eq(:file)
+      end
+
+      it 'resolves the parent key to :parents, not the first alias :collection' do
+        key = host.resolve_validation_key(mapping_manager, flag: 'related_parents_field_mapping', default: :parents)
+        expect(key).to eq(:parents)
+      end
+    end
+  end
+
   describe '#find_unrecognized_validation_headers (respects all `from` aliases)' do
     let(:mappings) do
       {
