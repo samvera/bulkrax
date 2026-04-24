@@ -36,7 +36,6 @@ module Bulkrax
   class Configuration
     attr_accessor :api_definition,
                   :default_field_mapping,
-                  :default_work_type,
                   :export_path,
                   :field_mappings,
                   :guided_import_enabled,
@@ -55,6 +54,21 @@ module Bulkrax
                   :required_elements,
                   :reserved_properties,
                   :server_name
+
+    ##
+    # The default work type used when a CSV row has no `model` value. Bulkrax
+    # treats this as a class name (String) — it's used for hash lookups, I18n
+    # interpolation, and `.constantize`. Consumers historically sometimes
+    # configured it as a Class constant (e.g. `config.default_work_type = MyWork`),
+    # which silently broke validators that key on String model names. The reader
+    # coerces to String so callers can stop scattering `.to_s` everywhere.
+    # @return [String, nil]
+    attr_writer :default_work_type
+
+    def default_work_type
+      return nil if @default_work_type.nil?
+      @default_work_type.to_s
+    end
 
     ##
     # @return [#call] with arity 2.  The first parameter is a {Bulkrax::ApplicationParser} and the

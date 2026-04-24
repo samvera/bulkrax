@@ -40,6 +40,8 @@ module Bulkrax
 
       def self.add_missing_required_value_errors(context, record, row_index, metadata, mapping_manager)
         (metadata[:required_terms] || []).each do |field|
+          column_present = record[:raw_row].keys.any? { |key| resolve_header(key.to_s, mapping_manager) == field }
+          next unless column_present
           next if record[:raw_row].any? { |key, value| resolve_header(key.to_s, mapping_manager) == field && value.present? }
 
           context[:errors] << {

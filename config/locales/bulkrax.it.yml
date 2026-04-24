@@ -17,13 +17,23 @@ it:
         record_link: Collegamento %{record_type}
         unknown: Sconosciuto
     exporter:
+      hints:
+        generated_metadata: Questi campi esportati non possono essere importati al momento.
+        include_thumbnails: Questi campi esportati non possono essere importati al momento.
+        limit: Lasciare vuoto o 0 per tutti i record
       labels:
         all: Tutto
         collection: Collezione
+        collection_entries: Voci di raccolta
+        download: Scarica
+        export_format: Formato di esportazione
         export_from: Esporta da
         export_source: Esporta origine
         export_type: Tipo di esportazione
         field_mapping: Mappatura del campo
+        file_set_entries: Voci di insieme di file
+        filter_by_date: Filtra per data
+        finish_date: Data di fine
         full: Metadati e file
         generated_metadata: Includere metadati generati?
         importer: Importatore
@@ -33,7 +43,20 @@ it:
         name: Nome
         parser_fields: Campi del parser
         parser_klass: Analizzatore
+        start_date: Data di inizio
+        status: Stato
+        total_entries: Voci totali
+        total_work_entries: Totale opere
         user: Utente
+        work_entries: Voci di opere
+        workflow_status:
+          approved: Approvato
+          broken_url: URL non funzionante
+          deleted: Eliminato
+          in_process: In elaborazione
+          ingested: Acquisito
+          needs_repair: Da riparare
+          unapproved: Non approvato
         worktype: Tipo di lavoro
       prompts:
         export_from: Seleziona una fonte di esportazione
@@ -45,8 +68,14 @@ it:
           one: '1 errore ha impedito il salvataggio di questo esportatore:'
           other: "%{count} errori hanno impedito il salvataggio di questo esportatore:"
     headings:
+      edit_exporter: Modifica esportatore
+      edit_importer: Modifica importatore
+      exporters: Esportatori
       importers: Importatori
+      new_exporter: Nuovo esportatore
+      new_importer: Nuovo importatore
       upload_corrected_entries: 'Carica voci corrette: %{name}'
+      upload_corrected_entries_action: Carica voci corrette
     importer:
       bagit:
         bags_to_import: 'Borsa o borse da importare:'
@@ -77,6 +106,9 @@ it:
           private: Privato
           public: Pubblico
       edit_form:
+        entry_modal_title: Opzioni per l'aggiornamento di una voce
+        entry_rebuild_hint: Ricostruire metadati e file.
+        entry_remove_and_recreate_hint: Rimuovere l'opera esistente e ricreare metadati e file dell'opera.
         modal_title: Opzioni per l'aggiornamento dell'importatore
         remove_and_rerun_hint: Rimuovi tutti i lavori e poi esegui nuovamente l'importazione da zero. Questo rimuoverà tutti i file e le associazioni e tutte le modifiche apportate dall'ultima importazione andranno perse.
         update_and_harvest_hint: Aggiorna i valori nel modulo di importazione e aggiorna gli elementi che sono stati modificati all'origine.
@@ -96,19 +128,23 @@ it:
         override_rights_statement: Se selezionata, utilizza sempre l'istruzione dei diritti selezionata. Se non selezionata, utilizza rights o rights_statement dal record e utilizza il valore fornito solo se dc:rights è vuoto.
       labels:
         admin_set: Insieme amministrativo
+        collection_entries: Voci di raccolta
         entry_id: ID di ingresso
         exporter: Esportatore
+        file_set_entries: Voci di insieme di file
         frequency: Frequenza
         identifier: Identificatore
         importer: Importatore
         limit: Limite
         name: Nome
+        parser_fields: Campi del parser
         parser_klass: Analizzatore
         total_collections: Raccolte totali
         total_file_sets: Set di file totali
         total_work_entries: Opere totali
         type: Tipo
         user: Utente
+        work_entries: Voci di opere
       oai:
         hints:
           metadata_prefix: Come oai_dc, dcterms o oai_qdc
@@ -185,6 +221,8 @@ it:
           review_total: "%{total} totale — %{collections} collezioni, %{works} opere, %{file_sets} set di file"
           review_visibility: 'Visibilità:'
           server_error: Errore del server durante la convalida. Riprova o contatta l'assistenza.
+          existing_record_badge: esistente
+          existing_record_title: Questo record esiste già nell'archivio e verrà collegato durante l'importazione.
           shared_badge: condiviso
           starting: Di partenza...
           upload_csv_and_zip: CSV + file caricati separatamente
@@ -199,9 +237,20 @@ it:
           validating: Convalida in corso...
           validation_failed: Convalida non riuscita. Riprova.
           validation_timeout: Validazione scaduta. I file potrebbero essere troppo grandi. Prova con file più piccoli o contatta l'assistenza.
+          validation_truncated_note: troncato a %{shown} — scarica il CSV degli errori per l'elenco completo
+          validation_truncated_tooltip: Questo elenco è limitato per mantenere la pagina leggibile. L'elenco completo si trova nel file CSV degli errori scaricabile.
           visibility_institution: Istituzione
           visibility_private: Privato
           visibility_public: Pubblico
+          warning_category_circular_reference: Riferimento circolare
+          warning_category_default_work_type_used: Tipo di opera predefinito utilizzato
+          warning_category_duplicate_source_identifier: Identificatore di origine duplicato nel CSV
+          warning_category_existing_source_identifier: Identificatore di origine esistente (verrà aggiornato)
+          warning_category_invalid_child_reference: Riferimento figlio non valido
+          warning_category_invalid_controlled_value: Valore di vocabolario controllato non valido
+          warning_category_invalid_parent_reference: Riferimento genitore non valido
+          warning_category_missing_required_value: Valore obbligatorio mancante
+          warning_category_missing_source_identifier: Identificatore di origine mancante
           zip_limit: 'È consentito un solo file ZIP. I seguenti file non sono stati aggiunti:'
         nav:
           back: Indietro
@@ -264,6 +313,7 @@ it:
           large_import_message_html: Stai per importare <span class="total-items-count">%{count}</span> articoli. Le importazioni di grandi dimensioni richiedono più tempo e sono più difficili da risolvere. Valuta la possibilità di suddividere i lotti in lotti più piccoli.
           large_import_warning: Avviso di importazione di grandi dimensioni
           ready_to_import: Pronto per l'importazione
+          section_errors: Errori
           section_files: File
           section_records: Registrazioni
           section_settings: Impostazioni
@@ -324,6 +374,14 @@ it:
             errors:
               message: "Il genitore referenziato '%{value}' non esiste come %{field} in questo CSV."
               suggestion: "Controllare eventuali errori di battitura o aggiungere il record genitore."
+          child_reference_validator:
+            errors:
+              message: "Il figlio referenziato '%{value}' non esiste come %{field} in questo CSV."
+              suggestion: "Controllare eventuali errori di battitura o aggiungere il record figlio."
+          circular_reference_validator:
+            errors:
+              message: "'%{value}' fa parte di una relazione padre-figlio circolare."
+              suggestion: "Rivedere le colonne padre/figlio e rimuovere i riferimenti errati."
           passed: Validazione superata
           passed_warnings: Validazione superata con avvisi
           recognized_fields: 'Campi riconosciuti: %{fields}'
@@ -340,7 +398,14 @@ it:
             errors:
               message: "Il campo '%{field}' è obbligatorio ma è vuoto per questa riga."
               suggestion: "Aggiungi un valore per '%{field}'."
+          validation_error_csv_builder:
+            empty_column: "La colonna %{column} non ha intestazione e verrà ignorata durante l'importazione"
+            missing_file: "File mancante: %{filename}"
+            missing_required_column: "Colonna obbligatoria mancante '%{field}' (%{model})"
+            unrecognized_column: "Colonna non riconosciuta '%{column}'"
+            unrecognized_column_with_suggestion: "Colonna non riconosciuta '%{column}' (intendevi '%{suggestion}'?)"
           unable_to_process: Impossibile elaborare i file per la convalida
+          empty_column: 'Colonna %{column} (senza intestazione)'
           notices_desc: 'Questi avvisi potrebbero influire sul modo in cui il tuo CSV viene importato:'
           notices_title: Avvisi di importazione
           unrecognized_desc: 'Queste colonne verranno ignorate durante l''importazione:'
@@ -405,11 +470,35 @@ it:
         name: Nome
         next_run: Prossima corsa
         status: Stato
+        status_set_at: Stato impostato il
         total_collection_entries: Totale voci di raccolta
         total_file_set_entries: Numero totale di voci del set di file
         total_work_entries: Totale voci di lavoro
         type: Tipo
         updated_at: Aggiornato alle
+    datatable:
+      filters:
+        filter_by_entry_class: Filtra per classe di voce
+        filter_by_status: Filtra per stato
+      language:
+        empty_table: Nessun dato disponibile nella tabella
+        info: Visualizzazione da _START_ a _END_ di _TOTAL_ voci
+        info_empty: Visualizzazione da 0 a 0 di 0 voci
+        info_filtered: (filtrato da _MAX_ voci totali)
+        length_menu: Mostra _MENU_ voci
+        loading_records: Caricamento...
+        next: Successivo
+        previous: Precedente
+        processing: Elaborazione in corso...
+        search: 'Cerca:'
+        zero_records: Nessun record corrispondente trovato
+      status:
+        complete: Completato
+        complete_with_failures: Completato (con errori)
+        deleted: Eliminato
+        failed: Fallito
+        pending: In attesa
+        skipped: Saltato
   helpers:
     action:
       exporter:

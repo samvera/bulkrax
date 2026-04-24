@@ -25,6 +25,7 @@ en:
         all: All
         collection: Collection
         collection_entries: Collection Entries
+        download: Download
         export_format: Export Format
         export_from: Export From
         export_source: Export Source
@@ -67,8 +68,14 @@ en:
           one: '1 error prohibited this exporter from being saved:'
           other: "%{count} errors prohibited this exporter from being saved:"
     headings:
+      edit_exporter: Edit Exporter
+      edit_importer: Edit Importer
+      exporters: Exporters
       importers: Importers
+      new_exporter: New Exporter
+      new_importer: New Importer
       upload_corrected_entries: 'Upload Corrected Entries: %{name}'
+      upload_corrected_entries_action: Upload Corrected Entries
     importer:
       bagit:
         bags_to_import: 'Bag or Bags to Import:'
@@ -99,6 +106,9 @@ en:
           private: Private
           public: Public
       edit_form:
+        entry_modal_title: Options for Updating an Entry
+        entry_rebuild_hint: Rebuild metadata and files.
+        entry_remove_and_recreate_hint: Remove existing work and then recreate the works metadata and files.
         modal_title: Options for Updating the Importer
         remove_and_rerun_hint: Remove all works and then run the import again from a clean slate. This will remove all files and associations and any edits made since the last import will be lost.
         update_and_harvest_hint: Update the values in the importer form and update items that have changed at the source.
@@ -127,6 +137,7 @@ en:
         importer: Importer
         limit: Limit
         name: Name
+        parser_fields: Parser fields
         parser_klass: Parser
         total_collections: Total Collections
         total_file_sets: Total File Sets
@@ -226,9 +237,20 @@ en:
           validating: Validating...
           validation_failed: Validation failed. Please try again.
           validation_timeout: Validation timed out. Your files may be too large. Please try with smaller files or contact support.
+          validation_truncated_note: truncated to %{shown} — download errors CSV for full list
+          validation_truncated_tooltip: This list is capped to keep the page readable. The full list is in the Download errors CSV file.
           visibility_institution: Institution
           visibility_private: Private
           visibility_public: Public
+          warning_category_circular_reference: Circular reference
+          warning_category_default_work_type_used: Default work type used
+          warning_category_duplicate_source_identifier: Duplicate source identifier in CSV
+          warning_category_existing_source_identifier: Existing source identifier (will update)
+          warning_category_invalid_child_reference: Invalid child reference
+          warning_category_invalid_controlled_value: Invalid controlled vocabulary value
+          warning_category_invalid_parent_reference: Invalid parent reference
+          warning_category_missing_required_value: Missing required value
+          warning_category_missing_source_identifier: Missing source identifier
           zip_limit: 'Only 1 ZIP file allowed. The following files were not added:'
         nav:
           back: Back
@@ -291,6 +313,7 @@ en:
           large_import_message_html: You're about to import <span class="total-items-count">%{count}</span> items. Large imports take longer and are harder to troubleshoot. Consider splitting into smaller batches.
           large_import_warning: Large Import Warning
           ready_to_import: Ready to Import
+          section_errors: Errors
           section_files: Files
           section_records: Records
           section_settings: Settings
@@ -375,6 +398,12 @@ en:
             errors:
               message: "Field '%{field}' is required but is empty for this row."
               suggestion: "Add a value for '%{field}'."
+          validation_error_csv_builder:
+            empty_column: "Column %{column} has no header and will be ignored during import"
+            missing_file: "Missing file: %{filename}"
+            missing_required_column: "Missing required column '%{field}' (%{model})"
+            unrecognized_column: "Unrecognized column '%{column}'"
+            unrecognized_column_with_suggestion: "Unrecognized column '%{column}' (did you mean '%{suggestion}'?)"
           unable_to_process: Unable to process files for validation
           empty_column: 'Column %{column} (no header)'
           notices_desc: 'These notices may affect how your CSV is imported:'
@@ -447,6 +476,29 @@ en:
         total_work_entries: Total Work Entries
         type: Type
         updated_at: Updated At
+    datatable:
+      filters:
+        filter_by_entry_class: Filter by Entry Class
+        filter_by_status: Filter by Status
+      language:
+        empty_table: No data available in table
+        info: Showing _START_ to _END_ of _TOTAL_ entries
+        info_empty: Showing 0 to 0 of 0 entries
+        info_filtered: (filtered from _MAX_ total entries)
+        length_menu: Show _MENU_ entries
+        loading_records: Loading...
+        next: Next
+        previous: Previous
+        processing: Processing...
+        search: 'Search:'
+        zero_records: No matching records found
+      status:
+        complete: Complete
+        complete_with_failures: Complete (with failures)
+        deleted: Deleted
+        failed: Failed
+        pending: Pending
+        skipped: Skipped
   helpers:
     action:
       exporter:

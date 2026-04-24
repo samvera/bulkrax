@@ -14,6 +14,25 @@ RSpec.describe Bulkrax do
       it 'reads default work type from rails_helper' do
         expect(described_class.default_work_type).to eq('Work')
       end
+
+      context 'when assigned a Class constant' do
+        before  { described_class.default_work_type = Object }
+        after   { described_class.default_work_type = 'Work' }
+
+        it 'coerces the reader to the class name as a String' do
+          expect(described_class.default_work_type).to eq('Object')
+          expect(described_class.default_work_type).to be_a(String)
+        end
+      end
+
+      context 'when assigned nil' do
+        before  { described_class.default_work_type = nil }
+        after   { described_class.default_work_type = 'Work' }
+
+        it 'returns nil without coercing' do
+          expect(described_class.default_work_type).to be_nil
+        end
+      end
     end
 
     context 'import_path' do

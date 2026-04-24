@@ -17,13 +17,23 @@ fr:
         record_link: Lien %{record_type}
         unknown: Inconnu
     exporter:
+      hints:
+        generated_metadata: Ces champs exportés ne peuvent pas être importés actuellement.
+        include_thumbnails: Ces champs exportés ne peuvent pas être importés actuellement.
+        limit: Laisser vide ou 0 pour tous les enregistrements
       labels:
         all: Tous
         collection: Collection
+        collection_entries: Entrées de collection
+        download: Télécharger
+        export_format: Format d'exportation
         export_from: Exporter depuis
         export_source: Source d'exportation
         export_type: Type d'exportation
         field_mapping: Cartographie de terrain
+        file_set_entries: Entrées d'ensemble de fichiers
+        filter_by_date: Filtrer par date
+        finish_date: Date de fin
         full: Métadonnées et fichiers
         generated_metadata: Inclure les métadonnées générées ?
         importer: Importateur
@@ -33,7 +43,20 @@ fr:
         name: Nom
         parser_fields: Champs de l'analyseur
         parser_klass: Analyseur syntaxique
+        start_date: Date de début
+        status: Statut
+        total_entries: Total des entrées
+        total_work_entries: Total des œuvres
         user: Utilisateur
+        work_entries: Entrées d'œuvres
+        workflow_status:
+          approved: Approuvé
+          broken_url: URL brisée
+          deleted: Supprimé
+          in_process: En cours
+          ingested: Ingéré
+          needs_repair: Nécessite une réparation
+          unapproved: Non approuvé
         worktype: Type de travail
       prompts:
         export_from: Veuillez sélectionner une source d'exportation
@@ -45,7 +68,13 @@ fr:
           one: 'Une erreur a empêché l''enregistrement de cet exportateur :'
           other: 'Des erreurs %{count} ont empêché l''enregistrement de cet exportateur :'
     headings:
+      edit_exporter: Modifier l'exportateur
+      edit_importer: Modifier l'importateur
+      exporters: Exportateurs
       importers: Importateurs
+      new_exporter: Nouvel exportateur
+      new_importer: Nouvel importateur
+      upload_corrected_entries_action: Téléverser les entrées corrigées
       upload_corrected_entries: 'Entrées corrigées à télécharger : %{name}'
     importer:
       bagit:
@@ -77,6 +106,9 @@ fr:
           private: Privé
           public: Publique
       edit_form:
+        entry_modal_title: Options de mise à jour d'une entrée
+        entry_rebuild_hint: Reconstruire les métadonnées et les fichiers.
+        entry_remove_and_recreate_hint: Supprimer l'œuvre existante, puis recréer les métadonnées et les fichiers de l'œuvre.
         modal_title: Options de mise à jour de l'importateur
         remove_and_rerun_hint: Supprimez tous les fichiers, puis relancez l'importation en partant de zéro. Cela supprimera tous les fichiers et associations, et toutes les modifications effectuées depuis la dernière importation seront perdues.
         update_and_harvest_hint: Mettez à jour les valeurs dans le formulaire d'importation et les éléments qui ont été modifiés à la source.
@@ -96,19 +128,23 @@ fr:
         override_rights_statement: Si cette option est cochée, utiliser systématiquement la déclaration de droits sélectionnée. Sinon, utiliser les droits ou la déclaration de droits de l'enregistrement et n'utiliser la valeur fournie que si dc:rights est vide.
       labels:
         admin_set: Ensemble administratif
+        collection_entries: Entrées de collection
         entry_id: ID d'entrée
         exporter: Exportateur
+        file_set_entries: Entrées d'ensemble de fichiers
         frequency: Fréquence
         identifier: Identifiant
         importer: Importateur
         limit: Limite
         name: Nom
+        parser_fields: Champs de l'analyseur
         parser_klass: Analyseur syntaxique
         total_collections: Collections totales
         total_file_sets: Ensembles de fichiers totaux
         total_work_entries: Travaux totaux
         type: Taper
         user: Utilisateur
+        work_entries: Entrées d'œuvres
       oai:
         hints:
           metadata_prefix: Par exemple, oai_dc, dcterms ou oai_qdc
@@ -185,6 +221,8 @@ fr:
           review_total: "%{total} au total — %{collections} collections, %{works} œuvres, %{file_sets} ensembles de fichiers"
           review_visibility: 'Visibilité:'
           server_error: Erreur serveur lors de la validation. Veuillez réessayer ou contacter l'assistance.
+          existing_record_badge: existant
+          existing_record_title: Cet enregistrement existe déjà dans le dépôt et sera lié lors de l'importation.
           shared_badge: commun
           starting: Départ...
           upload_csv_and_zip: Fichiers CSV + téléchargés séparément
@@ -199,9 +237,20 @@ fr:
           validating: Validation en cours...
           validation_failed: La validation a échoué. Veuillez réessayer.
           validation_timeout: La validation a expiré. Vos fichiers sont peut-être trop volumineux. Veuillez essayer avec des fichiers plus petits ou contacter l'assistance.
+          validation_truncated_note: tronqué à %{shown} — téléchargez le CSV des erreurs pour la liste complète
+          validation_truncated_tooltip: Cette liste est limitée pour garder la page lisible. La liste complète se trouve dans le fichier CSV des erreurs téléchargeable.
           visibility_institution: Institution
           visibility_private: Privé
           visibility_public: Publique
+          warning_category_circular_reference: Référence circulaire
+          warning_category_default_work_type_used: Type d'œuvre par défaut utilisé
+          warning_category_duplicate_source_identifier: Identifiant source en double dans le CSV
+          warning_category_existing_source_identifier: Identifiant source existant (sera mis à jour)
+          warning_category_invalid_child_reference: Référence enfant non valide
+          warning_category_invalid_controlled_value: Valeur de vocabulaire contrôlé non valide
+          warning_category_invalid_parent_reference: Référence parente non valide
+          warning_category_missing_required_value: Valeur obligatoire manquante
+          warning_category_missing_source_identifier: Identifiant source manquant
           zip_limit: 'Un seul fichier ZIP est autorisé. Les fichiers suivants n''ont pas été ajoutés :'
         nav:
           back: Dos
@@ -264,6 +313,7 @@ fr:
           large_import_message_html: Vous allez importer <span class="total-items-count">%{count}</span> articles. Les importations volumineuses sont plus longues et plus difficiles à dépanner. Pensez à les fractionner en lots plus petits.
           large_import_warning: Avertissement concernant les importations importantes
           ready_to_import: Prêt à importer
+          section_errors: Erreurs
           section_files: Fichiers
           section_records: Archives
           section_settings: Paramètres
@@ -324,6 +374,14 @@ fr:
             errors:
               message: "Le parent référencé « %{value} » n'existe pas en tant que %{field} dans ce CSV."
               suggestion: "Vérifiez les fautes de frappe ou ajoutez l'enregistrement parent."
+          child_reference_validator:
+            errors:
+              message: "L'enfant référencé « %{value} » n'existe pas en tant que %{field} dans ce CSV."
+              suggestion: "Vérifiez les fautes de frappe ou ajoutez l'enregistrement enfant."
+          circular_reference_validator:
+            errors:
+              message: "« %{value} » fait partie d'une relation parent-enfant circulaire."
+              suggestion: "Vérifiez les colonnes parent/enfant et supprimez les références incorrectes."
           passed: Validation réussie
           passed_warnings: Validation réussie avec avertissements
           recognized_fields: 'Champs reconnus : %{fields}'
@@ -340,7 +398,14 @@ fr:
             errors:
               message: "Le champ « %{field} » est obligatoire mais il est vide pour cette ligne."
               suggestion: "Ajoutez une valeur pour « %{field} »."
+          validation_error_csv_builder:
+            empty_column: "La colonne %{column} n'a pas d'en-tête et sera ignorée lors de l'importation"
+            missing_file: "Fichier manquant : %{filename}"
+            missing_required_column: "Colonne obligatoire manquante « %{field} » (%{model})"
+            unrecognized_column: "Colonne non reconnue « %{column} »"
+            unrecognized_column_with_suggestion: "Colonne non reconnue « %{column} » (vouliez-vous dire « %{suggestion} » ?)"
           unable_to_process: Impossible de traiter les fichiers pour validation
+          empty_column: 'Colonne %{column} (sans en-tête)'
           notices_desc: 'Ces avis peuvent affecter la façon dont votre CSV est importé :'
           notices_title: Avis d'importation
           unrecognized_desc: 'Ces colonnes seront ignorées lors de l''importation :'
@@ -405,11 +470,35 @@ fr:
         name: Nom
         next_run: Prochaine course
         status: Statut
+        status_set_at: Statut défini à
         total_collection_entries: Nombre total d'entrées de la collection
         total_file_set_entries: Nombre total d'entrées du fichier
         total_work_entries: Nombre total d'entrées de travail
         type: Taper
         updated_at: Mise à jour le
+    datatable:
+      filters:
+        filter_by_entry_class: Filtrer par classe d'entrée
+        filter_by_status: Filtrer par statut
+      language:
+        empty_table: Aucune donnée disponible dans le tableau
+        info: Affichage de _START_ à _END_ sur _TOTAL_ entrées
+        info_empty: Affichage de 0 à 0 sur 0 entrées
+        info_filtered: (filtré à partir de _MAX_ entrées au total)
+        length_menu: Afficher _MENU_ entrées
+        loading_records: Chargement...
+        next: Suivant
+        previous: Précédent
+        processing: Traitement en cours...
+        search: 'Rechercher :'
+        zero_records: Aucun enregistrement correspondant trouvé
+      status:
+        complete: Terminé
+        complete_with_failures: Terminé (avec des échecs)
+        deleted: Supprimé
+        failed: Échoué
+        pending: En attente
+        skipped: Ignoré
   helpers:
     action:
       exporter:

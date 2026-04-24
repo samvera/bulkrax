@@ -48,6 +48,8 @@ module Bulkrax
     end
 
     def download_validation_errors
+      set_locale_from_params
+
       cache_key = params[:key].to_s
       expected_prefix = "guided_import_errors:#{session.id}:"
       return head :not_found unless cache_key.start_with?(expected_prefix)
@@ -165,7 +167,7 @@ module Bulkrax
     def add_importer_breadcrumbs
       add_breadcrumb t(:'hyrax.controls.home'), main_app.root_path
       add_breadcrumb t(:'hyrax.dashboard.breadcrumbs.admin'), hyrax.dashboard_path
-      add_breadcrumb 'Importers', bulkrax.importers_path
+      add_breadcrumb t(:'bulkrax.headings.importers'), bulkrax.importers_path
     end
 
     def check_permissions

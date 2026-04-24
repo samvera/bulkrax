@@ -91,6 +91,9 @@
     // Hierarchy rendering limits
     MAX_TREE_DEPTH: 50, // Prevent stack overflow on deeply nested hierarchies
 
+    // Validation issue list cap — accordion shows up to this many items; full list is in the downloaded CSV
+    MAX_ISSUE_ITEMS: 10,
+
     // API endpoints
     ENDPOINTS: {
       DEMO_SCENARIOS: '/importers/guided_import/demo_scenarios',
@@ -1341,6 +1344,8 @@
     $('input[name="importer[parser_fields][override_rights_statement]"]').prop('checked', false)
 
     // Clear review step warnings from previous run
+    $('.review-errors-list').empty()
+    $('.review-errors').hide()
     $('.review-warnings-list').empty()
     $('.review-warnings').hide()
     $('.large-import-warning').hide()
@@ -1658,8 +1663,11 @@
 
     // Download errors button
     if (data.validationErrorsCacheKey) {
+      var locale = $('input[name="locale"]').val()
       var downloadUrl =
-        CONSTANTS.ENDPOINTS.DOWNLOAD_VALIDATION_ERRORS + '?key=' + encodeURIComponent(data.validationErrorsCacheKey)
+        CONSTANTS.ENDPOINTS.DOWNLOAD_VALIDATION_ERRORS +
+        '?key=' + encodeURIComponent(data.validationErrorsCacheKey) +
+        (locale ? '&locale=' + encodeURIComponent(locale) : '')
       var $btn = $(
         '<a class="btn btn-outline-secondary btn-sm mt-2" href="' +
           downloadUrl +
@@ -1745,12 +1753,14 @@
     return grouped
   }
 
-  // Render missing required fields grouped by model
+  // Render missing required fields grouped by model. Group count capped at
+  // CONSTANTS.MAX_ISSUE_ITEMS so we never show a partial group.
   function renderMissingRequiredFields(items) {
     var groupedByModel = groupItemsByModel(items)
+    var modelNames = Object.keys(groupedByModel).slice(0, CONSTANTS.MAX_ISSUE_ITEMS)
     var parts = []
 
-    Object.keys(groupedByModel).forEach(function (modelName) {
+    modelNames.forEach(function (modelName) {
       parts.push('<div class="missing-field-group">')
       parts.push('<strong class="missing-field-model">' + modelName + '</strong>')
       parts.push('<ul>')
@@ -1768,14 +1778,32 @@
     return parts.join('')
   }
 
-  // Render default issue items (unrecognized fields, file references, etc.)
+  // Render default issue items (unrecognized fields, file references, etc.).
+  // When items carry a `category` (row-level errors/warnings), show up to
+  // CONSTANTS.MAX_ISSUE_ITEMS per category so each distinct problem type is
+  // represented. Otherwise fall back to a simple slice of the first N items.
   function renderDefaultIssueItems(items) {
-    var listItems = items.map(function (item) {
+    var hasCategories = items.some(function (item) { return item.category })
+    var capped = hasCategories ? capItemsPerCategory(items) : items.slice(0, CONSTANTS.MAX_ISSUE_ITEMS)
+    var listItems = capped.map(function (item) {
       var msg = item.message ? ' — ' + item.message : ''
       return '<li>• ' + item.field + msg + '</li>'
     })
 
     return '<ul>' + listItems.join('') + '</ul>'
+  }
+
+  // Keep the first CONSTANTS.MAX_ISSUE_ITEMS entries per category, preserving
+  // their original order so rows still read top-to-bottom within each category.
+  function capItemsPerCategory(items) {
+    var counts = {}
+    var result = []
+    items.forEach(function (item) {
+      var cat = item.category || 'uncategorized'
+      counts[cat] = (counts[cat] || 0) + 1
+      if (counts[cat] <= CONSTANTS.MAX_ISSUE_ITEMS) result.push(item)
+    })
+    return result
   }
 
   // Render issue items based on issue type
@@ -1845,7 +1873,7 @@
             issue.title,
             issue.icon,
             issue.severity,
-            issue.count,
+            countDisplayFor(issue),
             issue.defaultOpen,
             issueContent
           )
@@ -1853,6 +1881,185 @@
       })
     }
 
+  }
+
+  // Build the count badge display for a validation issue accordion.
+  // Returns a plain number (or null) normally, or an HTML fragment with a
+  // truncation note when the inline list is capped.
+  function countDisplayFor(issue) {
+    if (issue.count == null) return null
+    if (!isIssueTruncated(issue)) return issue.count
+
+    var noteText = t('validation_truncated_note', {
+      shown: issueShownCount(issue)
+    })
+    var tooltip = t('validation_truncated_tooltip')
+    return issue.count +
+      ' <span class="accordion-count-note" title="' + escapeHtml(tooltip) +
+      '" aria-label="' + escapeHtml(tooltip) + '">' +
+      escapeHtml(noteText) + '</span>'
+  }
+
+  // How many items are actually rendered in the accordion body, mirroring the
+  // slicing logic in renderDefaultIssueItems / renderMissingRequiredFields.
+  function issueShownCount(issue) {
+    var items = issue.items || []
+    if (!items.length) return 0
+
+    var hasModelField = issue.type === 'missing_required_fields' &&
+      items.some(function (item) { return item.model })
+    if (hasModelField) {
+      return Math.min(issueDisplayUnitCount(issue), CONSTANTS.MAX_ISSUE_ITEMS)
+    }
+
+    var hasCategories = items.some(function (item) { return item.category })
+    if (hasCategories) return capItemsPerCategory(items).length
+
+    return Math.min(items.length, CONSTANTS.MAX_ISSUE_ITEMS)
+  }
+
+  // Decide whether an issue's rendered item list is capped. Mirrors the
+  // slicing logic in renderDefaultIssueItems / renderMissingRequiredFields so
+  // the header note only appears when items are actually dropped.
+  function isIssueTruncated(issue) {
+    var items = issue.items || []
+    if (!items.length) return false
+
+    var hasModelField = issue.type === 'missing_required_fields' &&
+      items.some(function (item) { return item.model })
+    if (hasModelField) return issueDisplayUnitCount(issue) > CONSTANTS.MAX_ISSUE_ITEMS
+
+    var hasCategories = items.some(function (item) { return item.category })
+    if (hasCategories) {
+      var counts = {}
+      for (var i = 0; i < items.length; i++) {
+        var cat = items[i].category || 'uncategorized'
+        counts[cat] = (counts[cat] || 0) + 1
+        if (counts[cat] > CONSTANTS.MAX_ISSUE_ITEMS) return true
+      }
+      return false
+    }
+
+    return items.length > CONSTANTS.MAX_ISSUE_ITEMS
+  }
+
+  // Render one review-section (errors or warnings) on Step 3 from a list of
+  // validation issues. Each issue gets a breakdown appropriate to its shape:
+  // row-level issues group by category, missing_required_fields groups by
+  // model, everything else is a flat list of field names.
+  function renderReviewIssueSection(issues, sectionSelector, listSelector) {
+    if (!issues.length) {
+      $(listSelector).empty()
+      $(sectionSelector).hide()
+      return
+    }
+
+    var html = ''
+    issues.forEach(function (issue) {
+      var label = issue.title
+      if (issue.count) { label += ' (' + issue.count + ')' }
+      var detail = issue.summary || issue.description || ''
+      html += '<p>' + label
+      if (detail) { html += ' — ' + detail }
+      html += '</p>'
+
+      html += renderReviewIssueBreakdown(issue)
+    })
+    $(listSelector).html(html)
+    $(sectionSelector).show()
+  }
+
+  // Pick the right breakdown renderer for an issue on the Step 3 summary.
+  function renderReviewIssueBreakdown(issue) {
+    var items = issue.items || []
+    if (!items.length) return ''
+
+    if (issue.type === 'row_level_errors' || issue.type === 'row_level_warnings') {
+      return renderWarningCategoryBreakdown(items)
+    }
+    if (issue.type === 'missing_required_fields' && items.some(function (i) { return i.model })) {
+      return renderMissingRequiredBreakdown(items)
+    }
+    return renderFieldListBreakdown(items)
+  }
+
+  // Missing required fields grouped by model, matching the Step 1 accordion layout.
+  function renderMissingRequiredBreakdown(items) {
+    var grouped = groupItemsByModel(items)
+    var html = '<ul class="review-warning-categories">'
+    Object.keys(grouped).forEach(function (modelName) {
+      var fields = grouped[modelName].map(escapeHtml).join(', ')
+      html += '<li><strong>' + escapeHtml(modelName) + ':</strong> ' + fields + '</li>'
+    })
+    html += '</ul>'
+    return html
+  }
+
+  // Flat list of `field — message` entries — used for unrecognized fields,
+  // file references, notices. Message provides the context a bare field name
+  // lacks (e.g. "No model column found — all rows will be imported as …").
+  function renderFieldListBreakdown(items) {
+    var html = '<ul class="review-warning-categories">'
+    items.forEach(function (item) {
+      if (!item || !item.field) return
+      var line = escapeHtml(item.field)
+      if (item.message) line += ' — ' + escapeHtml(item.message)
+      html += '<li>' + line + '</li>'
+    })
+    html += '</ul>'
+    return html
+  }
+
+  // Render a bulleted breakdown of row-warning items grouped by category.
+  // Used on the Review & Start Import step under "Row Validation Warnings".
+  function renderWarningCategoryBreakdown(items) {
+    var counts = items.reduce(function (acc, item) {
+      var cat = item.category || 'uncategorized'
+      acc[cat] = (acc[cat] || 0) + 1
+      return acc
+    }, {})
+    var html = '<ul class="review-warning-categories">'
+    Object.keys(counts).forEach(function (cat) {
+      html += '<li>' + escapeHtml(warningCategoryLabel(cat)) + ' (' + counts[cat] + ')</li>'
+    })
+    html += '</ul>'
+    return html
+  }
+
+  // Localized label for a warning category, with a humanized fallback so a
+  // new validator category doesn't produce raw snake_case in the UI.
+  function warningCategoryLabel(category) {
+    var key = 'warning_category_' + category
+    var label = t(key)
+    if (label === key) return humanizeCategory(category)
+    return label
+  }
+
+  function humanizeCategory(category) {
+    if (!category) return ''
+    return category
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, function (c) { return c.toUpperCase() })
+  }
+
+  // Count the display units for an issue. For missing-required-fields grouped
+  // by model the unit is a model-group; for everything else it's an item.
+  function issueDisplayUnitCount(issue) {
+    if (!issue.items || !issue.items.length) return 0
+    var hasModelField = issue.type === 'missing_required_fields' &&
+      issue.items.some(function (item) { return item.model })
+    if (!hasModelField) return issue.items.length
+
+    var seen = {}
+    var groups = 0
+    issue.items.forEach(function (item) {
+      var key = item.model || 'Unknown'
+      if (!seen[key]) {
+        seen[key] = true
+        groups += 1
+      }
+    })
+    return groups
   }
 
   // Create accordion HTML
@@ -2313,26 +2520,14 @@
 
     $('.review-settings').html(settingsHtml)
 
-    // Warnings — derive from messages.issues so all warning types are covered
-    var warningIssues = (data && data.messages && data.messages.issues)
-      ? data.messages.issues.filter(function (issue) { return issue.severity === 'warning' })
-      : []
-    if (warningIssues.length > 0) {
-      var warningsHtml = ''
-      warningIssues.forEach(function (issue) {
-        var label = issue.title
-        if (issue.count) { label += ' (' + issue.count + ')' }
-        var detail = issue.summary || issue.description || ''
-        warningsHtml += '<p>' + label
-        if (detail) { warningsHtml += ' — ' + detail }
-        warningsHtml += '</p>'
-      })
-      $('.review-warnings-list').html(warningsHtml)
-      $('.review-warnings').show()
-    } else {
-      $('.review-warnings-list').empty()
-      $('.review-warnings').hide()
-    }
+    // Errors and warnings — derive from messages.issues so every severity is covered.
+    // Row-level errors/warnings get a per-category breakdown beneath the summary line.
+    var allIssues = (data && data.messages && data.messages.issues) || []
+    var errorIssues = allIssues.filter(function (issue) { return issue.severity === 'error' })
+    var warningIssues = allIssues.filter(function (issue) { return issue.severity === 'warning' })
+
+    renderReviewIssueSection(errorIssues, '.review-errors', '.review-errors-list')
+    renderReviewIssueSection(warningIssues, '.review-warnings', '.review-warnings-list')
 
     // Large import warning
     $('.total-items-count').text(totalItems)

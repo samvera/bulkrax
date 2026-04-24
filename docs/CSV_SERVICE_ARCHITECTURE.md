@@ -47,7 +47,7 @@ Returns:
 }
 ```
 
-**Rights Statement Override:** When the only missing required field is `rights_statement`, the result is treated as valid with a warning rather than invalid. This supports workflows where rights statements are assigned after import.
+**Rights Statement Special Case:** When the only missing required field is `rights_statement`, `assemble_result` reports the CSV as valid with a warning (rather than invalid). This supports workflows where rights statements are assigned on the next step via the default rights statement selector.
 
 ## Architecture
 

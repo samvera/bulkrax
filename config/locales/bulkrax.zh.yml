@@ -17,13 +17,23 @@ zh:
         record_link: "%{record_type} 链接"
         unknown: 未知
     exporter:
+      hints:
+        generated_metadata: 这些导出的字段目前无法导入。
+        include_thumbnails: 这些导出的字段目前无法导入。
+        limit: 留空或填 0 表示所有记录
       labels:
         all: 全部
         collection: 收藏
+        collection_entries: 收藏条目
+        download: 下载
+        export_format: 导出格式
         export_from: 导出
         export_source: 出口来源
         export_type: 出口类型
         field_mapping: 田间测绘
+        file_set_entries: 文件集条目
+        filter_by_date: 按日期筛选
+        finish_date: 结束日期
         full: 元数据和文件
         generated_metadata: 是否包含生成的元数据？
         importer: 进口商
@@ -33,7 +43,20 @@ zh:
         name: 姓名
         parser_fields: 解析器字段
         parser_klass: 解析器
+        start_date: 开始日期
+        status: 状态
+        total_entries: 条目总数
+        total_work_entries: 作品总数
         user: 用户
+        work_entries: 作品条目
+        workflow_status:
+          approved: 已批准
+          broken_url: URL 失效
+          deleted: 已删除
+          in_process: 处理中
+          ingested: 已摄入
+          needs_repair: 需要修复
+          unapproved: 未批准
         worktype: 工作类型
       prompts:
         export_from: 请选择导出源
@@ -45,8 +68,14 @@ zh:
           one: 1 个错误导致此导出器无法保存：
           other: "%{count} 错误导致无法保存此导出器："
     headings:
+      edit_exporter: 编辑导出程序
+      edit_importer: 编辑导入程序
+      exporters: 导出程序
       importers: 进口商
+      new_exporter: 新建导出程序
+      new_importer: 新建导入程序
       upload_corrected_entries: 上传更正后的条目：%{name}
+      upload_corrected_entries_action: 上传更正后的条目
     importer:
       bagit:
         bags_to_import: 进口袋或包：
@@ -77,6 +106,9 @@ zh:
           private: 私人的
           public: 民众
       edit_form:
+        entry_modal_title: 更新条目的选项
+        entry_rebuild_hint: 重新构建元数据和文件。
+        entry_remove_and_recreate_hint: 删除现有作品，然后重新创建作品的元数据和文件。
         modal_title: 更新导入程序的选项
         remove_and_rerun_hint: 删除所有作品，然后从头开始重新导入。这将删除所有文件和关联关系，并且自上次导入以来所做的任何编辑都将丢失。
         update_and_harvest_hint: 更新导入器表单中的值，并更新源中已更改的项目。
@@ -96,19 +128,23 @@ zh:
         override_rights_statement: 如果选中，则始终使用选定的权限语句。如果未选中，则使用记录中的权限或权限语句，并且仅当 dc:rights 为空时才使用提供的值。
       labels:
         admin_set: 管理集
+        collection_entries: 收藏条目
         entry_id: 条目 ID
         exporter: 出口商
+        file_set_entries: 文件集条目
         frequency: 频率
         identifier: 标识符
         importer: 进口商
         limit: 限制
         name: 姓名
+        parser_fields: 解析器字段
         parser_klass: 解析器
         total_collections: 总收藏
         total_file_sets: 文件集总数
         total_work_entries: 总作品
         type: 类型
         user: 用户
+        work_entries: 作品条目
       oai:
         hints:
           metadata_prefix: 例如 oai_dc、dcterms 或 oai_qdc
@@ -185,6 +221,8 @@ zh:
           review_total: 总计 %{total} — %{collections} 个收藏集，%{works} 个作品，%{file_sets} 个文件集
           review_visibility: 能见度：
           server_error: 验证过程中服务器出错。请重试或联系客服。
+          existing_record_badge: 已存在
+          existing_record_title: 此记录已存在于存储库中，导入时将进行关联。
           shared_badge: 共享
           starting: 开始...
           upload_csv_and_zip: CSV 文件和其他文件单独上传
@@ -199,9 +237,20 @@ zh:
           validating: 正在验证……
           validation_failed: 验证失败，请重试。
           validation_timeout: 验证超时。您的文件可能过大。请尝试上传较小的文件或联系技术支持。
+          validation_truncated_note: 已截断至 %{shown} 条 — 请下载错误 CSV 以查看完整列表
+          validation_truncated_tooltip: 为保持页面整洁，此列表已限制显示条数。完整列表包含在可下载的错误 CSV 文件中。
           visibility_institution: 机构
           visibility_private: 私人的
           visibility_public: 民众
+          warning_category_circular_reference: 循环引用
+          warning_category_default_work_type_used: 使用了默认的作品类型
+          warning_category_duplicate_source_identifier: CSV 中的源标识符重复
+          warning_category_existing_source_identifier: 已存在的源标识符（将被更新）
+          warning_category_invalid_child_reference: 无效的子引用
+          warning_category_invalid_controlled_value: 无效的受控词汇值
+          warning_category_invalid_parent_reference: 无效的父引用
+          warning_category_missing_required_value: 缺少必填值
+          warning_category_missing_source_identifier: 缺少源标识符
           zip_limit: 仅允许上传 1 个 ZIP 文件。以下文件未添加：
         nav:
           back: 后退
@@ -209,6 +258,7 @@ zh:
           next_step: 下一个
           skip_validation: 跳过验证
           start_import: 开始导入
+        feedback_link: 报告错误 / 反馈
         page_subtitle: 通过 CSV 导入收藏集、作品和文件
         page_title: 开始批量导入
         step1:
@@ -263,6 +313,7 @@ zh:
           large_import_message_html: 您即将导入<span class="total-items-count">%{count}</span>个项目。大量导入操作耗时更长，且更难排查问题。建议您分批导入。
           large_import_warning: 大量进口警告
           ready_to_import: 准备进口
+          section_errors: 错误
           section_files: 文件
           section_records: 记录
           section_settings: 设置
@@ -323,6 +374,14 @@ zh:
             errors:
               message: "引用的父级 '%{value}' 在此 CSV 中不存在对应的 %{field}。"
               suggestion: "请检查拼写错误或添加父级记录。"
+          child_reference_validator:
+            errors:
+              message: "引用的子级 '%{value}' 在此 CSV 中不存在对应的 %{field}。"
+              suggestion: "请检查拼写错误或添加子级记录。"
+          circular_reference_validator:
+            errors:
+              message: "'%{value}' 属于循环的父子关系。"
+              suggestion: "请检查父级/子级列并移除错误的引用。"
           passed: 验证通过
           passed_warnings: 验证通过，但存在警告
           recognized_fields: 已识别字段：%{fields}
@@ -339,7 +398,14 @@ zh:
             errors:
               message: "字段 '%{field}' 是必填项，但此行中该字段为空。"
               suggestion: "请为 '%{field}' 添加一个值。"
+          validation_error_csv_builder:
+            empty_column: "第 %{column} 列没有标题，将在导入时被忽略"
+            missing_file: "缺少文件：%{filename}"
+            missing_required_column: "缺少必填列 '%{field}' (%{model})"
+            unrecognized_column: "无法识别的列 '%{column}'"
+            unrecognized_column_with_suggestion: "无法识别的列 '%{column}'（是否想输入 '%{suggestion}'？）"
           unable_to_process: 无法处理文件进行验证
+          empty_column: '第 %{column} 列（无标题）'
           notices_desc: '这些通知可能会影响您的 CSV 的导入方式：'
           notices_title: 导入通知
           unrecognized_desc: 导入过程中将忽略以下列：
@@ -404,11 +470,35 @@ zh:
         name: 姓名
         next_run: 下一轮
         status: 地位
+        status_set_at: 状态设置时间
         total_collection_entries: 总收款条目
         total_file_set_entries: 文件集条目总数
         total_work_entries: 总工作条目
         type: 类型
         updated_at: 更新于
+    datatable:
+      filters:
+        filter_by_entry_class: 按条目类筛选
+        filter_by_status: 按状态筛选
+      language:
+        empty_table: 表中没有可用数据
+        info: 显示第 _START_ 至 _END_ 项，共 _TOTAL_ 项
+        info_empty: 显示第 0 至 0 项，共 0 项
+        info_filtered: （从 _MAX_ 项中筛选）
+        length_menu: 显示 _MENU_ 项
+        loading_records: 加载中...
+        next: 下一页
+        previous: 上一页
+        processing: 处理中...
+        search: '搜索：'
+        zero_records: 未找到匹配的记录
+      status:
+        complete: 完成
+        complete_with_failures: 完成（含失败）
+        deleted: 已删除
+        failed: 失败
+        pending: 待处理
+        skipped: 已跳过
   helpers:
     action:
       exporter:
