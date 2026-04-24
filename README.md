@@ -225,9 +225,15 @@ This project is intended to be a safe, welcoming space for collaboration, and co
 ```bash
 /path/to/ruby/install/bin/gem install bundler -v '~> 2.4.0'
 ```
-- Decide on your version of Hyrax to test against and export it to your environment, then bundle install. The Hyrax version should be greater or equal to 2.3.
+- Decide on your version of Hyrax & Rails to test against and export it to your environment, then bundle install. The Hyrax version should be greater or equal to 2.3.
+
+You can find version combinations that should work in [.github/workflows/test.yml](.github/workflows/test.yml)
+
+If you have previously bundle installed with a different combination of versions, you may need to remove your Gemfile.lock `rm Gemfile.lock`
+
 ```bash
-export HYRAX_VERSION="~> 4.0.0"
+export RAILS_GEM_VERSION="~> 7.2"
+export HYRAX_VERSION="~> 5.2"
 bundle install
 ```
 - Run the test migrations
