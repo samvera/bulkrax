@@ -57,8 +57,8 @@ module Bulkrax
 
       def file_column?(column)
         file_cols = CsvTemplate::ColumnDescriptor::COLUMN_DESCRIPTIONS[:files].flat_map do |property_hash|
-          property_hash.keys.filter_map do |key|
-            @service.mappings.dig(key, "from")&.first
+          property_hash.keys.flat_map do |key|
+            Bulkrax::FieldResolver.headers_for_field(@service.mappings, key)
           end
         end
         column.in?(file_cols)

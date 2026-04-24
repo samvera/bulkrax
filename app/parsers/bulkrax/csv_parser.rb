@@ -363,15 +363,16 @@ module Bulkrax
       return [] if importerexporter.metadata_only?
 
       # Compute once — these don't vary per record.
-      file_mapping  = Bulkrax.field_mappings.dig(self.class.to_s, 'file', :from)&.first&.to_sym || :file
+      file_keys     = Bulkrax::FieldResolver.headers_for_field(Bulkrax.field_mappings[self.class.to_s], 'file').map(&:to_sym)
       split_pattern = self.class.file_split_pattern
       files_dir     = path_to_files
 
       @file_paths ||= records.map do |r|
-        next if r[file_mapping].blank?
+        raw_values = file_keys.filter_map { |k| r[k] }.reject(&:blank?)
+        next if raw_values.empty?
         raise StandardError, "Record references local files but no files directory could be resolved from the import path" if files_dir.nil?
 
-        r[file_mapping].split(split_pattern).map do |f|
+        raw_values.flat_map { |v| v.split(split_pattern) }.map do |f|
           file = File.join(files_dir, f.strip.tr(' ', '_'))
           if File.exist?(file) # rubocop:disable Style/GuardClause
             file
