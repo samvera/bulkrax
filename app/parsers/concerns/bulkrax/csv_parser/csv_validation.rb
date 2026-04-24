@@ -50,7 +50,7 @@ module Bulkrax
           append_missing_model_notice!(notices, headers, csv_data)
 
           row_errors                       = run_row_validators(csv_data, all_ids, source_id_key, mappings, field_metadata, find_record, notices, mapping_manager: mapping_manager)
-          file_validator                   = CsvTemplate::FileValidator.new(csv_data, zip_file, admin_set_id)
+          file_validator                   = Bulkrax::FileValidator.new(csv_data, zip_file, admin_set_id)
           collections, works, file_sets    = extract_hierarchy_items(csv_data, all_ids, find_record, mappings)
           [notices, row_errors, file_validator, collections, works, file_sets]
         end
@@ -68,9 +68,9 @@ module Bulkrax
           source_id_key = resolve_validation_key(mapping_manager, flag: 'source_identifier', default: :source_identifier)
           parent_key    = resolve_validation_key(mapping_manager, flag: 'related_parents_field_mapping',  default: :parents)
           children_key  = resolve_validation_key(mapping_manager, flag: 'related_children_field_mapping', default: :children)
-          file_key      = resolve_validation_key(mapping_manager, key: 'file',                            default: :file)
+          file_headers  = Bulkrax::FieldResolver.headers_for_field(mappings, 'file')
 
-          csv_data       = parse_validation_rows(raw_csv, source_id_key, parent_key, children_key, file_key)
+          csv_data       = parse_validation_rows(raw_csv, source_id_key, parent_key, children_key, file_headers)
           all_models     = csv_data.map { |r| r[:model].to_s }.reject(&:blank?).uniq
           all_models    |= [Bulkrax.default_work_type] if Bulkrax.default_work_type.present?
           field_analyzer = CsvTemplate::FieldAnalyzer.new(mappings, admin_set_id)

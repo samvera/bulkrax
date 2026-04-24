@@ -16,7 +16,8 @@ module Bulkrax
       # Parse rows from a CsvEntry.read_data result into the canonical record shape.
       # CsvEntry.read_data returns CSV::Row objects with symbol headers; blank rows
       # are already filtered by CsvWrapper.
-      def parse_validation_rows(raw_csv, source_id_key, parent_key, children_key, file_key)
+      def parse_validation_rows(raw_csv, source_id_key, parent_key, children_key, file_headers)
+        file_syms = Array(file_headers).map(&:to_sym)
         raw_csv.map do |row|
           # CSV::Row#to_h converts symbol headers → string-keyed hash
           row_hash = row.to_h.transform_keys(&:to_s)
@@ -25,7 +26,7 @@ module Bulkrax
             model: row[:model],
             parent: row[parent_key],
             children: row[children_key],
-            file: row[file_key],
+            file: file_syms.map { |sym| row[sym] }.reject(&:blank?),
             raw_row: row_hash
           }
         end

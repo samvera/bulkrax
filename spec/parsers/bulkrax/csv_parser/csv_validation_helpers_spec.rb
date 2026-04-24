@@ -246,12 +246,6 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
     end
   end
 
-  # Regression: `resolve_validation_key` blindly took `options.first` from
-  # the mapping's `from:` array. When a tenant configures a mapping like
-  # `file: { from: ['item', 'file'] }`, the validator picked `:item` as the
-  # lookup key — so `row[:item]` was always nil, every row's `:file` came
-  # out nil, and `FileValidator` saw zero file references (no missing-file
-  # report even when files were missing from the uploaded ZIP).
   describe '#resolve_validation_key' do
     let(:mapping_manager) { Bulkrax::CsvTemplate::MappingManager.new }
     let(:mappings) do
@@ -585,7 +579,7 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
   describe '#assemble_result' do
     let(:file_validator) do
       instance_double(
-        'Bulkrax::CsvTemplate::FileValidator',
+        'Bulkrax::FileValidator',
         missing_files: [],
         possible_missing_files?: false,
         count_references: 0,
