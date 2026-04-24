@@ -25,6 +25,7 @@ en:
         all: All
         collection: Collection
         collection_entries: Collection Entries
+        download: Download
         export_format: Export Format
         export_from: Export From
         export_source: Export Source
@@ -67,7 +68,10 @@ en:
           one: '1 error prohibited this exporter from being saved:'
           other: "%{count} errors prohibited this exporter from being saved:"
     headings:
+      edit_exporter: Edit Exporter
       importers: Importers
+      new_exporter: New Exporter
+      new_importer: New Importer
       upload_corrected_entries: 'Upload Corrected Entries: %{name}'
     importer:
       bagit:
@@ -99,6 +103,9 @@ en:
           private: Private
           public: Public
       edit_form:
+        entry_modal_title: Options for Updating an Entry
+        entry_rebuild_hint: Rebuild metadata and files.
+        entry_remove_and_recreate_hint: Remove existing work and then recreate the works metadata and files.
         modal_title: Options for Updating the Importer
         remove_and_rerun_hint: Remove all works and then run the import again from a clean slate. This will remove all files and associations and any edits made since the last import will be lost.
         update_and_harvest_hint: Update the values in the importer form and update items that have changed at the source.
@@ -127,6 +134,7 @@ en:
         importer: Importer
         limit: Limit
         name: Name
+        parser_fields: Parser fields
         parser_klass: Parser
         total_collections: Total Collections
         total_file_sets: Total File Sets

@@ -25,6 +25,7 @@ fr:
         all: Tous
         collection: Collection
         collection_entries: Entrées de collection
+        download: Télécharger
         export_format: Format d'exportation
         export_from: Exporter depuis
         export_source: Source d'exportation
@@ -67,7 +68,10 @@ fr:
           one: 'Une erreur a empêché l''enregistrement de cet exportateur :'
           other: 'Des erreurs %{count} ont empêché l''enregistrement de cet exportateur :'
     headings:
+      edit_exporter: Modifier l'exportateur
       importers: Importateurs
+      new_exporter: Nouvel exportateur
+      new_importer: Nouvel importateur
       upload_corrected_entries: 'Entrées corrigées à télécharger : %{name}'
     importer:
       bagit:
@@ -99,6 +103,9 @@ fr:
           private: Privé
           public: Publique
       edit_form:
+        entry_modal_title: Options de mise à jour d'une entrée
+        entry_rebuild_hint: Reconstruire les métadonnées et les fichiers.
+        entry_remove_and_recreate_hint: Supprimer l'œuvre existante, puis recréer les métadonnées et les fichiers de l'œuvre.
         modal_title: Options de mise à jour de l'importateur
         remove_and_rerun_hint: Supprimez tous les fichiers, puis relancez l'importation en partant de zéro. Cela supprimera tous les fichiers et associations, et toutes les modifications effectuées depuis la dernière importation seront perdues.
         update_and_harvest_hint: Mettez à jour les valeurs dans le formulaire d'importation et les éléments qui ont été modifiés à la source.
@@ -127,6 +134,7 @@ fr:
         importer: Importateur
         limit: Limite
         name: Nom
+        parser_fields: Champs de l'analyseur
         parser_klass: Analyseur syntaxique
         total_collections: Collections totales
         total_file_sets: Ensembles de fichiers totaux

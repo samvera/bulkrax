@@ -25,6 +25,7 @@ pt-BR:
         all: Todos
         collection: Coleção
         collection_entries: Entradas de coleção
+        download: Baixar
         export_format: Formato de exportação
         export_from: Exportar de
         export_source: Fonte de exportação
@@ -67,7 +68,10 @@ pt-BR:
           one: '1 erro impediu que este exportador fosse salvo:'
           other: "%{count} erros impediram que este exportador fosse salvo:"
     headings:
+      edit_exporter: Editar exportador
       importers: Importadores
+      new_exporter: Novo exportador
+      new_importer: Novo importador
       upload_corrected_entries: 'Enviar entradas corrigidas: %{name}'
     importer:
       bagit:
@@ -99,6 +103,9 @@ pt-BR:
           private: Privado
           public: Público
       edit_form:
+        entry_modal_title: Opções para atualizar uma entrada
+        entry_rebuild_hint: Reconstruir metadados e arquivos.
+        entry_remove_and_recreate_hint: Remover a obra existente e depois recriar os metadados e arquivos da obra.
         modal_title: Opções para atualizar o importador
         remove_and_rerun_hint: Remova todos os trabalhos e execute a importação novamente a partir de um ponto de partida limpo. Isso removerá todos os arquivos e associações, e quaisquer edições feitas desde a última importação serão perdidas.
         update_and_harvest_hint: Atualize os valores no formulário do importador e atualize os itens que foram alterados na origem.
@@ -127,6 +134,7 @@ pt-BR:
         importer: Importador
         limit: Limite
         name: Nome
+        parser_fields: Campos do analisador
         parser_klass: Analisador sintático
         total_collections: Total de Coleções
         total_file_sets: Conjuntos de arquivos totais

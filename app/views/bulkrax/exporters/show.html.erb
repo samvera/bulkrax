@@ -9,7 +9,7 @@
 
     <% if File.exist?(@exporter.exporter_export_zip_path) %>
       <%= simple_form_for @exporter, method: :get, url: exporter_download_path(@exporter), html: { class: 'form-inline bulkrax-p-align' } do |form| %>
-        <strong>Download:</strong>
+        <strong><%= t('bulkrax.exporter.labels.download') %>:</strong>
         <%= render 'downloads', exporter: @exporter, form: form %>
         <%= form.button :submit, value: t('helpers.action.exporter.download'), data: { disable_with: false } %>
       <% end %>

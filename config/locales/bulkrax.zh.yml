@@ -25,6 +25,7 @@ zh:
         all: 全部
         collection: 收藏
         collection_entries: 收藏条目
+        download: 下载
         export_format: 导出格式
         export_from: 导出
         export_source: 出口来源
@@ -67,7 +68,10 @@ zh:
           one: 1 个错误导致此导出器无法保存：
           other: "%{count} 错误导致无法保存此导出器："
     headings:
+      edit_exporter: 编辑导出程序
       importers: 进口商
+      new_exporter: 新建导出程序
+      new_importer: 新建导入程序
       upload_corrected_entries: 上传更正后的条目：%{name}
     importer:
       bagit:
@@ -99,6 +103,9 @@ zh:
           private: 私人的
           public: 民众
       edit_form:
+        entry_modal_title: 更新条目的选项
+        entry_rebuild_hint: 重新构建元数据和文件。
+        entry_remove_and_recreate_hint: 删除现有作品，然后重新创建作品的元数据和文件。
         modal_title: 更新导入程序的选项
         remove_and_rerun_hint: 删除所有作品，然后从头开始重新导入。这将删除所有文件和关联关系，并且自上次导入以来所做的任何编辑都将丢失。
         update_and_harvest_hint: 更新导入器表单中的值，并更新源中已更改的项目。
@@ -127,6 +134,7 @@ zh:
         importer: 进口商
         limit: 限制
         name: 姓名
+        parser_fields: 解析器字段
         parser_klass: 解析器
         total_collections: 总收藏
         total_file_sets: 文件集总数
