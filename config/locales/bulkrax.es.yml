@@ -69,11 +69,13 @@ es:
           other: 'Los errores %{count} impidieron que se guardara este exportador:'
     headings:
       edit_exporter: Editar exportador
+      edit_importer: Editar importador
       exporters: Exportadores
       importers: Importadores
       new_exporter: Nuevo exportador
       new_importer: Nuevo importador
       upload_corrected_entries: 'Subir entradas corregidas: %{name}'
+      upload_corrected_entries_action: Subir entradas corregidas
     importer:
       bagit:
         bags_to_import: 'Bolsa o Bolsas para Importar:'

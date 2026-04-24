@@ -69,11 +69,13 @@ en:
           other: "%{count} errors prohibited this exporter from being saved:"
     headings:
       edit_exporter: Edit Exporter
+      edit_importer: Edit Importer
       exporters: Exporters
       importers: Importers
       new_exporter: New Exporter
       new_importer: New Importer
       upload_corrected_entries: 'Upload Corrected Entries: %{name}'
+      upload_corrected_entries_action: Upload Corrected Entries
     importer:
       bagit:
         bags_to_import: 'Bag or Bags to Import:'

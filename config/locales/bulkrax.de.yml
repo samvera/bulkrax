@@ -69,11 +69,13 @@ de:
           other: "%{count}-Fehler verhinderten das Speichern dieses Exporters:"
     headings:
       edit_exporter: Exporter bearbeiten
+      edit_importer: Importer bearbeiten
       exporters: Exporteure
       importers: Importeure
       new_exporter: Neuer Exporter
       new_importer: Neuer Importer
       upload_corrected_entries: 'Korrigierte Einträge hochgeladen: %{name}'
+      upload_corrected_entries_action: Korrigierte Einträge hochladen
     importer:
       bagit:
         bags_to_import: 'Zu importierender Beutel oder Beutel:'

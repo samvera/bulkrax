@@ -69,10 +69,12 @@ fr:
           other: 'Des erreurs %{count} ont empêché l''enregistrement de cet exportateur :'
     headings:
       edit_exporter: Modifier l'exportateur
+      edit_importer: Modifier l'importateur
       exporters: Exportateurs
       importers: Importateurs
       new_exporter: Nouvel exportateur
       new_importer: Nouvel importateur
+      upload_corrected_entries_action: Téléverser les entrées corrigées
       upload_corrected_entries: 'Entrées corrigées à télécharger : %{name}'
     importer:
       bagit:

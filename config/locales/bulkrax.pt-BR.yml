@@ -69,11 +69,13 @@ pt-BR:
           other: "%{count} erros impediram que este exportador fosse salvo:"
     headings:
       edit_exporter: Editar exportador
+      edit_importer: Editar importador
       exporters: Exportadores
       importers: Importadores
       new_exporter: Novo exportador
       new_importer: Novo importador
       upload_corrected_entries: 'Enviar entradas corrigidas: %{name}'
+      upload_corrected_entries_action: Enviar entradas corrigidas
     importer:
       bagit:
         bags_to_import: 'Mala ou malas para importar:'

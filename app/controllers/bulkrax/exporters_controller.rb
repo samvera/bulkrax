@@ -48,7 +48,7 @@ module Bulkrax
       @exporter = Exporter.new
       return unless defined?(::Hyrax)
       add_exporter_breadcrumbs
-      add_breadcrumb 'New'
+      add_breadcrumb t(:'bulkrax.headings.new_exporter')
     end
 
     # GET /exporters/1/edit
@@ -56,7 +56,7 @@ module Bulkrax
       if defined?(::Hyrax)
         add_exporter_breadcrumbs
         add_breadcrumb @exporter.name, bulkrax.exporter_path(@exporter.id)
-        add_breadcrumb 'Edit'
+        add_breadcrumb t(:'bulkrax.headings.edit_exporter')
       end
 
       # Correctly populate export_source_collection input
@@ -141,7 +141,7 @@ module Bulkrax
     def add_exporter_breadcrumbs
       add_breadcrumb t(:'hyrax.controls.home'), main_app.root_path
       add_breadcrumb t(:'hyrax.dashboard.breadcrumbs.admin'), hyrax.dashboard_path
-      add_breadcrumb 'Exporters', bulkrax.exporters_path
+      add_breadcrumb t(:'bulkrax.headings.exporters'), bulkrax.exporters_path
     end
 
     # Download methods

@@ -69,11 +69,13 @@ zh:
           other: "%{count} 错误导致无法保存此导出器："
     headings:
       edit_exporter: 编辑导出程序
+      edit_importer: 编辑导入程序
       exporters: 导出程序
       importers: 进口商
       new_exporter: 新建导出程序
       new_importer: 新建导入程序
       upload_corrected_entries: 上传更正后的条目：%{name}
+      upload_corrected_entries_action: 上传更正后的条目
     importer:
       bagit:
         bags_to_import: 进口袋或包：

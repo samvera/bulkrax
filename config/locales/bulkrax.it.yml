@@ -69,11 +69,13 @@ it:
           other: "%{count} errori hanno impedito il salvataggio di questo esportatore:"
     headings:
       edit_exporter: Modifica esportatore
+      edit_importer: Modifica importatore
       exporters: Esportatori
       importers: Importatori
       new_exporter: Nuovo esportatore
       new_importer: Nuovo importatore
       upload_corrected_entries: 'Carica voci corrette: %{name}'
+      upload_corrected_entries_action: Carica voci corrette
     importer:
       bagit:
         bags_to_import: 'Borsa o borse da importare:'
