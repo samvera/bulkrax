@@ -5,9 +5,9 @@ require 'rails_helper'
 RSpec.describe Bulkrax::FileValidator do
   let(:csv_data) do
     [
-      { file: 'image1.jpg', source_identifier: 'work1' },
-      { file: 'document.pdf', source_identifier: 'work2' },
-      { file: nil, source_identifier: 'work3' }
+      { file_values: ['image1.jpg'], source_identifier: 'work1' },
+      { file_values: ['document.pdf'], source_identifier: 'work2' },
+      { file_values: [], source_identifier: 'work3' }
     ]
   end
 
@@ -33,7 +33,7 @@ RSpec.describe Bulkrax::FileValidator do
     end
 
     it 'returns 0 when no files referenced' do
-      empty_data = [{ file: nil }, { file: '' }]
+      empty_data = [{ file_values: [] }, { file_values: [] }]
       validator = described_class.new(empty_data, zip_file)
       expect(validator.count_references).to eq(0)
     end
@@ -46,7 +46,7 @@ RSpec.describe Bulkrax::FileValidator do
     end
 
     it 'identifies missing files' do
-      data_with_missing = csv_data + [{ file: 'missing.jpg' }]
+      data_with_missing = csv_data + [{ file_values: ['missing.jpg'] }]
       validator = described_class.new(data_with_missing, zip_file)
       expect(validator.missing_files).to include('missing.jpg')
     end
@@ -58,7 +58,7 @@ RSpec.describe Bulkrax::FileValidator do
 
     context 'with delimiter-separated file references in a single cell' do
       let(:csv_data_multi) do
-        [{ file: 'Cornus_drummondii.jpg|ArtThumbnail.JPG', source_identifier: 'work1' }]
+        [{ file_values: ['Cornus_drummondii.jpg|ArtThumbnail.JPG'], source_identifier: 'work1' }]
       end
 
       let(:zip_with_both) do
@@ -102,8 +102,8 @@ RSpec.describe Bulkrax::FileValidator do
     context 'with paths in file references' do
       let(:csv_data_with_paths) do
         [
-          { file: 'images/photo.jpg', source_identifier: 'work1' },
-          { file: 'documents/report.pdf', source_identifier: 'work2' }
+          { file_values: ['images/photo.jpg'], source_identifier: 'work1' },
+          { file_values: ['documents/report.pdf'], source_identifier: 'work2' }
         ]
       end
 
@@ -128,7 +128,7 @@ RSpec.describe Bulkrax::FileValidator do
       end
 
       it 'identifies missing files when basenames do not match' do
-        data_with_missing = csv_data_with_paths + [{ file: 'path/to/missing.jpg' }]
+        data_with_missing = csv_data_with_paths + [{ file_values: ['path/to/missing.jpg'] }]
         validator = described_class.new(data_with_missing, zip_with_paths)
         expect(validator.missing_files).to eq(['missing.jpg'])
       end
@@ -147,7 +147,7 @@ RSpec.describe Bulkrax::FileValidator do
     end
 
     it 'only counts files that exist in zip' do
-      data_with_missing = csv_data + [{ file: 'missing.jpg' }]
+      data_with_missing = csv_data + [{ file_values: ['missing.jpg'] }]
       validator = described_class.new(data_with_missing, zip_file)
       expect(validator.found_files_count).to eq(2)
     end
@@ -155,9 +155,9 @@ RSpec.describe Bulkrax::FileValidator do
     context 'with paths in file references and zip entries' do
       let(:csv_data_with_paths) do
         [
-          { file: 'images/photo.jpg', source_identifier: 'work1' },
-          { file: 'documents/report.pdf', source_identifier: 'work2' },
-          { file: 'nested/path/to/file.txt', source_identifier: 'work3' }
+          { file_values: ['images/photo.jpg'], source_identifier: 'work1' },
+          { file_values: ['documents/report.pdf'], source_identifier: 'work2' },
+          { file_values: ['nested/path/to/file.txt'], source_identifier: 'work3' }
         ]
       end
 
@@ -184,8 +184,8 @@ RSpec.describe Bulkrax::FileValidator do
 
       it 'counts only matching basenames even with different paths' do
         mixed_data = [
-          { file: 'path1/found.jpg', source_identifier: 'work1' },
-          { file: 'path2/notfound.jpg', source_identifier: 'work2' }
+          { file_values: ['path1/found.jpg'], source_identifier: 'work1' },
+          { file_values: ['path2/notfound.jpg'], source_identifier: 'work2' }
         ]
         mixed_zip = Tempfile.new(['test', '.zip'])
         Zip::File.open(mixed_zip.path, create: true) do |zipfile|
@@ -216,7 +216,7 @@ RSpec.describe Bulkrax::FileValidator do
 
   describe '#possible_missing_files?' do
     it 'returns false when no file references in CSV' do
-      empty_data = [{ file: nil }, { file: '' }]
+      empty_data = [{ file_values: [] }, { file_values: [] }]
       validator = described_class.new(empty_data, zip_file)
 
       expect(validator.possible_missing_files?).to be false
@@ -229,7 +229,7 @@ RSpec.describe Bulkrax::FileValidator do
     end
 
     it 'returns false when zip provided even if some files missing from zip' do
-      data_with_missing = csv_data + [{ file: 'missing.jpg' }]
+      data_with_missing = csv_data + [{ file_values: ['missing.jpg'] }]
       validator = described_class.new(data_with_missing, zip_file)
 
       expect(validator.possible_missing_files?).to be false
@@ -265,8 +265,8 @@ RSpec.describe Bulkrax::FileValidator do
     context 'with paths in file references' do
       let(:csv_data_with_paths) do
         [
-          { file: 'images/photo.jpg', source_identifier: 'work1' },
-          { file: 'documents/report.pdf', source_identifier: 'work2' }
+          { file_values: ['images/photo.jpg'], source_identifier: 'work1' },
+          { file_values: ['documents/report.pdf'], source_identifier: 'work2' }
         ]
       end
 
@@ -307,9 +307,9 @@ RSpec.describe Bulkrax::FileValidator do
 
       it 'handles mix of present and absent file references' do
         mixed_data = [
-          { file: 'image1.jpg', source_identifier: 'work1' },
-          { file: nil, source_identifier: 'work2' },
-          { file: '', source_identifier: 'work3' }
+          { file_values: ['image1.jpg'], source_identifier: 'work1' },
+          { file_values: [], source_identifier: 'work2' },
+          { file_values: [], source_identifier: 'work3' }
         ]
         validator = described_class.new(mixed_data, zip_file)
 
@@ -323,7 +323,7 @@ RSpec.describe Bulkrax::FileValidator do
   # #file_paths and CsvEntry#add_file.
   describe 'split behaviour for the file column' do
     context 'with no `file` mapping configured' do
-      let(:csv_data) { [{ file: 'sun.jpg;moon.jpg', source_identifier: 'work1' }] }
+      let(:csv_data) { [{ file_values: ['sun.jpg;moon.jpg'], source_identifier: 'work1' }] }
 
       it 'falls back to Bulkrax.multi_value_element_split_on' do
         validator = described_class.new(csv_data, nil)
@@ -336,7 +336,7 @@ RSpec.describe Bulkrax::FileValidator do
     # match, so this spec genuinely distinguishes honouring-the-config from
     # falling back to the default.
     context 'when the `file` mapping configures a non-default split' do
-      let(:csv_data) { [{ file: 'sun.jpg,moon.jpg', source_identifier: 'work1' }] }
+      let(:csv_data) { [{ file_values: ['sun.jpg,moon.jpg'], source_identifier: 'work1' }] }
 
       around do |spec|
         old = Bulkrax.field_mappings['Bulkrax::CsvParser']

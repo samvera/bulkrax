@@ -357,27 +357,16 @@ module Bulkrax
       return [] if importerexporter.metadata_only?
 
       # Compute once — these don't vary per record.
-      file_mapping  = Bulkrax.field_mappings.dig(self.class.to_s, 'file', :from)&.first&.to_sym || :file
+      file_headers  = Bulkrax::FieldResolver.headers_for_field(Bulkrax.field_mappings[self.class.to_s], 'file')
       split_pattern = self.class.file_split_pattern
       files_dir     = path_to_files
 
       @file_paths ||= records.map do |r|
-        next if r[file_mapping].blank?
+        raw_values = r.select { |key, _| Bulkrax::FieldResolver.header_for_any?(key, file_headers) }.values.reject(&:blank?)
+        next if raw_values.empty?
         raise StandardError, "Record references local files but no files directory could be resolved from the import path" if files_dir.nil?
 
-        r[file_mapping].split(split_pattern).map do |f|
-          reference = f.strip
-          # Try the reference as written first, then the space->underscore
-          # variant produced by #remove_spaces_from_filenames. The rename only
-          # rewrites the top level of files/ (see unzip_spec), so nested
-          # attachments keep their spaces on disk and only match as written.
-          file = [reference, reference.tr(' ', '_')].uniq
-                                                    .map { |candidate| File.join(files_dir, candidate) }
-                                                    .find { |candidate| File.exist?(candidate) }
-          raise "File #{File.join(files_dir, reference)} does not exist" if file.nil?
-
-          file
-        end
+        raw_values.flat_map { |v| v.split(split_pattern) }.map { |f| existing_file_path(files_dir, f.strip) }
       end.flatten.compact.uniq
     end
 
@@ -481,6 +470,19 @@ module Bulkrax
 
       row = entry_class.read_first_row(file_for_import)
       entry_class.data_for_entry(row, nil, self).keys.compact.uniq if row
+    end
+
+    # Try the reference as written first, then the space->underscore
+    # variant produced by #remove_spaces_from_filenames. The rename only
+    # rewrites the top level of files/ (see unzip_spec), so nested
+    # attachments keep their spaces on disk and only match as written.
+    def existing_file_path(files_dir, reference)
+      file = [reference, reference.tr(' ', '_')].uniq
+                                                .map { |candidate| File.join(files_dir, candidate) }
+                                                .find { |candidate| File.exist?(candidate) }
+      raise "File #{File.join(files_dir, reference)} does not exist" if file.nil?
+
+      file
     end
 
     # Memoized base directory under which import attachments live. Kept

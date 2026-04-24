@@ -14,6 +14,24 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
   before { Bulkrax.object_factory = Bulkrax::ValkyrieObjectFactory }
   after  { Bulkrax.object_factory = Bulkrax::ObjectFactory }
 
+  describe '#parse_validation_rows' do
+    let(:raw_csv) do
+      Bulkrax::CsvEntry.read_data(StringIO.new("source_identifier,item,file_1\nw1,a.jpg,b.jpg\n"))
+    end
+
+    let(:record) do
+      host.parse_validation_rows(raw_csv, :source_identifier, :parents, :children, %w[item file]).first
+    end
+
+    it 'keeps `file` as the cell under the first file alias' do
+      expect(record[:file]).to eq('a.jpg')
+    end
+
+    it 'lists every file cell, numbered columns included, in `file_values`' do
+      expect(record[:file_values]).to eq(%w[a.jpg b.jpg])
+    end
+  end
+
   describe '#find_record_by_source_identifier' do
     let(:work_identifier)        { 'source' }
     let(:work_identifier_search) { 'source_sim' }

@@ -182,7 +182,7 @@ Each validator receives:
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `record` | Hash | Parsed row with `:source_identifier`, `:model`, `:parent`, `:children`, `:file`, `:raw_row` |
+| `record` | Hash | Parsed row with `:source_identifier`, `:model`, `:parent`, `:children`, `:file` (the cell under the first file alias), `:file_values` (every file cell, numbered columns included), `:raw_row` |
 | `row_number` | Integer | 1-indexed row number (accounting for header row) |
 | `context` | Hash | Shared validation context |
 

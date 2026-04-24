@@ -882,6 +882,47 @@ module Bulkrax
           expect(result).to include('spec/fixtures/csv/files/sun.jpg', 'spec/fixtures/csv/files/moon.jpg')
         end
       end
+
+      context 'when the `file` mapping aliases the column' do
+        before do
+          allow(Bulkrax).to receive(:field_mappings).and_return(
+            'Bulkrax::CsvParser' => { 'file' => { 'from' => %w[item file], 'split' => '\\|' } }
+          )
+          allow(subject).to receive(:path_to_files).and_return('spec/fixtures/csv/files')
+          allow(File).to receive(:exist?).and_return(true)
+        end
+
+        it 'returns paths when the record uses the canonical `file` key' do
+          allow(subject).to receive(:records).and_return([{ file: 'sun.jpg' }])
+          expect(subject.file_paths).to include('spec/fixtures/csv/files/sun.jpg')
+        end
+
+        it 'returns paths when the record uses an aliased key (`item`)' do
+          allow(subject).to receive(:records).and_return([{ item: 'sun.jpg' }])
+          expect(subject.file_paths).to include('spec/fixtures/csv/files/sun.jpg')
+        end
+
+        it 'returns paths from numbered columns under any alias' do
+          allow(subject).to receive(:records).and_return([{ item_1: 'sun.jpg', file_2: 'moon.jpg' }])
+          expect(subject.file_paths).to include(
+            'spec/fixtures/csv/files/sun.jpg',
+            'spec/fixtures/csv/files/moon.jpg'
+          )
+        end
+
+        it 'returns paths from columns numbered with a prefix' do
+          allow(subject).to receive(:records).and_return([{ '1_item': 'sun.jpg' }])
+          expect(subject.file_paths).to include('spec/fixtures/csv/files/sun.jpg')
+        end
+
+        it 'combines file values from multiple aliased columns in one record' do
+          allow(subject).to receive(:records).and_return([{ file: 'sun.jpg', item: 'moon.jpg' }])
+          expect(subject.file_paths).to include(
+            'spec/fixtures/csv/files/sun.jpg',
+            'spec/fixtures/csv/files/moon.jpg'
+          )
+        end
+      end
     end
 
     describe '#missing_elements' do

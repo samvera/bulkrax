@@ -39,7 +39,7 @@ into the existing `Bulkrax::CsvRow::*` row-validator framework. Reasoning:
   shape (flat `missingFiles` basename list with no row attribution).
 - Per-row errors are strictly more informative than aggregated basename lists:
   users see which row references which missing file, not just the union.
-- Path-awareness is natural: each row validator sees `record[:file]` and can
+- Path-awareness is natural: each row validator sees `record[:file_values]` and can
   compare full relative paths against a shared plan passed in via `context`.
 
 ## Prerequisites from the extraction fix
@@ -112,10 +112,7 @@ module Bulkrax
         plan = context[:zip_plan]
         return if plan.nil?  # no zip uploaded
 
-        value = record[:file]
-        return if value.blank?
-
-        value.split(Bulkrax.multi_value_element_split_on).each do |raw|
+        Array(record[:file_values]).flat_map { |cell| cell.split(Bulkrax.multi_value_element_split_on) }.each do |raw|
           path = raw.strip
           next if path.blank?
           next if plan.available_paths.include?(path)
@@ -213,7 +210,7 @@ Keep this as a run-level **notice**, not a row error. Similar to
 
 ```ruby
 def append_missing_zip_notice!(notices, csv_data)
-  return if csv_data.none? { |r| r[:file].present? }
+  return if csv_data.none? { |r| r[:file_values].present? }
   return if zip_present?
   notices << {
     field: 'file',

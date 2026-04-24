@@ -44,5 +44,20 @@ module Bulkrax
       aliases = Array(entry['from'] || entry[:from])
       (aliases + [canonical_key]).uniq
     end
+
+    # The header import maps, after dropping column numbering such as
+    # `creator_1` or `1_creator`.
+    def self.key_without_numbers(header)
+      header.to_s.gsub(/_\d+/, '').sub(/^\d+_/, '')
+    end
+
+    # Whether import reads `header` into a field that `aliases` names.
+    #
+    # @param header [String, Symbol] a CSV header
+    # @param aliases [Array<String, Symbol>]
+    # @return [Boolean]
+    def self.header_for_any?(header, aliases)
+      Array(aliases).map(&:to_s).include?(key_without_numbers(header))
+    end
   end
 end

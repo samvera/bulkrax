@@ -13,7 +13,7 @@ module Bulkrax
     end
 
     def count_references
-      @csv_data.count { |item| item[:file].present? }
+      @csv_data.count { |item| item[:file_values].present? }
     end
 
     def missing_files
@@ -43,9 +43,11 @@ module Bulkrax
 
     def referenced_files
       @referenced_files ||= @csv_data.flat_map do |item|
-        next [] if item[:file].blank?
+        next [] if item[:file_values].blank?
 
-        item[:file].split(Bulkrax::CsvParser.file_split_pattern).map { |f| File.basename(f.strip) }
+        Array(item[:file_values]).flat_map do |value|
+          value.to_s.split(Bulkrax::CsvParser.file_split_pattern).map { |f| File.basename(f.strip) }
+        end
       end.compact
     end
 
