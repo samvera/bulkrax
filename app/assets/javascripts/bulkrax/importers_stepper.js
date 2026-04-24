@@ -1941,8 +1941,10 @@
   }
 
   // Render one review-section (errors or warnings) on Step 3 from a list of
-  // validation issues. Row-level issues get a per-category breakdown.
-  function renderReviewIssueSection(issues, sectionSelector, listSelector, rowLevelType) {
+  // validation issues. Each issue gets a breakdown appropriate to its shape:
+  // row-level issues group by category, missing_required_fields groups by
+  // model, everything else is a flat list of field names.
+  function renderReviewIssueSection(issues, sectionSelector, listSelector) {
     if (!issues.length) {
       $(listSelector).empty()
       $(sectionSelector).hide()
@@ -1958,12 +1960,51 @@
       if (detail) { html += ' — ' + detail }
       html += '</p>'
 
-      if (issue.type === rowLevelType && issue.items && issue.items.length) {
-        html += renderWarningCategoryBreakdown(issue.items)
-      }
+      html += renderReviewIssueBreakdown(issue)
     })
     $(listSelector).html(html)
     $(sectionSelector).show()
+  }
+
+  // Pick the right breakdown renderer for an issue on the Step 3 summary.
+  function renderReviewIssueBreakdown(issue) {
+    var items = issue.items || []
+    if (!items.length) return ''
+
+    if (issue.type === 'row_level_errors' || issue.type === 'row_level_warnings') {
+      return renderWarningCategoryBreakdown(items)
+    }
+    if (issue.type === 'missing_required_fields' && items.some(function (i) { return i.model })) {
+      return renderMissingRequiredBreakdown(items)
+    }
+    return renderFieldListBreakdown(items)
+  }
+
+  // Missing required fields grouped by model, matching the Step 1 accordion layout.
+  function renderMissingRequiredBreakdown(items) {
+    var grouped = groupItemsByModel(items)
+    var html = '<ul class="review-warning-categories">'
+    Object.keys(grouped).forEach(function (modelName) {
+      var fields = grouped[modelName].map(escapeHtml).join(', ')
+      html += '<li><strong>' + escapeHtml(modelName) + ':</strong> ' + fields + '</li>'
+    })
+    html += '</ul>'
+    return html
+  }
+
+  // Flat list of `field — message` entries — used for unrecognized fields,
+  // file references, notices. Message provides the context a bare field name
+  // lacks (e.g. "No model column found — all rows will be imported as …").
+  function renderFieldListBreakdown(items) {
+    var html = '<ul class="review-warning-categories">'
+    items.forEach(function (item) {
+      if (!item || !item.field) return
+      var line = escapeHtml(item.field)
+      if (item.message) line += ' — ' + escapeHtml(item.message)
+      html += '<li>' + line + '</li>'
+    })
+    html += '</ul>'
+    return html
   }
 
   // Render a bulleted breakdown of row-warning items grouped by category.
@@ -2482,8 +2523,8 @@
     var errorIssues = allIssues.filter(function (issue) { return issue.severity === 'error' })
     var warningIssues = allIssues.filter(function (issue) { return issue.severity === 'warning' })
 
-    renderReviewIssueSection(errorIssues, '.review-errors', '.review-errors-list', 'row_level_errors')
-    renderReviewIssueSection(warningIssues, '.review-warnings', '.review-warnings-list', 'row_level_warnings')
+    renderReviewIssueSection(errorIssues, '.review-errors', '.review-errors-list')
+    renderReviewIssueSection(warningIssues, '.review-warnings', '.review-warnings-list')
 
     // Large import warning
     $('.total-items-count').text(totalItems)
