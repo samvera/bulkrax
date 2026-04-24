@@ -17,13 +17,22 @@ zh:
         record_link: "%{record_type} 链接"
         unknown: 未知
     exporter:
+      hints:
+        generated_metadata: 这些导出的字段目前无法导入。
+        include_thumbnails: 这些导出的字段目前无法导入。
+        limit: 留空或填 0 表示所有记录
       labels:
         all: 全部
         collection: 收藏
+        collection_entries: 收藏条目
+        export_format: 导出格式
         export_from: 导出
         export_source: 出口来源
         export_type: 出口类型
         field_mapping: 田间测绘
+        file_set_entries: 文件集条目
+        filter_by_date: 按日期筛选
+        finish_date: 结束日期
         full: 元数据和文件
         generated_metadata: 是否包含生成的元数据？
         importer: 进口商
@@ -33,7 +42,20 @@ zh:
         name: 姓名
         parser_fields: 解析器字段
         parser_klass: 解析器
+        start_date: 开始日期
+        status: 状态
+        total_entries: 条目总数
+        total_work_entries: 作品总数
         user: 用户
+        work_entries: 作品条目
+        workflow_status:
+          approved: 已批准
+          broken_url: URL 失效
+          deleted: 已删除
+          in_process: 处理中
+          ingested: 已摄入
+          needs_repair: 需要修复
+          unapproved: 未批准
         worktype: 工作类型
       prompts:
         export_from: 请选择导出源
@@ -96,8 +118,10 @@ zh:
         override_rights_statement: 如果选中，则始终使用选定的权限语句。如果未选中，则使用记录中的权限或权限语句，并且仅当 dc:rights 为空时才使用提供的值。
       labels:
         admin_set: 管理集
+        collection_entries: 收藏条目
         entry_id: 条目 ID
         exporter: 出口商
+        file_set_entries: 文件集条目
         frequency: 频率
         identifier: 标识符
         importer: 进口商
@@ -109,6 +133,7 @@ zh:
         total_work_entries: 总作品
         type: 类型
         user: 用户
+        work_entries: 作品条目
       oai:
         hints:
           metadata_prefix: 例如 oai_dc、dcterms 或 oai_qdc
@@ -185,6 +210,8 @@ zh:
           review_total: 总计 %{total} — %{collections} 个收藏集，%{works} 个作品，%{file_sets} 个文件集
           review_visibility: 能见度：
           server_error: 验证过程中服务器出错。请重试或联系客服。
+          existing_record_badge: 已存在
+          existing_record_title: 此记录已存在于存储库中，导入时将进行关联。
           shared_badge: 共享
           starting: 开始...
           upload_csv_and_zip: CSV 文件和其他文件单独上传
@@ -220,6 +247,7 @@ zh:
           next_step: 下一个
           skip_validation: 跳过验证
           start_import: 开始导入
+        feedback_link: 报告错误 / 反馈
         page_subtitle: 通过 CSV 导入收藏集、作品和文件
         page_title: 开始批量导入
         step1:
@@ -335,6 +363,14 @@ zh:
             errors:
               message: "引用的父级 '%{value}' 在此 CSV 中不存在对应的 %{field}。"
               suggestion: "请检查拼写错误或添加父级记录。"
+          child_reference_validator:
+            errors:
+              message: "引用的子级 '%{value}' 在此 CSV 中不存在对应的 %{field}。"
+              suggestion: "请检查拼写错误或添加子级记录。"
+          circular_reference_validator:
+            errors:
+              message: "'%{value}' 属于循环的父子关系。"
+              suggestion: "请检查父级/子级列并移除错误的引用。"
           passed: 验证通过
           passed_warnings: 验证通过，但存在警告
           recognized_fields: 已识别字段：%{fields}
@@ -352,6 +388,7 @@ zh:
               message: "字段 '%{field}' 是必填项，但此行中该字段为空。"
               suggestion: "请为 '%{field}' 添加一个值。"
           unable_to_process: 无法处理文件进行验证
+          empty_column: '第 %{column} 列（无标题）'
           notices_desc: '这些通知可能会影响您的 CSV 的导入方式：'
           notices_title: 导入通知
           unrecognized_desc: 导入过程中将忽略以下列：
@@ -416,6 +453,7 @@ zh:
         name: 姓名
         next_run: 下一轮
         status: 地位
+        status_set_at: 状态设置时间
         total_collection_entries: 总收款条目
         total_file_set_entries: 文件集条目总数
         total_work_entries: 总工作条目

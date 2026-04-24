@@ -17,13 +17,22 @@ de:
         record_link: "%{record_type} Link"
         unknown: Unbekannt
     exporter:
+      hints:
+        generated_metadata: Diese exportierten Felder können derzeit nicht importiert werden.
+        include_thumbnails: Diese exportierten Felder können derzeit nicht importiert werden.
+        limit: Lassen Sie das Feld leer oder geben Sie 0 ein, um alle Datensätze einzuschließen.
       labels:
         all: Alle
         collection: Sammlung
+        collection_entries: Sammlungseinträge
+        export_format: Exportformat
         export_from: Exportieren von
         export_source: Exportquelle
         export_type: Art des Exports
         field_mapping: Feldzuordnung
+        file_set_entries: Dateisatzeinträge
+        filter_by_date: Nach Datum filtern
+        finish_date: Enddatum
         full: Metadaten und Dateien
         generated_metadata: Generierte Metadaten einbeziehen?
         importer: Importeur
@@ -33,7 +42,20 @@ de:
         name: Name
         parser_fields: Parserfelder
         parser_klass: Parser
+        start_date: Startdatum
+        status: Status
+        total_entries: Gesamtzahl der Einträge
+        total_work_entries: Gesamtzahl der Werke
         user: Benutzer
+        work_entries: Werkeinträge
+        workflow_status:
+          approved: Genehmigt
+          broken_url: Defekte URL
+          deleted: Gelöscht
+          in_process: In Bearbeitung
+          ingested: Aufgenommen
+          needs_repair: Benötigt Reparatur
+          unapproved: Nicht genehmigt
         worktype: Arbeitsart
       prompts:
         export_from: Bitte wählen Sie eine Exportquelle aus.
@@ -96,8 +118,10 @@ de:
         override_rights_statement: Wenn diese Option aktiviert ist, wird immer die ausgewählte Rechteanweisung verwendet. Wenn sie deaktiviert ist, werden die Rechteanweisung oder die Rechteanweisung aus dem Datensatz verwendet. Der angegebene Wert wird nur verwendet, wenn dc:rights leer ist.
       labels:
         admin_set: Verwaltungssatz
+        collection_entries: Sammlungseinträge
         entry_id: Eintrags-ID
         exporter: Exporteur
+        file_set_entries: Dateisatzeinträge
         frequency: Frequenz
         identifier: Kennung
         importer: Importeur
@@ -109,6 +133,7 @@ de:
         total_work_entries: Total Works
         type: Typ
         user: Benutzer
+        work_entries: Werkeinträge
       oai:
         hints:
           metadata_prefix: Zum Beispiel oai_dc, dcterms oder oai_qdc
@@ -185,6 +210,8 @@ de:
           review_total: "%{total} Gesamt — %{collections} Sammlungen, %{works} Werke, %{file_sets} Dateisätze"
           review_visibility: 'Sichtweite:'
           server_error: Bei der Validierung ist ein Serverfehler aufgetreten. Bitte versuchen Sie es erneut oder kontaktieren Sie den Support.
+          existing_record_badge: vorhanden
+          existing_record_title: Dieser Datensatz ist bereits im Repository vorhanden und wird beim Import verknüpft.
           shared_badge: geteilt
           starting: Es geht los...
           upload_csv_and_zip: CSV-Dateien + separat hochgeladene Dateien
@@ -336,6 +363,14 @@ de:
             errors:
               message: "Das referenzierte übergeordnete Element '%{value}' existiert nicht als %{field} in dieser CSV-Datei."
               suggestion: "Prüfen Sie auf Tippfehler oder fügen Sie den Datensatz für das übergeordnete Element hinzu."
+          child_reference_validator:
+            errors:
+              message: "Das referenzierte untergeordnete Element '%{value}' existiert nicht als %{field} in dieser CSV-Datei."
+              suggestion: "Prüfen Sie auf Tippfehler oder fügen Sie den Datensatz für das untergeordnete Element hinzu."
+          circular_reference_validator:
+            errors:
+              message: "'%{value}' ist Teil einer zirkulären Eltern-Kind-Beziehung."
+              suggestion: "Überprüfen Sie die Eltern-/Kind-Spalten und entfernen Sie die fehlerhaften Referenzen."
           passed: Validierung erfolgreich
           passed_warnings: Validierung mit Warnungen bestanden
           recognized_fields: 'Erkannte Felder: %{fields}'
@@ -353,6 +388,7 @@ de:
               message: "Das Feld '%{field}' ist erforderlich, ist aber für diese Zeile leer."
               suggestion: "Geben Sie einen Wert für '%{field}' ein."
           unable_to_process: Die Validierungsdateien konnten nicht verarbeitet werden.
+          empty_column: 'Spalte %{column} (keine Überschrift)'
           notices_desc: 'Diese Hinweise können Auswirkungen auf den Import Ihrer CSV-Datei haben:'
           notices_title: Importhinweise
           unrecognized_desc: 'Diese Spalten werden beim Import ignoriert:'
@@ -417,6 +453,7 @@ de:
         name: Name
         next_run: Nächster Lauf
         status: Status
+        status_set_at: Status gesetzt am
         total_collection_entries: Gesamtzahl der Sammlungseinträge
         total_file_set_entries: Gesamtzahl der Dateisätze
         total_work_entries: Gesamtzahl der Arbeitseinsätze

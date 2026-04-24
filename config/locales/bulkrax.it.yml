@@ -17,13 +17,22 @@ it:
         record_link: Collegamento %{record_type}
         unknown: Sconosciuto
     exporter:
+      hints:
+        generated_metadata: Questi campi esportati non possono essere importati al momento.
+        include_thumbnails: Questi campi esportati non possono essere importati al momento.
+        limit: Lasciare vuoto o 0 per tutti i record
       labels:
         all: Tutto
         collection: Collezione
+        collection_entries: Voci di raccolta
+        export_format: Formato di esportazione
         export_from: Esporta da
         export_source: Esporta origine
         export_type: Tipo di esportazione
         field_mapping: Mappatura del campo
+        file_set_entries: Voci di insieme di file
+        filter_by_date: Filtra per data
+        finish_date: Data di fine
         full: Metadati e file
         generated_metadata: Includere metadati generati?
         importer: Importatore
@@ -33,7 +42,20 @@ it:
         name: Nome
         parser_fields: Campi del parser
         parser_klass: Analizzatore
+        start_date: Data di inizio
+        status: Stato
+        total_entries: Voci totali
+        total_work_entries: Totale opere
         user: Utente
+        work_entries: Voci di opere
+        workflow_status:
+          approved: Approvato
+          broken_url: URL non funzionante
+          deleted: Eliminato
+          in_process: In elaborazione
+          ingested: Acquisito
+          needs_repair: Da riparare
+          unapproved: Non approvato
         worktype: Tipo di lavoro
       prompts:
         export_from: Seleziona una fonte di esportazione
@@ -96,8 +118,10 @@ it:
         override_rights_statement: Se selezionata, utilizza sempre l'istruzione dei diritti selezionata. Se non selezionata, utilizza rights o rights_statement dal record e utilizza il valore fornito solo se dc:rights è vuoto.
       labels:
         admin_set: Insieme amministrativo
+        collection_entries: Voci di raccolta
         entry_id: ID di ingresso
         exporter: Esportatore
+        file_set_entries: Voci di insieme di file
         frequency: Frequenza
         identifier: Identificatore
         importer: Importatore
@@ -109,6 +133,7 @@ it:
         total_work_entries: Opere totali
         type: Tipo
         user: Utente
+        work_entries: Voci di opere
       oai:
         hints:
           metadata_prefix: Come oai_dc, dcterms o oai_qdc
@@ -185,6 +210,8 @@ it:
           review_total: "%{total} totale — %{collections} collezioni, %{works} opere, %{file_sets} set di file"
           review_visibility: 'Visibilità:'
           server_error: Errore del server durante la convalida. Riprova o contatta l'assistenza.
+          existing_record_badge: esistente
+          existing_record_title: Questo record esiste già nell'archivio e verrà collegato durante l'importazione.
           shared_badge: condiviso
           starting: Di partenza...
           upload_csv_and_zip: CSV + file caricati separatamente
@@ -336,6 +363,14 @@ it:
             errors:
               message: "Il genitore referenziato '%{value}' non esiste come %{field} in questo CSV."
               suggestion: "Controllare eventuali errori di battitura o aggiungere il record genitore."
+          child_reference_validator:
+            errors:
+              message: "Il figlio referenziato '%{value}' non esiste come %{field} in questo CSV."
+              suggestion: "Controllare eventuali errori di battitura o aggiungere il record figlio."
+          circular_reference_validator:
+            errors:
+              message: "'%{value}' fa parte di una relazione padre-figlio circolare."
+              suggestion: "Rivedere le colonne padre/figlio e rimuovere i riferimenti errati."
           passed: Validazione superata
           passed_warnings: Validazione superata con avvisi
           recognized_fields: 'Campi riconosciuti: %{fields}'
@@ -353,6 +388,7 @@ it:
               message: "Il campo '%{field}' è obbligatorio ma è vuoto per questa riga."
               suggestion: "Aggiungi un valore per '%{field}'."
           unable_to_process: Impossibile elaborare i file per la convalida
+          empty_column: 'Colonna %{column} (senza intestazione)'
           notices_desc: 'Questi avvisi potrebbero influire sul modo in cui il tuo CSV viene importato:'
           notices_title: Avvisi di importazione
           unrecognized_desc: 'Queste colonne verranno ignorate durante l''importazione:'
@@ -417,6 +453,7 @@ it:
         name: Nome
         next_run: Prossima corsa
         status: Stato
+        status_set_at: Stato impostato il
         total_collection_entries: Totale voci di raccolta
         total_file_set_entries: Numero totale di voci del set di file
         total_work_entries: Totale voci di lavoro

@@ -17,13 +17,22 @@ es:
         record_link: Enlace %{record_type}
         unknown: Desconocido
     exporter:
+      hints:
+        generated_metadata: Estos campos exportados no se pueden importar actualmente.
+        include_thumbnails: Estos campos exportados no se pueden importar actualmente.
+        limit: Deje en blanco o 0 para todos los registros
       labels:
         all: Todo
         collection: Recopilación
+        collection_entries: Entradas de colección
+        export_format: Formato de exportación
         export_from: Exportar desde
         export_source: Fuente de exportación
         export_type: Tipo de Exportación
         field_mapping: Mapeo de campos
+        file_set_entries: Entradas de conjunto de archivos
+        filter_by_date: Filtrar por fecha
+        finish_date: Fecha de finalización
         full: Metadatos y archivos
         generated_metadata: "¿Incluir metadatos generados?"
         importer: Importador
@@ -33,7 +42,20 @@ es:
         name: Nombre
         parser_fields: Campos del analizador
         parser_klass: Analizador sintáctico
+        start_date: Fecha de inicio
+        status: Estado
+        total_entries: Total de entradas
+        total_work_entries: Total de obras
         user: Usuario
+        work_entries: Entradas de obras
+        workflow_status:
+          approved: Aprobado
+          broken_url: URL rota
+          deleted: Eliminado
+          in_process: En proceso
+          ingested: Ingresado
+          needs_repair: Necesita reparación
+          unapproved: No aprobado
         worktype: Tipo de trabajo
       prompts:
         export_from: Por favor seleccione una fuente de exportación
@@ -96,8 +118,10 @@ es:
         override_rights_statement: Si está marcada, usar siempre la declaración de derechos seleccionada. Si no está marcada, usar los derechos o la declaración de derechos del registro y usar solo el valor proporcionado si dc:rights está en blanco.
       labels:
         admin_set: Conjunto administrativo
+        collection_entries: Entradas de colección
         entry_id: ID de entrada
         exporter: Exportador
+        file_set_entries: Entradas de conjunto de archivos
         frequency: Frecuencia
         identifier: Identificador
         importer: Importador
@@ -109,6 +133,7 @@ es:
         total_work_entries: Obras totales
         type: Tipo
         user: Usuario
+        work_entries: Entradas de obras
       oai:
         hints:
           metadata_prefix: Como oai_dc, dcterms o oai_qdc
@@ -185,6 +210,8 @@ es:
           review_total: "%{total} en total: %{collections} colecciones, %{works} obras, %{file_sets} conjuntos de archivos"
           review_visibility: 'Visibilidad:'
           server_error: Error del servidor durante la validación. Inténtalo de nuevo o contacta con el soporte técnico.
+          existing_record_badge: existente
+          existing_record_title: Este registro ya existe en el repositorio y se enlazará durante la importación.
           shared_badge: compartido
           starting: A partir de...
           upload_csv_and_zip: CSV + archivos cargados por separado
@@ -336,6 +363,14 @@ es:
             errors:
               message: "El elemento primario referenciado '%{value}' no existe como %{field} en este CSV."
               suggestion: "Busque errores tipográficos o añada el registro primario."
+          child_reference_validator:
+            errors:
+              message: "El elemento secundario referenciado '%{value}' no existe como %{field} en este CSV."
+              suggestion: "Busque errores tipográficos o añada el registro secundario."
+          circular_reference_validator:
+            errors:
+              message: "'%{value}' forma parte de una relación padre-hijo circular."
+              suggestion: "Revise las columnas de padre/hijo y elimine las referencias incorrectas."
           passed: Validación aprobada
           passed_warnings: Validación aprobada con advertencias
           recognized_fields: 'Campos reconocidos: %{fields}'
@@ -353,6 +388,7 @@ es:
               message: "El campo '%{field}' es obligatorio pero está vacío para esta fila."
               suggestion: "Añada un valor para '%{field}'."
           unable_to_process: No se pueden procesar archivos para su validación
+          empty_column: 'Columna %{column} (sin encabezado)'
           notices_desc: 'Estos avisos pueden afectar cómo se importa su CSV:'
           notices_title: Avisos de importación
           unrecognized_desc: 'Estas columnas se ignorarán durante la importación:'
@@ -417,6 +453,7 @@ es:
         name: Nombre
         next_run: Próxima carrera
         status: Estado
+        status_set_at: Estado establecido en
         total_collection_entries: Entradas totales de la colección
         total_file_set_entries: Entradas totales del conjunto de archivos
         total_work_entries: Total de entradas de trabajo
