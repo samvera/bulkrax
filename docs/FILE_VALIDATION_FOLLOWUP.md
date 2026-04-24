@@ -2,7 +2,7 @@
 
 ## Context
 
-Guided-import validation currently uses `Bulkrax::CsvTemplate::FileValidator` to
+Guided-import validation currently uses `Bulkrax::FileValidator` to
 check whether files referenced in a CSV exist inside an uploaded zip. The check
 compares **basenames only** (`File.basename`), ignoring relative paths.
 
@@ -26,7 +26,7 @@ time with an unhelpful missing-file error.
 
 ## Architectural decision
 
-File validation moves from the standalone `CsvTemplate::FileValidator` class
+File validation moves from the standalone `Bulkrax::FileValidator` class
 into the existing `Bulkrax::CsvRow::*` row-validator framework. Reasoning:
 
 - Row validators are pluggable via `Bulkrax.csv_row_validators` — apps can
@@ -162,9 +162,9 @@ Emit different `category:` values so the UI and error CSV can distinguish:
 Each category gets its own i18n entry under
 `bulkrax.importer.guided_import.validation.file_reference_validator.errors.*`.
 
-### 5. Retire `CsvTemplate::FileValidator`
+### 5. Retire `Bulkrax::FileValidator`
 
-Delete `app/services/bulkrax/csv_template/file_validator.rb` or reduce to a
+Delete `app/services/bulkrax/file_validator.rb` or reduce to a
 stats helper that answers:
 
 - `zip_included?`

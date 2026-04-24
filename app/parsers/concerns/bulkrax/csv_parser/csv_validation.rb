@@ -50,7 +50,7 @@ module Bulkrax
           append_missing_model_notice!(notices, headers, csv_data)
 
           row_errors                       = run_row_validators(csv_data, all_ids, source_id_key, mappings, field_metadata, find_record, notices, mapping_manager: mapping_manager)
-          file_validator                   = CsvTemplate::FileValidator.new(csv_data, zip_file, admin_set_id)
+          file_validator                   = Bulkrax::FileValidator.new(csv_data, zip_file, admin_set_id)
           collections, works, file_sets    = extract_hierarchy_items(csv_data, all_ids, find_record, mappings)
           [notices, row_errors, file_validator, collections, works, file_sets]
         end

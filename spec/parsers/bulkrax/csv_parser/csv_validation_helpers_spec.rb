@@ -629,7 +629,7 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
   describe '#assemble_result' do
     let(:file_validator) do
       instance_double(
-        'Bulkrax::CsvTemplate::FileValidator',
+        'Bulkrax::FileValidator',
         missing_files: [],
         possible_missing_files?: false,
         count_references: 0,
