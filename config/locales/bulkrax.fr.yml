@@ -69,6 +69,7 @@ fr:
           other: 'Des erreurs %{count} ont empêché l''enregistrement de cet exportateur :'
     headings:
       edit_exporter: Modifier l'exportateur
+      exporters: Exportateurs
       importers: Importateurs
       new_exporter: Nouvel exportateur
       new_importer: Nouvel importateur
@@ -467,6 +468,29 @@ fr:
         total_work_entries: Nombre total d'entrées de travail
         type: Taper
         updated_at: Mise à jour le
+    datatable:
+      filters:
+        filter_by_entry_class: Filtrer par classe d'entrée
+        filter_by_status: Filtrer par statut
+      language:
+        empty_table: Aucune donnée disponible dans le tableau
+        info: Affichage de _START_ à _END_ sur _TOTAL_ entrées
+        info_empty: Affichage de 0 à 0 sur 0 entrées
+        info_filtered: (filtré à partir de _MAX_ entrées au total)
+        length_menu: Afficher _MENU_ entrées
+        loading_records: Chargement...
+        next: Suivant
+        previous: Précédent
+        processing: Traitement en cours...
+        search: 'Rechercher :'
+        zero_records: Aucun enregistrement correspondant trouvé
+      status:
+        complete: Terminé
+        complete_with_failures: Terminé (avec des échecs)
+        deleted: Supprimé
+        failed: Échoué
+        pending: En attente
+        skipped: Ignoré
   helpers:
     action:
       exporter:

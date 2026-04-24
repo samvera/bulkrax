@@ -69,6 +69,7 @@ de:
           other: "%{count}-Fehler verhinderten das Speichern dieses Exporters:"
     headings:
       edit_exporter: Exporter bearbeiten
+      exporters: Exporteure
       importers: Importeure
       new_exporter: Neuer Exporter
       new_importer: Neuer Importer
@@ -467,6 +468,29 @@ de:
         total_work_entries: Gesamtzahl der Arbeitseinsätze
         type: Typ
         updated_at: Aktualisiert am
+    datatable:
+      filters:
+        filter_by_entry_class: Nach Eintragsklasse filtern
+        filter_by_status: Nach Status filtern
+      language:
+        empty_table: Keine Daten in der Tabelle verfügbar
+        info: Zeige _START_ bis _END_ von _TOTAL_ Einträgen
+        info_empty: Zeige 0 bis 0 von 0 Einträgen
+        info_filtered: (gefiltert aus _MAX_ Gesamteinträgen)
+        length_menu: _MENU_ Einträge anzeigen
+        loading_records: Lade...
+        next: Weiter
+        previous: Zurück
+        processing: Wird verarbeitet...
+        search: 'Suche:'
+        zero_records: Keine passenden Einträge gefunden
+      status:
+        complete: Abgeschlossen
+        complete_with_failures: Abgeschlossen (mit Fehlern)
+        deleted: Gelöscht
+        failed: Fehlgeschlagen
+        pending: Ausstehend
+        skipped: Übersprungen
   helpers:
     action:
       exporter:

@@ -69,6 +69,7 @@ es:
           other: 'Los errores %{count} impidieron que se guardara este exportador:'
     headings:
       edit_exporter: Editar exportador
+      exporters: Exportadores
       importers: Importadores
       new_exporter: Nuevo exportador
       new_importer: Nuevo importador
@@ -467,6 +468,29 @@ es:
         total_work_entries: Total de entradas de trabajo
         type: Tipo
         updated_at: Actualizado en
+    datatable:
+      filters:
+        filter_by_entry_class: Filtrar por clase de entrada
+        filter_by_status: Filtrar por estado
+      language:
+        empty_table: No hay datos disponibles en la tabla
+        info: Mostrando _START_ a _END_ de _TOTAL_ entradas
+        info_empty: Mostrando 0 a 0 de 0 entradas
+        info_filtered: (filtrado de _MAX_ entradas en total)
+        length_menu: Mostrar _MENU_ entradas
+        loading_records: Cargando...
+        next: Siguiente
+        previous: Anterior
+        processing: Procesando...
+        search: 'Buscar:'
+        zero_records: No se encontraron registros coincidentes
+      status:
+        complete: Completo
+        complete_with_failures: Completo (con errores)
+        deleted: Eliminado
+        failed: Fallido
+        pending: Pendiente
+        skipped: Omitido
   helpers:
     action:
       exporter:

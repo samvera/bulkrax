@@ -69,6 +69,7 @@ en:
           other: "%{count} errors prohibited this exporter from being saved:"
     headings:
       edit_exporter: Edit Exporter
+      exporters: Exporters
       importers: Importers
       new_exporter: New Exporter
       new_importer: New Importer
@@ -467,6 +468,29 @@ en:
         total_work_entries: Total Work Entries
         type: Type
         updated_at: Updated At
+    datatable:
+      filters:
+        filter_by_entry_class: Filter by Entry Class
+        filter_by_status: Filter by Status
+      language:
+        empty_table: No data available in table
+        info: Showing _START_ to _END_ of _TOTAL_ entries
+        info_empty: Showing 0 to 0 of 0 entries
+        info_filtered: (filtered from _MAX_ total entries)
+        length_menu: Show _MENU_ entries
+        loading_records: Loading...
+        next: Next
+        previous: Previous
+        processing: Processing...
+        search: 'Search:'
+        zero_records: No matching records found
+      status:
+        complete: Complete
+        complete_with_failures: Complete (with failures)
+        deleted: Deleted
+        failed: Failed
+        pending: Pending
+        skipped: Skipped
   helpers:
     action:
       exporter:
