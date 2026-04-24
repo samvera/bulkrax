@@ -18,9 +18,6 @@ jobs:
       matrix:
         include:
           - ruby: '2.7'
-            rails: '~> 5.1'
-            hyrax: '~> 3.0'
-          - ruby: '2.7'
             rails: '~> 6.1'
             hyrax: '~> 4.0'
           - ruby: '3.3'
