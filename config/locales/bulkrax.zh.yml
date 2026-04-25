@@ -249,6 +249,7 @@ zh:
           warning_category_invalid_child_reference: 无效的子引用
           warning_category_invalid_controlled_value: 无效的受控词汇值
           warning_category_invalid_parent_reference: 无效的父引用
+          warning_category_missing_file_reference: "缺少引用的文件"
           warning_category_missing_required_value: 缺少必填值
           warning_category_missing_source_identifier: 缺少源标识符
           zip_limit: 仅允许上传 1 个 ZIP 文件。以下文件未添加：
@@ -367,6 +368,7 @@ zh:
           missing_rights_desc: 您的 CSV 文件不包含 rights_statement 列。您可以在下一步中将其添加到 CSV 文件中，或选择默认的权利声明。
           multiple_csv: ZIP 文件中的同一最浅层级下发现了多个 CSV 文件，无法确定主 CSV。请在该层级仅保留一个 CSV，其他 CSV 必须位于更深的目录中。
           no_csv_in_zip: ZIP 文件中未找到 CSV 文件
+          zip_unreadable: "无法读取 ZIP 文件（%{error}）。请重新创建 ZIP 文件并再次上传。"
           no_csv_uploaded: 未上传 CSV 元数据文件。
           no_files_uploaded: 未上传任何文件。
           no_zip_desc: 未上传 ZIP 文件。请确保服务器上的文件可访问，或上传 ZIP 文件。
@@ -382,6 +384,11 @@ zh:
             errors:
               message: "'%{value}' 属于循环的父子关系。"
               suggestion: "请检查父级/子级列并移除错误的引用。"
+          file_reference_validator:
+            errors:
+              missing_file_reference:
+                message: "引用的文件 '%{value}' 不在上传的 ZIP 文件中。"
+                suggestion: "请检查文件路径，并确保该文件在 ZIP 文件中的位置相同。"
           passed: 验证通过
           passed_warnings: 验证通过，但存在警告
           recognized_fields: 已识别字段：%{fields}

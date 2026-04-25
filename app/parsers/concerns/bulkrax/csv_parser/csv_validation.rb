@@ -19,8 +19,10 @@ module Bulkrax
         # @param csv_file [File, ActionDispatch::Http::UploadedFile, String] path or file object
         # @param zip_file [File, ActionDispatch::Http::UploadedFile, nil]
         # @param admin_set_id [String, nil]
+        # @param csv_in_zip [Boolean] true when csv_file was extracted from zip_file
         # @return [Hash] validation result compatible with the guided import UI
-        def validate_csv(csv_file:, zip_file: nil, admin_set_id: nil)
+        # @raise [Bulkrax::UnzipError] when zip_file can't be read
+        def validate_csv(csv_file:, zip_file: nil, admin_set_id: nil, csv_in_zip: false)
           raw_csv, headers, mapping_manager, mappings, source_id_key, csv_data, field_metadata, field_analyzer =
             parse_csv_inputs(csv_file, admin_set_id)
 
@@ -28,7 +30,8 @@ module Bulkrax
           header_issues    = check_headers(headers, raw_csv, mapping_manager, mappings, field_metadata, field_analyzer)
           missing_required = header_issues[:missing_required]
           notices, row_errors, file_validator, collections, works, file_sets =
-            run_validations(csv_data, all_ids, headers, source_id_key, mappings, field_metadata, missing_required, zip_file, admin_set_id, mapping_manager: mapping_manager)
+            run_validations(csv_data, all_ids, headers, source_id_key, mappings, field_metadata, missing_required, zip_file, admin_set_id,
+                            mapping_manager: mapping_manager, csv_in_zip: csv_in_zip)
 
           result = assemble_result(
             headers: headers, missing_required: missing_required, header_issues: header_issues,
@@ -41,15 +44,34 @@ module Bulkrax
 
         private
 
+        # Builds a ZipPlacementPlanner::Plan for the uploaded zip so row
+        # validators can check referenced file paths against the set of
+        # paths that will actually exist under files/ after extraction.
+        # The mode follows the upload, as in ImporterJob#unzip_imported_file:
+        # a CSV extracted from the zip means :primary_csv, and a CSV uploaded
+        # beside it means :attachments_only. Returns nil only when no zip was
+        # uploaded.
+        def build_zip_plan(zip_file, csv_in_zip: false)
+          return nil if zip_file.nil?
+
+          zip_path = zip_file.respond_to?(:path) ? zip_file.path : zip_file
+          Zip::File.open(zip_path) do |zf|
+            Bulkrax::ZipPlacementPlanner.plan(Bulkrax::CsvParser.real_zip_entries(zf), mode: csv_in_zip ? :primary_csv : :attachments_only)
+          end
+        rescue Zip::Error, Errno::ENOENT => e
+          raise Bulkrax::UnzipError, I18n.t('bulkrax.importer.guided_import.validation.zip_unreadable', error: e.message)
+        end
+
         # Builds notices, runs row validators, file validator, and hierarchy extraction.
         # Returns [notices, row_errors, file_validator, collections, works, file_sets].
-        def run_validations(csv_data, all_ids, headers, source_id_key, mappings, field_metadata, missing_required, zip_file, admin_set_id, mapping_manager: nil) # rubocop:disable Metrics/ParameterLists
+        def run_validations(csv_data, all_ids, headers, source_id_key, mappings, field_metadata, missing_required, zip_file, admin_set_id, mapping_manager: nil, csv_in_zip: false) # rubocop:disable Metrics/ParameterLists
           find_record = build_find_record
           notices     = []
           append_missing_source_id!(missing_required, headers, source_id_key, csv_data.map { |r| r[:model] }.compact.uniq)
           append_missing_model_notice!(notices, headers, csv_data, model_headers: Bulkrax::FieldResolver.headers_for_field(mappings, 'model'))
 
-          row_errors                       = run_row_validators(csv_data, all_ids, source_id_key, mappings, field_metadata, find_record, notices, mapping_manager: mapping_manager)
+          zip_plan                         = build_zip_plan(zip_file, csv_in_zip: csv_in_zip)
+          row_errors                       = run_row_validators(csv_data, all_ids, source_id_key, mappings, field_metadata, find_record, notices, mapping_manager: mapping_manager, zip_plan: zip_plan)
           file_validator                   = Bulkrax::FileValidator.new(csv_data, zip_file, admin_set_id)
           collections, works, file_sets    = extract_hierarchy_items(csv_data, all_ids, find_record, mappings)
           [notices, row_errors, file_validator, collections, works, file_sets]
@@ -116,19 +138,24 @@ module Bulkrax
         end
 
         def extract_hierarchy_items(csv_data, all_ids, find_record, mappings)
+          parent_columns, children_columns = relationship_columns(mappings)
           extract_validation_items(
             csv_data, all_ids, find_record,
             parent_split_pattern: resolve_parent_split_pattern(mappings),
             child_split_pattern: resolve_children_split_pattern(mappings),
-            parent_columns: Bulkrax::CsvRow::RelationshipIds.columns(mappings, 'related_parents_field_mapping', 'parents'),
-            children_columns: Bulkrax::CsvRow::RelationshipIds.columns(mappings, 'related_children_field_mapping', 'children')
+            parent_columns: parent_columns,
+            children_columns: children_columns
           )
         end
 
+        def relationship_columns(mappings)
+          [Bulkrax::CsvRow::RelationshipIds.columns(mappings, 'related_parents_field_mapping', 'parents'),
+           Bulkrax::CsvRow::RelationshipIds.columns(mappings, 'related_children_field_mapping', 'children')]
+        end
+
         # Runs all registered row validators and returns the collected errors.
-        def run_row_validators(csv_data, all_ids, source_id_key, mappings, field_metadata, find_record, notices = [], mapping_manager: nil) # rubocop:disable Metrics/ParameterLists
-          parent_columns   = Bulkrax::CsvRow::RelationshipIds.columns(mappings, 'related_parents_field_mapping', 'parents')
-          children_columns = Bulkrax::CsvRow::RelationshipIds.columns(mappings, 'related_children_field_mapping', 'children')
+        def run_row_validators(csv_data, all_ids, source_id_key, mappings, field_metadata, find_record, notices = [], mapping_manager: nil, zip_plan: nil) # rubocop:disable Metrics/ParameterLists
+          parent_columns, children_columns = relationship_columns(mappings)
           context = {
             errors: [],
             warnings: [],
@@ -146,7 +173,8 @@ module Bulkrax
             field_metadata: field_metadata,
             find_record_by_source_identifier: find_record,
             relationship_graph: build_relationship_graph(csv_data, mappings),
-            notices: notices
+            notices: notices,
+            zip_plan: zip_plan
           }
           csv_data.each_with_index do |record, index|
             row_number = index + 2 # 1-indexed, plus header row
