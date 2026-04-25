@@ -109,14 +109,8 @@ module Bulkrax
 
     def missing_elements(record)
       keys_from_record = keys_without_numbers(record.reject { |_, v| v.blank? }.keys.compact.uniq.map(&:to_s))
-      keys = []
       mapping_values = importerexporter.mapping.stringify_keys
-      mapping_values.each do |k, v|
-        from_values = Array.wrap(v.is_a?(Hash) ? (v['from'] || v[:from]) : nil)
-        from_values.each do |vf|
-          keys << k if vf.present? && keys_from_record.include?(vf.to_s.strip)
-        end
-      end
+      keys = keys_from_record.flat_map { |header| Bulkrax::FieldResolver.fields_for_header(mapping_values, header) }
       required_elements.map(&:to_s) - keys.uniq.map(&:to_s)
     end
 

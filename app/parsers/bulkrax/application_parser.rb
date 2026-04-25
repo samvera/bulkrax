@@ -135,10 +135,7 @@ module Bulkrax
 
     # @return [Array<String>]
     def model_field_mappings
-      model_mappings = Bulkrax.field_mappings[self.class.to_s]&.dig('model', :from) || []
-      model_mappings |= ['model']
-
-      model_mappings
+      Bulkrax::FieldResolver.headers_for_field(Bulkrax.field_mappings[self.class.to_s], 'model')
     end
 
     # @return [String]

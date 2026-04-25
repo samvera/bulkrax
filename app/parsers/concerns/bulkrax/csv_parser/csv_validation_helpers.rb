@@ -89,8 +89,7 @@ module Bulkrax
                             CsvTemplate::ColumnDescriptor::COLUMN_DESCRIPTIONS[:files].flat_map(&:keys) +
                             CsvTemplate::ColumnDescriptor::COLUMN_DESCRIPTIONS[:relationships].flat_map(&:keys)
         non_property_keys.flat_map do |key|
-          entry = mappings[key]
-          entry.is_a?(Hash) ? Array(entry["from"]) : []
+          Bulkrax::FieldResolver.headers_for_field(mappings, key)
         end
       end
 
@@ -249,11 +248,13 @@ module Bulkrax
       end
 
       # Returns the raw CSV column name (String) for a relationship field.
-      # Looks for the mapping entry flagged with +flag+ and returns its first +from+ value,
-      # falling back to +default+ when none is found.
+      # Looks for the mapping entry flagged with +flag+ and returns its first
+      # alias, falling back to +default+ when none is found.
       def resolve_relationship_column(mappings, flag, default)
-        entry = mappings.find { |_k, v| v.is_a?(Hash) && v[flag] }
-        entry&.last&.dig('from')&.first || default
+        entry = mappings.find { |_k, v| v.is_a?(Hash) && (v[flag] || v[flag.to_sym]) }
+        return default unless entry
+
+        Bulkrax::FieldResolver.headers_for_field(mappings, entry.first).first || default
       end
 
       def resolve_parent_split_pattern(mappings)

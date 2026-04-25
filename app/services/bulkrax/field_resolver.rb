@@ -20,9 +20,10 @@ module Bulkrax
       fields = mapping&.map do |key, value|
         return [header] if value.nil?
 
-        if value['from'].instance_of?(Array)
-          key if value['from'].include?(header) || key == header
-        elsif value['from'] == header || key == header
+        from = from_value(value)
+        if from.is_a?(Array)
+          key if from.include?(header) || key == header
+        elsif from == header || key == header
           key
         end
       end&.compact
@@ -42,7 +43,7 @@ module Bulkrax
     # @return [Array<String>] deduplicated list of header aliases
     def self.headers_for_field(mapping, canonical_key)
       entry = mapping&.dig(canonical_key) || {}
-      aliases = Array(entry['from'] || entry[:from])
+      aliases = Array(from_value(entry))
       (aliases + [canonical_key]).uniq
     end
 
@@ -58,14 +59,31 @@ module Bulkrax
     # @param headers [Array<String>] the actual CSV header row
     # @return [String, nil] the chosen alias
     def self.present_header_for_flag(mapping, flag, headers)
-      flagged_key, flagged_value = (mapping || {}).find { |_k, v| v.is_a?(Hash) && v[flag] == true }
+      flagged_key, flagged_value = (mapping || {}).find { |_k, v| v.is_a?(Hash) && flagged?(v, flag) }
       return nil unless flagged_key
 
-      aliases = Array(flagged_value['from'] || flagged_value[:from])
+      aliases = Array(from_value(flagged_value))
       candidates = (aliases + [flagged_key]).uniq
 
       header_set = Array(headers).map(&:to_s).to_set
       candidates.find { |c| header_set.include?(c.to_s) } || aliases.first || flagged_key
     end
+
+    # Reads a mapping entry's `from:` regardless of whether the entry was
+    # built with string or symbol keys. Bulkrax mappings reach runtime
+    # from three sources (Bulkrax.field_mappings default lambda, tenant
+    # JSON merged through HashWithIndifferentAccess, and direct test
+    # construction) with inconsistent key shapes; this collapses them.
+    def self.from_value(entry)
+      return nil unless entry.is_a?(Hash)
+
+      entry['from'] || entry[:from]
+    end
+    private_class_method :from_value
+
+    def self.flagged?(entry, flag)
+      entry[flag.to_s] == true || entry[flag.to_sym] == true
+    end
+    private_class_method :flagged?
   end
 end
