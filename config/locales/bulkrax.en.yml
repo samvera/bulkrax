@@ -382,6 +382,11 @@ en:
             errors:
               message: "'%{value}' is part of a circular parent-child relationship."
               suggestion: "Review the parent/child columns and remove the incorrect references."
+          file_reference_validator:
+            errors:
+              missing_file_reference:
+                message: "Referenced file '%{value}' is not in the uploaded ZIP."
+                suggestion: "Check the file path and ensure the file exists in the ZIP at the same location."
           passed: Validation Passed
           passed_warnings: Validation Passed with Warnings
           recognized_fields: 'Recognized fields: %{fields}'

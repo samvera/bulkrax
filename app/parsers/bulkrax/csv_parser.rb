@@ -423,16 +423,8 @@ module Bulkrax
       dest_dir = importer_unzip_path(mkdir: true)
       Zip::File.open(file_to_unzip) do |zip_file|
         entries = real_zip_entries(zip_file)
-        primary = select_primary_csv!(entries)
-        primary_dir = File.dirname(primary.name)
-
-        entries.each do |entry|
-          if entry == primary
-            extract_to(zip_file, entry, dest_dir, File.basename(entry.name))
-          else
-            extract_to(zip_file, entry, dest_dir, File.join('files', relative_to(primary_dir, entry.name)))
-          end
-        end
+        plan = Bulkrax::ZipPlacementPlanner.plan(entries, mode: :primary_csv)
+        plan.placements.each { |entry, dest| extract_to(zip_file, entry, dest_dir, dest) }
       end
     end
 
@@ -448,13 +440,8 @@ module Bulkrax
       dest_dir = importer_unzip_path(mkdir: true)
       Zip::File.open(file_to_unzip) do |zip_file|
         entries = real_zip_entries(zip_file)
-        wrapper = single_top_level_wrapper(entries)
-
-        entries.each do |entry|
-          relative = wrapper ? entry.name.delete_prefix("#{wrapper}/") : entry.name
-          next if relative.empty?
-          extract_to(zip_file, entry, dest_dir, File.join('files', relative))
-        end
+        plan = Bulkrax::ZipPlacementPlanner.plan(entries, mode: :attachments_only)
+        plan.placements.each { |entry, dest| extract_to(zip_file, entry, dest_dir, dest) }
       end
     end
 
@@ -492,39 +479,6 @@ module Bulkrax
       entries = zip_file.entries.select { |e| e.file? && !macos_junk_entry?(e.name) }
       entries.each { |e| reject_unsafe_entry!(e.name) }
       entries
-    end
-
-    # Picks the single primary CSV from zip entries, enforcing the
-    # shallowest-level rule. Raises {Bulkrax::UnzipError} on failure.
-    def select_primary_csv!(entries)
-      csvs = entries.select { |e| e.name.end_with?('.csv') }
-      raise Bulkrax::UnzipError, I18n.t('bulkrax.importer.unzip.errors.no_csv') if csvs.empty?
-
-      by_depth = csvs.group_by { |e| e.name.count('/') }
-      shallowest = by_depth[by_depth.keys.min]
-
-      raise Bulkrax::UnzipError, I18n.t('bulkrax.importer.unzip.errors.multiple_csv') if shallowest.size > 1
-
-      shallowest.first
-    end
-
-    # If every entry shares a single top-level directory, returns that
-    # directory name; otherwise nil.
-    def single_top_level_wrapper(entries)
-      tops = entries.map { |e| e.name.split('/').first }.uniq
-      return nil unless tops.size == 1
-      # If the single top segment is a file (no slashes in the entry), not a dir,
-      # there's no wrapper to strip.
-      return nil if entries.any? { |e| e.name == tops.first }
-      tops.first
-    end
-
-    # Returns `path` with `prefix/` removed from the front, if present, and
-    # a leading `files/` segment also stripped so callers can join under
-    # `files/` without doubling when the zip already uses that convention.
-    def relative_to(prefix, path)
-      remaining = prefix == '.' || prefix.empty? ? path : path.delete_prefix("#{prefix}/")
-      remaining.delete_prefix('files/')
     end
 
     # Extracts a zip entry to `dest_dir/relative_dest`. Creates intermediate

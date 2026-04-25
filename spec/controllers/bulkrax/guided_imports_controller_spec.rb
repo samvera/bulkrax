@@ -263,6 +263,98 @@ module Bulkrax
           include_examples 'reports the missing file', 'missing.jpg'
         end
       end
+
+      # Path-aware cases that the basename-only FileValidator silently
+      # passes, but that would fail at import time. Validation should fail
+      # by emitting per-row file errors (category: 'missing_file_reference').
+      context 'path-aware file validation' do
+        before { stub_bulkrax_models }
+
+        let(:csv_upload) do
+          t = Tempfile.new(['data', '.csv'])
+          t.write(csv_content)
+          t.flush
+          Rack::Test::UploadedFile.new(t.path, 'text/csv', original_filename: 'data.csv')
+        end
+
+        # Build a zip whose entry names are `zip_entries` verbatim.
+        let(:zip_upload) do
+          t = Tempfile.new(['upload', '.zip'])
+          Zip::File.open(t.path, create: true) do |zip|
+            zip_entries.each { |name| zip.get_output_stream(name) { |f| f.write('fake') } }
+          end
+          Rack::Test::UploadedFile.new(t.path, 'application/zip', original_filename: 'upload.zip')
+        end
+
+        shared_examples 'per-row error for the referenced path' do |missing_path|
+          it "emits a missing_file_reference row error for #{missing_path}" do
+            post_validate(importer: { parser_fields: { files: [csv_upload, zip_upload] } })
+
+            expect(response).to have_http_status(:ok)
+            expect(json_response[:isValid]).to eq(false)
+            row_errors = json_response[:rowErrors] || []
+            expect(row_errors).to include(
+              a_hash_including(
+                category: 'missing_file_reference',
+                column: 'file',
+                value: missing_path
+              )
+            )
+          end
+        end
+
+        context 'subdirectory mismatch' do
+          let(:csv_content) do
+            <<~CSV
+              source_identifier,title,model,file
+              w1,W1,GenericWork,subdir_a/foo.jpg
+            CSV
+          end
+          let(:zip_entries) { %w[files/subdir_b/foo.jpg] }
+
+          include_examples 'per-row error for the referenced path', 'subdir_a/foo.jpg'
+        end
+
+        context 'root/nested mismatch' do
+          let(:csv_content) do
+            <<~CSV
+              source_identifier,title,model,file
+              w1,W1,GenericWork,foo.jpg
+            CSV
+          end
+          let(:zip_entries) { %w[files/deep/nested/foo.jpg] }
+
+          include_examples 'per-row error for the referenced path', 'foo.jpg'
+        end
+
+        context 'duplicate basenames at different depths' do
+          let(:csv_content) do
+            <<~CSV
+              source_identifier,title,model,file
+              w1,W1,GenericWork,foo.jpg
+            CSV
+          end
+          let(:zip_entries) { %w[files/dir_a/foo.jpg files/dir_b/foo.jpg] }
+
+          include_examples 'per-row error for the referenced path', 'foo.jpg'
+        end
+
+        context 'exact-path match (regression guard)' do
+          let(:csv_content) do
+            <<~CSV
+              source_identifier,title,model,file
+              w1,W1,GenericWork,subdir/foo.jpg
+            CSV
+          end
+          let(:zip_entries) { %w[files/subdir/foo.jpg] }
+
+          it 'emits no file-reference row errors' do
+            post_validate(importer: { parser_fields: { files: [csv_upload, zip_upload] } })
+            row_errors = json_response[:rowErrors] || []
+            expect(row_errors).to all(satisfy { |e| e[:category] != 'missing_file_reference' })
+          end
+        end
+      end
     end
 
     # -------------------------------------------------------------------------
