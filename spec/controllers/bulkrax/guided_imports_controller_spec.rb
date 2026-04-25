@@ -355,6 +355,100 @@ module Bulkrax
           end
         end
       end
+
+      # When a tenant aliases a flag-resolved column (parents/children/
+      # source_identifier) and the CSV uses the alias, the validator must
+      # read the aliased column. Previously the validator picked the
+      # first `from:` entry blindly, so a CSV with header `parents` but
+      # mapping `from: ['collection', 'parents']` looked at `:collection`
+      # — every row's parent came out nil and parent-reference validation
+      # didn't fire.
+      context 'flag-resolved column aliasing parity with import' do
+        before { stub_bulkrax_models }
+
+        let(:csv_upload) do
+          t = Tempfile.new(['data', '.csv'])
+          t.write(csv_content)
+          t.flush
+          Rack::Test::UploadedFile.new(t.path, 'text/csv', original_filename: 'data.csv')
+        end
+
+        context "when the `parents` mapping aliases as `from: ['collection', 'parents']`" do
+          before do
+            allow(Bulkrax).to receive(:field_mappings).and_return(
+              'Bulkrax::CsvParser' => {
+                'title' => { 'from' => ['title'] },
+                'model' => { 'from' => ['model'] },
+                'parents' => { 'from' => %w[collection parents], 'related_parents_field_mapping' => true },
+                'source_identifier' => { 'from' => ['source_identifier'], 'source_identifier' => true }
+              }
+            )
+          end
+
+          context 'and the CSV uses the canonical `parents` column' do
+            let(:csv_content) do
+              <<~CSV
+                source_identifier,title,model,parents
+                w1,Work 1,GenericWork,nonexistent_parent
+              CSV
+            end
+
+            it 'reports the unresolvable parent' do
+              post_validate(importer: { parser_fields: { files: [csv_upload] } })
+              row_errors = json_response[:rowErrors] || []
+              expect(row_errors).to include(
+                a_hash_including(category: 'invalid_parent_reference', value: 'nonexistent_parent')
+              )
+            end
+          end
+
+          context 'and the CSV uses the aliased `collection` column' do
+            let(:csv_content) do
+              <<~CSV
+                source_identifier,title,model,collection
+                w1,Work 1,GenericWork,nonexistent_parent
+              CSV
+            end
+
+            it 'reports the unresolvable parent' do
+              post_validate(importer: { parser_fields: { files: [csv_upload] } })
+              row_errors = json_response[:rowErrors] || []
+              expect(row_errors).to include(
+                a_hash_including(category: 'invalid_parent_reference', value: 'nonexistent_parent')
+              )
+            end
+          end
+        end
+
+        context "when the `source_identifier` mapping aliases as `from: ['external_id', 'source_identifier']`" do
+          before do
+            allow(Bulkrax).to receive(:field_mappings).and_return(
+              'Bulkrax::CsvParser' => {
+                'title' => { 'from' => ['title'] },
+                'model' => { 'from' => ['model'] },
+                'parents' => { 'from' => ['parents'], 'related_parents_field_mapping' => true },
+                'source_identifier' => { 'from' => %w[external_id source_identifier], 'source_identifier' => true }
+              }
+            )
+          end
+
+          let(:csv_content) do
+            <<~CSV
+              external_id,title,model
+              w1,Work 1,GenericWork
+              w1,Work 2,GenericWork
+            CSV
+          end
+
+          it 'reads source_identifier from the aliased column and detects duplicates' do
+            post_validate(importer: { parser_fields: { files: [csv_upload] } })
+            row_errors = json_response[:rowErrors] || []
+            expect(row_errors).to include(
+              a_hash_including(category: 'duplicate_source_identifier', value: 'w1')
+            )
+          end
+        end
+      end
     end
 
     # -------------------------------------------------------------------------

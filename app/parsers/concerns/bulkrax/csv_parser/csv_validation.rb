@@ -93,9 +93,9 @@ module Bulkrax
           mapping_manager = CsvTemplate::MappingManager.new
           mappings        = mapping_manager.mappings
 
-          source_id_key = resolve_validation_key(mapping_manager, flag: 'source_identifier', default: :source_identifier)
-          parent_key    = resolve_validation_key(mapping_manager, flag: 'related_parents_field_mapping',  default: :parents)
-          children_key  = resolve_validation_key(mapping_manager, flag: 'related_children_field_mapping', default: :children)
+          source_id_key = resolve_validation_key(mapping_manager, flag: 'source_identifier', headers: headers, default: :source_identifier)
+          parent_key    = resolve_validation_key(mapping_manager, flag: 'related_parents_field_mapping',  headers: headers, default: :parents)
+          children_key  = resolve_validation_key(mapping_manager, flag: 'related_children_field_mapping', headers: headers, default: :children)
           file_headers  = Bulkrax::FieldResolver.headers_for_field(mappings, 'file')
 
           csv_data       = parse_validation_rows(raw_csv, source_id_key, parent_key, children_key, file_headers)

@@ -85,4 +85,44 @@ RSpec.describe Bulkrax::FieldResolver do
       expect(described_class.headers_for_field(mapping, 'file')).to contain_exactly('item', 'file')
     end
   end
+
+  describe '.present_header_for_flag' do
+    let(:mapping) do
+      {
+        'parents' => { 'from' => %w[collection parents], 'related_parents_field_mapping' => true },
+        'source_identifier' => { 'from' => ['source_identifier'], 'source_identifier' => true }
+      }
+    end
+
+    it 'returns the canonical name when it appears in the CSV headers' do
+      result = described_class.present_header_for_flag(mapping, 'related_parents_field_mapping', %w[parents title])
+      expect(result).to eq('parents')
+    end
+
+    it 'returns the alias when only the alias appears in the CSV headers' do
+      result = described_class.present_header_for_flag(mapping, 'related_parents_field_mapping', %w[collection title])
+      expect(result).to eq('collection')
+    end
+
+    it 'falls back to the first `from:` alias when no candidate matches the headers' do
+      result = described_class.present_header_for_flag(mapping, 'related_parents_field_mapping', %w[title])
+      expect(result).to eq('collection')
+    end
+
+    it 'falls back to the canonical name when `from:` is empty and no header matches' do
+      mapping_with_empty_from = { 'source_identifier' => { 'source_identifier' => true } }
+      result = described_class.present_header_for_flag(mapping_with_empty_from, 'source_identifier', %w[title])
+      expect(result).to eq('source_identifier')
+    end
+
+    it 'returns nil when no mapping has the flag' do
+      result = described_class.present_header_for_flag(mapping, 'nonexistent_flag', %w[title])
+      expect(result).to be_nil
+    end
+
+    it 'tolerates a nil mapping' do
+      result = described_class.present_header_for_flag(nil, 'related_parents_field_mapping', %w[parents])
+      expect(result).to be_nil
+    end
+  end
 end

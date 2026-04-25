@@ -45,5 +45,27 @@ module Bulkrax
       aliases = Array(entry['from'] || entry[:from])
       (aliases + [canonical_key]).uniq
     end
+
+    # For flag-resolved mappings (`source_identifier: true`,
+    # `related_parents_field_mapping: true`, etc.), pick the single
+    # CSV header that should be read into the canonical record key.
+    # Prefers an alias present in the CSV's actual headers; falls back
+    # to the first alias when none match (preserving today's behavior
+    # for back-compat). Returns nil if no mapping is flagged.
+    #
+    # @param mapping [Hash, nil]
+    # @param flag [String] e.g. 'source_identifier' or 'related_parents_field_mapping'
+    # @param headers [Array<String>] the actual CSV header row
+    # @return [String, nil] the chosen alias
+    def self.present_header_for_flag(mapping, flag, headers)
+      flagged_key, flagged_value = (mapping || {}).find { |_k, v| v.is_a?(Hash) && v[flag] == true }
+      return nil unless flagged_key
+
+      aliases = Array(flagged_value['from'] || flagged_value[:from])
+      candidates = (aliases + [flagged_key]).uniq
+
+      header_set = Array(headers).map(&:to_s).to_set
+      candidates.find { |c| header_set.include?(c.to_s) } || aliases.first || flagged_key
+    end
   end
 end

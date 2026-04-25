@@ -8,7 +8,18 @@ module Bulkrax
 
       # Resolve a symbol key from mappings for use as a record hash key.
       # Returns a Symbol matching the parser's symbol-keyed record hash.
-      def resolve_validation_key(mapping_manager, key: nil, flag: nil, default:)
+      #
+      # When `flag:` is provided along with `headers:`, picks the alias
+      # that actually appears in the CSV's headers — falling back to the
+      # first `from:` alias when none match. This keeps the validator's
+      # column resolution in lockstep with the import pipeline (which
+      # aliases the matching column upstream in CsvEntry.data_for_entry).
+      def resolve_validation_key(mapping_manager, key: nil, flag: nil, headers: nil, default:)
+        if flag && headers
+          chosen = Bulkrax::FieldResolver.present_header_for_flag(mapping_manager.mappings, flag, headers)
+          return chosen.to_sym if chosen
+        end
+
         options = mapping_manager.resolve_column_name(key: key, flag: flag, default: default.to_s)
         options.first&.to_sym || default
       end
