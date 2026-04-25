@@ -22,10 +22,6 @@ module Bulkrax
         @mappings.find { |_k, v| v["from"].include?(column_str) }&.first || column_str
       end
 
-      def key_to_mapped_column(key)
-        @mappings.dig(key, "from")&.first || key
-      end
-
       # Returns the `object:` value for a given mapping key, or nil. Mirrors
       # the importer-side `Bulkrax::HasMatchers#get_object_name` for callers
       # working with the template-side mapping manager.
@@ -46,7 +42,7 @@ module Bulkrax
         @mappings
           .select { |_k, v| v.is_a?(Hash) && v["object"] == object_name }
           .keys
-          .map { |key| key_to_mapped_column(key) }
+          .map { |key| Bulkrax::FieldResolver.headers_for_field(@mappings, key).first }
           .uniq
       end
 

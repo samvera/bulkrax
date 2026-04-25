@@ -22,9 +22,7 @@ module Bulkrax
       private
 
       def mapped_core_columns
-        @descriptor.core_columns.map do |column|
-          @service.mapping_manager.key_to_mapped_column(column)
-        end
+        @descriptor.core_columns.map { |column| header_for(column) }
       end
 
       def property_columns
@@ -48,7 +46,7 @@ module Bulkrax
       def columns_for_property(property)
         nested = @service.mapping_manager.object_columns_for(property)
         return nested if nested.any?
-        [@service.mapping_manager.key_to_mapped_column(property)]
+        [header_for(property)]
       end
 
       def relationship_columns
@@ -60,10 +58,14 @@ module Bulkrax
 
       def file_columns
         CsvTemplate::ColumnDescriptor::COLUMN_DESCRIPTIONS[:files].flat_map do |property_hash|
-          property_hash.keys.map do |key|
-            @service.mapping_manager.key_to_mapped_column(key)
-          end
+          property_hash.keys.map { |key| header_for(key) }
         end
+      end
+
+      # The first `from:` alias, because import reads only that one for the
+      # source identifier (ApplicationParser#source_identifier).
+      def header_for(key)
+        Bulkrax::FieldResolver.headers_for_field(@service.mappings, key).first
       end
     end
   end
