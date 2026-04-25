@@ -169,12 +169,14 @@ module Bulkrax
             post_validate(importer: { parser_fields: { files: [csv_upload, zip_upload] } })
 
             expect(response).to have_http_status(:ok)
-            expect(json_response[:zipIncluded]).to eq(true)
-            expect(json_response[:missingFiles]).to include(missing_name)
-
-            file_issue = json_response.dig(:messages, :issues).find { |i| i[:type] == 'file_references' }
-            expect(file_issue).to be_present
-            expect(file_issue[:items]).to include(a_hash_including(field: missing_name))
+            row_errors = json_response[:rowErrors] || []
+            expect(row_errors).to include(
+              a_hash_including(
+                category: 'missing_file_reference',
+                column: 'file',
+                value: missing_name
+              )
+            )
           end
         end
 
@@ -287,14 +289,17 @@ module Bulkrax
         end
 
         shared_examples 'per-row error for the referenced path' do |missing_path|
-          it "emits a missing_file_reference row error for #{missing_path}" do
+          it "emits a missing_file_reference row warning for #{missing_path}" do
             post_validate(importer: { parser_fields: { files: [csv_upload, zip_upload] } })
 
             expect(response).to have_http_status(:ok)
-            expect(json_response[:isValid]).to eq(false)
+            # Missing files are warnings, not errors — the file may still
+            # exist on the server at import time.
+            expect(json_response[:hasWarnings]).to eq(true)
             row_errors = json_response[:rowErrors] || []
             expect(row_errors).to include(
               a_hash_including(
+                severity: 'warning',
                 category: 'missing_file_reference',
                 column: 'file',
                 value: missing_path

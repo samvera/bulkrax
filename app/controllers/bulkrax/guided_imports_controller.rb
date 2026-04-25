@@ -112,8 +112,7 @@ module Bulkrax
       has_errors = validation_result[:rowErrors]&.any? ||
                    validation_result[:missingRequired]&.any? ||
                    validation_result[:unrecognized]&.any? ||
-                   validation_result[:emptyColumns]&.any? ||
-                   validation_result[:missingFiles]&.any?
+                   validation_result[:emptyColumns]&.any?
       return nil unless has_errors
 
       key = "guided_import_errors:#{session.id}:#{Time.now.to_i}"
@@ -126,8 +125,7 @@ module Bulkrax
           file_errors: {
             missing_required: validation_result[:missingRequired] || [],
             unrecognized: validation_result[:unrecognized] || {},
-            empty_columns: validation_result[:emptyColumns] || [],
-            missing_files: validation_result[:missingFiles] || []
+            empty_columns: validation_result[:emptyColumns] || []
           },
           original_filename: filename_for(csv_file)
         },

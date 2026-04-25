@@ -65,7 +65,7 @@ RSpec.describe Bulkrax::CsvRow::FileReference do
           a_hash_including(
             row: 2,
             source_identifier: 'w1',
-            severity: 'error',
+            severity: 'warning',
             category: 'missing_file_reference',
             column: 'file',
             value: 'subdir_a/foo.jpg'

@@ -352,11 +352,6 @@ zh:
               suggestion: "如果您不打算更新现有记录，请更改 %{field} 的值。"
           failed: 验证失败
           file_path_not_exist: 文件路径不存在
-          file_references_title: 文件引用
-          files_found_in_zip: 在 ZIP 文件中找到 %{found} 个文件（共 %{total} 个）。
-          files_missing_from_zip: CSV 文件中引用了 %{count} %{files_word}，但 ZIP 文件中缺少该 %{files_word}：
-          files_referenced: 导入时未找到 CSV 文件中引用的 %{count} 文件。
-          missing_from_zip: ZIP 文件中缺少
           missing_source_identifier_validator:
             errors:
               message: "该行缺少 '%{field}' 的值。"
@@ -369,7 +364,6 @@ zh:
           no_csv_in_zip: ZIP 文件中未找到 CSV 文件
           no_csv_uploaded: 未上传 CSV 元数据文件。
           no_files_uploaded: 未上传任何文件。
-          no_zip_desc: 未上传 ZIP 文件。请确保服务器上的文件可访问，或上传 ZIP 文件。
           parent_reference_validator:
             errors:
               message: "引用的父级 '%{value}' 在此 CSV 中不存在对应的 %{field}。"
@@ -400,7 +394,6 @@ zh:
               suggestion: "请为 '%{field}' 添加一个值。"
           validation_error_csv_builder:
             empty_column: "第 %{column} 列没有标题，将在导入时被忽略"
-            missing_file: "缺少文件：%{filename}"
             missing_required_column: "缺少必填列 '%{field}' (%{model})"
             unrecognized_column: "无法识别的列 '%{column}'"
             unrecognized_column_with_suggestion: "无法识别的列 '%{column}'（是否想输入 '%{suggestion}'？）"

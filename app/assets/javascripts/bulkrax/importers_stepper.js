@@ -1562,10 +1562,6 @@
       rowCount: data.rowCount != null ? data.rowCount : data.row_count,
       isValid: determineIsValid(data),
       hasWarnings: determineHasWarnings(data),
-      fileReferences: data.fileReferences != null ? data.fileReferences : data.file_references,
-      missingFiles: data.missingFiles || data.missing_files,
-      foundFiles: data.foundFiles != null ? data.foundFiles : data.found_files,
-      zipIncluded: data.zipIncluded != null ? data.zipIncluded : data.zip_included,
       messages: data.messages,
       validationErrorsCacheKey: data.validationErrorsCacheKey || null
     }
