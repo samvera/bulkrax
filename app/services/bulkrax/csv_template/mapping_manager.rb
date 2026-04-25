@@ -22,10 +22,6 @@ module Bulkrax
         @mappings.find { |_k, v| v["from"].include?(column_str) }&.first || column_str
       end
 
-      def key_to_mapped_column(key)
-        @mappings.dig(key, "from")&.first || key
-      end
-
       def find_by_flag(field_name, default)
         @mappings.find { |_k, v| v[field_name] == true }&.first || default
       end

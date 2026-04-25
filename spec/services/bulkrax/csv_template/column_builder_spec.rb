@@ -96,32 +96,18 @@ RSpec.describe Bulkrax::CsvTemplate::ColumnBuilder do
       end
 
       context 'when a mapping exists for model' do
-        before do
-          allow(mapping_manager).to receive(:key_to_mapped_column).with('model').and_return('work_type')
-        end
+        before { allow(service).to receive(:mappings).and_return('model' => { 'from' => ['work_type'] }) }
 
-        it 'maps model column through mapping_manager' do
-          result = column_builder.send(:mapped_core_columns)
-
-          expect(result).to eq(['work_type'])
-        end
-
-        it 'calls key_to_mapped_column for model' do
-          column_builder.send(:mapped_core_columns)
-
-          expect(mapping_manager).to have_received(:key_to_mapped_column).with('model')
+        it 'emits the mapped header for the model column' do
+          expect(column_builder.send(:mapped_core_columns)).to eq(['work_type'])
         end
       end
 
       context 'when no mapping exists for model' do
-        before do
-          allow(mapping_manager).to receive(:key_to_mapped_column).with('model').and_return('model')
-        end
+        before { allow(service).to receive(:mappings).and_return({}) }
 
-        it 'returns original column name' do
-          result = column_builder.send(:mapped_core_columns)
-
-          expect(result).to eq(['model'])
+        it 'returns the canonical column name' do
+          expect(column_builder.send(:mapped_core_columns)).to eq(['model'])
         end
       end
     end
@@ -150,10 +136,11 @@ RSpec.describe Bulkrax::CsvTemplate::ColumnBuilder do
         allow(field_analyzer).to receive(:find_or_create_field_list_for)
           .with(model_name: 'AnotherWork').and_return(field_list_2)
 
-        # Mock the mapping manager to return mapped column names
-        allow(mapping_manager).to receive(:key_to_mapped_column) do |key|
-          "x#{key}" # Simple mapping for testing
+        # Each property maps to a header prefixed with `x` for the test.
+        property_mappings = %w[title creator description extent format].index_with do |prop|
+          { 'from' => ["x#{prop}"] }
         end
+        allow(service).to receive(:mappings).and_return(property_mappings)
 
         # Mock required columns to exclude some properties
         allow(column_builder).to receive(:required_columns).and_return(['xtitle'])
@@ -171,12 +158,6 @@ RSpec.describe Bulkrax::CsvTemplate::ColumnBuilder do
         result = column_builder.send(:property_columns)
 
         expect(result).to eq(result.uniq.sort)
-      end
-
-      it 'maps property names through mapping_manager' do
-        column_builder.send(:property_columns)
-
-        expect(mapping_manager).to have_received(:key_to_mapped_column).at_least(:once)
       end
 
       it 'handles empty field lists gracefully' do
@@ -228,32 +209,18 @@ RSpec.describe Bulkrax::CsvTemplate::ColumnBuilder do
       end
 
       context 'when a mapping exists for file' do
-        before do
-          allow(mapping_manager).to receive(:key_to_mapped_column).with('file').and_return('xlocalfiles')
-        end
+        before { allow(service).to receive(:mappings).and_return('file' => { 'from' => ['xlocalfiles'] }) }
 
-        it 'maps file column through mapping_manager' do
-          result = column_builder.send(:file_columns)
-
-          expect(result).to eq(['xlocalfiles'])
-        end
-
-        it 'calls key_to_mapped_column for file' do
-          column_builder.send(:file_columns)
-
-          expect(mapping_manager).to have_received(:key_to_mapped_column).with('file')
+        it 'emits the first `from:` alias as the file header' do
+          expect(column_builder.send(:file_columns)).to eq(['xlocalfiles'])
         end
       end
 
       context 'when no mapping exists for file' do
-        before do
-          allow(mapping_manager).to receive(:key_to_mapped_column).with('file').and_return('file')
-        end
+        before { allow(service).to receive(:mappings).and_return({}) }
 
-        it 'returns original column name' do
-          result = column_builder.send(:file_columns)
-
-          expect(result).to eq(['file'])
+        it 'returns the canonical column name' do
+          expect(column_builder.send(:file_columns)).to eq(['file'])
         end
       end
     end
@@ -262,7 +229,6 @@ RSpec.describe Bulkrax::CsvTemplate::ColumnBuilder do
   describe 'integration' do
     context 'when mappings exist for model and file columns' do
       before do
-        # Set up a complete mock scenario
         allow(descriptor).to receive(:core_columns).and_return(['model', 'source_identifier'])
         allow(mapping_manager).to receive(:find_by_flag)
           .with("related_children_field_mapping", 'children').and_return('children')
@@ -273,14 +239,12 @@ RSpec.describe Bulkrax::CsvTemplate::ColumnBuilder do
         allow(field_analyzer).to receive(:find_or_create_field_list_for)
           .and_return({ 'MyWork' => { 'properties' => ['title', 'creator'] } })
 
-        # Mock key_to_mapped_column to map model and file specifically
-        allow(mapping_manager).to receive(:key_to_mapped_column) do |key|
-          case key
-          when 'model' then 'work_type'
-          when 'file' then 'xlocalfiles'
-          else "x#{key}"
-          end
-        end
+        allow(service).to receive(:mappings).and_return(
+          'model' => { 'from' => ['work_type'] },
+          'file' => { 'from' => ['xlocalfiles'] },
+          'title' => { 'from' => ['xtitle'] },
+          'creator' => { 'from' => ['xcreator'] }
+        )
 
         stub_const('Bulkrax::CsvTemplate::ColumnDescriptor::COLUMN_DESCRIPTIONS', {
                      files: [
@@ -301,13 +265,6 @@ RSpec.describe Bulkrax::CsvTemplate::ColumnBuilder do
 
         expect(result).to include('xlocalfiles')
         expect(result).not_to include('file')
-      end
-
-      it 'calls key_to_mapped_column for model and file' do
-        column_builder.all_columns
-
-        expect(mapping_manager).to have_received(:key_to_mapped_column).with('model').at_least(:once)
-        expect(mapping_manager).to have_received(:key_to_mapped_column).with('file').at_least(:once)
       end
     end
   end
