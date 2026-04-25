@@ -54,8 +54,6 @@ RSpec.describe Bulkrax::CsvRow::FileReference do
       end
     end
 
-    # These are the three cases FileValidator silently passes today and
-    # that import later fails on.
     context 'subdirectory mismatch (CSV `subdir_a/foo.jpg`, zip `subdir_b/foo.jpg`)' do
       let(:plan) { build_plan('subdir_b/foo.jpg') }
 

@@ -29,13 +29,13 @@ module Bulkrax
           all_ids          = csv_data.map { |r| r[:source_identifier] }.compact.to_set
           header_issues    = check_headers(headers, raw_csv, mapping_manager, mappings, field_metadata, field_analyzer)
           missing_required = header_issues[:missing_required]
-          notices, row_errors, file_validator, collections, works, file_sets =
-            run_validations(csv_data, all_ids, headers, source_id_key, mappings, field_metadata, missing_required, zip_file, admin_set_id,
+          notices, row_errors, collections, works, file_sets =
+            run_validations(csv_data, all_ids, headers, source_id_key, mappings, field_metadata, missing_required, zip_file,
                             mapping_manager: mapping_manager, csv_in_zip: csv_in_zip)
 
           result = assemble_result(
             headers: headers, missing_required: missing_required, header_issues: header_issues,
-            row_errors: row_errors, csv_data: csv_data, file_validator: file_validator,
+            row_errors: row_errors, csv_data: csv_data,
             collections: collections, works: works, file_sets: file_sets, notices: notices
           )
           result[:raw_csv_data] = csv_data
@@ -62,19 +62,19 @@ module Bulkrax
           raise Bulkrax::UnzipError, I18n.t('bulkrax.importer.guided_import.validation.zip_unreadable', error: e.message)
         end
 
-        # Builds notices, runs row validators, file validator, and hierarchy extraction.
-        # Returns [notices, row_errors, file_validator, collections, works, file_sets].
-        def run_validations(csv_data, all_ids, headers, source_id_key, mappings, field_metadata, missing_required, zip_file, admin_set_id, mapping_manager: nil, csv_in_zip: false) # rubocop:disable Metrics/ParameterLists
+        # Builds notices, runs row validators, and hierarchy extraction.
+        # Returns [notices, row_errors, collections, works, file_sets].
+        def run_validations(csv_data, all_ids, headers, source_id_key, mappings, field_metadata, missing_required, zip_file, mapping_manager: nil, csv_in_zip: false) # rubocop:disable Metrics/ParameterLists
           find_record = build_find_record
           notices     = []
           append_missing_source_id!(missing_required, headers, source_id_key, csv_data.map { |r| r[:model] }.compact.uniq)
           append_missing_model_notice!(notices, headers, csv_data, model_headers: Bulkrax::FieldResolver.headers_for_field(mappings, 'model'))
+          append_files_referenced_no_zip_notice!(notices, csv_data, zip_file)
 
-          zip_plan                         = build_zip_plan(zip_file, csv_in_zip: csv_in_zip)
-          row_errors                       = run_row_validators(csv_data, all_ids, source_id_key, mappings, field_metadata, find_record, notices, mapping_manager: mapping_manager, zip_plan: zip_plan)
-          file_validator                   = Bulkrax::FileValidator.new(csv_data, zip_file, admin_set_id)
-          collections, works, file_sets    = extract_hierarchy_items(csv_data, all_ids, find_record, mappings)
-          [notices, row_errors, file_validator, collections, works, file_sets]
+          zip_plan                       = build_zip_plan(zip_file, csv_in_zip: csv_in_zip)
+          row_errors                     = run_row_validators(csv_data, all_ids, source_id_key, mappings, field_metadata, find_record, notices, mapping_manager: mapping_manager, zip_plan: zip_plan)
+          collections, works, file_sets  = extract_hierarchy_items(csv_data, all_ids, find_record, mappings)
+          [notices, row_errors, collections, works, file_sets]
         end
 
         # Reads the CSV, resolves mappings, parses rows, and builds field metadata.

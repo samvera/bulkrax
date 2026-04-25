@@ -25,8 +25,7 @@ module Bulkrax
   #     file_errors: {
   #       missing_required: result[:missingRequired],
   #       unrecognized:     result[:unrecognized],
-  #       empty_columns:    result[:emptyColumns],
-  #       missing_files:    result[:missingFiles]
+  #       empty_columns:    result[:emptyColumns]
   #     }
   #   )
   class ValidationErrorCsvBuilder
@@ -49,7 +48,6 @@ module Bulkrax
     #   - :missing_required [Array<Hash>] each hash has :model and :field
     #   - :unrecognized [Hash] column_name => suggestion_or_nil
     #   - :empty_columns [Array<Integer>] 1-based column positions with no header
-    #   - :missing_files [Array<String>] filenames referenced but not found
     # @return [String] CSV content
     def self.build(headers:, csv_data:, row_errors:, file_errors: {})
       new(headers: headers, csv_data: csv_data, row_errors: row_errors, file_errors: file_errors).build
@@ -111,10 +109,6 @@ module Bulkrax
 
       Array(@file_errors[:empty_columns]).each do |pos|
         messages << I18n.t("#{I18N_BASE}.empty_column", column: pos + 2)
-      end
-
-      Array(@file_errors[:missing_files]).each do |filename|
-        messages << I18n.t("#{I18N_BASE}.missing_file", filename: filename)
       end
 
       messages
