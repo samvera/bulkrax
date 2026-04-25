@@ -83,14 +83,14 @@ module Bulkrax
           all_models    = field_metadata.keys
           valid_headers = build_valid_validation_headers(mapping_manager, field_analyzer,
                                                          all_models, mappings, field_metadata)
-          # Only allow a suffixed header (e.g. `creator_1`, `redirect_path_2`)
+          # Only allow a numbered header (e.g. `creator_1`, `1_creator`)
           # when its base name is itself recognised. The blanket allow that
           # used to live here let through any *_<digits> column, which masked
           # typos in numbered columns at validation time even though the real
           # importer would fail to map them.
           known_property_keys = (field_metadata || {}).values.flat_map { |m| Array(m[:properties]) }.to_set
           suffixed = headers.select do |h|
-            h.match?(/_\d+\z/) && header_base_recognized?(h, valid_headers, mapping_manager, known_property_keys)
+            Bulkrax::FieldResolver.key_without_numbers(h) != h && header_base_recognized?(h, valid_headers, mapping_manager, known_property_keys)
           end
           valid_headers = (valid_headers + suffixed).uniq
 
@@ -106,15 +106,14 @@ module Bulkrax
         # Mirrors the recognition rule used by
         # find_unrecognized_validation_headers: a header's base name is
         # recognised if it appears in valid_headers directly or if its
-        # mapping_manager#mapped_to_key resolves to a known model property.
+        # mapping_manager#mapped_to_keys includes a known model property.
         # known_property_keys is precomputed by check_headers so this can be
         # called per-header without rebuilding the set each time.
         def header_base_recognized?(header, valid_headers, mapping_manager, known_property_keys)
-          base = header.sub(/_\d+\z/, '')
+          base = Bulkrax::FieldResolver.key_without_numbers(header)
           return true if valid_headers.include?(base)
 
-          mapped_key = mapping_manager&.mapped_to_key(base)
-          mapped_key.present? && known_property_keys.include?(mapped_key)
+          Array(mapping_manager&.mapped_to_keys(base)).any? { |key| known_property_keys.include?(key) }
         end
 
         def extract_hierarchy_items(csv_data, all_ids, find_record, mappings)

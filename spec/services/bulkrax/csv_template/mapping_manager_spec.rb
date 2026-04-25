@@ -73,6 +73,15 @@ RSpec.describe Bulkrax::CsvTemplate::MappingManager do
     end
   end
 
+  describe "#mapped_to_key when a header is both a mapping key and another mapping's alias" do
+    it "prefers the mapping that lists it in from:" do
+      allow(Bulkrax).to receive(:field_mappings).and_return(
+        "Bulkrax::CsvParser" => { "creator" => { "from" => ["author"] }, "title" => { "from" => ["creator"] } }
+      )
+      expect(described_class.new.mapped_to_key("creator")).to eq("title")
+    end
+  end
+
   describe '#resolve_column_name' do
     context 'with direct key lookup' do
       it 'returns all mapped columns by key' do
@@ -145,6 +154,14 @@ RSpec.describe Bulkrax::CsvTemplate::MappingManager do
 
         result = new_manager.resolve_column_name(flag: 'source_identifier', default: 'source_identifier')
         expect(result).to eq(%w[id source_id identifier])
+      end
+
+      it 'finds the flagged mapping by the presence of its flag, as import does' do
+        allow(Bulkrax).to receive(:field_mappings).and_return(
+          'Bulkrax::CsvParser' => { 'source' => { 'from' => ['ident'], 'source_identifier' => 'true' } }
+        )
+        result = described_class.new.resolve_column_name(flag: 'source_identifier', default: 'source_identifier')
+        expect(result).to eq(['ident'])
       end
 
       it 'returns all options for flagged field when no headers provided' do

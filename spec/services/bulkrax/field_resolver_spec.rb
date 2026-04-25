@@ -53,6 +53,11 @@ RSpec.describe Bulkrax::FieldResolver do
       scalar_mapping = { 'creator' => { 'from' => 'author' } }
       expect(described_class.fields_for_header(scalar_mapping, 'author')).to eq(['creator'])
     end
+
+    it 'reads `:from` (symbol) as well as `"from"` (string)' do
+      sym_mapping = { 'creator' => { from: %w[author creator] } }
+      expect(described_class.fields_for_header(sym_mapping, 'author')).to eq(['creator'])
+    end
   end
 
   describe '.headers_for_field' do
@@ -87,6 +92,22 @@ RSpec.describe Bulkrax::FieldResolver do
     it 'reads a `from:` stored under a symbol key' do
       mapping = { 'file' => { from: %w[item file] } }
       expect(described_class.headers_for_field(mapping, 'file')).to contain_exactly('item', 'file')
+    end
+  end
+
+  describe '.flagged_key' do
+    it 'finds a flag stored under a symbol key' do
+      mapping = { 'title' => { 'from' => ['title'] }, 'parents' => { from: ['parents'], related_parents_field_mapping: true } }
+      expect(described_class.flagged_key(mapping, 'related_parents_field_mapping')).to eq('parents')
+    end
+
+    it 'treats the flag as set when its key is present, as import does' do
+      mapping = { 'parents' => { 'from' => ['parents'], 'related_parents_field_mapping' => 'true' } }
+      expect(described_class.flagged_key(mapping, 'related_parents_field_mapping')).to eq('parents')
+    end
+
+    it 'returns nil when no mapping carries the flag' do
+      expect(described_class.flagged_key({ 'title' => { 'from' => ['title'] } }, 'source_identifier')).to be_nil
     end
   end
 
@@ -127,6 +148,12 @@ RSpec.describe Bulkrax::FieldResolver do
     it 'tolerates a nil mapping' do
       result = described_class.present_header_for_flag(nil, 'related_parents_field_mapping', %w[parents])
       expect(result).to be_nil
+    end
+
+    it 'reads symbol-keyed `:from` and symbol-keyed flag values' do
+      sym_mapping = { 'parents' => { from: %w[collection parents], related_parents_field_mapping: true } }
+      result = described_class.present_header_for_flag(sym_mapping, 'related_parents_field_mapping', %w[collection title])
+      expect(result).to eq('collection')
     end
   end
 end
