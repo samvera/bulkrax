@@ -28,8 +28,9 @@ module Bulkrax
       return render json: StepperResponseFormatter.error(message: I18n.t('bulkrax.importer.guided_import.validation.no_files_uploaded')), status: :ok unless files.any?
 
       csv_file, zip_file = select_csv_and_zip(files)
+      csv_in_zip = csv_file.nil?
 
-      unless csv_file
+      if csv_in_zip
         return render json: StepperResponseFormatter.error(message: I18n.t('bulkrax.importer.guided_import.validation.no_csv_uploaded')), status: :ok unless zip_file
 
         csv_file, error = extract_csv_from_zip(zip_file)
@@ -37,12 +38,16 @@ module Bulkrax
       end
 
       admin_set_id = params[:importer]&.[](:admin_set_id)
-      validation_result = run_validation(csv_file, zip_file, admin_set_id: admin_set_id)
+      validation_result = run_validation(csv_file, zip_file, admin_set_id: admin_set_id, csv_in_zip: csv_in_zip)
       raw_csv_data = validation_result.delete(:raw_csv_data)
       cache_key = cache_validation_errors(validation_result, raw_csv_data, csv_file)
       formatted = StepperResponseFormatter.format(validation_result)
       formatted[:validationErrorsCacheKey] = cache_key
       render json: formatted, status: :ok
+    rescue Bulkrax::UnzipError => e
+      render json: StepperResponseFormatter.error(message: e.message), status: :ok
+    rescue Zip::Error => e
+      render json: StepperResponseFormatter.error(message: I18n.t('bulkrax.importer.guided_import.validation.zip_unreadable', error: e.message)), status: :ok
     ensure
       close_file_handles(files)
     end
@@ -136,8 +141,8 @@ module Bulkrax
       key
     end
 
-    def run_validation(csv_file, zip_file, admin_set_id: nil)
-      CsvParser.validate_csv(csv_file: csv_file, zip_file: zip_file, admin_set_id: admin_set_id)
+    def run_validation(csv_file, zip_file, admin_set_id: nil, csv_in_zip: false)
+      CsvParser.validate_csv(csv_file: csv_file, zip_file: zip_file, admin_set_id: admin_set_id, csv_in_zip: csv_in_zip)
     end
 
     def importer_params

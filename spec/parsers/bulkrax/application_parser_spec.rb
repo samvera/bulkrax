@@ -220,6 +220,15 @@ module Bulkrax
       end
     end
 
+    describe ".reject_unsafe_entry!" do
+      it "names a non-ASCII entry in any locale" do
+        I18n.with_locale(:fr) do
+          expect { described_class.reject_unsafe_entry!("../caf\u00e9.jpg".b) }
+            .to raise_error(Bulkrax::UnzipError, /caf\u00e9\.jpg/)
+        end
+      end
+    end
+
     describe '#macos_junk_entry?' do
       let(:parser) { described_class.new(importer) }
 

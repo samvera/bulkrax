@@ -249,6 +249,7 @@ es:
           warning_category_invalid_child_reference: Referencia secundaria no válida
           warning_category_invalid_controlled_value: Valor de vocabulario controlado no válido
           warning_category_invalid_parent_reference: Referencia principal no válida
+          warning_category_missing_file_reference: "Archivo referenciado no encontrado"
           warning_category_missing_required_value: Falta un valor obligatorio
           warning_category_missing_source_identifier: Falta el identificador de origen
           zip_limit: 'Solo se permite un archivo ZIP. No se agregaron los siguientes archivos:'
@@ -367,6 +368,7 @@ es:
           missing_rights_desc: Su archivo CSV no incluye la columna "rights_statement". Puede añadirla o seleccionar una "Declaración de derechos predeterminada" en el siguiente paso.
           multiple_csv: Hay varios archivos CSV en el nivel menos profundo del ZIP, por lo que no se puede determinar el CSV principal. Mantén exactamente un CSV en ese nivel; cualquier CSV adicional debe estar anidado más profundamente.
           no_csv_in_zip: No se encontraron archivos CSV en ZIP
+          zip_unreadable: "No se pudo leer el archivo ZIP (%{error}). Vuelva a crear el ZIP y cárguelo de nuevo."
           no_csv_uploaded: No se cargó ningún archivo de metadatos CSV
           no_files_uploaded: No hay archivos subidos
           no_zip_desc: No se ha subido ningún archivo ZIP. Asegúrese de que los archivos estén accesibles en el servidor o suba un archivo ZIP.
@@ -382,6 +384,11 @@ es:
             errors:
               message: "'%{value}' forma parte de una relación padre-hijo circular."
               suggestion: "Revise las columnas de padre/hijo y elimine las referencias incorrectas."
+          file_reference_validator:
+            errors:
+              missing_file_reference:
+                message: "El archivo referenciado '%{value}' no está en el ZIP cargado."
+                suggestion: "Compruebe la ruta del archivo y asegúrese de que el archivo esté en la misma ubicación dentro del ZIP."
           passed: Validación aprobada
           passed_warnings: Validación aprobada con advertencias
           recognized_fields: 'Campos reconocidos: %{fields}'

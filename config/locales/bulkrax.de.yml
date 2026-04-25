@@ -249,6 +249,7 @@ de:
           warning_category_invalid_child_reference: Ungültige Kind-Referenz
           warning_category_invalid_controlled_value: Ungültiger Wert aus kontrolliertem Vokabular
           warning_category_invalid_parent_reference: Ungültige Eltern-Referenz
+          warning_category_missing_file_reference: "Fehlende Datei"
           warning_category_missing_required_value: Erforderlicher Wert fehlt
           warning_category_missing_source_identifier: Quell-Identifikator fehlt
           zip_limit: 'Es ist nur eine ZIP-Datei zulässig. Folgende Dateien wurden nicht hinzugefügt:'
@@ -367,6 +368,7 @@ de:
           missing_rights_desc: Ihre CSV-Datei enthält keine Spalte „rights_statement“. Sie können diese entweder Ihrer CSV-Datei hinzufügen oder im nächsten Schritt eine Standard-Rechteerklärung auswählen.
           multiple_csv: Mehrere CSV-Dateien befinden sich auf der obersten Ebene des ZIP-Archivs, sodass die primäre CSV nicht bestimmt werden kann. Belassen Sie genau eine CSV auf dieser Ebene; weitere CSVs müssen tiefer verschachtelt sein.
           no_csv_in_zip: Es wurden keine CSV-Dateien im ZIP-Archiv gefunden.
+          zip_unreadable: "Das ZIP-Archiv konnte nicht gelesen werden (%{error}). Erstellen Sie das ZIP-Archiv neu und laden Sie es erneut hoch."
           no_csv_uploaded: Es wurde keine CSV-Metadatendatei hochgeladen.
           no_files_uploaded: Es wurden keine Dateien hochgeladen.
           no_zip_desc: Es wurde keine ZIP-Datei hochgeladen. Stellen Sie sicher, dass die Dateien auf dem Server zugänglich sind, oder laden Sie eine ZIP-Datei hoch.
@@ -382,6 +384,11 @@ de:
             errors:
               message: "'%{value}' ist Teil einer zirkulären Eltern-Kind-Beziehung."
               suggestion: "Überprüfen Sie die Eltern-/Kind-Spalten und entfernen Sie die fehlerhaften Referenzen."
+          file_reference_validator:
+            errors:
+              missing_file_reference:
+                message: "Die referenzierte Datei '%{value}' ist nicht im hochgeladenen ZIP-Archiv enthalten."
+                suggestion: "Prüfen Sie den Dateipfad und stellen Sie sicher, dass die Datei am selben Ort im ZIP-Archiv liegt."
           passed: Validierung erfolgreich
           passed_warnings: Validierung mit Warnungen bestanden
           recognized_fields: 'Erkannte Felder: %{fields}'

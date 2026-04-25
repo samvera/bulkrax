@@ -249,6 +249,7 @@ fr:
           warning_category_invalid_child_reference: Référence enfant non valide
           warning_category_invalid_controlled_value: Valeur de vocabulaire contrôlé non valide
           warning_category_invalid_parent_reference: Référence parente non valide
+          warning_category_missing_file_reference: "Fichier référencé manquant"
           warning_category_missing_required_value: Valeur obligatoire manquante
           warning_category_missing_source_identifier: Identifiant source manquant
           zip_limit: 'Un seul fichier ZIP est autorisé. Les fichiers suivants n''ont pas été ajoutés :'
@@ -367,6 +368,7 @@ fr:
           missing_rights_desc: Votre fichier CSV ne contient pas de colonne « droits_statement ». Vous pouvez l'ajouter ou sélectionner une déclaration de droits par défaut à l'étape suivante.
           multiple_csv: Plusieurs fichiers CSV se trouvent au niveau le moins profond dans le ZIP, ce qui empêche d'identifier le CSV principal. Conservez exactement un fichier CSV à ce niveau ; les CSV supplémentaires doivent être imbriqués plus profondément.
           no_csv_in_zip: Aucun fichier CSV trouvé dans le fichier ZIP
+          zip_unreadable: "Le fichier ZIP n'a pas pu être lu (%{error}). Recréez le fichier ZIP et téléversez-le à nouveau."
           no_csv_uploaded: Aucun fichier de métadonnées CSV n'a été téléchargé.
           no_files_uploaded: Aucun fichier téléchargé
           no_zip_desc: Aucun fichier ZIP n'a été téléchargé. Assurez-vous que les fichiers sont accessibles sur le serveur ou téléchargez un fichier ZIP.
@@ -382,6 +384,11 @@ fr:
             errors:
               message: "« %{value} » fait partie d'une relation parent-enfant circulaire."
               suggestion: "Vérifiez les colonnes parent/enfant et supprimez les références incorrectes."
+          file_reference_validator:
+            errors:
+              missing_file_reference:
+                message: "Le fichier référencé « %{value} » ne figure pas dans le fichier ZIP téléversé."
+                suggestion: "Vérifiez le chemin du fichier et assurez-vous que le fichier se trouve au même emplacement dans le fichier ZIP."
           passed: Validation réussie
           passed_warnings: Validation réussie avec avertissements
           recognized_fields: 'Champs reconnus : %{fields}'

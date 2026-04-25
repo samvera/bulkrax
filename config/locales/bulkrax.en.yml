@@ -249,6 +249,7 @@ en:
           warning_category_invalid_child_reference: Invalid child reference
           warning_category_invalid_controlled_value: Invalid controlled vocabulary value
           warning_category_invalid_parent_reference: Invalid parent reference
+          warning_category_missing_file_reference: "Missing file reference"
           warning_category_missing_required_value: Missing required value
           warning_category_missing_source_identifier: Missing source identifier
           zip_limit: 'Only 1 ZIP file allowed. The following files were not added:'
@@ -367,6 +368,7 @@ en:
           missing_rights_desc: Your CSV does not include a rights_statement column. You can add it to your CSV or select a Default Rights Statement in the next step.
           multiple_csv: Multiple CSV files share the shallowest directory level in the ZIP, so the primary CSV cannot be determined. Keep exactly one CSV at that level; any additional CSVs must be nested deeper.
           no_csv_in_zip: No CSV files found in ZIP
+          zip_unreadable: "The ZIP file could not be read (%{error}). Re-create the ZIP and upload it again."
           no_csv_uploaded: No CSV metadata file uploaded
           no_files_uploaded: No files uploaded
           no_zip_desc: No ZIP file uploaded. Ensure files are accessible on the server or upload a ZIP.
@@ -382,6 +384,11 @@ en:
             errors:
               message: "'%{value}' is part of a circular parent-child relationship."
               suggestion: "Review the parent/child columns and remove the incorrect references."
+          file_reference_validator:
+            errors:
+              missing_file_reference:
+                message: "Referenced file '%{value}' is not in the uploaded ZIP."
+                suggestion: "Check the file path and ensure the file exists in the ZIP at the same location."
           passed: Validation Passed
           passed_warnings: Validation Passed with Warnings
           recognized_fields: 'Recognized fields: %{fields}'
