@@ -264,6 +264,46 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
     end
   end
 
+  describe '#resolve_validation_key' do
+    let(:mapping_manager) { Bulkrax::CsvTemplate::MappingManager.new }
+    let(:mappings) do
+      {
+        'title' => { 'from' => ['title'] },
+        'parents' => { 'from' => %w[collection parents], 'related_parents_field_mapping' => true },
+        'children' => { 'from' => ['children'], 'related_children_field_mapping' => true },
+        'source_identifier' => { 'from' => ['source_identifier'], 'source_identifier' => true }
+      }
+    end
+
+    before { allow(Bulkrax).to receive(:field_mappings).and_return('Bulkrax::CsvParser' => mappings) }
+
+    context 'with a flag-resolved mapping that has multiple `from:` aliases' do
+      it 'resolves to the alias that appears in the CSV headers (canonical present)' do
+        key = host.resolve_validation_key(mapping_manager,
+                                          flag: 'related_parents_field_mapping',
+                                          headers: %w[parents title],
+                                          default: :parents)
+        expect(key).to eq(:parents)
+      end
+
+      it 'resolves to the alias that appears in the CSV headers (alias present)' do
+        key = host.resolve_validation_key(mapping_manager,
+                                          flag: 'related_parents_field_mapping',
+                                          headers: %w[collection title],
+                                          default: :parents)
+        expect(key).to eq(:collection)
+      end
+
+      it 'falls back to the first `from:` alias when no candidate matches the headers' do
+        key = host.resolve_validation_key(mapping_manager,
+                                          flag: 'related_parents_field_mapping',
+                                          headers: %w[title],
+                                          default: :parents)
+        expect(key).to eq(:collection)
+      end
+    end
+  end
+
   describe '#find_unrecognized_validation_headers (respects all `from` aliases)' do
     let(:mappings) do
       {

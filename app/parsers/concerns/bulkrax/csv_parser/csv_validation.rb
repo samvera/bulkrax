@@ -66,8 +66,8 @@ module Bulkrax
           mappings        = mapping_manager.mappings
 
           source_id_key = resolve_validation_key(mapping_manager, flag: 'source_identifier', default: :source_identifier)
-          parent_key    = resolve_validation_key(mapping_manager, flag: 'related_parents_field_mapping',  default: :parents)
-          children_key  = resolve_validation_key(mapping_manager, flag: 'related_children_field_mapping', default: :children)
+          parent_key    = resolve_validation_key(mapping_manager, flag: 'related_parents_field_mapping',  headers: headers, default: :parents)
+          children_key  = resolve_validation_key(mapping_manager, flag: 'related_children_field_mapping', headers: headers, default: :children)
           file_headers  = Bulkrax::FieldResolver.headers_for_field(mappings, 'file')
 
           csv_data       = parse_validation_rows(raw_csv, source_id_key, parent_key, children_key, file_headers)
@@ -121,12 +121,16 @@ module Bulkrax
           extract_validation_items(
             csv_data, all_ids, find_record,
             parent_split_pattern: resolve_parent_split_pattern(mappings),
-            child_split_pattern: resolve_children_split_pattern(mappings) || Bulkrax::DEFAULT_MULTI_VALUE_ELEMENT_SPLIT_ON
+            child_split_pattern: resolve_children_split_pattern(mappings),
+            parent_columns: Bulkrax::CsvRow::RelationshipIds.columns(mappings, 'related_parents_field_mapping', 'parents'),
+            children_columns: Bulkrax::CsvRow::RelationshipIds.columns(mappings, 'related_children_field_mapping', 'children')
           )
         end
 
         # Runs all registered row validators and returns the collected errors.
         def run_row_validators(csv_data, all_ids, source_id_key, mappings, field_metadata, find_record, notices = [], mapping_manager: nil) # rubocop:disable Metrics/ParameterLists
+          parent_columns   = Bulkrax::CsvRow::RelationshipIds.columns(mappings, 'related_parents_field_mapping', 'parents')
+          children_columns = Bulkrax::CsvRow::RelationshipIds.columns(mappings, 'related_children_field_mapping', 'children')
           context = {
             errors: [],
             warnings: [],
@@ -135,8 +139,10 @@ module Bulkrax
             source_identifier: source_id_key.to_s,
             parent_split_pattern: resolve_parent_split_pattern(mappings),
             child_split_pattern: resolve_children_split_pattern(mappings),
-            parent_column: resolve_relationship_column(mappings, 'related_parents_field_mapping', 'parents'),
-            children_column: resolve_relationship_column(mappings, 'related_children_field_mapping', 'children'),
+            parent_column: parent_columns.first,
+            children_column: children_columns.first,
+            parent_columns: parent_columns,
+            children_columns: children_columns,
             mappings: mappings,
             mapping_manager: mapping_manager,
             field_metadata: field_metadata,

@@ -8,8 +8,18 @@ module Bulkrax
 
       # Resolve a symbol key from mappings for use as a record hash key.
       # Returns a Symbol matching the parser's symbol-keyed record hash.
-      def resolve_validation_key(mapping_manager, key: nil, flag: nil, default:)
-        options = mapping_manager.resolve_column_name(key: key, flag: flag, default: default.to_s)
+      #
+      # With `headers:`, picks the flagged mapping's alias that appears in
+      # the CSV, falling back to its first `from:` alias. Without it, uses
+      # the first alias, which is the only one import reads for the source
+      # identifier (ApplicationParser#source_identifier).
+      def resolve_validation_key(mapping_manager, flag:, default:, headers: nil)
+        if headers
+          chosen = Bulkrax::FieldResolver.present_header_for_flag(mapping_manager.mappings, flag, headers)
+          return chosen.to_sym if chosen
+        end
+
+        options = mapping_manager.resolve_column_name(flag: flag, default: default.to_s)
         options.first&.to_sym || default
       end
 
@@ -254,14 +264,6 @@ module Bulkrax
         false
       end
 
-      # Returns the raw CSV column name (String) for a relationship field.
-      # Looks for the mapping entry flagged with +flag+ and returns its first +from+ value,
-      # falling back to +default+ when none is found.
-      def resolve_relationship_column(mappings, flag, default)
-        entry = mappings.find { |_k, v| v.is_a?(Hash) && v[flag] }
-        entry&.last&.dig('from')&.first || default
-      end
-
       def resolve_parent_split_pattern(mappings)
         Bulkrax::SplitPatternCoercion.coerce(mappings.dig('parents', 'split') || mappings.dig(:parents, :split))
       end
@@ -278,55 +280,33 @@ module Bulkrax
       #   - inverted child declarations (children / children_N columns), mirroring
       #     the normalisation done in importers_stepper.js#normalizeRelationships
       def build_relationship_graph(csv_data, mappings)
-        parent_column   = resolve_relationship_column(mappings, 'related_parents_field_mapping', 'parents')
-        children_column = resolve_relationship_column(mappings, 'related_children_field_mapping', 'children')
-        parent_suffix   = /\A#{Regexp.escape(parent_column)}_\d+\z/
-        children_suffix = /\A#{Regexp.escape(children_column)}_\d+\z/
+        parent_columns   = Bulkrax::CsvRow::RelationshipIds.columns(mappings, 'related_parents_field_mapping', 'parents')
+        children_columns = Bulkrax::CsvRow::RelationshipIds.columns(mappings, 'related_children_field_mapping', 'children')
 
-        graph = build_parent_edges(csv_data, parent_suffix, resolve_parent_split_pattern(mappings))
-        invert_child_edges(graph, csv_data, children_suffix, resolve_children_split_pattern(mappings))
+        graph = build_parent_edges(csv_data, parent_columns, resolve_parent_split_pattern(mappings))
+        invert_child_edges(graph, csv_data, children_columns, resolve_children_split_pattern(mappings))
         graph
       end
 
-      def build_parent_edges(csv_data, suffix_pattern, split_pattern)
+      def build_parent_edges(csv_data, columns, split_pattern)
         csv_data.each_with_object({}) do |record, graph|
           id = record[:source_identifier]
           next if id.blank?
 
-          base_ids = split_or_single(record[:parent], split_pattern)
-          suffix_ids = suffixed_values(record[:raw_row], suffix_pattern)
-          graph[id] = (base_ids + suffix_ids).uniq
+          graph[id] = Bulkrax::CsvRow::RelationshipIds.ids(record[:parent], record[:raw_row], columns, split_pattern)
         end
       end
 
-      def invert_child_edges(graph, csv_data, suffix_pattern, split_pattern)
+      def invert_child_edges(graph, csv_data, columns, split_pattern)
         csv_data.each do |record|
           id = record[:source_identifier]
           next if id.blank?
 
-          child_ids = split_or_single(record[:children], split_pattern) +
-                      suffixed_values(record[:raw_row], suffix_pattern)
-          child_ids.each do |child_id|
+          Bulkrax::CsvRow::RelationshipIds.ids(record[:children], record[:raw_row], columns, split_pattern).each do |child_id|
             graph[child_id] ||= []
             graph[child_id] << id unless graph[child_id].include?(id)
           end
         end
-      end
-
-      def split_or_single(value, split_pattern)
-        coerced = Bulkrax::SplitPatternCoercion.coerce(split_pattern)
-        if coerced
-          value.to_s.split(coerced).map(&:strip).reject(&:blank?)
-        elsif value.present?
-          [value.to_s.strip]
-        else
-          []
-        end
-      end
-
-      def suffixed_values(raw_row, suffix_pattern)
-        raw_row.select { |k, _| k.to_s.match?(suffix_pattern) }
-               .values.map(&:to_s).map(&:strip).reject(&:blank?)
       end
     end
   end

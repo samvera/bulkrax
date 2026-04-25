@@ -3,8 +3,8 @@
 require 'rails_helper'
 
 RSpec.describe Bulkrax::CsvRow::ChildReference do
-  def make_context(all_ids: Set.new(%w[col1 work1]), find_record: nil)
-    { errors: [], warnings: [], all_ids: all_ids, parent_split_pattern: nil,
+  def make_context(all_ids: Set.new(%w[col1 work1]), find_record: nil, child_split_pattern: '\|')
+    { errors: [], warnings: [], all_ids: all_ids, parent_split_pattern: nil, child_split_pattern: child_split_pattern,
       find_record_by_source_identifier: find_record }
   end
 
@@ -30,6 +30,19 @@ RSpec.describe Bulkrax::CsvRow::ChildReference do
     expect(context[:errors].length).to eq(1)
     expect(context[:errors].first[:category]).to eq('invalid_child_reference')
     expect(context[:errors].first[:value]).to eq('missing_child')
+  end
+
+  it 'keeps a child id whole when the mapping has no split, as import does' do
+    context = make_context(all_ids: Set.new(%w[col1 urn:child1]), child_split_pattern: nil)
+    described_class.call(make_record(children: 'urn:child1'), 2, context)
+    expect(context[:errors]).to be_empty
+  end
+
+  it 'keeps a numbered child cell whole when the mapping has no split' do
+    context = make_context(all_ids: Set.new(%w[col1 urn:child1]), child_split_pattern: nil)
+    record = make_record.merge(raw_row: { 'children_1' => 'urn:child1' })
+    described_class.call(record, 2, context)
+    expect(context[:errors]).to be_empty
   end
 
   it 'adds an error for each unresolvable id in a pipe-separated list' do
@@ -159,11 +172,10 @@ RSpec.describe Bulkrax::CsvRow::ChildReference do
       expect(context[:errors].first[:value]).to eq('missing_child')
     end
 
-    it 'falls back to | when child_split_pattern is nil' do
+    it 'keeps the cell whole when child_split_pattern is nil, as import does' do
       context = make_context_with_split(nil)
       described_class.call(make_record(children: 'work1|missing_child'), 2, context)
-      expect(context[:errors].length).to eq(1)
-      expect(context[:errors].first[:value]).to eq('missing_child')
+      expect(context[:errors].map { |e| e[:value] }).to eq(['work1|missing_child'])
     end
   end
 
