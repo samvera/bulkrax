@@ -68,7 +68,7 @@ module Bulkrax
         # (core/file/relationship). Accept every alias so a CSV using a
         # non-primary alias like `file` (when mappings are `from: ['item', 'file']`)
         # isn't flagged unrecognised. Property-level aliases are handled
-        # separately by find_unrecognized_validation_headers via mapped_to_key.
+        # separately by find_unrecognized_validation_headers via mapped_to_keys.
         non_property_aliases = non_property_mapping_aliases(mappings)
         (all_cols + non_property_aliases).uniq - CsvTemplate::CsvBuilder::IGNORED_PROPERTIES
       rescue StandardError => e
@@ -88,13 +88,14 @@ module Bulkrax
                             CsvTemplate::ColumnDescriptor::COLUMN_DESCRIPTIONS[:files].flat_map(&:keys) +
                             CsvTemplate::ColumnDescriptor::COLUMN_DESCRIPTIONS[:relationships].flat_map(&:keys)
         non_property_keys.flat_map do |key|
-          entry = mappings[key]
-          entry.is_a?(Hash) ? Array(entry["from"]) : []
+          Bulkrax::FieldResolver.headers_for_field(mappings, key)
         end
       end
 
       def find_missing_required_headers(headers, field_metadata, mapping_manager)
-        csv_keys = headers.map { |h| mapping_manager.mapped_to_key(h).sub(/_\d+\z/, '') }.uniq
+        csv_keys = headers.flat_map do |h|
+          Bulkrax::FieldResolver.fields_for_header(mapping_manager.mappings, Bulkrax::FieldResolver.key_without_numbers(h))
+        end.uniq
         missing = []
         field_metadata.each do |model, meta|
           (meta[:required_terms] || []).each do |field|
@@ -115,10 +116,9 @@ module Bulkrax
         checker = DidYouMean::SpellChecker.new(dictionary: valid_headers)
         unrecognized = headers.reject do |h|
           next true if h.blank?
-          base = h.sub(/_\d+\z/, '')
+          base = Bulkrax::FieldResolver.key_without_numbers(h)
           next true if valid_headers.include?(h) || valid_headers.include?(base)
-          mapped_key = mapping_manager&.mapped_to_key(base)
-          mapped_key && known_property_keys.include?(mapped_key)
+          Array(mapping_manager&.mapped_to_keys(base)).any? { |key| known_property_keys.include?(key) }
         end
         unrecognized.index_with { |h| checker.correct(h).first }
       end

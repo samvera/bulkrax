@@ -345,6 +345,24 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
       expect(unrecognized(%w[title resource_type])).not_to have_key('resource_type')
     end
 
+    context 'when a header also feeds a mapping that is not a model property' do
+      let(:mappings) do
+        {
+          'author_note' => { 'from' => ['author'] },
+          'creator' => { 'from' => %w[creator author] },
+          'title' => { 'from' => ['title'] }
+        }
+      end
+
+      it 'does not flag it, or its numbered form' do
+        expect(unrecognized(%w[title author author_1])).to be_empty
+      end
+    end
+
+    it 'does not flag a column numbered with a prefix ("1_creator")' do
+      expect(unrecognized(%w[title 1_creator])).not_to have_key('1_creator')
+    end
+
     it 'still flags a header that matches no alias of any known property' do
       expect(unrecognized(%w[title totally_made_up])).to have_key('totally_made_up')
     end
@@ -420,6 +438,48 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
       it 'does not report rights_statement as missing when `rights` alias is present' do
         missing = host.find_missing_required_headers(%w[title rights], field_metadata, mapping_manager)
         expect(missing).to be_empty
+      end
+    end
+  end
+
+  describe '#find_missing_required_headers' do
+    let(:mapping_manager) { Bulkrax::CsvTemplate::MappingManager.new }
+    let(:field_metadata) do
+      { 'GenericWorkResource' => { properties: %w[title creator], required_terms: %w[title creator], controlled_vocab_terms: [] } }
+    end
+
+    before { allow(Bulkrax).to receive(:field_mappings).and_return('Bulkrax::CsvParser' => mappings) }
+
+    context 'when a numbered column uses a `from:` alias' do
+      let(:mappings) { { 'title' => { 'from' => ['title'] }, 'creator' => { 'from' => %w[author creator] } } }
+
+      it 'counts `author_1` as the creator column' do
+        expect(host.find_missing_required_headers(%w[title_1 author_1], field_metadata, mapping_manager)).to be_empty
+      end
+    end
+
+    context 'when a column is numbered with a prefix' do
+      let(:mappings) { { 'title' => { 'from' => ['title'] }, 'creator' => { 'from' => %w[author creator] } } }
+
+      it 'counts `1_author` as the creator column' do
+        expect(host.find_missing_required_headers(%w[title 1_author], field_metadata, mapping_manager)).to be_empty
+      end
+    end
+
+    context 'when one header feeds two mappings' do
+      let(:mappings) { { 'creator' => { 'from' => ['author'] }, 'title' => { 'from' => ['creator'] } } }
+
+      it 'counts the header for every field it feeds' do
+        expect(host.find_missing_required_headers(%w[creator], field_metadata, mapping_manager)).to be_empty
+      end
+    end
+
+    context 'when a required field has no column' do
+      let(:mappings) { { 'title' => { 'from' => ['title'] }, 'creator' => { 'from' => %w[author creator] } } }
+
+      it 'reports it' do
+        expect(host.find_missing_required_headers(%w[title], field_metadata, mapping_manager))
+          .to eq([{ model: 'GenericWorkResource', field: 'creator' }])
       end
     end
   end

@@ -220,6 +220,7 @@ Resolves Bulkrax field mappings between internal keys and CSV column names.
 ```ruby
 manager = CsvTemplate::MappingManager.new
 manager.mapped_to_key('work_type')       # => 'model'
+manager.mapped_to_keys('author')         # => every key the header feeds, e.g. ['creator', 'contributor']
 Bulkrax::FieldResolver.headers_for_field(manager.mappings, 'model')  # => ['work_type', 'model']
 ```
 

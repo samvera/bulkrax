@@ -7,7 +7,7 @@ module Bulkrax
     # and their numbered forms (`parents_1`, `parents_2`), splitting each cell.
     module RelationshipIds
       def self.columns(mappings, flag, default)
-        key, = (mappings || {}).find { |_k, v| v.is_a?(Hash) && (v[flag] || v[flag.to_sym]) }
+        key = Bulkrax::FieldResolver.flagged_key(mappings, flag)
         Bulkrax::FieldResolver.headers_for_field(mappings, key || default)
       end
 

@@ -46,6 +46,12 @@ RSpec.describe Bulkrax::CsvRow::RequiredValues do
     expect(context[:errors]).to be_empty
   end
 
+  it 'flags a blank required value under a prefixed column (1_title)' do
+    context = make_context
+    described_class.call(make_record('1_title' => ''), 2, context)
+    expect(context[:errors].map { |e| e[:column] }).to eq(['title'])
+  end
+
   context 'when model is blank' do
     def make_blank_model_record(raw_row_hash = {})
       {
@@ -150,6 +156,21 @@ RSpec.describe Bulkrax::CsvRow::RequiredValues do
       context = make_context(required_terms: %w[title rights_statement])
       described_class.call(record, 2, context)
       expect(context[:errors]).to be_empty
+    end
+  end
+
+  context 'when one header feeds two mappings' do
+    let(:mapping_manager) do
+      allow(Bulkrax).to receive(:field_mappings).and_return(
+        'Bulkrax::CsvParser' => { 'contributor' => { 'from' => ['author'] }, 'creator' => { 'from' => ['author'] } }
+      )
+      Bulkrax::CsvTemplate::MappingManager.new
+    end
+
+    it 'flags a blank value for the second mapping the header feeds' do
+      context = make_context(required_terms: ['creator']).merge(mapping_manager: mapping_manager)
+      described_class.call(make_record('author' => ''), 2, context)
+      expect(context[:errors].map { |e| e[:column] }).to contain_exactly('creator')
     end
   end
 end

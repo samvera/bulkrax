@@ -944,6 +944,16 @@ module Bulkrax
       end
     end
 
+    describe '#missing_elements when a header matches a mapping key rather than its `from:`' do
+      it 'counts the header, as field_to does' do
+        allow(importer).to receive(:mapping).and_return(
+          'title' => { 'from' => ['dc_title'] },
+          'source_identifier' => { 'from' => ['source_identifier'], 'source_identifier' => true }
+        )
+        expect(subject.missing_elements('title' => 'A Title', 'source_identifier' => 'id1')).to eq([])
+      end
+    end
+
     describe '#write_errored_entries_file', clean_downloads: true do
       let(:importer)         { FactoryBot.create(:bulkrax_importer_csv_failed, entries: [entry_failed, entry_succeeded, entry_collection]) }
       let(:entry_failed)     { FactoryBot.create(:bulkrax_csv_entry_failed, raw_metadata: { title: 'Failed' }) }
