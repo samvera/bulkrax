@@ -32,6 +32,14 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
     end
   end
 
+  describe "#append_files_referenced_no_zip_notice!" do
+    it "adds the notice when files are listed only under a later or numbered file column" do
+      notices = []
+      host.append_files_referenced_no_zip_notice!(notices, [{ file: nil, file_values: ["a.jpg"] }], nil)
+      expect(notices.map { |n| n[:category] }).to eq(["files_referenced_no_zip"])
+    end
+  end
+
   describe '#find_record_by_source_identifier' do
     let(:work_identifier)        { 'source' }
     let(:work_identifier_search) { 'source_sim' }
@@ -745,16 +753,6 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
   end
 
   describe '#assemble_result' do
-    let(:file_validator) do
-      instance_double(
-        'Bulkrax::FileValidator',
-        missing_files: [],
-        possible_missing_files?: false,
-        count_references: 0,
-        found_files_count: 0,
-        zip_included?: false
-      )
-    end
     let(:header_issues) { { unrecognized: {}, empty_columns: [] } }
     let(:csv_data) { [{ source_identifier: 'w1' }] }
     let(:headers) { %w[source_identifier title] }
@@ -763,7 +761,7 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
       host.send(
         :assemble_result,
         headers: headers, missing_required: missing_required, header_issues: header_issues,
-        row_errors: row_errors, csv_data: csv_data, file_validator: file_validator,
+        row_errors: row_errors, csv_data: csv_data,
         collections: [], works: [], file_sets: [], notices: notices
       )
     end

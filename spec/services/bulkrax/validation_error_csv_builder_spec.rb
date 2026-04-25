@@ -172,42 +172,6 @@ RSpec.describe Bulkrax::ValidationErrorCsvBuilder do
         expect(rows[1][1]).to eq('Column 5 has no header and will be ignored during import')
       end
 
-      it 'emits a row for each missing file' do
-        result = described_class.build(
-          headers: headers, csv_data: csv_data, row_errors: row_errors,
-          file_errors: { missing_files: ['photo.jpg'] }
-        )
-        rows = CSV.parse(result)
-        expect(rows[1][1]).to eq('Missing file: photo.jpg')
-      end
-
-      it 'leaves the row number blank for file-level rows' do
-        result = described_class.build(
-          headers: headers, csv_data: csv_data, row_errors: row_errors,
-          file_errors: { missing_files: ['photo.jpg'] }
-        )
-        rows = CSV.parse(result)
-        expect(rows[1][0]).to be_nil
-      end
-
-      it 'leaves the category cell blank for file-level rows' do
-        result = described_class.build(
-          headers: headers, csv_data: csv_data, row_errors: row_errors,
-          file_errors: { missing_files: ['photo.jpg'] }
-        )
-        rows = CSV.parse(result)
-        expect(rows[1][2]).to be_nil
-      end
-
-      it 'leaves data columns blank for file-level rows' do
-        result = described_class.build(
-          headers: headers, csv_data: csv_data, row_errors: row_errors,
-          file_errors: { missing_files: ['photo.jpg'] }
-        )
-        rows = CSV.parse(result)
-        expect(rows[1][3..]).to all(be_nil)
-      end
-
       context 'when both file-level and row-level errors are present' do
         let(:row_errors) { [{ row: 2, severity: 'error', category: 'test', column: 'title', value: nil, message: 'Row error' }] }
 

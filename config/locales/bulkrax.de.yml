@@ -353,11 +353,6 @@ de:
               suggestion: "Falls Sie keinen bestehenden Datensatz aktualisieren wollten, ändern Sie den Wert für %{field}."
           failed: Validierung fehlgeschlagen
           file_path_not_exist: Der Dateipfad existiert nicht.
-          file_references_title: Dateiverweise
-          files_found_in_zip: "%{found} von %{total} Dateien im ZIP-Archiv gefunden."
-          files_missing_from_zip: "%{count} %{files_word} werden in Ihrer CSV-Datei referenziert, fehlen aber in der ZIP-Datei:"
-          files_referenced: Die in der CSV-Datei referenzierten %{count}-Dateien wurden beim Import nicht gefunden.
-          missing_from_zip: fehlt in der Postleitzahl
           missing_source_identifier_validator:
             errors:
               message: "In der Zeile fehlt ein Wert für '%{field}'."
@@ -371,7 +366,6 @@ de:
           zip_unreadable: "Das ZIP-Archiv konnte nicht gelesen werden (%{error}). Erstellen Sie das ZIP-Archiv neu und laden Sie es erneut hoch."
           no_csv_uploaded: Es wurde keine CSV-Metadatendatei hochgeladen.
           no_files_uploaded: Es wurden keine Dateien hochgeladen.
-          no_zip_desc: Es wurde keine ZIP-Datei hochgeladen. Stellen Sie sicher, dass die Dateien auf dem Server zugänglich sind, oder laden Sie eine ZIP-Datei hoch.
           parent_reference_validator:
             errors:
               message: "Das referenzierte übergeordnete Element '%{value}' existiert nicht als %{field} in dieser CSV-Datei."
@@ -392,6 +386,9 @@ de:
           passed: Validierung erfolgreich
           passed_warnings: Validierung mit Warnungen bestanden
           recognized_fields: 'Erkannte Felder: %{fields}'
+          files_referenced_no_zip_notice:
+            message: "In der CSV-Datei werden Dateien referenziert, aber es wurde kein ZIP-Archiv hochgeladen."
+            suggestion: "Laden Sie ein ZIP-Archiv mit den referenzierten Dateien hoch oder stellen Sie sicher, dass sie beim Import auf dem Server verfügbar sind."
           default_work_type_validator:
             warnings:
               message: "Kein Modell angegeben — diese Zeile wird als '%{default_work_type}' importiert."
@@ -407,7 +404,6 @@ de:
               suggestion: "Geben Sie einen Wert für '%{field}' ein."
           validation_error_csv_builder:
             empty_column: "Spalte %{column} hat keine Überschrift und wird beim Import ignoriert"
-            missing_file: "Fehlende Datei: %{filename}"
             missing_required_column: "Fehlende Pflichtspalte '%{field}' (%{model})"
             unrecognized_column: "Unbekannte Spalte '%{column}'"
             unrecognized_column_with_suggestion: "Unbekannte Spalte '%{column}' (meinten Sie '%{suggestion}'?)"

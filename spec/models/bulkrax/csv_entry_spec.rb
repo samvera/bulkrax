@@ -1608,7 +1608,7 @@ module Bulkrax
     end
     # Ingestion writes to parsed_metadata['file'] via Bulkrax::CsvParser.
     # file_split_pattern, so any `split:` configured on the `file` mapping is
-    # honoured — matching #file_paths and FileValidator#referenced_files.
+    # honored, matching #file_paths.
     describe '#add_file' do
       let(:importer) { FactoryBot.create(:bulkrax_importer_csv) }
       subject(:entry) do

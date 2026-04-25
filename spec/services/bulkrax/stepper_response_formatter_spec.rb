@@ -3,8 +3,8 @@
 require 'rails_helper'
 
 RSpec.describe Bulkrax::StepperResponseFormatter do
-  # Load demo scenarios from the fixtures
-  let(:demo_scenarios_path) { File.expand_path('../../fixtures/demo_scenarios.json', __dir__) }
+  # The controller's demo mode reads this same file.
+  let(:demo_scenarios_path) { Bulkrax::Engine.root.join('lib', 'bulkrax', 'data', 'demo_scenarios.json') }
   let(:demo_scenarios) { JSON.parse(File.read(demo_scenarios_path), symbolize_names: true) }
 
   describe '.format' do
@@ -28,13 +28,7 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
         expect(result[:isValid]).to be true
         expect(result[:hasWarnings]).to be false
         expect(result[:messages][:validationStatus][:severity]).to eq('success')
-        expect(result[:messages][:issues].length).to eq(1)
-
-        file_issue = result[:messages][:issues].first
-        expect(file_issue[:type]).to eq('file_references')
-        expect(file_issue[:severity]).to eq('info')
-        expect(file_issue[:count]).to eq(25)
-        expect(file_issue[:summary]).to eq('25 of 25 files found in ZIP.')
+        expect(result[:messages][:issues]).to be_empty
       end
     end
 
@@ -56,27 +50,6 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
         expect(unrecognized_issue[:items].map { |i| i[:field] }).to contain_exactly('legacy_id', 'internal_notes')
       end
 
-      it 'formats validation with missing files from ZIP' do
-        input_data = demo_scenarios[:scenarios][:warning_missing_files][:response]
-        result = described_class.format(input_data)
-
-        expect(result[:isValid]).to be true
-        expect(result[:hasWarnings]).to be true
-        expect(result[:messages][:validationStatus][:severity]).to eq('warning')
-
-        file_issue = result[:messages][:issues].find { |i| i[:type] == 'file_references' }
-        expect(file_issue).to be_present
-        expect(file_issue[:severity]).to eq('warning')
-        expect(file_issue[:count]).to eq(55)
-        expect(file_issue[:summary]).to eq('52 of 55 files found in ZIP.')
-        expect(file_issue[:items].length).to eq(3)
-        expect(file_issue[:items].map { |i| i[:field] }).to contain_exactly(
-          'photo_087.tiff',
-          'letter_scan_12.pdf',
-          'recording_03.wav'
-        )
-      end
-
       it 'formats validation with file references but no ZIP' do
         input_data = demo_scenarios[:scenarios][:warning_no_zip][:response]
         result = described_class.format(input_data)
@@ -84,13 +57,11 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
         expect(result[:isValid]).to be true
         expect(result[:hasWarnings]).to be true
 
-        file_issue = result[:messages][:issues].find { |i| i[:type] == 'file_references' }
-        expect(file_issue).to be_present
-        expect(file_issue[:severity]).to eq('warning')
-        expect(file_issue[:count]).to eq(30)
-        expect(file_issue[:summary]).to eq('30 files referenced in CSV.')
-        expect(file_issue[:description]).to include('No ZIP file uploaded')
-        expect(file_issue[:items]).to be_empty
+        notices_issue = result[:messages][:issues].find { |i| i[:type] == 'notices' }
+        expect(notices_issue).to be_present
+        expect(notices_issue[:count]).to eq(1)
+        expect(notices_issue[:items].first[:field]).to eq('file')
+        expect(notices_issue[:items].first[:message]).to include('no ZIP was uploaded')
       end
 
       it 'formats validation with combined warnings' do
@@ -104,12 +75,25 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
         unrecognized_issue = result[:messages][:issues].find { |i| i[:type] == 'unrecognized_fields' }
         expect(unrecognized_issue[:count]).to eq(1)
 
-        file_issue = result[:messages][:issues].find { |i| i[:type] == 'file_references' }
-        expect(file_issue[:count]).to eq(55)
+        warnings_issue = result[:messages][:issues].find { |i| i[:type] == 'row_level_warnings' }
+        expect(warnings_issue[:count]).to eq(3)
       end
     end
 
     context 'with error scenarios' do
+      it 'formats validation with missing files from ZIP as blocking row errors' do
+        input_data = demo_scenarios[:scenarios][:error_missing_files][:response]
+        result = described_class.format(input_data)
+
+        expect(result[:isValid]).to be false
+        expect(result[:messages][:validationStatus][:severity]).to eq('error')
+
+        errors_issue = result[:messages][:issues].find { |i| i[:type] == 'row_level_errors' }
+        expect(errors_issue[:count]).to eq(3)
+        expect(errors_issue[:items]).to all(satisfy { |i| i[:category] == 'missing_file_reference' })
+        expect(errors_issue[:items].map { |i| i[:message] }).to all(include("is not in the uploaded ZIP"))
+      end
+
       it 'formats validation with missing required fields' do
         input_data = demo_scenarios[:scenarios][:error_missing_required][:response]
         result = described_class.format(input_data)
@@ -174,11 +158,7 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
           collections: [],
           works: [],
           fileSets: [],
-          totalItems: 10,
-          fileReferences: 0,
-          missingFiles: [],
-          foundFiles: 0,
-          zipIncluded: false
+          totalItems: 10
         }
       end
 
@@ -241,8 +221,7 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
           rowCount: 42,
           isValid: true,
           hasWarnings: false,
-          unrecognized: {},
-          fileReferences: 0
+          unrecognized: {}
         }
 
         result = described_class.new(data).format
@@ -256,8 +235,7 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
           rowCount: 10,
           isValid: true,
           hasWarnings: true,
-          unrecognized: { 'unknown_field' => nil },
-          fileReferences: 0
+          unrecognized: { 'unknown_field' => nil }
         }
 
         result = described_class.new(data).format
@@ -274,8 +252,7 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
           isValid: false,
           hasWarnings: false,
           missingRequired: [{ model: 'Work', field: 'source_identifier' }, { model: 'Work', field: 'model' }],
-          unrecognized: {},
-          fileReferences: 0
+          unrecognized: {}
         }
 
         result = described_class.new(data).format
@@ -292,8 +269,7 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
           isValid: false,
           hasWarnings: false,
           missingRequired: [{ model: 'Work', field: 'source_identifier' }, { model: 'Work', field: 'model' }],
-          unrecognized: {},
-          fileReferences: 0
+          unrecognized: {}
         }
 
         result = described_class.new(data).format
@@ -320,8 +296,7 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
             { model: 'Work', field: 'source_identifier' },
             { model: 'Work', field: 'model' }
           ],
-          unrecognized: {},
-          fileReferences: 0
+          unrecognized: {}
         }
 
         result = described_class.new(data).format
@@ -348,8 +323,7 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
             { model: 'GenericWork', field: 'rights_statement' },
             { model: 'Image', field: 'rights_statement' }
           ],
-          unrecognized: {},
-          fileReferences: 0
+          unrecognized: {}
         }
 
         result = described_class.new(data).format
@@ -375,8 +349,7 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
           isValid: true,
           hasWarnings: true,
           missingRequired: [],
-          unrecognized: { 'legacy_id' => nil },
-          fileReferences: 0
+          unrecognized: { 'legacy_id' => nil }
         }
 
         result = described_class.new(data).format
@@ -399,8 +372,7 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
           isValid: true,
           hasWarnings: true,
           missingRequired: [],
-          unrecognized: { 'legacy_id' => 'legacyid', 'internal_notes' => nil, 'bad_field' => nil },
-          fileReferences: 0
+          unrecognized: { 'legacy_id' => 'legacyid', 'internal_notes' => nil, 'bad_field' => nil }
         }
 
         result = described_class.new(data).format
@@ -411,36 +383,31 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
         expect(items.last(2).map { |i| i[:message] }).to all(be_nil)
       end
 
-      it 'generates file references issue for missing files in ZIP' do
+      it 'surfaces missing-file row errors via the row_level_errors accordion' do
         data = {
           headers: ['source_identifier', 'title', 'file'],
-          rowCount: 10,
-          isValid: true,
-          hasWarnings: true,
+          rowCount: 2,
+          isValid: false,
+          hasWarnings: false,
           missingRequired: [],
           unrecognized: {},
-          fileReferences: 10,
-          foundFiles: 8,
-          missingFiles: ['file1.jpg', 'file2.pdf'],
-          zipIncluded: true
+          rowErrors: [
+            { row: 2, source_identifier: 'w1', severity: 'error',
+              category: 'missing_file_reference', column: 'file', value: 'missing.jpg',
+              message: 'Referenced file missing.jpg is not in the uploaded ZIP.',
+              suggestion: 'Check the file path.' }
+          ]
         }
 
         result = described_class.new(data).format
-        issue = result[:messages][:issues].find { |i| i[:type] == 'file_references' }
-
-        expect(issue[:severity]).to eq('warning')
-        expect(issue[:icon]).to eq('fa-info-circle')
-        expect(issue[:title]).to eq('File References')
-        expect(issue[:count]).to eq(10)
-        expect(issue[:summary]).to eq('8 of 10 files found in ZIP.')
-        expect(issue[:description]).to eq('2 files referenced in your CSV but missing from the ZIP:')
-        expect(issue[:items]).to contain_exactly(
-          { field: 'file1.jpg', message: 'missing from ZIP' },
-          { field: 'file2.pdf', message: 'missing from ZIP' }
+        issue = result[:messages][:issues].find { |i| i[:type] == 'row_level_errors' }
+        expect(issue).to be_present
+        expect(issue[:items]).to include(
+          a_hash_including(category: 'missing_file_reference', message: include('missing.jpg'))
         )
       end
 
-      it 'generates file references issue when no ZIP uploaded' do
+      it 'surfaces a files_referenced_no_zip notice via the notices accordion' do
         data = {
           headers: ['source_identifier', 'title', 'file'],
           rowCount: 5,
@@ -448,22 +415,19 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
           hasWarnings: true,
           missingRequired: [],
           unrecognized: {},
-          fileReferences: 5,
-          foundFiles: 0,
-          missingFiles: [],
-          zipIncluded: false
+          notices: [
+            { field: 'file', category: 'files_referenced_no_zip',
+              message: 'Files are referenced in the CSV but no ZIP was uploaded.',
+              suggestion: 'Upload a ZIP of the referenced files.' }
+          ]
         }
 
         result = described_class.new(data).format
-        issue = result[:messages][:issues].find { |i| i[:type] == 'file_references' }
-
-        expect(issue[:severity]).to eq('warning')
-        expect(issue[:icon]).to eq('fa-exclamation-triangle')
-        expect(issue[:title]).to eq('File References')
-        expect(issue[:count]).to eq(5)
-        expect(issue[:summary]).to eq('5 files referenced in CSV not found in import.')
-        expect(issue[:description]).to eq('No ZIP file uploaded. Ensure files are accessible on the server or upload a ZIP.')
-        expect(issue[:items]).to be_empty
+        notice_issue = result[:messages][:issues].find { |i| i[:type] == 'notices' }
+        expect(notice_issue).to be_present
+        expect(notice_issue[:items]).to include(
+          a_hash_including(field: 'file')
+        )
       end
 
       it 'generates separate error and warning boxes when both are present' do
@@ -474,7 +438,6 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
           hasWarnings: true,
           missingRequired: [],
           unrecognized: {},
-          fileReferences: 0,
           rowErrors: [
             { row: 1, source_identifier: 'ABC', severity: 'error', category: 'missing_required_value',
               column: 'creator', value: nil, message: "Field 'creator' is required but is empty for this row.",
@@ -515,7 +478,6 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
           hasWarnings: true,
           missingRequired: [],
           unrecognized: {},
-          fileReferences: 0,
           rowErrors: [
             { row: 1, source_identifier: 'ABC', severity: 'warning', category: 'existing_source_identifier',
               column: 'source_identifier', value: 'ABC', message: "'ABC' matches an existing repository record.",
@@ -542,7 +504,6 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
           hasWarnings: true,
           missingRequired: [],
           unrecognized: {},
-          fileReferences: 0,
           rowErrors: [
             { row: 1, source_identifier: 'ABC', severity: 'warning', category: 'existing_source_identifier',
               column: 'source_identifier', value: 'ABC', message: 'matches existing record.' },
@@ -568,7 +529,6 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
           hasWarnings: false,
           missingRequired: [{ model: 'GenericWork', field: 'rights_statement' }],
           unrecognized: {},
-          fileReferences: 0,
           rowErrors: [
             { row: 1, source_identifier: 'ABC', severity: 'error', category: 'missing_required_value',
               column: 'rights_statement', value: nil, message: "Field 'rights_statement' is required but is empty for this row.",
@@ -596,7 +556,6 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
           hasWarnings: true,
           missingRequired: [{ model: 'GenericWork', field: 'rights_statement' }],
           unrecognized: {},
-          fileReferences: 0,
           rowErrors: [
             { row: 1, source_identifier: 'ABC', severity: 'warning', category: 'missing_required_value',
               column: 'rights_statement', value: nil, message: "Field 'rights_statement' is required but is empty for this row.",
@@ -617,11 +576,7 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
           isValid: true,
           hasWarnings: false,
           missingRequired: [],
-          unrecognized: {},
-          fileReferences: 0,
-          foundFiles: 0,
-          missingFiles: [],
-          zipIncluded: false
+          unrecognized: {}
         }
 
         result = described_class.new(data).format
