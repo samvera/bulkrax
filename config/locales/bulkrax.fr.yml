@@ -352,11 +352,6 @@ fr:
               suggestion: "Si vous ne souhaitiez pas mettre à jour un enregistrement existant, modifiez la valeur de %{field}."
           failed: Échec de la validation
           file_path_not_exist: Le chemin d'accès au fichier n'existe pas.
-          file_references_title: Références de fichiers
-          files_found_in_zip: "%{found} fichiers sur %{total} trouvés dans le fichier ZIP."
-          files_missing_from_zip: "%{count} %{files_word} référencé dans votre fichier CSV mais absent du fichier ZIP :"
-          files_referenced: "%{count} fichiers référencés dans le fichier CSV sont introuvables lors de l'importation."
-          missing_from_zip: manquant dans le fichier ZIP
           missing_source_identifier_validator:
             errors:
               message: "Il manque une valeur pour '%{field}' dans cette ligne."
@@ -369,7 +364,6 @@ fr:
           no_csv_in_zip: Aucun fichier CSV trouvé dans le fichier ZIP
           no_csv_uploaded: Aucun fichier de métadonnées CSV n'a été téléchargé.
           no_files_uploaded: Aucun fichier téléchargé
-          no_zip_desc: Aucun fichier ZIP n'a été téléchargé. Assurez-vous que les fichiers sont accessibles sur le serveur ou téléchargez un fichier ZIP.
           parent_reference_validator:
             errors:
               message: "Le parent référencé « %{value} » n'existe pas en tant que %{field} dans ce CSV."
@@ -400,7 +394,6 @@ fr:
               suggestion: "Ajoutez une valeur pour « %{field} »."
           validation_error_csv_builder:
             empty_column: "La colonne %{column} n'a pas d'en-tête et sera ignorée lors de l'importation"
-            missing_file: "Fichier manquant : %{filename}"
             missing_required_column: "Colonne obligatoire manquante « %{field} » (%{model})"
             unrecognized_column: "Colonne non reconnue « %{column} »"
             unrecognized_column_with_suggestion: "Colonne non reconnue « %{column} » (vouliez-vous dire « %{suggestion} » ?)"

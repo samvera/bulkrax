@@ -33,10 +33,6 @@ module Bulkrax
     #   - works: Array of work items with id, title, type, parentIds (array), childIds (array)
     #   - fileSets: Array of file set items
     #   - totalItems: Total count of items
-    #   - fileReferences: Count of file references
-    #   - missingFiles: Array of missing file names
-    #   - foundFiles: Count of found files
-    #   - zipIncluded: Boolean indicating if zip was provided
     # @return [Hash] Formatted response ready for JSON rendering
     def self.format(data)
       new(data).format
@@ -94,10 +90,6 @@ module Bulkrax
         works: @data[:works],
         fileSets: @data[:fileSets],
         totalItems: @data[:totalItems],
-        fileReferences: @data[:fileReferences],
-        missingFiles: @data[:missingFiles],
-        foundFiles: @data[:foundFiles],
-        zipIncluded: @data[:zipIncluded],
         messages: build_messages
       }
     end
@@ -121,7 +113,6 @@ module Bulkrax
       issues << missing_required_issue if @data[:missingRequired]&.any?
       issues << notices_issue if @data[:notices]&.any?
       issues << unrecognized_fields_issue if @data[:unrecognized]&.any? || @data[:emptyColumns]&.any?
-      issues << file_references_issue if @data[:fileReferences]&.positive?
       issues << row_errors_issue if @data[:rowErrors]&.any? { |e| e[:severity] == 'error' }
       issues << row_warnings_issue if @data[:rowErrors]&.any? { |e| e[:severity] == 'warning' }
 
@@ -229,55 +220,6 @@ module Bulkrax
         { field: I18n.t('bulkrax.importer.guided_import.validation.empty_column', column: col), message: nil }
       end
       named + empty
-    end
-
-    # Format file references issue
-    #
-    # @return [Hash, nil] File references issue structure or nil if not applicable
-    def file_references_issue
-      missing_files = @data[:missingFiles] || []
-
-      if missing_files.any? && @data[:zipIncluded]
-        missing_files_issue
-      elsif !@data[:zipIncluded]
-        no_zip_issue
-      end
-    end
-
-    # Format issue for missing files in ZIP
-    #
-    # @return [Hash] Missing files issue structure
-    def missing_files_issue
-      missing_files = @data[:missingFiles]
-
-      {
-        type: 'file_references',
-        severity: 'warning',
-        icon: 'fa-info-circle',
-        title: I18n.t('bulkrax.importer.guided_import.validation.file_references_title'),
-        count: @data[:fileReferences],
-        summary: I18n.t('bulkrax.importer.guided_import.validation.files_found_in_zip', found: @data[:foundFiles], total: @data[:fileReferences]),
-        description: I18n.t('bulkrax.importer.guided_import.validation.files_missing_from_zip', count: missing_files.length, files_word: 'file'.pluralize(missing_files.length)),
-        items: missing_files.map { |file| { field: file, message: I18n.t('bulkrax.importer.guided_import.validation.missing_from_zip') } },
-        defaultOpen: false
-      }
-    end
-
-    # Format issue for no ZIP uploaded
-    #
-    # @return [Hash] No ZIP issue structure
-    def no_zip_issue
-      {
-        type: 'file_references',
-        severity: 'warning',
-        icon: 'fa-exclamation-triangle',
-        title: I18n.t('bulkrax.importer.guided_import.validation.file_references_title'),
-        count: @data[:fileReferences],
-        summary: I18n.t('bulkrax.importer.guided_import.validation.files_referenced', count: @data[:fileReferences]),
-        description: I18n.t('bulkrax.importer.guided_import.validation.no_zip_desc'),
-        items: [],
-        defaultOpen: false
-      }
     end
 
     def row_errors_issue

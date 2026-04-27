@@ -352,11 +352,6 @@ it:
               suggestion: "Se non intendevi aggiornare un record esistente, modifica il valore di %{field}."
           failed: Convalida fallita
           file_path_not_exist: Il percorso del file non esiste
-          file_references_title: Riferimenti ai file
-          files_found_in_zip: "%{found} di %{total} file trovati in ZIP."
-          files_missing_from_zip: "%{count} %{files_word} a cui si fa riferimento nel CSV ma che non è presente nel file ZIP:"
-          files_referenced: "%{count} file referenziati nel CSV non trovati durante l'importazione."
-          missing_from_zip: mancante dal codice postale
           missing_source_identifier_validator:
             errors:
               message: "Nella riga manca un valore per '%{field}'."
@@ -369,7 +364,6 @@ it:
           no_csv_in_zip: Nessun file CSV trovato nello ZIP
           no_csv_uploaded: Nessun file di metadati CSV caricato
           no_files_uploaded: Nessun file caricato
-          no_zip_desc: Nessun file ZIP caricato. Assicurarsi che i file siano accessibili sul server o caricare un file ZIP.
           parent_reference_validator:
             errors:
               message: "Il genitore referenziato '%{value}' non esiste come %{field} in questo CSV."
@@ -400,7 +394,6 @@ it:
               suggestion: "Aggiungi un valore per '%{field}'."
           validation_error_csv_builder:
             empty_column: "La colonna %{column} non ha intestazione e verrà ignorata durante l'importazione"
-            missing_file: "File mancante: %{filename}"
             missing_required_column: "Colonna obbligatoria mancante '%{field}' (%{model})"
             unrecognized_column: "Colonna non riconosciuta '%{column}'"
             unrecognized_column_with_suggestion: "Colonna non riconosciuta '%{column}' (intendevi '%{suggestion}'?)"

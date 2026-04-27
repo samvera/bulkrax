@@ -352,11 +352,6 @@ en:
               suggestion: "If you did not intend to update an existing record, change the %{field} value."
           failed: Validation Failed
           file_path_not_exist: File path does not exist
-          file_references_title: File References
-          files_found_in_zip: "%{found} of %{total} files found in ZIP."
-          files_missing_from_zip: "%{count} %{files_word} referenced in your CSV but missing from the ZIP:"
-          files_referenced: "%{count} files referenced in CSV not found in import."
-          missing_from_zip: missing from ZIP
           missing_source_identifier_validator:
             errors:
               message: "Row is missing a value for '%{field}'."
@@ -369,7 +364,6 @@ en:
           no_csv_in_zip: No CSV files found in ZIP
           no_csv_uploaded: No CSV metadata file uploaded
           no_files_uploaded: No files uploaded
-          no_zip_desc: No ZIP file uploaded. Ensure files are accessible on the server or upload a ZIP.
           parent_reference_validator:
             errors:
               message: "Referenced parent '%{value}' does not exist as a %{field} in this CSV."
@@ -395,6 +389,9 @@ en:
             message_column_empty: "No model provided — all rows will be imported as '%{default_work_type}'."
             suggestion_column_empty: "Add model values to the 'model' column in your CSV if you want to use a different work type for some rows."
             suggestion_column_missing: "Add a 'model' column to your CSV if you want to use a different work type for some rows."
+          files_referenced_no_zip_notice:
+            message: "Files are referenced in the CSV but no ZIP was uploaded."
+            suggestion: "Upload a ZIP of the referenced files, or ensure they are accessible on the server at import time."
           default_work_type_validator:
             warnings:
               message: "No model specified — this row will be imported as '%{default_work_type}'."
@@ -405,7 +402,6 @@ en:
               suggestion: "Add a value for '%{field}'."
           validation_error_csv_builder:
             empty_column: "Column %{column} has no header and will be ignored during import"
-            missing_file: "Missing file: %{filename}"
             missing_required_column: "Missing required column '%{field}' (%{model})"
             unrecognized_column: "Unrecognized column '%{column}'"
             unrecognized_column_with_suggestion: "Unrecognized column '%{column}' (did you mean '%{suggestion}'?)"

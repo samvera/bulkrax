@@ -590,16 +590,6 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
   end
 
   describe '#assemble_result' do
-    let(:file_validator) do
-      instance_double(
-        'Bulkrax::FileValidator',
-        missing_files: [],
-        possible_missing_files?: false,
-        count_references: 0,
-        found_files_count: 0,
-        zip_included?: false
-      )
-    end
     let(:header_issues) { { unrecognized: {}, empty_columns: [] } }
     let(:csv_data) { [{ source_identifier: 'w1' }] }
     let(:headers) { %w[source_identifier title] }
@@ -608,7 +598,7 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
       host.send(
         :assemble_result,
         headers: headers, missing_required: missing_required, header_issues: header_issues,
-        row_errors: row_errors, csv_data: csv_data, file_validator: file_validator,
+        row_errors: row_errors, csv_data: csv_data,
         collections: [], works: [], file_sets: [], notices: notices
       )
     end

@@ -225,10 +225,6 @@
         "rowCount": 50,
         "isValid": true,
         "hasWarnings": false,
-        "fileReferences": 0,
-        "missingFiles": [],
-        "foundFiles": 0,
-        "zipIncluded": false,
         "messages": {
           "validationStatus": {
             "severity": "success",
@@ -423,10 +419,6 @@
         "rowCount": 25,
         "isValid": true,
         "hasWarnings": false,
-        "fileReferences": 25,
-        "missingFiles": [],
-        "foundFiles": 25,
-        "zipIncluded": true,
         "messages": {
           "validationStatus": {
             "severity": "success",
@@ -436,19 +428,7 @@
             "details": "Recognized fields: source_identifier, title, creator, model, file",
             "defaultOpen": true
           },
-          "issues": [
-            {
-              "type": "file_references",
-              "severity": "info",
-              "icon": "fa-info-circle",
-              "title": "File References",
-              "count": 25,
-              "summary": "25 of 25 files found in ZIP.",
-              "description": null,
-              "items": [],
-              "defaultOpen": false
-            }
-          ]
+          "issues": []
         }
       }
     },
@@ -579,10 +559,6 @@
         "rowCount": 30,
         "isValid": true,
         "hasWarnings": false,
-        "fileReferences": 0,
-        "missingFiles": [],
-        "foundFiles": 0,
-        "zipIncluded": false,
         "messages": {
           "validationStatus": {
             "severity": "success",
@@ -717,10 +693,6 @@
         "rowCount": 20,
         "isValid": true,
         "hasWarnings": false,
-        "fileReferences": 0,
-        "missingFiles": [],
-        "foundFiles": 0,
-        "zipIncluded": false,
         "messages": {
           "validationStatus": {
             "severity": "success",
@@ -846,10 +818,6 @@
         "rowCount": 20,
         "isValid": true,
         "hasWarnings": false,
-        "fileReferences": 0,
-        "missingFiles": [],
-        "foundFiles": 0,
-        "zipIncluded": false,
         "messages": {
           "validationStatus": {
             "severity": "success",
@@ -1053,10 +1021,6 @@
         "rowCount": 247,
         "isValid": true,
         "hasWarnings": true,
-        "fileReferences": 0,
-        "missingFiles": [],
-        "foundFiles": 0,
-        "zipIncluded": false,
         "messages": {
           "validationStatus": {
             "severity": "warning",
@@ -1272,14 +1236,6 @@
         "rowCount": 55,
         "isValid": true,
         "hasWarnings": true,
-        "fileReferences": 55,
-        "foundFiles": 52,
-        "zipIncluded": true,
-        "missingFiles": [
-          "photo_087.tiff",
-          "letter_scan_12.pdf",
-          "recording_03.wav"
-        ],
         "messages": {
           "validationStatus": {
             "severity": "warning",
@@ -1291,25 +1247,27 @@
           },
           "issues": [
             {
-              "type": "file_references",
+              "type": "row_level_warnings",
               "severity": "warning",
-              "icon": "fa-info-circle",
-              "title": "File References",
-              "count": 55,
-              "summary": "52 of 55 files found in ZIP.",
-              "description": "3 files are referenced in your CSV but missing from the ZIP:",
+              "icon": "fa-exclamation-triangle",
+              "title": "Row Validation Warnings",
+              "count": 3,
+              "description": "The following issues exist with data in your CSV:",
               "items": [
                 {
-                  "field": "photo_087.tiff",
-                  "message": "missing from ZIP"
+                  "field": "Row 12 · file",
+                  "message": "Referenced file 'photo_087.tiff' is not in the uploaded ZIP. Check the file path and ensure the file exists in the ZIP at the same location.",
+                  "category": "missing_file_reference"
                 },
                 {
-                  "field": "letter_scan_12.pdf",
-                  "message": "missing from ZIP"
+                  "field": "Row 27 · file",
+                  "message": "Referenced file 'letter_scan_12.pdf' is not in the uploaded ZIP. Check the file path and ensure the file exists in the ZIP at the same location.",
+                  "category": "missing_file_reference"
                 },
                 {
-                  "field": "recording_03.wav",
-                  "message": "missing from ZIP"
+                  "field": "Row 41 · file",
+                  "message": "Referenced file 'recording_03.wav' is not in the uploaded ZIP. Check the file path and ensure the file exists in the ZIP at the same location.",
+                  "category": "missing_file_reference"
                 }
               ],
               "defaultOpen": false
@@ -1491,10 +1449,14 @@
         "rowCount": 30,
         "isValid": true,
         "hasWarnings": true,
-        "fileReferences": 30,
-        "missingFiles": [],
-        "foundFiles": 0,
-        "zipIncluded": false,
+        "notices": [
+          {
+            "field": "file",
+            "category": "files_referenced_no_zip",
+            "message": "Files are referenced in the CSV but no ZIP was uploaded.",
+            "suggestion": "Upload a ZIP of the referenced files, or ensure they are accessible on the server at import time."
+          }
+        ],
         "messages": {
           "validationStatus": {
             "severity": "warning",
@@ -1506,14 +1468,18 @@
           },
           "issues": [
             {
-              "type": "file_references",
+              "type": "notices",
               "severity": "warning",
-              "icon": "fa-exclamation-triangle",
-              "title": "File References",
-              "count": 30,
-              "summary": "30 files referenced in CSV.",
-              "description": "No ZIP file uploaded. Ensure files are accessible on the server or upload a ZIP file containing the referenced files.",
-              "items": [],
+              "icon": "fa-info-circle",
+              "title": "Import Notices",
+              "count": 1,
+              "description": "These notices may affect how your CSV is imported:",
+              "items": [
+                {
+                  "field": "file",
+                  "message": "Files are referenced in the CSV but no ZIP was uploaded. Upload a ZIP of the referenced files, or ensure they are accessible on the server at import time."
+                }
+              ],
               "defaultOpen": false
             }
           ]
@@ -1708,14 +1674,6 @@
         "rowCount": 247,
         "isValid": true,
         "hasWarnings": true,
-        "fileReferences": 55,
-        "foundFiles": 52,
-        "zipIncluded": true,
-        "missingFiles": [
-          "photo_087.tiff",
-          "letter_scan_12.pdf",
-          "recording_03.wav"
-        ],
         "messages": {
           "validationStatus": {
             "severity": "warning",
@@ -1742,25 +1700,27 @@
               "defaultOpen": false
             },
             {
-              "type": "file_references",
+              "type": "row_level_warnings",
               "severity": "warning",
-              "icon": "fa-info-circle",
-              "title": "File References",
-              "count": 55,
-              "summary": "52 of 55 files found in ZIP.",
-              "description": "3 files are referenced in your CSV but missing from the ZIP:",
+              "icon": "fa-exclamation-triangle",
+              "title": "Row Validation Warnings",
+              "count": 3,
+              "description": "The following issues exist with data in your CSV:",
               "items": [
                 {
-                  "field": "photo_087.tiff",
-                  "message": "missing from ZIP"
+                  "field": "Row 12 · file",
+                  "message": "Referenced file 'photo_087.tiff' is not in the uploaded ZIP. Check the file path and ensure the file exists in the ZIP at the same location.",
+                  "category": "missing_file_reference"
                 },
                 {
-                  "field": "letter_scan_12.pdf",
-                  "message": "missing from ZIP"
+                  "field": "Row 27 · file",
+                  "message": "Referenced file 'letter_scan_12.pdf' is not in the uploaded ZIP. Check the file path and ensure the file exists in the ZIP at the same location.",
+                  "category": "missing_file_reference"
                 },
                 {
-                  "field": "recording_03.wav",
-                  "message": "missing from ZIP"
+                  "field": "Row 41 · file",
+                  "message": "Referenced file 'recording_03.wav' is not in the uploaded ZIP. Check the file path and ensure the file exists in the ZIP at the same location.",
+                  "category": "missing_file_reference"
                 }
               ],
               "defaultOpen": false
@@ -1945,10 +1905,6 @@
         "rowCount": 100,
         "isValid": false,
         "hasWarnings": false,
-        "fileReferences": 0,
-        "missingFiles": [],
-        "foundFiles": 0,
-        "zipIncluded": false,
         "messages": {
           "validationStatus": {
             "severity": "error",
@@ -2171,10 +2127,6 @@
         "rowCount": 75,
         "isValid": false,
         "hasWarnings": true,
-        "fileReferences": 0,
-        "missingFiles": [],
-        "foundFiles": 0,
-        "zipIncluded": false,
         "messages": {
           "validationStatus": {
             "severity": "error",

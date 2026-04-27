@@ -72,8 +72,33 @@ module Bulkrax
       headers = ['source_identifier', 'title', 'creator', 'model', 'parents', 'children', 'file', 'description', 'date_created', 'legacy_id', 'subject']
       unrecognized = ['legacy_id']
       missing_required = []
-      missing_files = ['photo_087.tiff', 'letter_scan_12.pdf', 'recording_03.wav']
       zip_included = zip_file.present?
+      missing_file_paths = ['photo_087.tiff', 'letter_scan_12.pdf', 'recording_03.wav']
+      row_warnings = if zip_included
+                       missing_file_paths.each_with_index.map do |path, i|
+                         {
+                           row: 10 + (i * 15),
+                           severity: 'warning',
+                           category: 'missing_file_reference',
+                           column: 'file',
+                           value: path,
+                           message: I18n.t('bulkrax.importer.guided_import.validation.file_reference_validator.errors.missing_file_reference.message', value: path),
+                           suggestion: I18n.t('bulkrax.importer.guided_import.validation.file_reference_validator.errors.missing_file_reference.suggestion')
+                         }
+                       end
+                     else
+                       []
+                     end
+      notices = if zip_included
+                  []
+                else
+                  [{
+                    field: 'file',
+                    category: 'files_referenced_no_zip',
+                    message: I18n.t('bulkrax.importer.guided_import.validation.files_referenced_no_zip_notice.message'),
+                    suggestion: I18n.t('bulkrax.importer.guided_import.validation.files_referenced_no_zip_notice.suggestion')
+                  }]
+                end
 
       {
         headers: headers,
@@ -86,14 +111,12 @@ module Bulkrax
         works: works,
         fileSets: file_sets,
         totalItems: collections.length + works.length + file_sets.length,
-        fileReferences: 55,
-        missingFiles: missing_files,
-        foundFiles: 52,
-        zipIncluded: zip_included,
+        rowErrors: row_warnings,
+        notices: notices,
         messages: build_validation_messages(
           headers: headers, unrecognized: unrecognized, missing_required: missing_required,
-          missing_files: missing_files, zip_included: zip_included, row_count: 247,
-          is_valid: true, has_warnings: true, file_references: 55
+          row_warnings: row_warnings, notices: notices, row_count: 247,
+          is_valid: true, has_warnings: true
         )
       }
     end
@@ -101,12 +124,13 @@ module Bulkrax
 
     # Builds the structured messages hash from validation results.
     # @param results [Hash] with keys: headers, unrecognized, missing_required,
-    #   missing_files, zip_included, row_count, is_valid, has_warnings, file_references
+    #   row_warnings, notices, row_count, is_valid, has_warnings
     def build_validation_messages(results)
       issues = []
       issues << missing_required_issue(results[:missing_required]) if results[:missing_required]&.any?
+      issues << notices_issue(results[:notices]) if results[:notices]&.any?
       issues << unrecognized_fields_issue(results[:unrecognized]) if results[:unrecognized]&.any?
-      issues << file_references_issue(results) if results[:file_references]&.positive?
+      issues << row_level_warnings_issue(results[:row_warnings]) if results[:row_warnings]&.any?
 
       {
         validationStatus: validation_status(results),
@@ -164,38 +188,37 @@ module Bulkrax
       }
     end
 
-    # rubocop:disable Metrics/MethodLength
-    def file_references_issue(results)
-      file_references = results[:file_references]
-      missing_files = results[:missing_files] || []
-      found_files = file_references - missing_files.length
+    def notices_issue(notices)
+      {
+        type: 'notices',
+        severity: 'warning',
+        icon: 'fa-info-circle',
+        title: I18n.t('bulkrax.importer.guided_import.validation.notices_title'),
+        count: notices.length,
+        description: I18n.t('bulkrax.importer.guided_import.validation.notices_desc'),
+        items: notices.map { |n| { field: n[:field], message: [n[:message], n[:suggestion]].compact.join(' ') } },
+        defaultOpen: false
+      }
+    end
 
-      if missing_files.any? && results[:zip_included]
-        {
-          type: 'file_references',
-          severity: 'warning',
-          icon: 'fa-info-circle',
-          title: I18n.t('bulkrax.importer.guided_import.validation.file_references_title'),
-          count: file_references,
-          summary: I18n.t('bulkrax.importer.guided_import.validation.files_found_in_zip', found: found_files, total: file_references),
-          description: I18n.t('bulkrax.importer.guided_import.validation.files_missing_from_zip', count: missing_files.length, files_word: 'file'.pluralize(missing_files.length)),
-          items: missing_files.map { |file| { field: file, message: I18n.t('bulkrax.importer.guided_import.validation.missing_from_zip') } },
-          defaultOpen: false
-        }
-      elsif !results[:zip_included]
-        {
-          type: 'file_references',
-          severity: 'warning',
-          icon: 'fa-exclamation-triangle',
-          title: I18n.t('bulkrax.importer.guided_import.validation.file_references_title'),
-          count: file_references,
-          summary: I18n.t('bulkrax.importer.guided_import.validation.files_referenced', count: file_references),
-          description: I18n.t('bulkrax.importer.guided_import.validation.no_zip_desc'),
-          items: [],
-          defaultOpen: false
-        }
-      end
-    end # rubocop:enable Metrics/MethodLength
+    def row_level_warnings_issue(row_warnings)
+      {
+        type: 'row_level_warnings',
+        severity: 'warning',
+        icon: 'fa-exclamation-triangle',
+        title: I18n.t('bulkrax.importer.guided_import.stepper_response_formatter.row_errors_issue.title_warnings'),
+        count: row_warnings.length,
+        description: I18n.t('bulkrax.importer.guided_import.stepper_response_formatter.row_errors_issue.description'),
+        items: row_warnings.map do |error|
+          {
+            field: I18n.t('bulkrax.importer.guided_import.stepper_response_formatter.row_errors_issue.row_label', row: error[:row], column: error[:column]),
+            message: [error[:message], error[:suggestion]].compact.join(' '),
+            category: error[:category]
+          }
+        end,
+        defaultOpen: false
+      }
+    end
   end
   # rubocop:enable Metrics/ModuleLength
 end

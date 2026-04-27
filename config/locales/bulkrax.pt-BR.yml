@@ -352,11 +352,6 @@ pt-BR:
               suggestion: "Se você não pretendia atualizar um registro existente, altere o valor de %{field}."
           failed: Validação falhou
           file_path_not_exist: O caminho do arquivo não existe.
-          file_references_title: Referências de arquivos
-          files_found_in_zip: "%{found} de %{total} arquivos encontrados no arquivo ZIP."
-          files_missing_from_zip: "%{count} %{files_word} referenciado no seu CSV, mas ausente no ZIP:"
-          files_referenced: "%{count} arquivos referenciados no CSV não foram encontrados na importação."
-          missing_from_zip: ausente do CEP
           missing_source_identifier_validator:
             errors:
               message: "A linha não tem um valor para '%{field}'."
@@ -369,7 +364,6 @@ pt-BR:
           no_csv_in_zip: Nenhum arquivo CSV encontrado no arquivo ZIP.
           no_csv_uploaded: Nenhum arquivo de metadados CSV foi carregado.
           no_files_uploaded: Nenhum arquivo foi enviado.
-          no_zip_desc: Nenhum arquivo ZIP foi enviado. Certifique-se de que os arquivos estejam acessíveis no servidor ou envie um arquivo ZIP.
           parent_reference_validator:
             errors:
               message: "O pai referenciado '%{value}' não existe como %{field} neste CSV."
@@ -400,7 +394,6 @@ pt-BR:
               suggestion: "Adicione um valor para '%{field}'."
           validation_error_csv_builder:
             empty_column: "A coluna %{column} não tem cabeçalho e será ignorada durante a importação"
-            missing_file: "Arquivo ausente: %{filename}"
             missing_required_column: "Falta a coluna obrigatória '%{field}' (%{model})"
             unrecognized_column: "Coluna não reconhecida '%{column}'"
             unrecognized_column_with_suggestion: "Coluna não reconhecida '%{column}' (você quis dizer '%{suggestion}'?)"

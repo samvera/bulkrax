@@ -52,7 +52,9 @@ module Bulkrax
         {
           row: row_index,
           source_identifier: record[:source_identifier],
-          severity: 'error',
+          # A referenced file missing from the ZIP is a warning, not an
+          # error — the file may still exist on the server at import time.
+          severity: 'warning',
           category: 'missing_file_reference',
           column: 'file',
           value: path,

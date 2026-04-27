@@ -140,6 +140,24 @@ module Bulkrax
         all_models.each { |model| missing_required << { model: model, field: source_id_key.to_s } }
       end
 
+      # Adds a notice when the CSV references files but no zip was uploaded.
+      # Per-row file-reference validation can't run without a zip plan, so
+      # this nudges the user without blocking validation. (Files may still
+      # exist on the server at import time; this is intentionally a notice,
+      # not an error.)
+      def append_files_referenced_no_zip_notice!(notices, csv_data, zip_file)
+        return if zip_file
+        return unless csv_data.any? { |r| r[:file].present? }
+
+        base_key = 'bulkrax.importer.guided_import.validation.files_referenced_no_zip_notice'
+        notices << {
+          field: 'file',
+          category: 'files_referenced_no_zip',
+          message: I18n.t("#{base_key}.message"),
+          suggestion: I18n.t("#{base_key}.suggestion")
+        }
+      end
+
       # Adds a file-level notice when the model column is absent or every row has a blank
       # model value, indicating that the default work type will be used for all rows.
       # When this notice is present the per-row default_work_type_used warnings are
@@ -164,10 +182,10 @@ module Bulkrax
       end
 
       # Assembles the final result hash returned to the guided import UI.
-      def assemble_result(headers:, missing_required:, header_issues:, row_errors:, csv_data:, file_validator:, collections:, works:, file_sets:, notices: []) # rubocop:disable Metrics/ParameterLists
+      def assemble_result(headers:, missing_required:, header_issues:, row_errors:, csv_data:, collections:, works:, file_sets:, notices: []) # rubocop:disable Metrics/ParameterLists
         is_valid, has_warnings = determine_validity(
           headers: headers, missing_required: missing_required, header_issues: header_issues,
-          row_errors: row_errors, csv_data: csv_data, file_validator: file_validator, notices: notices
+          row_errors: row_errors, csv_data: csv_data, notices: notices
         )
 
         {
@@ -183,11 +201,7 @@ module Bulkrax
           collections: collections,
           works: works,
           fileSets: file_sets,
-          totalItems: csv_data.length,
-          fileReferences: file_validator.count_references,
-          missingFiles: file_validator.missing_files,
-          foundFiles: file_validator.found_files_count,
-          zipIncluded: file_validator.zip_included?
+          totalItems: csv_data.length
         }
       end
 
@@ -195,7 +209,7 @@ module Bulkrax
       # rights_statement can be supplied on Step 2, so a CSV missing ONLY the
       # rights_statement column is valid-with-warnings rather than a blocker;
       # the display formatter styles that case as a warning accordion.
-      def determine_validity(headers:, missing_required:, header_issues:, row_errors:, csv_data:, file_validator:, notices:) # rubocop:disable Metrics/ParameterLists
+      def determine_validity(headers:, missing_required:, header_issues:, row_errors:, csv_data:, notices:) # rubocop:disable Metrics/ParameterLists
         row_error_entries   = row_errors.select { |e| e[:severity] == 'error' }
         row_warning_entries = row_errors.select { |e| e[:severity] == 'warning' }
 
@@ -204,10 +218,9 @@ module Bulkrax
         blocking_missing_required = missing_required.any? && !only_rights_missing
 
         has_errors   = blocking_missing_required || headers.blank? || csv_data.empty? ||
-                       file_validator.missing_files.any? || row_error_entries.any?
+                       row_error_entries.any?
         has_warnings = header_issues[:unrecognized].any? || header_issues[:empty_columns].any? ||
-                       file_validator.possible_missing_files? || row_warning_entries.any? ||
-                       notices.any? || only_rights_missing
+                       row_warning_entries.any? || notices.any? || only_rights_missing
 
         [!has_errors, has_warnings]
       end
