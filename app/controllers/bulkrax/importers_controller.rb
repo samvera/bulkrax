@@ -13,14 +13,33 @@ module Bulkrax
     protect_from_forgery unless: -> { api_request? }
     before_action :token_authenticate!, if: -> { api_request? }, only: [:create, :update, :delete]
     before_action :authenticate_user!, unless: -> { api_request? }
-    before_action :check_permissions
-    before_action :set_importer, only: [:show, :entry_table, :edit, :update, :destroy, :original_file]
+    # load_and_authorize_resource covers standard CRUD member actions for
+    # non-API requests.  Actions that use :importer_id rather than :id, or
+    # that are collection-scoped, are excluded and handled by separate
+    # before_actions below.
+    load_and_authorize_resource class: 'Bulkrax::Importer',
+                                instance_name: :importer,
+                                except: [:index, :importer_table, :sample_csv_file, :external_sets,
+                                         :continue, :upload_corrected_entries, :upload_corrected_entries_file,
+                                         :export_errors, :original_file],
+                                unless: -> { api_request? }
+    # For API requests, fall back to simple find so existing consumers are
+    # unaffected while the token-to-user wiring is not yet implemented.
+    before_action :set_importer_for_api,
+                  only: [:show, :entry_table, :edit, :update, :destroy, :original_file],
+                  if: -> { api_request? }
+    # Actions that reference importers by :importer_id (not :id)
+    before_action :load_and_authorize_importer_by_importer_id,
+                  only: [:continue, :upload_corrected_entries, :upload_corrected_entries_file, :export_errors, :original_file]
     with_themed_layout 'dashboard' if defined?(::Hyrax)
 
     # GET /importers
     def index
       # NOTE: We're paginating this in the browser.
       if api_request?
+        # TODO: Scope API index by token owner once token-to-user wiring is in
+        # place.  Tracked in [ISSUE].  Until then, API clients see all importers
+        # to preserve backward-compatibility with existing API consumers.
         @importers = Importer.order(created_at: :desc).all
         json_response('index')
       elsif defined?(::Hyrax)
@@ -30,7 +49,13 @@ module Bulkrax
 
     def importer_table
       order = table_order.presence || Arel.sql('last_imported_at DESC NULLS LAST')
-      @importers = accessible_importers.order(order).page(table_page).per(table_per_page)
+      # TODO: API requests bypass ownership scoping here too; see index TODO.
+      @importers = if api_request?
+                     Importer.all
+                   else
+                     Importer.accessible_by(current_ability)
+                   end
+      @importers = @importers.order(order).page(table_page).per(table_per_page)
       @importers = @importers.where(importer_table_search) if importer_table_search.present?
       respond_to do |format|
         format.json { render json: format_importers(@importers) }
@@ -58,7 +83,6 @@ module Bulkrax
 
     # GET /importers/new
     def new
-      @importer = Importer.new
       if api_request?
         json_response('new')
       elsif defined?(::Hyrax)
@@ -95,12 +119,13 @@ module Bulkrax
       # rubocop:disable Style/IfInsideElse
       if api_request?
         return return_json_response unless valid_create_params?
+        # load_and_authorize_resource is skipped for API; build the record here.
+        @importer ||= Importer.new(importer_params)
       end
       uploads = uploaded_files_scope
       file = file_param
       cloud_files = cloud_params
 
-      @importer = Importer.new(importer_params)
       field_mapping_params
       @importer.validate_only = true if params[:commit] == 'Create and Validate'
       # the following line is needed to handle updating remote files of a FileSet
@@ -177,7 +202,6 @@ module Bulkrax
 
     # PUT /importers/1
     def continue
-      @importer = accessible_importers.find(params[:importer_id])
       params[:importer] = { name: @importer.name }
       @importer.validate_only = false
       update
@@ -185,7 +209,6 @@ module Bulkrax
 
     # GET /importer/1/upload_corrected_entries
     def upload_corrected_entries
-      @importer = accessible_importers.find(params[:importer_id])
       return unless defined?(::Hyrax)
       add_breadcrumb t(:'hyrax.controls.home'), main_app.root_path
       add_breadcrumb t(:'hyrax.dashboard.breadcrumbs.admin'), hyrax.dashboard_path
@@ -197,7 +220,6 @@ module Bulkrax
     # POST /importer/1/upload_corrected_entries_file
     def upload_corrected_entries_file
       file = params[:importer][:parser_fields].delete(:file)
-      @importer = accessible_importers.find(params[:importer_id])
       if file.present?
         @importer[:parser_fields]['partial_import_file_path'] = @importer.parser.write_partial_import_file(file)
         @importer.save
@@ -242,22 +264,29 @@ module Bulkrax
 
     # GET /importers/1/export_errors
     def export_errors
-      @importer = accessible_importers.find(params[:importer_id])
       @importer.write_errored_entries_file
       send_content
     end
 
     private
 
-    # Use callbacks to share common setup or constraints between actions.
-    def set_importer
-      @importer = accessible_importers.find(params[:id] || params[:importer_id])
+    # Load @importer for API requests (no CanCan authorization — the API path
+    # does not yet resolve a token to a current_user, so ownership rules cannot
+    # be evaluated).
+    # TODO: Remove once token-to-user wiring is complete and CanCan rules apply
+    # uniformly to API requests.  Tracked in [ISSUE].
+    def set_importer_for_api
+      @importer = Importer.find(params[:id] || params[:importer_id])
     end
 
-    # API requests bypass per-user scoping so existing API consumers are unaffected.
-    def accessible_importers
-      return Importer.all if api_request?
-      super
+    # Load and authorize @importer for actions that identify the importer by
+    # :importer_id rather than :id (e.g. continue, upload_corrected_entries).
+    # Uses the action name directly so that alias_action mappings defined in
+    # bulkrax_default_abilities apply (e.g. :export_errors → :read,
+    # :continue → :update).
+    def load_and_authorize_importer_by_importer_id
+      @importer = Importer.find(params[:importer_id])
+      authorize! action_name.to_sym, @importer
     end
 
     def importable_params
@@ -370,10 +399,6 @@ module Bulkrax
         @importer.parser_fields['metadata_only'] = true
       end
       @importer.save
-    end
-
-    def check_permissions
-      raise CanCan::AccessDenied unless current_ability.can_import_works?
     end
   end
   # rubocop:enable Metrics/ClassLength

@@ -5,7 +5,7 @@ class Ability
 
   include Hyrax::Ability
   include Bulkrax::Ability
-  self.ability_logic += [:everyone_can_create_curation_concerns]
+  self.ability_logic += [:everyone_can_create_curation_concerns, :bulkrax_default_abilities]
 
   # Define any customized permissions here.
   def custom_permissions

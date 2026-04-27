@@ -102,8 +102,8 @@ module Bulkrax
       end
       {
         data: result,
-        recordsTotal: accessible_importers.count,
-        recordsFiltered: accessible_importers.count
+        recordsTotal: Bulkrax::Importer.accessible_by(current_ability).count,
+        recordsFiltered: Bulkrax::Importer.accessible_by(current_ability).count
       }
     end
 
@@ -119,8 +119,8 @@ module Bulkrax
       end
       {
         data: result,
-        recordsTotal: accessible_exporters.count,
-        recordsFiltered: accessible_exporters.count
+        recordsTotal: Bulkrax::Exporter.accessible_by(current_ability).count,
+        recordsFiltered: Bulkrax::Exporter.accessible_by(current_ability).count
       }
     end
 
@@ -146,7 +146,7 @@ module Bulkrax
     def entry_util_links(e, item)
       links = []
       links << view_context.link_to(view_context.raw('<span class="fa fa-info-circle"></span>'), view_context.item_entry_path(item, e))
-      if item_accessible?(item)
+      if can?(:update, item)
         links << "<a class='fa fa-repeat' data-toggle='modal' data-target='#bulkraxItemModal' data-entry-id='#{e.id}'></a>" if view_context.an_importer?(item)
         links << view_context.link_to(view_context.raw('<span class="fa fa-trash"></span>'), view_context.item_entry_path(item, e), method: :delete, data: { confirm: 'This will delete the entry and any work associated with it. Are you sure?' })
       end
@@ -168,7 +168,7 @@ module Bulkrax
     def importer_util_links(i)
       links = []
       links << view_context.link_to(view_context.raw('<span class="fa fa-info-circle"></span>'), importer_path(i))
-      if item_accessible?(i)
+      if can?(:update, i)
         links << view_context.link_to(view_context.raw('<span class="fa fa-pencil"></span>'), edit_importer_path(i))
         links << view_context.link_to(view_context.raw('<span class="fa fa-remove"></span>'), i, method: :delete, data: { confirm: 'Are you sure?' })
       end
@@ -178,7 +178,7 @@ module Bulkrax
     def exporter_util_links(i)
       links = []
       links << view_context.link_to(view_context.raw('<span class="fa fa-info-circle"></span>'), exporter_path(i))
-      if item_accessible?(i)
+      if can?(:update, i)
         links << view_context.link_to(view_context.raw('<span class="fa fa-pencil"></span>'), edit_exporter_path(i), data: { turbolinks: false })
         links << view_context.link_to(view_context.raw('<span class="fa fa-remove"></span>'), i, method: :delete, data: { confirm: 'Are you sure?' })
       end
