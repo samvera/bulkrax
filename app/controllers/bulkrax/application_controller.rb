@@ -13,7 +13,7 @@ module Bulkrax
       respond_to do |format|
         format.html do
           flash[:alert] = exception.message
-          redirect_to '/'
+          redirect_to main_app.root_path
         end
         format.json { render json: { error: exception.message }, status: :forbidden }
       end

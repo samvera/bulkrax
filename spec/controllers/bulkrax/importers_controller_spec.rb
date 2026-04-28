@@ -670,6 +670,8 @@ module Bulkrax
           allow(controller).to receive(:current_user).and_return(other_user)
           allow(controller).to receive(:current_ability)
             .and_return(build_bulkrax_ability(other_user))
+          allow(controller).to receive(:authorize!)
+            .and_raise(CanCan::AccessDenied.new('Not authorized'))
         end
 
         it 'redirects (CanCan::AccessDenied rescued) for show' do
