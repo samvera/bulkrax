@@ -96,27 +96,45 @@ module Bulkrax
                    :download, to: :read
       alias_action :continue, :upload_corrected_entries_file, to: :update
 
-      if can_import_works?
+      grant_importer_abilities
+      grant_exporter_abilities
+    end
+
+    def grant_importer_abilities
+      if can_admin_importers?
+        # Prefer a single unconditional rule for admins.  Older CanCanCan/
+        # ActiveRecord combinations used by the Hyrax 4 appraisal can fail when
+        # accessible_by has to merge unconditional and hash-conditioned rules.
+        can :manage, Bulkrax::Importer
+      elsif can_import_works?
         can :create, Bulkrax::Importer
         can [:read, :update, :destroy], Bulkrax::Importer, user_id: current_user.id
-        can [:read, :update, :destroy], Bulkrax::Entry do |entry|
-          entry.importerexporter.is_a?(Bulkrax::Importer) &&
-            entry.importerexporter.user_id == current_user.id
-        end
       end
 
-      if can_export_works?
+      return unless can_import_works?
+
+      can [:read, :update, :destroy], Bulkrax::Entry do |entry|
+        entry.importerexporter.is_a?(Bulkrax::Importer) &&
+          entry.importerexporter.user_id == current_user.id
+      end
+    end
+
+    def grant_exporter_abilities
+      if can_admin_exporters?
+        # Prefer a single unconditional rule for admins.  See importer rule
+        # above for the Hyrax 4 accessible_by compatibility note.
+        can :manage, Bulkrax::Exporter
+      elsif can_export_works?
         can :create, Bulkrax::Exporter
         can [:read, :update, :destroy], Bulkrax::Exporter, user_id: current_user.id
-        can [:read, :update, :destroy], Bulkrax::Entry do |entry|
-          entry.importerexporter.is_a?(Bulkrax::Exporter) &&
-            entry.importerexporter.user_id == current_user.id
-        end
       end
 
-      # Admin rules grant full management with no ownership restriction.
-      can :manage, Bulkrax::Importer if can_admin_importers?
-      can :manage, Bulkrax::Exporter if can_admin_exporters?
+      return unless can_export_works?
+
+      can [:read, :update, :destroy], Bulkrax::Entry do |entry|
+        entry.importerexporter.is_a?(Bulkrax::Exporter) &&
+          entry.importerexporter.user_id == current_user.id
+      end
     end
   end
 end

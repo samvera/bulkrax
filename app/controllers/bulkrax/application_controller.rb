@@ -11,7 +11,10 @@ module Bulkrax
     # keeps error handling in one place and consistent across all resources.
     rescue_from CanCan::AccessDenied do |exception|
       respond_to do |format|
-        format.html { redirect_to main_app.root_path, alert: exception.message }
+        format.html do
+          flash[:alert] = exception.message
+          redirect_to main_app.root_path
+        end
         format.json { render json: { error: exception.message }, status: :forbidden }
       end
     end
