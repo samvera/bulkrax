@@ -155,7 +155,7 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
     context 'when ColumnBuilder raises' do
       before do
         allow(Bulkrax::CsvTemplate::ColumnBuilder).to receive(:new).and_raise(StandardError, 'boom')
-        allow(mapping_manager).to receive(:key_to_mapped_column) { |prop| prop }
+        allow(mapping_manager).to receive(:mappings).and_return(mappings)
       end
 
       it 'falls back to a standard header list that includes both parents and children' do
@@ -242,6 +242,46 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
         result = host.build_valid_validation_headers(mapping_manager, field_analyzer,
                                                     %w[GenericWorkResource], mappings, field_metadata)
         expect(result).to include('item', 'file')
+      end
+    end
+  end
+
+  describe '#resolve_validation_key' do
+    let(:mapping_manager) { Bulkrax::CsvTemplate::MappingManager.new }
+    let(:mappings) do
+      {
+        'title' => { 'from' => ['title'] },
+        'parents' => { 'from' => %w[collection parents], 'related_parents_field_mapping' => true },
+        'children' => { 'from' => ['children'], 'related_children_field_mapping' => true },
+        'source_identifier' => { 'from' => ['source_identifier'], 'source_identifier' => true }
+      }
+    end
+
+    before { allow(Bulkrax).to receive(:field_mappings).and_return('Bulkrax::CsvParser' => mappings) }
+
+    context 'with a flag-resolved mapping that has multiple `from:` aliases' do
+      it 'resolves to the alias that appears in the CSV headers (canonical present)' do
+        key = host.resolve_validation_key(mapping_manager,
+                                          flag: 'related_parents_field_mapping',
+                                          headers: %w[parents title],
+                                          default: :parents)
+        expect(key).to eq(:parents)
+      end
+
+      it 'resolves to the alias that appears in the CSV headers (alias present)' do
+        key = host.resolve_validation_key(mapping_manager,
+                                          flag: 'related_parents_field_mapping',
+                                          headers: %w[collection title],
+                                          default: :parents)
+        expect(key).to eq(:collection)
+      end
+
+      it 'falls back to the first `from:` alias when no candidate matches the headers' do
+        key = host.resolve_validation_key(mapping_manager,
+                                          flag: 'related_parents_field_mapping',
+                                          headers: %w[title],
+                                          default: :parents)
+        expect(key).to eq(:collection)
       end
     end
   end
@@ -552,7 +592,7 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
   describe '#assemble_result' do
     let(:file_validator) do
       instance_double(
-        'Bulkrax::CsvTemplate::FileValidator',
+        'Bulkrax::FileValidator',
         missing_files: [],
         possible_missing_files?: false,
         count_references: 0,

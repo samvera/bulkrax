@@ -65,6 +65,26 @@ RSpec.describe Bulkrax::CsvParser do
         result = described_class.generate_template(models: ['GenericWork'], output: 'csv_string')
         expect(result).to be_a(String)
       end
+
+      context "with a multi-alias mapping like `file: { from: ['item','file'] }`" do
+        before do
+          allow(Bulkrax).to receive(:field_mappings).and_return(
+            'Bulkrax::CsvParser' => {
+              'title' => { 'from' => ['title'] },
+              'model' => { 'from' => ['model'] },
+              'parents' => { 'from' => ['parents'], 'related_parents_field_mapping' => true },
+              'file' => { 'from' => %w[item file] },
+              'source_identifier' => { 'from' => ['source_identifier'], 'source_identifier' => true }
+            }
+          )
+        end
+
+        it 'emits one of the file aliases as a column header' do
+          template = described_class.generate_template(models: ['GenericWork'], output: 'csv_string')
+          headers = template.lines.first.split(',').map(&:strip)
+          expect(headers).to include(satisfy { |h| %w[file item].include?(h) })
+        end
+      end
     end
   end
 

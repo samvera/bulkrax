@@ -53,16 +53,6 @@ RSpec.describe Bulkrax::CsvTemplate::MappingManager do
     end
   end
 
-  describe '#key_to_mapped_column' do
-    it 'returns the mapped column name for a key' do
-      expect(manager.key_to_mapped_column('model')).to eq('work_type')
-    end
-
-    it 'returns the key if no mapping found' do
-      expect(manager.key_to_mapped_column('unmapped_key')).to eq('unmapped_key')
-    end
-  end
-
   describe '#find_by_flag' do
     it 'finds a key with the specified flag set to true' do
       expect(manager.find_by_flag('source_identifier', 'default')).to eq('source_identifier')

@@ -181,18 +181,7 @@ module Bulkrax
     # @param field [String] the importer field name
     # @return [Array] hyrax fields
     def field_to(field)
-      fields = mapping&.map do |key, value|
-        return unless value
-
-        if value['from'].instance_of?(Array)
-          key if value['from'].include?(field) || key == field
-        elsif (value['from'] == field) || key == field
-          key
-        end
-      end&.compact
-
-      return [field] if fields.blank?
-      return fields
+      Bulkrax::FieldResolver.fields_for_header(mapping, field)
     end
 
     # Check whether a field is explicitly excluded in the mapping

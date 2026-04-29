@@ -109,14 +109,8 @@ module Bulkrax
 
     def missing_elements(record)
       keys_from_record = keys_without_numbers(record.reject { |_, v| v.blank? }.keys.compact.uniq.map(&:to_s))
-      keys = []
       mapping_values = importerexporter.mapping.stringify_keys
-      mapping_values.each do |k, v|
-        from_values = Array.wrap(v.is_a?(Hash) ? (v['from'] || v[:from]) : nil)
-        from_values.each do |vf|
-          keys << k if vf.present? && keys_from_record.include?(vf.to_s.strip)
-        end
-      end
+      keys = keys_from_record.flat_map { |header| Bulkrax::FieldResolver.fields_for_header(mapping_values, header) }
       required_elements.map(&:to_s) - keys.uniq.map(&:to_s)
     end
 
@@ -363,15 +357,16 @@ module Bulkrax
       return [] if importerexporter.metadata_only?
 
       # Compute once — these don't vary per record.
-      file_mapping  = Bulkrax.field_mappings.dig(self.class.to_s, 'file', :from)&.first&.to_sym || :file
+      file_keys     = Bulkrax::FieldResolver.headers_for_field(Bulkrax.field_mappings[self.class.to_s], 'file').map(&:to_sym)
       split_pattern = self.class.file_split_pattern
       files_dir     = path_to_files
 
       @file_paths ||= records.map do |r|
-        next if r[file_mapping].blank?
+        raw_values = file_keys.filter_map { |k| r[k] }.reject(&:blank?)
+        next if raw_values.empty?
         raise StandardError, "Record references local files but no files directory could be resolved from the import path" if files_dir.nil?
 
-        r[file_mapping].split(split_pattern).map do |f|
+        raw_values.flat_map { |v| v.split(split_pattern) }.map do |f|
           file = File.join(files_dir, f.strip.tr(' ', '_'))
           if File.exist?(file) # rubocop:disable Style/GuardClause
             file
@@ -422,16 +417,8 @@ module Bulkrax
       dest_dir = importer_unzip_path(mkdir: true)
       Zip::File.open(file_to_unzip) do |zip_file|
         entries = real_zip_entries(zip_file)
-        primary = select_primary_csv!(entries)
-        primary_dir = File.dirname(primary.name)
-
-        entries.each do |entry|
-          if entry == primary
-            extract_to(zip_file, entry, dest_dir, File.basename(entry.name))
-          else
-            extract_to(zip_file, entry, dest_dir, File.join('files', relative_to(primary_dir, entry.name)))
-          end
-        end
+        plan = Bulkrax::ZipPlacementPlanner.plan(entries, mode: :primary_csv)
+        plan.placements.each { |entry, dest| extract_to(zip_file, entry, dest_dir, dest) }
       end
     end
 
@@ -447,13 +434,8 @@ module Bulkrax
       dest_dir = importer_unzip_path(mkdir: true)
       Zip::File.open(file_to_unzip) do |zip_file|
         entries = real_zip_entries(zip_file)
-        wrapper = single_top_level_wrapper(entries)
-
-        entries.each do |entry|
-          relative = wrapper ? entry.name.delete_prefix("#{wrapper}/") : entry.name
-          next if relative.empty?
-          extract_to(zip_file, entry, dest_dir, File.join('files', relative))
-        end
+        plan = Bulkrax::ZipPlacementPlanner.plan(entries, mode: :attachments_only)
+        plan.placements.each { |entry, dest| extract_to(zip_file, entry, dest_dir, dest) }
       end
     end
 
@@ -491,39 +473,6 @@ module Bulkrax
       entries = zip_file.entries.select { |e| e.file? && !macos_junk_entry?(e.name) }
       entries.each { |e| reject_unsafe_entry!(e.name) }
       entries
-    end
-
-    # Picks the single primary CSV from zip entries, enforcing the
-    # shallowest-level rule. Raises {Bulkrax::UnzipError} on failure.
-    def select_primary_csv!(entries)
-      csvs = entries.select { |e| e.name.end_with?('.csv') }
-      raise Bulkrax::UnzipError, I18n.t('bulkrax.importer.unzip.errors.no_csv') if csvs.empty?
-
-      by_depth = csvs.group_by { |e| e.name.count('/') }
-      shallowest = by_depth[by_depth.keys.min]
-
-      raise Bulkrax::UnzipError, I18n.t('bulkrax.importer.unzip.errors.multiple_csv') if shallowest.size > 1
-
-      shallowest.first
-    end
-
-    # If every entry shares a single top-level directory, returns that
-    # directory name; otherwise nil.
-    def single_top_level_wrapper(entries)
-      tops = entries.map { |e| e.name.split('/').first }.uniq
-      return nil unless tops.size == 1
-      # If the single top segment is a file (no slashes in the entry), not a dir,
-      # there's no wrapper to strip.
-      return nil if entries.any? { |e| e.name == tops.first }
-      tops.first
-    end
-
-    # Returns `path` with `prefix/` removed from the front, if present, and
-    # a leading `files/` segment also stripped so callers can join under
-    # `files/` without doubling when the zip already uses that convention.
-    def relative_to(prefix, path)
-      remaining = prefix == '.' || prefix.empty? ? path : path.delete_prefix("#{prefix}/")
-      remaining.delete_prefix('files/')
     end
 
     # Extracts a zip entry to `dest_dir/relative_dest`. Creates intermediate

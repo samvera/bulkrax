@@ -80,7 +80,7 @@ CsvParser.validate_csv
         ├── CsvTemplate::MappingManager     - Resolve column names from field mappings
         ├── CsvTemplate::FieldAnalyzer      - Required fields, controlled vocab per model
         ├── CsvTemplate::ColumnBuilder      - Valid headers for comparison
-        ├── CsvTemplate::FileValidator      - File references vs zip contents
+        ├── FileValidator                   - File references vs zip contents
         ├── Bulkrax.csv_row_validators      - Array of callable row validators
         │     ├── CsvRow::DuplicateIdentifier
         │     ├── CsvRow::ParentReference
@@ -253,7 +253,7 @@ Assembles the full list of valid CSV columns for a set of models. Combines core 
 Validates file references in parsed CSV data against the contents of an uploaded ZIP archive. Compares basenames only (no path comparison).
 
 ```ruby
-validator = CsvTemplate::FileValidator.new(csv_data, zip_file, admin_set_id)
+validator = Bulkrax::FileValidator.new(csv_data, zip_file, admin_set_id)
 validator.count_references       # => 10
 validator.missing_files          # => ['image1.jpg']
 validator.found_files_count      # => 9

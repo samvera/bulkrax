@@ -307,7 +307,11 @@ module Bulkrax
     # metadata that does not have a specific Bulkrax entry is mapped to the key name, as matching keys coming in are mapped by the csv parser automatically
     def key_for_export(key)
       clean_key = key_without_numbers(key)
-      unnumbered_key = mapping[clean_key] ? mapping[clean_key]['from'].first : clean_key
+      unnumbered_key = if mapping[clean_key]
+                         Bulkrax::FieldResolver.headers_for_field(mapping, clean_key).first
+                       else
+                         clean_key
+                       end
       # Bring the number back if there is one
       "#{unnumbered_key}#{key.sub(clean_key, '')}"
     end

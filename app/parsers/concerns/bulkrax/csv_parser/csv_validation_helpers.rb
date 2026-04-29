@@ -8,7 +8,18 @@ module Bulkrax
 
       # Resolve a symbol key from mappings for use as a record hash key.
       # Returns a Symbol matching the parser's symbol-keyed record hash.
-      def resolve_validation_key(mapping_manager, key: nil, flag: nil, default:)
+      #
+      # When `flag:` is provided along with `headers:`, picks the alias
+      # that actually appears in the CSV's headers — falling back to the
+      # first `from:` alias when none match. This keeps the validator's
+      # column resolution in lockstep with the import pipeline (which
+      # aliases the matching column upstream in CsvEntry.data_for_entry).
+      def resolve_validation_key(mapping_manager, key: nil, flag: nil, headers: nil, default:)
+        if flag && headers
+          chosen = Bulkrax::FieldResolver.present_header_for_flag(mapping_manager.mappings, flag, headers)
+          return chosen.to_sym if chosen
+        end
+
         options = mapping_manager.resolve_column_name(key: key, flag: flag, default: default.to_s)
         options.first&.to_sym || default
       end
@@ -16,7 +27,8 @@ module Bulkrax
       # Parse rows from a CsvEntry.read_data result into the canonical record shape.
       # CsvEntry.read_data returns CSV::Row objects with symbol headers; blank rows
       # are already filtered by CsvWrapper.
-      def parse_validation_rows(raw_csv, source_id_key, parent_key, children_key, file_key)
+      def parse_validation_rows(raw_csv, source_id_key, parent_key, children_key, file_headers)
+        file_syms = Array(file_headers).map(&:to_sym)
         raw_csv.map do |row|
           # CSV::Row#to_h converts symbol headers → string-keyed hash
           row_hash = row.to_h.transform_keys(&:to_s)
@@ -25,7 +37,7 @@ module Bulkrax
             model: row[:model],
             parent: row[parent_key],
             children: row[children_key],
-            file: row[file_key],
+            file: file_syms.map { |sym| row[sym] }.reject(&:blank?),
             raw_row: row_hash
           }
         end
@@ -64,7 +76,7 @@ module Bulkrax
         Rails.logger.error("CsvParser.validate_csv: error building valid headers – #{e.message}")
         standard = %w[model source_identifier parents children file]
         model_fields = field_metadata.values.flat_map { |m| m[:properties] }
-                                            .map { |prop| mapping_manager.key_to_mapped_column(prop) }
+                                            .map { |prop| Bulkrax::FieldResolver.headers_for_field(mapping_manager.mappings, prop).first }
         (standard + model_fields).uniq
       end
 
@@ -77,8 +89,7 @@ module Bulkrax
                             CsvTemplate::ColumnDescriptor::COLUMN_DESCRIPTIONS[:files].flat_map(&:keys) +
                             CsvTemplate::ColumnDescriptor::COLUMN_DESCRIPTIONS[:relationships].flat_map(&:keys)
         non_property_keys.flat_map do |key|
-          entry = mappings[key]
-          entry.is_a?(Hash) ? Array(entry["from"]) : []
+          Bulkrax::FieldResolver.headers_for_field(mappings, key)
         end
       end
 
@@ -237,11 +248,13 @@ module Bulkrax
       end
 
       # Returns the raw CSV column name (String) for a relationship field.
-      # Looks for the mapping entry flagged with +flag+ and returns its first +from+ value,
-      # falling back to +default+ when none is found.
+      # Looks for the mapping entry flagged with +flag+ and returns its first
+      # alias, falling back to +default+ when none is found.
       def resolve_relationship_column(mappings, flag, default)
-        entry = mappings.find { |_k, v| v.is_a?(Hash) && v[flag] }
-        entry&.last&.dig('from')&.first || default
+        entry = mappings.find { |_k, v| v.is_a?(Hash) && (v[flag] || v[flag.to_sym]) }
+        return default unless entry
+
+        Bulkrax::FieldResolver.headers_for_field(mappings, entry.first).first || default
       end
 
       def resolve_parent_split_pattern(mappings)

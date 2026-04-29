@@ -134,6 +134,321 @@ module Bulkrax
           expect(json_response.dig(:messages, :validationStatus, :severity)).to eq('error')
         end
       end
+
+      context 'file-column validation parity with import' do
+        before do
+          stub_bulkrax_models
+          allow(Bulkrax).to receive(:field_mappings).and_return(
+            'Bulkrax::CsvParser' => {
+              'title' => { 'from' => ['title'] },
+              'model' => { 'from' => ['model'] },
+              'parents' => { 'from' => ['parents'], 'related_parents_field_mapping' => true },
+              'file' => { 'from' => %w[item file], 'split' => '\\|' },
+              'source_identifier' => { 'from' => ['source_identifier'], 'source_identifier' => true }
+            }
+          )
+        end
+
+        let(:csv_upload) do
+          t = Tempfile.new(['data', '.csv'])
+          t.write(csv_content)
+          t.flush
+          Rack::Test::UploadedFile.new(t.path, 'text/csv', original_filename: 'data.csv')
+        end
+
+        let(:zip_upload) do
+          t = Tempfile.new(['upload', '.zip'])
+          Zip::File.open(t.path, create: true) do |zip|
+            present_in_zip.each { |name| zip.get_output_stream(name) { |f| f.write('fake') } }
+          end
+          Rack::Test::UploadedFile.new(t.path, 'application/zip', original_filename: 'upload.zip')
+        end
+
+        shared_examples 'reports the missing file' do |missing_name|
+          it "reports #{missing_name} as missing in the JSON response" do
+            post_validate(importer: { parser_fields: { files: [csv_upload, zip_upload] } })
+
+            expect(response).to have_http_status(:ok)
+            expect(json_response[:zipIncluded]).to eq(true)
+            expect(json_response[:missingFiles]).to include(missing_name)
+
+            file_issue = json_response.dig(:messages, :issues).find { |i| i[:type] == 'file_references' }
+            expect(file_issue).to be_present
+            expect(file_issue[:items]).to include(a_hash_including(field: missing_name))
+          end
+        end
+
+        context 'when the CSV uses the canonical `file` column' do
+          let(:csv_content) do
+            <<~CSV
+              source_identifier,title,model,file
+              work1,Work 1,GenericWork,present.jpg
+              work2,Work 2,GenericWork,missing.jpg
+            CSV
+          end
+          let(:present_in_zip) { %w[present.jpg] }
+
+          include_examples 'reports the missing file', 'missing.jpg'
+        end
+
+        context 'when the CSV uses an aliased column (`item` only)' do
+          let(:csv_content) do
+            <<~CSV
+              source_identifier,title,model,item
+              work1,Work 1,GenericWork,present.jpg
+              work2,Work 2,GenericWork,missing.jpg
+            CSV
+          end
+          let(:present_in_zip) { %w[present.jpg] }
+
+          include_examples 'reports the missing file', 'missing.jpg'
+        end
+
+        context 'when `from:` lists the canonical name first and the CSV uses only the alias' do
+          before do
+            allow(Bulkrax).to receive(:field_mappings).and_return(
+              'Bulkrax::CsvParser' => {
+                'title' => { 'from' => ['title'] },
+                'model' => { 'from' => ['model'] },
+                'parents' => { 'from' => ['parents'], 'related_parents_field_mapping' => true },
+                'file' => { 'from' => %w[file item], 'split' => '\\|' },
+                'source_identifier' => { 'from' => ['source_identifier'], 'source_identifier' => true }
+              }
+            )
+          end
+          let(:csv_content) do
+            <<~CSV
+              source_identifier,title,model,item
+              work1,Work 1,GenericWork,present.jpg
+              work2,Work 2,GenericWork,missing.jpg
+            CSV
+          end
+          let(:present_in_zip) { %w[present.jpg] }
+
+          include_examples 'reports the missing file', 'missing.jpg'
+        end
+
+        context 'when a single cell lists multiple files separated by `|`' do
+          let(:csv_content) do
+            <<~CSV
+              source_identifier,title,model,file
+              work1,Work 1,GenericWork,present.jpg|missing.jpg
+            CSV
+          end
+          let(:present_in_zip) { %w[present.jpg] }
+
+          include_examples 'reports the missing file', 'missing.jpg'
+        end
+
+        context 'when the mapping configures `split:` as a serialised Regexp' do
+          before do
+            allow(Bulkrax).to receive(:field_mappings).and_return(
+              'Bulkrax::CsvParser' => {
+                'title' => { 'from' => ['title'] },
+                'model' => { 'from' => ['model'] },
+                'parents' => { 'from' => ['parents'], 'related_parents_field_mapping' => true },
+                'file' => { 'from' => %w[item file], 'split' => '(?-mix:\\s*[;|]\\s*)' },
+                'source_identifier' => { 'from' => ['source_identifier'], 'source_identifier' => true }
+              }
+            )
+          end
+          let(:csv_content) do
+            <<~CSV
+              source_identifier,title,model,file
+              work1,Work 1,GenericWork,present.jpg | missing.jpg
+            CSV
+          end
+          let(:present_in_zip) { %w[present.jpg] }
+
+          include_examples 'reports the missing file', 'missing.jpg'
+        end
+      end
+
+      # Path-aware cases that the basename-only FileValidator silently
+      # passes, but that would fail at import time. Validation should fail
+      # by emitting per-row file errors (category: 'missing_file_reference').
+      context 'path-aware file validation' do
+        before { stub_bulkrax_models }
+
+        let(:csv_upload) do
+          t = Tempfile.new(['data', '.csv'])
+          t.write(csv_content)
+          t.flush
+          Rack::Test::UploadedFile.new(t.path, 'text/csv', original_filename: 'data.csv')
+        end
+
+        # Build a zip whose entry names are `zip_entries` verbatim.
+        let(:zip_upload) do
+          t = Tempfile.new(['upload', '.zip'])
+          Zip::File.open(t.path, create: true) do |zip|
+            zip_entries.each { |name| zip.get_output_stream(name) { |f| f.write('fake') } }
+          end
+          Rack::Test::UploadedFile.new(t.path, 'application/zip', original_filename: 'upload.zip')
+        end
+
+        shared_examples 'per-row error for the referenced path' do |missing_path|
+          it "emits a missing_file_reference row error for #{missing_path}" do
+            post_validate(importer: { parser_fields: { files: [csv_upload, zip_upload] } })
+
+            expect(response).to have_http_status(:ok)
+            expect(json_response[:isValid]).to eq(false)
+            row_errors = json_response[:rowErrors] || []
+            expect(row_errors).to include(
+              a_hash_including(
+                category: 'missing_file_reference',
+                column: 'file',
+                value: missing_path
+              )
+            )
+          end
+        end
+
+        context 'subdirectory mismatch' do
+          let(:csv_content) do
+            <<~CSV
+              source_identifier,title,model,file
+              w1,W1,GenericWork,subdir_a/foo.jpg
+            CSV
+          end
+          let(:zip_entries) { %w[files/subdir_b/foo.jpg] }
+
+          include_examples 'per-row error for the referenced path', 'subdir_a/foo.jpg'
+        end
+
+        context 'root/nested mismatch' do
+          let(:csv_content) do
+            <<~CSV
+              source_identifier,title,model,file
+              w1,W1,GenericWork,foo.jpg
+            CSV
+          end
+          let(:zip_entries) { %w[files/deep/nested/foo.jpg] }
+
+          include_examples 'per-row error for the referenced path', 'foo.jpg'
+        end
+
+        context 'duplicate basenames at different depths' do
+          let(:csv_content) do
+            <<~CSV
+              source_identifier,title,model,file
+              w1,W1,GenericWork,foo.jpg
+            CSV
+          end
+          let(:zip_entries) { %w[files/dir_a/foo.jpg files/dir_b/foo.jpg] }
+
+          include_examples 'per-row error for the referenced path', 'foo.jpg'
+        end
+
+        context 'exact-path match (regression guard)' do
+          let(:csv_content) do
+            <<~CSV
+              source_identifier,title,model,file
+              w1,W1,GenericWork,subdir/foo.jpg
+            CSV
+          end
+          let(:zip_entries) { %w[files/subdir/foo.jpg] }
+
+          it 'emits no file-reference row errors' do
+            post_validate(importer: { parser_fields: { files: [csv_upload, zip_upload] } })
+            row_errors = json_response[:rowErrors] || []
+            expect(row_errors).to all(satisfy { |e| e[:category] != 'missing_file_reference' })
+          end
+        end
+      end
+
+      # When a tenant aliases a flag-resolved column (parents/children/
+      # source_identifier) and the CSV uses the alias, the validator must
+      # read the aliased column. Previously the validator picked the
+      # first `from:` entry blindly, so a CSV with header `parents` but
+      # mapping `from: ['collection', 'parents']` looked at `:collection`
+      # — every row's parent came out nil and parent-reference validation
+      # didn't fire.
+      context 'flag-resolved column aliasing parity with import' do
+        before { stub_bulkrax_models }
+
+        let(:csv_upload) do
+          t = Tempfile.new(['data', '.csv'])
+          t.write(csv_content)
+          t.flush
+          Rack::Test::UploadedFile.new(t.path, 'text/csv', original_filename: 'data.csv')
+        end
+
+        context "when the `parents` mapping aliases as `from: ['collection', 'parents']`" do
+          before do
+            allow(Bulkrax).to receive(:field_mappings).and_return(
+              'Bulkrax::CsvParser' => {
+                'title' => { 'from' => ['title'] },
+                'model' => { 'from' => ['model'] },
+                'parents' => { 'from' => %w[collection parents], 'related_parents_field_mapping' => true },
+                'source_identifier' => { 'from' => ['source_identifier'], 'source_identifier' => true }
+              }
+            )
+          end
+
+          context 'and the CSV uses the canonical `parents` column' do
+            let(:csv_content) do
+              <<~CSV
+                source_identifier,title,model,parents
+                w1,Work 1,GenericWork,nonexistent_parent
+              CSV
+            end
+
+            it 'reports the unresolvable parent' do
+              post_validate(importer: { parser_fields: { files: [csv_upload] } })
+              row_errors = json_response[:rowErrors] || []
+              expect(row_errors).to include(
+                a_hash_including(category: 'invalid_parent_reference', value: 'nonexistent_parent')
+              )
+            end
+          end
+
+          context 'and the CSV uses the aliased `collection` column' do
+            let(:csv_content) do
+              <<~CSV
+                source_identifier,title,model,collection
+                w1,Work 1,GenericWork,nonexistent_parent
+              CSV
+            end
+
+            it 'reports the unresolvable parent' do
+              post_validate(importer: { parser_fields: { files: [csv_upload] } })
+              row_errors = json_response[:rowErrors] || []
+              expect(row_errors).to include(
+                a_hash_including(category: 'invalid_parent_reference', value: 'nonexistent_parent')
+              )
+            end
+          end
+        end
+
+        context "when the `source_identifier` mapping aliases as `from: ['external_id', 'source_identifier']`" do
+          before do
+            allow(Bulkrax).to receive(:field_mappings).and_return(
+              'Bulkrax::CsvParser' => {
+                'title' => { 'from' => ['title'] },
+                'model' => { 'from' => ['model'] },
+                'parents' => { 'from' => ['parents'], 'related_parents_field_mapping' => true },
+                'source_identifier' => { 'from' => %w[external_id source_identifier], 'source_identifier' => true }
+              }
+            )
+          end
+
+          let(:csv_content) do
+            <<~CSV
+              external_id,title,model
+              w1,Work 1,GenericWork
+              w1,Work 2,GenericWork
+            CSV
+          end
+
+          it 'reads source_identifier from the aliased column and detects duplicates' do
+            post_validate(importer: { parser_fields: { files: [csv_upload] } })
+            row_errors = json_response[:rowErrors] || []
+            expect(row_errors).to include(
+              a_hash_including(category: 'duplicate_source_identifier', value: 'w1')
+            )
+          end
+        end
+      end
     end
 
     # -------------------------------------------------------------------------
