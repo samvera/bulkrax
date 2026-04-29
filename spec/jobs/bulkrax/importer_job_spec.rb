@@ -63,6 +63,27 @@ module Bulkrax
         end
       end
 
+      context 'when current_run fails with an unexpected database error' do
+        let(:importer) { FactoryBot.create(:bulkrax_importer_oai) }
+        let(:db_error) { ActiveRecord::StatementInvalid.new('PG::UndefinedColumn: ERROR: column "processed_children" does not exist') }
+
+        before do
+          importer.importer_runs.create!
+          allow(importer).to receive(:current_run).and_raise(db_error)
+        end
+
+        it 'records the error class and message on the importer status' do
+          expect { importer_job.perform(importer.id) }.to raise_error(ActiveRecord::StatementInvalid)
+          expect(importer.reload.status).to eq('Failed')
+          expect(importer.current_status.error_class).to eq('ActiveRecord::StatementInvalid')
+          expect(importer.current_status.error_message).to match(/processed_children/)
+        end
+
+        it 're-raises so the failure is visible to the job runner' do
+          expect { importer_job.perform(importer.id) }.to raise_error(ActiveRecord::StatementInvalid)
+        end
+      end
+
       context 'when the zip cannot be interpreted (e.g. no CSV inside)' do
         let(:zip_tmp) { Tempfile.new(['import', '.zip']) }
         let(:importer) do

@@ -15,6 +15,9 @@ module Bulkrax
       schedule(importer) if importer.schedulable?
     rescue ::CSV::MalformedCSVError, Bulkrax::UnzipError => e
       importer.set_status_info(e)
+    rescue StandardError => e
+      importer&.set_status_info(e)
+      raise
     end
 
     private
