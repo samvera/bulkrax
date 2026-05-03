@@ -29,6 +29,8 @@ module Bulkrax
   RSpec.describe ImportersController, type: :controller do
     routes { Bulkrax::Engine.routes }
 
+    let(:current_user) { FactoryBot.create(:user) }
+
     before do
       module Bulkrax::Auth
         def authenticate_user!
@@ -41,6 +43,8 @@ module Bulkrax
         end
       end
       described_class.prepend Bulkrax::Auth
+      allow(controller).to receive(:authenticate_user!).and_return(true)
+      allow(controller).to receive(:current_user).and_return(current_user)
       allow(Bulkrax::ImporterJob).to receive(:perform_later).and_return(true)
     end
 
@@ -51,7 +55,7 @@ module Bulkrax
       {
         name: 'Test Importer',
         admin_set_id: 'admin_set/default',
-        user_id: FactoryBot.create(:user).id,
+        user_id: current_user.id,
         parser_klass: 'Bulkrax::CsvParser',
         parser_fields: { some_attribute: 'something' }
       }
@@ -156,7 +160,7 @@ module Bulkrax
           {
             name: 'Test Importer Updated',
             admin_set_id: 'admin_set/default',
-            user_id: FactoryBot.create(:user).id,
+            user_id: current_user.id,
             parser_fields: { some_attribute: 'something' }
           }
         end
@@ -207,7 +211,7 @@ module Bulkrax
         {
           name: 'Test Importer',
           admin_set_id: 'admin_set/default',
-          user_id: FactoryBot.create(:user).id,
+          user_id: current_user.id,
           parser_klass: 'Bulkrax::CsvParser',
           parser_fields: { some_attribute: 'something' },
           validate_only: false
@@ -294,6 +298,9 @@ module Bulkrax
       let(:import_file_path) { importer.errored_entries_csv_path }
 
       before do
+        # Ensure current_user is the importer's owner so ownership scoping works
+        # regardless of creation order from chained factories.
+        allow(controller).to receive(:current_user).and_return(importer.user)
         importer.parser_fields.merge!(import_file_path: import_file_path)
       end
 
@@ -326,7 +333,7 @@ module Bulkrax
         end
 
         it 'sets partial_import_file_path on the requested importer' do
-          importer = FactoryBot.create(:bulkrax_importer_csv_failed)
+          importer = FactoryBot.create(:bulkrax_importer_csv_failed, user: current_user)
           expect(importer.parser_fields['partial_import_file_path']).not_to be_present
 
           post :upload_corrected_entries_file, params: { importer_id: importer.to_param, importer: file_upload_params }, session: valid_session
@@ -335,12 +342,12 @@ module Bulkrax
 
         it 'invokes Bulkrax::ImporterJob' do
           expect(Bulkrax::ImporterJob).to receive(:perform_later).exactly(1).times
-          importer = FactoryBot.create(:bulkrax_importer_csv_failed)
+          importer = FactoryBot.create(:bulkrax_importer_csv_failed, user: current_user)
           post :upload_corrected_entries_file, params: { importer_id: importer.to_param, importer: file_upload_params }, session: valid_session
         end
 
         it 'redirects to the importer with a notice' do
-          importer = FactoryBot.create(:bulkrax_importer_csv_failed)
+          importer = FactoryBot.create(:bulkrax_importer_csv_failed, user: current_user)
           post :upload_corrected_entries_file, params: { importer_id: importer.to_param, importer: file_upload_params }, session: valid_session
           expect(response).to redirect_to(importer_path(importer))
           expect(flash[:notice]).to include('successfully')
@@ -421,7 +428,7 @@ module Bulkrax
             {
               name: 'Test Importer Updated',
               admin_set_id: 'admin_set/default',
-              user_id: FactoryBot.create(:user).id,
+              user_id: current_user.id,
               parser_fields: { some_attribute: 'something' }
             }
           end
@@ -607,6 +614,105 @@ module Bulkrax
           get :original_file, params: { importer_id: importer.to_param, file_type: :zip }, session: valid_session
           expect(response).to redirect_to(importer)
           expect(flash[:alert]).to eq("File type 'zip' not found.")
+        end
+      end
+    end
+
+    describe 'ownership enforcement' do
+      let(:owner)      { FactoryBot.create(:user) }
+      let(:other_user) { FactoryBot.create(:user) }
+      let(:owned_importer) do
+        Importer.create!(
+          name: 'Owned Importer',
+          admin_set_id: 'admin_set/default',
+          user_id: owner.id,
+          parser_klass: 'Bulkrax::CsvParser',
+          parser_fields: { some_attribute: 'something' }
+        )
+      end
+
+      # Build a real CanCan ability that includes Bulkrax rules so that
+      # load_and_authorize_resource can evaluate can? against the correct rules.
+      def build_bulkrax_ability(user, admin: false)
+        klass = Class.new do
+          include CanCan::Ability
+          include Bulkrax::Ability
+
+          attr_reader :current_user
+
+          def initialize(user, admin)
+            @current_user = user
+            @admin = admin
+            bulkrax_default_abilities
+          end
+
+          def can_import_works?
+            true
+          end
+
+          def can_export_works?
+            true
+          end
+
+          def can_admin_importers?
+            @admin
+          end
+
+          def can_admin_exporters?
+            @admin
+          end
+        end
+        klass.new(user, admin)
+      end
+
+      context 'when current user is not the owner and lacks admin ability' do
+        before do
+          allow(controller).to receive(:current_user).and_return(other_user)
+          allow(controller).to receive(:current_ability)
+            .and_return(build_bulkrax_ability(other_user))
+          allow(controller).to receive(:authorize!)
+            .and_raise(CanCan::AccessDenied.new('Not authorized'))
+        end
+
+        it 'redirects (CanCan::AccessDenied rescued) for show' do
+          get :show, params: { id: owned_importer.to_param }, session: {}
+          expect(response).to be_redirect
+        end
+
+        it 'redirects for edit' do
+          get :edit, params: { id: owned_importer.to_param }, session: {}
+          expect(response).to be_redirect
+        end
+
+        it 'redirects for destroy' do
+          delete :destroy, params: { id: owned_importer.to_param }, session: {}
+          expect(response).to be_redirect
+        end
+      end
+
+      context 'when current user is the owner' do
+        before do
+          allow(controller).to receive(:current_user).and_return(owner)
+          allow(controller).to receive(:current_ability)
+            .and_return(build_bulkrax_ability(owner))
+        end
+
+        it 'allows show' do
+          get :show, params: { id: owned_importer.to_param }, session: {}
+          expect(response).to be_successful
+        end
+      end
+
+      context 'when current user has can_admin_importers?' do
+        before do
+          allow(controller).to receive(:current_user).and_return(other_user)
+          allow(controller).to receive(:current_ability)
+            .and_return(build_bulkrax_ability(other_user, admin: true))
+        end
+
+        it 'allows show for any importer' do
+          get :show, params: { id: owned_importer.to_param }, session: {}
+          expect(response).to be_successful
         end
       end
     end

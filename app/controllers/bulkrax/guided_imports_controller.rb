@@ -8,7 +8,7 @@ module Bulkrax
     helper Bulkrax::ImportersHelper
 
     before_action :authenticate_user!
-    before_action :check_permissions
+    before_action { authorize! :create, Bulkrax::Importer }
     with_themed_layout 'dashboard' if defined?(::Hyrax)
 
     # trigger form to allow upload
@@ -168,10 +168,6 @@ module Bulkrax
       add_breadcrumb t(:'hyrax.controls.home'), main_app.root_path
       add_breadcrumb t(:'hyrax.dashboard.breadcrumbs.admin'), hyrax.dashboard_path
       add_breadcrumb t(:'bulkrax.headings.importers'), bulkrax.importers_path
-    end
-
-    def check_permissions
-      raise CanCan::AccessDenied unless current_ability.can_import_works?
     end
   end
 end

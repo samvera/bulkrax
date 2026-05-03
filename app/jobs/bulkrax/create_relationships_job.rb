@@ -60,7 +60,7 @@ module Bulkrax
       @importer_run_id = importer_run_id
       @importer_run = Bulkrax::ImporterRun.find(@importer_run_id) if @importer_run_id
       @user = run_user || importer_run&.user
-      @ability = Ability.new(@user)
+      @ability = ::Ability.new(@user)
 
       @number_of_successes = 0
       @number_of_failures = 0

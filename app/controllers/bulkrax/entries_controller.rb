@@ -4,7 +4,6 @@ module Bulkrax
   class EntriesController < ApplicationController
     include Hyrax::ThemedLayoutController if defined?(::Hyrax)
     before_action :authenticate_user!
-    before_action :check_permissions
     with_themed_layout 'dashboard' if defined?(::Hyrax)
 
     def show
@@ -17,6 +16,8 @@ module Bulkrax
 
     def update
       @entry = Entry.find(params[:id])
+      authorize! :update, @entry
+
       type = case @entry.type.downcase
              when /fileset/
                'file_set'
@@ -25,8 +26,8 @@ module Bulkrax
              else
                'work'
              end
-      item = @entry.importerexporter
       # do not run counters as it loads the whole parser
+      item = @entry.importerexporter
       current_run = item.current_run(skip_counts: true)
       @entry.set_status_info('Pending', current_run)
       ScheduleRelationshipsJob.set(wait: 5.minutes).perform_later(importer_id: @entry.importer.id)
@@ -44,6 +45,9 @@ module Bulkrax
 
     def destroy
       @entry = Entry.find(params[:id])
+      authorize! :destroy, @entry
+
+      item = @entry.importerexporter
       @status = ""
       begin
         work = @entry.factory&.find
@@ -59,7 +63,6 @@ module Bulkrax
         @status = "Error: #{e.message}"
       end
 
-      item = @entry.importerexporter
       entry_path = item.class.to_s.include?('Importer') ? bulkrax.importer_entry_path(item.id, @entry.id) : bulkrax.exporter_entry_path(item.id, @entry.id)
 
       redirect_back fallback_location: entry_path, notice: @status
@@ -70,7 +73,9 @@ module Bulkrax
     # GET /importers/1/entries/1
     def show_importer
       @importer = Importer.find(params[:importer_id])
-      @entry = Entry.find(params[:id])
+      authorize! :read, @importer
+      @entry = @importer.entries.find(params[:id])
+      authorize! :read, @entry
 
       return unless defined?(::Hyrax)
       add_breadcrumb t(:'hyrax.controls.home'), main_app.root_path
@@ -83,7 +88,9 @@ module Bulkrax
     # GET /exporters/1/entries/1
     def show_exporter
       @exporter = Exporter.find(params[:exporter_id])
-      @entry = Entry.find(params[:id])
+      authorize! :read, @exporter
+      @entry = @exporter.entries.find(params[:id])
+      authorize! :read, @entry
 
       return unless defined?(::Hyrax)
       add_breadcrumb t(:'hyrax.controls.home'), main_app.root_path
@@ -91,10 +98,6 @@ module Bulkrax
       add_breadcrumb t(:'bulkrax.headings.exporters'), bulkrax.exporters_path
       add_breadcrumb @exporter.name, bulkrax.exporter_path(@exporter.id)
       add_breadcrumb @entry.id
-    end
-
-    def check_permissions
-      raise CanCan::AccessDenied unless current_ability.can_import_works? || current_ability.can_export_works?
     end
   end
 end
