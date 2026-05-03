@@ -29,6 +29,10 @@ class Ability
     can_create_any_work?
   end
 
+  def can_admin_exporters?
+    false
+  end
+
   def can_create_any_work?
     true
   end
