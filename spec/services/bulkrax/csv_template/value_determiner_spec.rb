@@ -18,6 +18,9 @@ RSpec.describe Bulkrax::CsvTemplate::ValueDeterminer do
     allow(service).to receive(:mapping_manager).and_return(mapping_manager)
     allow(service).to receive(:mappings).and_return(mappings)
     allow(mapping_manager).to receive(:find_by_flag).and_return(nil)
+    # Default: no column maps to an object. Tests that exercise object: mappings
+    # override this for specific keys.
+    allow(mapping_manager).to receive(:get_object_name).and_return(nil)
   end
 
   describe '#determine_value' do
@@ -148,6 +151,48 @@ RSpec.describe Bulkrax::CsvTemplate::ValueDeterminer do
         result = value_determiner.determine_value('xlocalfiles', collection_model, collection_field_list)
 
         expect(result).to be_nil
+      end
+    end
+
+    # When a mapping declares `object:`, the per-child column (e.g.
+    # `redirect_path`) doesn't appear in the model's properties list — but its
+    # parent (e.g. `redirects`) does. Without recognising this case, the row
+    # builder leaves the cell blank and the CsvBuilder's empty-column pruning
+    # drops the column from the downloaded template.
+    context 'when column belongs to an `object:` mapping' do
+      let(:object_field_list) do
+        {
+          'GenericWork' => {
+            'properties' => ['title', 'redirects'],
+            'required_terms' => ['title']
+          }
+        }
+      end
+
+      before do
+        allow(mapping_manager).to receive(:mapped_to_key).with('redirect_path').and_return('path')
+        allow(mapping_manager).to receive(:get_object_name).with('path').and_return('redirects')
+      end
+
+      it 'marks the column as Optional based on the parent property' do
+        result = value_determiner.determine_value('redirect_path', model_name, object_field_list)
+        expect(result).to eq('Optional')
+      end
+
+      context 'when the parent property is required' do
+        let(:object_field_list) do
+          {
+            'GenericWork' => {
+              'properties' => ['title', 'redirects'],
+              'required_terms' => ['redirects']
+            }
+          }
+        end
+
+        it 'marks the column as Required' do
+          result = value_determiner.determine_value('redirect_path', model_name, object_field_list)
+          expect(result).to eq('Required')
+        end
       end
     end
   end
