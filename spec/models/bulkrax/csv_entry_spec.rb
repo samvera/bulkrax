@@ -626,6 +626,50 @@ module Bulkrax
         end
       end
 
+      context 'with multiple objects and the nested_attributes: true flag' do
+        # When the field-mapping declares nested_attributes: true, Bulkrax
+        # writes to parsed_metadata['<name>_attributes'] as a numbered-key
+        # hash with '_destroy' markers — the shape Hyrax form populators
+        # built on Reform's nested-attributes machinery consume.
+        let(:importer) do
+          FactoryBot.create(:bulkrax_importer_csv, field_mapping: {
+                              'first_name' => { from: ['multiple_objects_first_name'], object: 'multiple_objects', nested_attributes: true },
+                              'last_name' => { from: ['multiple_objects_last_name'], object: 'multiple_objects', nested_attributes: true }
+                            })
+        end
+
+        before do
+          allow_any_instance_of(ObjectFactory).to receive(:run!)
+          allow(subject).to receive(:raw_metadata).and_return(
+            'source_identifier' => '2',
+            'title' => 'some title',
+            'multiple_objects_first_name_1' => 'Fake',
+            'multiple_objects_last_name_1' => 'Fakerson',
+            'multiple_objects_first_name_2' => 'Judge',
+            'multiple_objects_last_name_2' => 'Hines'
+          )
+        end
+
+        it 'writes a numbered-key hash to <object>_attributes with _destroy markers' do
+          metadata = subject.build_metadata
+          # The bare object key is not populated when the flag is on.
+          expect(metadata).not_to have_key('multiple_objects')
+          # Routed to the _attributes key for Hyrax form populators.
+          expect(metadata['multiple_objects_attributes']).to be_a(Hash)
+          expect(metadata['multiple_objects_attributes'].keys).to contain_exactly('0', '1')
+
+          row0 = metadata['multiple_objects_attributes']['0']
+          expect(row0['first_name']).to eq('Fake')
+          expect(row0['last_name']).to eq('Fakerson')
+          expect(row0['_destroy']).to eq('false')
+
+          row1 = metadata['multiple_objects_attributes']['1']
+          expect(row1['first_name']).to eq('Judge')
+          expect(row1['last_name']).to eq('Hines')
+          expect(row1['_destroy']).to eq('false')
+        end
+      end
+
       context 'with object fields not prefixed and properties with multiple values' do
         let(:importer) do
           FactoryBot.create(:bulkrax_importer_csv, field_mapping: {
@@ -949,6 +993,44 @@ module Bulkrax
           expect(metadata['multiple_objects_position_2_1']).to eq('King')
           expect(metadata['multiple_objects_position_2_2']).to eq('Lord')
           expect(metadata['multiple_objects_position_2_3']).to eq('Duke')
+        end
+      end
+
+      context 'when the resource returns plain hashes (no stringification)' do
+        # Valkyrie / Postgres JSONB attributes return Ruby hashes directly,
+        # not the legacy stringified-hash literal that ActiveFedora produced.
+        # object_metadata must accept either form.
+        let(:exporter) do
+          FactoryBot.create(:bulkrax_exporter_worktype, field_mapping: {
+                              'id' => { from: ['id'], source_identifier: true },
+                              'first_name' => { from: ['multiple_objects_first_name'], object: 'multiple_objects' },
+                              'last_name' => { from: ['multiple_objects_last_name'], object: 'multiple_objects' }
+                            })
+        end
+
+        let(:work_obj) { Work.new(title: ['test']) }
+
+        before do
+          allow_any_instance_of(ObjectFactory).to receive(:run!)
+          allow(subject).to receive(:hyrax_record).and_return(work_obj)
+          allow(work_obj).to receive(:id).and_return('test123')
+          allow(work_obj).to receive(:member_of_work_ids).and_return([])
+          allow(work_obj).to receive(:in_work_ids).and_return([])
+          allow(work_obj).to receive(:member_work_ids).and_return([])
+          # Simulate the Valkyrie/JSONB shape: the accessor returns plain
+          # hashes directly, not the stringified form ActiveFedora produces.
+          allow(work_obj).to receive(:multiple_objects).and_return([
+                                                                     { 'first_name' => 'Fake', 'last_name' => 'Fakerson' },
+                                                                     { 'first_name' => 'Judge', 'last_name' => 'Hines' }
+                                                                   ])
+        end
+
+        it 'produces numbered columns from plain-hash entries without eval' do
+          metadata = subject.build_export_metadata
+          expect(metadata['multiple_objects_first_name_1']).to eq('Fake')
+          expect(metadata['multiple_objects_last_name_1']).to eq('Fakerson')
+          expect(metadata['multiple_objects_first_name_2']).to eq('Judge')
+          expect(metadata['multiple_objects_last_name_2']).to eq('Hines')
         end
       end
 

@@ -38,7 +38,7 @@ module Bulkrax
 
         if object_name
           Rails.logger.info("Bulkrax Column automatically matched object #{node_name}, #{node_content}")
-          parsed_metadata[object_name] ||= object_multiple ? [{}] : {}
+          init_object_container(object_name, object_multiple)
         end
 
         value = if matcher
@@ -60,6 +60,30 @@ module Bulkrax
       mapping&.[](field)&.[]('object')
     end
 
+    # When any field-mapping sibling under `object_name` carries
+    # `nested_attributes: true`, Bulkrax routes the imported data through
+    # `parsed_metadata["#{object_name}_attributes"]` as a numbered-key hash
+    # (with `_destroy: 'false'` per row) — the shape consumed by Reform's
+    # nested-attributes machinery and other `*_attributes`-style populators.
+    def nested_attributes_object?(object_name)
+      return false unless mapping.is_a?(Hash) && object_name.present?
+      mapping.any? { |_, cfg| cfg.is_a?(Hash) && cfg['object'] == object_name && cfg['nested_attributes'] }
+    end
+
+    def parsed_object_target_key(object_name)
+      nested_attributes_object?(object_name) ? "#{object_name}_attributes" : object_name
+    end
+
+    def init_object_container(object_name, object_multiple)
+      target_key = parsed_object_target_key(object_name)
+      default = if object_multiple
+                  nested_attributes_object?(object_name) ? {} : [{}]
+                else
+                  {}
+                end
+      parsed_metadata[target_key] ||= default
+    end
+
     def set_parsed_data(name, value)
       return parsed_metadata[name] = value unless multiple?(name)
 
@@ -69,22 +93,33 @@ module Bulkrax
     end
 
     def set_parsed_object_data(object_multiple, object_name, name, index, value)
-      if object_multiple
-        index ||= 0
-        parsed_metadata[object_name][index] ||= {}
-        parsed_metadata[object_name][index][name] ||= []
-        if value.is_a?(Array)
-          parsed_metadata[object_name][index][name] += value
-        else
-          parsed_metadata[object_name][index][name] = value
-        end
+      target_key = parsed_object_target_key(object_name)
+      target = object_target_for(target_key, object_name, object_multiple, index)
+      assign_object_value(target, name, value)
+    end
+
+    # Resolve the hash slot that `name` should be written into, initializing
+    # any intermediate containers. Returns the leaf hash so the caller can
+    # assign the value with a single statement.
+    def object_target_for(target_key, object_name, object_multiple, index)
+      return parsed_metadata[target_key] unless object_multiple
+
+      idx = index || 0
+      if nested_attributes_object?(object_name)
+        parsed_metadata[target_key][idx.to_s] ||= { '_destroy' => 'false' }
+        parsed_metadata[target_key][idx.to_s]
       else
-        parsed_metadata[object_name][name] ||= []
-        if value.is_a?(Array)
-          parsed_metadata[object_name][name] += value
-        else
-          parsed_metadata[object_name][name] = value
-        end
+        parsed_metadata[target_key][idx] ||= {}
+        parsed_metadata[target_key][idx]
+      end
+    end
+
+    def assign_object_value(target, name, value)
+      target[name] ||= []
+      if value.is_a?(Array)
+        target[name] += value
+      else
+        target[name] = value
       end
     end
 

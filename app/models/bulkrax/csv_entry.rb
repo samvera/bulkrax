@@ -329,15 +329,14 @@ module Bulkrax
     end
 
     def object_metadata(data)
-      # NOTE: What is `d` in this case:
-      #
-      #  "[{\"single_object_first_name\"=>\"Fake\", \"single_object_last_name\"=>\"Fakerson\", \"single_object_position\"=>\"Leader, Jester, Queen\", \"single_object_language\"=>\"english\"}]"
-      #
-      # The above is a stringified version of a Ruby string.  Using eval is a very bad idea as it
-      # will execute the value of `d` within the full Ruby interpreter context.
-      #
-      # TODO: Would it be possible to store this as a non-string?  Maybe the actual Ruby Array and Hash?
-      data = data.map { |d| eval(d) }.flatten # rubocop:disable Security/Eval
+      # Each `d` may be either a stringified Ruby hash literal (legacy
+      # ActiveFedora persistence) or a plain Hash (Valkyrie/Postgres
+      # JSONB). For the legacy stringified form we eval to recover the
+      # hash; for plain Hashes we pass through. Using eval is a very bad
+      # idea as it will execute the value of `d` within the full Ruby
+      # interpreter context — only do it when we know the input is a
+      # stringified hash.
+      data = data.map { |d| d.is_a?(Hash) ? d : eval(d) }.flatten # rubocop:disable Security/Eval
 
       data.each_with_index do |obj, index|
         next if obj.nil?
