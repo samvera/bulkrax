@@ -150,6 +150,10 @@ RSpec.describe Bulkrax::CsvTemplate::ColumnBuilder do
         allow(field_analyzer).to receive(:find_or_create_field_list_for)
           .with(model_name: 'AnotherWork').and_return(field_list_2)
 
+        # Default: no property is the target of an `object:` mapping. Tests
+        # that exercise nested-attribute properties override this.
+        allow(mapping_manager).to receive(:object_columns_for).and_return([])
+
         # Mock the mapping manager to return mapped column names
         allow(mapping_manager).to receive(:key_to_mapped_column) do |key|
           "x#{key}" # Simple mapping for testing
@@ -185,6 +189,32 @@ RSpec.describe Bulkrax::CsvTemplate::ColumnBuilder do
         result = column_builder.send(:property_columns)
 
         expect(result).to eq([])
+      end
+
+      context 'when a property is the target of `object:` field mappings' do
+        let(:field_list_with_redirects) do
+          {
+            'MyWork' => { 'properties' => ['title', 'redirects'] }
+          }
+        end
+
+        before do
+          allow(field_analyzer).to receive(:find_or_create_field_list_for)
+            .with(model_name: 'MyWork').and_return(field_list_with_redirects)
+          allow(field_analyzer).to receive(:find_or_create_field_list_for)
+            .with(model_name: 'AnotherWork').and_return({})
+
+          allow(mapping_manager).to receive(:object_columns_for).with('redirects')
+                                                                .and_return(['redirect_path', 'redirect_canonical', 'redirect_sequence'])
+        end
+
+        it 'emits the object\'s child columns instead of the bare property name' do
+          result = column_builder.send(:property_columns)
+
+          expect(result).to include('redirect_path', 'redirect_canonical', 'redirect_sequence')
+          # Bare property name does not appear (no `xredirects` in the output).
+          expect(result).not_to include('xredirects')
+        end
       end
     end
 
@@ -268,6 +298,7 @@ RSpec.describe Bulkrax::CsvTemplate::ColumnBuilder do
           .with("related_children_field_mapping", 'children').and_return('children')
         allow(mapping_manager).to receive(:find_by_flag)
           .with("related_parents_field_mapping", 'parents').and_return('parents')
+        allow(mapping_manager).to receive(:object_columns_for).and_return([])
 
         allow(service).to receive(:all_models).and_return(['MyWork'])
         allow(field_analyzer).to receive(:find_or_create_field_list_for)
