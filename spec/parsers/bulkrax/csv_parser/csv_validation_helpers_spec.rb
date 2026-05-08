@@ -291,6 +291,50 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
       expect(unrecognized(%w[title totally_made_up])).to have_key('totally_made_up')
     end
 
+    # `nested_attributes: true` mappings (introduced for objects whose form
+    # populator strips the bare property name) emit data through the
+    # `<object>_attributes` key. The CSV side still uses the per-child
+    # column names (e.g. `redirect_path`, `redirect_canonical`,
+    # `redirect_sequence`) — both bare and numbered — and the validator
+    # must accept all three forms.
+    context 'when a mapping declares nested_attributes: true' do
+      let(:mappings) do
+        {
+          'title' => { 'from' => ['title'], 'split' => '\\|' },
+          'path' => { 'from' => ['redirect_path'], 'object' => 'redirects', 'nested_attributes' => true },
+          'canonical' => { 'from' => ['redirect_canonical'], 'object' => 'redirects', 'nested_attributes' => true },
+          'sequence' => { 'from' => ['redirect_sequence'], 'object' => 'redirects', 'nested_attributes' => true }
+        }
+      end
+      let(:field_metadata) do
+        { 'GenericWorkResource' =>
+          { properties: %w[title redirects], required_terms: [], controlled_vocab_terms: [] } }
+      end
+
+      before do
+        allow(field_analyzer).to receive(:find_or_create_field_list_for)
+          .with(model_name: 'GenericWorkResource')
+          .and_return('GenericWorkResource' => { 'properties' => %w[title redirects] })
+      end
+
+      it 'does not flag the bare per-child column name' do
+        expect(unrecognized(%w[title redirect_path])).not_to have_key('redirect_path')
+      end
+
+      it 'does not flag a numbered per-child column' do
+        expect(unrecognized(%w[title redirect_path_1])).not_to have_key('redirect_path_1')
+      end
+
+      it 'does not flag any of the per-child columns together' do
+        result = unrecognized(%w[title redirect_path_1 redirect_canonical_1 redirect_sequence_1 redirect_path_2])
+        expect(result).to be_empty
+      end
+
+      it 'still flags an unrelated column even when nested_attributes mappings are present' do
+        expect(unrecognized(%w[title redirect_path totally_made_up])).to have_key('totally_made_up')
+      end
+    end
+
     # Bulkrax ships `rights_statement` with `generated: true`. The validator
     # must still honour its `from:` aliases so a CSV with a `rights` column
     # isn't flagged as unrecognised (and, via #find_missing_required_headers,
