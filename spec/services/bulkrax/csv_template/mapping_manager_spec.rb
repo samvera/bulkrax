@@ -235,4 +235,38 @@ RSpec.describe Bulkrax::CsvTemplate::MappingManager do
       end
     end
   end
+
+  describe '#object_columns_for' do
+    before do
+      allow(Bulkrax).to receive(:field_mappings).and_return({
+                                                              'Bulkrax::CsvParser' => {
+                                                                'title' => { 'from' => ['title'] },
+                                                                'path' => { 'from' => ['redirect_path'], 'object' => 'redirects', 'nested_attributes' => true },
+                                                                'canonical' => { 'from' => ['redirect_canonical'], 'object' => 'redirects', 'nested_attributes' => true },
+                                                                'sequence' => { 'from' => ['redirect_sequence'], 'object' => 'redirects', 'nested_attributes' => true },
+                                                                'creator_first_name' => { 'from' => ['creator_first_name'], 'object' => 'creator' }
+                                                              }
+                                                            })
+    end
+
+    let(:object_manager) { described_class.new }
+
+    it 'returns the from-columns of every mapping that targets the given object' do
+      expect(object_manager.object_columns_for('redirects'))
+        .to contain_exactly('redirect_path', 'redirect_canonical', 'redirect_sequence')
+    end
+
+    it 'returns an empty array when no mapping targets the given object' do
+      expect(object_manager.object_columns_for('unknown')).to eq([])
+    end
+
+    it 'works for a single-mapping object' do
+      expect(object_manager.object_columns_for('creator'))
+        .to contain_exactly('creator_first_name')
+    end
+
+    it 'returns an empty array for a property without an `object:` flag' do
+      expect(object_manager.object_columns_for('title')).to eq([])
+    end
+  end
 end

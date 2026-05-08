@@ -55,6 +55,46 @@ module Bulkrax
             .to eq({ empty_array: [], empty_string: nil, filled_array: ["A", "B"], filled_string: "A" }.stringify_keys)
         end
       end
+
+      context 'with `*_attributes` keys whose bare property is permitted' do
+        # When a field mapping declares `nested_attributes: true`, parsed_metadata
+        # arrives at the factory with a `<name>_attributes` key. The transform
+        # must keep that key even though it's not declared on the model schema —
+        # otherwise the slice in #transform_attributes drops it before the form
+        # populator can consume it.
+        it 'preserves the `<name>_attributes` key alongside the bare property' do
+          attributes = {
+            redirects_attributes: {
+              '0' => { 'path' => '/foo', '_destroy' => 'false' }
+            },
+            title: ['Test']
+          }
+          factory = described_class.new(attributes: attributes,
+                                        source_identifier_value: 123,
+                                        work_identifier: "title",
+                                        work_identifier_search_field: 'title_sim')
+          factory.base_permitted_attributes = %i[redirects title]
+
+          result = factory.send(:transform_attributes)
+          expect(result.keys).to include('redirects_attributes', 'title')
+          expect(result['redirects_attributes']).to eq('0' => { 'path' => '/foo', '_destroy' => 'false' })
+        end
+
+        it 'drops `*_attributes` keys whose bare property is not permitted' do
+          attributes = {
+            unknown_attributes: { '0' => { 'foo' => 'bar' } },
+            title: ['Test']
+          }
+          factory = described_class.new(attributes: attributes,
+                                        source_identifier_value: 123,
+                                        work_identifier: "title",
+                                        work_identifier_search_field: 'title_sim')
+          factory.base_permitted_attributes = %i[title]
+
+          result = factory.send(:transform_attributes)
+          expect(result.keys).not_to include('unknown_attributes')
+        end
+      end
     end
   end
 end

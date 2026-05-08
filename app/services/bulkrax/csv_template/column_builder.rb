@@ -35,10 +35,20 @@ module Bulkrax
         properties = field_lists
                      .flat_map { |item| item.values.flat_map { |config| config["properties"] || [] } }
                      .uniq
-                     .map { |property| @service.mapping_manager.key_to_mapped_column(property) }
+                     .flat_map { |property| columns_for_property(property) }
                      .uniq
 
         (properties - required_columns).sort
+      end
+
+      # When a property is the target of one or more `object:` field mappings,
+      # emit each of those mappings' `from:` columns (e.g. redirect_path,
+      # redirect_canonical, redirect_sequence) rather than the bare property
+      # name (redirects). Otherwise fall back to the standard 1:1 mapping.
+      def columns_for_property(property)
+        nested = @service.mapping_manager.object_columns_for(property)
+        return nested if nested.any?
+        [@service.mapping_manager.key_to_mapped_column(property)]
       end
 
       def relationship_columns
