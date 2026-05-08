@@ -89,8 +89,9 @@ module Bulkrax
           # used to live here let through any *_<digits> column, which masked
           # typos in numbered columns at validation time even though the real
           # importer would fail to map them.
+          known_property_keys = (field_metadata || {}).values.flat_map { |m| Array(m[:properties]) }.to_set
           suffixed = headers.select do |h|
-            h.match?(/_\d+\z/) && header_base_recognized?(h, valid_headers, mapping_manager, field_metadata)
+            h.match?(/_\d+\z/) && header_base_recognized?(h, valid_headers, mapping_manager, known_property_keys)
           end
           valid_headers = (valid_headers + suffixed).uniq
 
@@ -107,11 +108,12 @@ module Bulkrax
         # find_unrecognized_validation_headers: a header's base name is
         # recognised if it appears in valid_headers directly or if its
         # mapping_manager#mapped_to_key resolves to a known model property.
-        def header_base_recognized?(header, valid_headers, mapping_manager, field_metadata)
+        # known_property_keys is precomputed by check_headers so this can be
+        # called per-header without rebuilding the set each time.
+        def header_base_recognized?(header, valid_headers, mapping_manager, known_property_keys)
           base = header.sub(/_\d+\z/, '')
           return true if valid_headers.include?(base)
 
-          known_property_keys = (field_metadata || {}).values.flat_map { |m| Array(m[:properties]) }.to_set
           mapped_key = mapping_manager&.mapped_to_key(base)
           mapped_key.present? && known_property_keys.include?(mapped_key)
         end
