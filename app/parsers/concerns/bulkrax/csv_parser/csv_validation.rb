@@ -84,7 +84,15 @@ module Bulkrax
           all_models    = field_metadata.keys
           valid_headers = build_valid_validation_headers(mapping_manager, field_analyzer,
                                                          all_models, mappings, field_metadata)
-          suffixed      = headers.select { |h| h.match?(/_\d+\z/) }
+          # Only allow a suffixed header (e.g. `creator_1`, `redirect_path_2`)
+          # when its base name is itself recognised. The blanket allow that
+          # used to live here let through any *_<digits> column, which masked
+          # typos in numbered columns at validation time even though the real
+          # importer would fail to map them.
+          known_property_keys = (field_metadata || {}).values.flat_map { |m| Array(m[:properties]) }.to_set
+          suffixed = headers.select do |h|
+            h.match?(/_\d+\z/) && header_base_recognized?(h, valid_headers, mapping_manager, known_property_keys)
+          end
           valid_headers = (valid_headers + suffixed).uniq
 
           {
@@ -94,6 +102,20 @@ module Bulkrax
                                                                field_metadata: field_metadata),
             empty_columns: find_empty_column_positions(headers, raw_csv)
           }
+        end
+
+        # Mirrors the recognition rule used by
+        # find_unrecognized_validation_headers: a header's base name is
+        # recognised if it appears in valid_headers directly or if its
+        # mapping_manager#mapped_to_key resolves to a known model property.
+        # known_property_keys is precomputed by check_headers so this can be
+        # called per-header without rebuilding the set each time.
+        def header_base_recognized?(header, valid_headers, mapping_manager, known_property_keys)
+          base = header.sub(/_\d+\z/, '')
+          return true if valid_headers.include?(base)
+
+          mapped_key = mapping_manager&.mapped_to_key(base)
+          mapped_key.present? && known_property_keys.include?(mapped_key)
         end
 
         def extract_hierarchy_items(csv_data, all_ids, find_record, mappings)

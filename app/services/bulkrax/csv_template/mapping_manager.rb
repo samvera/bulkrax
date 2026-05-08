@@ -26,6 +26,28 @@ module Bulkrax
         @mappings.dig(key, "from")&.first || key
       end
 
+      # Returns the `object:` value for a given mapping key, or nil. Mirrors
+      # the importer-side `Bulkrax::HasMatchers#get_object_name` for callers
+      # working with the template-side mapping manager.
+      def get_object_name(key)
+        @mappings.dig(key, "object")
+      end
+
+      # Returns the column names that target a given object name via the
+      # `object:` field-mapping pattern. The template generator uses this to
+      # emit the per-child columns (e.g. redirect_path, redirect_canonical,
+      # redirect_sequence) instead of the bare property name (redirects).
+      # Numbering is intentionally omitted — the template shows the column
+      # shape once; CSV rows can repeat the column with numeric suffixes
+      # (e.g. redirect_path_1, redirect_path_2) at import time.
+      def object_columns_for(object_name)
+        @mappings
+          .select { |_k, v| v.is_a?(Hash) && v["object"] == object_name }
+          .values
+          .flat_map { |v| Array(v["from"]) }
+          .uniq
+      end
+
       def find_by_flag(field_name, default)
         @mappings.find { |_k, v| v[field_name] == true }&.first || default
       end
