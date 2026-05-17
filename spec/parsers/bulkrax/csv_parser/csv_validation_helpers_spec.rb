@@ -294,16 +294,14 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
     # `nested_attributes: true` mappings (introduced for objects whose form
     # populator strips the bare property name) emit data through the
     # `<object>_attributes` key. The CSV side still uses the per-child
-    # column names (e.g. `redirect_path`, `redirect_canonical`,
-    # `redirect_sequence`) — both bare and numbered — and the validator
-    # must accept all three forms.
+    # column names (e.g. `redirect_path`, `redirect_display_url`) — both
+    # bare and numbered — and the validator must accept both forms.
     context 'when a mapping declares nested_attributes: true' do
       let(:mappings) do
         {
           'title' => { 'from' => ['title'], 'split' => '\\|' },
           'path' => { 'from' => ['redirect_path'], 'object' => 'redirects', 'nested_attributes' => true },
-          'canonical' => { 'from' => ['redirect_canonical'], 'object' => 'redirects', 'nested_attributes' => true },
-          'sequence' => { 'from' => ['redirect_sequence'], 'object' => 'redirects', 'nested_attributes' => true }
+          'display_url' => { 'from' => ['redirect_display_url'], 'object' => 'redirects', 'nested_attributes' => true }
         }
       end
       let(:field_metadata) do
@@ -326,7 +324,7 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
       end
 
       it 'does not flag any of the per-child columns together' do
-        result = unrecognized(%w[title redirect_path_1 redirect_canonical_1 redirect_sequence_1 redirect_path_2])
+        result = unrecognized(%w[title redirect_path_1 redirect_display_url_1 redirect_path_2 redirect_display_url_2])
         expect(result).to be_empty
       end
 

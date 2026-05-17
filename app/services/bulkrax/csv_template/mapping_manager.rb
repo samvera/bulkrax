@@ -35,11 +35,11 @@ module Bulkrax
 
       # Returns the column names that target a given object name via the
       # `object:` field-mapping pattern. The template generator uses this to
-      # emit the per-child columns (e.g. redirect_path, redirect_canonical,
-      # redirect_sequence) instead of the bare property name (redirects).
-      # Numbering is intentionally omitted — the template shows the column
-      # shape once; CSV rows can repeat the column with numeric suffixes
-      # (e.g. redirect_path_1, redirect_path_2) at import time.
+      # emit the per-child columns (e.g. redirect_path, redirect_display_url)
+      # instead of the bare property name (redirects). Numbering is
+      # intentionally omitted — the template shows the column shape once;
+      # CSV rows can repeat the column with numeric suffixes (e.g.
+      # redirect_path_1, redirect_path_2) at import time.
       def object_columns_for(object_name)
         @mappings
           .select { |_k, v| v.is_a?(Hash) && v["object"] == object_name }

@@ -205,13 +205,13 @@ RSpec.describe Bulkrax::CsvTemplate::ColumnBuilder do
             .with(model_name: 'AnotherWork').and_return({})
 
           allow(mapping_manager).to receive(:object_columns_for).with('redirects')
-                                                                .and_return(['redirect_path', 'redirect_canonical', 'redirect_sequence'])
+                                                                .and_return(['redirect_path', 'redirect_display_url'])
         end
 
         it 'emits the object\'s child columns instead of the bare property name' do
           result = column_builder.send(:property_columns)
 
-          expect(result).to include('redirect_path', 'redirect_canonical', 'redirect_sequence')
+          expect(result).to include('redirect_path', 'redirect_display_url')
           # Bare property name does not appear (no `xredirects` in the output).
           expect(result).not_to include('xredirects')
         end
