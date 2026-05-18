@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+return if defined?(Hyrax) && Hyrax.try(:config).try(:disable_wings)
+
 module Wings
   module CustomQueries
     class FindBySourceIdentifier
