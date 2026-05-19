@@ -242,8 +242,7 @@ RSpec.describe Bulkrax::CsvTemplate::MappingManager do
                                                               'Bulkrax::CsvParser' => {
                                                                 'title' => { 'from' => ['title'] },
                                                                 'path' => { 'from' => ['redirect_path'], 'object' => 'redirects', 'nested_attributes' => true },
-                                                                'canonical' => { 'from' => ['redirect_canonical'], 'object' => 'redirects', 'nested_attributes' => true },
-                                                                'sequence' => { 'from' => ['redirect_sequence'], 'object' => 'redirects', 'nested_attributes' => true },
+                                                                'display_url' => { 'from' => ['redirect_display_url'], 'object' => 'redirects', 'nested_attributes' => true },
                                                                 'creator_first_name' => { 'from' => ['creator_first_name'], 'object' => 'creator' }
                                                               }
                                                             })
@@ -253,7 +252,7 @@ RSpec.describe Bulkrax::CsvTemplate::MappingManager do
 
     it 'returns the from-columns of every mapping that targets the given object' do
       expect(object_manager.object_columns_for('redirects'))
-        .to contain_exactly('redirect_path', 'redirect_canonical', 'redirect_sequence')
+        .to contain_exactly('redirect_path', 'redirect_display_url')
     end
 
     it 'returns an empty array when no mapping targets the given object' do

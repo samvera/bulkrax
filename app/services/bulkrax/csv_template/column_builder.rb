@@ -43,8 +43,8 @@ module Bulkrax
 
       # When a property is the target of one or more `object:` field mappings,
       # emit each of those mappings' `from:` columns (e.g. redirect_path,
-      # redirect_canonical, redirect_sequence) rather than the bare property
-      # name (redirects). Otherwise fall back to the standard 1:1 mapping.
+      # redirect_display_url) rather than the bare property name (redirects).
+      # Otherwise fall back to the standard 1:1 mapping.
       def columns_for_property(property)
         nested = @service.mapping_manager.object_columns_for(property)
         return nested if nested.any?
