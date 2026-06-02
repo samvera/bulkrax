@@ -29,6 +29,72 @@ module Bulkrax
       include_examples 'dynamic record lookup'
     end
 
+    describe '#update_file_set' do
+      let(:factory) { build(:object_factory) }
+      let(:file_set) { double('FileSet', label: nil, import_url: nil) }
+      let(:actor) { instance_double(::Hyrax::Actors::FileSetActor, file_set: file_set, update_metadata: true) }
+      let(:remote_file) { { 'url' => 'https://example.com/foo.tif', 'file_name' => 'foo.tif' } }
+      let(:attrs) { { 'remote_files' => [remote_file] } }
+
+      before do
+        allow(::Hyrax::Actors::FileSetActor).to receive(:new).and_return(actor)
+        allow(factory).to receive(:object).and_return(double(attributes: {}))
+        allow(factory).to receive(:file_set_operation_for).and_return(double)
+        allow(ImportUrlJob).to receive(:perform_now)
+      end
+
+      it 'sets import_url and label on the file_set before ImportUrlJob runs' do
+        captured_import_url = nil
+        captured_label = nil
+        allow(ImportUrlJob).to receive(:perform_now) do |fs, _op, _hdrs|
+          captured_import_url = fs.import_url
+          captured_label = fs.label
+        end
+        allow(file_set).to receive(:label=) { |v| allow(file_set).to receive(:label).and_return(v) }
+        allow(file_set).to receive(:import_url=) { |v| allow(file_set).to receive(:import_url).and_return(v) }
+
+        factory.send(:update_file_set, attrs)
+
+        expect(captured_import_url).to eq('https://example.com/foo.tif')
+        expect(captured_label).to eq('foo.tif')
+      end
+    end
+
+    describe '#create_file_set_actor' do
+      let(:factory) { build(:object_factory) }
+      let(:file_set) { double('FileSet') }
+      let(:actor) do
+        instance_double(::Hyrax::Actors::FileSetActor,
+                        file_set: file_set,
+                        create_metadata: true,
+                        attach_to_work: true)
+      end
+      let(:work) { double('Work') }
+      let(:remote_file) { { 'url' => 'https://example.com/bar.tif', 'file_name' => 'bar.tif' } }
+
+      before do
+        allow(::Hyrax::Actors::FileSetActor).to receive(:new).and_return(actor)
+        allow(file_set).to receive(:permissions_attributes=)
+        allow(factory).to receive(:object).and_return(double)
+        allow(factory).to receive(:file_set_operation_for).and_return(double)
+        allow(ImportUrlJob).to receive(:perform_now)
+      end
+
+      it 'assigns import_url and label before attach_to_work so a Hyrax reload cannot drop them' do
+        call_order = []
+        allow(file_set).to receive(:import_url=) { call_order << :import_url= }
+        allow(file_set).to receive(:label=)      { call_order << :label= }
+        allow(actor).to receive(:attach_to_work) { call_order << :attach_to_work }
+        allow(ImportUrlJob).to receive(:perform_now) { call_order << :import_url_job }
+
+        factory.send(:create_file_set_actor, {}, work, [], nil, remote_file)
+
+        expect(call_order.index(:import_url=)).to be < call_order.index(:attach_to_work)
+        expect(call_order.index(:label=)).to be < call_order.index(:attach_to_work)
+        expect(call_order.last).to eq(:import_url_job)
+      end
+    end
+
     describe "#transform_attributes" do
       context 'default behavior' do
         it "does not empty arrays that only have empty values" do
