@@ -670,6 +670,47 @@ module Bulkrax
         end
       end
 
+      # Compound metadata is a Valkyrie-only feature: the in-row `name:` option
+      # supports compounds whose sub-property keys collide across parents
+      # (e.g. a `title` shared by two compounds). Exercise it against a Valkyrie
+      # resource whose schema declares `type: hash, multiple: true` parents.
+      context 'when a mapping declares name: to set the in-row key (Valkyrie compound)' do
+        # `name:` (alias `row_key:`) decouples the in-row key from the globally
+        # unique mapping key, so two mappings with distinct keys can write the
+        # same in-row key into different compounds.
+        let(:importer) do
+          FactoryBot.create(:bulkrax_importer_csv, field_mapping: {
+                              'compound_one_title' => { from: ['compound_one_title'], object: 'compound_one', nested_attributes: true, name: 'title' },
+                              'compound_two_title' => { from: ['compound_two_title'], object: 'compound_two', nested_attributes: true, name: 'title' }
+                            })
+        end
+
+        around do |example|
+          previous = Bulkrax.object_factory
+          Bulkrax.object_factory = Bulkrax::ValkyrieObjectFactory
+          example.run
+          Bulkrax.object_factory = previous
+        end
+
+        before do
+          allow(subject).to receive(:factory_class).and_return(WorkResource)
+          allow(subject).to receive(:raw_metadata).and_return(
+            'source_identifier' => '2',
+            'title' => 'some title',
+            'compound_one_title_1' => 'Title A',
+            'compound_two_title_1' => 'Title B'
+          )
+        end
+
+        it 'writes each value under the configured in-row key, independently per compound' do
+          metadata = subject.build_metadata
+          expect(metadata['compound_one_attributes']['0']['title']).to eq('Title A')
+          expect(metadata['compound_two_attributes']['0']['title']).to eq('Title B')
+          # The unique mapping key is not used as the in-row key.
+          expect(metadata['compound_one_attributes']['0']).not_to have_key('compound_one_title')
+        end
+      end
+
       context 'with object fields not prefixed and properties with multiple values' do
         let(:importer) do
           FactoryBot.create(:bulkrax_importer_csv, field_mapping: {
