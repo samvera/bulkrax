@@ -372,12 +372,17 @@ module Bulkrax
         raise StandardError, "Record references local files but no files directory could be resolved from the import path" if files_dir.nil?
 
         r[file_mapping].split(split_pattern).map do |f|
-          file = File.join(files_dir, f.strip.tr(' ', '_'))
-          if File.exist?(file) # rubocop:disable Style/GuardClause
-            file
-          else
-            raise "File #{file} does not exist"
-          end
+          reference = f.strip
+          # Try the reference as written first, then the space->underscore
+          # variant produced by #remove_spaces_from_filenames. The rename only
+          # rewrites the top level of files/ (see unzip_spec), so nested
+          # attachments keep their spaces on disk and only match as written.
+          file = [reference, reference.tr(' ', '_')].uniq
+                                                    .map { |candidate| File.join(files_dir, candidate) }
+                                                    .find { |candidate| File.exist?(candidate) }
+          raise "File #{File.join(files_dir, reference)} does not exist" if file.nil?
+
+          file
         end
       end.flatten.compact.uniq
     end
