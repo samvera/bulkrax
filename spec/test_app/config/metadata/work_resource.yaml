@@ -9,3 +9,12 @@ attributes:
       required: false
       primary: false
       multiple: false
+  # Two compound (Array<Hash>) parents used to exercise the `name:` (row_key)
+  # field-mapping option on a Valkyrie resource: a shared in-row key (`title`)
+  # written into different compounds from distinct, globally unique mapping keys.
+  compound_one:
+    type: hash
+    multiple: true
+  compound_two:
+    type: hash
+    multiple: true

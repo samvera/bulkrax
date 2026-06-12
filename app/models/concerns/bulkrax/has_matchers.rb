@@ -95,7 +95,20 @@ module Bulkrax
     def set_parsed_object_data(object_multiple, object_name, name, index, value)
       target_key = parsed_object_target_key(object_name)
       target = object_target_for(target_key, object_name, object_multiple, index)
-      assign_object_value(target, name, value)
+      assign_object_value(target, object_row_key(name), value)
+    end
+
+    # The key a value is written under inside an `object:` row. Defaults to the
+    # mapping key, but a mapping may set `name:` (alias `row_key:`) to use a
+    # different in-row key. This lets two mappings with distinct (globally
+    # unique) keys both write the same in-row key into different objects — e.g.
+    # a `title` sub-property shared by two compounds, each needing a unique
+    # top-level mapping key but the same `title` key inside its row.
+    def object_row_key(name)
+      cfg = mapping[name]
+      return name unless cfg.is_a?(Hash)
+
+      cfg['name'] || cfg[:name] || cfg['row_key'] || cfg[:row_key] || name
     end
 
     # Resolve the hash slot that `name` should be written into, initializing
