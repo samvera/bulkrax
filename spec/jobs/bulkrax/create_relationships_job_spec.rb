@@ -6,7 +6,7 @@ module Bulkrax
   RSpec.describe CreateRelationshipsJob, type: :job do
     let(:create_relationships_job) { described_class.new }
     let(:importer) { FactoryBot.create(:bulkrax_importer_csv_complex) }
-    let(:ability) { instance_double(Ability) }
+    let(:ability) { instance_double(::Ability) }
 
     # create objects
     let(:collection1) { build(:collection, id: 'collection1_id') }
@@ -23,7 +23,7 @@ module Bulkrax
 
     before do
       allow(ImporterRun).to receive(:update_counters).and_return(true)
-      allow(Ability).to receive(:new).and_return(ability)
+      allow(::Ability).to receive(:new).and_return(ability)
       allow(ability).to receive(:authorize!).and_return(true)
       # The real work happens in the object factory. Each object factory
       # should have its own tests to verify that it does the right thing.

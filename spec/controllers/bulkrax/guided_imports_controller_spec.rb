@@ -6,7 +6,7 @@ module Bulkrax
   RSpec.describe GuidedImportsController, type: :controller do
     routes { Bulkrax::Engine.routes }
 
-    let(:current_ability) { instance_double(Ability) }
+    let(:current_ability) { double('Ability', can_import_works?: true, can?: true, authorize!: true) }
 
     let(:user) { FactoryBot.create(:user) }
 
@@ -24,6 +24,7 @@ module Bulkrax
       end
       described_class.prepend Bulkrax::Auth
       allow(current_ability).to receive(:can_import_works?).and_return(true)
+      allow(current_ability).to receive(:can?).and_return(true)
       allow(controller).to receive(:current_ability).and_return(current_ability)
     end
 
