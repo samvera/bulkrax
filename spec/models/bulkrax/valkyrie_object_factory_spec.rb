@@ -137,7 +137,6 @@ module Bulkrax
       end
 
       before do
-        Hyrax.query_service.custom_queries.register_query_handler(Wings::CustomQueries::FindBySourceIdentifier)
         stub_request(:get, "http://localhost:8985/solr/hydra-test/select?fl=id&q=_query_:%22%7B!field%20f=bulkrax_identifier_tesim%7DTitle%22&qt=standard&rows=1000&sort=system_create_dtsi%20asc&start=0&wt=json")
           .to_return(status: 200, body: '{}', headers: {})
         allow(ActiveFedora::Base).to receive(:where).with({ "bulkrax_identifier_tesim" => "BU_Collegian-19481124" }).and_return(active_fedora_relation)
