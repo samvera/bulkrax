@@ -168,8 +168,8 @@ module Bulkrax
     end
 
     def self.solr_name(field_name)
-      if defined?(Hyrax)
-        Hyrax.index_field_mapper.solr_name(field_name)
+      if defined?(Hyrax) && Hyrax.respond_to?(:config) && Hyrax.config.respond_to?(:index_field_mapper)
+        Hyrax.config.index_field_mapper.solr_name(field_name)
       else
         ActiveFedora.index_field_mapper.solr_name(field_name)
       end
