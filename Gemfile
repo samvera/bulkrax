@@ -20,6 +20,7 @@ gem 'factory_bot_rails'
 
 # Bulkrax supports Hyrax 2.3 through 5.2 only.
 gem 'hyrax', ENV['HYRAX_VERSION'] || '~> 5.0'
+gem 'json', '< 3.0' # remove once Bulkrax allows rails >= 8.0 - ActiveSupport::JSON passes quirks_mode kwarg that json 3.0 dropped
 
 gem 'oai'
 gem 'pg'
