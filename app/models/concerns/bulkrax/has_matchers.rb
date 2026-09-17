@@ -230,7 +230,7 @@ module Bulkrax
     # @return [Array] hyrax fields
     def field_to(field)
       fields = mapping&.map do |key, value|
-        return unless value
+        next unless value
 
         if value['from'].instance_of?(Array)
           key if value['from'].include?(field) || key == field
