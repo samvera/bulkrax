@@ -67,10 +67,13 @@ module Bulkrax
     end
 
     def parse_subject(src)
-      string = src.strip.downcase
+      string = src.strip
       return if string.blank?
 
-      string.slice(0, 1).capitalize + string.slice(1..-1)
+      return string.sub(%r{\Ahttps?}i, &:downcase) if string.match?(%r{\Ahttps?://}i)
+
+      downcased = string.downcase
+      downcased.slice(0, 1).capitalize + downcased.slice(1..-1)
     end
 
     def parse_types(src)
