@@ -129,6 +129,23 @@ module Bulkrax
         all_models.each { |model| missing_required << { model: model, field: source_id_key.to_s } }
       end
 
+      # Adding the default work type unconditionally makes every sheet answer
+      # for that model's required fields, so a collection-only sheet gets asked
+      # for properties belonging to a work type it never mentions.
+      def models_to_validate(csv_data, headers)
+        row_models = csv_data.map { |r| r[:model].to_s }.reject(&:blank?).uniq
+        return row_models if Bulkrax.default_work_type.blank?
+        return row_models unless default_work_type_needed?(csv_data, headers)
+
+        row_models | [Bulkrax.default_work_type]
+      end
+
+      def default_work_type_needed?(csv_data, headers)
+        return true unless headers.map(&:to_s).include?('model')
+
+        csv_data.empty? || csv_data.any? { |r| r[:model].blank? }
+      end
+
       # Adds a file-level notice when the model column is absent or every row has a blank
       # model value, indicating that the default work type will be used for all rows.
       # When this notice is present the per-row default_work_type_used warnings are
