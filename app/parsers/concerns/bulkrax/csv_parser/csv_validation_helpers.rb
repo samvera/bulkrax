@@ -63,8 +63,8 @@ module Bulkrax
       rescue StandardError => e
         Rails.logger.error("CsvParser.validate_csv: error building valid headers – #{e.message}")
         standard = %w[model source_identifier parents children file]
-        model_fields = field_metadata.values.flat_map { |m| m[:properties] }
-                                            .map { |prop| mapping_manager.key_to_mapped_column(prop) }
+        properties = field_metadata.values.flat_map { |m| m[:properties] }
+        model_fields = properties.map { |prop| mapping_manager.key_to_mapped_column(prop) }
         (standard + model_fields).uniq
       end
 

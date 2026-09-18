@@ -230,7 +230,9 @@ module Bulkrax
     # @return [Array] hyrax fields
     def field_to(field)
       fields = mapping&.map do |key, value|
-        return unless value
+        # Bails out of #field_to with nil, not just this entry: `next` would
+        # fall through to the `fields.blank?` branch and answer [field].
+        return unless value # rubocop:disable Lint/NonLocalExitFromIterator
 
         if value['from'].instance_of?(Array)
           key if value['from'].include?(field) || key == field
