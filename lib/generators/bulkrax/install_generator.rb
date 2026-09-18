@@ -58,18 +58,29 @@ class Bulkrax::InstallGenerator < Rails::Generators::Base
   def add_ability
     file = 'app/models/ability.rb'
     file_text = File.read(file)
-    import_line = 'def can_import_works?'
-    export_line = 'def can_export_works?'
-    unless file_text.include?(import_line)
-      insert_into_file file, before: /^end/ do
-        "  def can_import_works?\n    can_create_any_work?\n  end"
-      end
-    end
+    include_line = 'include Bulkrax::Ability'
 
     # rubocop:disable Style/GuardClause
-    unless file_text.include?(export_line)
-      insert_into_file file, before: /^end/ do
-        "  def can_export_works?\n    can_create_any_work?\n  end"
+    unless file_text.include?(include_line)
+      insert_into_file file, after: /include\s+\S+Ability[^\n]*\n/ do
+        "  include Bulkrax::Ability\n\n" \
+        "  # Override Bulkrax::Ability methods as needed, for example:\n" \
+        "  #\n" \
+        "  #   def can_import_works?\n" \
+        "  #     can_create_any_work?\n" \
+        "  #   end\n" \
+        "  #\n" \
+        "  #   def can_export_works?\n" \
+        "  #     can_create_any_work?\n" \
+        "  #   end\n" \
+        "  #\n" \
+        "  #   def can_admin_importers?\n" \
+        "  #     current_user.admin?\n" \
+        "  #   end\n" \
+        "  #\n" \
+        "  #   def can_admin_exporters?\n" \
+        "  #     current_user.admin?\n" \
+        "  #   end\n"
       end
     end
     # rubocop:enable Style/GuardClause
