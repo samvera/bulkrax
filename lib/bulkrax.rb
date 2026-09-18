@@ -129,6 +129,21 @@ module Bulkrax
       instance.respond_to?(:internal_resource) ? instance.internal_resource : collection_model_class.to_s
     end
 
+    # A sheet written against either side of a Wings pair has to import, since
+    # both names resolve to the same object.
+    def collection_model_names
+      @collection_model_names ||= model_names_for(collection_model_class)
+    end
+
+    attr_writer :collection_model_names
+
+    def collection_model_name?(model_name)
+      name = model_name.to_s.strip
+      return false if name.empty?
+
+      collection_model_names.any? { |known| name.casecmp(known).zero? }
+    end
+
     def file_model_class
       @file_model_class ||= defined?(::Hyrax) ? ::FileSet : File
     end
@@ -147,6 +162,36 @@ module Bulkrax
       # ```
       instance = file_model_class.new
       instance.respond_to?(:internal_resource) ? instance.internal_resource : file_model_class.to_s
+    end
+
+    # As #collection_model_names, for file set rows. Wings pairs file sets by
+    # namespace rather than a `Resource` suffix: `Wings::ModelRegistry` maps
+    # both `FileSet` and `Hyrax::FileSet` onto the same object, so whichever
+    # one is configured, the other is its twin.
+    def file_model_names
+      @file_model_names ||= model_names_for(file_model_class, twin: file_set_twin_for(file_model_class))
+    end
+
+    attr_writer :file_model_names
+
+    def file_model_name?(model_name)
+      name = model_name.to_s.strip
+      return false if name.empty?
+
+      file_model_names.any? { |known| name.casecmp(known).zero? }
+    end
+
+    # Constantizing is what distinguishes a Wings install from a name that
+    # merely looks like one.
+    def model_names_for(klass, twin: "#{klass}Resource")
+      names = [klass.to_s]
+      names << twin.to_s if twin.present? && twin.to_s.safe_constantize
+      names.uniq
+    end
+
+    def file_set_twin_for(klass)
+      name = klass.to_s
+      name.start_with?('Hyrax::') ? name.delete_prefix('Hyrax::') : "Hyrax::#{name}"
     end
 
     def curation_concerns
@@ -224,6 +269,9 @@ module Bulkrax
                  :collection_model_class,
                  :collection_model_internal_resource,
                  :collection_model_class=,
+                 :collection_model_name?,
+                 :collection_model_names,
+                 :collection_model_names=,
                  :curation_concerns,
                  :curation_concerns=,
                  :curation_concern_internal_resources,
@@ -240,6 +288,9 @@ module Bulkrax
                  :file_model_class,
                  :file_model_class=,
                  :file_model_internal_resource,
+                 :file_model_name?,
+                 :file_model_names,
+                 :file_model_names=,
                  :fill_in_blank_source_identifiers,
                  :fill_in_blank_source_identifiers=,
                  :generated_metadata_mapping,

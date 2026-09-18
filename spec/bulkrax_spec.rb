@@ -146,6 +146,102 @@ RSpec.describe Bulkrax do
       end
     end
 
+    context 'collection_model_names' do
+      after { described_class.collection_model_names = nil }
+
+      it 'is only the configured class when the application defines no Wings twin' do
+        expect(described_class.collection_model_names).to eq(['Collection'])
+      end
+
+      it 'pairs the configured class with its Wings twin when that twin is defined' do
+        stub_const('DigitalCollectionResource', Class.new)
+        allow(described_class.config).to receive(:collection_model_class).and_return(double(to_s: 'DigitalCollection'))
+        described_class.collection_model_names = nil
+
+        expect(described_class.collection_model_names)
+          .to contain_exactly('DigitalCollection', 'DigitalCollectionResource')
+      end
+    end
+
+    context 'collection_model_name?' do
+      after { described_class.collection_model_names = nil }
+
+      it 'recognises the configured class, whatever its case' do
+        expect(described_class.collection_model_name?('Collection')).to be true
+        expect(described_class.collection_model_name?('collection')).to be true
+      end
+
+      it 'recognises the Wings twin when the application defines it' do
+        stub_const('DigitalCollectionResource', Class.new)
+        allow(described_class.config).to receive(:collection_model_class).and_return(double(to_s: 'DigitalCollection'))
+        described_class.collection_model_names = nil
+
+        expect(described_class.collection_model_name?('digitalcollectionresource')).to be true
+      end
+
+      it 'recognises the configured collection_model_class' do
+        allow(described_class.config).to receive(:collection_model_class).and_return(double(to_s: 'DigitalCollection'))
+        described_class.collection_model_names = nil
+
+        expect(described_class.collection_model_name?('DigitalCollection')).to be true
+      end
+
+      it 'does not recognise a collection class this application does not use' do
+        allow(described_class.config).to receive(:collection_model_class).and_return(double(to_s: 'DigitalCollection'))
+        described_class.collection_model_names = nil
+
+        expect(described_class.collection_model_name?('Collection')).to be false
+      end
+
+      it 'recognises a name added to collection_model_names' do
+        described_class.collection_model_names += ['LegacyCollection']
+
+        expect(described_class.collection_model_name?('LegacyCollection')).to be true
+      end
+
+      it 'rejects a work model name and a blank value' do
+        expect(described_class.collection_model_name?('Work')).to be false
+        expect(described_class.collection_model_name?(' ')).to be false
+        expect(described_class.collection_model_name?(nil)).to be false
+      end
+    end
+
+    context 'file_model_names' do
+      after { described_class.file_model_names = nil }
+
+      it 'pairs the bare class with its namespaced twin' do
+        expect(described_class.file_model_names).to contain_exactly('FileSet', 'Hyrax::FileSet')
+      end
+
+      it 'pairs the namespaced class with its bare twin' do
+        allow(described_class.config).to receive(:file_model_class).and_return(double(to_s: 'Hyrax::FileSet'))
+        described_class.file_model_names = nil
+
+        expect(described_class.file_model_names).to contain_exactly('Hyrax::FileSet', 'FileSet')
+      end
+
+      it 'is only the configured class when the twin is not defined' do
+        allow(described_class.config).to receive(:file_model_class).and_return(double(to_s: 'BespokeFileSet'))
+        described_class.file_model_names = nil
+
+        expect(described_class.file_model_names).to eq(['BespokeFileSet'])
+      end
+    end
+
+    context 'file_model_name?' do
+      after { described_class.file_model_names = nil }
+
+      it 'recognises either half of the pair, whatever its case' do
+        expect(described_class.file_model_name?('FileSet')).to be true
+        expect(described_class.file_model_name?('hyrax::fileset')).to be true
+      end
+
+      it 'rejects a work model name and a blank value' do
+        expect(described_class.file_model_name?('Work')).to be false
+        expect(described_class.file_model_name?(nil)).to be false
+      end
+    end
+
     context 'parsers' do
       it 'has a default' do
         expect(described_class.parsers).to eq([
