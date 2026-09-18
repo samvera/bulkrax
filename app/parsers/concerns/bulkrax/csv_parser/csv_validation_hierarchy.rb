@@ -36,9 +36,9 @@ module Bulkrax
         model_str = item[:model].to_s
 
         opts = { type: nil, find_record: find_record, parent: parent_split_pattern, child: child_split_pattern }
-        if model_str.casecmp('collection').zero? || model_str.casecmp('collectionresource').zero?
+        if Bulkrax.collection_model_name?(model_str)
           collections << build_item_hash(item, child_to_parents, all_ids, opts.merge(type: 'collection'))
-        elsif model_str.casecmp('fileset').zero? || model_str.casecmp('hyrax::fileset').zero?
+        elsif Bulkrax.file_model_name?(model_str)
           file_sets << { id: item_id, title: item[:raw_row]['title'] || item_id, type: 'file_set' }
         else
           works << build_item_hash(item, child_to_parents, all_ids, opts.merge(type: 'work'))

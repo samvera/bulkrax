@@ -332,5 +332,76 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHierarchy do
       expect(works.first[:parentIds]).to include('col1')
       expect(collections.first[:childIds]).to be_empty
     end
+
+    context 'when the collection model is configured to a host-app class' do
+      before do
+        allow(Bulkrax.config).to receive(:collection_model_class).and_return(double(to_s: 'DigitalCollection'))
+        Bulkrax.collection_model_names = nil
+      end
+
+      after { Bulkrax.collection_model_names = nil }
+
+      it 'categorises rows naming that class as collections' do
+        data = [
+          make_item(source_identifier: 'col1', model: 'DigitalCollection',
+                    raw_row: { 'title' => 'My Collection' }),
+          make_item(source_identifier: 'work1', raw_row: { 'title' => 'Work One', 'parents_1' => 'col1' }),
+          make_item(source_identifier: 'fs1', model: 'FileSet', raw_row: { 'title' => 'File Set One' })
+        ]
+        all_ids = Set.new(%w[col1 work1 fs1])
+        collections, works, file_sets = host.extract_validation_items(data, all_ids)
+
+        expect(collections.map { |c| c[:id] }).to contain_exactly('col1')
+        expect(works.map { |w| w[:id] }).to contain_exactly('work1')
+        expect(file_sets.map { |f| f[:id] }).to contain_exactly('fs1')
+      end
+    end
+
+    context 'when the collection model is an ActiveFedora class paired with Wings' do
+      before do
+        stub_const('CollectionResource', Class.new)
+        Bulkrax.collection_model_names = nil
+      end
+
+      after { Bulkrax.collection_model_names = nil }
+
+      it 'categorises rows naming either half of the pair as collections' do
+        data = [
+          make_item(source_identifier: 'col1', model: 'Collection', raw_row: { 'title' => 'One' }),
+          make_item(source_identifier: 'col2', model: 'CollectionResource', raw_row: { 'title' => 'Two' })
+        ]
+        collections, works, = host.extract_validation_items(data, Set.new(%w[col1 col2]))
+
+        expect(collections.map { |c| c[:id] }).to contain_exactly('col1', 'col2')
+        expect(works).to be_empty
+      end
+
+      it 'does not categorise the twin when the application does not define it' do
+        hide_const('CollectionResource')
+        Bulkrax.collection_model_names = nil
+        data = [make_item(source_identifier: 'col2', model: 'CollectionResource', raw_row: { 'title' => 'Two' })]
+
+        collections, works, = host.extract_validation_items(data, Set.new(%w[col2]))
+
+        expect(collections).to be_empty
+        expect(works.map { |w| w[:id] }).to contain_exactly('col2')
+      end
+    end
+
+    context 'when collection_model_names is extended by the application' do
+      before { allow(Bulkrax.config).to receive(:collection_model_names).and_return(%w[Collection LegacyCollection]) }
+
+      it 'categorises rows naming any of them as collections' do
+        data = [
+          make_item(source_identifier: 'col1', model: 'Collection', raw_row: { 'title' => 'One' }),
+          make_item(source_identifier: 'col2', model: 'LegacyCollection', raw_row: { 'title' => 'Two' }),
+          make_item(source_identifier: 'work1', raw_row: { 'title' => 'Work One' })
+        ]
+        collections, works, = host.extract_validation_items(data, Set.new(%w[col1 col2 work1]))
+
+        expect(collections.map { |c| c[:id] }).to contain_exactly('col1', 'col2')
+        expect(works.map { |w| w[:id] }).to contain_exactly('work1')
+      end
+    end
   end
 end
