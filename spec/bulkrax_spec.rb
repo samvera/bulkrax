@@ -147,7 +147,10 @@ RSpec.describe Bulkrax do
     end
 
     context 'collection_model_names' do
-      after { described_class.collection_model_names = nil }
+      after do
+        described_class.collection_model_class = Collection
+        described_class.collection_model_names = nil
+      end
 
       it 'is only the configured class when the application defines no Wings twin' do
         expect(described_class.collection_model_names).to eq(['Collection'])
@@ -160,6 +163,21 @@ RSpec.describe Bulkrax do
 
         expect(described_class.collection_model_names)
           .to contain_exactly('DigitalCollection', 'DigitalCollectionResource')
+      end
+
+      it 'pairs a configured Resource class with its bare twin' do
+        allow(described_class.config).to receive(:collection_model_class).and_return(double(to_s: 'CollectionResource'))
+        described_class.collection_model_names = nil
+
+        expect(described_class.collection_model_names).to contain_exactly('CollectionResource', 'Collection')
+      end
+
+      it 'is rebuilt when the configured collection class changes' do
+        expect(described_class.collection_model_names).to eq(['Collection'])
+
+        described_class.collection_model_class = double(to_s: 'DigitalCollection')
+
+        expect(described_class.collection_model_names).to eq(['DigitalCollection'])
       end
     end
 
@@ -207,10 +225,21 @@ RSpec.describe Bulkrax do
     end
 
     context 'file_model_names' do
-      after { described_class.file_model_names = nil }
+      after do
+        described_class.file_model_class = ::FileSet
+        described_class.file_model_names = nil
+      end
 
       it 'pairs the bare class with its namespaced twin' do
         expect(described_class.file_model_names).to contain_exactly('FileSet', 'Hyrax::FileSet')
+      end
+
+      it 'is rebuilt when the configured file model changes' do
+        expect(described_class.file_model_names).to contain_exactly('FileSet', 'Hyrax::FileSet')
+
+        described_class.file_model_class = double(to_s: 'BespokeFileSet')
+
+        expect(described_class.file_model_names).to eq(['BespokeFileSet'])
       end
 
       it 'pairs the namespaced class with its bare twin' do

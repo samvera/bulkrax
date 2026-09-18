@@ -113,7 +113,10 @@ module Bulkrax
       @collection_model_class ||= Collection if defined?(::Hyrax)
     end
 
-    attr_writer :collection_model_class
+    def collection_model_class=(klass)
+      @collection_model_names = nil
+      @collection_model_class = klass
+    end
 
     def collection_model_internal_resource
       # WARN: Using #try on :internal_resource can yield unexpected results.
@@ -132,7 +135,8 @@ module Bulkrax
     # A sheet written against either side of a Wings pair has to import, since
     # both names resolve to the same object.
     def collection_model_names
-      @collection_model_names ||= model_names_for(collection_model_class)
+      @collection_model_names ||=
+        model_names_for(collection_model_class, twin: curation_concern_twin_for(collection_model_class))
     end
 
     attr_writer :collection_model_names
@@ -148,7 +152,10 @@ module Bulkrax
       @file_model_class ||= defined?(::Hyrax) ? ::FileSet : File
     end
 
-    attr_writer :file_model_class
+    def file_model_class=(klass)
+      @file_model_names = nil
+      @file_model_class = klass
+    end
 
     def file_model_internal_resource
       # WARN: Using #try on :internal_resource can yield unexpected results.
@@ -183,10 +190,15 @@ module Bulkrax
 
     # Constantizing is what distinguishes a Wings install from a name that
     # merely looks like one.
-    def model_names_for(klass, twin: "#{klass}Resource")
+    def model_names_for(klass, twin:)
       names = [klass.to_s]
       names << twin.to_s if twin.present? && twin.to_s.safe_constantize
       names.uniq
+    end
+
+    def curation_concern_twin_for(klass)
+      name = klass.to_s
+      name.end_with?('Resource') ? name.delete_suffix('Resource') : "#{name}Resource"
     end
 
     def file_set_twin_for(klass)
