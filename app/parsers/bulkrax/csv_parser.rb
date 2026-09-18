@@ -37,7 +37,6 @@ module Bulkrax
       @records
     end
 
-    # rubocop:disable Metrics/AbcSize
     def build_records
       @collections = []
       @works = []
@@ -49,11 +48,9 @@ module Bulkrax
             next unless r.key?(model_mapping)
 
             model = r[model_mapping].nil? ? "" : r[model_mapping].strip
-            # TODO: Eventually this should be refactored to us Hyrax.config.collection_model
-            #       We aren't right now because so many Bulkrax users are in between Fedora and Valkyrie
-            if model.casecmp('collection').zero? || model.casecmp('collectionresource').zero?
+            if Bulkrax.collection_model_name?(model)
               @collections << r
-            elsif model.casecmp('fileset').zero? || model.casecmp('hyrax::fileset').zero?
+            elsif Bulkrax.file_model_name?(model)
               @file_sets << r
             else
               @works << r
@@ -69,7 +66,6 @@ module Bulkrax
 
       true
     end
-    # rubocop:enabled Metrics/AbcSize
 
     def collections
       build_records if @collections.nil?

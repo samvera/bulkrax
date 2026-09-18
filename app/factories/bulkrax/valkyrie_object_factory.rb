@@ -434,7 +434,7 @@ module Bulkrax
 
       file_attrs = []
       uploads.each_with_index do |f, index|
-        file_attrs << ({ uploaded_file_id: f["id"].to_s, filename: files[index]["file_name"] }).merge(additional_attributes[index])
+        file_attrs << { uploaded_file_id: f["id"].to_s, filename: files[index]["file_name"] }.merge(additional_attributes[index])
       end
       file_attrs.compact.uniq
     end
