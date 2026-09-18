@@ -268,5 +268,21 @@ RSpec.describe Bulkrax::CsvTemplate::MappingManager do
     it 'returns an empty array for a property without an `object:` flag' do
       expect(object_manager.object_columns_for('title')).to eq([])
     end
+
+    context 'when a mapping declares several `from:` aliases' do
+      before do
+        allow(Bulkrax).to receive(:field_mappings).and_return({
+                                                                'Bulkrax::CsvParser' => {
+                                                                  'creator_name' => { 'from' => ['creator_name', 'creator name'], 'object' => 'creators' },
+                                                                  'creator_role' => { 'from' => ['creator_role', 'creator role'], 'object' => 'creators' }
+                                                                }
+                                                              })
+      end
+
+      it 'offers one column per mapping rather than every alias' do
+        expect(object_manager.object_columns_for('creators'))
+          .to contain_exactly('creator_name', 'creator_role')
+      end
+    end
   end
 end
