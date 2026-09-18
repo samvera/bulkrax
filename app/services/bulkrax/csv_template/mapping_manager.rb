@@ -40,11 +40,13 @@ module Bulkrax
       # intentionally omitted — the template shows the column shape once;
       # CSV rows can repeat the column with numeric suffixes (e.g.
       # redirect_path_1, redirect_path_2) at import time.
+      # An import accepts every `from:` alias, but offering them all here would
+      # put two columns for the same field on the template.
       def object_columns_for(object_name)
         @mappings
           .select { |_k, v| v.is_a?(Hash) && v["object"] == object_name }
-          .values
-          .flat_map { |v| Array(v["from"]) }
+          .keys
+          .map { |key| key_to_mapped_column(key) }
           .uniq
       end
 
