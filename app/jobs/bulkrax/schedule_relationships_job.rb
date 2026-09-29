@@ -5,7 +5,8 @@ module Bulkrax
     def perform(importer_id:)
       importer = Importer.find(importer_id)
       pending_num = importer.entries.left_outer_joins(:latest_status)
-                            .where('bulkrax_statuses.status_message IS NULL ').count
+                            .where("bulkrax_statuses.status_message IS NULL OR bulkrax_statuses.status_message = 'Pending'")
+                            .count
       return reschedule(importer_id) unless pending_num.zero?
 
       importer.last_run.parents.each do |parent_id|
