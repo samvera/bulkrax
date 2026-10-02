@@ -386,11 +386,7 @@ module Bulkrax
         before do
           allow(Site).to receive(:instance).and_return(site)
           allow(Site.instance).to receive(:account).and_return(account)
-          ENV['HYKU_MULTITENANT'] = 'true'
-        end
-
-        after do
-          ENV['HYKU_MULTITENANT'] = 'false'
+          stub_env('HYKU_MULTITENANT', 'true')
         end
 
         it 'returns the path of the partial import file' do
