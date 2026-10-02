@@ -12,7 +12,7 @@ gemspec
 # Git. Remember to move these dependencies to your gemspec before releasing
 # your gem to rubygems.org.
 
-gem 'blacklight'
+gem 'blacklight', '< 7.43' # 7.43.0 needs Rails 7.0+ and Ruby 3.0+ despite its gemspec
 gem 'bootstrap-sass', '~> 3.4.1'
 gem 'coderay'
 gem 'concurrent-ruby', '1.3.4'
