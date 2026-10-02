@@ -21,6 +21,10 @@ module Bulkrax
         )
       end
       context 'a successful run' do
+        # Stubbed because a build with the metadata needed to reach Complete
+        # queries Solr, which WebMock blocks.
+        before { allow_any_instance_of(CsvCollectionEntry).to receive(:succeeded?).and_return(true) }
+
         it 'increments the importer run count' do
           expect { perform }.to change(Bulkrax::ImporterRun, :count).by(1)
         end
@@ -39,6 +43,24 @@ module Bulkrax
           expect { perform }.to change { entry.importerexporter.current_run.reload.enqueued_records }.by(-1)
         end
       end
+      context 'a run whose entry fails without raising' do
+        before do
+          allow(Entry).to receive(:find).with(entry.id).and_return(entry)
+          allow(entry).to receive(:build)
+          allow(entry).to receive(:succeeded?).and_return(false)
+          allow(ImporterRun).to receive(:increment_counter).and_call_original
+        end
+
+        it 'counts the entry as failed rather than processed' do
+          perform
+
+          expect(ImporterRun).to have_received(:increment_counter).with(:failed_records, current_run_id).once
+          expect(ImporterRun).to have_received(:increment_counter).with(:failed_collections, current_run_id).once
+          expect(ImporterRun).not_to have_received(:increment_counter).with(:processed_records, current_run_id)
+          expect(ImporterRun).not_to have_received(:increment_counter).with(:processed_collections, current_run_id)
+        end
+      end
+
       context 'a run with an error' do
         before do
           allow(Entry).to receive(:find).with(entry.id).and_return(entry)
