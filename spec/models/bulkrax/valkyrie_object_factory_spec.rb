@@ -64,7 +64,6 @@ module Bulkrax
       end
 
       before do
-        described_class.instance_variable_set(:@cached_schema_map, nil)
         # rubocop:disable Lint/UnusedBlockArgument
         Hyrax.define_singleton_method(:schema_for) { |klass:, admin_set_id: nil| klass.new.singleton_class.schema || klass.schema } unless Hyrax.respond_to?(:schema_for)
         # rubocop:enable Lint/UnusedBlockArgument
@@ -87,6 +86,41 @@ module Bulkrax
         described_class.cached_schema_for(klass: test_klass, admin_set_id: 'set-memo')
         expect(Hyrax).to have_received(:schema_for).once
       end
+
+      it 'resolves the schema again in a later request or job' do
+        old_schema = double('old schema')
+        new_schema = double('new schema')
+        allow(Hyrax).to receive(:schema_for).with(klass: test_klass, admin_set_id: 'set-exec').and_return(old_schema, new_schema)
+        schemas = Array.new(2) do
+          Rails.application.executor.wrap { described_class.cached_schema_for(klass: test_klass, admin_set_id: 'set-exec') }
+        end
+        expect(schemas).to eq([old_schema, new_schema])
+      end
+
+      it 'resolves the schema separately for each admin set' do
+        schema_a = double('admin set A schema')
+        schema_b = double('admin set B schema')
+        allow(Hyrax).to receive(:schema_for).with(klass: test_klass, admin_set_id: 'set-a').and_return(schema_a)
+        allow(Hyrax).to receive(:schema_for).with(klass: test_klass, admin_set_id: 'set-b').and_return(schema_b)
+        schemas = %w[set-a set-b].map { |id| described_class.cached_schema_for(klass: test_klass, admin_set_id: id) }
+        expect(schemas).to eq([schema_a, schema_b])
+      end
+
+      context 'when the tenant changes within one request or job' do
+        let(:tenant) { Struct.new(:current).new('tenant-a') }
+
+        before { stub_const('Apartment::Tenant', tenant) }
+
+        it 'resolves the schema separately for each tenant' do
+          schema_a = double('tenant A schema')
+          schema_b = double('tenant B schema')
+          allow(Hyrax).to receive(:schema_for).with(klass: test_klass, admin_set_id: 'admin_set/default').and_return(schema_a, schema_b)
+          first = described_class.cached_schema_for(klass: test_klass, admin_set_id: 'admin_set/default')
+          tenant.current = 'tenant-b'
+          second = described_class.cached_schema_for(klass: test_klass, admin_set_id: 'admin_set/default')
+          expect([first, second]).to eq([schema_a, schema_b])
+        end
+      end
     end
 
     describe '.schema_properties' do
@@ -103,7 +137,6 @@ module Bulkrax
       end
 
       before do
-        described_class.instance_variable_set(:@cached_schema_map, nil)
         # rubocop:disable Lint/UnusedBlockArgument
         Hyrax.define_singleton_method(:schema_for) { |klass:, admin_set_id: nil| klass.new.singleton_class.schema || klass.schema } unless Hyrax.respond_to?(:schema_for)
         # rubocop:enable Lint/UnusedBlockArgument
@@ -111,6 +144,16 @@ module Bulkrax
 
       it 'returns field names from the schema' do
         expect(described_class.schema_properties(klass: test_klass)).to eq(['title'])
+      end
+
+      it 'builds the field names once per request or job' do
+        allow(field).to receive(:name).and_return(:title)
+        2.times { described_class.schema_properties(klass: test_klass) }
+        expect(field).to have_received(:name).once
+      end
+
+      it 'returns field names that callers cannot mutate for later lookups' do
+        expect(described_class.schema_properties(klass: test_klass)).to be_frozen
       end
 
       it 'includes context-specific fields when admin_set_id is provided' do
