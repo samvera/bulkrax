@@ -71,8 +71,7 @@ module Bulkrax
           file_key      = resolve_validation_key(mapping_manager, key: 'file',                            default: :file)
 
           csv_data       = parse_validation_rows(raw_csv, source_id_key, parent_key, children_key, file_key)
-          all_models     = csv_data.map { |r| r[:model].to_s }.reject(&:blank?).uniq
-          all_models    |= [Bulkrax.default_work_type] if Bulkrax.default_work_type.present?
+          all_models     = models_to_validate(csv_data, headers)
           field_analyzer = CsvTemplate::FieldAnalyzer.new(mappings, admin_set_id)
           field_metadata = build_validation_field_metadata(all_models, field_analyzer)
 
