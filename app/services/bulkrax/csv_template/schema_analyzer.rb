@@ -36,11 +36,7 @@ module Bulkrax
       def load_schema
         return nil unless @klass.respond_to?(:schema)
 
-        if @admin_set_id.present? && defined?(Hyrax) && Hyrax.respond_to?(:schema_for)
-          Hyrax.schema_for(klass: @klass, admin_set_id: @admin_set_id)
-        else
-          @klass.new.singleton_class.schema || @klass.schema
-        end
+        Bulkrax::ValkyrieObjectFactory.cached_schema_for(klass: @klass, admin_set_id: @admin_set_id)
       rescue StandardError
         nil
       end
