@@ -513,7 +513,7 @@ module Bulkrax
       @permitted_attributes ||= begin
         bare = base_permitted_attributes + if klass.respond_to?(:schema)
                                              admin_set_id = attributes[:admin_set_id] || attributes['admin_set_id']
-                                             Bulkrax::ValkyrieObjectFactory.schema_properties(klass: klass, admin_set_id: admin_set_id)
+                                             Bulkrax::ValkyrieObjectFactory.schema_properties(klass: klass, admin_set_id: admin_set_id).map(&:to_sym)
                                            else
                                              klass.properties.keys.map(&:to_sym)
                                            end
