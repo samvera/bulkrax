@@ -129,6 +129,15 @@ RSpec.describe Bulkrax::CsvTemplate::SchemaAnalyzer, type: :service do
         expect(Hyrax).to have_received(:schema_for).with(klass: klass, admin_set_id: 'set-123')
       end
 
+      it 'shares one schema lookup with the object factory per request or job' do
+        field = build_field(name: :title, meta: { 'form' => { 'required' => true } })
+        klass = build_schema_class(schema: [field])
+        allow(Hyrax).to receive(:schema_for).with(klass: klass, admin_set_id: 'set-123').and_return([field])
+        described_class.new(klass: klass, admin_set_id: 'set-123')
+        Bulkrax::ValkyrieObjectFactory.schema_properties(klass: klass, admin_set_id: 'set-123')
+        expect(Hyrax).to have_received(:schema_for).once
+      end
+
       it 'falls back gracefully when Hyrax.schema_for raises' do
         field = build_field(name: :title, meta: { 'form' => { 'required' => true } })
         klass = build_schema_class(schema: [field])

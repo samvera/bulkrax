@@ -62,6 +62,7 @@ RSpec.configure do |config|
 
   config.before do
     DatabaseCleaner.start
+    Bulkrax::Current.reset
   end
 
   config.after do
