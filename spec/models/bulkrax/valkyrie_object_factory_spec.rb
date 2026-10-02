@@ -166,6 +166,28 @@ module Bulkrax
       end
     end
 
+    describe '#permitted_attributes' do
+      let(:test_klass) do
+        fields = [double('Field', name: :title), double('Field', name: :id)]
+        Class.new do
+          define_singleton_method(:name) { 'PermittedWork' }
+          define_singleton_method(:schema) { fields }
+        end
+      end
+      let(:factory) do
+        described_class.new(attributes: {},
+                            source_identifier_value: 123,
+                            work_identifier: 'title',
+                            work_identifier_search_field: 'title_sim',
+                            klass: test_klass)
+      end
+
+      it 'returns schema properties as symbols without duplicating base attributes' do
+        expect(factory.send(:permitted_attributes)).to include(:title).and(all(be_a(Symbol)))
+        expect(factory.send(:permitted_attributes).count(:id)).to eq(1)
+      end
+    end
+
     describe '#create_file_set' do
       let(:parent_id) { "gw-123" }
       let(:of_attributes) do
