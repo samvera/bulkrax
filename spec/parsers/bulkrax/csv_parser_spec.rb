@@ -622,6 +622,30 @@ module Bulkrax
         end
       end
 
+      context 'when a record references file names containing spaces' do
+        before do
+          allow(subject).to receive(:records).and_return([{ file: 'subdir/has space.jpg|top space.jpg' }])
+          allow(subject).to receive(:path_to_files).and_return('spec/fixtures/csv/files')
+        end
+
+        it 'resolves nested files as written and top-level files via the underscored variant' do
+          allow(File).to receive(:exist?).and_return(false)
+          allow(File).to receive(:exist?).with('spec/fixtures/csv/files/subdir/has space.jpg').and_return(true)
+          allow(File).to receive(:exist?).with('spec/fixtures/csv/files/top_space.jpg').and_return(true)
+
+          expect(subject.file_paths).to contain_exactly(
+            'spec/fixtures/csv/files/subdir/has space.jpg',
+            'spec/fixtures/csv/files/top_space.jpg'
+          )
+        end
+
+        it 'raises naming the as-written reference when neither variant exists' do
+          allow(File).to receive(:exist?).and_return(false)
+
+          expect { subject.file_paths }.to raise_error(RuntimeError, %r{subdir/has space\.jpg does not exist})
+        end
+      end
+
       context 'when a record file value is blank' do
         before do
           allow(subject).to receive(:records).and_return([{ file: '' }, { file: nil }])
