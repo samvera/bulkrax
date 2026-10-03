@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2026_04_29_000000) do
+ActiveRecord::Schema.define(version: 2026_10_02_000000) do
   create_table "accounts", force: :cascade do |t|
     t.string "name"
   end
@@ -81,6 +81,28 @@ ActiveRecord::Schema.define(version: 2026_04_29_000000) do
     t.string "status_message", default: "Pending"
     t.string "error_class"
     t.index ["user_id"], name: "index_bulkrax_exporters_on_user_id"
+  end
+
+  create_table "bulkrax_import_metrics", force: :cascade do |t|
+    t.string "metric_type", null: false
+    t.string "event", null: false
+    t.integer "importer_id"
+    t.integer "importer_run_id"
+    t.integer "user_id"
+    t.string "session_id"
+    t.string "outcome"
+    t.boolean "first_attempt"
+    t.integer "duration_ms"
+    t.integer "step"
+    t.integer "rating"
+    t.text "payload"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["importer_id"], name: "index_bulkrax_import_metrics_on_importer_id"
+    t.index ["importer_run_id", "metric_type"], name: "index_bulkrax_import_metrics_on_importer_run_id_and_metric_type", unique: true
+    t.index ["metric_type", "created_at"], name: "index_bulkrax_import_metrics_on_metric_type_and_created_at"
+    t.index ["session_id"], name: "index_bulkrax_import_metrics_on_session_id"
+    t.index ["user_id"], name: "index_bulkrax_import_metrics_on_user_id"
   end
 
   create_table "bulkrax_importer_runs", force: :cascade do |t|

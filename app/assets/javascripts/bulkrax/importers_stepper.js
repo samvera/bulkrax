@@ -1379,7 +1379,8 @@
           },
           admin_set_id: StepperState.adminSetId
         },
-        locale: $('input[name="locale"]').val()
+        locale: $('input[name="locale"]').val(),
+        metrics_session_id: $('#metrics-session-id').val()
       },
       timeout: CONSTANTS.AJAX_TIMEOUT_LONG
     })
@@ -1491,7 +1492,8 @@
         importer: {
           admin_set_id: StepperState.adminSetId
         },
-        locale: $('input[name="locale"]').val()
+        locale: $('input[name="locale"]').val(),
+        metrics_session_id: $('#metrics-session-id').val()
       }
     }
 

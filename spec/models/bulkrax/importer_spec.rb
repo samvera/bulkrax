@@ -48,6 +48,151 @@ module Bulkrax
       end
     end
 
+    describe 'import outcome metrics' do
+      include ActiveSupport::Testing::TimeHelpers
+
+      let(:metrics_enabled) { true }
+      let(:parser_fields) do
+        { 'import_file_path' => 'spec/fixtures/csv/good.csv', 'guided_import' => true, 'metrics_session_id' => 'gi_test123' }
+      end
+      let(:importer) { FactoryBot.create(:bulkrax_importer_csv, parser_fields: parser_fields) }
+      let(:outcomes) { ImportMetric.import_outcomes }
+
+      before { allow(Bulkrax.config).to receive(:guided_import_metrics_enabled).and_return(metrics_enabled) }
+
+      context 'when a guided import run finishes' do
+        it 'records the status the run finished with' do
+          importer.record_status
+
+          expect(outcomes.count).to eq(1)
+          expect(outcomes.first).to have_attributes(
+            importer_id: importer.id,
+            importer_run_id: importer.current_run.id,
+            session_id: 'gi_test123',
+            outcome: 'Complete',
+            first_attempt: true
+          )
+        end
+
+        it 'keeps one row when the run is reported finished more than once' do
+          2.times { importer.record_status }
+          expect(outcomes.count).to eq(1)
+        end
+
+        it 'measures the duration from the start of the run to its last report' do
+          importer.current_run
+          travel(10.minutes) { importer.record_status }
+          expect(outcomes.first.duration_ms).to be_within(5_000).of(600_000)
+        end
+      end
+
+      context 'when the run still has records enqueued' do
+        it 'records nothing' do
+          importer.current_run.update!(enqueued_records: 1)
+          importer.record_status
+          expect(outcomes.count).to eq(0)
+        end
+      end
+
+      context 'when a later run finishes differently' do
+        it 'keeps the first run outcome as it was recorded' do
+          importer.record_status
+          first_run = importer.current_run
+
+          importer.current_run = importer.importer_runs.create!
+          importer.current_run.update!(failed_records: 1)
+          importer.record_status
+
+          expect(outcomes.find_by(importer_run: first_run)).to have_attributes(outcome: 'Complete', first_attempt: true)
+          expect(outcomes.find_by(importer_run: importer.current_run)).to have_attributes(outcome: 'Complete (with failures)', first_attempt: false)
+        end
+
+        it 'still counts the first run as the first attempt when its last job reports after the re-run starts' do
+          first_run = importer.current_run
+          importer.importer_runs.create!
+
+          importer.current_run = first_run
+          importer.record_status
+
+          expect(outcomes.find_by(importer_run: first_run).first_attempt).to eq(true)
+        end
+      end
+
+      context 'when the parser fails while building entries' do
+        it 'records the run as failed' do
+          allow(importer.parser).to receive(:works).and_raise(StandardError, 'boom')
+          importer.import_objects
+
+          expect(outcomes.first).to have_attributes(importer_run_id: importer.current_run.id, outcome: 'Failed')
+        end
+      end
+
+      context 'when a failure status is set on the importer' do
+        it 'records the run as failed' do
+          importer.set_status_info(CSV::MalformedCSVError.new('bad quote', 2))
+          expect(outcomes.first).to have_attributes(importer_run_id: importer.current_run.id, outcome: 'Failed')
+        end
+
+        it 'records an earlier run as failed when the failure names that run' do
+          first_run = importer.current_run
+          importer.importer_runs.create!
+
+          importer.set_status_info(StandardError.new('boom'), first_run)
+          expect(outcomes.find_by(importer_run: first_run).outcome).to eq('Failed')
+        end
+      end
+
+      context 'when a non-failure status is set outside record_status' do
+        it 'records nothing' do
+          importer.set_status_info('Complete')
+          expect(outcomes.count).to eq(0)
+        end
+      end
+
+      context 'when the importer is re-run from the edit form' do
+        it 'keeps recording it as a guided import' do
+          importer.update!(parser_fields: { 'import_file_path' => 'spec/fixtures/csv/good.csv', 'visibility' => 'open' })
+          expect(importer.reload.parser_fields).to include('guided_import' => true, 'metrics_session_id' => 'gi_test123', 'visibility' => 'open')
+        end
+      end
+
+      context 'when the metrics table has not been migrated' do
+        let(:connection) { ActiveRecord::Base.connection }
+
+        def hide_metrics_table(from, to)
+          connection.rename_table(from, to)
+          connection.schema_cache.clear!
+          ImportMetric.reset_column_information
+        end
+
+        it 'still lets the importer be destroyed' do
+          importer
+          hide_metrics_table(:bulkrax_import_metrics, :bulkrax_import_metrics_hidden)
+          expect { importer.destroy! }.not_to raise_error
+        ensure
+          hide_metrics_table(:bulkrax_import_metrics_hidden, :bulkrax_import_metrics)
+        end
+      end
+
+      context 'when metrics are disabled' do
+        let(:metrics_enabled) { false }
+
+        it 'records nothing' do
+          importer.record_status
+          expect(outcomes.count).to eq(0)
+        end
+      end
+
+      context 'when the importer was not created by the guided import' do
+        let(:parser_fields) { { 'import_file_path' => 'spec/fixtures/csv/good.csv' } }
+
+        it 'records nothing' do
+          importer.record_status
+          expect(outcomes.count).to eq(0)
+        end
+      end
+    end
+
     describe 'field_mapping' do
       context 'oai_parser' do
         it 'retrieves the default field mapping for oai_dc' do
