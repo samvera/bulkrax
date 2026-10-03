@@ -172,6 +172,9 @@ en:
         instructions_html: Upload <b>only</b> the corrected entries for the <b>%{name}</b> importer. To export failed entries for correction,
       guided_import:
         breadcrumb: Guided Import
+        failure:
+          message: Something went wrong while starting the import, and it may already have been created. Check the Import Queue before starting it again.
+          title: We could not confirm that the import started
         flash:
           demo_not_available: Demo scenarios not available
           import_started: Import started successfully.
@@ -200,6 +203,7 @@ en:
           hierarchy_too_deep: Hierarchy too deep (max %{max} levels)
           import_hierarchy: Import Hierarchy
           import_name_prefix: 'CSV Import - '
+          import_submit_error: The import could not be started. Please try again.
           invalid_file_format: Invalid file format. Please check your files and try again.
           invalid_format: Invalid file format. Only .csv and .zip files are allowed.
           max_files: Maximum of %{count} files reached (1 CSV and 1 ZIP).
@@ -261,6 +265,19 @@ en:
         feedback_link: Report a Bug / Feedback
         page_subtitle: Import collections, works, and files via CSV
         page_title: Start a Bulk Import
+        seq:
+          comment_label: What could be improved?
+          comment_placeholder: Tell us about your experience...
+          dismiss: Dismiss feedback form
+          legend: Ease of use rating from 1 (Very Difficult) to 7 (Very Easy)
+          optional: optional
+          send_feedback: Send Feedback
+          skip: Skip
+          subtitle: Your feedback helps us improve this experience.
+          thank_you: Thank you for your feedback!
+          title: How easy was it to complete this import?
+          very_difficult: Very Difficult
+          very_easy: Very Easy
         step1:
           add_another: Add another file
           add_another_hint_html: Drop a CSV or ZIP file here, or click to <strong class="text-primary">browse</strong>
@@ -330,7 +347,7 @@ en:
             title_errors: Row Validation Errors
             title_warnings: Row Validation Warnings
         success:
-          message: Your import is now processing in the background. You'll be notified when it's complete.
+          message: Your import is now processing in the background. You can monitor progress in the Import Queue.
           start_another: Start Another Import
           title: Import Started
           view_queue: View Import Queue
