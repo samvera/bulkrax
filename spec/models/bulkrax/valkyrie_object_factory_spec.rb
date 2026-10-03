@@ -210,6 +210,29 @@ module Bulkrax
       end
     end
 
+    describe '#destroy_existing_files' do
+      let(:valkyrie_object_factory) do
+        described_class.new(
+          attributes: {},
+          source_identifier_value: 'fs-123',
+          work_identifier: :bulkrax_identifier,
+          work_identifier_search_field: "bulkrax_identifier_tesim",
+          related_parents_parsed_mapping: "parents",
+          importer_run_id: importer_run.id
+        )
+      end
+      let(:importer_run) { FactoryBot.create(:bulkrax_importer_run) }
+      let(:object) { double('work', id: 'wk-1') }
+
+      it 'handles a lazy enumerator of file sets without raising' do
+        custom_queries = double('custom_queries')
+        allow(Hyrax).to receive(:custom_queries).and_return(custom_queries)
+        allow(custom_queries).to receive(:find_child_file_sets).with(resource: object).and_return([].lazy)
+
+        expect { valkyrie_object_factory.send(:destroy_existing_files, object: object) }.not_to raise_error
+      end
+    end
+
     describe 'Hyrax-dependent methods' do
       context 'with Hyrax available' do
         describe '#solr_name' do
