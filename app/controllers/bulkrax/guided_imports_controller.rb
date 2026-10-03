@@ -5,6 +5,7 @@ module Bulkrax
     include Hyrax::ThemedLayoutController if defined?(::Hyrax)
     include Bulkrax::GuidedImportDemoScenarios if Bulkrax.config.guided_import_demo_scenarios_enabled
     include Bulkrax::ImporterFileHandler
+    include Bulkrax::GuidedImportMetrics
     helper Bulkrax::ImportersHelper
 
     before_action :authenticate_user!
@@ -37,7 +38,9 @@ module Bulkrax
       end
 
       admin_set_id = params[:importer]&.[](:admin_set_id)
+      started_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       validation_result = run_validation(csv_file, zip_file, admin_set_id: admin_set_id)
+      record_validation_metric(validation_result, ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - started_at) * 1000).round)
       raw_csv_data = validation_result.delete(:raw_csv_data)
       cache_key = cache_validation_errors(validation_result, raw_csv_data, csv_file)
       formatted = StepperResponseFormatter.format(validation_result)
@@ -74,6 +77,7 @@ module Bulkrax
       @importer = Importer.new(importer_params)
       @importer.parser_klass = 'Bulkrax::CsvParser'
       @importer.user = current_user if respond_to?(:current_user) && current_user.present?
+      @importer.parser_fields = (@importer.parser_fields || {}).merge(guided_import_parser_fields)
       apply_field_mapping
 
       if @importer.save
