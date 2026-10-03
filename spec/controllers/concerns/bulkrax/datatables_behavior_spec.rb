@@ -101,6 +101,11 @@ RSpec.describe Bulkrax::ImportersController, type: :controller do
     let(:item) { FactoryBot.create(:bulkrax_importer) }
     let(:entry) { FactoryBot.create(:bulkrax_entry, importerexporter: item) }
 
+    before do
+      # Force item and entry creation so User.first is set before authenticate_user! runs
+      entry
+    end
+
     it 'returns a string of HTML links' do
       get :index
       result = controller.entry_util_links(entry, item)

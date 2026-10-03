@@ -211,7 +211,7 @@ module Bulkrax
     # @param [Hash] attrs the attributes to put in the environment
     # @return [Hyrax::Actors::Environment]
     def environment(attrs)
-      Hyrax::Actors::Environment.new(object, Ability.new(@user), attrs)
+      Hyrax::Actors::Environment.new(object, ::Ability.new(@user), attrs)
     end
 
     def work_actor
