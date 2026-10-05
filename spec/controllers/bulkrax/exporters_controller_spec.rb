@@ -89,7 +89,7 @@ module Bulkrax
 
       context 'when there is a search filter' do
         before do
-          allow(controller).to receive(:exporter_table_search).and_return(['name ILIKE ?', '%Bulkrax%'])
+          allow(controller).to receive(:exporter_table_search).and_return(['name LIKE ?', '%Bulkrax%'])
         end
 
         it 'returns the filtered count before pagination is applied' do
