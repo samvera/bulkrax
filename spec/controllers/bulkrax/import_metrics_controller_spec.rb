@@ -126,5 +126,77 @@ module Bulkrax
         end
       end
     end
+
+    describe 'the dashboard' do
+      let(:current_ability) { instance_double(Ability, can_import_works?: true, can_read_bulkrax_metrics?: can_read) }
+      let(:can_read) { true }
+
+      describe 'GET #index' do
+        it 'summarizes the requested date range' do
+          get :index, params: { from: '2026-01-01', to: '2026-01-31' }
+
+          expect(response).to have_http_status(:ok)
+          expect(assigns(:aggregator)).to have_attributes(from: Time.zone.parse('2026-01-01'), to: Time.zone.parse('2026-01-31').end_of_day)
+        end
+
+        it 'falls back to the last 30 days when the dates cannot be read' do
+          get :index, params: { from: 'not-a-date', to: '' }
+          expect(assigns(:aggregator).from).to be_within(1.minute).of(30.days.ago.beginning_of_day)
+        end
+
+        context 'when the user cannot read metrics' do
+          let(:can_read) { false }
+
+          it 'denies access' do
+            expect { get :index }.to raise_error(CanCan::AccessDenied)
+          end
+        end
+
+        context 'when the host app grants no metrics permission at all' do
+          let(:current_ability) { instance_double(Ability, can_import_works?: true) }
+
+          it 'denies access' do
+            expect { get :index }.to raise_error(CanCan::AccessDenied)
+          end
+        end
+
+        context 'when metrics are disabled' do
+          let(:metrics_enabled) { false }
+
+          it 'returns not found' do
+            get :index
+            expect(response).to have_http_status(:not_found)
+          end
+        end
+      end
+
+      describe 'GET #export' do
+        it 'neutralizes formulas hidden behind a leading tab or carriage return' do
+          ImportMetric.record(metric_type: 'funnel', event: 'step_reached', step: 1, session_id: "\t=1+1")
+          ImportMetric.record(metric_type: 'funnel', event: 'step_reached', step: 1, session_id: "\r=1+1")
+          get :export
+
+          expect(CSV.parse(response.body).drop(1).map { |row| row[6] }).to contain_exactly("'\t=1+1", "'\r=1+1")
+        end
+
+        it 'downloads every metric in the range as CSV, neutralizing spreadsheet formulas' do
+          ImportMetric.record(metric_type: 'funnel', event: 'step_reached', step: 2, session_id: '=HYPERLINK("x")')
+          get :export
+
+          expect(response.media_type).to eq('text/csv')
+          rows = CSV.parse(response.body)
+          expect(rows.first).to include('metric_type', 'session_id', 'payload')
+          expect(rows.second).to include('funnel', %('=HYPERLINK("x")))
+        end
+
+        context 'when the user cannot read metrics' do
+          let(:can_read) { false }
+
+          it 'denies access' do
+            expect { get :export }.to raise_error(CanCan::AccessDenied)
+          end
+        end
+      end
+    end
   end
 end
