@@ -4,6 +4,7 @@ en:
     admin:
       sidebar:
         exporters: Exporters
+        import_metrics: Guided Import Metrics
         importers: Importers
     cancel: Cancel
     entry:
@@ -76,6 +77,72 @@ en:
       new_importer: New Importer
       upload_corrected_entries: 'Upload Corrected Entries: %{name}'
       upload_corrected_entries_action: Upload Corrected Entries
+    import_metrics:
+      accuracy:
+        description: How each first import attempt turned out, grouped by the last validation result in the same guided import session.
+        results:
+          fail: Failed validation
+          not_validated: Validation skipped
+          pass: Passed validation
+          pass_with_warnings: Passed with warnings
+        title: Validation Accuracy
+        validation_result: Validation result
+      by_day:
+        complete: Complete
+        date: Date
+        other: Other outcomes
+        title: Imports by Day
+      empty:
+        message: Data will appear here once people start using the guided import.
+        title: No metrics in this date range
+      errors:
+        title: Most Common Validation Errors
+        types:
+          missing_files: Missing files
+          missing_required_fields: Missing required fields
+          row_errors: Row errors
+      feedback:
+        rating: "%{rating} of 7"
+        recent_comments: Recent Comments
+        responses:
+          one: 1 response
+          other: "%{count} responses"
+        title: Ease-of-Use Ratings
+      filter:
+        apply: Apply
+        export_csv: Export CSV
+        from: From
+        last_days: Last %{count} days
+        quick_ranges: Quick date ranges
+        to: To
+      funnel:
+        description: How many guided import sessions reached each step.
+        steps:
+          step1: Upload and validate
+          step2: Configure
+          step3: Review
+          step4: Import started
+        title: Import Funnel
+      no_data: No data in this date range.
+      none: None yet
+      recent:
+        date: Date
+        deleted_importer: Deleted importer
+        first_attempt: First attempt
+        importer: Importer
+        'no': 'No'
+        outcome: Outcome
+        records: Records
+        title: Recent Guided Imports
+        'yes': 'Yes'
+      seconds: "%{count} s"
+      subtitle: Success rates, validation results, and feedback for the guided import.
+      summary:
+        average_rating: Average ease-of-use rating
+        average_validation: Average validation time
+        first_attempt_success: First-attempt success
+        total_imports: Import runs
+      title: Guided Import Metrics
     importer:
       bagit:
         bags_to_import: 'Bag or Bags to Import:'
