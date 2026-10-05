@@ -102,7 +102,7 @@ module Bulkrax
       end
       {
         data: result,
-        recordsTotal:    Bulkrax::Importer.count,
+        recordsTotal: Bulkrax::Importer.count,
         recordsFiltered: filtered_count
       }
     end
