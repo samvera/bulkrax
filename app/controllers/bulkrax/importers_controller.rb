@@ -230,7 +230,8 @@ module Bulkrax
         # For BagIt, there will only be one bag, so we get the file_path back and set import_file_path
         # For CSV, we expect only file uploads, so we won't get the file_path back
         # and we expect the import_file_path to be set already
-        target = @importer.parser.retrieve_cloud_files(cloud_files, @importer)
+        # target = @importer.parser.retrieve_cloud_files(cloud_files, @importer)
+        target = @importer.parser.move_csv_to_files_dir(cloud_files, uploads, @importer)
         @importer[:parser_fields]['import_file_path'] = target if target.present?
       end
 
