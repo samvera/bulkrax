@@ -25,7 +25,7 @@ module Bulkrax
         it 'processes export successfully' do
           expect(exporter).to receive(:export)
           expect(exporter).to receive(:write)
-          expect(exporter).to receive(:save)
+          expect(exporter).to receive(:save).at_least(:once).and_call_original
 
           result = described_class.perform_now(exporter.id)
           expect(result).to be true
@@ -37,6 +37,47 @@ module Bulkrax
           allow(exporter).to receive(:export).and_raise(StandardError, 'Export failed')
 
           expect { described_class.perform_now(exporter.id) }.to raise_error(StandardError)
+        end
+      end
+
+      context 'when the export matched no records' do
+        it 'marks the exporter Complete instead of leaving it Pending' do
+          allow(exporter).to receive(:export)
+
+          described_class.perform_now(exporter.id)
+
+          expect(exporter.status).to eq('Complete')
+        end
+      end
+
+      context 'when an entry failed without the run getting a status' do
+        it 'marks the exporter Complete (with failures)' do
+          allow(exporter).to receive(:export) { bulkrax_exporter_run.update!(failed_records: 1) }
+
+          described_class.perform_now(exporter.id)
+
+          expect(exporter.status).to eq('Complete (with failures)')
+        end
+      end
+
+      context 'when writing the files fails' do
+        it 'marks the exporter Failed with the error, even after its entries completed' do
+          allow(exporter).to receive(:export) { exporter.set_status_info }
+          allow(exporter).to receive(:write).and_raise(StandardError, 'Unable to retrieve files')
+
+          expect { described_class.perform_now(exporter.id) }.to raise_error(StandardError, 'Unable to retrieve files')
+          expect(exporter.status).to eq('Failed')
+          expect(exporter.current_status.error_message).to eq('Unable to retrieve files')
+        end
+      end
+
+      context 'when the export itself failed' do
+        it 'keeps the Failed status' do
+          allow(exporter).to receive(:export) { exporter.set_status_info(StandardError.new('Solr said no')) }
+
+          described_class.perform_now(exporter.id)
+
+          expect(exporter.status).to eq('Failed')
         end
       end
 
