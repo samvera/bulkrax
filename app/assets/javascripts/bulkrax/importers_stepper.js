@@ -144,6 +144,7 @@
 
     eventsInitialized = false
 
+    MetricsTracker.init()
     bindEvents()
     initAdminSetState()
     updateDownloadTemplateLink()
@@ -343,7 +344,7 @@
     })
 
     // Start another import
-    $('#start-another-import').on('click', function () {
+    $('#start-another-import, #restart-after-failure').on('click', function () {
       location.reload()
     })
 
@@ -1379,7 +1380,8 @@
           },
           admin_set_id: StepperState.adminSetId
         },
-        locale: $('input[name="locale"]').val()
+        locale: $('input[name="locale"]').val(),
+        metrics_session_id: $('#metrics-session-id').val()
       },
       timeout: CONSTANTS.AJAX_TIMEOUT_LONG
     })
@@ -1491,7 +1493,8 @@
         importer: {
           admin_set_id: StepperState.adminSetId
         },
-        locale: $('input[name="locale"]').val()
+        locale: $('input[name="locale"]').val(),
+        metrics_session_id: $('#metrics-session-id').val()
       }
     }
 
@@ -2312,6 +2315,7 @@
   // Navigate to step
   function goToStep(stepNum) {
     StepperState.currentStep = stepNum
+    MetricsTracker.recordStep(stepNum)
     updateStepperUI()
 
     // Scroll to top, then move focus to the new step's heading
@@ -2546,6 +2550,7 @@
   function handleImportSubmit() {
     var $btn = $('#start-import-btn')
     var $form = $('#bulk-import-stepper-form')
+    var buttonHtml = $btn.html()
     $btn
       .prop('disabled', true)
       .html('<span class="fa fa-spinner fa-spin"></span> ' + t('starting'))
@@ -2553,19 +2558,85 @@
     // Disable the file input so raw files aren't sent with the form
     $('#file-input').prop('disabled', true)
 
+    var formData = new FormData($form[0])
+
     // Only append uploaded file IDs in upload mode; in file_path mode the import_file_path
     // param is used and appending IDs would cause GuidedImportsController#create to ignore the path.
     if (StepperState.uploadMode === 'upload' && Array.isArray(StepperState.uploadedFiles)) {
       StepperState.uploadedFiles.forEach(function (f) {
         if (f.uploadId) {
-          var $input = $('<input>', { type: 'hidden', name: 'uploaded_files[]' }).val(f.uploadId)
-          $form.append($input)
+          formData.append('uploaded_files[]', f.uploadId)
         }
       })
     }
 
-    // Submit the form so the request hits GuidedImportsController#create and creates the importer / enqueues job
-    $form[0].submit()
+    $.ajax({
+      url: $form.attr('action'),
+      method: 'POST',
+      data: formData,
+      processData: false,
+      contentType: false,
+      dataType: 'json'
+    }).done(function (data) {
+      MetricsTracker.recordSubmitted()
+      showImportSuccess(data.importer_id)
+    }).fail(function (xhr) {
+      handleImportSubmitError(xhr, $btn, buttonHtml)
+    })
+  }
+
+  function showImportSuccess(importerId) {
+    $('.stepper-content-wrapper').hide()
+    $('.stepper-header').hide()
+    $('.import-success-state').show()
+    $('#import-success-title').focus()
+    initSeqFeedback(importerId)
+  }
+
+  // Only GuidedImportsController#create's own rejection, a 422 carrying an
+  // errors list, is safe to retry. Any other failure (an expired session's
+  // CSRF 422, a 500, a dropped connection) may have come after the importer
+  // was saved, so retrying could duplicate it.
+  function handleImportSubmitError(xhr, $btn, buttonHtml) {
+    var errors = xhr.responseJSON && xhr.responseJSON.errors
+    if (xhr.status !== 422 || !Array.isArray(errors)) {
+      $('.stepper-content-wrapper').hide()
+      $('.stepper-header').hide()
+      $('.import-failure-state').show()
+      $('#import-failure-title').focus()
+      return
+    }
+
+    $btn.prop('disabled', false).html(buttonHtml)
+    $('#file-input').prop('disabled', false)
+    var details = errors.length ? ' ' + errors.join(' ') : ''
+    showNotification(t('import_submit_error') + details, 'error')
+  }
+
+  // The SEQ form is only rendered when metrics are enabled.
+  function initSeqFeedback(importerId) {
+    var $seq = $('#seq-feedback')
+    if ($seq.length === 0) return
+
+    setTimeout(function () { $seq.fadeIn(300) }, 400)
+
+    $seq.on('change', 'input[name="seq_score"]', function () {
+      $seq.find('.seq-comment-group, .seq-actions').slideDown(200)
+    })
+
+    $('#seq-feedback-form').on('submit', function (e) {
+      e.preventDefault()
+      var rating = parseInt($seq.find('input[name="seq_score"]:checked').val(), 10)
+      if (!rating) return
+      MetricsTracker.recordFeedback(rating, $('#seq-comment').val(), importerId)
+      $(this).hide()
+      $seq.find('.seq-thank-you').show().focus()
+    })
+
+    $('#seq-skip-btn, #seq-dismiss').on('click', function () {
+      $seq.fadeOut(200)
+      $('#import-success-title').focus()
+    })
   }
 
   // Look up mock validation data from cached demo scenarios JSON
@@ -2608,6 +2679,83 @@
         $(this).remove()
       })
     })
+  }
+
+  // ============================================================================
+  // METRICS TRACKER
+  // ============================================================================
+
+  // Validation results are recorded by the server, so the tracker only sends
+  // what the server cannot see: step navigation, time on each step and SEQ
+  // feedback. It is inert when the page renders no metrics URL. Each step is
+  // reported to the funnel once per session, and time is summed per step, so
+  // going back and forth neither double-counts nor loses time.
+  var MetricsTracker = {
+    url: null,
+    sessionId: null,
+    sessionStartedAt: null,
+    currentStep: 1,
+    enteredStepAt: null,
+    reachedSteps: {},
+    stepDurations: {},
+
+    init: function () {
+      this.url = $('.bulk-import-stepper-container').data('metrics-url') || null
+      this.sessionId = $('#metrics-session-id').val() || null
+      this.sessionStartedAt = this.enteredStepAt = Date.now()
+      this.currentStep = 1
+      this.reachedSteps = {}
+      this.stepDurations = {}
+      this.reachStep(1)
+    },
+
+    recordStep: function (stepNum) {
+      this.closeCurrentStep()
+      this.currentStep = stepNum
+      this.reachStep(stepNum)
+    },
+
+    recordSubmitted: function () {
+      this.closeCurrentStep()
+      this.reachStep(4)
+      this.send({ metric_type: 'timing', duration_ms: Date.now() - this.sessionStartedAt, step_durations: this.stepDurations })
+    },
+
+    reachStep: function (stepNum) {
+      if (this.reachedSteps[stepNum]) return
+      this.reachedSteps[stepNum] = true
+      this.send({ metric_type: 'funnel', step: stepNum })
+    },
+
+    closeCurrentStep: function () {
+      var now = Date.now()
+      var key = 'step' + this.currentStep
+      this.stepDurations[key] = (this.stepDurations[key] || 0) + (now - this.enteredStepAt)
+      this.enteredStepAt = now
+    },
+
+    recordFeedback: function (rating, comment, importerId) {
+      this.send({ metric_type: 'feedback', rating: rating, comment: comment || '', importer_id: importerId || '' })
+    },
+
+    send: function (fields) {
+      if (!this.url) return
+
+      var body = new URLSearchParams()
+      body.append($('meta[name="csrf-param"]').attr('content') || 'authenticity_token', $('meta[name="csrf-token"]').attr('content') || '')
+      body.append('session_id', this.sessionId || '')
+      Object.keys(fields).forEach(function (key) {
+        var value = fields[key]
+        if (value && typeof value === 'object') {
+          Object.keys(value).forEach(function (sub) { body.append(key + '[' + sub + ']', value[sub]) })
+        } else {
+          body.append(key, value)
+        }
+      })
+
+      if (navigator.sendBeacon && navigator.sendBeacon(this.url, body)) return
+      $.ajax({ url: this.url, method: 'POST', data: body.toString() })
+    }
   }
 
   // Initialize on document ready and turbolinks load

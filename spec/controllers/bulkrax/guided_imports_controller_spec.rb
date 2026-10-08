@@ -60,6 +60,38 @@ module Bulkrax
           expect(response).to have_http_status(:ok)
           expect(json_response[:isValid]).to eq(true)
         end
+
+        context 'when metrics are enabled' do
+          before { allow(Bulkrax.config).to receive(:guided_import_metrics_enabled).and_return(true) }
+
+          it 'records the validation outcome against the metrics session' do
+            post_validate(importer: { parser_fields: { files: [csv_upload] } }, metrics_session_id: 'gi_abc123')
+
+            metric = ImportMetric.validations.last
+            expect(metric).to have_attributes(session_id: 'gi_abc123', user_id: user.id, outcome: 'pass')
+            expect(metric.duration_ms).to be >= 0
+            expect(metric.payload).to include('row_count' => 4, 'error_types' => [])
+          end
+
+          it 'records which kinds of problems a failed validation found' do
+            allow(Bulkrax::CsvParser).to receive(:validate_csv)
+              .and_return(validation_success.merge(isValid: false, missingRequired: [{ model: 'GenericWork', field: 'title' }]))
+            post_validate(importer: { parser_fields: { files: [csv_upload] } })
+
+            metric = ImportMetric.validations.last
+            expect(metric.outcome).to eq('fail')
+            expect(metric.payload['error_types']).to eq(['missing_required_fields'])
+          end
+        end
+
+        context 'when metrics are disabled' do
+          before { allow(Bulkrax.config).to receive(:guided_import_metrics_enabled).and_return(false) }
+
+          it 'records nothing' do
+            expect { post_validate(importer: { parser_fields: { files: [csv_upload] } }, metrics_session_id: 'gi_abc123') }
+              .not_to change(ImportMetric, :count)
+          end
+        end
       end
 
       context 'with a file path that exists' do
@@ -174,6 +206,34 @@ module Bulkrax
         it 'redirects to importers path' do
           post_create
           expect(response).to redirect_to(importers_path)
+        end
+      end
+
+      context 'with a metrics session' do
+        def post_create_with_session(session_id)
+          post :create, params: {
+            importer: valid_importer_params.merge(
+              parser_fields: valid_importer_params[:parser_fields].merge(files: [csv_upload])
+            ),
+            metrics_session_id: session_id
+          }
+        end
+
+        it 'marks the importer as created by the guided import' do
+          post_create_with_session('gi_xyz789')
+          expect(Importer.last.parser_fields['guided_import']).to eq(true)
+        end
+
+        it 'stores the metrics session when metrics are enabled' do
+          allow(Bulkrax.config).to receive(:guided_import_metrics_enabled).and_return(true)
+          post_create_with_session('gi_xyz789')
+          expect(Importer.last.parser_fields['metrics_session_id']).to eq('gi_xyz789')
+        end
+
+        it 'does not store the metrics session when metrics are disabled' do
+          allow(Bulkrax.config).to receive(:guided_import_metrics_enabled).and_return(false)
+          post_create_with_session('gi_xyz789')
+          expect(Importer.last.parser_fields).not_to have_key('metrics_session_id')
         end
       end
 

@@ -1,0 +1,6 @@
+<% percent = max.positive? ? (count * 100.0 / max).round : 0 %>
+<div class="metrics-bar-row">
+  <span class="metrics-bar-label"><%= label %></span>
+  <span class="metrics-bar-track" aria-hidden="true"><span class="metrics-bar" style="width: <%= percent %>%;"></span></span>
+  <span class="metrics-bar-count"><%= count %></span>
+</div>

@@ -1,0 +1,186 @@
+<% provide :page_header do %>
+  <h1><span class="fa fa-line-chart" aria-hidden="true"></span> <%= t('bulkrax.import_metrics.title') %></h1>
+<% end %>
+
+<% scope = 'bulkrax.import_metrics' %>
+<% none = t("#{scope}.none") %>
+<% from = @aggregator.from.to_date %>
+<% to = @aggregator.to.to_date %>
+
+<div class="import-metrics">
+  <p class="text-muted"><%= t("#{scope}.subtitle") %></p>
+
+  <%= form_tag import_metrics_path, method: :get, class: 'metrics-filter' do %>
+    <label for="metrics-from"><%= t("#{scope}.filter.from") %></label>
+    <%= date_field_tag :from, from, id: 'metrics-from', class: 'form-control form-control-sm' %>
+    <label for="metrics-to"><%= t("#{scope}.filter.to") %></label>
+    <%= date_field_tag :to, to, id: 'metrics-to', class: 'form-control form-control-sm' %>
+    <%= submit_tag t("#{scope}.filter.apply"), name: nil, class: 'btn btn-primary btn-sm' %>
+    <nav aria-label="<%= t("#{scope}.filter.quick_ranges") %>" class="metrics-quick-ranges">
+      <% [7, 30, 90, 365].each do |days| %>
+        <%= link_to t("#{scope}.filter.last_days", count: days), import_metrics_path(from: days.days.ago.to_date, to: Time.zone.today) %>
+      <% end %>
+    </nav>
+    <%= link_to import_metrics_export_path(from: from, to: to), class: 'btn btn-outline-secondary btn-sm' do %>
+      <span class="fa fa-download" aria-hidden="true"></span> <%= t("#{scope}.filter.export_csv") %>
+    <% end %>
+  <% end %>
+
+  <dl class="metrics-summary">
+    <div>
+      <dt><%= t("#{scope}.summary.total_imports") %></dt>
+      <dd><%= @aggregator.total_imports %></dd>
+    </div>
+    <div>
+      <dt><%= t("#{scope}.summary.first_attempt_success") %></dt>
+      <dd><%= (rate = @aggregator.first_attempt_success_rate) ? number_to_percentage(rate, precision: 1) : none %></dd>
+    </div>
+    <div>
+      <dt><%= t("#{scope}.summary.average_validation") %></dt>
+      <dd><%= (ms = @aggregator.average_validation_ms) ? t("#{scope}.seconds", count: (ms / 1000.0).round(1)) : none %></dd>
+    </div>
+    <div>
+      <dt><%= t("#{scope}.summary.average_rating") %></dt>
+      <dd><%= (rating = @aggregator.average_rating) ? t("#{scope}.feedback.rating", rating: rating) : none %></dd>
+    </div>
+  </dl>
+
+  <% if @aggregator.total_imports.zero? && @aggregator.response_count.zero? && @aggregator.funnel.values.all?(&:zero?) %>
+    <div class="metrics-empty">
+      <h2><%= t("#{scope}.empty.title") %></h2>
+      <p><%= t("#{scope}.empty.message") %></p>
+    </div>
+  <% else %>
+    <section aria-labelledby="metrics-by-day">
+      <h2 id="metrics-by-day"><%= t("#{scope}.by_day.title") %></h2>
+      <% days = @aggregator.imports_by_day %>
+      <% if days.any? %>
+        <table class="table table-sm table-striped">
+          <thead>
+            <tr>
+              <th scope="col"><%= t("#{scope}.by_day.date") %></th>
+              <th scope="col"><%= t("#{scope}.by_day.complete") %></th>
+              <th scope="col"><%= t("#{scope}.by_day.other") %></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% days.each do |day, counts| %>
+              <tr>
+                <th scope="row"><%= l(day, format: :long) %></th>
+                <td><%= counts[:complete] %></td>
+                <td><%= counts[:other] %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% else %>
+        <p class="text-muted"><%= t("#{scope}.no_data") %></p>
+      <% end %>
+    </section>
+
+    <section aria-labelledby="metrics-accuracy">
+      <h2 id="metrics-accuracy"><%= t("#{scope}.accuracy.title") %></h2>
+      <p class="text-muted"><%= t("#{scope}.accuracy.description") %></p>
+      <% accuracy = @aggregator.validation_accuracy %>
+      <% if accuracy.any? %>
+        <% statuses = accuracy.values.flat_map(&:keys).uniq.sort %>
+        <table class="table table-sm">
+          <thead>
+            <tr>
+              <th scope="col"><%= t("#{scope}.accuracy.validation_result") %></th>
+              <% statuses.each do |status| %><th scope="col"><%= status %></th><% end %>
+            </tr>
+          </thead>
+          <tbody>
+            <% %w[pass pass_with_warnings fail not_validated].select { |result| accuracy.key?(result) }.each do |result| %>
+              <tr>
+                <th scope="row"><%= t("#{scope}.accuracy.results.#{result}") %></th>
+                <% statuses.each do |status| %><td><%= accuracy[result].fetch(status, 0) %></td><% end %>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% else %>
+        <p class="text-muted"><%= t("#{scope}.no_data") %></p>
+      <% end %>
+    </section>
+
+    <section aria-labelledby="metrics-funnel">
+      <h2 id="metrics-funnel"><%= t("#{scope}.funnel.title") %></h2>
+      <p class="text-muted"><%= t("#{scope}.funnel.description") %></p>
+      <% funnel = @aggregator.funnel %>
+      <% funnel.each do |step, count| %>
+        <%= render 'bar', label: t("#{scope}.funnel.steps.step#{step}"), count: count, max: funnel.values.max %>
+      <% end %>
+    </section>
+
+    <section aria-labelledby="metrics-errors">
+      <h2 id="metrics-errors"><%= t("#{scope}.errors.title") %></h2>
+      <% errors = @aggregator.error_type_frequencies %>
+      <% if errors.any? %>
+        <% errors.each do |type, count| %>
+          <%= render 'bar', label: t("#{scope}.errors.types.#{type}", default: type.humanize), count: count, max: errors.first.last %>
+        <% end %>
+      <% else %>
+        <p class="text-muted"><%= t("#{scope}.no_data") %></p>
+      <% end %>
+    </section>
+
+    <section aria-labelledby="metrics-feedback">
+      <h2 id="metrics-feedback"><%= t("#{scope}.feedback.title") %></h2>
+      <% if @aggregator.response_count.positive? %>
+        <p><%= t("#{scope}.feedback.responses", count: @aggregator.response_count) %></p>
+        <% distribution = @aggregator.rating_distribution %>
+        <% distribution.each do |rating, count| %>
+          <%= render 'bar', label: t("#{scope}.feedback.rating", rating: rating), count: count, max: distribution.values.max %>
+        <% end %>
+        <% comments = @aggregator.recent_comments %>
+        <% if comments.any? %>
+          <h3><%= t("#{scope}.feedback.recent_comments") %></h3>
+          <ul class="metrics-comments">
+            <% comments.each do |comment| %>
+              <li>
+                <span class="badge badge-secondary"><%= t("#{scope}.feedback.rating", rating: comment[:rating]) %></span>
+                <%= comment[:comment] %>
+                <small class="text-muted"><%= l(comment[:date].to_date, format: :long) %></small>
+              </li>
+            <% end %>
+          </ul>
+        <% end %>
+      <% else %>
+        <p class="text-muted"><%= t("#{scope}.no_data") %></p>
+      <% end %>
+    </section>
+
+    <section aria-labelledby="metrics-recent">
+      <h2 id="metrics-recent"><%= t("#{scope}.recent.title") %></h2>
+      <% recent = @aggregator.recent_imports %>
+      <% if recent.any? %>
+        <table class="table table-sm table-striped">
+          <thead>
+            <tr>
+              <th scope="col"><%= t("#{scope}.recent.importer") %></th>
+              <th scope="col"><%= t("#{scope}.recent.outcome") %></th>
+              <th scope="col"><%= t("#{scope}.recent.records") %></th>
+              <th scope="col"><%= t("#{scope}.recent.first_attempt") %></th>
+              <th scope="col"><%= t("#{scope}.recent.date") %></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% recent.each do |metric| %>
+              <tr>
+                <td><%= metric.importer ? link_to(metric.importer.name, importer_path(metric.importer)) : t("#{scope}.recent.deleted_importer") %></td>
+                <td><%= metric.outcome %></td>
+                <td><%= metric.payload.values_at('total_work_entries', 'total_collection_entries', 'total_file_set_entries').sum(&:to_i) %></td>
+                <td><%= t(metric.first_attempt ? "#{scope}.recent.yes" : "#{scope}.recent.no") %></td>
+                <td><%= l(metric.created_at.to_date, format: :long) %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% else %>
+        <p class="text-muted"><%= t("#{scope}.no_data") %></p>
+      <% end %>
+    </section>
+  <% end %>
+</div>
