@@ -259,10 +259,7 @@ module Bulkrax
       record = Bulkrax.object_factory.find(identifier)
       return unless record
 
-      file_sets = Array.wrap(record) if record.file_set?
-      if file_sets.nil? # for valkyrie
-        file_sets = record.respond_to?(:file_sets) ? record.file_sets : record.members&.select(&:file_set?)
-      end
+      file_sets = Array(Bulkrax.object_factory.file_sets_for(resource: record))
 
       if importerexporter.include_thumbnails?
         thumbnail = Bulkrax.object_factory.thumbnail_for(resource: record)

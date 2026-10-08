@@ -509,6 +509,24 @@ module Bulkrax
       end
     end
 
+    describe '#store_files' do
+      subject(:parser) { described_class.new(exporter) }
+      let(:exporter) { FactoryBot.create(:bulkrax_exporter_worktype) }
+      let(:work) { double('valkyrie work without #file_sets or #members', file_set?: false) }
+
+      before do
+        allow(Bulkrax.object_factory).to receive(:find).with('work-1').and_return(work)
+        allow(exporter).to receive(:include_thumbnails?).and_return(false)
+      end
+
+      it 'asks the object factory for the file sets' do
+        allow(Bulkrax.object_factory).to receive(:file_sets_for).with(resource: work).and_return([].each)
+
+        expect { parser.store_files('work-1', '1') }.not_to raise_error
+        expect(Bulkrax.object_factory).to have_received(:file_sets_for).with(resource: work)
+      end
+    end
+
     describe '#total' do
       context 'on import' do
         subject { described_class.new(importer) }
