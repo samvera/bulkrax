@@ -286,7 +286,7 @@ module Bulkrax
       return if data.empty?
 
       data = data.to_a if data.is_a?(ActiveTriples::Relation)
-      object_metadata(Array.wrap(data))
+      object_metadata(Array.wrap(data), value['object'])
     end
 
     def build_value(property_name, mapping_config)
@@ -312,6 +312,22 @@ module Bulkrax
       "#{unnumbered_key}#{key.sub(clean_key, '')}"
     end
 
+    # The export column for a key inside an `object:` row. This is the inverse of
+    # HasMatchers#object_row_key: a mapping that renames its in-row key with `name:` (so that two
+    # objects can share one, as `creators` and `contributors` share `name` and `role`) exports under
+    # its own `from` column rather than the bare in-row key, which would collide across objects and
+    # map to nothing on re-import.
+    def object_key_for_export(row_key, object_name)
+      if object_name.present?
+        _map_key, config = mapping.find do |map_key, cfg|
+          cfg.is_a?(Hash) && cfg['object'] == object_name && object_row_key(map_key) == row_key
+        end
+        return config['from'].first if config&.dig('from').present?
+      end
+
+      key_for_export(row_key)
+    end
+
     def prepare_export_data_with_join(data)
       # Yes...it's possible we're asking to coerce a multi-value but only have a single value.
       return data.to_s unless data.is_a?(Enumerable)
@@ -328,7 +344,7 @@ module Bulkrax
       end
     end
 
-    def object_metadata(data)
+    def object_metadata(data, object_name = nil)
       # Each `d` may be either a stringified Ruby hash literal (legacy
       # ActiveFedora persistence) or a plain Hash (Valkyrie/Postgres
       # JSONB). For the legacy stringified form we eval to recover the
@@ -346,10 +362,10 @@ module Bulkrax
         obj.each_key do |key|
           if obj[key].is_a?(Array)
             obj[key].each_with_index do |_nested_item, nested_index|
-              self.parsed_metadata["#{key_for_export(key)}_#{index + 1}_#{nested_index + 1}"] = prepare_export_data(obj[key][nested_index])
+              self.parsed_metadata["#{object_key_for_export(key, object_name)}_#{index + 1}_#{nested_index + 1}"] = prepare_export_data(obj[key][nested_index])
             end
           else
-            self.parsed_metadata["#{key_for_export(key)}_#{index + 1}"] = prepare_export_data(obj[key])
+            self.parsed_metadata["#{object_key_for_export(key, object_name)}_#{index + 1}"] = prepare_export_data(obj[key])
           end
         end
       end
