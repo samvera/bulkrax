@@ -86,7 +86,9 @@ RSpec.describe Bulkrax do
         expect(described_class).to respond_to(:curation_concerns)
       end
 
-      it 'has a default curation_concerns' do
+      it 'defaults to the curation_concerns registered with Hyrax' do
+        described_class.curation_concerns = nil
+        allow(Hyrax.config).to receive(:curation_concerns).and_return([Work])
         expect(described_class.curation_concerns).to eq([Work])
         expect(described_class.curation_concern_internal_resources).to eq(['Work'])
       end
