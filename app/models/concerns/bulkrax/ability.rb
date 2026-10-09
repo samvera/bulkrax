@@ -92,8 +92,7 @@ module Bulkrax
       # so that load_and_authorize_resource can authorize them without requiring
       # a dedicated `can` declaration for each custom action name.
       alias_action :entry_table, :importer_table, :exporter_table,
-                   :original_file, :export_errors, :upload_corrected_entries,
-                   :download, to: :read
+                   :original_file, :export_errors, :upload_corrected_entries, to: :read
       alias_action :continue, :upload_corrected_entries_file, to: :update
 
       grant_importer_abilities
