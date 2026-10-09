@@ -299,7 +299,7 @@ module Bulkrax
     end
 
     def self.schema_cache_entry(klass:, admin_set_id:)
-      tenant = Apartment::Tenant.current if defined?(Apartment::Tenant)
+      tenant = defined?(Apartment::Tenant) ? Apartment::Tenant.current : 'single'
       Bulkrax::Current.schema_cache ||= {}
       Bulkrax::Current.schema_cache[[tenant, klass, admin_set_id]] ||= { schema: resolve_schema(klass: klass, admin_set_id: admin_set_id) }
     end
