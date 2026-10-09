@@ -178,6 +178,70 @@ module Bulkrax
       end
     end
 
+    describe '#destroy_existing_files' do
+      let(:valkyrie_object_factory) do
+        described_class.new(
+          attributes: {},
+          source_identifier_value: 'fs-123',
+          work_identifier: :bulkrax_identifier,
+          work_identifier_search_field: "bulkrax_identifier_tesim",
+          related_parents_parsed_mapping: "parents",
+          importer_run_id: importer_run.id
+        )
+      end
+      let(:importer_run) { FactoryBot.create(:bulkrax_importer_run) }
+      let(:object) { double('work', id: 'wk-1') }
+      let(:custom_queries) { double('custom_queries') }
+
+      before { allow(Hyrax).to receive(:custom_queries).and_return(custom_queries) }
+
+      it 'handles a lazy enumerator of file sets without raising' do
+        allow(custom_queries).to receive(:find_child_file_sets).with(resource: object).and_return([].lazy)
+
+        expect { valkyrie_object_factory.send(:destroy_existing_files, object: object) }.not_to raise_error
+      end
+
+      context 'when the work has file sets' do
+        let(:file_sets) { [double('file_set', id: 'fs-1'), double('file_set', id: 'fs-2')] }
+        let(:other_member_id) { 'wk-child' }
+        let(:object) do
+          Struct.new(:id, :member_ids, :rendering_ids, :representative_id, :thumbnail_id)
+                .new('wk-1', ['fs-1', other_member_id, 'fs-2'], ['fs-1'], 'fs-1', 'fs-1')
+        end
+        let(:destroy_transaction) { double('file_set.destroy') }
+        let(:processing_log) { [] }
+
+        before do
+          loaded_file_sets = file_sets.lazy.map do |fs|
+            processing_log << [:load, fs.id]
+            fs
+          end
+          allow(custom_queries).to receive(:find_child_file_sets).with(resource: object).and_return(loaded_file_sets)
+          allow(valkyrie_object_factory).to receive(:transactions).and_return('file_set.destroy' => destroy_transaction)
+          allow(destroy_transaction).to receive(:with_step_args).and_return(destroy_transaction)
+          allow(destroy_transaction).to receive(:call) do |fs|
+            processing_log << [:destroy, fs.id]
+            double('result', value!: fs)
+          end
+        end
+
+        it 'loads each file set once and destroys it before loading the next' do
+          valkyrie_object_factory.send(:destroy_existing_files, object: object)
+
+          expect(processing_log).to eq([[:load, 'fs-1'], [:destroy, 'fs-1'], [:load, 'fs-2'], [:destroy, 'fs-2']])
+        end
+
+        it 'destroys each file set and removes them from the work' do
+          valkyrie_object_factory.send(:destroy_existing_files, object: object)
+
+          expect(destroy_transaction).to have_received(:call).with(file_sets[0])
+          expect(destroy_transaction).to have_received(:call).with(file_sets[1])
+          expect(object.member_ids).to eq([other_member_id])
+          expect(object).to have_attributes(rendering_ids: [], representative_id: nil, thumbnail_id: nil)
+        end
+      end
+    end
+
     describe 'Hyrax-dependent methods' do
       context 'with Hyrax available' do
         describe '#solr_name' do
