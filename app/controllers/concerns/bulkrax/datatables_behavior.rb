@@ -103,7 +103,7 @@ module Bulkrax
       {
         data: result,
         recordsTotal: Bulkrax::Importer.accessible_by(current_ability).count,
-        recordsFiltered: Bulkrax::Importer.accessible_by(current_ability).count
+        recordsFiltered: filtered_count
       }
     end
 

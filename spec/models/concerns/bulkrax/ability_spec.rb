@@ -124,8 +124,8 @@ RSpec.describe Bulkrax::Ability do
     # ------------------------------------------------------------------
 
     describe 'importer rules for a user who can_import_works?' do
-      let(:owned_importer)  { FactoryBot.build(:bulkrax_importer, user: user) }
-      let(:other_importer)  { FactoryBot.build(:bulkrax_importer, user: other_user) }
+      let(:owned_importer) { FactoryBot.build(:bulkrax_importer, user: user) }
+      let(:other_importer) { FactoryBot.build(:bulkrax_importer, user: other_user) }
 
       subject(:ability) { importer_ability(user) }
 
