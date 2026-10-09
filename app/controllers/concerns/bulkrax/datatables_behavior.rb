@@ -102,7 +102,7 @@ module Bulkrax
       end
       {
         data: result,
-recordsTotal: api_request? ? Bulkrax::Importer.count : Bulkrax::Importer.accessible_by(current_ability).count
+        recordsTotal: api_request? ? Bulkrax::Importer.count : Bulkrax::Importer.accessible_by(current_ability).count,
         recordsFiltered: filtered_count
       }
     end

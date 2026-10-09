@@ -62,10 +62,10 @@ class Bulkrax::InstallGenerator < Rails::Generators::Base
 
     # rubocop:disable Style/GuardClause
     unless file_text.include?(include_line)
-insert_into_file file, after: /include\s+\S+Ability[^\n]*\n/ do
-  "  include Bulkrax::Ability\n" \
-  "  self.ability_logic += [:bulkrax_default_abilities]\n\n" \
-  "  # Override Bulkrax::Ability methods as needed, for example:\n" \
+      insert_into_file file, after: /include\s+\S+Ability[^\n]*\n/ do
+        "  include Bulkrax::Ability\n" \
+          "  self.ability_logic += [:bulkrax_default_abilities]\n\n" \
+          "  # Override Bulkrax::Ability methods as needed, for example:\n" \
         "  #\n" \
         "  #   def can_import_works?\n" \
         "  #     can_create_any_work?\n" \
