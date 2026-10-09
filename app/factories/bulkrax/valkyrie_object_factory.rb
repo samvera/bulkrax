@@ -280,11 +280,14 @@ module Bulkrax
     # @param admin_set_id [String, nil] admin set used to resolve contexts
     # @return [Array<String>]
     def self.schema_properties(klass:, admin_set_id: nil)
-      cached_schema_for(klass: klass, admin_set_id: admin_set_id).map { |k| k.name.to_s }
+      entry = schema_cache_entry(klass: klass, admin_set_id: admin_set_id)
+      entry[:properties] ||= entry[:schema].map { |k| k.name.to_s }.freeze
     end
 
     ##
-    # Returns the schema for a model, memoized per (klass, admin_set_id) pair.
+    # Returns the schema for a model, memoized per (tenant, klass, admin_set_id)
+    # for the current request or job only, so a new metadata profile or a
+    # change to an admin set's contexts is picked up without a restart.
     # Delegates to +Hyrax.schema_for+ when available so that context-gated
     # properties are included without Bulkrax knowing about flexibility internals.
     #
@@ -292,15 +295,24 @@ module Bulkrax
     # @param admin_set_id [String, nil]
     # @return [Dry::Types::Hash]
     def self.cached_schema_for(klass:, admin_set_id: nil)
-      @cached_schema_map ||= {}
-      key = [klass.name, admin_set_id].compact.join('|')
-      @cached_schema_map[key] ||=
-        if admin_set_id.present? && defined?(Hyrax) && Hyrax.respond_to?(:schema_for)
-          Hyrax.schema_for(klass: klass, admin_set_id: admin_set_id)
-        else
-          klass.new.singleton_class.schema || klass.schema
-        end
+      schema_cache_entry(klass: klass, admin_set_id: admin_set_id)[:schema]
     end
+
+    def self.schema_cache_entry(klass:, admin_set_id:)
+      tenant = defined?(Apartment::Tenant) ? Apartment::Tenant.current : 'single'
+      Bulkrax::Current.schema_cache ||= {}
+      Bulkrax::Current.schema_cache[[tenant, klass, admin_set_id]] ||= { schema: resolve_schema(klass: klass, admin_set_id: admin_set_id) }
+    end
+    private_class_method :schema_cache_entry
+
+    def self.resolve_schema(klass:, admin_set_id:)
+      if admin_set_id.present? && defined?(Hyrax) && Hyrax.respond_to?(:schema_for)
+        Hyrax.schema_for(klass: klass, admin_set_id: admin_set_id)
+      else
+        klass.new.singleton_class.schema || klass.schema
+      end
+    end
+    private_class_method :resolve_schema
 
     def self.ordered_file_sets_for(object)
       return [] if object.blank?
@@ -501,7 +513,7 @@ module Bulkrax
       @permitted_attributes ||= begin
         bare = base_permitted_attributes + if klass.respond_to?(:schema)
                                              admin_set_id = attributes[:admin_set_id] || attributes['admin_set_id']
-                                             Bulkrax::ValkyrieObjectFactory.schema_properties(klass: klass, admin_set_id: admin_set_id)
+                                             Bulkrax::ValkyrieObjectFactory.schema_properties(klass: klass, admin_set_id: admin_set_id).map(&:to_sym)
                                            else
                                              klass.properties.keys.map(&:to_sym)
                                            end
