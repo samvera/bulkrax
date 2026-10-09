@@ -83,7 +83,7 @@ module Bulkrax
       @exporter_table_search
     end
 
-    def format_importers(importers, filtered_count = Bulkrax::Importer.count)
+    def format_importers(importers, filtered_count = Bulkrax::Importer.accessible_by(current_ability).count)
       result = importers.map do |i|
         {
           name: view_context.link_to(i.name, view_context.importer_path(i)),
