@@ -526,6 +526,11 @@ module Bulkrax
       end
 
       describe 'DELETE #destroy' do
+        before do
+          ENV['BULKRAX_API_TOKEN'] = '1234'
+          request.headers['Authorization'] = 'Token: 1234'
+        end
+
         it 'destroys the requested importer' do
           importer = Importer.create! valid_attributes
           expect do
@@ -547,6 +552,8 @@ module Bulkrax
 
         before do
           allow(controller).to receive(:table_order).and_return('created_at asc')
+          ENV['BULKRAX_API_TOKEN'] = '1234'
+          request.headers['Authorization'] = 'Token: 1234'
         end
 
         it 'returns a success response' do

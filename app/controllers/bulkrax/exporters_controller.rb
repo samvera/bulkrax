@@ -5,14 +5,10 @@ module Bulkrax
     include Hyrax::ThemedLayoutController if defined?(::Hyrax)
     include Bulkrax::DownloadBehavior
     include Bulkrax::DatatablesBehavior
-    before_action :authenticate_user!
-    # load_and_authorize_resource handles both record loading and per-resource
-    # authorization for all member actions.  Index and exporter_table are
-    # excluded because they operate on a collection (scoped via accessible_by).
-    # Download is excluded because it uses :exporter_id rather than :id.
-    load_and_authorize_resource class: 'Bulkrax::Exporter',
-                                instance_name: :exporter,
-                                except: [:index, :exporter_table, :download]
+
+    # Authentication, record loading and authorization for every action.
+    before_action(except: [:download]) { authenticate_and_authorize!(Bulkrax::Exporter) }
+
     with_themed_layout 'dashboard' if defined?(::Hyrax)
 
     # GET /exporters

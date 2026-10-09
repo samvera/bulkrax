@@ -11,31 +11,8 @@ module Bulkrax
     include Bulkrax::ImporterFileHandler
 
     protect_from_forgery unless: -> { api_request? }
-before_action :token_authenticate!, if: -> { api_request? }
-    before_action :authenticate_user!, unless: -> { api_request? }
-    # load_and_authorize_resource covers standard CRUD member actions for
-    # non-API requests.  Actions that use :importer_id rather than :id, or
-    # that are collection-scoped, are excluded and handled by separate
-    # before_actions below.
-load_and_authorize_resource class: 'Bulkrax::Importer',
-                            instance_name: :importer,
-                            except: [:index, :importer_table, :entry_table, :sample_csv_file, :external_sets,
-                                     :continue, :upload_corrected_entries, :upload_corrected_entries_file,
-                                     :export_errors, :original_file],
-                            unless: -> { api_request? }
-load_and_authorize_resource class: 'Bulkrax::Importer',
-                            instance_name: :importer,
-                            only: :entry_table,
-                            id_param: :importer_id,
-                            unless: -> { api_request? }
-    # For API requests, fall back to simple find so existing consumers are
-    # unaffected while #1237 establishes token-to-user wiring.
-    before_action :set_importer_for_api,
-                  only: [:show, :entry_table, :edit, :update, :destroy, :original_file],
-                  if: -> { api_request? }
-    # Actions that reference importers by :importer_id (not :id)
-    before_action :load_and_authorize_importer_by_importer_id,
-                  only: [:continue, :upload_corrected_entries, :upload_corrected_entries_file, :export_errors, :original_file]
+    # Authentication, record loading and authorization for every action.
+    before_action { authenticate_and_authorize!(Bulkrax::Importer) }
     with_themed_layout 'dashboard' if defined?(::Hyrax)
 
     # GET /importers
@@ -127,7 +104,7 @@ load_and_authorize_resource class: 'Bulkrax::Importer',
       # rubocop:disable Style/IfInsideElse
       if api_request?
         return return_json_response unless valid_create_params?
-        # load_and_authorize_resource is skipped for API; build the record here.
+        # authenticate_and_authorize! doesn't build for API requests; build it here
         @importer ||= Importer.new(importer_params)
       end
       uploads = uploaded_files_scope
@@ -277,25 +254,6 @@ load_and_authorize_resource class: 'Bulkrax::Importer',
     end
 
     private
-
-    # Load @importer for API requests (no CanCan authorization — the API path
-    # does not yet resolve a token to a current_user, so ownership rules cannot
-    # be evaluated).
-    # TODO(#1237): Remove once token-to-user wiring is complete and CanCan
-    # rules apply uniformly to API requests.
-    def set_importer_for_api
-      @importer = Importer.find(params[:id] || params[:importer_id])
-    end
-
-    # Load and authorize @importer for actions that identify the importer by
-    # :importer_id rather than :id (e.g. continue, upload_corrected_entries).
-    # Uses the action name directly so that alias_action mappings defined in
-    # bulkrax_default_abilities apply (e.g. :export_errors → :read,
-    # :continue → :update).
-    def load_and_authorize_importer_by_importer_id
-      @importer = Importer.find(params[:importer_id])
-      authorize! action_name.to_sym, @importer
-    end
 
     def importable_params
       params.except(:selected_files)
