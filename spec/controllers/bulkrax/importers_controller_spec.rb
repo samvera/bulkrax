@@ -426,7 +426,7 @@ module Bulkrax
 
       context 'with valid params' do
         before do
-          ENV['BULKRAX_API_TOKEN'] = '1234'
+          stub_env('BULKRAX_API_TOKEN', '1234')
           request.headers['Authorization'] = 'Token: 1234'
         end
 
@@ -444,7 +444,7 @@ module Bulkrax
 
       context 'with invalid params' do
         before do
-          ENV['BULKRAX_API_TOKEN'] = '1234'
+          stub_env('BULKRAX_API_TOKEN', '1234')
           request.headers['Authorization'] = 'Token: 1234'
         end
 
@@ -478,7 +478,7 @@ module Bulkrax
           end
 
           before do
-            ENV['BULKRAX_API_TOKEN'] = '1234'
+            stub_env('BULKRAX_API_TOKEN', '1234')
             request.headers['Authorization'] = 'Token: 1234'
           end
 
@@ -498,7 +498,7 @@ module Bulkrax
 
         context 'with invalid params' do
           before do
-            ENV['BULKRAX_API_TOKEN'] = '1234'
+            stub_env('BULKRAX_API_TOKEN', '1234')
             request.headers['Authorization'] = 'Token: 1234'
           end
 

@@ -72,7 +72,7 @@ module Bulkrax
 
       context 'in a multi tenant app' do
         before do
-          ENV['SETTINGS__MULTITENANCY__ENABLED'] = 'true'
+          stub_env('SETTINGS__MULTITENANCY__ENABLED', 'true')
         end
 
         it 'sets the import path correctly' do
@@ -88,7 +88,7 @@ module Bulkrax
         # this includes hyrax apps AND single tenant hyku apps
 
         before do
-          ENV['SETTINGS__MULTITENANCY__ENABLED'] = 'false'
+          stub_env('SETTINGS__MULTITENANCY__ENABLED', 'false')
         end
 
         it 'sets the import path correctly' do
