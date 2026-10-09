@@ -120,7 +120,10 @@ module Bulkrax
       #
       # No sense attempting to query for more than the limit.
       def query_kwargs
-        { fl: "id,#{Bulkrax.solr_key_for_member_file_ids}", method: :post, rows: row_limit }
+        base = { fl: "id,#{Bulkrax.solr_key_for_member_file_ids}", method: :post, rows: row_limit }
+        filters = permission_filters
+        return base if filters.empty?
+        base.merge(fq: filters)
       end
 
       # If we have a limit, we need not query beyond that limit
@@ -175,10 +178,25 @@ module Bulkrax
         @file_sets ||= ParserExportRecordSet.in_batches(candidate_file_set_ids) do |batch_of_ids|
           fsq = "has_model_ssim:\"#{Bulkrax.file_model_internal_resource.demodulize}\" AND id:(\"" + batch_of_ids.join('" OR "') + "\")"
           fsq += extra_filters if extra_filters.present?
-          Bulkrax.object_factory.query(
-            fsq,
-            fl: "id", method: :post, rows: batch_of_ids.size
-          )
+          fq = permission_filters
+          kwargs = { fl: "id", method: :post, rows: batch_of_ids.size }
+          kwargs[:fq] = fq unless fq.empty?
+          Bulkrax.object_factory.query(fsq, **kwargs)
+        end
+      end
+
+      def exporting_user
+        importerexporter.user || Bulkrax.fallback_user_for_importer_exporter_processing
+      end
+
+      def permission_filters
+        @permission_filters ||= begin
+          ability = ::Ability.new(exporting_user)
+          return [] if ability.can_admin_exporters?
+
+          scope   = Bulkrax::ExportScope.new(ability)
+          builder = Bulkrax::ExportSearchBuilder.new(scope)
+          builder.to_h.fetch(:fq, [])
         end
       end
 
@@ -246,7 +264,7 @@ module Bulkrax
           Bulkrax.object_factory.query(
             extra_filters.to_s,
             **query_kwargs.merge(
-              fq: [
+              fq: (query_kwargs[:fq] || []) + [
                 %(#{solr_name(work_identifier)}:("#{ids.join('" OR "')}")),
                 "has_model_ssim:(#{Bulkrax.curation_concern_internal_resources.join(' OR ')})"
               ],
@@ -261,7 +279,7 @@ module Bulkrax
           Bulkrax.object_factory.query(
             "has_model_ssim:#{Bulkrax.collection_model_internal_resource} #{extra_filters}",
             **query_kwargs.merge(
-              fq: [
+              fq: (query_kwargs[:fq] || []) + [
                 %(#{solr_name(work_identifier)}:("#{ids.join('" OR "')}")),
                 "has_model_ssim:#{Bulkrax.collection_model_internal_resource}"
               ],
@@ -280,7 +298,7 @@ module Bulkrax
           Bulkrax.object_factory.query(
             extra_filters,
             **query_kwargs.merge(
-              fq: [
+              fq: (query_kwargs[:fq] || []) + [
                 %(#{solr_name(work_identifier)}:("#{ids.join('" OR "')}")),
                 "has_model_ssim:#{Bulkrax.file_model_internal_resource}"
               ],

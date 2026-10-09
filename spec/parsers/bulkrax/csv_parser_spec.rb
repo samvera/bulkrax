@@ -561,52 +561,28 @@ module Bulkrax
       end
 
       context 'when an argument is not passed' do
-        it 'returns the correct path' do
-          expect(subject.path_to_files).to eq('spec/fixtures/csv/files/')
+        it 'returns the files directory' do
+          expect(subject.path_to_files).to eq('spec/fixtures/csv/files')
+        end
+      end
+
+      # `path_to_files` previously memoized into `@path_to_files`
+      # for both directory lookups (filename blank) and file lookups
+      # (filename present). If it was first called with a filename and
+      # then later called without one, it returned the stale per-file path
+      # instead of the directory.
+      context 'when called first with a filename then without' do
+        it 'returns the directory on the no-filename call, not the memoized file path' do
+          expect(subject.path_to_files(filename: 'sun.jpg')).to eq('spec/fixtures/csv/files/sun.jpg')
+          expect(subject.path_to_files).to eq('spec/fixtures/csv/files')
         end
       end
     end
 
-    describe '#unzip' do
-      let(:unzip_dir) { File.realpath(Dir.mktmpdir) }
-
-      before do
-        dir = unzip_dir
-        importer.define_singleton_method(:importer_unzip_path) { |**| dir }
-      end
-      after { FileUtils.rm_rf(unzip_dir) }
-
-      def build_zip(zip_path, entries)
-        Zip::File.open(zip_path, create: true) do |zip|
-          entries.each do |name, content|
-            next if name.end_with?('/')
-            zip.get_output_stream(name) { |f| f.write(content) }
-          end
-        end
-      end
-
-      def with_zip(entries)
-        zip_file = Tempfile.new(['import', '.zip'])
-        build_zip(zip_file.path, entries)
-        yield zip_file.path
-      ensure
-        zip_file.close!
-      end
-
-      context 'when the zip is flat (image files at root, no files/ subdirectory)' do
-        it 'moves extracted files into a files/ subdirectory' do
-          with_zip('Cornus_drummondii.jpg' => 'jpg-content',
-                   'ArtThumbnail.JPG' => 'jpg-content') do |zip_path|
-            subject.unzip(zip_path)
-
-            expect(File.exist?(File.join(unzip_dir, 'files', 'Cornus_drummondii.jpg'))).to be true
-            expect(File.exist?(File.join(unzip_dir, 'files', 'ArtThumbnail.JPG'))).to be true
-            expect(File.exist?(File.join(unzip_dir, 'Cornus_drummondii.jpg'))).to be false
-            expect(File.exist?(File.join(unzip_dir, 'ArtThumbnail.JPG'))).to be false
-          end
-        end
-      end
-    end
+    # NOTE: CSV-specific unzip behavior is pinned in
+    # spec/parsers/bulkrax/csv_parser/unzip_spec.rb, which covers
+    # `#unzip_with_primary_csv` and `#unzip_attachments_only` against the
+    # accepted zip shapes from guided-import validation.
 
     describe '#file_paths' do
       let(:importer) do
@@ -655,6 +631,54 @@ module Bulkrax
         it 'skips blank file entries without raising' do
           expect { subject.file_paths }.not_to raise_error
           expect(subject.file_paths).to eq([])
+        end
+      end
+
+      # Characterisation coverage for how the `file` mapping's `split:` value
+      # is interpreted. These lock in each branch of the case statement in
+      # #file_paths so the behaviour is preserved when the inline block is
+      # later refactored into a shared helper.
+      context 'when the `file` mapping configures a split:' do
+        let(:base_mappings) { { 'Bulkrax::CsvParser' => { file: { split: split_value } } } }
+
+        before do
+          allow(subject).to receive(:records).and_return([{ file: 'sun.jpg;moon.jpg' }])
+          allow(subject).to receive(:path_to_files).and_return('spec/fixtures/csv/files')
+          allow(File).to receive(:exist?).and_return(true)
+          allow(Bulkrax).to receive(:field_mappings).and_return(base_mappings)
+        end
+
+        context 'as a Regexp' do
+          let(:split_value) { /;/ }
+
+          it 'splits on the configured Regexp' do
+            result = subject.file_paths
+            expect(result).to include('spec/fixtures/csv/files/sun.jpg', 'spec/fixtures/csv/files/moon.jpg')
+          end
+        end
+
+        context 'as a regex-source String' do
+          let(:split_value) { ';' }
+
+          it 'builds a Regexp from the String and splits on it' do
+            result = subject.file_paths
+            expect(result).to include('spec/fixtures/csv/files/sun.jpg', 'spec/fixtures/csv/files/moon.jpg')
+          end
+        end
+      end
+
+      context 'when no `file` split: is configured' do
+        before do
+          # Explicit — no `file` key in the mappings, so split_value is nil.
+          allow(Bulkrax).to receive(:field_mappings).and_return('Bulkrax::CsvParser' => {})
+          allow(subject).to receive(:records).and_return([{ file: 'sun.jpg|moon.jpg' }])
+          allow(subject).to receive(:path_to_files).and_return('spec/fixtures/csv/files')
+          allow(File).to receive(:exist?).and_return(true)
+        end
+
+        it 'falls back to Bulkrax.multi_value_element_split_on' do
+          result = subject.file_paths
+          expect(result).to include('spec/fixtures/csv/files/sun.jpg', 'spec/fixtures/csv/files/moon.jpg')
         end
       end
     end

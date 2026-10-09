@@ -26,8 +26,12 @@ module Bulkrax
     def exporter_table
       @exporters = Exporter.accessible_by(current_ability).order(table_order).page(table_page).per(table_per_page)
       @exporters = @exporters.where(exporter_table_search) if exporter_table_search.present?
+      # Count the filtered relation before applying pagination so the UI receives
+      # the total number of matching exporters, not just the total number of exporters.
+      filtered_count = @exporters.count
+      @exporters = @exporters.reorder(table_order).page(table_page).per(table_per_page)
       respond_to do |format|
-        format.json { render json: format_exporters(@exporters) }
+        format.json { render json: format_exporters(@exporters, filtered_count) }
       end
     end
 
@@ -52,7 +56,7 @@ module Bulkrax
     def new
       return unless defined?(::Hyrax)
       add_exporter_breadcrumbs
-      add_breadcrumb 'New'
+      add_breadcrumb t(:'bulkrax.headings.new_exporter')
     end
 
     # GET /exporters/1/edit
@@ -60,7 +64,7 @@ module Bulkrax
       if defined?(::Hyrax)
         add_exporter_breadcrumbs
         add_breadcrumb @exporter.name, bulkrax.exporter_path(@exporter.id)
-        add_breadcrumb 'Edit'
+        add_breadcrumb t(:'bulkrax.headings.edit_exporter')
       end
 
       # Correctly populate export_source_collection input
@@ -140,7 +144,7 @@ module Bulkrax
     def add_exporter_breadcrumbs
       add_breadcrumb t(:'hyrax.controls.home'), main_app.root_path
       add_breadcrumb t(:'hyrax.dashboard.breadcrumbs.admin'), hyrax.dashboard_path
-      add_breadcrumb 'Exporters', bulkrax.exporters_path
+      add_breadcrumb t(:'bulkrax.headings.exporters'), bulkrax.exporters_path
     end
 
     # Download methods

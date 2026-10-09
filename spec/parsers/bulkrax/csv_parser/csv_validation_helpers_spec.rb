@@ -173,6 +173,197 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
         expect(result).to include('title', 'creator')
       end
     end
+
+    context 'when ColumnBuilder succeeds (happy path)' do
+      let(:mapping_manager) { Bulkrax::CsvTemplate::MappingManager.new }
+      let(:field_analyzer)  { instance_double(Bulkrax::CsvTemplate::FieldAnalyzer) }
+      let(:mappings) do
+        {
+          'title' => { 'from' => ['title'] },
+          'file' => { 'from' => ['file'] },
+          'parents' => { 'from' => ['parents'], 'related_parents_field_mapping' => true },
+          'children' => { 'from' => ['children'], 'related_children_field_mapping' => true }
+        }
+      end
+      let(:field_metadata) do
+        { 'GenericWorkResource' =>
+          { properties: %w[title], required_terms: [], controlled_vocab_terms: [] } }
+      end
+
+      before do
+        allow(Bulkrax).to receive(:field_mappings).and_return('Bulkrax::CsvParser' => mappings)
+        allow(field_analyzer).to receive(:find_or_create_field_list_for)
+          .with(model_name: 'GenericWorkResource')
+          .and_return('GenericWorkResource' => { 'properties' => %w[title] })
+      end
+
+      it 'does not hit the rescue branch' do
+        expect(Rails.logger).not_to receive(:error).with(/error building valid headers/)
+        host.build_valid_validation_headers(mapping_manager, field_analyzer,
+                                            %w[GenericWorkResource], mappings, field_metadata)
+      end
+
+      it 'includes the core visibility and embargo columns' do
+        result = host.build_valid_validation_headers(mapping_manager, field_analyzer,
+                                                    %w[GenericWorkResource], mappings, field_metadata)
+        expect(result).to include('visibility', 'embargo_release_date',
+                                  'visibility_during_embargo', 'visibility_after_embargo')
+      end
+    end
+
+    # Regression: ColumnBuilder emits only the first `from:` alias per
+    # non-property key (core/file/relationship). When a tenant maps `file`
+    # as `from: ['item', 'file']`, a CSV header `file` was wrongly flagged
+    # unrecognised because only `item` made it into valid_headers.
+    context 'when a non-property mapping has multiple `from:` aliases' do
+      let(:mapping_manager) { Bulkrax::CsvTemplate::MappingManager.new }
+      let(:field_analyzer)  { instance_double(Bulkrax::CsvTemplate::FieldAnalyzer) }
+      let(:mappings) do
+        {
+          'title' => { 'from' => ['title'] },
+          'file' => { 'from' => %w[item file], 'split' => '\\|' },
+          'parents' => { 'from' => ['parents'], 'related_parents_field_mapping' => true },
+          'children' => { 'from' => ['children'], 'related_children_field_mapping' => true }
+        }
+      end
+      let(:field_metadata) do
+        { 'GenericWorkResource' =>
+          { properties: %w[title], required_terms: [], controlled_vocab_terms: [] } }
+      end
+
+      before do
+        allow(Bulkrax).to receive(:field_mappings).and_return('Bulkrax::CsvParser' => mappings)
+        allow(field_analyzer).to receive(:find_or_create_field_list_for)
+          .with(model_name: 'GenericWorkResource')
+          .and_return('GenericWorkResource' => { 'properties' => %w[title] })
+      end
+
+      it 'includes every `from:` alias for the file mapping' do
+        result = host.build_valid_validation_headers(mapping_manager, field_analyzer,
+                                                    %w[GenericWorkResource], mappings, field_metadata)
+        expect(result).to include('item', 'file')
+      end
+    end
+  end
+
+  describe '#find_unrecognized_validation_headers (respects all `from` aliases)' do
+    let(:mappings) do
+      {
+        'creator' => { 'from' => %w[author creator], 'split' => '\\|' },
+        'resource_type' => { 'from' => ['type', 'resource type'], 'split' => '\\|' },
+        'title' => { 'from' => ['title'], 'split' => '\\|' }
+      }
+    end
+    let(:mapping_manager) { Bulkrax::CsvTemplate::MappingManager.new }
+    let(:field_analyzer)  { instance_double(Bulkrax::CsvTemplate::FieldAnalyzer) }
+    let(:field_metadata)  do
+      { 'GenericWorkResource' =>
+        { properties: %w[title creator resource_type], required_terms: [], controlled_vocab_terms: [] } }
+    end
+
+    before do
+      allow(Bulkrax).to receive(:field_mappings).and_return('Bulkrax::CsvParser' => mappings)
+      allow(field_analyzer).to receive(:find_or_create_field_list_for)
+        .with(model_name: 'GenericWorkResource')
+        .and_return('GenericWorkResource' => { 'properties' => %w[title creator resource_type] })
+    end
+
+    def valid_headers
+      host.build_valid_validation_headers(mapping_manager, field_analyzer,
+                                          %w[GenericWorkResource], mappings, field_metadata)
+    end
+
+    def unrecognized(headers)
+      host.find_unrecognized_validation_headers(headers, valid_headers,
+                                                mapping_manager: mapping_manager,
+                                                field_metadata: field_metadata)
+    end
+
+    it 'does not flag a header matching a non-first `from` alias ("creator")' do
+      expect(unrecognized(%w[title creator])).not_to have_key('creator')
+    end
+
+    it 'does not flag a header matching a non-first `from` alias ("resource_type")' do
+      expect(unrecognized(%w[title resource_type])).not_to have_key('resource_type')
+    end
+
+    it 'still flags a header that matches no alias of any known property' do
+      expect(unrecognized(%w[title totally_made_up])).to have_key('totally_made_up')
+    end
+
+    # `nested_attributes: true` mappings (introduced for objects whose form
+    # populator strips the bare property name) emit data through the
+    # `<object>_attributes` key. The CSV side still uses the per-child
+    # column names (e.g. `redirect_path`, `redirect_display_url`) — both
+    # bare and numbered — and the validator must accept both forms.
+    context 'when a mapping declares nested_attributes: true' do
+      let(:mappings) do
+        {
+          'title' => { 'from' => ['title'], 'split' => '\\|' },
+          'path' => { 'from' => ['redirect_path'], 'object' => 'redirects', 'nested_attributes' => true },
+          'display_url' => { 'from' => ['redirect_display_url'], 'object' => 'redirects', 'nested_attributes' => true }
+        }
+      end
+      let(:field_metadata) do
+        { 'GenericWorkResource' =>
+          { properties: %w[title redirects], required_terms: [], controlled_vocab_terms: [] } }
+      end
+
+      before do
+        allow(field_analyzer).to receive(:find_or_create_field_list_for)
+          .with(model_name: 'GenericWorkResource')
+          .and_return('GenericWorkResource' => { 'properties' => %w[title redirects] })
+      end
+
+      it 'does not flag the bare per-child column name' do
+        expect(unrecognized(%w[title redirect_path])).not_to have_key('redirect_path')
+      end
+
+      it 'does not flag a numbered per-child column' do
+        expect(unrecognized(%w[title redirect_path_1])).not_to have_key('redirect_path_1')
+      end
+
+      it 'does not flag any of the per-child columns together' do
+        result = unrecognized(%w[title redirect_path_1 redirect_display_url_1 redirect_path_2 redirect_display_url_2])
+        expect(result).to be_empty
+      end
+
+      it 'still flags an unrelated column even when nested_attributes mappings are present' do
+        expect(unrecognized(%w[title redirect_path totally_made_up])).to have_key('totally_made_up')
+      end
+    end
+
+    # Bulkrax ships `rights_statement` with `generated: true`. The validator
+    # must still honour its `from:` aliases so a CSV with a `rights` column
+    # isn't flagged as unrecognised (and, via #find_missing_required_headers,
+    # `rights_statement` isn't reported missing when `rights` is present).
+    context 'when a mapping is flagged generated: true' do
+      let(:mappings) do
+        {
+          'title' => { 'from' => ['title'], 'split' => '\\|' },
+          'rights_statement' => { 'from' => %w[rights rights_statement], 'split' => '\\|', 'generated' => true }
+        }
+      end
+      let(:field_metadata) do
+        { 'GenericWorkResource' =>
+          { properties: %w[title rights_statement], required_terms: ['rights_statement'], controlled_vocab_terms: [] } }
+      end
+
+      before do
+        allow(field_analyzer).to receive(:find_or_create_field_list_for)
+          .with(model_name: 'GenericWorkResource')
+          .and_return('GenericWorkResource' => { 'properties' => %w[title rights_statement] })
+      end
+
+      it 'does not flag a `from:` alias ("rights") as unrecognised' do
+        expect(unrecognized(%w[title rights])).not_to have_key('rights')
+      end
+
+      it 'does not report rights_statement as missing when `rights` alias is present' do
+        missing = host.find_missing_required_headers(%w[title rights], field_metadata, mapping_manager)
+        expect(missing).to be_empty
+      end
+    end
   end
 
   describe '#resolve_children_split_pattern' do
@@ -192,10 +383,59 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
         .to eq(Bulkrax::DEFAULT_MULTI_VALUE_ELEMENT_SPLIT_ON)
     end
 
-    it 'returns the custom split string when split is a string' do
+    it 'treats a String split value as a regex source (matching ApplicationMatcher)' do
+      # The shared SplitPatternCoercion.coerce contract: any String becomes
+      # Regexp.new(str). This keeps relationship-field splitting consistent
+      # with the long-standing ApplicationMatcher#process_split behaviour.
       mappings = { 'children' => { 'split' => ';' } }
-      expect(host.resolve_children_split_pattern(mappings)).to eq(';')
+      result   = host.resolve_children_split_pattern(mappings)
+      expect(result).to be_a(Regexp)
+      expect('a;b;c'.split(result)).to eq(%w[a b c])
     end
+  end
+
+  # Hyku persists field_mapping as JSON; a Regexp configured via the UI
+  # serialises to its `Regexp#to_s` form (e.g. "(?-mix:\\s*[;|]\\s*)",
+  # "(?i-mx:foo)", etc. — any valid Regexp is fair game) and round-trips
+  # back as a String. Callers pass the result of these resolvers into
+  # String#split, which treats a String argument as a literal substring,
+  # so a serialised Regexp never matches real content and cells are never
+  # split. The resolver must coerce any `Regexp#to_s`-shaped String back
+  # into an equivalent Regexp.
+  #
+  # We exercise a representative set of Regexp forms rather than pinning to
+  # one particular delimiter, so the fix is general rather than tailored to
+  # the one pattern that prompted this bug report.
+  # Each case pairs an original Regexp with a sample String whose split
+  # result we can predict. We only care that the coerced Regexp splits the
+  # same way as the original — the internal `.source` / `.options` may
+  # legitimately differ (Regexp.new of a "(?-mix:...)" string keeps the
+  # wrapper), so assert behaviour rather than internal representation.
+  shared_examples 'coerces a serialised Regexp back into a Regexp' do |resolver, key|
+    {
+      /\s*[;|]\s*/ => ['coll1 | coll2', %w[coll1 coll2]], # original bug repro
+      /\|/ => ['a|b|c',         %w[a b c]], # plain pipe
+      /,\s*/ => ['a, b, c', %w[a b c]], # comma + optional space
+      /\A\s*foo\s*\z/i => ['FOO', []] # flagged (case-insensitive): split consumes entire string
+    }.each do |original, (sample, expected_split)|
+      it "rebuilds a Regexp that splits like #{original.inspect} (serialised as #{original.to_s.inspect})" do
+        mappings = { key.to_s => { 'split' => original.to_s } }
+        result   = host.public_send(resolver, mappings)
+        expect(result).to be_a(Regexp)
+        expect(sample.split(result)).to eq(sample.split(original))
+        expect(sample.split(result)).to eq(expected_split)
+      end
+    end
+  end
+
+  describe '#resolve_parent_split_pattern (JSON-serialised Regexp)' do
+    include_examples 'coerces a serialised Regexp back into a Regexp',
+                     :resolve_parent_split_pattern, :parents
+  end
+
+  describe '#resolve_children_split_pattern (JSON-serialised Regexp)' do
+    include_examples 'coerces a serialised Regexp back into a Regexp',
+                     :resolve_children_split_pattern, :children
   end
 
   describe '#build_relationship_graph' do
@@ -347,6 +587,68 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
           hash_including(search_field: 'bulkrax_identifier_tesim', name_field: 'bulkrax_identifier')
         ).and_return(nil)
         lam.call('star_wars_movie_collection')
+      end
+    end
+  end
+
+  describe '#assemble_result' do
+    let(:file_validator) do
+      instance_double(
+        'Bulkrax::CsvTemplate::FileValidator',
+        missing_files: [],
+        possible_missing_files?: false,
+        count_references: 0,
+        found_files_count: 0,
+        zip_included?: false
+      )
+    end
+    let(:header_issues) { { unrecognized: {}, empty_columns: [] } }
+    let(:csv_data) { [{ source_identifier: 'w1' }] }
+    let(:headers) { %w[source_identifier title] }
+
+    def assemble(missing_required:, row_errors: [], notices: [])
+      host.send(
+        :assemble_result,
+        headers: headers, missing_required: missing_required, header_issues: header_issues,
+        row_errors: row_errors, csv_data: csv_data, file_validator: file_validator,
+        collections: [], works: [], file_sets: [], notices: notices
+      )
+    end
+
+    context 'when only rights_statement is missing' do
+      let(:missing_required) { [{ model: 'Work', field: 'rights_statement' }] }
+
+      it 'is valid-with-warnings since rights_statement can be supplied on Step 2' do
+        result = assemble(missing_required: missing_required)
+        expect(result[:isValid]).to be true
+        expect(result[:hasWarnings]).to be true
+      end
+
+      it 'is not valid when a row-level error is also present' do
+        result = assemble(
+          missing_required: missing_required,
+          row_errors: [{ severity: 'error', column: 'parent', row: 2 }]
+        )
+        expect(result[:isValid]).to be false
+      end
+
+      it 'stays valid-with-warnings when only row-level warnings are present' do
+        result = assemble(
+          missing_required: missing_required,
+          row_errors: [{ severity: 'warning', column: 'source_identifier', row: 2 }]
+        )
+        expect(result[:isValid]).to be true
+        expect(result[:hasWarnings]).to be true
+      end
+    end
+
+    context 'when another required field is missing alongside rights_statement' do
+      it 'is not valid — the Step 2 fallback only covers rights_statement' do
+        result = assemble(missing_required: [
+                            { model: 'Work', field: 'rights_statement' },
+                            { model: 'Work', field: 'title' }
+                          ])
+        expect(result[:isValid]).to be false
       end
     end
   end

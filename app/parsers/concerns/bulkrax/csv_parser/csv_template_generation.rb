@@ -27,7 +27,10 @@ module Bulkrax
 
         def initialize(models: nil, admin_set_id: nil)
           @admin_set_id = admin_set_id
-          @mapping_manager = CsvTemplate::MappingManager.new
+          # Template generation excludes system-maintained fields (generated:
+          # true) so users don't see columns like date_uploaded, depositor,
+          # etc. on the downloadable template.
+          @mapping_manager = CsvTemplate::MappingManager.new(include_generated: false)
           @mappings = @mapping_manager.mappings
           @field_analyzer = CsvTemplate::FieldAnalyzer.new(@mappings, admin_set_id)
           @all_models = CsvTemplate::ModelLoader.new(Array.wrap(models)).models

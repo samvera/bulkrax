@@ -124,43 +124,9 @@ module Bulkrax
       end
     end
 
-    describe '#remove_spaces_from_filenames' do
-      let(:parser) { described_class.new(importer) }
-      let(:before_filenames) { ['spec/fixtures/csv/files/no_space.jpg', 'spec/fixtures/csv/files/has space.jpg'] }
-      let(:after_filenames) { ['spec/fixtures/csv/files/no_space.jpg', 'spec/fixtures/csv/files/has_space.jpg'] }
-
-      before do
-        before_filenames.each do |file_path|
-          File.write(file_path, 'w')
-        end
-
-        allow(Dir).to receive(:glob).and_return(before_filenames)
-      end
-
-      after do
-        after_filenames.each do |file_path|
-          File.delete(file_path)
-        end
-      end
-
-      it 'renames files to replace spaces with underscores' do
-        expect(File.exist?('spec/fixtures/csv/files/has space.jpg')).to eq(true)
-        expect(File.exist?('spec/fixtures/csv/files/has_space.jpg')).to eq(false)
-
-        parser.remove_spaces_from_filenames
-
-        expect(File.exist?('spec/fixtures/csv/files/has space.jpg')).to eq(false)
-        expect(File.exist?('spec/fixtures/csv/files/has_space.jpg')).to eq(true)
-      end
-
-      it 'does not alter files that do not have spaces in their name' do
-        expect(File.exist?('spec/fixtures/csv/files/no_space.jpg')).to eq(true)
-
-        parser.remove_spaces_from_filenames
-
-        expect(File.exist?('spec/fixtures/csv/files/no_space.jpg')).to eq(true)
-      end
-    end
+    # NOTE: `#remove_spaces_from_filenames` is a CSV-specific concern and
+    # now lives on `Bulkrax::CsvParser`. Its contract is exercised in
+    # spec/parsers/bulkrax/csv_parser/unzip_spec.rb.
 
     describe '#unzip' do
       let(:parser)    { described_class.new(importer) }
@@ -189,21 +155,24 @@ module Bulkrax
         zip_file.close!
       end
 
-      context 'when the zip contains a top-level wrapper directory (directory zipped, not contents)' do
-        it 'extracts files directly into the unzip path, stripping the wrapper directory' do
+      # The base-class `#unzip` is a verbatim extraction: it preserves the
+      # zip's internal structure and only filters macOS junk. Parser
+      # subclasses that need to interpret the archive (e.g. CsvParser's
+      # `#unzip_with_primary_csv`) do their own extraction.
+      context 'when the zip contains a top-level wrapper directory' do
+        it 'preserves the wrapper directory in the extracted paths' do
           with_zip('directory/data.csv' => 'title,identifier',
                    'directory/files/a.jpg' => 'jpg-content') do |zip_path|
             parser.unzip(zip_path)
 
-            expect(File.exist?(File.join(unzip_dir, 'data.csv'))).to be true
-            expect(File.exist?(File.join(unzip_dir, 'files', 'a.jpg'))).to be true
-            expect(File.exist?(File.join(unzip_dir, 'directory', 'data.csv'))).to be false
+            expect(File.exist?(File.join(unzip_dir, 'directory', 'data.csv'))).to be true
+            expect(File.exist?(File.join(unzip_dir, 'directory', 'files', 'a.jpg'))).to be true
           end
         end
       end
 
-      context 'when the zip contains files at the root (contents zipped, not directory)' do
-        it 'extracts files directly into the unzip path without stripping any prefix' do
+      context 'when the zip contains files at the root' do
+        it 'extracts files directly into the unzip path' do
           with_zip('data.csv' => 'title,identifier',
                    'files/a.jpg' => 'jpg-content') do |zip_path|
             parser.unzip(zip_path)
@@ -216,13 +185,13 @@ module Bulkrax
 
       context 'when the zip contains macOS junk entries (__MACOSX, .DS_Store, ._files)' do
         it 'skips junk entries and extracts only real files' do
-          with_zip('directory/data.csv' => 'title,identifier',
-                   'directory/.DS_Store' => 'junk',
-                   'directory/files/a.jpg' => 'jpg-content',
-                   '__MACOSX/directory/._.DS_Store' => 'junk',
-                   '__MACOSX/directory/._data.csv' => 'junk',
-                   '__MACOSX/directory/._files' => 'junk',
-                   '__MACOSX/directory/files/._a.jpg' => 'junk') do |zip_path|
+          with_zip('data.csv' => 'title,identifier',
+                   '.DS_Store' => 'junk',
+                   'files/a.jpg' => 'jpg-content',
+                   '__MACOSX/._.DS_Store' => 'junk',
+                   '__MACOSX/._data.csv' => 'junk',
+                   '__MACOSX/._files' => 'junk',
+                   '__MACOSX/files/._a.jpg' => 'junk') do |zip_path|
             parser.unzip(zip_path)
 
             expect(File.exist?(File.join(unzip_dir, 'data.csv'))).to be true
@@ -230,6 +199,23 @@ module Bulkrax
             expect(Dir.exist?(File.join(unzip_dir, '__MACOSX'))).to be false
             expect(File.exist?(File.join(unzip_dir, '.DS_Store'))).to be false
           end
+        end
+      end
+
+      # Zip Slip defense — a malicious zip entry with `..` must not write
+      # outside the extraction directory. Base-class unzip is inherited
+      # by BagIt and any other parsers, so this defense protects them too.
+      context 'when the zip contains a path-traversal entry (..)' do
+        it 'raises UnzipError and writes nothing outside the extraction dir' do
+          outside_dir = File.realpath(Dir.mktmpdir)
+          with_zip('data.csv' => 'title', "../#{File.basename(outside_dir)}/evil.txt" => 'pwned') do |zip_path|
+            expect { parser.unzip(zip_path) }
+              .to raise_error(Bulkrax::UnzipError, /unsafe/i)
+
+            expect(File).not_to exist(File.join(outside_dir, 'evil.txt'))
+          end
+        ensure
+          FileUtils.rm_rf(outside_dir) if outside_dir
         end
       end
     end

@@ -57,8 +57,12 @@ module Bulkrax
                    end
       @importers = @importers.order(order).page(table_page).per(table_per_page)
       @importers = @importers.where(importer_table_search) if importer_table_search.present?
+      # Count the filtered relation before applying pagination so the UI receives
+      # the total number of matching importers, not just the total number of importers.
+      filtered_count = @importers.count
+      @importers = @importers.reorder(order).page(table_page).per(table_per_page)
       respond_to do |format|
-        format.json { render json: format_importers(@importers) }
+        format.json { render json: format_importers(@importers, filtered_count) }
       end
     end
 
@@ -87,7 +91,7 @@ module Bulkrax
         json_response('new')
       elsif defined?(::Hyrax)
         add_importer_breadcrumbs
-        add_breadcrumb 'New'
+        add_breadcrumb t(:'bulkrax.headings.new_importer')
       end
     end
 
@@ -108,7 +112,7 @@ module Bulkrax
       elsif defined?(::Hyrax)
         add_importer_breadcrumbs
         add_breadcrumb @importer.name, bulkrax.importer_path(@importer.id)
-        add_breadcrumb 'Edit'
+        add_breadcrumb t(:'bulkrax.headings.edit_importer')
       end
     end
 
@@ -212,9 +216,9 @@ module Bulkrax
       return unless defined?(::Hyrax)
       add_breadcrumb t(:'hyrax.controls.home'), main_app.root_path
       add_breadcrumb t(:'hyrax.dashboard.breadcrumbs.admin'), hyrax.dashboard_path
-      add_breadcrumb 'Importers', bulkrax.importers_path
+      add_breadcrumb t(:'bulkrax.headings.importers'), bulkrax.importers_path
       add_breadcrumb @importer.name, bulkrax.importer_path(@importer.id)
-      add_breadcrumb 'Upload Corrected Entries'
+      add_breadcrumb t(:'bulkrax.headings.upload_corrected_entries_action')
     end
 
     # POST /importer/1/upload_corrected_entries_file
@@ -348,7 +352,7 @@ module Bulkrax
     def add_importer_breadcrumbs
       add_breadcrumb t(:'hyrax.controls.home'), main_app.root_path
       add_breadcrumb t(:'hyrax.dashboard.breadcrumbs.admin'), hyrax.dashboard_path
-      add_breadcrumb 'Importers', bulkrax.importers_path
+      add_breadcrumb t(:'bulkrax.headings.importers'), bulkrax.importers_path
     end
 
     def setup_client(url)

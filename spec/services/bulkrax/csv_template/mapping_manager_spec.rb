@@ -21,10 +21,25 @@ RSpec.describe Bulkrax::CsvTemplate::MappingManager do
   end
 
   describe '#initialize' do
-    it 'loads mappings and filters out generated fields' do
+    it 'loads all mappings including ones flagged generated: true by default' do
+      # The import/validation path needs the FULL mapping so that aliases on
+      # a `generated: true` entry (e.g. `rights` → `rights_statement`) are
+      # still recognised.
       expect(manager.mappings).to be_a(Hash)
       expect(manager.mappings).to have_key('title')
-      expect(manager.mappings).not_to have_key('generated_field')
+      expect(manager.mappings).to have_key('generated_field')
+    end
+
+    context 'when initialized with include_generated: false' do
+      # Template-generation passes this so the downloadable CSV template
+      # doesn't expose system-maintained columns (date_uploaded, depositor,
+      # source_identifier, etc.).
+      let(:filtered_manager) { described_class.new(include_generated: false) }
+
+      it 'excludes mapping entries flagged generated: true' do
+        expect(filtered_manager.mappings).to have_key('title')
+        expect(filtered_manager.mappings).not_to have_key('generated_field')
+      end
     end
   end
 
@@ -218,6 +233,39 @@ RSpec.describe Bulkrax::CsvTemplate::MappingManager do
         # Key not mapped, should return default as array
         expect(result).to eq(['file'])
       end
+    end
+  end
+
+  describe '#object_columns_for' do
+    before do
+      allow(Bulkrax).to receive(:field_mappings).and_return({
+                                                              'Bulkrax::CsvParser' => {
+                                                                'title' => { 'from' => ['title'] },
+                                                                'path' => { 'from' => ['redirect_path'], 'object' => 'redirects', 'nested_attributes' => true },
+                                                                'display_url' => { 'from' => ['redirect_display_url'], 'object' => 'redirects', 'nested_attributes' => true },
+                                                                'creator_first_name' => { 'from' => ['creator_first_name'], 'object' => 'creator' }
+                                                              }
+                                                            })
+    end
+
+    let(:object_manager) { described_class.new }
+
+    it 'returns the from-columns of every mapping that targets the given object' do
+      expect(object_manager.object_columns_for('redirects'))
+        .to contain_exactly('redirect_path', 'redirect_display_url')
+    end
+
+    it 'returns an empty array when no mapping targets the given object' do
+      expect(object_manager.object_columns_for('unknown')).to eq([])
+    end
+
+    it 'works for a single-mapping object' do
+      expect(object_manager.object_columns_for('creator'))
+        .to contain_exactly('creator_first_name')
+    end
+
+    it 'returns an empty array for a property without an `object:` flag' do
+      expect(object_manager.object_columns_for('title')).to eq([])
     end
   end
 end

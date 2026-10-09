@@ -26,12 +26,18 @@ RSpec.describe Bulkrax::CsvRow::RequiredValues do
     expect(context[:errors]).to be_empty
   end
 
-  it 'adds an error when a required field is missing' do
+  it 'adds an error when the required column is present but blank' do
     context = make_context
-    described_class.call(make_record({}), 2, context)
+    described_class.call(make_record('title' => ''), 2, context)
     expect(context[:errors].length).to eq(1)
     expect(context[:errors].first[:category]).to eq('missing_required_value')
     expect(context[:errors].first[:column]).to eq('title')
+  end
+
+  it 'does not add a row-level error when the required column is absent from the CSV entirely' do
+    context = make_context
+    described_class.call(make_record({}), 2, context)
+    expect(context[:errors]).to be_empty
   end
 
   it 'accepts a numbered column for a required field (title_1 satisfies title)' do
@@ -63,9 +69,9 @@ RSpec.describe Bulkrax::CsvRow::RequiredValues do
         expect(warning[:column]).to eq('model')
       end
 
-      it 'also emits a missing_required_value error when a required field is absent' do
+      it 'also emits a missing_required_value error when a required column is present but blank' do
         context = make_context
-        described_class.call(make_blank_model_record({}), 2, context)
+        described_class.call(make_blank_model_record('title' => ''), 2, context)
         categories = context[:errors].map { |e| e[:category] }
         expect(categories).to include('default_work_type_used', 'missing_required_value')
       end
@@ -86,9 +92,9 @@ RSpec.describe Bulkrax::CsvRow::RequiredValues do
         expect(context[:errors]).to be_empty
       end
 
-      it 'still emits missing_required_value errors for blank required fields' do
+      it 'still emits missing_required_value errors for blank required fields whose columns are present' do
         context = make_context(notices: [{ field: 'model', default_work_type: 'GenericWork' }])
-        described_class.call(make_blank_model_record({}), 2, context)
+        described_class.call(make_blank_model_record('title' => ''), 2, context)
         expect(context[:errors].map { |e| e[:category] }).to eq(['missing_required_value'])
       end
     end
@@ -103,6 +109,47 @@ RSpec.describe Bulkrax::CsvRow::RequiredValues do
         described_class.call(make_blank_model_record({}), 2, context)
         expect(context[:errors]).to be_empty
       end
+    end
+  end
+
+  # When the CSV uses an alias for a required field (e.g. `rights` satisfying
+  # `rights_statement` because `rights_statement: { from: ['rights', ...] }`),
+  # the validator must honour the mapping — otherwise the header-level check
+  # passes but every row still gets flagged as missing the value.
+  context 'when the CSV header uses a from: alias for a required field' do
+    let(:mapping_manager) do
+      mappings = {
+        'rights_statement' => { 'from' => ['rights', 'rights_statement', 'rights statement'], 'generated' => true },
+        'title' => { 'from' => ['title'] }
+      }
+      allow(Bulkrax).to receive(:field_mappings).and_return('Bulkrax::CsvParser' => mappings)
+      Bulkrax::CsvTemplate::MappingManager.new
+    end
+
+    def alias_context
+      make_context(required_terms: %w[title rights_statement]).merge(mapping_manager: mapping_manager)
+    end
+
+    it 'treats `rights` as satisfying the `rights_statement` requirement' do
+      record = make_record('title' => 'My Title', 'rights' => 'http://rightsstatements.org/vocab/CNE/1.0/')
+      described_class.call(record, 2, alias_context)
+      expect(alias_context[:errors]).to be_empty
+    end
+
+    it 'still flags rights_statement as missing when the `rights` column is blank' do
+      record = make_record('title' => 'My Title', 'rights' => '')
+      context = alias_context
+      described_class.call(record, 2, context)
+      expect(context[:errors].map { |e| e[:column] }).to contain_exactly('rights_statement')
+    end
+
+    it 'falls back to exact-header matching when no mapping_manager is provided' do
+      # Back-compat: callers that do not pass a mapping_manager (e.g. existing
+      # specs) still work because we short-circuit to the normalised header.
+      record = make_record('title' => 'My Title', 'rights_statement' => 'CNE')
+      context = make_context(required_terms: %w[title rights_statement])
+      described_class.call(record, 2, context)
+      expect(context[:errors]).to be_empty
     end
   end
 end

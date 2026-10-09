@@ -46,7 +46,7 @@ module Bulkrax
         @referenced_files ||= @csv_data.flat_map do |item|
           next [] if item[:file].blank?
 
-          item[:file].split(Bulkrax.multi_value_element_split_on).map { |f| File.basename(f.strip) }
+          item[:file].split(Bulkrax::CsvParser.file_split_pattern).map { |f| File.basename(f.strip) }
         end.compact
       end
 

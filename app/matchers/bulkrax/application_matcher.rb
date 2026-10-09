@@ -33,12 +33,11 @@ module Bulkrax
     end
 
     def process_split
-      if self.split.is_a?(TrueClass)
-        @result = @result.split(Bulkrax.multi_value_element_split_on)
-      elsif self.split
-        @result = @result.split(Regexp.new(self.split))
-        @result = @result.map(&:strip).select(&:present?)
-      end
+      pattern = Bulkrax::SplitPatternCoercion.coerce(self.split)
+      return unless pattern
+
+      @result = @result.split(pattern)
+      @result = @result.map(&:strip).select(&:present?) unless self.split.is_a?(TrueClass)
     end
 
     def process_parse
@@ -68,10 +67,13 @@ module Bulkrax
     end
 
     def parse_subject(src)
-      string = src.strip.downcase
+      string = src.strip
       return if string.blank?
 
-      string.slice(0, 1).capitalize + string.slice(1..-1)
+      return string.sub(%r{\Ahttps?}i, &:downcase) if string.match?(%r{\Ahttps?://}i)
+
+      downcased = string.downcase
+      downcased.slice(0, 1).capitalize + downcased.slice(1..-1)
     end
 
     def parse_types(src)

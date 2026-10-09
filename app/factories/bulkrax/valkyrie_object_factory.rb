@@ -434,7 +434,7 @@ module Bulkrax
 
       file_attrs = []
       uploads.each_with_index do |f, index|
-        file_attrs << ({ uploaded_file_id: f["id"].to_s, filename: files[index]["file_name"] }).merge(additional_attributes[index])
+        file_attrs << { uploaded_file_id: f["id"].to_s, filename: files[index]["file_name"] }.merge(additional_attributes[index])
       end
       file_attrs.compact.uniq
     end
@@ -498,14 +498,15 @@ module Bulkrax
     #
     # @return [Array<Symbols>]
     def permitted_attributes
-      @permitted_attributes ||= (
-        base_permitted_attributes + if klass.respond_to?(:schema)
-                                      admin_set_id = attributes[:admin_set_id] || attributes['admin_set_id']
-                                      Bulkrax::ValkyrieObjectFactory.schema_properties(klass: klass, admin_set_id: admin_set_id)
-                                    else
-                                      klass.properties.keys.map(&:to_sym)
-                                    end
-      ).uniq
+      @permitted_attributes ||= begin
+        bare = base_permitted_attributes + if klass.respond_to?(:schema)
+                                             admin_set_id = attributes[:admin_set_id] || attributes['admin_set_id']
+                                             Bulkrax::ValkyrieObjectFactory.schema_properties(klass: klass, admin_set_id: admin_set_id)
+                                           else
+                                             klass.properties.keys.map(&:to_sym)
+                                           end
+        (bare + nested_attributes_keys(bare)).uniq
+      end
     end
 
     def update_work(attrs)

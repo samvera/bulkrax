@@ -40,17 +40,24 @@ RSpec.describe Bulkrax::ValidationErrorCsvBuilder do
       it 'preserves the original row values in subsequent columns' do
         result = described_class.build(headers: headers, csv_data: csv_data, row_errors: row_errors)
         rows = CSV.parse(result)
-        expect(rows[1][2]).to eq('GenericWork')
-        expect(rows[1][3]).to eq('id-001')
-        expect(rows[1][4]).to eq('My Title')
+        expect(rows[1][3]).to eq('GenericWork')
+        expect(rows[1][4]).to eq('id-001')
+        expect(rows[1][5]).to eq('My Title')
+      end
+
+      it 'puts the error category in column 3' do
+        result = described_class.build(headers: headers, csv_data: csv_data, row_errors: row_errors)
+        rows = CSV.parse(result)
+        expect(rows[1][2]).to eq('missing_required_value')
       end
 
       it 'includes clean rows with a blank errors cell' do
         result = described_class.build(headers: headers, csv_data: csv_data, row_errors: row_errors)
         rows = CSV.parse(result)
-        clean_row = rows.find { |r| r[3] == 'id-002' }
+        clean_row = rows.find { |r| r[4] == 'id-002' }
         expect(clean_row).not_to be_nil
         expect(clean_row[1]).to be_nil
+        expect(clean_row[2]).to be_nil
       end
     end
 
@@ -66,6 +73,27 @@ RSpec.describe Bulkrax::ValidationErrorCsvBuilder do
         result = described_class.build(headers: headers, csv_data: csv_data, row_errors: row_errors)
         rows = CSV.parse(result)
         expect(rows[3][1]).to eq('Title is required | Description is required')
+      end
+
+      it 'deduplicates the category column when multiple errors share a category' do
+        result = described_class.build(headers: headers, csv_data: csv_data, row_errors: row_errors)
+        rows = CSV.parse(result)
+        expect(rows[3][2]).to eq('missing_required_value')
+      end
+    end
+
+    context 'when row errors have distinct categories' do
+      let(:row_errors) do
+        [
+          { row: 2, severity: 'warning', category: 'existing_source_identifier', column: 'source_identifier', value: 'id-001', message: 'Exists' },
+          { row: 2, severity: 'warning', category: 'default_work_type_used', column: 'model', value: nil, message: 'Using default' }
+        ]
+      end
+
+      it 'joins distinct category values with " | " in the categories column' do
+        result = described_class.build(headers: headers, csv_data: csv_data, row_errors: row_errors)
+        rows = CSV.parse(result)
+        expect(rows[1][2]).to eq('existing_source_identifier | default_work_type_used')
       end
     end
 
@@ -86,7 +114,7 @@ RSpec.describe Bulkrax::ValidationErrorCsvBuilder do
       it 'outputs rows in original order with errors on the correct rows' do
         result = described_class.build(headers: headers, csv_data: csv_data, row_errors: row_errors)
         rows = CSV.parse(result)
-        row_by_id = rows[1..].index_by { |r| r[3] }
+        row_by_id = rows[1..].index_by { |r| r[4] }
         expect(row_by_id['id-001'][1]).to eq('Duplicate source_identifier')
         expect(row_by_id['id-003'][1]).to eq('Title is required')
         expect(row_by_id['id-002'][1]).to be_nil
@@ -96,17 +124,18 @@ RSpec.describe Bulkrax::ValidationErrorCsvBuilder do
     context 'header row' do
       let(:row_errors) { [{ row: 2, severity: 'error', category: 'test', column: 'title', value: nil, message: 'Error' }] }
 
-      it 'has "row" as the first column and "errors" as the second' do
+      it 'has "row", "errors", and "categories" as the first three columns' do
         result = described_class.build(headers: headers, csv_data: csv_data, row_errors: row_errors)
         rows = CSV.parse(result)
         expect(rows.first[0]).to eq('row')
         expect(rows.first[1]).to eq('errors')
+        expect(rows.first[2]).to eq('categories')
       end
 
-      it 'preserves the original headers after the row and errors columns' do
+      it 'preserves the original headers after the row, errors, and categories columns' do
         result = described_class.build(headers: headers, csv_data: csv_data, row_errors: row_errors)
         rows = CSV.parse(result)
-        expect(rows.first[2..]).to eq(headers)
+        expect(rows.first[3..]).to eq(headers)
       end
     end
 
@@ -161,13 +190,22 @@ RSpec.describe Bulkrax::ValidationErrorCsvBuilder do
         expect(rows[1][0]).to be_nil
       end
 
+      it 'leaves the category cell blank for file-level rows' do
+        result = described_class.build(
+          headers: headers, csv_data: csv_data, row_errors: row_errors,
+          file_errors: { missing_files: ['photo.jpg'] }
+        )
+        rows = CSV.parse(result)
+        expect(rows[1][2]).to be_nil
+      end
+
       it 'leaves data columns blank for file-level rows' do
         result = described_class.build(
           headers: headers, csv_data: csv_data, row_errors: row_errors,
           file_errors: { missing_files: ['photo.jpg'] }
         )
         rows = CSV.parse(result)
-        expect(rows[1][2..]).to all(be_nil)
+        expect(rows[1][3..]).to all(be_nil)
       end
 
       context 'when both file-level and row-level errors are present' do

@@ -9,6 +9,8 @@ module Bulkrax
 
         if split_value == true
           parse_pattern(Bulkrax.multi_value_element_split_on.source)
+        elsif split_value.is_a?(Regexp)
+          parse_pattern(split_value.source)
         elsif split_value.is_a?(String)
           parse_pattern(split_value)
         else
@@ -34,9 +36,14 @@ module Bulkrax
       end
 
       def format_message(chars)
-        formatted = chars.chars.then do |c|
-          c.length > 1 ? "#{c[0..-2].join(' ')}, or #{c.last}" : c.first
-        end
+        list = chars.chars
+        # Use spaces rather than commas between delimiters so the message
+        # stays unambiguous when one of the delimiters IS a comma.
+        formatted = if list.length <= 1
+                      list.first || chars # no extractable chars → surface as-is
+                    else
+                      "#{list[0..-2].join(' ')} or #{list.last}"
+                    end
         "Split multiple values with #{formatted}"
       end
     end

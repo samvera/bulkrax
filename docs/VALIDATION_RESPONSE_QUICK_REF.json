@@ -1,20 +1,39 @@
 {
   "_comment": "Quick Reference - JSON Response Structure for POST /importers/guided_import/validate",
-  "_version": "1.0",
-  "_required_fields": "All fields marked with * are required",
+  "_version": "2.0",
+  "_required_fields": "All fields marked with * are always present; others are conditional as noted.",
+  "_last_updated_behavior_notes": [
+    "v2.0: Documented row-level validator output (rowErrors + row_level_errors / row_level_warnings issues), notices issue type, emptyColumns, item `category`, and validationErrorsCacheKey. Removed the legacy string form of missingRequired (hashes are the only shape emitted now). Removed the unused 'info' severity from issues (only the file_references icon uses fa-info-circle; its severity is 'warning').",
+    "v1.0: Initial structure covered missing_required_fields / unrecognized_fields / file_references only."
+  ],
   "structure": {
     "headers*": [
       "string - CSV column names"
     ],
     "missingRequired*": [
-      "string|object - Missing required columns (legacy: strings, new: {model, field})"
+      {
+        "model": "string - Work type / model name (e.g. 'GenericWork')",
+        "field": "string - Required field name missing from the CSV headers"
+      }
     ],
     "unrecognized*": {
       "column_name": "string|null - Spell-check suggestion, or null if no suggestion"
     },
     "rowCount*": "integer - Number of data rows",
-    "isValid*": "boolean - Validation passed?",
+    "isValid*": "boolean - Validation passed? False when missingRequired (except when only rights_statement is missing), missingFiles, row-level errors, empty headers, or empty CSV.",
     "hasWarnings*": "boolean - Non-critical warnings exist?",
+    "rowErrors*": [
+      {
+        "row": "integer - 1-based row number (header is row 1; first data row is row 2)",
+        "source_identifier": "string - Value of the row's source_identifier column",
+        "severity": "error|warning",
+        "category": "string - Validator category slug (see `validator_categories`)",
+        "column": "string - CSV column the issue is attributed to",
+        "value": "string|null - The offending cell value (nil when the column is blank or absent)",
+        "message": "string - Human-readable, localized error/warning text",
+        "suggestion": "string|null - Localized suggestion for how to fix the issue"
+      }
+    ],
     "collections*": [
       {
         "id": "string",
@@ -55,6 +74,7 @@
     ],
     "foundFiles*": "integer - Files found in ZIP",
     "zipIncluded*": "boolean - ZIP file uploaded?",
+    "validationErrorsCacheKey": "string|null - Cache key passed to GET /importers/guided_import/download_validation_errors?key=<value>. Present when any errors exist (missingRequired, unrecognized, emptyColumns, missingFiles, or rowErrors). Null when validation is clean.",
     "messages*": {
       "validationStatus*": {
         "severity*": "success|warning|error",
@@ -66,20 +86,14 @@
       },
       "issues*": [
         {
-          "type*": "string - Issue type identifier",
-          "severity*": "error|warning|info",
+          "type*": "string - One of: missing_required_fields | unrecognized_fields | file_references | row_level_errors | row_level_warnings | notices",
+          "severity*": "error|warning",
           "icon*": "string - FontAwesome class",
           "title*": "string - Issue heading",
           "count*": "integer - Count badge",
           "description": "string|null - Explanatory text (optional)",
-          "summary": "string|null - Summary line (optional)",
-          "items*": [
-            {
-              "field*": "string - Field/file name",
-              "model": "string - Model name (for missing_required_fields type, used for grouping)",
-              "message": "string|null - Additional message (optional, used for non-grouped issue types)"
-            }
-          ],
+          "summary": "string|null - Summary line (optional; used by file_references)",
+          "items*": "See `issue_items_by_type` for the shape of items per issue type.",
           "details": "string|null - Additional details (optional)",
           "defaultOpen*": "boolean - Start expanded?"
         }
@@ -94,43 +108,92 @@
     ],
     "issues": [
       "error",
-      "warning",
-      "info"
+      "warning"
     ]
   },
   "common_icons": {
     "success": "fa-check-circle",
     "warning": "fa-exclamation-triangle",
     "error": "fa-times-circle",
-    "info": "fa-info-circle"
+    "info": "fa-info-circle (used on 'warning'-severity file_references and notices issues)"
   },
   "issue_types": {
-    "missing_required_fields": "Required columns missing from CSV (each item includes model name to show which models need which fields)",
-    "unrecognized_fields": "CSV columns not mapped to properties",
-    "file_references": "File validation results"
+    "missing_required_fields": "Required columns missing from the CSV headers. Severity is 'error' by default, or 'warning' when the only missing required field is 'rights_statement' (user supplies a default on Step 2).",
+    "unrecognized_fields": "CSV columns that don't map to any known property, plus columns with a blank header (emptyColumns). Severity 'warning'. Ignored during import.",
+    "file_references": "Row-level `file:` values that are missing from the ZIP, or file references when no ZIP was uploaded. Severity 'warning'.",
+    "row_level_errors": "Per-row errors from CsvRow:: validators (e.g. invalid parent reference, missing required value in a present column, invalid controlled-vocab value). Severity 'error'.",
+    "row_level_warnings": "Per-row warnings from CsvRow:: validators (e.g. default work type used, existing source_identifier will be updated). Severity 'warning'.",
+    "notices": "File-level notices — informational messages that don't block import but the user should see (e.g. model column missing or empty → default work type used for all rows). Severity 'warning'."
   },
-  "missing_required_fields_notes": {
-    "description": "Missing required fields are grouped by model for better readability",
-    "display_format": "Fields are displayed under model name headings (e.g., 'GenericWork:', 'Collection:')",
-    "example": "If GenericWork needs 'title' and 'rights_statement', both appear under 'GenericWork:' heading",
-    "benefits": [
-      "Clear visual grouping by model eliminates redundant model names",
-      "Users can quickly scan which models need which fields",
-      "Supports multi-model CSV files with different requirements per model",
-      "Cleaner, more compact display than listing model name with each field"
+  "issue_items_by_type": {
+    "missing_required_fields": {
+      "shape": {
+        "model": "string - Work type requiring this field",
+        "field": "string - Required field name"
+      },
+      "display": "Grouped by model in the UI (e.g. 'GenericWork:' heading with fields listed beneath)."
+    },
+    "unrecognized_fields": {
+      "shape": {
+        "field": "string - Column name, or a localized 'Column N (no header)' placeholder for empty-header columns",
+        "message": "string|null - \"Did you mean 'X'?\" when a spell-check suggestion is available, otherwise null"
+      }
+    },
+    "file_references": {
+      "shape": {
+        "field": "string - Filename",
+        "message": "string - Localized 'missing from ZIP' text; empty items array when the issue is 'no ZIP uploaded'"
+      }
+    },
+    "row_level_errors": {
+      "shape": {
+        "field": "string - Localized 'Row %{row} · %{column}' label",
+        "message": "string - Localized error text (concatenated with suggestion if any)",
+        "category": "string - Validator category slug; used by the UI for per-category grouping and by the downloaded errors CSV's `categories` column"
+      }
+    },
+    "row_level_warnings": {
+      "shape": "Identical to row_level_errors items."
+    },
+    "notices": {
+      "shape": {
+        "field": "string - The CSV field/column the notice relates to (e.g. 'model')",
+        "message": "string - Localized notice message (concatenated with suggestion)"
+      }
+    }
+  },
+  "validator_categories": {
+    "description": "Slug assigned by each row-level validator to identify the issue type. Exposed on rowErrors[*].category and on row_level_* items[*].category.",
+    "values": [
+      "missing_source_identifier",
+      "duplicate_source_identifier",
+      "existing_source_identifier",
+      "invalid_parent_reference",
+      "invalid_child_reference",
+      "circular_reference",
+      "missing_required_value",
+      "invalid_controlled_value",
+      "default_work_type_used"
     ]
   },
   "validation_rules": {
     "isValid_false_when": [
-      "Required fields are missing",
-      "CSV is malformed/unreadable",
-      "Critical validation errors"
+      "CSV headers are empty",
+      "CSV has zero data rows",
+      "missingRequired is non-empty (EXCEPT when the only missing field is rights_statement; see rights_statement_special_case)",
+      "missingFiles is non-empty",
+      "Any rowErrors entry has severity 'error'"
     ],
     "hasWarnings_true_when": [
       "Unrecognized columns exist",
+      "Empty-header columns exist",
       "Files referenced but missing from ZIP",
-      "Files referenced but no ZIP uploaded"
-    ]
+      "Files referenced but no ZIP uploaded",
+      "Any rowErrors entry has severity 'warning'",
+      "notices is non-empty",
+      "Only missing required field is rights_statement (in which case isValid is also true)"
+    ],
+    "rights_statement_special_case": "When the entire missingRequired list consists of rights_statement entries, the response is valid with a warning rather than invalid. The user supplies a default rights statement on Step 2, which is applied to every row lacking one. The missing_required_fields issue's severity downshifts to 'warning' and its description swaps to the 'can be supplied on Step 2' variant."
   },
   "minimal_success_example": {
     "headers": [
@@ -143,6 +206,7 @@
     "rowCount": 10,
     "isValid": true,
     "hasWarnings": false,
+    "rowErrors": [],
     "collections": [],
     "works": [],
     "fileSets": [],
@@ -151,6 +215,7 @@
     "missingFiles": [],
     "foundFiles": 0,
     "zipIncluded": false,
+    "validationErrorsCacheKey": null,
     "messages": {
       "validationStatus": {
         "severity": "success",
@@ -177,6 +242,7 @@
     "rowCount": 25,
     "isValid": true,
     "hasWarnings": true,
+    "rowErrors": [],
     "collections": [],
     "works": [],
     "fileSets": [],
@@ -185,6 +251,7 @@
     "missingFiles": [],
     "foundFiles": 0,
     "zipIncluded": false,
+    "validationErrorsCacheKey": "guided_import_errors:SESSION-ID:1776992963",
     "messages": {
       "validationStatus": {
         "severity": "warning",
@@ -202,14 +269,12 @@
           "title": "Unrecognized Fields",
           "count": 1,
           "description": "These columns will be ignored during import:",
-          "summary": null,
           "items": [
             {
               "field": "legacy_id",
               "message": null
             }
           ],
-          "details": null,
           "defaultOpen": false
         }
       ]
@@ -221,13 +286,28 @@
       "description"
     ],
     "missingRequired": [
-      "source_identifier",
-      "rights_statement"
+      {
+        "model": "GenericWork",
+        "field": "source_identifier"
+      },
+      {
+        "model": "GenericWork",
+        "field": "rights_statement"
+      },
+      {
+        "model": "Collection",
+        "field": "source_identifier"
+      },
+      {
+        "model": "Collection",
+        "field": "rights_statement"
+      }
     ],
     "unrecognized": {},
     "rowCount": 15,
     "isValid": false,
     "hasWarnings": false,
+    "rowErrors": [],
     "collections": [],
     "works": [],
     "fileSets": [],
@@ -236,6 +316,7 @@
     "missingFiles": [],
     "foundFiles": 0,
     "zipIncluded": false,
+    "validationErrorsCacheKey": "guided_import_errors:SESSION-ID:1776992963",
     "messages": {
       "validationStatus": {
         "severity": "error",
@@ -253,7 +334,6 @@
           "title": "Missing Required Fields",
           "count": 4,
           "description": "These required columns must be added to your CSV:",
-          "summary": null,
           "items": [
             {
               "model": "GenericWork",
@@ -272,7 +352,151 @@
               "field": "rights_statement"
             }
           ],
-          "details": null,
+          "defaultOpen": false
+        }
+      ]
+    }
+  },
+  "minimal_row_errors_example": {
+    "_comment": "Shows rowErrors at top level plus the row_level_errors / row_level_warnings issues derived from them.",
+    "headers": [
+      "source_identifier",
+      "title",
+      "parents",
+      "resource_type"
+    ],
+    "missingRequired": [],
+    "unrecognized": {},
+    "rowCount": 3,
+    "isValid": false,
+    "hasWarnings": true,
+    "rowErrors": [
+      {
+        "row": 2,
+        "source_identifier": "w1",
+        "severity": "error",
+        "category": "invalid_parent_reference",
+        "column": "parents",
+        "value": "ghost_parent",
+        "message": "Referenced parent 'ghost_parent' does not exist as a source_identifier in this CSV.",
+        "suggestion": "Check for typos or add the parent record."
+      },
+      {
+        "row": 3,
+        "source_identifier": "w2",
+        "severity": "warning",
+        "category": "existing_source_identifier",
+        "column": "source_identifier",
+        "value": "w2",
+        "message": "'w2' matches an existing repository record — this row will update it.",
+        "suggestion": "If you did not intend to update an existing record, change the source_identifier value."
+      }
+    ],
+    "collections": [],
+    "works": [],
+    "fileSets": [],
+    "totalItems": 0,
+    "fileReferences": 0,
+    "missingFiles": [],
+    "foundFiles": 0,
+    "zipIncluded": false,
+    "validationErrorsCacheKey": "guided_import_errors:SESSION-ID:1776992963",
+    "messages": {
+      "validationStatus": {
+        "severity": "error",
+        "icon": "fa-times-circle",
+        "title": "Validation Failed",
+        "summary": "4 columns detected · 3 records found",
+        "details": "Critical errors must be fixed before import.",
+        "defaultOpen": true
+      },
+      "issues": [
+        {
+          "type": "row_level_errors",
+          "severity": "error",
+          "icon": "fa-times-circle",
+          "title": "Row Validation Errors",
+          "count": 1,
+          "description": "The following issues exist with data in your CSV:",
+          "items": [
+            {
+              "field": "Row 2 · parents",
+              "message": "Referenced parent 'ghost_parent' does not exist as a source_identifier in this CSV. Check for typos or add the parent record.",
+              "category": "invalid_parent_reference"
+            }
+          ],
+          "defaultOpen": false
+        },
+        {
+          "type": "row_level_warnings",
+          "severity": "warning",
+          "icon": "fa-exclamation-triangle",
+          "title": "Row Validation Warnings",
+          "count": 1,
+          "description": "The following issues exist with data in your CSV:",
+          "items": [
+            {
+              "field": "Row 3 · source_identifier",
+              "message": "'w2' matches an existing repository record — this row will update it. If you did not intend to update an existing record, change the source_identifier value.",
+              "category": "existing_source_identifier"
+            }
+          ],
+          "defaultOpen": false
+        }
+      ]
+    }
+  },
+  "minimal_notices_example": {
+    "_comment": "Shows the notices issue type emitted when the model column is missing or every row's model is blank — indicating the configured default_work_type will be used for all rows.",
+    "headers": [
+      "source_identifier",
+      "title"
+    ],
+    "missingRequired": [],
+    "unrecognized": {},
+    "rowCount": 2,
+    "isValid": true,
+    "hasWarnings": true,
+    "rowErrors": [],
+    "collections": [],
+    "works": [
+      {
+        "id": "w1",
+        "title": "Parent Work",
+        "type": "work",
+        "parentIds": []
+      }
+    ],
+    "fileSets": [],
+    "totalItems": 1,
+    "fileReferences": 0,
+    "missingFiles": [],
+    "foundFiles": 0,
+    "zipIncluded": false,
+    "validationErrorsCacheKey": "guided_import_errors:SESSION-ID:1776992963",
+    "messages": {
+      "validationStatus": {
+        "severity": "warning",
+        "icon": "fa-exclamation-triangle",
+        "title": "Validation Passed with Warnings",
+        "summary": "2 columns detected · 2 records found",
+        "details": "Recognized fields: source_identifier, title",
+        "defaultOpen": true
+      },
+      "issues": [
+        {
+          "type": "notices",
+          "severity": "warning",
+          "icon": "fa-info-circle",
+          "title": "Import Notices",
+          "count": 1,
+          "description": "These notices may affect how your CSV is imported:",
+          "items": [
+            {
+              "field": "model",
+              "message": "No model column found — all rows will be imported as 'GenericWork'. Add a model column to your CSV if you want to use a different work type for some rows."
+            }
+          ],
           "defaultOpen": false
         }
       ]

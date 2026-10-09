@@ -494,7 +494,11 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
         expect(error_issue[:title]).to eq('Row Validation Errors')
         expect(error_issue[:count]).to eq(1)
         expect(error_issue[:items]).to contain_exactly(
-          { field: 'Row 1 · creator', message: "Field 'creator' is required but is empty for this row. Add a value for 'creator' in row 1." }
+          { field: 'Row 1 · creator', message: "Field 'creator' is required but is empty for this row. Add a value for 'creator' in row 1.", category: 'missing_required_value' }
+        )
+
+        expect(warning_issue[:items]).to contain_exactly(
+          { field: 'Row 2 · source_identifier', message: "'DEF' matches an existing repository record. If you did not intend to update an existing record, change the source_identifier value.", category: 'existing_source_identifier' }
         )
 
         expect(warning_issue[:severity]).to eq('warning')
@@ -530,6 +534,32 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
         expect(warning_issue[:count]).to eq(1)
       end
 
+      it 'preserves the validator category on each row-warning item so the UI can group them' do
+        data = {
+          headers: ['source_identifier', 'title', 'creator', 'model'],
+          rowCount: 5,
+          isValid: true,
+          hasWarnings: true,
+          missingRequired: [],
+          unrecognized: {},
+          fileReferences: 0,
+          rowErrors: [
+            { row: 1, source_identifier: 'ABC', severity: 'warning', category: 'existing_source_identifier',
+              column: 'source_identifier', value: 'ABC', message: 'matches existing record.' },
+            { row: 2, source_identifier: 'DEF', severity: 'warning', category: 'default_work_type_used',
+              column: 'model', value: nil, message: 'using default work type.' }
+          ]
+        }
+
+        result = described_class.new(data).format
+        warning_issue = result[:messages][:issues].find { |i| i[:type] == 'row_level_warnings' }
+
+        expect(warning_issue[:items].map { |i| i[:category] }).to contain_exactly(
+          'existing_source_identifier',
+          'default_work_type_used'
+        )
+      end
+
       it 'suppresses row errors for columns already flagged in missingRequired' do
         data = {
           headers: ['source_identifier', 'title', 'model'],
@@ -554,7 +584,7 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
 
         expect(issue[:count]).to eq(1)
         expect(issue[:items]).to contain_exactly(
-          { field: 'Row 1 · creator', message: "Field 'creator' is required but is empty for this row. Add a value for 'creator' in row 1." }
+          { field: 'Row 1 · creator', message: "Field 'creator' is required but is empty for this row. Add a value for 'creator' in row 1.", category: 'missing_required_value' }
         )
       end
 

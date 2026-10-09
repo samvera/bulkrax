@@ -159,6 +159,24 @@ RSpec.describe Bulkrax::CsvParser do
       end
     end
 
+    context 'with misspelled suffixed headers' do
+      # Pre-2026, headers ending in `_<digits>` were unconditionally accepted
+      # regardless of the base name. The validator now requires the base name
+      # to be recognised, so a typo like `creater_1` is flagged the same way
+      # `creater` (without the suffix) is.
+      let(:csv_content) do
+        <<~CSV
+          source_identifier,title,creater_1,creater_2,model
+          work1,Test Work 1,Author 1,Author 2,GenericWork
+        CSV
+      end
+
+      it 'flags a numbered column whose base name is misspelled' do
+        result = described_class.validate_csv(csv_file: csv_file, zip_file: nil)
+        expect(result[:unrecognized].keys).to include('creater_1')
+      end
+    end
+
     context 'source_identifier generation' do
       context 'when fill_in_blank_source_identifiers is not configured' do
         before { allow(Bulkrax).to receive(:fill_in_blank_source_identifiers).and_return(nil) }

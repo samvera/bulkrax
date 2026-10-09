@@ -173,7 +173,8 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHierarchy do
                                            'parents_1' => 'col1',
                                            'parents_2' => 'col2' })
         ids = Set.new(%w[col1 col2 work1])
-        split_hash  = host.build_item_hash(split_item,  {}, ids, type: 'work', parent: '|')
+        # Pattern is a regex source; escape '|' so it's not empty-alternation.
+        split_hash  = host.build_item_hash(split_item,  {}, ids, type: 'work', parent: '\\|')
         suffix_hash = host.build_item_hash(suffix_item, {}, ids, type: 'work')
         expect(split_hash[:parentIds]).to eq(suffix_hash[:parentIds])
       end
@@ -202,6 +203,28 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHierarchy do
                          raw_row: { 'title' => 'Work', 'parents_1' => 'repo_col' })
         hash = host.build_item_hash(item, {}, Set.new(['work1']), type: 'work', find_record: find_record)
         expect(hash[:existingParentIds]).to include('repo_col')
+      end
+    end
+
+    context 'existing flag' do
+      it 'sets existing to true when find_record returns true for the item' do
+        find_record = ->(id) { id == 'work1' }
+        item = make_item(source_identifier: 'work1', raw_row: { 'title' => 'Work One' })
+        hash = host.build_item_hash(item, {}, all_ids, type: 'work', find_record: find_record)
+        expect(hash[:existing]).to be true
+      end
+
+      it 'sets existing to false when find_record returns false for the item' do
+        find_record = ->(_id) { false }
+        item = make_item(source_identifier: 'work1', raw_row: { 'title' => 'Work One' })
+        hash = host.build_item_hash(item, {}, all_ids, type: 'work', find_record: find_record)
+        expect(hash[:existing]).to be false
+      end
+
+      it 'sets existing to false when find_record is nil' do
+        item = make_item(source_identifier: 'work1', raw_row: { 'title' => 'Work One' })
+        hash = host.build_item_hash(item, {}, all_ids, type: 'work')
+        expect(hash[:existing]).to be false
       end
     end
   end

@@ -28,14 +28,13 @@ module Bulkrax
           header_issues    = check_headers(headers, raw_csv, mapping_manager, mappings, field_metadata, field_analyzer)
           missing_required = header_issues[:missing_required]
           notices, row_errors, file_validator, collections, works, file_sets =
-            run_validations(csv_data, all_ids, headers, source_id_key, mappings, field_metadata, missing_required, zip_file, admin_set_id)
+            run_validations(csv_data, all_ids, headers, source_id_key, mappings, field_metadata, missing_required, zip_file, admin_set_id, mapping_manager: mapping_manager)
 
           result = assemble_result(
             headers: headers, missing_required: missing_required, header_issues: header_issues,
             row_errors: row_errors, csv_data: csv_data, file_validator: file_validator,
             collections: collections, works: works, file_sets: file_sets, notices: notices
           )
-          apply_rights_statement_validation_override!(result, missing_required)
           result[:raw_csv_data] = csv_data
           result
         end
@@ -44,13 +43,13 @@ module Bulkrax
 
         # Builds notices, runs row validators, file validator, and hierarchy extraction.
         # Returns [notices, row_errors, file_validator, collections, works, file_sets].
-        def run_validations(csv_data, all_ids, headers, source_id_key, mappings, field_metadata, missing_required, zip_file, admin_set_id) # rubocop:disable Metrics/ParameterLists
+        def run_validations(csv_data, all_ids, headers, source_id_key, mappings, field_metadata, missing_required, zip_file, admin_set_id, mapping_manager: nil) # rubocop:disable Metrics/ParameterLists
           find_record = build_find_record
           notices     = []
           append_missing_source_id!(missing_required, headers, source_id_key, csv_data.map { |r| r[:model] }.compact.uniq)
           append_missing_model_notice!(notices, headers, csv_data)
 
-          row_errors                       = run_row_validators(csv_data, all_ids, source_id_key, mappings, field_metadata, find_record, notices)
+          row_errors                       = run_row_validators(csv_data, all_ids, source_id_key, mappings, field_metadata, find_record, notices, mapping_manager: mapping_manager)
           file_validator                   = CsvTemplate::FileValidator.new(csv_data, zip_file, admin_set_id)
           collections, works, file_sets    = extract_hierarchy_items(csv_data, all_ids, find_record, mappings)
           [notices, row_errors, file_validator, collections, works, file_sets]
@@ -72,7 +71,7 @@ module Bulkrax
           file_key      = resolve_validation_key(mapping_manager, key: 'file',                            default: :file)
 
           csv_data       = parse_validation_rows(raw_csv, source_id_key, parent_key, children_key, file_key)
-          all_models     = csv_data.map { |r| r[:model] }.compact.uniq
+          all_models     = csv_data.map { |r| r[:model].to_s }.reject(&:blank?).uniq
           all_models    |= [Bulkrax.default_work_type] if Bulkrax.default_work_type.present?
           field_analyzer = CsvTemplate::FieldAnalyzer.new(mappings, admin_set_id)
           field_metadata = build_validation_field_metadata(all_models, field_analyzer)
@@ -85,26 +84,50 @@ module Bulkrax
           all_models    = field_metadata.keys
           valid_headers = build_valid_validation_headers(mapping_manager, field_analyzer,
                                                          all_models, mappings, field_metadata)
-          suffixed      = headers.select { |h| h.match?(/_\d+\z/) }
+          # Only allow a suffixed header (e.g. `creator_1`, `redirect_path_2`)
+          # when its base name is itself recognised. The blanket allow that
+          # used to live here let through any *_<digits> column, which masked
+          # typos in numbered columns at validation time even though the real
+          # importer would fail to map them.
+          known_property_keys = (field_metadata || {}).values.flat_map { |m| Array(m[:properties]) }.to_set
+          suffixed = headers.select do |h|
+            h.match?(/_\d+\z/) && header_base_recognized?(h, valid_headers, mapping_manager, known_property_keys)
+          end
           valid_headers = (valid_headers + suffixed).uniq
 
           {
             missing_required: find_missing_required_headers(headers, field_metadata, mapping_manager),
-            unrecognized: find_unrecognized_validation_headers(headers, valid_headers),
+            unrecognized: find_unrecognized_validation_headers(headers, valid_headers,
+                                                               mapping_manager: mapping_manager,
+                                                               field_metadata: field_metadata),
             empty_columns: find_empty_column_positions(headers, raw_csv)
           }
+        end
+
+        # Mirrors the recognition rule used by
+        # find_unrecognized_validation_headers: a header's base name is
+        # recognised if it appears in valid_headers directly or if its
+        # mapping_manager#mapped_to_key resolves to a known model property.
+        # known_property_keys is precomputed by check_headers so this can be
+        # called per-header without rebuilding the set each time.
+        def header_base_recognized?(header, valid_headers, mapping_manager, known_property_keys)
+          base = header.sub(/_\d+\z/, '')
+          return true if valid_headers.include?(base)
+
+          mapped_key = mapping_manager&.mapped_to_key(base)
+          mapped_key.present? && known_property_keys.include?(mapped_key)
         end
 
         def extract_hierarchy_items(csv_data, all_ids, find_record, mappings)
           extract_validation_items(
             csv_data, all_ids, find_record,
             parent_split_pattern: resolve_parent_split_pattern(mappings),
-            child_split_pattern: resolve_children_split_pattern(mappings) || '|'
+            child_split_pattern: resolve_children_split_pattern(mappings) || Bulkrax::DEFAULT_MULTI_VALUE_ELEMENT_SPLIT_ON
           )
         end
 
         # Runs all registered row validators and returns the collected errors.
-        def run_row_validators(csv_data, all_ids, source_id_key, mappings, field_metadata, find_record, notices = []) # rubocop:disable Metrics/ParameterLists
+        def run_row_validators(csv_data, all_ids, source_id_key, mappings, field_metadata, find_record, notices = [], mapping_manager: nil) # rubocop:disable Metrics/ParameterLists
           context = {
             errors: [],
             warnings: [],
@@ -116,6 +139,7 @@ module Bulkrax
             parent_column: resolve_relationship_column(mappings, 'related_parents_field_mapping', 'parents'),
             children_column: resolve_relationship_column(mappings, 'related_children_field_mapping', 'children'),
             mappings: mappings,
+            mapping_manager: mapping_manager,
             field_metadata: field_metadata,
             find_record_by_source_identifier: find_record,
             relationship_graph: build_relationship_graph(csv_data, mappings),

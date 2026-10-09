@@ -25,6 +25,18 @@ unless ENV.fetch('BULKRAX_NO_BAGIT', 'false').to_s == 'true'
         @path_to_files ||= Dir.glob(File.join(import_file_path, '**/data', filename)).first
       end
 
+      # BagIt archives are not CSV imports: they don't contain a primary
+      # CSV at a shallowest level, and their structure (bagit.txt + data/
+      # + manifests) must be preserved verbatim. Override both CSV-flavored
+      # unzip entry points to use the base-class verbatim extraction.
+      def unzip_with_primary_csv(file_to_unzip)
+        unzip(file_to_unzip)
+      end
+
+      def unzip_attachments_only(file_to_unzip)
+        unzip(file_to_unzip)
+      end
+
       # Take a random sample of 10 metadata_paths and work out the import fields from that
       def import_fields
         raise StandardError, 'No metadata files were found' if metadata_paths.blank?

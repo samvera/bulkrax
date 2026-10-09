@@ -6,8 +6,16 @@ module Bulkrax
     class MappingManager
       attr_reader :mappings
 
-      def initialize
-        @mappings = load_mappings
+      # @param include_generated [Boolean] when false, excludes mapping entries
+      #   flagged `generated: true` (system-maintained fields like
+      #   date_uploaded, depositor, source_identifier). Template generation
+      #   passes +false+ so the downloadable template doesn't expose
+      #   system columns; import validation uses the default +true+ so that
+      #   user-configured mappings like `rights_statement` (which Bulkrax
+      #   ships with `generated: true`) are still recognised when the CSV
+      #   uses one of their `from:` aliases.
+      def initialize(include_generated: true)
+        @mappings = load_mappings(include_generated: include_generated)
       end
 
       def mapped_to_key(column_str)
@@ -16,6 +24,28 @@ module Bulkrax
 
       def key_to_mapped_column(key)
         @mappings.dig(key, "from")&.first || key
+      end
+
+      # Returns the `object:` value for a given mapping key, or nil. Mirrors
+      # the importer-side `Bulkrax::HasMatchers#get_object_name` for callers
+      # working with the template-side mapping manager.
+      def get_object_name(key)
+        @mappings.dig(key, "object")
+      end
+
+      # Returns the column names that target a given object name via the
+      # `object:` field-mapping pattern. The template generator uses this to
+      # emit the per-child columns (e.g. redirect_path, redirect_display_url)
+      # instead of the bare property name (redirects). Numbering is
+      # intentionally omitted — the template shows the column shape once;
+      # CSV rows can repeat the column with numeric suffixes (e.g.
+      # redirect_path_1, redirect_path_2) at import time.
+      def object_columns_for(object_name)
+        @mappings
+          .select { |_k, v| v.is_a?(Hash) && v["object"] == object_name }
+          .values
+          .flat_map { |v| Array(v["from"]) }
+          .uniq
       end
 
       def find_by_flag(field_name, default)
@@ -45,10 +75,11 @@ module Bulkrax
 
       private
 
-      def load_mappings
-        Bulkrax.field_mappings["Bulkrax::CsvParser"].reject do |_key, value|
-          value["generated"] == true
-        end
+      def load_mappings(include_generated:)
+        raw = Bulkrax.field_mappings["Bulkrax::CsvParser"]
+        return raw if include_generated
+
+        raw.reject { |_key, value| value["generated"] == true }
       end
     end
   end

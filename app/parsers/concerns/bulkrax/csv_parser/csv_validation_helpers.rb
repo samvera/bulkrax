@@ -46,20 +46,40 @@ module Bulkrax
       end
 
       def build_valid_validation_headers(mapping_manager, field_analyzer, all_models, mappings, field_metadata)
-        svc = ValidationContext.new(
+        svc = Bulkrax::CsvParser::ValidationContext.new(
           mapping_manager: mapping_manager,
           field_analyzer: field_analyzer,
           all_models: all_models,
           mappings: mappings
         )
         all_cols = CsvTemplate::ColumnBuilder.new(svc).all_columns
-        all_cols - CsvTemplate::CsvBuilder::IGNORED_PROPERTIES
+        # ColumnBuilder only emits the first `from:` alias per non-property key
+        # (core/file/relationship). Accept every alias so a CSV using a
+        # non-primary alias like `file` (when mappings are `from: ['item', 'file']`)
+        # isn't flagged unrecognised. Property-level aliases are handled
+        # separately by find_unrecognized_validation_headers via mapped_to_key.
+        non_property_aliases = non_property_mapping_aliases(mappings)
+        (all_cols + non_property_aliases).uniq - CsvTemplate::CsvBuilder::IGNORED_PROPERTIES
       rescue StandardError => e
         Rails.logger.error("CsvParser.validate_csv: error building valid headers – #{e.message}")
         standard = %w[model source_identifier parents children file]
         model_fields = field_metadata.values.flat_map { |m| m[:properties] }
-                                            .map { |prop| mapping_manager.key_to_mapped_column(prop) }
+                                     .map { |prop| mapping_manager.key_to_mapped_column(prop) }
         (standard + model_fields).uniq
+      end
+
+      # Returns every `from:` alias for mapping keys that describe non-property
+      # columns (core/file/relationship). These keys are fixed by the descriptor
+      # rather than discovered per-model, so every alias is unambiguously valid.
+      def non_property_mapping_aliases(mappings)
+        descriptor = CsvTemplate::ColumnDescriptor.new
+        non_property_keys = descriptor.core_columns +
+                            CsvTemplate::ColumnDescriptor::COLUMN_DESCRIPTIONS[:files].flat_map(&:keys) +
+                            CsvTemplate::ColumnDescriptor::COLUMN_DESCRIPTIONS[:relationships].flat_map(&:keys)
+        non_property_keys.flat_map do |key|
+          entry = mappings[key]
+          entry.is_a?(Hash) ? Array(entry["from"]) : []
+        end
       end
 
       def find_missing_required_headers(headers, field_metadata, mapping_manager)
@@ -73,11 +93,23 @@ module Bulkrax
         missing.uniq
       end
 
-      def find_unrecognized_validation_headers(headers, valid_headers)
+      # A header is considered recognised if it appears in valid_headers or
+      # if it matches any alias in a known property's `from` array. The real
+      # importer (CsvParser#missing_elements) scans every `from` entry when
+      # matching incoming columns, so the validator has to use the same rule
+      # — otherwise a CSV that imports cleanly gets flagged for columns like
+      # `creator` when the mapping declares `creator: { from: ['author', 'creator'] }`.
+      def find_unrecognized_validation_headers(headers, valid_headers, mapping_manager: nil, field_metadata: nil)
+        known_property_keys = (field_metadata || {}).values.flat_map { |m| Array(m[:properties]) }.to_set
         checker = DidYouMean::SpellChecker.new(dictionary: valid_headers)
-        headers
-          .reject { |h| h.blank? || valid_headers.include?(h) || valid_headers.include?(h.sub(/_\d+\z/, '')) }
-          .index_with { |h| checker.correct(h).first }
+        unrecognized = headers.reject do |h|
+          next true if h.blank?
+          base = h.sub(/_\d+\z/, '')
+          next true if valid_headers.include?(h) || valid_headers.include?(base)
+          mapped_key = mapping_manager&.mapped_to_key(base)
+          mapped_key && known_property_keys.include?(mapped_key)
+        end
+        unrecognized.index_with { |h| checker.correct(h).first }
       end
 
       def find_empty_column_positions(headers, raw_csv)
@@ -120,25 +152,12 @@ module Bulkrax
         }
       end
 
-      def apply_rights_statement_validation_override!(result, missing_required)
-        only_rights = missing_required.present? &&
-                      missing_required.all? { |h| h[:field].to_s == 'rights_statement' }
-        return unless only_rights && !result[:isValid]
-        return if result[:headers].blank?
-        return if result[:missingFiles]&.any?
-
-        result[:isValid]     = true
-        result[:hasWarnings] = true
-      end
-
       # Assembles the final result hash returned to the guided import UI.
       def assemble_result(headers:, missing_required:, header_issues:, row_errors:, csv_data:, file_validator:, collections:, works:, file_sets:, notices: []) # rubocop:disable Metrics/ParameterLists
-        row_error_entries   = row_errors.select { |e| e[:severity] == 'error' }
-        row_warning_entries = row_errors.select { |e| e[:severity] == 'warning' }
-        has_errors   = missing_required.any? || headers.blank? || csv_data.empty? ||
-                       file_validator.missing_files.any? || row_error_entries.any?
-        has_warnings = header_issues[:unrecognized].any? || header_issues[:empty_columns].any? ||
-                       file_validator.possible_missing_files? || row_warning_entries.any? || notices.any?
+        is_valid, has_warnings = determine_validity(
+          headers: headers, missing_required: missing_required, header_issues: header_issues,
+          row_errors: row_errors, csv_data: csv_data, file_validator: file_validator, notices: notices
+        )
 
         {
           headers: headers,
@@ -147,7 +166,7 @@ module Bulkrax
           unrecognized: header_issues[:unrecognized],
           emptyColumns: header_issues[:empty_columns],
           rowCount: csv_data.length,
-          isValid: !has_errors,
+          isValid: is_valid,
           hasWarnings: has_warnings,
           rowErrors: row_errors,
           collections: collections,
@@ -159,6 +178,27 @@ module Bulkrax
           foundFiles: file_validator.found_files_count,
           zipIncluded: file_validator.zip_included?
         }
+      end
+
+      # Returns [is_valid, has_warnings] for the assembled result.
+      # rights_statement can be supplied on Step 2, so a CSV missing ONLY the
+      # rights_statement column is valid-with-warnings rather than a blocker;
+      # the display formatter styles that case as a warning accordion.
+      def determine_validity(headers:, missing_required:, header_issues:, row_errors:, csv_data:, file_validator:, notices:) # rubocop:disable Metrics/ParameterLists
+        row_error_entries   = row_errors.select { |e| e[:severity] == 'error' }
+        row_warning_entries = row_errors.select { |e| e[:severity] == 'warning' }
+
+        only_rights_missing = missing_required.present? &&
+                              missing_required.all? { |h| h[:field].to_s == 'rights_statement' }
+        blocking_missing_required = missing_required.any? && !only_rights_missing
+
+        has_errors   = blocking_missing_required || headers.blank? || csv_data.empty? ||
+                       file_validator.missing_files.any? || row_error_entries.any?
+        has_warnings = header_issues[:unrecognized].any? || header_issues[:empty_columns].any? ||
+                       file_validator.possible_missing_files? || row_warning_entries.any? ||
+                       notices.any? || only_rights_missing
+
+        [!has_errors, has_warnings]
       end
 
       # Builds the find_record lambda used by row validators and hierarchy extraction.
@@ -205,19 +245,11 @@ module Bulkrax
       end
 
       def resolve_parent_split_pattern(mappings)
-        split_val = mappings.dig('parents', 'split') || mappings.dig(:parents, :split)
-        return nil if split_val.blank?
-        return Bulkrax::DEFAULT_MULTI_VALUE_ELEMENT_SPLIT_ON if split_val == true
-
-        split_val
+        Bulkrax::SplitPatternCoercion.coerce(mappings.dig('parents', 'split') || mappings.dig(:parents, :split))
       end
 
       def resolve_children_split_pattern(mappings)
-        split_val = mappings.dig('children', 'split') || mappings.dig(:children, :split)
-        return nil if split_val.blank?
-        return Bulkrax::DEFAULT_MULTI_VALUE_ELEMENT_SPLIT_ON if split_val == true
-
-        split_val
+        Bulkrax::SplitPatternCoercion.coerce(mappings.dig('children', 'split') || mappings.dig(:children, :split))
       end
 
       # Builds a graph of { source_identifier => [parent_ids] } from all CSV records.
@@ -264,8 +296,9 @@ module Bulkrax
       end
 
       def split_or_single(value, split_pattern)
-        if split_pattern
-          value.to_s.split(split_pattern).map(&:strip).reject(&:blank?)
+        coerced = Bulkrax::SplitPatternCoercion.coerce(split_pattern)
+        if coerced
+          value.to_s.split(coerced).map(&:strip).reject(&:blank?)
         elsif value.present?
           [value.to_s.strip]
         else

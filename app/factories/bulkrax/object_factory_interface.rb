@@ -468,7 +468,24 @@ module Bulkrax
     # Regardless of what the Parser gives us, these are the properties we are
     # prepared to accept.
     def permitted_attributes
-      klass.properties.keys.map(&:to_sym) + base_permitted_attributes
+      bare = klass.properties.keys.map(&:to_sym) + base_permitted_attributes
+      bare + nested_attributes_keys(bare)
+    end
+
+    # Permits `*_attributes` virtual keys when the corresponding bare property
+    # is itself permitted. Field mappings declaring `nested_attributes: true`
+    # (see Bulkrax::HasMatchers#set_parsed_object_data) emit data under keys
+    # like `redirects_attributes`; without this, the slice in
+    # #transform_attributes would drop them and downstream form populators
+    # would receive nothing.
+    def nested_attributes_keys(bare_permitted)
+      bare_set = bare_permitted.map(&:to_sym).to_set
+      attributes.keys.filter_map do |key|
+        key_str = key.to_s
+        next unless key_str.end_with?('_attributes')
+        bare_name = key_str.sub(/_attributes\z/, '').to_sym
+        key.to_sym if bare_set.include?(bare_name)
+      end.uniq
     end
 
     # Return a copy of the given attributes, such that all values that are empty

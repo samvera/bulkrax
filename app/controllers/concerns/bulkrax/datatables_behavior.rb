@@ -83,7 +83,7 @@ module Bulkrax
       @exporter_table_search
     end
 
-    def format_importers(importers)
+    def format_importers(importers, filtered_count = Bulkrax::Importer.count)
       result = importers.map do |i|
         {
           name: view_context.link_to(i.name, view_context.importer_path(i)),
@@ -107,7 +107,7 @@ module Bulkrax
       }
     end
 
-    def format_exporters(exporters)
+    def format_exporters(exporters, filtered_count = Bulkrax::Exporter.accessible_by(current_ability).count)
       result = exporters.map do |e|
         {
           name: view_context.link_to(e.name, view_context.exporter_path(e)),
@@ -120,7 +120,7 @@ module Bulkrax
       {
         data: result,
         recordsTotal: Bulkrax::Exporter.accessible_by(current_ability).count,
-        recordsFiltered: Bulkrax::Exporter.accessible_by(current_ability).count
+        recordsFiltered: filtered_count
       }
     end
 

@@ -107,21 +107,10 @@ module Bulkrax
       end
     end
 
-    describe '#importer_unzip_path' do
-      context 'when parser_fields import_file_path is a string path to an existing zip file' do
-        it 'returns the directory containing the zip file' do
-          zip_tmp = Tempfile.new(['import', '.zip'])
-          zip_path = zip_tmp.path
-          Zip::File.open(zip_path, create: true) { |z| z.get_output_stream('dummy') { |f| f.write('x') } }
-          zip_tmp.close
-
-          importer = FactoryBot.build(:bulkrax_importer_csv, parser_fields: { 'import_file_path' => zip_path })
-          expect(importer.importer_unzip_path).to eq(File.dirname(zip_path))
-        ensure
-          zip_tmp&.unlink
-        end
-      end
-    end
+    # NOTE: the full contract for `#importer_unzip_path` lives in
+    # spec/parsers/bulkrax/csv_parser/unzip_spec.rb alongside the CsvParser
+    # extraction specs, where it can be exercised against real filesystem
+    # behavior.
 
     describe '#original_files' do
       let(:csv_file) { Tempfile.new(['metadata', '.csv']) }

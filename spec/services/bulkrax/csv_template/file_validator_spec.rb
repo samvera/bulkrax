@@ -317,4 +317,47 @@ RSpec.describe Bulkrax::CsvTemplate::FileValidator do
       end
     end
   end
+
+  # FileValidator splits via Bulkrax::CsvParser.file_split_pattern, so any
+  # `split:` configured on the `file` mapping is honoured — matching
+  # #file_paths and CsvEntry#add_file.
+  describe 'split behaviour for the file column' do
+    context 'with no `file` mapping configured' do
+      let(:csv_data) { [{ file: 'sun.jpg;moon.jpg', source_identifier: 'work1' }] }
+
+      it 'falls back to Bulkrax.multi_value_element_split_on' do
+        validator = described_class.new(csv_data, nil)
+        expect(validator.count_references).to eq(1)
+        expect(validator.possible_missing_files?).to be true
+      end
+    end
+
+    # Use a delimiter (`,`) that the default pattern /\s*[:;|]\s*/ does NOT
+    # match, so this spec genuinely distinguishes honouring-the-config from
+    # falling back to the default.
+    context 'when the `file` mapping configures a non-default split' do
+      let(:csv_data) { [{ file: 'sun.jpg,moon.jpg', source_identifier: 'work1' }] }
+
+      around do |spec|
+        old = Bulkrax.field_mappings['Bulkrax::CsvParser']
+        Bulkrax.field_mappings['Bulkrax::CsvParser'] = { 'file' => { split: ',' } }
+        spec.run
+        Bulkrax.field_mappings['Bulkrax::CsvParser'] = old
+      end
+
+      it 'honours the configured split' do
+        zip = Tempfile.new(['test', '.zip'])
+        Zip::File.open(zip.path, create: true) do |zipfile|
+          zipfile.get_output_stream('sun.jpg') { |f| f.write('a') }
+          zipfile.get_output_stream('moon.jpg') { |f| f.write('b') }
+        end
+        zip.rewind
+        validator = described_class.new(csv_data, zip)
+        expect(validator.found_files_count).to eq(2)
+        expect(validator.missing_files).to eq([])
+        zip.close
+        zip.unlink
+      end
+    end
+  end
 end

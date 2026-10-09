@@ -269,6 +269,23 @@ module Bulkrax
             end
           end
         end
+
+        # BagitParser inherits `#unzip_with_primary_csv` and
+        # `#unzip_attachments_only` from CsvParser, but BagIt archives
+        # don't contain a primary CSV at a shallowest level. BagitParser
+        # overrides both to delegate to the base-class verbatim `#unzip`,
+        # preserving the BagIt layout (bagit.txt + data/ + manifests).
+        describe 'CSV-flavored unzip overrides' do
+          it '#unzip_with_primary_csv delegates to verbatim #unzip' do
+            expect(subject).to receive(:unzip).with('/tmp/bag.zip')
+            subject.unzip_with_primary_csv('/tmp/bag.zip')
+          end
+
+          it '#unzip_attachments_only delegates to verbatim #unzip' do
+            expect(subject).to receive(:unzip).with('/tmp/bag.zip')
+            subject.unzip_attachments_only('/tmp/bag.zip')
+          end
+        end
       end
     end
 

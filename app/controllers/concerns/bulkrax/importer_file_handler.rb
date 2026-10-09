@@ -121,12 +121,7 @@ module Bulkrax
       csv_by_depth = get_directory_depth_for_each_csv(csv_entries)
       csvs_at_level = determine_csvs_at_shallowest_level(csv_by_depth)
 
-      csvs_by_directory = csvs_at_level.group_by { |entry| File.dirname(entry.name) }
-      csvs_by_directory.each do |_dir, csvs|
-        return StepperResponseFormatter.error(message: I18n.t('bulkrax.importer.guided_import.validation.multiple_csv_same_dir')) if csvs.count > 1
-      end
-
-      return StepperResponseFormatter.error(message: I18n.t('bulkrax.importer.guided_import.validation.multiple_csv_same_level')) if csvs_at_level.size > 1
+      return StepperResponseFormatter.error(message: I18n.t('bulkrax.importer.guided_import.validation.multiple_csv')) if csvs_at_level.size > 1
 
       csvs_at_level.first
     end

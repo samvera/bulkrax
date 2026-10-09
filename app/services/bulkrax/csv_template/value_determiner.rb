@@ -12,9 +12,16 @@ module Bulkrax
       def determine_value(column, model_name, field_list)
         key = @service.mapping_manager.mapped_to_key(column)
         required_terms = field_list.dig(model_name, 'required_terms')
+        properties = field_list.dig(model_name, "properties") || []
+        object_name = @service.mapping_manager.get_object_name(key)
 
-        if field_list.dig(model_name, "properties")&.include?(key)
+        if properties.include?(key)
           mark_required_or_optional(key, required_terms)
+        elsif object_name && properties.include?(object_name)
+          # Column belongs to an `object:` mapping (e.g. `redirect_path` → object
+          # `redirects`). Treat the column as required/optional based on the
+          # parent property's required-terms list.
+          mark_required_or_optional(object_name, required_terms)
         elsif special_column?(column, key)
           special_value(column, key, model_name, required_terms)
         end

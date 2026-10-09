@@ -626,6 +626,91 @@ module Bulkrax
         end
       end
 
+      context 'with multiple objects and the nested_attributes: true flag' do
+        # When the field-mapping declares nested_attributes: true, Bulkrax
+        # writes to parsed_metadata['<name>_attributes'] as a numbered-key
+        # hash with '_destroy' markers — the shape Hyrax form populators
+        # built on Reform's nested-attributes machinery consume.
+        let(:importer) do
+          FactoryBot.create(:bulkrax_importer_csv, field_mapping: {
+                              'first_name' => { from: ['multiple_objects_first_name'], object: 'multiple_objects', nested_attributes: true },
+                              'last_name' => { from: ['multiple_objects_last_name'], object: 'multiple_objects', nested_attributes: true }
+                            })
+        end
+
+        before do
+          allow_any_instance_of(ObjectFactory).to receive(:run!)
+          allow(subject).to receive(:raw_metadata).and_return(
+            'source_identifier' => '2',
+            'title' => 'some title',
+            'multiple_objects_first_name_1' => 'Fake',
+            'multiple_objects_last_name_1' => 'Fakerson',
+            'multiple_objects_first_name_2' => 'Judge',
+            'multiple_objects_last_name_2' => 'Hines'
+          )
+        end
+
+        it 'writes a numbered-key hash to <object>_attributes with _destroy markers' do
+          metadata = subject.build_metadata
+          # The bare object key is not populated when the flag is on.
+          expect(metadata).not_to have_key('multiple_objects')
+          # Routed to the _attributes key for Hyrax form populators.
+          expect(metadata['multiple_objects_attributes']).to be_a(Hash)
+          expect(metadata['multiple_objects_attributes'].keys).to contain_exactly('0', '1')
+
+          row0 = metadata['multiple_objects_attributes']['0']
+          expect(row0['first_name']).to eq('Fake')
+          expect(row0['last_name']).to eq('Fakerson')
+          expect(row0['_destroy']).to eq('false')
+
+          row1 = metadata['multiple_objects_attributes']['1']
+          expect(row1['first_name']).to eq('Judge')
+          expect(row1['last_name']).to eq('Hines')
+          expect(row1['_destroy']).to eq('false')
+        end
+      end
+
+      # Compound metadata is a Valkyrie-only feature: the in-row `name:` option
+      # supports compounds whose sub-property keys collide across parents
+      # (e.g. a `title` shared by two compounds). Exercise it against a Valkyrie
+      # resource whose schema declares `type: hash, multiple: true` parents.
+      context 'when a mapping declares name: to set the in-row key (Valkyrie compound)' do
+        # `name:` (alias `row_key:`) decouples the in-row key from the globally
+        # unique mapping key, so two mappings with distinct keys can write the
+        # same in-row key into different compounds.
+        let(:importer) do
+          FactoryBot.create(:bulkrax_importer_csv, field_mapping: {
+                              'compound_one_title' => { from: ['compound_one_title'], object: 'compound_one', nested_attributes: true, name: 'title' },
+                              'compound_two_title' => { from: ['compound_two_title'], object: 'compound_two', nested_attributes: true, name: 'title' }
+                            })
+        end
+
+        around do |example|
+          previous = Bulkrax.object_factory
+          Bulkrax.object_factory = Bulkrax::ValkyrieObjectFactory
+          example.run
+          Bulkrax.object_factory = previous
+        end
+
+        before do
+          allow(subject).to receive(:factory_class).and_return(WorkResource)
+          allow(subject).to receive(:raw_metadata).and_return(
+            'source_identifier' => '2',
+            'title' => 'some title',
+            'compound_one_title_1' => 'Title A',
+            'compound_two_title_1' => 'Title B'
+          )
+        end
+
+        it 'writes each value under the configured in-row key, independently per compound' do
+          metadata = subject.build_metadata
+          expect(metadata['compound_one_attributes']['0']['title']).to eq('Title A')
+          expect(metadata['compound_two_attributes']['0']['title']).to eq('Title B')
+          # The unique mapping key is not used as the in-row key.
+          expect(metadata['compound_one_attributes']['0']).not_to have_key('compound_one_title')
+        end
+      end
+
       context 'with object fields not prefixed and properties with multiple values' do
         let(:importer) do
           FactoryBot.create(:bulkrax_importer_csv, field_mapping: {
@@ -952,6 +1037,44 @@ module Bulkrax
         end
       end
 
+      context 'when the resource returns plain hashes (no stringification)' do
+        # Valkyrie / Postgres JSONB attributes return Ruby hashes directly,
+        # not the legacy stringified-hash literal that ActiveFedora produced.
+        # object_metadata must accept either form.
+        let(:exporter) do
+          FactoryBot.create(:bulkrax_exporter_worktype, field_mapping: {
+                              'id' => { from: ['id'], source_identifier: true },
+                              'first_name' => { from: ['multiple_objects_first_name'], object: 'multiple_objects' },
+                              'last_name' => { from: ['multiple_objects_last_name'], object: 'multiple_objects' }
+                            })
+        end
+
+        let(:work_obj) { Work.new(title: ['test']) }
+
+        before do
+          allow_any_instance_of(ObjectFactory).to receive(:run!)
+          allow(subject).to receive(:hyrax_record).and_return(work_obj)
+          allow(work_obj).to receive(:id).and_return('test123')
+          allow(work_obj).to receive(:member_of_work_ids).and_return([])
+          allow(work_obj).to receive(:in_work_ids).and_return([])
+          allow(work_obj).to receive(:member_work_ids).and_return([])
+          # Simulate the Valkyrie/JSONB shape: the accessor returns plain
+          # hashes directly, not the stringified form ActiveFedora produces.
+          allow(work_obj).to receive(:multiple_objects).and_return([
+                                                                     { 'first_name' => 'Fake', 'last_name' => 'Fakerson' },
+                                                                     { 'first_name' => 'Judge', 'last_name' => 'Hines' }
+                                                                   ])
+        end
+
+        it 'produces numbered columns from plain-hash entries without eval' do
+          metadata = subject.build_export_metadata
+          expect(metadata['multiple_objects_first_name_1']).to eq('Fake')
+          expect(metadata['multiple_objects_last_name_1']).to eq('Fakerson')
+          expect(metadata['multiple_objects_first_name_2']).to eq('Judge')
+          expect(metadata['multiple_objects_last_name_2']).to eq('Hines')
+        end
+      end
+
       context 'with source_identifier field with returns a relationship' do
         let(:exporter) do
           FactoryBot.create(:bulkrax_exporter_worktype, field_mapping: {
@@ -984,6 +1107,75 @@ module Bulkrax
         it 'succeeds' do
           metadata = subject.build_export_metadata
           expect(metadata['multiple_objects']).to eq('test_work_source_id')
+        end
+      end
+    end
+
+    describe 'round-tripping' do
+      context 'a nested_attributes mapping (import -> resource -> export)' do
+        # Confirms a single mapping declaration drives both directions:
+        # imported numbered columns become _attributes-shaped data the form
+        # consumes, and the persisted plain-hash array exports back to the
+        # same numbered columns.
+        let(:import_field_mapping) do
+          {
+            'first_name' => { from: ['multiple_objects_first_name'], object: 'multiple_objects', nested_attributes: true },
+            'last_name' => { from: ['multiple_objects_last_name'], object: 'multiple_objects', nested_attributes: true }
+          }
+        end
+
+        let(:export_field_mapping) do
+          import_field_mapping.merge('id' => { from: ['id'], source_identifier: true })
+        end
+
+        let(:csv_columns) do
+          {
+            'source_identifier' => '2',
+            'title' => 'some title',
+            'multiple_objects_first_name_1' => 'Fake',
+            'multiple_objects_last_name_1' => 'Fakerson',
+            'multiple_objects_first_name_2' => 'Judge',
+            'multiple_objects_last_name_2' => 'Hines'
+          }
+        end
+
+        let(:importer) { FactoryBot.create(:bulkrax_importer_csv, field_mapping: import_field_mapping) }
+        let(:exporter) { FactoryBot.create(:bulkrax_exporter_worktype, field_mapping: export_field_mapping) }
+        let(:import_entry) { described_class.new(importerexporter: importer) }
+        let(:export_entry) { described_class.new(importerexporter: exporter) }
+        let(:work_obj) { Work.new(title: ['test']) }
+
+        before do
+          allow_any_instance_of(ObjectFactory).to receive(:run!)
+          allow(import_entry).to receive(:raw_metadata).and_return(csv_columns)
+
+          allow(export_entry).to receive(:hyrax_record).and_return(work_obj)
+          allow(work_obj).to receive(:id).and_return('test123')
+          allow(work_obj).to receive(:member_of_work_ids).and_return([])
+          allow(work_obj).to receive(:in_work_ids).and_return([])
+          allow(work_obj).to receive(:member_work_ids).and_return([])
+        end
+
+        it 'produces the original numbered columns on export' do
+          # Import: the flag routes data to multiple_objects_attributes in
+          # numbered-key form. A form populator would consume this and
+          # ultimately assign the plain-hash array to the resource.
+          import_metadata = import_entry.build_metadata
+          expect(import_metadata['multiple_objects_attributes']['0']).to include('first_name' => 'Fake', 'last_name' => 'Fakerson')
+          expect(import_metadata['multiple_objects_attributes']['1']).to include('first_name' => 'Judge', 'last_name' => 'Hines')
+
+          # Simulate the form populator's effect: the resource's accessor
+          # returns the plain-hash array (Valkyrie/JSONB shape).
+          persisted = import_metadata['multiple_objects_attributes'].values.map { |row| row.except('_destroy') }
+          allow(work_obj).to receive(:multiple_objects).and_return(persisted)
+
+          # Export: the same mapping reads from the bare accessor and
+          # produces the original numbered-column shape.
+          export_metadata = export_entry.build_export_metadata
+          expect(export_metadata['multiple_objects_first_name_1']).to eq('Fake')
+          expect(export_metadata['multiple_objects_last_name_1']).to eq('Fakerson')
+          expect(export_metadata['multiple_objects_first_name_2']).to eq('Judge')
+          expect(export_metadata['multiple_objects_last_name_2']).to eq('Hines')
         end
       end
     end
@@ -1373,6 +1565,61 @@ module Bulkrax
         expect(entry.parsed_metadata['visibility_after_lease']).to eq('open')
       end
     end
+    # Ingestion writes to parsed_metadata['file'] via Bulkrax::CsvParser.
+    # file_split_pattern, so any `split:` configured on the `file` mapping is
+    # honoured — matching #file_paths and FileValidator#referenced_files.
+    describe '#add_file' do
+      let(:importer) { FactoryBot.create(:bulkrax_importer_csv) }
+      subject(:entry) do
+        described_class.new(importerexporter: importer, raw_metadata: raw_metadata, identifier: 'id-1')
+      end
+      let(:parser) { importer.parser }
+
+      before do
+        allow(parser).to receive(:path_to_files).and_return('spec/fixtures/csv/files')
+        allow(entry).to receive(:path_to_file) { |name| "spec/fixtures/csv/files/#{name}" }
+        entry.parsed_metadata = {}
+      end
+
+      context 'with a pipe-separated `file` cell and no configured split' do
+        let(:raw_metadata) { { 'source_identifier' => 'id-1', 'file' => 'sun.jpg|moon.jpg' } }
+
+        it 'falls back to Bulkrax.multi_value_element_split_on and writes an array' do
+          entry.send(:add_file)
+          expect(entry.parsed_metadata['file']).to eq(%w[spec/fixtures/csv/files/sun.jpg spec/fixtures/csv/files/moon.jpg])
+        end
+      end
+
+      # Use a delimiter (`,`) that the default pattern /\s*[:;|]\s*/ does NOT
+      # match, so this spec genuinely distinguishes honouring-the-config from
+      # falling back to the default.
+      context 'when the `file` mapping configures a non-default split' do
+        let(:raw_metadata) { { 'source_identifier' => 'id-1', 'file' => 'sun.jpg,moon.jpg' } }
+
+        around do |spec|
+          old = Bulkrax.field_mappings['Bulkrax::CsvParser']
+          Bulkrax.field_mappings['Bulkrax::CsvParser'] = { 'file' => { split: ',' } }
+          spec.run
+          Bulkrax.field_mappings['Bulkrax::CsvParser'] = old
+        end
+
+        it 'honours the configured split' do
+          entry.send(:add_file)
+          expect(entry.parsed_metadata['file'])
+            .to eq(%w[spec/fixtures/csv/files/sun.jpg spec/fixtures/csv/files/moon.jpg])
+        end
+      end
+
+      context 'when the `file` cell is already an Array' do
+        let(:raw_metadata) { { 'source_identifier' => 'id-1', 'file' => ['sun.jpg', 'moon.jpg'] } }
+
+        it 'passes the array through without splitting' do
+          entry.send(:add_file)
+          expect(entry.parsed_metadata['file']).to eq(%w[spec/fixtures/csv/files/sun.jpg spec/fixtures/csv/files/moon.jpg])
+        end
+      end
+    end
+
     describe '#path_to_file' do
       let(:importer) { FactoryBot.create(:bulkrax_importer_csv) }
       subject(:entry) { described_class.new(importerexporter: importer) }

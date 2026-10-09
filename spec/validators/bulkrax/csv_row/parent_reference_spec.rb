@@ -52,7 +52,8 @@ RSpec.describe Bulkrax::CsvRow::ParentReference do
       split_context = make_context
       split_record = { source_identifier: 'work2', model: 'GenericWork',
                        parent: 'col1|missing_parent', raw_row: {} }
-      described_class.call(split_record, 2, split_context.merge(parent_split_pattern: '|'))
+      # Pattern is a regex source; '|' would be empty-alternation, so escape it.
+      described_class.call(split_record, 2, split_context.merge(parent_split_pattern: '\\|'))
 
       suffix_context = make_context
       suffix_record = { source_identifier: 'work2', model: 'GenericWork',
@@ -112,6 +113,28 @@ RSpec.describe Bulkrax::CsvRow::ParentReference do
       context = make_context
       record = { source_identifier: 'work2', model: 'GenericWork',
                  parent: 'col1', raw_row: { 'parents_2' => 'missing_parent' } }
+      described_class.call(record, 2, context)
+      expect(context[:errors].length).to eq(1)
+      expect(context[:errors].first[:value]).to eq('missing_parent')
+    end
+  end
+
+  context 'when parent_split_pattern is a Regexp serialised as a String' do
+    let(:serialised_split) { '(?-mix:\\s*[;|]\\s*)' }
+    let(:all_ids)          { Set.new(%w[coll1 coll2]) }
+
+    it 'splits on | and validates each id individually' do
+      context = make_context(all_ids: all_ids).merge(parent_split_pattern: serialised_split)
+      record = { source_identifier: 'work2', model: 'GenericWork',
+                 parent: 'coll1 | coll2', raw_row: {} }
+      described_class.call(record, 2, context)
+      expect(context[:errors]).to be_empty
+    end
+
+    it 'reports only the missing id when the String regex splits correctly' do
+      context = make_context(all_ids: all_ids).merge(parent_split_pattern: serialised_split)
+      record = { source_identifier: 'work2', model: 'GenericWork',
+                 parent: 'coll1 | missing_parent', raw_row: {} }
       described_class.call(record, 2, context)
       expect(context[:errors].length).to eq(1)
       expect(context[:errors].first[:value]).to eq('missing_parent')

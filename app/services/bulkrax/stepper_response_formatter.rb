@@ -338,7 +338,8 @@ module Bulkrax
         message = [message, error[:suggestion]].compact.join(' ') if error[:suggestion].present?
         {
           field: I18n.t('bulkrax.importer.guided_import.stepper_response_formatter.row_errors_issue.row_label', row: error[:row], column: error[:column]),
-          message: message
+          message: message,
+          category: error[:category]
         }
       end
     end
