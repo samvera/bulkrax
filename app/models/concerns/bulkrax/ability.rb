@@ -105,16 +105,16 @@ module Bulkrax
         # ActiveRecord combinations used by the Hyrax 4 appraisal can fail when
         # accessible_by has to merge unconditional and hash-conditioned rules.
         can :manage, Bulkrax::Importer
+        can [:read, :update, :destroy], Bulkrax::Entry do |entry|
+          entry.importerexporter.is_a?(Bulkrax::Importer)
+        end
       elsif can_import_works?
         can :create, Bulkrax::Importer
         can [:read, :update, :destroy], Bulkrax::Importer, user_id: current_user.id
-      end
-
-      return unless can_import_works?
-
-      can [:read, :update, :destroy], Bulkrax::Entry do |entry|
-        entry.importerexporter.is_a?(Bulkrax::Importer) &&
-          entry.importerexporter.user_id == current_user.id
+        can [:read, :update, :destroy], Bulkrax::Entry do |entry|
+          entry.importerexporter.is_a?(Bulkrax::Importer) &&
+            entry.importerexporter.user_id == current_user.id
+        end
       end
     end
 
@@ -123,16 +123,16 @@ module Bulkrax
         # Prefer a single unconditional rule for admins.  See importer rule
         # above for the Hyrax 4 accessible_by compatibility note.
         can :manage, Bulkrax::Exporter
+        can [:read, :update, :destroy], Bulkrax::Entry do |entry|
+          entry.importerexporter.is_a?(Bulkrax::Exporter)
+        end
       elsif can_export_works?
         can :create, Bulkrax::Exporter
         can [:read, :update, :destroy], Bulkrax::Exporter, user_id: current_user.id
-      end
-
-      return unless can_export_works?
-
-      can [:read, :update, :destroy], Bulkrax::Entry do |entry|
-        entry.importerexporter.is_a?(Bulkrax::Exporter) &&
-          entry.importerexporter.user_id == current_user.id
+        can [:read, :update, :destroy], Bulkrax::Entry do |entry|
+          entry.importerexporter.is_a?(Bulkrax::Exporter) &&
+            entry.importerexporter.user_id == current_user.id
+        end
       end
     end
   end

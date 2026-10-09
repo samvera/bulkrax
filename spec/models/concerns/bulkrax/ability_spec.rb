@@ -202,6 +202,20 @@ RSpec.describe Bulkrax::Ability do
       it { is_expected.not_to be_able_to(:destroy, other_entry) }
     end
 
+    describe 'entry rules for an importer admin' do
+      let(:other_importer) { FactoryBot.create(:bulkrax_importer, user: other_user) }
+      let(:other_exporter) { FactoryBot.create(:bulkrax_exporter, user: other_user) }
+      let(:importer_entry) { FactoryBot.build(:bulkrax_csv_entry, importerexporter: other_importer) }
+      let(:exporter_entry) { FactoryBot.build(:bulkrax_csv_entry, importerexporter: other_exporter) }
+
+      subject(:ability) { ability_class.new(user, admin_importers: true) }
+
+      it { is_expected.to be_able_to(:read, importer_entry) }
+      it { is_expected.to be_able_to(:update, importer_entry) }
+      it { is_expected.to be_able_to(:destroy, importer_entry) }
+      it { is_expected.not_to be_able_to(:read, exporter_entry) }
+    end
+
     describe 'entry rules for an exporter owner' do
       let(:owned_exporter) { FactoryBot.create(:bulkrax_exporter, user: user) }
       let(:other_exporter) { FactoryBot.create(:bulkrax_exporter, user: other_user) }
@@ -214,6 +228,20 @@ RSpec.describe Bulkrax::Ability do
       it { is_expected.to be_able_to(:update,  owned_entry) }
       it { is_expected.not_to be_able_to(:read,    other_entry) }
       it { is_expected.not_to be_able_to(:update,  other_entry) }
+    end
+
+    describe 'entry rules for an exporter admin' do
+      let(:other_importer) { FactoryBot.create(:bulkrax_importer, user: other_user) }
+      let(:other_exporter) { FactoryBot.create(:bulkrax_exporter, user: other_user) }
+      let(:importer_entry) { FactoryBot.build(:bulkrax_csv_entry, importerexporter: other_importer) }
+      let(:exporter_entry) { FactoryBot.build(:bulkrax_csv_entry, importerexporter: other_exporter) }
+
+      subject(:ability) { ability_class.new(user, admin_exporters: true) }
+
+      it { is_expected.to be_able_to(:read, exporter_entry) }
+      it { is_expected.to be_able_to(:update, exporter_entry) }
+      it { is_expected.to be_able_to(:destroy, exporter_entry) }
+      it { is_expected.not_to be_able_to(:read, importer_entry) }
     end
 
     # ------------------------------------------------------------------
