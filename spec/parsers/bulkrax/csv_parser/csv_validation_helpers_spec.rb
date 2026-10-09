@@ -366,6 +366,41 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
     end
   end
 
+  describe '#models_to_validate' do
+    let(:headers) { %w[source_identifier model title] }
+
+    around do |example|
+      original = Bulkrax.default_work_type
+      Bulkrax.default_work_type = 'StillImage'
+      example.run
+      Bulkrax.default_work_type = original
+    end
+
+    it 'is the models the rows name when every row names one' do
+      csv_data = [{ model: 'DigitalCollection' }, { model: 'Book' }]
+
+      expect(host.models_to_validate(csv_data, headers)).to contain_exactly('DigitalCollection', 'Book')
+    end
+
+    it 'adds the default work type when a row leaves the model blank' do
+      csv_data = [{ model: 'DigitalCollection' }, { model: '' }]
+
+      expect(host.models_to_validate(csv_data, headers)).to contain_exactly('DigitalCollection', 'StillImage')
+    end
+
+    it 'adds the default work type when the sheet has no model column' do
+      csv_data = [{ model: nil }]
+
+      expect(host.models_to_validate(csv_data, %w[source_identifier title])).to eq(['StillImage'])
+    end
+
+    it 'is empty when there is no default work type and no row names a model' do
+      Bulkrax.default_work_type = nil
+
+      expect(host.models_to_validate([{ model: '' }], headers)).to be_empty
+    end
+  end
+
   describe '#resolve_children_split_pattern' do
     it 'returns nil when no split is configured for children' do
       mappings = {}
