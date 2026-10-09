@@ -91,9 +91,9 @@ module Bulkrax
         allow(controller).to receive(:table_per_page).and_return(1)
         allow(controller).to receive(:table_order).and_return('name ASC')
 
-        FactoryBot.create(:bulkrax_importer_csv, name: 'Bulkrax Import')
-        FactoryBot.create(:bulkrax_importer_csv, name: 'Bulkrax Two Import')
-        FactoryBot.create(:bulkrax_importer_csv, name: 'Random Import')
+        FactoryBot.create(:bulkrax_importer_csv, name: 'Bulkrax Import', user: current_user)
+        FactoryBot.create(:bulkrax_importer_csv, name: 'Bulkrax Two Import', user: current_user)
+        FactoryBot.create(:bulkrax_importer_csv, name: 'Random Import', user: current_user)
       end
 
       context 'when there is a search filter' do

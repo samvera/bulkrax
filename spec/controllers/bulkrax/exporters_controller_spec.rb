@@ -86,9 +86,9 @@ module Bulkrax
         allow(controller).to receive(:table_per_page).and_return(1)
         allow(controller).to receive(:table_order).and_return('name ASC')
 
-        FactoryBot.create(:bulkrax_exporter_worktype, name: 'Bulkrax Export')
-        FactoryBot.create(:bulkrax_exporter_worktype, name: 'Bulkrax Two Export')
-        FactoryBot.create(:bulkrax_exporter_worktype, name: 'Random Export')
+        FactoryBot.create(:bulkrax_exporter_worktype, name: 'Bulkrax Export', user: current_user)
+        FactoryBot.create(:bulkrax_exporter_worktype, name: 'Bulkrax Two Export', user: current_user)
+        FactoryBot.create(:bulkrax_exporter_worktype, name: 'Random Export', user: current_user)
       end
 
       context 'when there is a search filter' do

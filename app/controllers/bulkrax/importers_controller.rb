@@ -55,12 +55,11 @@ module Bulkrax
                    else
                      Importer.accessible_by(current_ability)
                    end
-      @importers = @importers.order(order).page(table_page).per(table_per_page)
       @importers = @importers.where(importer_table_search) if importer_table_search.present?
       # Count the filtered relation before applying pagination so the UI receives
       # the total number of matching importers, not just the total number of importers.
       filtered_count = @importers.count
-      @importers = @importers.reorder(order).page(table_page).per(table_per_page)
+      @importers = @importers.order(order).page(table_page).per(table_per_page)
       respond_to do |format|
         format.json { render json: format_importers(@importers, filtered_count) }
       end
