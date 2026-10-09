@@ -19,8 +19,8 @@ gem 'concurrent-ruby', '1.3.4'
 gem 'factory_bot_rails'
 
 # Bulkrax supports Hyrax 2.3 through 5.2 only.
-gem 'hyrax', ENV['HYRAX_VERSION'] || '~> 5.0'
-gem 'json', '< 3.0' # remove once Bulkrax allows rails >= 8.0 - ActiveSupport::JSON passes quirks_mode kwarg that json 3.0 dropped
+gem 'hyrax', ENV['HYRAX_VERSION'] || '~> 5.0' unless ENV['BULKRAX_WITH_HYRAX'] == 'false'
+gem 'json', '< 3.0' # Legacy Rails passes quirks_mode, which JSON 3.0 dropped.
 
 gem 'oai'
 gem 'pg'
@@ -37,7 +37,7 @@ group :development, :test do
   gem 'pry-byebug'
   gem 'solargraph'
   gem 'solr_wrapper', '>= 0.3'
-  gem 'sqlite3', '~> 1.4'
+  gem 'sqlite3', ENV['BULKRAX_WITH_HYRAX'] == 'false' ? '~> 2.1' : '~> 1.4'
 end
 
 group :test do

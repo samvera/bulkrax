@@ -40,7 +40,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: vendor/bundle
-          key: ${{ matrix.ruby }} ${{ matrix.rails }} ${{ matrix.hyrax }}
+          key: integration-${{ matrix.ruby }}-${{ matrix.rails }}-${{ matrix.hyrax }}-${{ hashFiles('Gemfile', 'bulkrax.gemspec') }}
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
@@ -69,6 +69,22 @@ jobs:
           name: coverage-report
           path: coverage/**
           include-hidden-files: true
+
+  rails_compat:
+    name: Rails 8.1 engine smoke (without Hyrax)
+    runs-on: ubuntu-latest
+    env:
+      BULKRAX_WITH_HYRAX: 'false'
+      RAILS_GEM_VERSION: '~> 8.1.0'
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+          bundler-cache: true
+          cache-version: rails81-no-hyrax
+      - name: Run engine boot, migration, and serialization smoke specs
+        run: bundle exec rspec spec/rails_compat --format progress
 
   coverage:
     runs-on: ubuntu-latest
