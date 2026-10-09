@@ -11,7 +11,7 @@ module Bulkrax
     include Bulkrax::ImporterFileHandler
 
     protect_from_forgery unless: -> { api_request? }
-    before_action :token_authenticate!, if: -> { api_request? }, only: [:create, :update, :delete]
+before_action :token_authenticate!, if: -> { api_request? }
     before_action :authenticate_user!, unless: -> { api_request? }
     # load_and_authorize_resource covers standard CRUD member actions for
     # non-API requests.  Actions that use :importer_id rather than :id, or
