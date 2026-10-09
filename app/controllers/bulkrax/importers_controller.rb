@@ -24,7 +24,7 @@ module Bulkrax
                                          :export_errors, :original_file],
                                 unless: -> { api_request? }
     # For API requests, fall back to simple find so existing consumers are
-    # unaffected while the token-to-user wiring is not yet implemented.
+    # unaffected while #1237 establishes token-to-user wiring.
     before_action :set_importer_for_api,
                   only: [:show, :entry_table, :edit, :update, :destroy, :original_file],
                   if: -> { api_request? }
@@ -37,8 +37,8 @@ module Bulkrax
     def index
       # NOTE: We're paginating this in the browser.
       if api_request?
-        # TODO: Scope API index by token owner once token-to-user wiring is in
-        # place.  Tracked in [ISSUE].  Until then, API clients see all importers
+        # TODO(#1237): Scope API index by token owner once token-to-user wiring
+        # is in place. Until then, API clients see all importers
         # to preserve backward-compatibility with existing API consumers.
         @importers = Importer.order(created_at: :desc).all
         json_response('index')
@@ -49,7 +49,7 @@ module Bulkrax
 
     def importer_table
       order = table_order.presence || Arel.sql('last_imported_at DESC NULLS LAST')
-      # TODO: API requests bypass ownership scoping here too; see index TODO.
+      # TODO(#1237): API requests bypass ownership scoping here too.
       @importers = if api_request?
                      Importer.all
                    else
@@ -277,8 +277,8 @@ module Bulkrax
     # Load @importer for API requests (no CanCan authorization — the API path
     # does not yet resolve a token to a current_user, so ownership rules cannot
     # be evaluated).
-    # TODO: Remove once token-to-user wiring is complete and CanCan rules apply
-    # uniformly to API requests.  Tracked in [ISSUE].
+    # TODO(#1237): Remove once token-to-user wiring is complete and CanCan
+    # rules apply uniformly to API requests.
     def set_importer_for_api
       @importer = Importer.find(params[:id] || params[:importer_id])
     end
