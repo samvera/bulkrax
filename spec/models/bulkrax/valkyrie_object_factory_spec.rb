@@ -209,12 +209,26 @@ module Bulkrax
                 .new('wk-1', ['fs-1', other_member_id, 'fs-2'], ['fs-1'], 'fs-1', 'fs-1')
         end
         let(:destroy_transaction) { double('file_set.destroy') }
+        let(:processing_log) { [] }
 
         before do
-          allow(custom_queries).to receive(:find_child_file_sets).with(resource: object).and_return(file_sets.lazy.map { |fs| fs })
+          loaded_file_sets = file_sets.lazy.map do |fs|
+            processing_log << [:load, fs.id]
+            fs
+          end
+          allow(custom_queries).to receive(:find_child_file_sets).with(resource: object).and_return(loaded_file_sets)
           allow(valkyrie_object_factory).to receive(:transactions).and_return('file_set.destroy' => destroy_transaction)
           allow(destroy_transaction).to receive(:with_step_args).and_return(destroy_transaction)
-          allow(destroy_transaction).to receive(:call) { |fs| double('result', value!: fs) }
+          allow(destroy_transaction).to receive(:call) do |fs|
+            processing_log << [:destroy, fs.id]
+            double('result', value!: fs)
+          end
+        end
+
+        it 'loads each file set once and destroys it before loading the next' do
+          valkyrie_object_factory.send(:destroy_existing_files, object: object)
+
+          expect(processing_log).to eq([[:load, 'fs-1'], [:destroy, 'fs-1'], [:load, 'fs-2'], [:destroy, 'fs-2']])
         end
 
         it 'destroys each file set and removes them from the work' do
