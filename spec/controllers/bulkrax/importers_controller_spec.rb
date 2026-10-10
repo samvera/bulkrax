@@ -169,6 +169,14 @@ module Bulkrax
           post :create, params: { importer: valid_attributes }, session: valid_session
           expect(response).to redirect_to(importers_path)
         end
+
+        it 'assigns the importer to the current user instead of the submitted user' do
+          submitted_user = FactoryBot.create(:user)
+
+          post :create, params: { importer: valid_attributes.merge(user_id: submitted_user.id) }, session: valid_session
+
+          expect(assigns(:importer).user_id).to eq(current_user.id)
+        end
       end
 
       context 'with invalid params' do
@@ -227,6 +235,15 @@ module Bulkrax
           importer = Importer.create! valid_attributes
           put :update, params: { id: importer.to_param, importer: valid_attributes }, session: valid_session
           expect(response).to redirect_to(importers_path)
+        end
+
+        it 'does not change the importer owner from submitted params' do
+          importer = Importer.create! valid_attributes
+          submitted_user = FactoryBot.create(:user)
+
+          put :update, params: { id: importer.to_param, importer: new_attributes.merge(user_id: submitted_user.id) }, session: valid_session
+
+          expect(importer.reload.user_id).to eq(current_user.id)
         end
       end
 

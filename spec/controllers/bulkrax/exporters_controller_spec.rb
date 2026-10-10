@@ -164,6 +164,14 @@ module Bulkrax
           post :create, params: { exporter: valid_attributes }, session: valid_session
           expect(response).to redirect_to(exporters_path)
         end
+
+        it 'assigns the exporter to the current user instead of the submitted user' do
+          submitted_user = FactoryBot.create(:user)
+
+          post :create, params: { exporter: valid_attributes.merge(user_id: submitted_user.id) }, session: valid_session
+
+          expect(assigns(:exporter).user_id).to eq(current_user.id)
+        end
       end
 
       context 'with invalid params' do
@@ -194,6 +202,15 @@ module Bulkrax
           exporter = Exporter.create! valid_attributes
           put :update, params: { id: exporter.to_param, exporter: valid_attributes }, session: valid_session
           expect(response).to redirect_to(exporters_path)
+        end
+
+        it 'does not change the exporter owner from submitted params' do
+          exporter = Exporter.create! valid_attributes
+          submitted_user = FactoryBot.create(:user)
+
+          put :update, params: { id: exporter.to_param, exporter: new_attributes.merge(user_id: submitted_user.id) }, session: valid_session
+
+          expect(exporter.reload.user_id).to eq(current_user.id)
         end
       end
 

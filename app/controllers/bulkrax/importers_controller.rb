@@ -107,6 +107,7 @@ module Bulkrax
         # authenticate_and_authorize! doesn't build for API requests; build it here
         @importer ||= Importer.new(importer_params)
       end
+      @importer.user_id = current_user.id
       uploads = uploaded_files_scope
       file = file_param
       cloud_files = cloud_params
@@ -268,7 +269,6 @@ module Bulkrax
       importable_params.require(:importer).permit(
         :name,
         :admin_set_id,
-        :user_id,
         :frequency,
         :parser_klass,
         :limit,
