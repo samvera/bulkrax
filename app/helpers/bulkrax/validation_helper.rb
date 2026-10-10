@@ -17,7 +17,7 @@ module Bulkrax
     end
 
     def check_admin_set
-      return unless defined?(::Hyrax)
+      return unless Bulkrax.hyrax_loaded?
 
       if params[:importer][:admin_set_id].blank?
         params[:importer][:admin_set_id] = Bulkrax.object_factory.default_admin_set_id

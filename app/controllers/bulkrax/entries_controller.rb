@@ -2,10 +2,10 @@
 
 module Bulkrax
   class EntriesController < ApplicationController
-    include Hyrax::ThemedLayoutController if defined?(::Hyrax)
+    include Hyrax::ThemedLayoutController if Bulkrax.hyrax_loaded?
     before_action :authenticate_user!
     before_action :check_permissions
-    with_themed_layout 'dashboard' if defined?(::Hyrax)
+    with_themed_layout 'dashboard' if Bulkrax.hyrax_loaded?
 
     def show
       if params[:importer_id].present?
@@ -72,7 +72,7 @@ module Bulkrax
       @importer = Importer.find(params[:importer_id])
       @entry = Entry.find(params[:id])
 
-      return unless defined?(::Hyrax)
+      return unless Bulkrax.hyrax_loaded?
       add_breadcrumb t(:'hyrax.controls.home'), main_app.root_path
       add_breadcrumb t(:'hyrax.dashboard.breadcrumbs.admin'), hyrax.dashboard_path
       add_breadcrumb t(:'bulkrax.headings.importers'), bulkrax.importers_path
@@ -85,7 +85,7 @@ module Bulkrax
       @exporter = Exporter.find(params[:exporter_id])
       @entry = Entry.find(params[:id])
 
-      return unless defined?(::Hyrax)
+      return unless Bulkrax.hyrax_loaded?
       add_breadcrumb t(:'hyrax.controls.home'), main_app.root_path
       add_breadcrumb t(:'hyrax.dashboard.breadcrumbs.admin'), hyrax.dashboard_path
       add_breadcrumb t(:'bulkrax.headings.exporters'), bulkrax.exporters_path

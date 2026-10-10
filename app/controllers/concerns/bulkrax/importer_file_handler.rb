@@ -43,7 +43,7 @@ module Bulkrax
     end
 
     def uploaded_files_scope
-      return [] unless defined?(::Hyrax)
+      return [] unless Bulkrax.hyrax_loaded?
 
       base = Hyrax::UploadedFile.where(id: params[:uploaded_files])
       if respond_to?(:current_user) && current_user.present?

@@ -2,19 +2,19 @@
 
 module Bulkrax
   class GuidedImportsController < ::Bulkrax::ApplicationController
-    include Hyrax::ThemedLayoutController if defined?(::Hyrax)
+    include Hyrax::ThemedLayoutController if Bulkrax.hyrax_loaded?
     include Bulkrax::GuidedImportDemoScenarios if Bulkrax.config.guided_import_demo_scenarios_enabled
     include Bulkrax::ImporterFileHandler
     helper Bulkrax::ImportersHelper
 
     before_action :authenticate_user!
     before_action :check_permissions
-    with_themed_layout 'dashboard' if defined?(::Hyrax)
+    with_themed_layout 'dashboard' if Bulkrax.hyrax_loaded?
 
     # trigger form to allow upload
     def new
       @importer = Importer.new
-      return unless defined?(::Hyrax)
+      return unless Bulkrax.hyrax_loaded?
       add_importer_breadcrumbs
       add_breadcrumb I18n.t('bulkrax.importer.guided_import.breadcrumb')
     end

@@ -17,6 +17,7 @@ RSpec.describe 'Bulkrax Rails compatibility' do
     expect(Bulkrax::Engine.routes.url_helpers.importers_path).to eq('/bulkrax/importers')
     expect(Gem.loaded_specs).not_to have_key('hyrax')
     expect(defined?(Hyrax::Engine)).to be_nil
+    expect(Bulkrax.hyrax_loaded?).to be false
     expect(defined?(ActiveFedora)).to be_nil
     expect(defined?(Wings)).to be_nil
   end
