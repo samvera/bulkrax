@@ -29,6 +29,8 @@ module Bulkrax
   RSpec.describe ExportersController, type: :controller do
     routes { Bulkrax::Engine.routes }
 
+    let(:current_user) { FactoryBot.create(:user) }
+
     before do
       module Bulkrax::Auth
         def authenticate_user!
@@ -41,6 +43,8 @@ module Bulkrax
         end
       end
       described_class.prepend Bulkrax::Auth
+      allow(controller).to receive(:authenticate_user!).and_return(true)
+      allow(controller).to receive(:current_user).and_return(current_user)
     end
 
     # This should return the minimal set of attributes required to create a valid
@@ -49,7 +53,7 @@ module Bulkrax
     let(:valid_attributes) do
       {
         name: 'Test Exporter',
-        user_id: FactoryBot.create(:user).id,
+        user_id: current_user.id,
         parser_klass: 'Bulkrax::CsvParser'
       }
     end
@@ -82,9 +86,9 @@ module Bulkrax
         allow(controller).to receive(:table_per_page).and_return(1)
         allow(controller).to receive(:table_order).and_return('name ASC')
 
-        FactoryBot.create(:bulkrax_exporter_worktype, name: 'Bulkrax Export')
-        FactoryBot.create(:bulkrax_exporter_worktype, name: 'Bulkrax Two Export')
-        FactoryBot.create(:bulkrax_exporter_worktype, name: 'Random Export')
+        FactoryBot.create(:bulkrax_exporter_worktype, name: 'Bulkrax Export', user: current_user)
+        FactoryBot.create(:bulkrax_exporter_worktype, name: 'Bulkrax Two Export', user: current_user)
+        FactoryBot.create(:bulkrax_exporter_worktype, name: 'Random Export', user: current_user)
       end
 
       context 'when there is a search filter' do
@@ -160,6 +164,14 @@ module Bulkrax
           post :create, params: { exporter: valid_attributes }, session: valid_session
           expect(response).to redirect_to(exporters_path)
         end
+
+        it 'assigns the exporter to the current user instead of the submitted user' do
+          submitted_user = FactoryBot.create(:user)
+
+          post :create, params: { exporter: valid_attributes.merge(user_id: submitted_user.id) }, session: valid_session
+
+          expect(assigns(:exporter).user_id).to eq(current_user.id)
+        end
       end
 
       context 'with invalid params' do
@@ -191,6 +203,15 @@ module Bulkrax
           put :update, params: { id: exporter.to_param, exporter: valid_attributes }, session: valid_session
           expect(response).to redirect_to(exporters_path)
         end
+
+        it 'does not change the exporter owner from submitted params' do
+          exporter = Exporter.create! valid_attributes
+          submitted_user = FactoryBot.create(:user)
+
+          put :update, params: { id: exporter.to_param, exporter: new_attributes.merge(user_id: submitted_user.id) }, session: valid_session
+
+          expect(exporter.reload.user_id).to eq(current_user.id)
+        end
       end
 
       context 'with invalid params' do
@@ -214,6 +235,103 @@ module Bulkrax
         exporter = Exporter.create! valid_attributes
         delete :destroy, params: { id: exporter.to_param }, session: valid_session
         expect(response).to redirect_to(exporters_url)
+      end
+    end
+
+    describe 'ownership enforcement' do
+      let(:owner)      { FactoryBot.create(:user) }
+      let(:other_user) { FactoryBot.create(:user) }
+      let(:owned_exporter) do
+        Exporter.create!(
+          name: 'Owned Exporter',
+          user_id: owner.id,
+          parser_klass: 'Bulkrax::CsvParser'
+        )
+      end
+
+      # Build a real CanCan ability that includes Bulkrax rules so that
+      # load_and_authorize_resource can evaluate can? against the correct rules.
+      def build_bulkrax_ability(user, admin: false)
+        klass = Class.new do
+          include CanCan::Ability
+          include Bulkrax::Ability
+
+          attr_reader :current_user
+
+          def initialize(user, admin)
+            @current_user = user
+            @admin = admin
+            bulkrax_default_abilities
+          end
+
+          def can_import_works?
+            true
+          end
+
+          def can_export_works?
+            true
+          end
+
+          def can_admin_importers?
+            @admin
+          end
+
+          def can_admin_exporters?
+            @admin
+          end
+        end
+        klass.new(user, admin)
+      end
+
+      context 'when current user is not the owner and lacks admin ability' do
+        before do
+          allow(controller).to receive(:current_user).and_return(other_user)
+          allow(controller).to receive(:current_ability)
+            .and_return(build_bulkrax_ability(other_user))
+          allow(controller).to receive(:authorize!)
+            .and_raise(CanCan::AccessDenied.new('Not authorized'))
+        end
+
+        it 'redirects (CanCan::AccessDenied rescued) for show' do
+          get :show, params: { id: owned_exporter.to_param }, session: {}
+          expect(response).to be_redirect
+        end
+
+        it 'redirects for edit' do
+          get :edit, params: { id: owned_exporter.to_param }, session: {}
+          expect(response).to be_redirect
+        end
+
+        it 'redirects for destroy' do
+          delete :destroy, params: { id: owned_exporter.to_param }, session: {}
+          expect(response).to be_redirect
+        end
+      end
+
+      context 'when current user is the owner' do
+        before do
+          allow(controller).to receive(:current_user).and_return(owner)
+          allow(controller).to receive(:current_ability)
+            .and_return(build_bulkrax_ability(owner))
+        end
+
+        it 'allows show' do
+          get :show, params: { id: owned_exporter.to_param }, session: {}
+          expect(response).to be_successful
+        end
+      end
+
+      context 'when current user has can_admin_exporters?' do
+        before do
+          allow(controller).to receive(:current_user).and_return(other_user)
+          allow(controller).to receive(:current_ability)
+            .and_return(build_bulkrax_ability(other_user, admin: true))
+        end
+
+        it 'allows show for any exporter' do
+          get :show, params: { id: owned_exporter.to_param }, session: {}
+          expect(response).to be_successful
+        end
       end
     end
   end

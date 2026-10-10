@@ -5,26 +5,27 @@ module Bulkrax
     include Hyrax::ThemedLayoutController if defined?(::Hyrax)
     include Bulkrax::DownloadBehavior
     include Bulkrax::DatatablesBehavior
-    before_action :authenticate_user!
-    before_action :check_permissions
-    before_action :set_exporter, only: [:show, :entry_table, :edit, :update, :destroy]
+
+    # Authentication, record loading and authorization for every action.
+    before_action(except: [:download]) { authenticate_and_authorize!(Bulkrax::Exporter) }
+
     with_themed_layout 'dashboard' if defined?(::Hyrax)
 
     # GET /exporters
     def index
       # NOTE: We're paginating this in the browser.
-      @exporters = Exporter.order(created_at: :desc).all
+      @exporters = Exporter.accessible_by(current_ability).order(created_at: :desc)
 
       add_exporter_breadcrumbs if defined?(::Hyrax)
     end
 
     def exporter_table
-      @exporters = Bulkrax::Exporter.all
+      @exporters = Exporter.accessible_by(current_ability)
       @exporters = @exporters.where(exporter_table_search) if exporter_table_search.present?
       # Count the filtered relation before applying pagination so the UI receives
       # the total number of matching exporters, not just the total number of exporters.
       filtered_count = @exporters.count
-      @exporters = @exporters.reorder(table_order).page(table_page).per(table_per_page)
+      @exporters = @exporters.order(table_order).page(table_page).per(table_per_page)
       respond_to do |format|
         format.json { render json: format_exporters(@exporters, filtered_count) }
       end
@@ -49,7 +50,6 @@ module Bulkrax
 
     # GET /exporters/new
     def new
-      @exporter = Exporter.new
       return unless defined?(::Hyrax)
       add_exporter_breadcrumbs
       add_breadcrumb t(:'bulkrax.headings.new_exporter')
@@ -69,7 +69,7 @@ module Bulkrax
 
     # POST /exporters
     def create
-      @exporter = Exporter.new(exporter_params)
+      @exporter.user_id = current_user.id
       field_mapping_params
 
       if @exporter.save
@@ -111,25 +111,21 @@ module Bulkrax
     # GET /exporters/1/download
     def download
       @exporter = Exporter.find(params[:exporter_id])
+      authorize! :read, @exporter
       send_content
     end
 
     private
 
-    # Use callbacks to share common setup or constraints between actions.
-    def set_exporter
-      @exporter = Exporter.find(params[:id] || params[:exporter_id])
-    end
-
     # Only allow a trusted parameters through.
     def exporter_params
       params[:exporter][:export_source] = params[:exporter]["export_source_#{params[:exporter][:export_from]}".to_sym]
       if params[:exporter][:date_filter] == "1"
-        params.fetch(:exporter).permit(:name, :user_id, :export_source, :export_from, :export_type, :generated_metadata,
+        params.fetch(:exporter).permit(:name, :export_source, :export_from, :export_type, :generated_metadata,
                                        :include_thumbnails, :parser_klass, :limit, :start_date, :finish_date, :work_visibility,
                                        :workflow_status, field_mapping: {})
       else
-        params.fetch(:exporter).permit(:name, :user_id, :export_source, :export_from, :export_type, :generated_metadata,
+        params.fetch(:exporter).permit(:name, :export_source, :export_from, :export_type, :generated_metadata,
                                        :include_thumbnails, :parser_klass, :limit, :work_visibility, :workflow_status,
                                        field_mapping: {}).merge(start_date: nil, finish_date: nil)
       end
@@ -152,10 +148,6 @@ module Bulkrax
 
     def file_path
       "#{@exporter.exporter_export_zip_path}/#{params['exporter']['exporter_export_zip_files']}"
-    end
-
-    def check_permissions
-      raise CanCan::AccessDenied unless current_ability.can_export_works?
     end
   end
 end

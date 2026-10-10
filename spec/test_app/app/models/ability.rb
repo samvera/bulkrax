@@ -4,7 +4,8 @@ class Ability
   include Hydra::Ability
 
   include Hyrax::Ability
-  self.ability_logic += [:everyone_can_create_curation_concerns]
+  include Bulkrax::Ability
+  self.ability_logic += [:everyone_can_create_curation_concerns, :bulkrax_default_abilities]
 
   # Define any customized permissions here.
   def custom_permissions
@@ -21,6 +22,8 @@ class Ability
     # end
   end
 
+  # Override Bulkrax::Ability defaults for the test application.
+  # All authenticated users who can create works may import and export.
   def can_import_works?
     can_create_any_work?
   end

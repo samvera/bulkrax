@@ -24,6 +24,36 @@ $ rails db:migrate
 
 If using Sidekiq, set up queues for `import` and `export`.
 
+### Permissions
+
+Add Bulkrax's rules to your application's `app/models/ability.rb`:
+
+```ruby
+include Bulkrax::Ability
+self.ability_logic += [:bulkrax_default_abilities]
+
+def can_import_works?
+  can_create_any_work?
+end
+
+def can_export_works?
+  can_create_any_work?
+end
+
+def can_admin_importers?
+  current_user.admin?
+end
+
+def can_admin_exporters?
+  current_user.admin?
+end
+```
+
+Replace the example predicates with your application's policy. By default, all
+four return `false`; permitted users manage only their own importers and
+exporters, while the admin predicates grant access to all records. Ensure
+existing importers and exporters have an owner (`user_id`).
+
 ### Bundle errors on ARM
 
 If posix-spawn is failing to bundle on an ARM based processor, try the following

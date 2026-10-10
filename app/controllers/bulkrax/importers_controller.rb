@@ -11,16 +11,17 @@ module Bulkrax
     include Bulkrax::ImporterFileHandler
 
     protect_from_forgery unless: -> { api_request? }
-    before_action :token_authenticate!, if: -> { api_request? }, only: [:create, :update, :delete]
-    before_action :authenticate_user!, unless: -> { api_request? }
-    before_action :check_permissions
-    before_action :set_importer, only: [:show, :entry_table, :edit, :update, :destroy, :original_file]
+    # Authentication, record loading and authorization for every action.
+    before_action { authenticate_and_authorize!(Bulkrax::Importer) }
     with_themed_layout 'dashboard' if defined?(::Hyrax)
 
     # GET /importers
     def index
       # NOTE: We're paginating this in the browser.
       if api_request?
+        # TODO(#1237): Scope API index by token owner once token-to-user wiring
+        # is in place. Until then, API clients see all importers
+        # to preserve backward-compatibility with existing API consumers.
         @importers = Importer.order(created_at: :desc).all
         json_response('index')
       elsif defined?(::Hyrax)
@@ -30,12 +31,17 @@ module Bulkrax
 
     def importer_table
       order = table_order.presence || Arel.sql('last_imported_at DESC NULLS LAST')
-      @importers = Bulkrax::Importer.all
+      # TODO(#1237): API requests bypass ownership scoping here too.
+      @importers = if api_request?
+                     Importer.all
+                   else
+                     Importer.accessible_by(current_ability)
+                   end
       @importers = @importers.where(importer_table_search) if importer_table_search.present?
       # Count the filtered relation before applying pagination so the UI receives
       # the total number of matching importers, not just the total number of importers.
       filtered_count = @importers.count
-      @importers = @importers.reorder(order).page(table_page).per(table_per_page)
+      @importers = @importers.order(order).page(table_page).per(table_per_page)
       respond_to do |format|
         format.json { render json: format_importers(@importers, filtered_count) }
       end
@@ -62,7 +68,6 @@ module Bulkrax
 
     # GET /importers/new
     def new
-      @importer = Importer.new
       if api_request?
         json_response('new')
       elsif defined?(::Hyrax)
@@ -99,12 +104,14 @@ module Bulkrax
       # rubocop:disable Style/IfInsideElse
       if api_request?
         return return_json_response unless valid_create_params?
+        # authenticate_and_authorize! doesn't build for API requests; build it here
+        @importer ||= Importer.new(importer_params)
       end
+      @importer.user_id = current_user.id
       uploads = uploaded_files_scope
       file = file_param
       cloud_files = cloud_params
 
-      @importer = Importer.new(importer_params)
       field_mapping_params
       @importer.validate_only = true if params[:commit] == 'Create and Validate'
       # the following line is needed to handle updating remote files of a FileSet
@@ -181,7 +188,6 @@ module Bulkrax
 
     # PUT /importers/1
     def continue
-      @importer = Importer.find(params[:importer_id])
       params[:importer] = { name: @importer.name }
       @importer.validate_only = false
       update
@@ -189,7 +195,6 @@ module Bulkrax
 
     # GET /importer/1/upload_corrected_entries
     def upload_corrected_entries
-      @importer = Importer.find(params[:importer_id])
       return unless defined?(::Hyrax)
       add_breadcrumb t(:'hyrax.controls.home'), main_app.root_path
       add_breadcrumb t(:'hyrax.dashboard.breadcrumbs.admin'), hyrax.dashboard_path
@@ -201,7 +206,6 @@ module Bulkrax
     # POST /importer/1/upload_corrected_entries_file
     def upload_corrected_entries_file
       file = params[:importer][:parser_fields].delete(:file)
-      @importer = Importer.find(params[:importer_id])
       if file.present?
         @importer[:parser_fields]['partial_import_file_path'] = @importer.parser.write_partial_import_file(file)
         @importer.save
@@ -246,17 +250,11 @@ module Bulkrax
 
     # GET /importers/1/export_errors
     def export_errors
-      @importer = Importer.find(params[:importer_id])
       @importer.write_errored_entries_file
       send_content
     end
 
     private
-
-    # Use callbacks to share common setup or constraints between actions.
-    def set_importer
-      @importer = Importer.find(params[:id] || params[:importer_id])
-    end
 
     def importable_params
       params.except(:selected_files)
@@ -271,7 +269,6 @@ module Bulkrax
       importable_params.require(:importer).permit(
         :name,
         :admin_set_id,
-        :user_id,
         :frequency,
         :parser_klass,
         :limit,
@@ -368,10 +365,6 @@ module Bulkrax
         @importer.parser_fields['metadata_only'] = true
       end
       @importer.save
-    end
-
-    def check_permissions
-      raise CanCan::AccessDenied unless current_ability.can_import_works?
     end
   end
   # rubocop:enable Metrics/ClassLength
