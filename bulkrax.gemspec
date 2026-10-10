@@ -18,10 +18,11 @@ Gem::Specification.new do |s|
 
   s.files = Dir["{app,config,db,lib}/**/*", "LICENSE", "Rakefile", "README.md"]
 
-  s.add_dependency 'rails', '>= 5.2', '< 8.0.0'
+  s.add_dependency 'rails', '>= 5.2', '< 8.2.0'
   s.add_dependency 'bagit', '~> 0.6.0'
   s.add_dependency 'coderay'
   s.add_dependency 'denormalize_fields'
+  s.add_dependency 'deprecation', '~> 1.0'
   s.add_dependency 'marcel'
   s.add_dependency 'iso8601', '~> 0.9.0'
   s.add_dependency 'kaminari'
@@ -35,7 +36,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'simple_form'
 
   s.add_development_dependency 'dry-monads'
-  s.add_development_dependency 'sqlite3', '~> 1.4'
+  s.add_development_dependency 'sqlite3', '>= 1.4', '< 3'
   s.add_development_dependency 'simplecov'
   s.add_development_dependency 'redis', '~> 4.2'
   s.add_development_dependency 'psych', '~> 3.3'

@@ -5,6 +5,25 @@ Bulkrax is a batteries included importer for Samvera applications. It currently 
 
 ## Installation
 
+### Rails compatibility
+
+Existing Hyrax integration tests retain Rails 6.1 compatibility. Rails 8.1 is
+tested independently with a minimal Rails application: engine boot, routes,
+engine migrations, and persisted JSON/YAML serialization. This smoke coverage
+unblocks a subsequent Hyrax upgrade; it does **not** claim that current Hyrax
+releases support Rails 8.1, or exercise repository-backed import/export workflows.
+
+Run the standalone smoke suite from the Bulkrax checkout with a separate bundle:
+
+```bash
+BULKRAX_WITH_HYRAX=false RAILS_GEM_VERSION='~> 8.1.0' BUNDLE_PATH=vendor/rails81 bundle install
+BULKRAX_WITH_HYRAX=false RAILS_GEM_VERSION='~> 8.1.0' BUNDLE_PATH=vendor/rails81 bundle exec rspec spec/rails_compat
+```
+
+Hyrax remains enabled by default for the existing integration suite. Resolve the
+bundle again when switching modes; do not reuse a frozen lockfile from the other
+mode. Rails 8.1 requires Ruby 3.2 or newer and SQLite 2.1 or newer for this smoke app.
+
 ### Install Generator
 
 Add this line to your application's Gemfile:
