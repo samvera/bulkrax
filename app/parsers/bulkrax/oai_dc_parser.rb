@@ -71,7 +71,7 @@ module Bulkrax
       metadata = {
         visibility: 'open'
       }
-      metadata[:collection_type_gid] = Hyrax::CollectionType.find_or_create_default_collection_type.to_global_id.to_s if defined?(::Hyrax)
+      metadata[:collection_type_gid] = Hyrax::CollectionType.find_or_create_default_collection_type.to_global_id.to_s if Bulkrax.hyrax_loaded?
 
       collections.each_with_index do |set, index|
         next unless collection_name == 'all' || collection_name == set.spec

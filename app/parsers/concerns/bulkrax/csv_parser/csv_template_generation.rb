@@ -14,7 +14,7 @@ module Bulkrax
         # @param args [Hash] Additional arguments passed to output method (e.g., file_path)
         # @return [String] File path (for 'file' output) or CSV string (for 'csv_string' output)
         def generate_template(models: [], output: 'file', admin_set_id: nil, **args)
-          raise NameError, "Hyrax is not defined" unless defined?(::Hyrax)
+          raise NameError, "Hyrax is not defined" unless Bulkrax.hyrax_loaded?
           TemplateContext.new(models: models, admin_set_id: admin_set_id).send("to_#{output}", **args)
         end
       end

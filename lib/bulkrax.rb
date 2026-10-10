@@ -30,6 +30,10 @@ module Bulkrax
   extend self # rubocop:disable Style/ModuleFunction
   extend Forwardable
 
+  def hyrax_loaded?
+    defined?(::Hyrax::Engine) ? true : false
+  end
+
   ##
   # @api public
   class Configuration
@@ -84,7 +88,7 @@ module Bulkrax
     def solr_key_for_member_file_ids
       return @solr_key_for_member_file_ids if @solr_key_for_member_file_ids.present?
 
-      return "member_ids_ssim" if defined?(Hyrax::Engine)
+      return "member_ids_ssim" if Bulkrax.hyrax_loaded?
 
       "#{file_model_class.name.to_s.underscore}_ids_ssim"
     end
@@ -109,7 +113,7 @@ module Bulkrax
     end
 
     def collection_model_class
-      @collection_model_class ||= Collection if defined?(::Hyrax::Engine)
+      @collection_model_class ||= Collection if Bulkrax.hyrax_loaded?
     end
 
     def collection_model_class=(klass)
@@ -148,7 +152,7 @@ module Bulkrax
     end
 
     def file_model_class
-      @file_model_class ||= defined?(::Hyrax::Engine) ? ::FileSet : File
+      @file_model_class ||= Bulkrax.hyrax_loaded? ? ::FileSet : File
     end
 
     def file_model_class=(klass)
@@ -206,7 +210,7 @@ module Bulkrax
     end
 
     def curation_concerns
-      @curation_concerns ||= defined?(::Hyrax::Engine) ? ::Hyrax.config.curation_concerns : []
+      @curation_concerns ||= Bulkrax.hyrax_loaded? ? ::Hyrax.config.curation_concerns : []
     end
 
     attr_writer :curation_concerns
@@ -232,7 +236,7 @@ module Bulkrax
     # @return [String, Proc]
     def ingest_queue_name
       return @ingest_queue_name if @ingest_queue_name.present?
-      return Hyrax.config.ingest_queue_name if defined?(Hyrax::Engine)
+      return Hyrax.config.ingest_queue_name if Bulkrax.hyrax_loaded?
       :import
     end
 
@@ -495,7 +499,7 @@ module Bulkrax
   end
 
   def fallback_user_for_importer_exporter_processing
-    return User.batch_user if defined?(Hyrax::Engine) && User.respond_to?(:batch_user)
+    return User.batch_user if Bulkrax.hyrax_loaded? && User.respond_to?(:batch_user)
 
     raise "We have no fallback user available for Bulkrax.fallback_user_for_importer_exporter_processing"
   end

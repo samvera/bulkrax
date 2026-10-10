@@ -114,7 +114,7 @@ module Bulkrax
     # We can use Hyrax's lock manager when we have one available.
     # However it's not certain that this is actually working, so to be
     # as safe as possible, we will reload resources before we update.
-    if defined?(::Hyrax)
+    if Bulkrax.hyrax_loaded?
       include Hyrax::Lockable
 
       def conditionally_acquire_lock_for(*args, &block)
