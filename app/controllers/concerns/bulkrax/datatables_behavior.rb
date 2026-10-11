@@ -83,7 +83,7 @@ module Bulkrax
       @exporter_table_search
     end
 
-    def format_importers(importers, filtered_count = Bulkrax::Importer.count)
+    def format_importers(importers, filtered_count = Bulkrax::Importer.accessible_by(current_ability).count)
       result = importers.map do |i|
         {
           name: view_context.link_to(i.name, view_context.importer_path(i)),
@@ -102,12 +102,12 @@ module Bulkrax
       end
       {
         data: result,
-        recordsTotal: Bulkrax::Importer.count,
+        recordsTotal: api_request? ? Bulkrax::Importer.count : Bulkrax::Importer.accessible_by(current_ability).count,
         recordsFiltered: filtered_count
       }
     end
 
-    def format_exporters(exporters, filtered_count = Bulkrax::Exporter.count)
+    def format_exporters(exporters, filtered_count = Bulkrax::Exporter.accessible_by(current_ability).count)
       result = exporters.map do |e|
         {
           name: view_context.link_to(e.name, view_context.exporter_path(e)),
@@ -119,7 +119,7 @@ module Bulkrax
       end
       {
         data: result,
-        recordsTotal: Bulkrax::Exporter.count,
+        recordsTotal: Bulkrax::Exporter.accessible_by(current_ability).count,
         recordsFiltered: filtered_count
       }
     end
@@ -146,8 +146,10 @@ module Bulkrax
     def entry_util_links(e, item)
       links = []
       links << view_context.link_to(view_context.raw('<span class="fa fa-info-circle"></span>'), view_context.item_entry_path(item, e))
-      links << "<a class='fa fa-repeat' data-toggle='modal' data-target='#bulkraxItemModal' data-entry-id='#{e.id}'></a>" if view_context.an_importer?(item)
-      links << view_context.link_to(view_context.raw('<span class="fa fa-trash"></span>'), view_context.item_entry_path(item, e), method: :delete, data: { confirm: 'This will delete the entry and any work associated with it. Are you sure?' })
+      if can?(:update, item)
+        links << "<a class='fa fa-repeat' data-toggle='modal' data-target='#bulkraxItemModal' data-entry-id='#{e.id}'></a>" if view_context.an_importer?(item)
+        links << view_context.link_to(view_context.raw('<span class="fa fa-trash"></span>'), view_context.item_entry_path(item, e), method: :delete, data: { confirm: 'This will delete the entry and any work associated with it. Are you sure?' })
+      end
       links.join(" ")
     end
 
@@ -166,16 +168,20 @@ module Bulkrax
     def importer_util_links(i)
       links = []
       links << view_context.link_to(view_context.raw('<span class="fa fa-info-circle"></span>'), importer_path(i))
-      links << view_context.link_to(view_context.raw('<span class="fa fa-pencil"></span>'), edit_importer_path(i))
-      links << view_context.link_to(view_context.raw('<span class="fa fa-remove"></span>'), i, method: :delete, data: { confirm: 'Are you sure?' })
+      if can?(:update, i)
+        links << view_context.link_to(view_context.raw('<span class="fa fa-pencil"></span>'), edit_importer_path(i))
+        links << view_context.link_to(view_context.raw('<span class="fa fa-remove"></span>'), i, method: :delete, data: { confirm: 'Are you sure?' })
+      end
       links.join(" ")
     end
 
     def exporter_util_links(i)
       links = []
       links << view_context.link_to(view_context.raw('<span class="fa fa-info-circle"></span>'), exporter_path(i))
-      links << view_context.link_to(view_context.raw('<span class="fa fa-pencil"></span>'), edit_exporter_path(i), data: { turbolinks: false })
-      links << view_context.link_to(view_context.raw('<span class="fa fa-remove"></span>'), i, method: :delete, data: { confirm: 'Are you sure?' })
+      if can?(:update, i)
+        links << view_context.link_to(view_context.raw('<span class="fa fa-pencil"></span>'), edit_exporter_path(i), data: { turbolinks: false })
+        links << view_context.link_to(view_context.raw('<span class="fa fa-remove"></span>'), i, method: :delete, data: { confirm: 'Are you sure?' })
+      end
       links.join(" ")
     end
 
