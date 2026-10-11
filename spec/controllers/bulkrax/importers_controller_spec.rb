@@ -81,6 +81,22 @@ module Bulkrax
         get :index, params: {}, session: valid_session
         expect(response).to be_successful
       end
+
+      it 'denies users who cannot import works' do
+        ability = Class.new do
+          include CanCan::Ability
+
+          def can_import_works?
+            false
+          end
+        end.new
+        expect(ability).to receive(:can_import_works?).and_return(false)
+        allow(controller).to receive(:current_ability).and_return(ability)
+
+        get :index, params: {}, session: valid_session
+
+        expect(response).to be_redirect
+      end
     end
 
     describe 'GET importer filtering' do

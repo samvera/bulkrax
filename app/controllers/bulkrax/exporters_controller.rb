@@ -7,7 +7,7 @@ module Bulkrax
     include Bulkrax::DatatablesBehavior
 
     # Authentication, record loading and authorization for every action.
-    before_action(except: [:download]) { authenticate_and_authorize!(Bulkrax::Exporter) }
+    before_action(except: [:download]) { authenticate_and_authorize!(Bulkrax::Exporter, :can_export_works?) }
 
     with_themed_layout 'dashboard' if defined?(::Hyrax)
 

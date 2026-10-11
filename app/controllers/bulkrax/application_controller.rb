@@ -35,11 +35,14 @@ module Bulkrax
     #   entry_table) and authorize action_name. Custom actions resolve through
     #   the alias_action mappings in Bulkrax::Ability (e.g. :export_errors ->
     #   :read, :continue -> :update).
-    # * Collection actions (no id param, e.g. index, *_table): nothing is
-    #   loaded or authorized here; the action scopes with accessible_by.
+    # * Browser collection actions (no id param, e.g. index, *_table): check
+    #   the controller-supplied capability predicate. The action scopes records
+    #   with accessible_by after authorization. API collection actions remain
+    #   compatible until token-to-user wiring is available.
     #
     # @param klass [Class] Bulkrax::Importer or Bulkrax::Exporter
-    def authenticate_and_authorize!(klass)
+    # @param collection_ability [Symbol] ability predicate for collection actions
+    def authenticate_and_authorize!(klass, collection_ability)
       return unless authenticate_request!
 
       name = klass.model_name.element
@@ -49,7 +52,8 @@ module Bulkrax
                  klass.new(action_name == 'create' ? send(:"#{name}_params") : {})
                else
                  id = params[:id] || params[:"#{name}_id"]
-                 return if id.blank?
+                 return if id.blank? && api_request?
+                 return authorize_collection!(collection_ability) if id.blank?
                  klass.find(id)
                end
       instance_variable_set(:"@#{name}", record)
@@ -64,6 +68,12 @@ module Bulkrax
     end
 
     private
+
+    def authorize_collection!(ability_method)
+      return if current_ability.public_send(ability_method)
+
+      raise CanCan::AccessDenied, 'Not authorized'
+    end
 
     # Overridden by Bulkrax::API in controllers that accept token-authenticated
     # JSON requests.

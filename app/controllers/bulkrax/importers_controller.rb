@@ -12,7 +12,7 @@ module Bulkrax
 
     protect_from_forgery unless: -> { api_request? }
     # Authentication, record loading and authorization for every action.
-    before_action { authenticate_and_authorize!(Bulkrax::Importer) }
+    before_action { authenticate_and_authorize!(Bulkrax::Importer, :can_import_works?) }
     with_themed_layout 'dashboard' if defined?(::Hyrax)
 
     # GET /importers
