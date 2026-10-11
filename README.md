@@ -29,7 +29,7 @@ If using Sidekiq, set up queues for `import` and `export`.
 Add Bulkrax's rules to your application's `app/models/ability.rb`:
 
 ```ruby
-include Bulkrax::Ability
+include Bulkrax::AbilityBehavior
 self.ability_logic += [:bulkrax_default_abilities]
 
 def can_import_works?

@@ -13,7 +13,7 @@ module Bulkrax
     let(:ability_class) do
       Class.new do
         include CanCan::Ability
-        include Bulkrax::Ability
+        include Bulkrax::AbilityBehavior
 
         attr_reader :current_user
 

@@ -8,9 +8,9 @@ The `importer-exorter-permissions` branch introduced working ownership-based aut
 
 ## Current Non-Conventional Patterns
 
-### 1. `Bulkrax::Ability` defines no `can` rules
+### 1. `Bulkrax::AbilityBehavior` defines no `can` rules
 
-**File:** `app/models/concerns/bulkrax/ability.rb`
+**File:** `app/models/concerns/bulkrax/ability_behavior.rb`
 
 The concern exposes four plain Ruby predicate methods (`can_import_works?`, `can_export_works?`, `can_admin_importers?`, `can_admin_exporters?`) and never calls `can` or `cannot`. CanCanCan conventions require that an Ability class define permissions by calling `can :action, Model` inside `initialize` (or a delegated method). Without these declarations, CanCan's `authorize!`, `load_and_authorize_resource`, and `Model.accessible_by(current_ability)` have nothing to evaluate.
 
@@ -69,7 +69,7 @@ This silently removes all ownership filtering for API requests. The conventional
 
 ## Proposed Conventional Replacements
 
-### Step A — Define `can` rules inside `Bulkrax::Ability`
+### Step A — Define `can` rules inside `Bulkrax::AbilityBehavior`
 
 Convert the four predicate methods into proper CanCan rule declarations. The concern's `included` block (or a `bulkrax_default_abilities` method called from the host app's `initialize`) should emit `can` calls:
 
@@ -217,7 +217,7 @@ Whichever is chosen, enforce it in `ApplicationController` and remove duplicate 
 
 | File | Changes |
 |------|---------|
-| `app/models/concerns/bulkrax/ability.rb` | Add `bulkrax_default_abilities` with `can` rule declarations; keep predicates as hooks |
+| `app/models/concerns/bulkrax/ability_behavior.rb` | Add `bulkrax_default_abilities` with `can` rule declarations; keep predicates as hooks |
 | `app/controllers/bulkrax/application_controller.rb` | Add `rescue_from CanCan::AccessDenied`; remove `accessible_importers`, `accessible_exporters`, `item_accessible?` (after migration) |
 | `app/controllers/bulkrax/importers_controller.rb` | Replace `check_permissions` + `set_importer` with `load_and_authorize_resource`; replace `accessible_importers.find/order` with `accessible_by`; document/extract API bypass |
 | `app/controllers/bulkrax/exporters_controller.rb` | Replace `check_permissions` + `set_exporter` with `load_and_authorize_resource`; replace `accessible_exporters` calls with `accessible_by` |
@@ -234,7 +234,7 @@ Whichever is chosen, enforce it in `ApplicationController` and remove duplicate 
 
 ## Testing Strategy
 
-### Unit tests — `Bulkrax::Ability`
+### Unit tests — `Bulkrax::AbilityBehavior`
 
 Test each `can` rule in isolation using CanCan's `be_able_to` matcher:
 
@@ -293,7 +293,7 @@ Block-form rules (required for `Entry` because authorization depends on the pare
 
 ### 3. Host app `Ability` classes must opt in to new rules
 
-Adding `bulkrax_default_abilities` is a new public API. Host apps that include `Bulkrax::Ability` but do not call `bulkrax_default_abilities` from their `initialize` will get **no** Bulkrax-specific rules, meaning all actions will be denied. This is a breaking change for host apps. Document clearly in the CHANGELOG and upgrade notes. Consider calling `bulkrax_default_abilities` automatically from an `included` block with a deprecation warning if it has not been called, or provide a configuration flag.
+Adding `bulkrax_default_abilities` is a new public API. Host apps that include `Bulkrax::AbilityBehavior` but do not call `bulkrax_default_abilities` from their `initialize` will get **no** Bulkrax-specific rules, meaning all actions will be denied. This is a breaking change for host apps. Document clearly in the CHANGELOG and upgrade notes. Consider calling `bulkrax_default_abilities` automatically from an `included` block with a deprecation warning if it has not been called, or provide a configuration flag.
 
 ### 4. API consumer backward compatibility
 
@@ -313,7 +313,7 @@ Engines should define `rescue_from` only in their own base controller (`Bulkrax:
 
 These are ordered by dependency. Each task is small enough to review independently.
 
-1. **[Ability] Define `bulkrax_default_abilities`** — Add `can` rule declarations to `Bulkrax::Ability`; add unit specs proving each rule works for owner, non-owner, and admin. Keep predicates intact.
+1. **[Ability] Define `bulkrax_default_abilities`** — Add `can` rule declarations to `Bulkrax::AbilityBehavior`; add unit specs proving each rule works for owner, non-owner, and admin. Keep predicates intact.
 
 2. **[Test App] Wire `bulkrax_default_abilities`** — Update `spec/test_app/app/models/ability.rb` to call `bulkrax_default_abilities` from `initialize`; confirm existing specs still pass.
 

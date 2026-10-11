@@ -2,14 +2,14 @@
 
 require 'rails_helper'
 
-RSpec.describe Bulkrax::Ability do
+RSpec.describe Bulkrax::AbilityBehavior do
   # Minimal host-app Ability class that includes the concern and supports
   # bulkrax_default_abilities.  This mirrors how a real Hyrax host app would
   # wire things up, without requiring the full Hydra::Ability stack.
   let(:ability_class) do
     Class.new do
       include CanCan::Ability
-      include Bulkrax::Ability
+      include Bulkrax::AbilityBehavior
 
       attr_reader :current_user
 

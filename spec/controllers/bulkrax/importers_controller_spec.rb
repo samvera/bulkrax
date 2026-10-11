@@ -727,7 +727,7 @@ module Bulkrax
       def build_bulkrax_ability(user, admin: false)
         klass = Class.new do
           include CanCan::Ability
-          include Bulkrax::Ability
+          include Bulkrax::AbilityBehavior
 
           attr_reader :current_user
 

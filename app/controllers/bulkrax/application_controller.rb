@@ -33,7 +33,7 @@ module Bulkrax
     #   the record inside the action.
     # * Member actions: find by :id or :<name>_id (e.g. continue, download,
     #   entry_table) and authorize action_name. Custom actions resolve through
-    #   the alias_action mappings in Bulkrax::Ability (e.g. :export_errors ->
+    #   the alias_action mappings in Bulkrax::AbilityBehavior (e.g. :export_errors ->
     #   :read, :continue -> :update).
     # * Browser collection actions (no id param, e.g. index, *_table): check
     #   the controller-supplied capability predicate. The action scopes records

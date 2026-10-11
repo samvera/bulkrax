@@ -15,7 +15,7 @@ module Bulkrax
   #
   #   class Ability
   #     include Hydra::Ability
-  #     include Bulkrax::Ability
+  #     include Bulkrax::AbilityBehavior
   #     self.ability_logic += [:bulkrax_default_abilities]
   #   end
   #
@@ -26,7 +26,7 @@ module Bulkrax
   #
   #   class Ability
   #     include Hydra::Ability
-  #     include Bulkrax::Ability
+  #     include Bulkrax::AbilityBehavior
   #     self.ability_logic += [:bulkrax_default_abilities]
   #
   #     # Grant import/export access to users who can create works
@@ -43,7 +43,7 @@ module Bulkrax
   #       current_user.admin?
   #     end
   #   end
-  module Ability
+  module AbilityBehavior
     extend ActiveSupport::Concern
 
     # Returns true if the current user may use importer functionality at all.
