@@ -191,7 +191,7 @@ module Bulkrax
 
       def permission_filters
         @permission_filters ||= begin
-          ability = ::Ability.new(exporting_user)
+          ability = Ability.new(exporting_user)
           return [] if ability.can_admin_exporters?
 
           scope   = Bulkrax::ExportScope.new(ability)
