@@ -34,7 +34,7 @@ module Bulkrax
       # TODO: This guard clause is not necessary as we can handle it in the
       # underlying factory.  However, to do that requires adjusting about 7
       # failing specs.  So for now this refactor appears acceptable
-      return unless defined?(::Hyrax)
+      return unless Bulkrax.hyrax_loaded?
       return unless self.class.to_s.include?("Collection")
       factory.add_user_to_collection_permissions(collection: @item, user: user)
     end
@@ -87,7 +87,7 @@ module Bulkrax
     end
 
     def add_admin_set_id
-      return unless defined?(::Hyrax)
+      return unless Bulkrax.hyrax_loaded?
 
       self.parsed_metadata['admin_set_id'] = importerexporter.admin_set_id if self.parsed_metadata['admin_set_id'].blank?
     end
@@ -161,7 +161,7 @@ module Bulkrax
     # @param field [String] name of the controlled property
     # @return [Boolean] provided value is a present, active authority ID for the provided field
     def active_id_for_authority?(value, field)
-      return false unless defined?(::Hyrax)
+      return false unless Bulkrax.hyrax_loaded?
       field_service = ('Hyrax::' + "#{field}_service".camelcase).constantize
       active_authority_ids = field_service.new.active_elements.map { |ae| ae['id'] }
 

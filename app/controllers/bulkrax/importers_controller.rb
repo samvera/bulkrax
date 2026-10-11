@@ -3,7 +3,7 @@
 module Bulkrax
   # rubocop:disable Metrics/ClassLength
   class ImportersController < ::Bulkrax::ApplicationController
-    include Hyrax::ThemedLayoutController if defined?(::Hyrax)
+    include Hyrax::ThemedLayoutController if Bulkrax.hyrax_loaded?
     include Bulkrax::DownloadBehavior
     include Bulkrax::API
     include Bulkrax::DatatablesBehavior
@@ -13,7 +13,7 @@ module Bulkrax
     protect_from_forgery unless: -> { api_request? }
     # Authentication, record loading and authorization for every action.
     before_action { authenticate_and_authorize!(Bulkrax::Importer, :can_import_works?) }
-    with_themed_layout 'dashboard' if defined?(::Hyrax)
+    with_themed_layout 'dashboard' if Bulkrax.hyrax_loaded?
 
     # GET /importers
     def index
@@ -24,7 +24,7 @@ module Bulkrax
         # to preserve backward-compatibility with existing API consumers.
         @importers = Importer.order(created_at: :desc).all
         json_response('index')
-      elsif defined?(::Hyrax)
+      elsif Bulkrax.hyrax_loaded?
         add_importer_breadcrumbs
       end
     end
@@ -51,7 +51,7 @@ module Bulkrax
     def show
       if api_request?
         json_response('show')
-      elsif defined?(::Hyrax)
+      elsif Bulkrax.hyrax_loaded?
         add_importer_breadcrumbs
         add_breadcrumb @importer.name
       end
@@ -70,7 +70,7 @@ module Bulkrax
     def new
       if api_request?
         json_response('new')
-      elsif defined?(::Hyrax)
+      elsif Bulkrax.hyrax_loaded?
         add_importer_breadcrumbs
         add_breadcrumb t(:'bulkrax.headings.new_importer')
       end
@@ -90,7 +90,7 @@ module Bulkrax
     def edit
       if api_request?
         json_response('edit')
-      elsif defined?(::Hyrax)
+      elsif Bulkrax.hyrax_loaded?
         add_importer_breadcrumbs
         add_breadcrumb @importer.name, bulkrax.importer_path(@importer.id)
         add_breadcrumb t(:'bulkrax.headings.edit_importer')
@@ -195,7 +195,7 @@ module Bulkrax
 
     # GET /importer/1/upload_corrected_entries
     def upload_corrected_entries
-      return unless defined?(::Hyrax)
+      return unless Bulkrax.hyrax_loaded?
       add_breadcrumb t(:'hyrax.controls.home'), main_app.root_path
       add_breadcrumb t(:'hyrax.dashboard.breadcrumbs.admin'), hyrax.dashboard_path
       add_breadcrumb t(:'bulkrax.headings.importers'), bulkrax.importers_path

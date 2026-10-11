@@ -3,6 +3,12 @@
 require 'rails_helper'
 
 RSpec.describe Bulkrax do
+  describe '.hyrax_loaded?' do
+    it 'returns true when the Hyrax engine is loaded' do
+      expect(described_class.hyrax_loaded?).to be true
+    end
+  end
+
   describe '#mattr_accessor' do
     context 'default_work_type' do
       it 'responds to default_work_type' do

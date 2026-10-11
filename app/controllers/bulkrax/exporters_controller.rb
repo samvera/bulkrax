@@ -2,21 +2,21 @@
 
 module Bulkrax
   class ExportersController < ApplicationController
-    include Hyrax::ThemedLayoutController if defined?(::Hyrax)
+    include Hyrax::ThemedLayoutController if Bulkrax.hyrax_loaded?
     include Bulkrax::DownloadBehavior
     include Bulkrax::DatatablesBehavior
 
     # Authentication, record loading and authorization for every action.
     before_action(except: [:download]) { authenticate_and_authorize!(Bulkrax::Exporter, :can_export_works?) }
 
-    with_themed_layout 'dashboard' if defined?(::Hyrax)
+    with_themed_layout 'dashboard' if Bulkrax.hyrax_loaded?
 
     # GET /exporters
     def index
       # NOTE: We're paginating this in the browser.
       @exporters = Exporter.accessible_by(current_ability).order(created_at: :desc)
 
-      add_exporter_breadcrumbs if defined?(::Hyrax)
+      add_exporter_breadcrumbs if Bulkrax.hyrax_loaded?
     end
 
     def exporter_table
@@ -33,7 +33,7 @@ module Bulkrax
 
     # GET /exporters/1
     def show
-      if defined?(::Hyrax)
+      if Bulkrax.hyrax_loaded?
         add_exporter_breadcrumbs
         add_breadcrumb @exporter.name
       end
@@ -50,14 +50,14 @@ module Bulkrax
 
     # GET /exporters/new
     def new
-      return unless defined?(::Hyrax)
+      return unless Bulkrax.hyrax_loaded?
       add_exporter_breadcrumbs
       add_breadcrumb t(:'bulkrax.headings.new_exporter')
     end
 
     # GET /exporters/1/edit
     def edit
-      if defined?(::Hyrax)
+      if Bulkrax.hyrax_loaded?
         add_exporter_breadcrumbs
         add_breadcrumb @exporter.name, bulkrax.exporter_path(@exporter.id)
         add_breadcrumb t(:'bulkrax.headings.edit_exporter')

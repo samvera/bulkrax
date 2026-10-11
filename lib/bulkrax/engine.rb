@@ -26,7 +26,7 @@ module Bulkrax
     config.after_initialize do
       # We want to ensure that Bulkrax is earlier in the lookup for view_paths than Hyrax.  That is
       # we favor view in Bulkrax over those in Hyrax.
-      if defined?(Hyrax::Engine)
+      if Bulkrax.hyrax_loaded?
         my_engine_root = Bulkrax::Engine.root.to_s
         hyrax_engine_root = Hyrax::Engine.root.to_s
         paths = ActionController::Base.view_paths.collect(&:to_s)

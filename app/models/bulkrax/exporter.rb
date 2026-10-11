@@ -69,7 +69,7 @@ module Bulkrax
     end
 
     def workflow_status_list
-      Sipity::WorkflowState.all.map { |s| [s.name&.titleize, s.name] }.uniq if defined?(::Hyrax)
+      Sipity::WorkflowState.all.map { |s| [s.name&.titleize, s.name] }.uniq if Bulkrax.hyrax_loaded?
     end
 
     # If field_mapping is empty, setup a default based on the export_properties
@@ -84,7 +84,7 @@ module Bulkrax
     end
 
     def export_from_list
-      if defined?(::Hyrax)
+      if Bulkrax.hyrax_loaded?
         [
           [I18n.t('bulkrax.exporter.labels.importer'), 'importer'],
           [I18n.t('bulkrax.exporter.labels.collection'), 'collection'],
