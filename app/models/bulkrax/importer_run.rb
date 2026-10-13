@@ -5,6 +5,7 @@ module Bulkrax
     belongs_to :importer
     has_many :statuses, as: :runnable, dependent: :destroy
     has_many :pending_relationships, dependent: :destroy
+    before_destroy { ImportMetric.detach_from(importer_run_id: id) }
 
     after_save :set_last_imported_at
     after_save :set_next_import_at

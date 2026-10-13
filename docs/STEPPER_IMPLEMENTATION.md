@@ -357,7 +357,8 @@ MAX_TREE_DEPTH: 50             // Prevent stack overflow
 - `updateDownloadTemplateLink()` - Update template URL with admin set ID
 
 **Form Submission:**
-- `handleImportSubmit()` - Prepare and submit form to `guided_import_create`
+- `handleImportSubmit()` - Post the form to `guided_import_create` over AJAX, then show the in-page "Import Started" card
+- `handleImportSubmitError()` - Re-enable the form only for the controller's own rejection (422 with an `errors` list); any other failure shows a panel pointing to the Import Queue, because the importer may already exist
 - `syncFilesToInput()` - Sync state files to hidden form input
 
 **Demo Mode:**
@@ -497,7 +498,7 @@ Browser                     Controller                  Services
 Browser                     Controller                  Background
   |                            |                           |
   |-- POST /guided_import ---->|                           |
-  |  (form with files)         |                           |
+  |  (AJAX, Accept: json)      |                           |
   |                            |-- Importer.new(params)    |
   |                            |-- importer.save           |
   |                            |-- write_guided_import_    |
@@ -506,7 +507,8 @@ Browser                     Controller                  Background
   |                            |-- ImporterJob ------------->|
   |                            |  .perform_later            |  |
   |                            |                           |  |
-  |<-- redirect to importers --|                     (async import)
+  |<-- 201 {importer_id} ------|                     (async import)
+  |-- show "Import Started"    |                           |
 ```
 
 ## Demo Mode

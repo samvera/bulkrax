@@ -25,6 +25,8 @@ module Bulkrax
 
     after_save :set_last_imported_at_from_importer_run
     after_save :set_next_import_at_from_importer_run
+    before_save :keep_guided_import_fields
+    before_destroy { ImportMetric.detach_from(importer_id: id) }
 
     attr_accessor :only_updates, :file_style, :file
     attr_writer :current_run
@@ -46,6 +48,13 @@ module Bulkrax
       end
     end
 
+    # Failures are reported through here from the parsers and ImporterJob,
+    # none of which reach record_status.
+    def set_status_info(e = nil, run = nil)
+      super
+      record_import_outcome_metric(importer_runs.find_by(id: (run || last_run)&.id), 'Failed') if e.is_a?(Exception)
+    end
+
     def record_status
       importer_run = ImporterRun.find(current_run.id) # make sure fresh
       return if importer_run.enqueued_records.positive? # still processing
@@ -59,6 +68,7 @@ module Bulkrax
       else
         importer_run.importer.set_status_info('Complete')
       end
+      record_import_outcome_metric(importer_run, importer_run.importer.status)
     end
 
     # If field_mapping is empty, setup a default based on the export_properties
@@ -282,6 +292,44 @@ module Bulkrax
     end
 
     private
+
+    def record_import_outcome_metric(run, status)
+      return unless run && Bulkrax.config.guided_import_metrics_enabled
+      return unless parser_fields&.dig('guided_import')
+
+      ImportMetric.record_import_outcome(
+        run,
+        importer: self,
+        user_id: user_id,
+        session_id: parser_fields['metrics_session_id'],
+        outcome: status,
+        first_attempt: run.id == importer_runs.minimum(:id),
+        duration_ms: ((Time.current - run.created_at) * 1000).round,
+        payload: import_outcome_payload(run)
+      )
+    rescue StandardError => e
+      ImportMetric.log_failure(e)
+    end
+
+    # The classic edit form replaces parser_fields wholesale, which would
+    # otherwise stop a re-run of a guided importer from being recorded.
+    def keep_guided_import_fields
+      return unless will_save_change_to_parser_fields? && parser_fields_in_database.is_a?(Hash)
+
+      kept = parser_fields_in_database.slice('guided_import', 'metrics_session_id')
+      self.parser_fields = kept.merge(parser_fields || {}) if kept.present?
+    end
+
+    def import_outcome_payload(run)
+      {
+        total_work_entries: run.total_work_entries.to_i,
+        total_collection_entries: run.total_collection_entries.to_i,
+        total_file_set_entries: run.total_file_set_entries.to_i,
+        processed_works: run.processed_works.to_i,
+        failed_works: run.failed_works.to_i,
+        failed_records: run.failed_records.to_i
+      }
+    end
 
     # Adding this here since we can update the importer without running the importer.
     # When we simply save the importer (as in just updating the importer from the options),
