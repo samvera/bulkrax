@@ -85,5 +85,52 @@ module Bulkrax
     describe ImportFileSetJob do
       it_behaves_like 'an import job that counts the record as failed once', :failed_file_sets
     end
+
+    context 'when recording the importer status raises after a delete' do
+      before do
+        allow_any_instance_of(Entry).to receive(:factory).and_return(instance_double(ObjectFactory, delete: true))
+        allow_any_instance_of(Importer).to receive(:record_status).and_raise(RuntimeError, 'status write failed')
+      end
+
+      it 'leaves the counts for the retry to apply' do
+        expect { DeleteWorkJob.new.perform(entry, importer_run) }.to raise_error(RuntimeError, 'status write failed')
+
+        expect(importer_run.reload).to have_attributes(enqueued_records: 2, deleted_records: 0)
+      end
+    end
+
+    context 'when deleting the record keeps raising' do
+      let(:factory) { instance_double(ObjectFactory, find: nil) }
+
+      before do
+        allow(factory).to receive(:delete).and_raise(RuntimeError, 'repository unavailable')
+        allow_any_instance_of(Entry).to receive(:factory).and_return(factory)
+      end
+
+      describe DeleteWorkJob do
+        it 'counts the record as finished and failed exactly once' do
+          perform_enqueued_jobs { described_class.perform_later(entry, importer_run) }
+
+          expect(importer_run.reload).to have_attributes(enqueued_records: 1, failed_records: 1)
+        end
+
+        it 'still counts the record when its entry is gone before the job runs' do
+          job_data = described_class.new(entry, importer_run).serialize
+          entry.destroy
+
+          perform_enqueued_jobs { ActiveJob::Base.execute(job_data) }
+
+          expect(importer_run.reload).to have_attributes(enqueued_records: 1, failed_records: 1)
+        end
+      end
+
+      describe DeleteAndImportWorkJob do
+        it 'counts the record as finished and failed exactly once' do
+          perform_enqueued_jobs { described_class.perform_later(entry, importer_run) }
+
+          expect(importer_run.reload).to have_attributes(enqueued_records: 1, failed_records: 1, failed_works: 1)
+        end
+      end
+    end
   end
 end
