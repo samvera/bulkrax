@@ -49,6 +49,7 @@ module Bulkrax
     def record_status
       importer_run = ImporterRun.find(current_run.id) # make sure fresh
       return if importer_run.enqueued_records.positive? # still processing
+      return if importer_run.importer.failed? # a parse failure outranks the records that finished
       if importer_run.failed_records.positive?
         if importer_run.invalid_records.present?
           e = Bulkrax::ImportFailed.new('Failed with Invalid Records', importer_run.invalid_records.split("\n"))
@@ -247,7 +248,7 @@ module Bulkrax
       ensure
         ImporterRun.decrement_enqueued_records(current_run.id)
       end
-      record_status unless failed?
+      record_status
     rescue StandardError => e
       set_status_info(e)
     end

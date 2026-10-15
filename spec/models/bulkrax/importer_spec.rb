@@ -116,6 +116,24 @@ module Bulkrax
 
           expect(status_at_release).to eq('Failed')
         end
+
+        context 'after some jobs were already enqueued' do
+          before do
+            rows = Enumerator.new do |yielder|
+              yielder << { source_identifier: 'work_1' }
+              raise 'unreadable row'
+            end
+            allow(importer.parser).to receive(:works).and_return(rows)
+            allow(ImportWorkJob).to receive(:perform_later) { |*args| deferred_work_jobs << args }
+          end
+
+          it 'leaves the importer failed when those jobs finish' do
+            importer.import_objects(%w[collection work])
+            deferred_work_jobs.each { |args| ImportWorkJob.perform_now(*args) }
+
+            expect(importer.reload.status).to eq('Failed')
+          end
+        end
       end
 
       context 'when every job finishes while the parser is still running' do
