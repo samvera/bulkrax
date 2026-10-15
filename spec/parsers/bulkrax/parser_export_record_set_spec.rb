@@ -299,3 +299,54 @@ RSpec.describe Bulkrax::ParserExportRecordSet::Importer do
     end
   end
 end
+
+RSpec.describe Bulkrax::ParserExportRecordSet::Importer, '#file_sets' do
+  let(:exporter) { Bulkrax::EntrySpecHelper.exporter_for(parser_class_name: "Bulkrax::CsvParser") }
+  let(:record_set) { described_class.new(parser: exporter.parser) }
+  let(:filters) { [] }
+
+  before do
+    allow(record_set).to receive(:complete_entry_identifiers).and_return(['entry-1'])
+    allow(Bulkrax.object_factory).to receive(:query) do |_q, **kwargs|
+      filters.concat(kwargs[:fq])
+      []
+    end
+  end
+
+  # A bare Hyrax::FileSet is unparseable by Solr, and depending on the app its documents carry
+  # either the full or the unqualified model name.
+  it 'queries file sets by both quoted forms of a namespaced model name' do
+    allow(Bulkrax).to receive(:file_model_internal_resource).and_return('Hyrax::FileSet')
+
+    record_set.send(:file_sets)
+
+    expect(filters).to include('has_model_ssim:("Hyrax::FileSet" OR "FileSet")')
+  end
+
+  it 'queries an unqualified model name once' do
+    allow(Bulkrax).to receive(:file_model_internal_resource).and_return('FileSet')
+
+    record_set.send(:file_sets)
+
+    expect(filters).to include('has_model_ssim:("FileSet")')
+  end
+end
+
+RSpec.describe Bulkrax::ParserExportRecordSet::All, '#file_sets' do
+  let(:exporter) { Bulkrax::EntrySpecHelper.exporter_for(parser_class_name: "Bulkrax::CsvParser") }
+  let(:record_set) { described_class.new(parser: exporter.parser) }
+
+  before do
+    allow(record_set).to receive(:candidate_file_set_ids).and_return(['fs-1'])
+    allow(record_set).to receive(:permission_filters).and_return([])
+    allow(Bulkrax.object_factory).to receive(:query).and_return([])
+    allow(Bulkrax).to receive(:file_model_internal_resource).and_return('Hyrax::FileSet')
+  end
+
+  it 'queries file sets by both quoted forms of a namespaced model name' do
+    record_set.send(:file_sets)
+
+    expect(Bulkrax.object_factory).to have_received(:query)
+      .with(a_string_starting_with('has_model_ssim:("Hyrax::FileSet" OR "FileSet") AND id:("fs-1")'), anything)
+  end
+end

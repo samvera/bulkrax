@@ -176,13 +176,21 @@ module Bulkrax
       # @see https://github.com/samvera/hyrax/blob/64c0bbf0dc0d3e1b49f040b50ea70d177cc9d8f6/app/indexers/hyrax/work_indexer.rb#L15-L18
       def file_sets
         @file_sets ||= ParserExportRecordSet.in_batches(candidate_file_set_ids) do |batch_of_ids|
-          fsq = "has_model_ssim:\"#{Bulkrax.file_model_internal_resource.demodulize}\" AND id:(\"" + batch_of_ids.join('" OR "') + "\")"
+          fsq = "#{file_set_model_clause} AND id:(\"" + batch_of_ids.join('" OR "') + "\")"
           fsq += extra_filters if extra_filters.present?
           fq = permission_filters
           kwargs = { fl: "id", method: :post, rows: batch_of_ids.size }
           kwargs[:fq] = fq unless fq.empty?
           Bulkrax.object_factory.query(fsq, **kwargs)
         end
+      end
+
+      # Matches file sets indexed under either the file model's full name ("Hyrax::FileSet", as
+      # stock Hyrax indexes it without Wings) or its unqualified one ("FileSet", as ActiveFedora and
+      # Hyku index it). The names are quoted because Solr cannot parse a bare "::".
+      def file_set_model_clause
+        names = [Bulkrax.file_model_internal_resource, Bulkrax.file_model_internal_resource.demodulize].uniq
+        "has_model_ssim:(#{names.map { |name| %("#{name}") }.join(' OR ')})"
       end
 
       def exporting_user
@@ -300,7 +308,7 @@ module Bulkrax
             **query_kwargs.merge(
               fq: (query_kwargs[:fq] || []) + [
                 %(#{solr_name(work_identifier)}:("#{ids.join('" OR "')}")),
-                "has_model_ssim:#{Bulkrax.file_model_internal_resource}"
+                file_set_model_clause
               ],
               fl: 'id'
             )
