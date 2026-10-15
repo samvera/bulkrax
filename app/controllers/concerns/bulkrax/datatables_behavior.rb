@@ -186,7 +186,7 @@ module Bulkrax
     end
 
     def download_zip(e)
-      return unless File.exist?(e.exporter_export_zip_path)
+      return if e.exporter_export_zip_files.blank?
 
       options_html = e.exporter_export_zip_files.flatten.map do |file_name|
         "<option value='#{CGI.escapeHTML(file_name)}'>#{CGI.escapeHTML(file_name)}</option>"

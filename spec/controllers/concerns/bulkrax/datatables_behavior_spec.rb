@@ -129,6 +129,28 @@ RSpec.describe Bulkrax::ImportersController, type: :controller do
     end
   end
 
+  describe '#download_zip' do
+    let(:exporter) { instance_double(Bulkrax::Exporter, id: 1, exporter_export_zip_path: Dir.tmpdir, exporter_export_zip_files: zip_files) }
+
+    before { allow(controller).to receive(:view_context).and_return(double(exporter_download_path: '/exporters/1/download')) }
+
+    context 'when the export folder exists but no zip was written' do
+      let(:zip_files) { [] }
+
+      it 'offers nothing to download' do
+        expect(controller.download_zip(exporter)).to be_nil
+      end
+    end
+
+    context 'when the export wrote a zip' do
+      let(:zip_files) { [['export_1_1_1.zip']] }
+
+      it 'offers it for download' do
+        expect(controller.download_zip(exporter)).to include("<option value='export_1_1_1.zip'>")
+      end
+    end
+  end
+
   describe '#status_message_for' do
     let(:item) { FactoryBot.create(:bulkrax_importer) }
 
