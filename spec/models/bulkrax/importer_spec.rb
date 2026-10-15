@@ -50,6 +50,87 @@ module Bulkrax
       end
     end
 
+    describe '#import_objects' do
+      let(:importer) { FactoryBot.create(:bulkrax_importer_csv) }
+      let(:deferred_work_jobs) { [] }
+
+      before do
+        allow(importer.parser).to receive(:collections).and_return([{ source_identifier: 'col_1', model: 'Collection' }])
+        allow(importer.parser).to receive(:works).and_return([{ source_identifier: 'work_1' }])
+        allow_any_instance_of(CsvEntry).to receive(:build) { |entry| entry.set_status_info('Complete') }
+        allow(ImportCollectionJob).to receive(:perform_later) { |*args| ImportCollectionJob.perform_now(*args) }
+      end
+
+      context 'when a job finishes before the parser has enqueued every record' do
+        before do
+          allow(ImportWorkJob).to receive(:perform_later) { |*args| deferred_work_jobs << args }
+        end
+
+        it 'leaves the importer pending until the remaining jobs finish' do
+          importer.import_objects(%w[collection work])
+
+          expect(importer.reload.status).to eq('Pending')
+        end
+
+        it 'marks the importer complete when the last job finishes' do
+          importer.import_objects(%w[collection work])
+          deferred_work_jobs.each { |args| ImportWorkJob.perform_now(*args) }
+
+          expect(importer.reload.status).to eq('Complete')
+        end
+
+        it 'stays pending while unseen entries are marked skipped' do
+          status_while_skipping = nil
+          allow(importer).to receive(:mark_unseen_as_skipped) do
+            deferred_work_jobs.each { |args| ImportWorkJob.perform_now(*args) }
+            status_while_skipping = Importer.find(importer.id).status
+          end
+
+          importer.import_objects(%w[collection work])
+
+          expect(status_while_skipping).to eq('Pending')
+        end
+      end
+
+      context 'when parsing fails' do
+        before do
+          allow(importer.parser).to receive(:works).and_raise(RuntimeError, 'unreadable row')
+        end
+
+        it 'leaves the importer failed' do
+          importer.import_objects(%w[collection work])
+
+          expect(importer.reload.status).to eq('Failed')
+        end
+
+        it 'records the failure before releasing the parsing hold' do
+          allow(importer).to receive(:existing_entries?).and_return(true)
+          allow(importer.parser).to receive(:rebuild_entries).and_raise(RuntimeError, 'unreadable row')
+          status_at_release = nil
+          allow(ImporterRun).to receive(:decrement_enqueued_records).and_wrap_original do |original, *args|
+            status_at_release = Importer.find(importer.id).status
+            original.call(*args)
+          end
+
+          importer.import_objects(%w[collection work])
+
+          expect(status_at_release).to eq('Failed')
+        end
+      end
+
+      context 'when every job finishes while the parser is still running' do
+        before do
+          allow(ImportWorkJob).to receive(:perform_later) { |*args| ImportWorkJob.perform_now(*args) }
+        end
+
+        it 'marks the importer complete once the parser finishes' do
+          importer.import_objects(%w[collection work])
+
+          expect(importer.reload.status).to eq('Complete')
+        end
+      end
+    end
+
     describe 'import works' do
       before do
         allow(Bulkrax::OaiDcParser).to receive(:new).and_return(Bulkrax::OaiDcParser.new(importer)) # .with(subject).and_return(parser)

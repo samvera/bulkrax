@@ -235,8 +235,19 @@ module Bulkrax
       self.only_updates ||= false
       self.save if self.new_record? # Object needs to be saved for statuses
       types = types_array || DEFAULT_OBJECT_TYPES
-      existing_entries? ? parser.rebuild_entries(types) : parser.create_objects(types)
-      mark_unseen_as_skipped
+      # Hold one extra count while parsing, so a job that finishes before the
+      # remaining records are enqueued cannot mark the importer complete.
+      ImporterRun.increment_counter(:enqueued_records, current_run.id) # rubocop:disable Rails/SkipsModelValidations
+      begin
+        existing_entries? ? parser.rebuild_entries(types) : parser.create_objects(types)
+        mark_unseen_as_skipped
+      rescue StandardError => e
+        # Recorded while the hold is still in place, so no finishing job can mark the run complete first.
+        set_status_info(e)
+      ensure
+        ImporterRun.decrement_enqueued_records(current_run.id)
+      end
+      record_status unless failed?
     rescue StandardError => e
       set_status_info(e)
     end

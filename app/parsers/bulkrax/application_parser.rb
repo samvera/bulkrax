@@ -199,7 +199,6 @@ module Bulkrax
           count_and_submit(index, "#{type}": true) { submit_job(new_entry, current_record, type) }
           index += 1
         end
-        importer.record_status
       end
       true
     rescue StandardError => e
