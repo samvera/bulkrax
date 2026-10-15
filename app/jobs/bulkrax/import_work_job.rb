@@ -2,6 +2,10 @@
 
 module Bulkrax
   class ImportWorkJob < ApplicationJob
+    include RetriesThenCountsFailure
+
+    FAILED_COUNTER = :failed_works
+
     queue_as Bulkrax.config.ingest_queue_name
 
     # rubocop:disable Rails/SkipsModelValidations
@@ -15,25 +19,28 @@ module Bulkrax
     def perform(entry_id, run_id, time_to_live = 3, *)
       entry = Entry.find(entry_id)
       entry.build
-      if entry.status == "Complete"
-        ImporterRun.increment_counter(:processed_records, run_id)
-        ImporterRun.increment_counter(:processed_works, run_id)
-      else
-        # do not retry here because whatever parse error kept you from creating a work will likely
-        # keep preventing you from doing so.
-        ImporterRun.increment_counter(:failed_records, run_id)
-        ImporterRun.increment_counter(:failed_works, run_id)
-      end
-      # Regardless of completion or not, we want to decrement the enqueued records.
-      ImporterRun.decrement_enqueued_records(run_id)
-
       entry.save!
-      entry.importer.current_run = ImporterRun.find(run_id)
-      entry.importer.record_status
+      # One transaction, so an error before the status is recorded leaves nothing for a retry to count twice.
+      ImporterRun.transaction do
+        if entry.status == "Complete"
+          ImporterRun.increment_counter(:processed_records, run_id)
+          ImporterRun.increment_counter(:processed_works, run_id)
+        else
+          # do not retry here because whatever parse error kept you from creating a work will likely
+          # keep preventing you from doing so.
+          ImporterRun.increment_counter(:failed_records, run_id)
+          ImporterRun.increment_counter(:failed_works, run_id)
+        end
+        # Regardless of completion or not, we want to decrement the enqueued records.
+        ImporterRun.decrement_enqueued_records(run_id)
+
+        entry.importer.current_run = ImporterRun.find(run_id)
+        entry.importer.record_status
+      end
     rescue Bulkrax::CollectionsCreatedError => e
       Rails.logger.warn("#{self.class} entry_id: #{entry_id}, run_id: #{run_id} encountered #{e.class}: #{e.message}")
-      # You get 3 attempts at the above perform before we have the import exception cascade into
-      # the Sidekiq retry ecosystem.
+      # You get 3 attempts at the above perform before the exception falls through to the
+      # retries declared by RetriesThenCountsFailure.
       # rubocop:disable Style/IfUnlessModifier
       if time_to_live <= 1
         raise "Exhauted reschedule limit for #{self.class} entry_id: #{entry_id}, run_id: #{run_id}.  Attemping retries"

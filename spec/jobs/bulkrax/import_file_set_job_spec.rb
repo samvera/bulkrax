@@ -101,7 +101,7 @@ module Bulkrax
             allow(import_file_set_job).to receive(:find_record).and_return(nil)
           end
 
-          context "when the entry's :import_attempts are less than 5" do
+          context "when the entry's :import_attempts are less than 6" do
             it "increments the entry's :import_attempts" do
               expect { import_file_set_job.perform(entry.id, importer_run.id) }
                 .to change(entry, :import_attempts).by(1)
@@ -118,19 +118,32 @@ module Bulkrax
               import_file_set_job.perform(entry.id, importer_run.id)
             end
 
-            it 'reschedules the job to try again after a couple minutes' do
+            it 'reschedules the job to try again after five minutes' do
               configured_job = instance_double(::ActiveJob::ConfiguredJob)
               # #set initializes an ActiveJob::ConfiguredJob
-              expect(described_class).to receive(:set).with(wait: 2.minutes).and_return(configured_job)
+              expect(described_class).to receive(:set).with(wait: 5.minutes).and_return(configured_job)
               expect(configured_job).to receive(:perform_later).with(entry.id, importer_run.id).once
 
               import_file_set_job.perform(entry.id, importer_run.id)
             end
+
+            it "waits long enough to outlast the parent work's own retries" do
+              configured_job = instance_double(::ActiveJob::ConfiguredJob, perform_later: true)
+              waits = []
+              allow(described_class).to receive(:set) do |wait:|
+                waits << wait.to_i
+                configured_job
+              end
+
+              5.times { import_file_set_job.perform(entry.id, importer_run.id) }
+
+              expect(waits).to eq([5, 10, 20, 40, 80].map { |minutes| minutes.minutes.to_i })
+            end
           end
 
-          context "when the entry's :import_attempts are 5 or greater" do
+          context "when the entry's :import_attempts are 6 or greater" do
             before do
-              entry.import_attempts = 4 # before failed attempt
+              entry.import_attempts = 5 # before failed attempt
               entry.save!
             end
 
@@ -140,19 +153,16 @@ module Bulkrax
             end
 
             it 'logs a MissingParentError on the entry' do
-              expect(entry).to receive(:set_status_info).with(instance_of(MissingParentError))
-
               import_file_set_job.perform(entry.id, importer_run.id)
+
+              expect(entry.reload.current_status).to have_attributes(status_message: 'Failed', error_class: 'Bulkrax::MissingParentError')
             end
 
-            it "only decrements the importer run's :enqueued_records counter" do
-              expect(ImporterRun).not_to receive(:increment_counter)
-              expect(ImporterRun)
-                .to receive(:decrement_enqueued_records)
-                .with(importer_run.id)
-                .once
-
+            it 'counts the record as finished and failed' do
               import_file_set_job.perform(entry.id, importer_run.id)
+
+              expect(importer_run.reload)
+                .to have_attributes(enqueued_records: 0, failed_records: 1, failed_file_sets: 1)
             end
 
             it 'does not reschedule the job' do
@@ -168,22 +178,32 @@ module Bulkrax
             allow(import_file_set_job).to receive(:find_record).and_return([nil, non_work])
           end
 
+          shared_examples 'a file set with an invalid parent' do
+            it 'fails the entry without retrying' do
+              expect { import_file_set_job.perform(entry.id, importer_run.id) }.not_to raise_error
+
+              expect(entry.reload.current_status)
+                .to have_attributes(error_class: 'Bulkrax::InvalidParentError', error_message: /not an valid\/available work type/)
+            end
+
+            it 'counts the record as finished and failed' do
+              import_file_set_job.perform(entry.id, importer_run.id)
+
+              expect(importer_run.reload)
+                .to have_attributes(enqueued_records: 0, failed_records: 1, failed_file_sets: 1)
+            end
+          end
+
           context 'when it references a collection' do
             let(:non_work) { Bulkrax.collection_model_class.new }
 
-            it 'raises an error' do
-              expect { import_file_set_job.perform(entry.id, importer_run.id) }
-                .to raise_error(::StandardError, /not an valid\/available work type/)
-            end
+            it_behaves_like 'a file set with an invalid parent'
           end
 
           context 'when it references a file set' do
             let(:non_work) { Bulkrax.file_model_class.new }
 
-            it 'raises an error' do
-              expect { import_file_set_job.perform(entry.id, importer_run.id) }
-                .to raise_error(::StandardError, /not an valid\/available work type/)
-            end
+            it_behaves_like 'a file set with an invalid parent'
           end
         end
       end

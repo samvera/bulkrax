@@ -321,15 +321,15 @@ module Bulkrax
           subject.current_run.update!(enqueued_records: 1)
         end
 
-        context 'and a job raises after counting its own record' do
+        context 'and a job raises' do
           before do
             allow_any_instance_of(CsvEntry).to receive(:build).and_raise(RuntimeError, 'Solr unavailable')
           end
 
-          it 'leaves the job to count its own record' do
-            subject.create_objects(%w[collection])
+          it 'keeps the record counted until its retry finishes' do
+            expect { subject.create_objects(%w[collection]) }.to have_enqueued_job(ImportCollectionJob)
 
-            expect(ImporterRun.find(subject.current_run.id).enqueued_records).to eq(1)
+            expect(ImporterRun.find(subject.current_run.id).enqueued_records).to eq(2)
           end
         end
 

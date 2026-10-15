@@ -65,27 +65,18 @@ module Bulkrax
         before do
           allow(Entry).to receive(:find).with(entry.id).and_return(entry)
           allow(entry).to receive(:build).and_raise(StandardError)
-          allow(ImporterRun).to receive(:increment_counter).and_call_original
         end
 
         it 'reraises the error' do
           expect { perform }.to raise_error(StandardError)
         end
 
-        it 'increments the failed records and collections' do
-          expect { perform }.to raise_error(StandardError)
-          expect(ImporterRun).to have_received(:increment_counter).with(:failed_records, current_run_id).once
-          expect(ImporterRun).to have_received(:increment_counter).with(:failed_collections, current_run_id).once
-        end
-
-        it 'does not decrement the number of enqueued records when it is already zero' do
-          expect { perform }.to raise_error(StandardError)
-          expect(entry.importerexporter.current_run.reload.enqueued_records).to eq(0)
-        end
-        it 'decrements the number of enqueued records' do
+        it 'leaves the counters for when its retries run out' do
           entry.importerexporter.current_run.update!(enqueued_records: 1)
+
           expect { perform }.to raise_error(StandardError)
-          expect(entry.importerexporter.current_run.reload.enqueued_records).to eq(0)
+          expect(entry.importerexporter.current_run.reload)
+            .to have_attributes(enqueued_records: 1, failed_records: 0, failed_collections: 0)
         end
       end
     end
