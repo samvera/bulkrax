@@ -1075,6 +1075,47 @@ module Bulkrax
         end
       end
 
+      context 'when two objects rename the same in-row keys with name:' do
+        let(:exporter) do
+          FactoryBot.create(:bulkrax_exporter_worktype, field_mapping: {
+                              'id' => { from: ['id'], source_identifier: true },
+                              'creator_name' => { from: ['creator_name'], object: 'creators', nested_attributes: true, name: 'name' },
+                              'creator_role' => { from: ['creator_role'], object: 'creators', nested_attributes: true, name: 'role' },
+                              'contributor_name' => { from: ['contributor_name'], object: 'contributors', nested_attributes: true, name: 'name' },
+                              'contributor_role' => { from: ['contributor_role'], object: 'contributors', nested_attributes: true, name: 'role' }
+                            })
+        end
+
+        let(:work_obj) do
+          Work.new(title: ['test']).tap do |work|
+            work.define_singleton_method(:creators) { [{ 'name' => 'Delaney, Beauford', 'role' => 'Creator' }] }
+            work.define_singleton_method(:contributors) do
+              [{ 'name' => 'Ruskin Co-operative Association', 'role' => 'Contributor' },
+               { 'name' => 'Wayland, J. A.', 'role' => 'Contributor' }]
+            end
+          end
+        end
+
+        before do
+          allow_any_instance_of(ObjectFactory).to receive(:run!)
+          allow(subject).to receive(:hyrax_record).and_return(work_obj)
+          allow(work_obj).to receive(:id).and_return('test123')
+          allow(work_obj).to receive(:member_of_work_ids).and_return([])
+          allow(work_obj).to receive(:in_work_ids).and_return([])
+          allow(work_obj).to receive(:member_work_ids).and_return([])
+        end
+
+        it 'exports each object under the columns it imports from' do
+          metadata = subject.build_export_metadata
+
+          expect(metadata).to include('creator_name_1' => 'Delaney, Beauford', 'creator_role_1' => 'Creator',
+                                      'contributor_name_1' => 'Ruskin Co-operative Association',
+                                      'contributor_role_1' => 'Contributor',
+                                      'contributor_name_2' => 'Wayland, J. A.', 'contributor_role_2' => 'Contributor')
+          expect(metadata.keys).not_to include('name_1', 'role_1')
+        end
+      end
+
       context 'with source_identifier field with returns a relationship' do
         let(:exporter) do
           FactoryBot.create(:bulkrax_exporter_worktype, field_mapping: {
