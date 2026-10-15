@@ -269,6 +269,89 @@ module Bulkrax
       end
     end
 
+    describe '#create_objects' do
+      let(:importer) { FactoryBot.create(:bulkrax_importer_csv) }
+      let(:deferred_work_jobs) { [] }
+
+      before do
+        allow(subject).to receive(:collections).and_return([{ source_identifier: 'col_1', model: 'Collection' }])
+        allow(subject).to receive(:works).and_return([{ source_identifier: 'work_1' }, { source_identifier: 'work_2' }])
+        allow_any_instance_of(CsvEntry).to receive(:build) { |entry| entry.set_status_info('Complete') }
+        allow(ImportCollectionJob).to receive(:perform_later) { |*args| ImportCollectionJob.perform_now(*args) }
+        allow(ImportWorkJob).to receive(:perform_later) { |*args| deferred_work_jobs << args }
+      end
+
+      context 'when the collection job finishes before the parser counts it as enqueued' do
+        it 'leaves no records counted as enqueued once every job has run' do
+          subject.create_objects(%w[collection work])
+          deferred_work_jobs.each { |args| ImportWorkJob.perform_now(*args) }
+
+          expect(ImporterRun.find(subject.current_run.id).enqueued_records).to eq(0)
+        end
+      end
+
+      context 'when a job cannot be enqueued' do
+        before do
+          allow(ImportWorkJob).to receive(:perform_later).and_raise(RuntimeError, 'queue unavailable')
+        end
+
+        it 'does not count the record as enqueued' do
+          subject.create_objects(%w[work])
+
+          expect(ImporterRun.find(subject.current_run.id).enqueued_records).to eq(0)
+        end
+      end
+
+      context 'when jobs run inline while another record is outstanding' do
+        let(:importer) { FactoryBot.create(:bulkrax_importer_csv, validate_only: true) }
+
+        before do
+          subject.current_run.update!(enqueued_records: 1)
+        end
+
+        context 'and a job raises after counting its own record' do
+          before do
+            allow_any_instance_of(CsvEntry).to receive(:build).and_raise(RuntimeError, 'Solr unavailable')
+          end
+
+          it 'leaves the job to count its own record' do
+            subject.create_objects(%w[collection])
+
+            expect(ImporterRun.find(subject.current_run.id).enqueued_records).to eq(1)
+          end
+        end
+
+        context 'and a background retry finishes while an entry that cannot be saved is prepared' do
+          before do
+            subject.current_run.update!(enqueued_records: 2)
+            allow(subject).to receive(:find_or_create_entry) do
+              ImporterRun.decrement_counter(:enqueued_records, subject.current_run.id) # rubocop:disable Rails/SkipsModelValidations
+              raise ActiveRecord::RecordInvalid
+            end
+          end
+
+          it 'counts only the record still outstanding' do
+            subject.create_objects(%w[collection])
+
+            expect(ImporterRun.find(subject.current_run.id).enqueued_records).to eq(1)
+          end
+        end
+
+        context 'and the entry cannot be saved' do
+          before do
+            allow(subject).to receive(:find_or_create_entry).and_raise(ActiveRecord::RecordInvalid)
+          end
+
+          it 'does not count the record and fails the import' do
+            subject.create_objects(%w[collection])
+
+            expect(ImporterRun.find(subject.current_run.id).enqueued_records).to eq(1)
+            expect(importer.reload.current_status.status_message).to eq('Failed')
+          end
+        end
+      end
+    end
+
     describe '#create_works' do
       let(:importer) { FactoryBot.create(:bulkrax_importer_csv) }
       let(:entry) { FactoryBot.create(:bulkrax_entry, importerexporter: importer) }

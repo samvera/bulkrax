@@ -195,8 +195,8 @@ module Bulkrax
           next unless record_has_source_identifier(current_record, index)
           break if limit_reached?(limit, index)
           seen[current_record[source_identifier]] = true
-          create_entry_and_job(current_record, type)
-          increment_counters(index, "#{type}": true)
+          new_entry = prepare_entry(current_record, type)
+          count_and_submit(index, "#{type}": true) { submit_job(new_entry, current_record, type) }
           index += 1
         end
         importer.record_status
@@ -217,15 +217,28 @@ module Bulkrax
         importer.entries.where(rebuild_entry_query(type, parser_fields['entry_statuses'])).find_each do |e|
           seen[e.identifier] = true
           e.status_info('Pending', importer.current_run)
-          if remove_and_rerun
-            delay = calculate_type_delay(type)
-            "Bulkrax::DeleteAndImport#{type.camelize}Job".constantize.set(wait: delay).send(perform_method, e, current_run)
-          else
-            "Bulkrax::Import#{type.camelize}Job".constantize.send(perform_method, e.id, current_run.id)
+          count_and_submit(index) do
+            if remove_and_rerun
+              delay = calculate_type_delay(type)
+              "Bulkrax::DeleteAndImport#{type.camelize}Job".constantize.set(wait: delay).send(perform_method, e, current_run)
+            else
+              "Bulkrax::Import#{type.camelize}Job".constantize.send(perform_method, e.id, current_run.id)
+            end
           end
-          increment_counters(index)
           index += 1
         end
+      end
+    end
+
+    # Counts the record as its job is submitted. A job that could not be enqueued gives its count
+    # back; a job run inline owns its count from the moment it starts.
+    def count_and_submit(index, **record_type)
+      increment_counters(index, **record_type)
+      begin
+        yield
+      rescue StandardError
+        ImporterRun.decrement_counter(:enqueued_records, current_run.id) if perform_method == 'perform_later' # rubocop:disable Rails/SkipsModelValidations
+        raise
       end
     end
 
@@ -258,12 +271,21 @@ module Bulkrax
     end
 
     def create_entry_and_job(current_record, type, identifier = nil)
+      new_entry = prepare_entry(current_record, type, identifier)
+      submit_job(new_entry, current_record, type)
+    end
+
+    def prepare_entry(current_record, type, identifier = nil)
       identifier ||= current_record[source_identifier]
       new_entry = find_or_create_entry(send("#{type}_entry_class"),
                                        identifier,
                                        'Bulkrax::Importer',
                                        record_raw_metadata(current_record))
       new_entry.status_info('Pending', importer.current_run)
+      new_entry
+    end
+
+    def submit_job(new_entry, current_record, type)
       if record_deleted?(current_record)
         "Bulkrax::Delete#{type.camelize}Job".constantize.send(perform_method, new_entry, current_run)
       elsif record_remove_and_rerun?(current_record) || remove_and_rerun

@@ -80,9 +80,9 @@ module Bulkrax
         metadata[work_identifier] = [unique_collection_identifier]
 
         new_entry = collection_entry_class.where(importerexporter: importerexporter, identifier: unique_collection_identifier, raw_metadata: metadata).first_or_create!
+        increment_counters(index, collection: true)
         # perform now to ensure this gets created before work imports start
         ImportCollectionJob.perform_now(new_entry.id, importerexporter.current_run.id)
-        increment_counters(index, collection: true)
       end
     end
 
@@ -95,8 +95,8 @@ module Bulkrax
         break if limit_reached?(limit, index)
 
         seen[identifier] = true
-        create_entry_and_job(record, 'work', identifier)
-        increment_counters(index, work: true)
+        new_entry = prepare_entry(record, 'work', identifier)
+        count_and_submit(index, work: true) { submit_job(new_entry, record, 'work') }
       end
       importer.record_status
     rescue StandardError => e
