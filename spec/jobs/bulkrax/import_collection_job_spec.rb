@@ -66,7 +66,6 @@ module Bulkrax
           allow(Entry).to receive(:find).with(entry.id).and_return(entry)
           allow(entry).to receive(:build).and_raise(StandardError)
           allow(ImporterRun).to receive(:increment_counter).and_call_original
-          allow(ImporterRun).to receive(:decrement_counter).and_call_original
         end
 
         it 'reraises the error' do
@@ -81,7 +80,7 @@ module Bulkrax
 
         it 'does not decrement the number of enqueued records when it is already zero' do
           expect { perform }.to raise_error(StandardError)
-          expect(ImporterRun).not_to have_received(:decrement_counter).with(:enqueued_records, current_run_id)
+          expect(entry.importerexporter.current_run.reload.enqueued_records).to eq(0)
         end
         it 'decrements the number of enqueued records' do
           entry.importerexporter.current_run.update!(enqueued_records: 1)

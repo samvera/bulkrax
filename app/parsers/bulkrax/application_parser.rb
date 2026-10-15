@@ -237,7 +237,7 @@ module Bulkrax
       begin
         yield
       rescue StandardError
-        ImporterRun.decrement_counter(:enqueued_records, current_run.id) if perform_method == 'perform_later' # rubocop:disable Rails/SkipsModelValidations
+        ImporterRun.decrement_enqueued_records(current_run.id) if perform_method == 'perform_later'
         raise
       end
     end
@@ -382,7 +382,7 @@ module Bulkrax
       current_run.invalid_records += message
       current_run.save
       ImporterRun.increment_counter(:failed_records, current_run.id)
-      ImporterRun.decrement_counter(:enqueued_records, current_run.id) unless ImporterRun.find(current_run.id).enqueued_records <= 0 # rubocop:disable Style/IdenticalConditionalBranches
+      ImporterRun.decrement_enqueued_records(current_run.id)
     end
     # rubocop:enable Rails/SkipsModelValidations
 

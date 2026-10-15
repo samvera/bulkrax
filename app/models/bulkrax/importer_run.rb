@@ -2,6 +2,8 @@
 
 module Bulkrax
   class ImporterRun < ApplicationRecord
+    include EnqueuedRecordsCounter
+
     belongs_to :importer
     has_many :statuses, as: :runnable, dependent: :destroy
     has_many :pending_relationships, dependent: :destroy

@@ -6,16 +6,9 @@ module Bulkrax
 
     # rubocop:disable Rails/SkipsModelValidations
     #
-    # @note Yes, we are calling {ImporterRun.find} each time.  these were on purpose to prevent race
-    #       conditions on the database update. If you do not re-find (or at least reload) the object
-    #       on each increment, the count can get messed up. Let's say there are two jobs A and B and
-    #       a counter set to 2.
-    #
-    #       - A grabs the importer_run (line 10)
-    #       - B grabs the importer_run (line 10)
-    #       - A Finishes the build, does the increment (now the counter is 3)
-    #       - B Finishes the build, does the increment (now the counter is 3 again) and thus a count
-    #         is lost.
+    # @note Counters change through single SQL updates ({ImporterRun.increment_counter},
+    #       {ImporterRun.decrement_enqueued_records}), never by loading the run and saving it.
+    #       Jobs run concurrently, so a load-and-save would overwrite another job's count.
     #
     # @see https://codingdeliberately.com/activerecord-increment/
     # @see https://github.com/samvera-labs/bulkrax/commit/5c2c795452e13a98c9217fdac81ae2f5aea031a0#r105848236
@@ -32,7 +25,7 @@ module Bulkrax
         ImporterRun.increment_counter(:failed_works, run_id)
       end
       # Regardless of completion or not, we want to decrement the enqueued records.
-      ImporterRun.decrement_counter(:enqueued_records, run_id) unless ImporterRun.find(run_id).enqueued_records <= 0
+      ImporterRun.decrement_enqueued_records(run_id)
 
       entry.save!
       entry.importer.current_run = ImporterRun.find(run_id)

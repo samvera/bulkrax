@@ -47,6 +47,26 @@ module Bulkrax
         expect(importer_run.enqueued_records).to eq(0)
       end
 
+      context 'when another job finishes at the same time' do
+        before do
+          importer_run
+          other_job_finished = false
+          allow(ImporterRun).to receive(:find).and_wrap_original do |original, *args|
+            original.call(*args).tap do
+              next if other_job_finished
+              other_job_finished = true
+              ImporterRun.where(id: importer_run_id).where('enqueued_records > 0').update_all('enqueued_records = enqueued_records - 1') # rubocop:disable Rails/SkipsModelValidations
+            end
+          end
+        end
+
+        it 'does not count below zero' do
+          import_work_job.perform(1, importer_run_id)
+
+          expect(importer_run.reload.enqueued_records).to eq(0)
+        end
+      end
+
       it "doesn't change unrelated counters" do
         expect(importer_run.failed_records).to eq(0)
         expect(importer_run.deleted_records).to eq(0)
