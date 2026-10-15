@@ -382,7 +382,6 @@ module Bulkrax
       current_run.invalid_records += message
       current_run.save
       ImporterRun.increment_counter(:failed_records, current_run.id)
-      ImporterRun.decrement_enqueued_records(current_run.id)
     end
     # rubocop:enable Rails/SkipsModelValidations
 

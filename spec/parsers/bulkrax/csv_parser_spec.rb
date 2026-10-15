@@ -290,6 +290,18 @@ module Bulkrax
         end
       end
 
+      context 'when a row has no source identifier' do
+        before do
+          allow(subject).to receive(:works).and_return([{ source_identifier: 'work_1' }, { title: 'no source identifier' }])
+        end
+
+        it 'keeps counting the queued records' do
+          subject.create_objects(%w[work])
+
+          expect(ImporterRun.find(subject.current_run.id).enqueued_records).to eq(1)
+        end
+      end
+
       context 'when a job cannot be enqueued' do
         before do
           allow(ImportWorkJob).to receive(:perform_later).and_raise(RuntimeError, 'queue unavailable')
