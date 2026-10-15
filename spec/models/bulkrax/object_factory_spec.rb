@@ -25,6 +25,21 @@ module Bulkrax
         expect(collection.title).to eq(["Title"])
       end
     end
+    describe '.file_sets_for' do
+      it "returns a work's file sets" do
+        file_sets = [double('file set')]
+        work = double('work', file_sets: file_sets)
+
+        expect(described_class.file_sets_for(resource: work)).to eq(file_sets)
+      end
+
+      it 'returns no file sets for a record without them, such as a collection' do
+        collection = double('collection')
+
+        expect(described_class.file_sets_for(resource: collection)).to eq([])
+      end
+    end
+
     describe 'is capable of looking up records dynamically' do
       include_examples 'dynamic record lookup'
     end
