@@ -31,8 +31,8 @@ module Bulkrax
         # TODO: differentiate between work and collection counts for exporters
         importer_run.total_work_entries = index + 1 unless limit.to_i.positive? || parser.total.positive?
       end
-      importer_run.enqueued_records += 1
       importer_run.save!
+      ImporterRun.increment_counter(:enqueued_records, importer_run.id) # rubocop:disable Rails/SkipsModelValidations
     end
 
     def keys_without_numbers(keys)
