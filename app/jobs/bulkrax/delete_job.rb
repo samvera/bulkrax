@@ -4,6 +4,9 @@ module Bulkrax
   class DeleteJob < ApplicationJob
     queue_as Bulkrax.config.ingest_queue_name
 
+    # Set by DeleteAndImportJob, whose import counts the record as finished instead.
+    attr_accessor :reimport
+
     def perform(entry, importer_run)
       user = importer_run.importer.user
 
@@ -24,8 +27,11 @@ module Bulkrax
       # rubocop:enable Rails/SkipsModelValidations
       ImporterRun.decrement_enqueued_records(importer_run.id)
       entry.save!
-      entry.importer.current_run = ImporterRun.find(importer_run.id)
-      entry.importer.record_status
+      unless reimport
+        ImporterRun.decrement_enqueued_records(importer_run.id)
+        entry.importer.current_run = ImporterRun.find(importer_run.id)
+        entry.importer.record_status
+      end
       entry.set_status_info("Deleted", ImporterRun.find(importer_run.id))
     rescue => e
       entry.set_status_info(e)
