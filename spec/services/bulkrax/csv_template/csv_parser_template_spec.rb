@@ -236,6 +236,25 @@ RSpec.describe Bulkrax::CsvParser do
       end
     end
 
+    context 'when the parents mapping stores its split under symbol keys' do
+      before do
+        allow(Bulkrax).to receive(:field_mappings).and_return(
+          'Bulkrax::CsvParser' => {
+            'title' => { 'from' => ['title'] },
+            'model' => { 'from' => ['model'] },
+            'parents' => { from: ['parents'], split: '\|', related_parents_field_mapping: true },
+            'source_identifier' => { 'from' => ['source_identifier'], 'source_identifier' => true }
+          }
+        )
+      end
+
+      it 'splits a multi-parent cell, as import does' do
+        csv = StringIO.new("source_identifier,title,model,parents\nc1,C1,Collection,\nc2,C2,Collection,\nw1,W1,GenericWork,c1|c2\n")
+        result = described_class.validate_csv(csv_file: csv)
+        expect(result[:rowErrors].map { |e| e[:category] }).not_to include('invalid_parent_reference')
+      end
+    end
+
     context 'source_identifier generation' do
       context 'when fill_in_blank_source_identifiers is not configured' do
         before { allow(Bulkrax).to receive(:fill_in_blank_source_identifiers).and_return(nil) }

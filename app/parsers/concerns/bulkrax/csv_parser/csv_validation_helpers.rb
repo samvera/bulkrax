@@ -247,9 +247,10 @@ module Bulkrax
       # Builds the find_record lambda used by row validators and hierarchy extraction.
       def build_find_record
         all_mappings = Bulkrax.field_mappings['Bulkrax::CsvParser'] || {}
-        work_identifier = all_mappings.find { |_k, v| v['source_identifier'] == true }&.first || 'source'
-        work_identifier_search = Array.wrap(all_mappings.dig(work_identifier, 'search_field')).first&.to_s ||
-                                 "#{work_identifier}_sim"
+        flagged = Bulkrax::FieldResolver.flagged_key(all_mappings, 'source_identifier')
+        work_identifier = flagged&.to_s || 'source'
+        search_field = Bulkrax::FieldResolver.option(flagged && all_mappings[flagged], 'search_field')
+        work_identifier_search = Array.wrap(search_field).first&.to_s || "#{work_identifier}_sim"
         ->(id) { find_record_by_source_identifier(id, work_identifier, work_identifier_search) }
       end
 
@@ -280,11 +281,19 @@ module Bulkrax
       end
 
       def resolve_parent_split_pattern(mappings)
-        Bulkrax::SplitPatternCoercion.coerce(mappings.dig('parents', 'split') || mappings.dig(:parents, :split))
+        relationship_split_pattern(mappings, 'related_parents_field_mapping', 'parents')
       end
 
       def resolve_children_split_pattern(mappings)
-        Bulkrax::SplitPatternCoercion.coerce(mappings.dig('children', 'split') || mappings.dig(:children, :split))
+        relationship_split_pattern(mappings, 'related_children_field_mapping', 'children')
+      end
+
+      # Import splits the flagged mapping's cells, so read `split:` from that
+      # mapping, falling back to the conventional key when none is flagged.
+      def relationship_split_pattern(mappings, flag, default_key)
+        key = Bulkrax::FieldResolver.flagged_key(mappings, flag) || default_key
+        entry = mappings[key] || mappings[key.to_s] || mappings[key.to_sym]
+        Bulkrax::SplitPatternCoercion.coerce(Bulkrax::FieldResolver.option(entry, 'split'))
       end
 
       # Builds a graph of { source_identifier => [parent_ids] } from all CSV records.
