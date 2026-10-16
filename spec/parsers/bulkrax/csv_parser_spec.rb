@@ -10,6 +10,39 @@ module Bulkrax
     let(:relationship_subject) { described_class.new(relationship_importer) }
     let(:all_collection_titles) { subject.collections.collect { |c| c[:title] } }
 
+    describe '#import_fields' do
+      let(:importer) { FactoryBot.create(:bulkrax_importer_csv, :with_relationships_mappings) }
+      let(:keys_of_every_row) { described_class.new(importer).records.inject(:merge).keys.compact.uniq }
+
+      it 'returns the keys of every row while reading only the first' do
+        expected = keys_of_every_row
+        expect(Bulkrax::CsvEntry).not_to receive(:read_data)
+        expect(subject.import_fields).to match_array(expected)
+      end
+
+      it 'includes the key an aliased parents column is copied to' do
+        expect(subject.import_fields).to include(:parents, :parents_column)
+      end
+
+      it 'uses the records when they are already loaded' do
+        expected = keys_of_every_row
+        subject.records
+        expect(Bulkrax::CsvEntry).not_to receive(:read_first_row)
+        expect(subject.import_fields).to match_array(expected)
+      end
+
+      context 'when importing only updates' do
+        before do
+          importer.only_updates = true
+          importer.parser_fields['partial_import_file_path'] = 'spec/fixtures/csv/collections.csv'
+        end
+
+        it 'reads the partial import file' do
+          expect(subject.import_fields).to match_array(%i[source_identifier model title description])
+        end
+      end
+    end
+
     describe '#build_records' do
       let(:importer) { FactoryBot.create(:bulkrax_importer_csv, :with_relationships_mappings, parser_fields: { 'import_file_path' => 'spec/fixtures/csv/all_record_types.csv' }) }
 

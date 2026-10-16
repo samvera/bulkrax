@@ -39,19 +39,28 @@ module Bulkrax
     # we strip any special characters out of the headers. looking at you Excel
     def self.read_data(path)
       raise CsvPathError, 'CSV path empty' if path.blank?
-      options = {
+
+      results = if path.respond_to?(:read)
+                  path.rewind if path.respond_to?(:rewind)
+                  CSV.parse(path.read, **read_data_options)
+                else
+                  CSV.read(path, **read_data_options)
+                end
+      csv_wrapper_class.new(results)
+    end
+
+    def self.read_first_row(path)
+      raise CsvPathError, 'CSV path empty' if path.blank?
+
+      CSV.foreach(path, **read_data_options).first
+    end
+
+    def self.read_data_options
+      {
         headers: true,
         header_converters: ->(h) { h.to_s.gsub(/[^\w\d\. -]+/, '').strip.to_sym },
         encoding: 'utf-8'
       }.merge(csv_read_data_options)
-
-      results = if path.respond_to?(:read)
-                  path.rewind if path.respond_to?(:rewind)
-                  CSV.parse(path.read, **options)
-                else
-                  CSV.read(path, **options)
-                end
-      csv_wrapper_class.new(results)
     end
 
     # The purpose of this class is to reject empty lines.  This causes lots of grief in importing.
