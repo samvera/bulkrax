@@ -98,7 +98,6 @@ module Bulkrax
         new_entry = prepare_entry(record, 'work', identifier)
         count_and_submit(index, work: true) { submit_job(new_entry, record, 'work') }
       end
-      importer.record_status
     rescue StandardError => e
       set_status_info(e)
     end

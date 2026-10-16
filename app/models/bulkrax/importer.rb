@@ -49,6 +49,7 @@ module Bulkrax
     def record_status
       importer_run = ImporterRun.find(current_run.id) # make sure fresh
       return if importer_run.enqueued_records.positive? # still processing
+      return if importer_run.importer.failed? # a parse failure outranks the records that finished
       if importer_run.failed_records.positive?
         if importer_run.invalid_records.present?
           e = Bulkrax::ImportFailed.new('Failed with Invalid Records', importer_run.invalid_records.split("\n"))
@@ -235,8 +236,19 @@ module Bulkrax
       self.only_updates ||= false
       self.save if self.new_record? # Object needs to be saved for statuses
       types = types_array || DEFAULT_OBJECT_TYPES
-      existing_entries? ? parser.rebuild_entries(types) : parser.create_objects(types)
-      mark_unseen_as_skipped
+      # Hold one extra count while parsing, so a job that finishes before the
+      # remaining records are enqueued cannot mark the importer complete.
+      ImporterRun.increment_counter(:enqueued_records, current_run.id) # rubocop:disable Rails/SkipsModelValidations
+      begin
+        existing_entries? ? parser.rebuild_entries(types) : parser.create_objects(types)
+        mark_unseen_as_skipped
+      rescue StandardError => e
+        # Recorded while the hold is still in place, so no finishing job can mark the run complete first.
+        set_status_info(e)
+      ensure
+        ImporterRun.decrement_enqueued_records(current_run.id)
+      end
+      record_status
     rescue StandardError => e
       set_status_info(e)
     end
