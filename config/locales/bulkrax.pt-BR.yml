@@ -249,6 +249,7 @@ pt-BR:
           warning_category_invalid_child_reference: Referência filha inválida
           warning_category_invalid_controlled_value: Valor de vocabulário controlado inválido
           warning_category_invalid_parent_reference: Referência-pai inválida
+          warning_category_missing_file_reference: "Arquivo referenciado ausente"
           warning_category_missing_required_value: Valor obrigatório ausente
           warning_category_missing_source_identifier: Identificador de origem ausente
           zip_limit: 'Apenas 1 arquivo ZIP permitido. Os seguintes arquivos não foram adicionados:'
@@ -352,11 +353,6 @@ pt-BR:
               suggestion: "Se você não pretendia atualizar um registro existente, altere o valor de %{field}."
           failed: Validação falhou
           file_path_not_exist: O caminho do arquivo não existe.
-          file_references_title: Referências de arquivos
-          files_found_in_zip: "%{found} de %{total} arquivos encontrados no arquivo ZIP."
-          files_missing_from_zip: "%{count} %{files_word} referenciado no seu CSV, mas ausente no ZIP:"
-          files_referenced: "%{count} arquivos referenciados no CSV não foram encontrados na importação."
-          missing_from_zip: ausente do CEP
           missing_source_identifier_validator:
             errors:
               message: "A linha não tem um valor para '%{field}'."
@@ -367,9 +363,9 @@ pt-BR:
           missing_rights_desc: Seu arquivo CSV não inclui uma coluna `rights_statement`. Você pode adicioná-la ao seu CSV ou selecionar uma Declaração de Direitos Padrão na próxima etapa.
           multiple_csv: Vários arquivos CSV estão no nível menos profundo dentro do ZIP, então não é possível determinar qual é o CSV principal. Mantenha exatamente um CSV nesse nível; CSVs adicionais devem estar aninhados em níveis mais profundos.
           no_csv_in_zip: Nenhum arquivo CSV encontrado no arquivo ZIP.
+          zip_unreadable: "Não foi possível ler o arquivo ZIP (%{error}). Recrie o ZIP e envie-o novamente."
           no_csv_uploaded: Nenhum arquivo de metadados CSV foi carregado.
           no_files_uploaded: Nenhum arquivo foi enviado.
-          no_zip_desc: Nenhum arquivo ZIP foi enviado. Certifique-se de que os arquivos estejam acessíveis no servidor ou envie um arquivo ZIP.
           parent_reference_validator:
             errors:
               message: "O pai referenciado '%{value}' não existe como %{field} neste CSV."
@@ -382,9 +378,17 @@ pt-BR:
             errors:
               message: "'%{value}' faz parte de uma relação pai-filho circular."
               suggestion: "Revise as colunas de pai/filho e remova as referências incorretas."
+          file_reference_validator:
+            errors:
+              missing_file_reference:
+                message: "O arquivo referenciado '%{value}' não está no ZIP enviado."
+                suggestion: "Verifique o caminho do arquivo e certifique-se de que ele está no mesmo local dentro do ZIP."
           passed: Validação aprovada
           passed_warnings: Validação aprovada com advertências.
           recognized_fields: 'Campos reconhecidos: %{fields}'
+          files_referenced_no_zip_notice:
+            message: "O CSV faz referência a arquivos, mas nenhum ZIP foi enviado."
+            suggestion: "Envie um ZIP com os arquivos referenciados ou certifique-se de que eles estejam acessíveis no servidor no momento da importação."
           default_work_type_validator:
             warnings:
               message: "Nenhum modelo especificado — esta linha será importada como '%{default_work_type}'."
@@ -400,7 +404,6 @@ pt-BR:
               suggestion: "Adicione um valor para '%{field}'."
           validation_error_csv_builder:
             empty_column: "A coluna %{column} não tem cabeçalho e será ignorada durante a importação"
-            missing_file: "Arquivo ausente: %{filename}"
             missing_required_column: "Falta a coluna obrigatória '%{field}' (%{model})"
             unrecognized_column: "Coluna não reconhecida '%{column}'"
             unrecognized_column_with_suggestion: "Coluna não reconhecida '%{column}' (você quis dizer '%{suggestion}'?)"

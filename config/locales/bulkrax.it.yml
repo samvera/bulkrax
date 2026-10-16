@@ -249,6 +249,7 @@ it:
           warning_category_invalid_child_reference: Riferimento figlio non valido
           warning_category_invalid_controlled_value: Valore di vocabolario controllato non valido
           warning_category_invalid_parent_reference: Riferimento genitore non valido
+          warning_category_missing_file_reference: "File referenziato mancante"
           warning_category_missing_required_value: Valore obbligatorio mancante
           warning_category_missing_source_identifier: Identificatore di origine mancante
           zip_limit: 'È consentito un solo file ZIP. I seguenti file non sono stati aggiunti:'
@@ -352,11 +353,6 @@ it:
               suggestion: "Se non intendevi aggiornare un record esistente, modifica il valore di %{field}."
           failed: Convalida fallita
           file_path_not_exist: Il percorso del file non esiste
-          file_references_title: Riferimenti ai file
-          files_found_in_zip: "%{found} di %{total} file trovati in ZIP."
-          files_missing_from_zip: "%{count} %{files_word} a cui si fa riferimento nel CSV ma che non è presente nel file ZIP:"
-          files_referenced: "%{count} file referenziati nel CSV non trovati durante l'importazione."
-          missing_from_zip: mancante dal codice postale
           missing_source_identifier_validator:
             errors:
               message: "Nella riga manca un valore per '%{field}'."
@@ -367,9 +363,9 @@ it:
           missing_rights_desc: Il tuo file CSV non include una colonna rights_statement. Puoi aggiungerla al tuo file CSV o selezionare una colonna "Default Rights Statement" nel passaggio successivo.
           multiple_csv: Sono stati trovati più file CSV al livello meno profondo all'interno dello ZIP, quindi non è possibile determinare il CSV principale. Mantieni esattamente un CSV a quel livello; eventuali CSV aggiuntivi devono essere annidati più in profondità.
           no_csv_in_zip: Nessun file CSV trovato nello ZIP
+          zip_unreadable: "Impossibile leggere il file ZIP (%{error}). Ricrea lo ZIP e caricalo di nuovo."
           no_csv_uploaded: Nessun file di metadati CSV caricato
           no_files_uploaded: Nessun file caricato
-          no_zip_desc: Nessun file ZIP caricato. Assicurarsi che i file siano accessibili sul server o caricare un file ZIP.
           parent_reference_validator:
             errors:
               message: "Il genitore referenziato '%{value}' non esiste come %{field} in questo CSV."
@@ -382,9 +378,17 @@ it:
             errors:
               message: "'%{value}' fa parte di una relazione padre-figlio circolare."
               suggestion: "Rivedere le colonne padre/figlio e rimuovere i riferimenti errati."
+          file_reference_validator:
+            errors:
+              missing_file_reference:
+                message: "Il file referenziato '%{value}' non è presente nello ZIP caricato."
+                suggestion: "Controlla il percorso del file e assicurati che si trovi nella stessa posizione all'interno dello ZIP."
           passed: Validazione superata
           passed_warnings: Validazione superata con avvisi
           recognized_fields: 'Campi riconosciuti: %{fields}'
+          files_referenced_no_zip_notice:
+            message: "Il CSV fa riferimento a dei file, ma non è stato caricato alcuno ZIP."
+            suggestion: "Carica uno ZIP con i file referenziati oppure assicurati che siano accessibili sul server al momento dell'importazione."
           default_work_type_validator:
             warnings:
               message: "Nessun modello specificato — questa riga verrà importata come '%{default_work_type}'."
@@ -400,7 +404,6 @@ it:
               suggestion: "Aggiungi un valore per '%{field}'."
           validation_error_csv_builder:
             empty_column: "La colonna %{column} non ha intestazione e verrà ignorata durante l'importazione"
-            missing_file: "File mancante: %{filename}"
             missing_required_column: "Colonna obbligatoria mancante '%{field}' (%{model})"
             unrecognized_column: "Colonna non riconosciuta '%{column}'"
             unrecognized_column_with_suggestion: "Colonna non riconosciuta '%{column}' (intendevi '%{suggestion}'?)"

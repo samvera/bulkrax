@@ -47,7 +47,7 @@ module Bulkrax
           missingRequired: [], unrecognized: {}, rowCount: 4,
           isValid: true, hasWarnings: false,
           collections: [], works: [], fileSets: [],
-          totalItems: 0, fileReferences: 0, missingFiles: [], foundFiles: 0, zipIncluded: false
+          totalItems: 0
         }
       end
 
@@ -170,12 +170,14 @@ module Bulkrax
             post_validate(importer: { parser_fields: { files: [csv_upload, zip_upload] } })
 
             expect(response).to have_http_status(:ok)
-            expect(json_response[:zipIncluded]).to eq(true)
-            expect(json_response[:missingFiles]).to include(missing_name)
-
-            file_issue = json_response.dig(:messages, :issues).find { |i| i[:type] == 'file_references' }
-            expect(file_issue).to be_present
-            expect(file_issue[:items]).to include(a_hash_including(field: missing_name))
+            row_errors = json_response[:rowErrors] || []
+            expect(row_errors).to include(
+              a_hash_including(
+                category: 'missing_file_reference',
+                column: 'file',
+                value: missing_name
+              )
+            )
           end
         end
 
@@ -287,6 +289,252 @@ module Bulkrax
           let(:present_in_zip) { %w[present.jpg] }
 
           include_examples 'reports the missing file', 'missing.jpg'
+        end
+      end
+
+      context 'path-aware file validation' do
+        before { stub_bulkrax_models }
+
+        let(:csv_upload) do
+          t = Tempfile.new(['data', '.csv'])
+          t.write(csv_content)
+          t.flush
+          Rack::Test::UploadedFile.new(t.path, 'text/csv', original_filename: 'data.csv')
+        end
+
+        # Build a zip whose entry names are `zip_entries` verbatim.
+        let(:zip_upload) do
+          t = Tempfile.new(['upload', '.zip'])
+          Zip::File.open(t.path, create: true) do |zip|
+            zip_entries.each { |name| zip.get_output_stream(name) { |f| f.write('fake') } }
+          end
+          Rack::Test::UploadedFile.new(t.path, 'application/zip', original_filename: 'upload.zip')
+        end
+
+        shared_examples 'per-row error for the referenced path' do |missing_path|
+          it "emits a missing_file_reference row error for #{missing_path}" do
+            post_validate(importer: { parser_fields: { files: [csv_upload, zip_upload] } })
+
+            expect(response).to have_http_status(:ok)
+            expect(json_response[:isValid]).to eq(false)
+            row_errors = json_response[:rowErrors] || []
+            expect(row_errors).to include(
+              a_hash_including(
+                severity: 'error',
+                category: 'missing_file_reference',
+                column: 'file',
+                value: missing_path
+              )
+            )
+          end
+        end
+
+        context 'when the CSV lists a file under a numbered column' do
+          let(:csv_content) do
+            <<~CSV
+              source_identifier,title,model,file_1
+              w1,W1,GenericWork,missing.jpg
+            CSV
+          end
+          let(:zip_entries) { %w[present.jpg] }
+
+          include_examples 'per-row error for the referenced path', 'missing.jpg'
+        end
+
+        context 'when a file name has non-ASCII characters' do
+          let(:csv_content) do
+            <<~CSV
+              source_identifier,title,model,file
+              w1,W1,GenericWork,café.jpg
+            CSV
+          end
+          let(:zip_entries) { ['café.jpg'] }
+
+          it 'finds the file, as import does' do
+            post_validate(importer: { parser_fields: { files: [csv_upload, zip_upload] } })
+            expect(json_response[:rowErrors] || []).to all(satisfy { |e| e[:category] != 'missing_file_reference' })
+          end
+        end
+
+        context 'when the zip holds an entry that would extract outside its folder' do
+          let(:csv_content) do
+            <<~CSV
+              source_identifier,title,model,file
+              w1,W1,GenericWork,img.jpg
+            CSV
+          end
+          let(:zip_entries) { %w[img.jpg ../evil.jpg] }
+
+          it 'fails validation with the unsafe-entry message import gives' do
+            post_validate(importer: { parser_fields: { files: [csv_upload, zip_upload] } })
+            expect(json_response[:isValid]).to eq(false)
+            expect(json_response.dig(:messages, :validationStatus, :summary)).to include('unsafe path (../evil.jpg)')
+          end
+        end
+
+        context 'when only a zip is uploaded and its CSV sits beside a files folder' do
+          let(:zip_only_upload) do
+            t = Tempfile.new(['upload', '.zip'])
+            Zip::File.open(t.path, create: true) do |zip|
+              zip.get_output_stream('metadata.csv') { |f| f.write("source_identifier,title,model,file\nw1,W1,GenericWork,img.jpg\n") }
+              zip.get_output_stream('files/img.jpg') { |f| f.write('fake') }
+            end
+            Rack::Test::UploadedFile.new(t.path, 'application/zip', original_filename: 'upload.zip')
+          end
+
+          it 'places the files relative to that CSV, as import does' do
+            post_validate(importer: { parser_fields: { files: [zip_only_upload] } })
+            expect(response).to have_http_status(:ok)
+            expect(json_response[:rowErrors] || []).to all(satisfy { |e| e[:category] != 'missing_file_reference' })
+          end
+        end
+
+        context 'when only a zip is uploaded and it cannot be read' do
+          let(:broken_zip_upload) do
+            t = Tempfile.new(['upload', '.zip'])
+            t.write('not a zip archive')
+            t.flush
+            Rack::Test::UploadedFile.new(t.path, 'application/zip', original_filename: 'upload.zip')
+          end
+
+          it 'fails validation and says the zip could not be read' do
+            post_validate(importer: { parser_fields: { files: [broken_zip_upload] } })
+            expect(response).to have_http_status(:ok)
+            expect(json_response.dig(:messages, :validationStatus, :summary)).to start_with('The ZIP file could not be read')
+          end
+        end
+
+        context 'when the CSV is uploaded beside a zip that also holds a CSV' do
+          let(:csv_content) do
+            <<~CSV
+              source_identifier,title,model,file
+              w1,W1,GenericWork,extra.csv
+            CSV
+          end
+          let(:zip_entries) { %w[extra.csv img.jpg] }
+
+          it 'treats every zip entry as an attachment, as import does' do
+            post_validate(importer: { parser_fields: { files: [csv_upload, zip_upload] } })
+            row_errors = json_response[:rowErrors] || []
+            expect(row_errors).to all(satisfy { |e| e[:category] != 'missing_file_reference' })
+          end
+        end
+
+        context 'when the CSV is uploaded beside a zip wrapped in one folder' do
+          let(:csv_content) do
+            <<~CSV
+              source_identifier,title,model,file
+              w1,W1,GenericWork,img.jpg
+            CSV
+          end
+          let(:zip_entries) { %w[batch/img.jpg batch/data/report.csv] }
+
+          it 'strips the wrapper folder, as import does' do
+            post_validate(importer: { parser_fields: { files: [csv_upload, zip_upload] } })
+            row_errors = json_response[:rowErrors] || []
+            expect(row_errors).to all(satisfy { |e| e[:category] != 'missing_file_reference' })
+          end
+        end
+
+        context 'when the zip holds only macOS metadata' do
+          let(:csv_content) do
+            <<~CSV
+              source_identifier,title,model,file
+              w1,W1,GenericWork,foo.jpg
+            CSV
+          end
+          let(:zip_entries) { %w[__MACOSX/._foo.jpg photos/._thumbs/foo.jpg] }
+
+          include_examples 'per-row error for the referenced path', 'foo.jpg'
+        end
+
+        context 'when a macOS metadata folder sits beside the wrapper folder' do
+          let(:csv_content) do
+            <<~CSV
+              source_identifier,title,model,file
+              w1,W1,GenericWork,foo.jpg
+            CSV
+          end
+          let(:zip_entries) { %w[files/foo.jpg ._junk/bar.jpg] }
+
+          it 'ignores the metadata folder before stripping the wrapper, as import does' do
+            post_validate(importer: { parser_fields: { files: [csv_upload, zip_upload] } })
+            row_errors = json_response[:rowErrors] || []
+            expect(row_errors).to all(satisfy { |e| e[:category] != 'missing_file_reference' })
+          end
+        end
+
+        context 'when the zip cannot be read' do
+          let(:csv_content) do
+            <<~CSV
+              source_identifier,title,model,file
+              w1,W1,GenericWork,foo.jpg
+            CSV
+          end
+          let(:zip_upload) do
+            t = Tempfile.new(['upload', '.zip'])
+            t.write('not a zip archive')
+            t.flush
+            Rack::Test::UploadedFile.new(t.path, 'application/zip', original_filename: 'upload.zip')
+          end
+
+          it 'fails validation and says the zip could not be read' do
+            post_validate(importer: { parser_fields: { files: [csv_upload, zip_upload] } })
+            expect(json_response[:isValid]).to eq(false)
+            expect(json_response.dig(:messages, :validationStatus, :summary)).to start_with('The ZIP file could not be read')
+          end
+        end
+
+        context 'subdirectory mismatch' do
+          let(:csv_content) do
+            <<~CSV
+              source_identifier,title,model,file
+              w1,W1,GenericWork,subdir_a/foo.jpg
+            CSV
+          end
+          let(:zip_entries) { %w[files/subdir_b/foo.jpg] }
+
+          include_examples 'per-row error for the referenced path', 'subdir_a/foo.jpg'
+        end
+
+        context 'root/nested mismatch' do
+          let(:csv_content) do
+            <<~CSV
+              source_identifier,title,model,file
+              w1,W1,GenericWork,foo.jpg
+            CSV
+          end
+          let(:zip_entries) { %w[files/deep/nested/foo.jpg] }
+
+          include_examples 'per-row error for the referenced path', 'foo.jpg'
+        end
+
+        context 'duplicate basenames at different depths' do
+          let(:csv_content) do
+            <<~CSV
+              source_identifier,title,model,file
+              w1,W1,GenericWork,foo.jpg
+            CSV
+          end
+          let(:zip_entries) { %w[files/dir_a/foo.jpg files/dir_b/foo.jpg] }
+
+          include_examples 'per-row error for the referenced path', 'foo.jpg'
+        end
+
+        context 'exact-path match (regression guard)' do
+          let(:csv_content) do
+            <<~CSV
+              source_identifier,title,model,file
+              w1,W1,GenericWork,subdir/foo.jpg
+            CSV
+          end
+          let(:zip_entries) { %w[files/subdir/foo.jpg] }
+
+          it 'emits no file-reference row errors' do
+            post_validate(importer: { parser_fields: { files: [csv_upload, zip_upload] } })
+            row_errors = json_response[:rowErrors] || []
+            expect(row_errors).to all(satisfy { |e| e[:category] != 'missing_file_reference' })
+          end
         end
       end
 

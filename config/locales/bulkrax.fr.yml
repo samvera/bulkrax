@@ -249,6 +249,7 @@ fr:
           warning_category_invalid_child_reference: Référence enfant non valide
           warning_category_invalid_controlled_value: Valeur de vocabulaire contrôlé non valide
           warning_category_invalid_parent_reference: Référence parente non valide
+          warning_category_missing_file_reference: "Fichier référencé manquant"
           warning_category_missing_required_value: Valeur obligatoire manquante
           warning_category_missing_source_identifier: Identifiant source manquant
           zip_limit: 'Un seul fichier ZIP est autorisé. Les fichiers suivants n''ont pas été ajoutés :'
@@ -352,11 +353,6 @@ fr:
               suggestion: "Si vous ne souhaitiez pas mettre à jour un enregistrement existant, modifiez la valeur de %{field}."
           failed: Échec de la validation
           file_path_not_exist: Le chemin d'accès au fichier n'existe pas.
-          file_references_title: Références de fichiers
-          files_found_in_zip: "%{found} fichiers sur %{total} trouvés dans le fichier ZIP."
-          files_missing_from_zip: "%{count} %{files_word} référencé dans votre fichier CSV mais absent du fichier ZIP :"
-          files_referenced: "%{count} fichiers référencés dans le fichier CSV sont introuvables lors de l'importation."
-          missing_from_zip: manquant dans le fichier ZIP
           missing_source_identifier_validator:
             errors:
               message: "Il manque une valeur pour '%{field}' dans cette ligne."
@@ -367,9 +363,9 @@ fr:
           missing_rights_desc: Votre fichier CSV ne contient pas de colonne « droits_statement ». Vous pouvez l'ajouter ou sélectionner une déclaration de droits par défaut à l'étape suivante.
           multiple_csv: Plusieurs fichiers CSV se trouvent au niveau le moins profond dans le ZIP, ce qui empêche d'identifier le CSV principal. Conservez exactement un fichier CSV à ce niveau ; les CSV supplémentaires doivent être imbriqués plus profondément.
           no_csv_in_zip: Aucun fichier CSV trouvé dans le fichier ZIP
+          zip_unreadable: "Le fichier ZIP n'a pas pu être lu (%{error}). Recréez le fichier ZIP et téléversez-le à nouveau."
           no_csv_uploaded: Aucun fichier de métadonnées CSV n'a été téléchargé.
           no_files_uploaded: Aucun fichier téléchargé
-          no_zip_desc: Aucun fichier ZIP n'a été téléchargé. Assurez-vous que les fichiers sont accessibles sur le serveur ou téléchargez un fichier ZIP.
           parent_reference_validator:
             errors:
               message: "Le parent référencé « %{value} » n'existe pas en tant que %{field} dans ce CSV."
@@ -382,9 +378,17 @@ fr:
             errors:
               message: "« %{value} » fait partie d'une relation parent-enfant circulaire."
               suggestion: "Vérifiez les colonnes parent/enfant et supprimez les références incorrectes."
+          file_reference_validator:
+            errors:
+              missing_file_reference:
+                message: "Le fichier référencé « %{value} » ne figure pas dans le fichier ZIP téléversé."
+                suggestion: "Vérifiez le chemin du fichier et assurez-vous que le fichier se trouve au même emplacement dans le fichier ZIP."
           passed: Validation réussie
           passed_warnings: Validation réussie avec avertissements
           recognized_fields: 'Champs reconnus : %{fields}'
+          files_referenced_no_zip_notice:
+            message: "Le CSV fait référence à des fichiers, mais aucun fichier ZIP n'a été téléversé."
+            suggestion: "Téléversez un fichier ZIP contenant les fichiers référencés, ou assurez-vous qu'ils seront accessibles sur le serveur au moment de l'importation."
           default_work_type_validator:
             warnings:
               message: "Aucun modèle spécifié — cette ligne sera importée en tant que '%{default_work_type}'."
@@ -400,7 +404,6 @@ fr:
               suggestion: "Ajoutez une valeur pour « %{field} »."
           validation_error_csv_builder:
             empty_column: "La colonne %{column} n'a pas d'en-tête et sera ignorée lors de l'importation"
-            missing_file: "Fichier manquant : %{filename}"
             missing_required_column: "Colonne obligatoire manquante « %{field} » (%{model})"
             unrecognized_column: "Colonne non reconnue « %{column} »"
             unrecognized_column_with_suggestion: "Colonne non reconnue « %{column} » (vouliez-vous dire « %{suggestion} » ?)"

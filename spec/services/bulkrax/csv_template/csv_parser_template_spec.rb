@@ -99,14 +99,11 @@ RSpec.describe Bulkrax::CsvParser do
       expect(result).to have_key(:rowCount)
       expect(result).to have_key(:isValid)
       expect(result).to have_key(:hasWarnings)
+      expect(result).to have_key(:rowErrors)
       expect(result).to have_key(:collections)
       expect(result).to have_key(:works)
       expect(result).to have_key(:fileSets)
       expect(result).to have_key(:totalItems)
-      expect(result).to have_key(:fileReferences)
-      expect(result).to have_key(:missingFiles)
-      expect(result).to have_key(:foundFiles)
-      expect(result).to have_key(:zipIncluded)
     end
 
     it 'extracts headers from CSV' do
@@ -127,19 +124,17 @@ RSpec.describe Bulkrax::CsvParser do
       expect(result[:totalItems]).to be_a(Numeric)
     end
 
-    it 'provides file validation information' do
+    it 'emits no file-reference row errors when every referenced file is in the ZIP' do
       result = described_class.validate_csv(csv_file: csv_file, zip_file: zip_file)
-      expect(result[:fileReferences]).to be_a(Numeric)
-      expect(result[:foundFiles]).to be_a(Numeric)
-      expect(result[:missingFiles]).to be_an(Array)
-      expect(result[:zipIncluded]).to be true
+      expect(result[:rowErrors]).to be_an(Array)
+      expect(result[:rowErrors]).to all(satisfy { |e| e[:category] != 'missing_file_reference' })
     end
 
-    it 'handles validation without zip file' do
+    it 'emits a files_referenced_no_zip notice when files are referenced but no zip is uploaded' do
       result = described_class.validate_csv(csv_file: csv_file, zip_file: nil)
-      expect(result[:zipIncluded]).to be false
-      expect(result[:missingFiles]).to be_empty
-      expect(result[:foundFiles]).to eq(0)
+      expect(result[:notices]).to include(
+        a_hash_including(category: 'files_referenced_no_zip')
+      )
     end
 
     context 'when only rights_statement is missing (suppliable on Step 2)' do

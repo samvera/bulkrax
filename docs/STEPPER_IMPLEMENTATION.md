@@ -220,10 +220,8 @@ StepperResponseFormatter.error(message: 'Something went wrong', summary: 'Error 
   works: [...],
   fileSets: [...],
   totalItems: 247,
-  fileReferences: 55,
-  missingFiles: [...],
-  foundFiles: 52,
-  zipIncluded: true,
+  rowErrors: [...],
+  notices: [...],
 
   # Added by formatter
   messages: {
@@ -246,7 +244,7 @@ StepperResponseFormatter.error(message: 'Something went wrong', summary: 'Error 
         items: ['title (Work)', 'creator (Work)'],
         defaultOpen: true
       },
-      # ... unrecognized_fields, file_references issues
+      # ... unrecognized_fields, row_level_errors, row_level_warnings, notices issues
     ]
   }
 }
@@ -566,10 +564,14 @@ The default validators run in order:
 ```ruby
 Bulkrax.csv_row_validators
 # => [
+#   Bulkrax::CsvRow::MissingSourceIdentifier,
 #   Bulkrax::CsvRow::DuplicateIdentifier,
 #   Bulkrax::CsvRow::ParentReference,
+#   Bulkrax::CsvRow::ChildReference,
+#   Bulkrax::CsvRow::CircularReference,
 #   Bulkrax::CsvRow::RequiredValues,
-#   Bulkrax::CsvRow::ControlledVocabulary
+#   Bulkrax::CsvRow::ControlledVocabulary,
+#   Bulkrax::CsvRow::FileReference
 # ]
 ```
 
