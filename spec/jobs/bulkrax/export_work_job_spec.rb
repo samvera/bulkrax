@@ -45,6 +45,21 @@ module Bulkrax
       end
     end
 
+    describe 'when the entry raises while the exporter runs it inline' do
+      let(:exporter_run) { create(:bulkrax_exporter_run, exporter: exporter, enqueued_records: 2) }
+
+      before do
+        allow(Bulkrax::Entry).to receive(:find).with(entry.id).and_return(entry)
+        allow(entry).to receive(:build).and_raise(RuntimeError, 'Solr unavailable')
+      end
+
+      it 're-raises for the export loop after counting the record as failed once' do
+        expect { described_class.perform_now(entry.id, exporter_run.id) }.to raise_error(RuntimeError, 'Solr unavailable')
+
+        expect(exporter_run.reload).to have_attributes(enqueued_records: 1, failed_records: 1)
+      end
+    end
+
     describe "when entry completes but entry.failed? is true" do
       before do
         allow(Bulkrax::Entry).to receive(:find).with(entry.id).and_return(entry)

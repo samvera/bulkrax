@@ -2,9 +2,13 @@
 
 module Bulkrax
   class MissingParentError < ::StandardError; end
+  class InvalidParentError < ::StandardError; end
 
   class ImportFileSetJob < ApplicationJob
     include DynamicRecordLookup
+    include RetriesThenCountsFailure
+
+    FAILED_COUNTER = :failed_file_sets
 
     queue_as Bulkrax.config.ingest_queue_name
 
@@ -21,22 +25,27 @@ module Bulkrax
       rescue MissingParentError => e
         handle_retry(entry, importer_run_id, e)
         return
+      rescue InvalidParentError => e
+        count_as_failed(entry.id, importer_run_id, e)
+        return
       end
 
       entry.build
-      if entry.succeeded?
-        # rubocop:disable Rails/SkipsModelValidations
-        ImporterRun.increment_counter(:processed_records, importer_run_id)
-        ImporterRun.increment_counter(:processed_file_sets, importer_run_id)
-      else
-        ImporterRun.increment_counter(:failed_records, importer_run_id)
-        ImporterRun.increment_counter(:failed_file_sets, importer_run_id)
-        # rubocop:enable Rails/SkipsModelValidations
-      end
-      ImporterRun.decrement_enqueued_records(importer_run_id)
       entry.save!
-      entry.importer.current_run = ImporterRun.find(importer_run_id)
-      entry.importer.record_status
+      ImporterRun.transaction do
+        if entry.succeeded?
+          # rubocop:disable Rails/SkipsModelValidations
+          ImporterRun.increment_counter(:processed_records, importer_run_id)
+          ImporterRun.increment_counter(:processed_file_sets, importer_run_id)
+        else
+          ImporterRun.increment_counter(:failed_records, importer_run_id)
+          ImporterRun.increment_counter(:failed_file_sets, importer_run_id)
+          # rubocop:enable Rails/SkipsModelValidations
+        end
+        ImporterRun.decrement_enqueued_records(importer_run_id)
+        entry.importer.current_run = ImporterRun.find(importer_run_id)
+        entry.importer.record_status
+      end
     end
 
     private
@@ -55,7 +64,7 @@ module Bulkrax
       case parent_record
       when Bulkrax.collection_model_class, Bulkrax.file_model_class
         error_msg = %(A record with the ID "#{parent_identifier}" was found, but it was a #{parent_record.class}, which is not an valid/available work type)
-        raise ::StandardError, error_msg
+        raise InvalidParentError, error_msg
       end
     end
 
@@ -67,11 +76,11 @@ module Bulkrax
     def handle_retry(entry, importer_run_id, e)
       entry.import_attempts += 1
       entry.save!
-      if entry.import_attempts < 5
-        ImportFileSetJob.set(wait: (entry.import_attempts + 1).minutes).perform_later(entry.id, importer_run_id)
+      # Waits 5, 10, 20, 40 and then 80 minutes, outlasting a parent work's own retries.
+      if entry.import_attempts < 6
+        ImportFileSetJob.set(wait: (5 * (2**(entry.import_attempts - 1))).minutes).perform_later(entry.id, importer_run_id)
       else
-        ImporterRun.decrement_enqueued_records(importer_run_id)
-        entry.set_status_info(e)
+        count_as_failed(entry.id, importer_run_id, e)
       end
     end
   end
