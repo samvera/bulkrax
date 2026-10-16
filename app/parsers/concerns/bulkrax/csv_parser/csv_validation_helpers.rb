@@ -248,9 +248,10 @@ module Bulkrax
       # Builds the find_record lambda used by row validators and hierarchy extraction.
       def build_find_record
         all_mappings = Bulkrax.field_mappings['Bulkrax::CsvParser'] || {}
-        work_identifier = all_mappings.find { |_k, v| v['source_identifier'] == true }&.first || 'source'
-        work_identifier_search = Array.wrap(all_mappings.dig(work_identifier, 'search_field')).first&.to_s ||
-                                 "#{work_identifier}_sim"
+        flagged = Bulkrax::FieldResolver.flagged_key(all_mappings, 'source_identifier')
+        work_identifier = flagged&.to_s || 'source'
+        search_field = Bulkrax::FieldResolver.option(flagged && all_mappings[flagged], 'search_field')
+        work_identifier_search = Array.wrap(search_field).first&.to_s || "#{work_identifier}_sim"
         ->(id) { find_record_by_source_identifier(id, work_identifier, work_identifier_search) }
       end
 

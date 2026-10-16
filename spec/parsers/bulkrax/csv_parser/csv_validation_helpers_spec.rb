@@ -757,6 +757,22 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
       end
     end
 
+    context 'when the source_identifier mapping uses symbol keys' do
+      before do
+        allow(Bulkrax).to receive(:field_mappings).and_return(
+          'Bulkrax::CsvParser' => { 'local_id' => { from: ['source_identifier'], source_identifier: true, search_field: 'local_id_tesim' } }
+        )
+      end
+
+      it 'uses the mapped identifier and search_field' do
+        lam = host.build_find_record
+        expect(Bulkrax::ValkyrieObjectFactory).to receive(:search_by_property).with(
+          hash_including(search_field: 'local_id_tesim', name_field: 'local_id')
+        ).and_return(nil)
+        lam.call('anything')
+      end
+    end
+
     context 'when the source_identifier mapping is a generated entry (e.g. bulkrax_identifier)' do
       before do
         allow(Bulkrax).to receive(:field_mappings).and_return({
