@@ -32,6 +32,24 @@ module Bulkrax
       end
     end
 
+    describe '#increment_counters' do
+      let(:importer) { FactoryBot.create(:bulkrax_importer_csv) }
+      let(:run) { importer.current_run }
+
+      before do
+        run.update!(enqueued_records: 1)
+        allow(ImporterRun).to receive(:find).and_wrap_original do |original, *args|
+          original.call(*args).tap { ImporterRun.decrement_counter(:enqueued_records, run.id) } # rubocop:disable Rails/SkipsModelValidations
+        end
+      end
+
+      it 'keeps a decrement from a job that finishes while the count is being saved' do
+        importer.increment_counters(0, work: true)
+
+        expect(run.reload.enqueued_records).to eq(1)
+      end
+    end
+
     describe 'import works' do
       before do
         allow(Bulkrax::OaiDcParser).to receive(:new).and_return(Bulkrax::OaiDcParser.new(importer)) # .with(subject).and_return(parser)

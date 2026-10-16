@@ -13,7 +13,7 @@ module Bulkrax
       rescue StandardError
         # rubocop:disable Rails/SkipsModelValidations
         ExporterRun.increment_counter(:failed_records, args[1])
-        ExporterRun.decrement_counter(:enqueued_records, args[1]) unless exporter_run.reload.enqueued_records <= 0
+        ExporterRun.decrement_enqueued_records(args[1])
         raise
       else
         if entry.failed?
@@ -21,8 +21,8 @@ module Bulkrax
         else
           ExporterRun.increment_counter(:processed_records, args[1])
         end
-        ExporterRun.decrement_counter(:enqueued_records, args[1]) unless exporter_run.reload.enqueued_records <= 0
         # rubocop:enable Rails/SkipsModelValidations
+        ExporterRun.decrement_enqueued_records(args[1])
       end
       return entry if exporter_run.reload.enqueued_records.positive?
 

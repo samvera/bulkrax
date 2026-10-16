@@ -113,7 +113,9 @@ module Bulkrax
 
             it "does not update any of importer run's counters" do
               expect(ImporterRun).not_to receive(:increment_counter)
-              expect(ImporterRun).not_to receive(:decrement_counter)
+              expect(ImporterRun).not_to receive(:decrement_enqueued_records)
+
+              import_file_set_job.perform(entry.id, importer_run.id)
             end
 
             it 'reschedules the job to try again after a couple minutes' do
@@ -146,8 +148,8 @@ module Bulkrax
             it "only decrements the importer run's :enqueued_records counter" do
               expect(ImporterRun).not_to receive(:increment_counter)
               expect(ImporterRun)
-                .to receive(:decrement_counter)
-                .with(:enqueued_records, importer_run.id)
+                .to receive(:decrement_enqueued_records)
+                .with(importer_run.id)
                 .once
 
               import_file_set_job.perform(entry.id, importer_run.id)
