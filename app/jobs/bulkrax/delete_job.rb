@@ -25,7 +25,6 @@ module Bulkrax
       # rubocop:disable Rails/SkipsModelValidations
       ImporterRun.increment_counter(:deleted_records, importer_run.id)
       # rubocop:enable Rails/SkipsModelValidations
-      ImporterRun.decrement_enqueued_records(importer_run.id)
       entry.save!
       unless reimport
         ImporterRun.decrement_enqueued_records(importer_run.id)
