@@ -197,6 +197,64 @@ RSpec.describe Bulkrax::CsvParser do
       end
     end
 
+    context 'when the `model` mapping reads an aliased column' do
+      before do
+        allow(Bulkrax).to receive(:field_mappings).and_return(
+          'Bulkrax::CsvParser' => {
+            'title' => { 'from' => ['title'] },
+            'model' => { 'from' => %w[work_type model] },
+            'source_identifier' => { 'from' => ['source_identifier'], 'source_identifier' => true }
+          }
+        )
+      end
+
+      let(:aliased_model_csv) do
+        StringIO.new("source_identifier,title,work_type,model\nc1,Coll,Collection,\nw1,Work,,GenericWork\n")
+      end
+
+      it 'reads each row model from the first alias with a value, as import does' do
+        result = described_class.validate_csv(csv_file: aliased_model_csv)
+        expect(result[:collections].map { |c| c[:id] }).to eq(['c1'])
+        expect(result[:works].map { |w| w[:id] }).to eq(['w1'])
+      end
+
+      it 'takes the last model column with a value, as import does' do
+        csv = StringIO.new("source_identifier,title,model,work_type\nx1,X,GenericWork,Collection\n")
+        result = described_class.validate_csv(csv_file: csv)
+        expect(result[:collections].map { |c| c[:id] }).to eq(['x1'])
+      end
+
+      it 'reads a numbered model column without reporting the model column missing' do
+        result = described_class.validate_csv(csv_file: StringIO.new("source_identifier,title,work_type_1\nc1,Coll,Collection\n"))
+        expect(result[:collections].map { |c| c[:id] }).to eq(['c1'])
+        expect(result[:notices]).to all(satisfy { |n| n[:field] != 'model' })
+      end
+
+      it 'does not report the model column as missing' do
+        result = described_class.validate_csv(csv_file: StringIO.new("source_identifier,title,work_type\nc1,Coll,Collection\n"))
+        expect(result[:notices]).to all(satisfy { |n| n[:field] != 'model' })
+      end
+    end
+
+    context 'when the parents mapping stores its split under symbol keys' do
+      before do
+        allow(Bulkrax).to receive(:field_mappings).and_return(
+          'Bulkrax::CsvParser' => {
+            'title' => { 'from' => ['title'] },
+            'model' => { 'from' => ['model'] },
+            'parents' => { from: ['parents'], split: '\|', related_parents_field_mapping: true },
+            'source_identifier' => { 'from' => ['source_identifier'], 'source_identifier' => true }
+          }
+        )
+      end
+
+      it 'splits a multi-parent cell, as import does' do
+        csv = StringIO.new("source_identifier,title,model,parents\nc1,C1,Collection,\nc2,C2,Collection,\nw1,W1,GenericWork,c1|c2\n")
+        result = described_class.validate_csv(csv_file: csv)
+        expect(result[:rowErrors].map { |e| e[:category] }).not_to include('invalid_parent_reference')
+      end
+    end
+
     context 'source_identifier generation' do
       context 'when fill_in_blank_source_identifiers is not configured' do
         before { allow(Bulkrax).to receive(:fill_in_blank_source_identifiers).and_return(nil) }

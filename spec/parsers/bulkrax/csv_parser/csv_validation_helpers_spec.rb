@@ -20,7 +20,7 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
     end
 
     let(:record) do
-      host.parse_validation_rows(raw_csv, :source_identifier, :parents, :children, %w[item file]).first
+      host.parse_validation_rows(raw_csv, :source_identifier, :parents, :children, { 'file' => { 'from' => ['item'] } }).first
     end
 
     it 'keeps `file` as the cell under the first file alias' do
@@ -591,6 +591,23 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
                      :resolve_children_split_pattern, :children
   end
 
+  describe 'relationship split patterns across mapping shapes' do
+    it 'reads a parents split stored under symbol keys' do
+      mappings = { 'parents' => { from: ['parents'], split: '\|', related_parents_field_mapping: true } }
+      expect('c1|c2'.split(host.resolve_parent_split_pattern(mappings))).to eq(%w[c1 c2])
+    end
+
+    it 'reads the parents split from the flagged mapping, whatever its key' do
+      mappings = { 'collection' => { 'from' => ['collection'], 'split' => ';', 'related_parents_field_mapping' => true } }
+      expect('c1;c2'.split(host.resolve_parent_split_pattern(mappings))).to eq(%w[c1 c2])
+    end
+
+    it 'reads the children split from the flagged mapping, whatever its key' do
+      mappings = { 'members' => { from: ['members'], split: ';', related_children_field_mapping: true } }
+      expect('w1;w2'.split(host.resolve_children_split_pattern(mappings))).to eq(%w[w1 w2])
+    end
+  end
+
   describe '#build_relationship_graph' do
     let(:mappings) { {} }
 
@@ -714,6 +731,22 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
       end
 
       it 'uses the mapped search_field' do
+        lam = host.build_find_record
+        expect(Bulkrax::ValkyrieObjectFactory).to receive(:search_by_property).with(
+          hash_including(search_field: 'local_id_tesim', name_field: 'local_id')
+        ).and_return(nil)
+        lam.call('anything')
+      end
+    end
+
+    context 'when the source_identifier mapping uses symbol keys' do
+      before do
+        allow(Bulkrax).to receive(:field_mappings).and_return(
+          'Bulkrax::CsvParser' => { 'local_id' => { from: ['source_identifier'], source_identifier: true, search_field: 'local_id_tesim' } }
+        )
+      end
+
+      it 'uses the mapped identifier and search_field' do
         lam = host.build_find_record
         expect(Bulkrax::ValkyrieObjectFactory).to receive(:search_by_property).with(
           hash_including(search_field: 'local_id_tesim', name_field: 'local_id')

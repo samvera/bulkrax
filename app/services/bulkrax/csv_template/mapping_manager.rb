@@ -58,8 +58,7 @@ module Bulkrax
       end
 
       def split_value_for(mapping_key)
-        entry = @mappings[mapping_key] || {}
-        entry.key?('split') ? entry['split'] : entry[:split]
+        Bulkrax::FieldResolver.option(@mappings[mapping_key], 'split')
       end
 
       def resolve_column_name(key: nil, flag: nil, default: nil)

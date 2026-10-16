@@ -89,9 +89,15 @@ module Bulkrax
     # settings an app merges through HashWithIndifferentAccess, and direct
     # test construction) with inconsistent key shapes; this collapses them.
     def self.from_value(entry)
+      option(entry, 'from')
+    end
+
+    # Reads one option (e.g. 'split', 'search_field') from a mapping entry
+    # stored with string or symbol keys.
+    def self.option(entry, name)
       return nil unless entry.is_a?(Hash)
 
-      entry['from'] || entry[:from]
+      entry.key?(name.to_s) ? entry[name.to_s] : entry[name.to_sym]
     end
 
     # The mapping key whose options carry `flag` (e.g. 'source_identifier').

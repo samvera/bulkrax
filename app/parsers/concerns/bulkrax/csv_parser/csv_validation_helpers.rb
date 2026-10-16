@@ -26,16 +26,18 @@ module Bulkrax
       # Parse rows from a CsvEntry.read_data result into the canonical record shape.
       # CsvEntry.read_data returns CSV::Row objects with symbol headers; blank rows
       # are already filtered by CsvWrapper.
-      def parse_validation_rows(raw_csv, source_id_key, parent_key, children_key, file_headers)
+      def parse_validation_rows(raw_csv, source_id_key, parent_key, children_key, mappings)
+        file_headers  = Bulkrax::FieldResolver.headers_for_field(mappings, 'file')
+        model_headers = Bulkrax::FieldResolver.headers_for_field(mappings, 'model')
         raw_csv.map do |row|
           # CSV::Row#to_h converts symbol headers → string-keyed hash
           row_hash = row.to_h.transform_keys(&:to_s)
           {
             source_identifier: row[source_id_key],
-            model: row[:model],
+            model: row_model(row_hash, model_headers),
             parent: row[parent_key],
             children: row[children_key],
-            file: row[Array(file_headers).first&.to_sym],
+            file: row[file_headers.first.to_sym],
             file_values: row_hash.select { |header, _| Bulkrax::FieldResolver.header_for_any?(header, file_headers) }.values.reject(&:blank?),
             raw_row: row_hash
           }
@@ -43,6 +45,15 @@ module Bulkrax
       rescue StandardError => e
         Rails.logger.error("CsvParser.validate_csv: error parsing rows – #{e.message}")
         []
+      end
+
+      # Matches FactoryClassFinder: every model column overwrites the parsed
+      # model in CSV column order, so the last one wins when it has a value;
+      # otherwise the literal `model` column, then the first alias with a value.
+      def row_model(row_hash, model_headers)
+        row_hash.select { |header, _| Bulkrax::FieldResolver.header_for_any?(header, model_headers) }.values.last.presence ||
+          row_hash['model'].presence ||
+          model_headers.map { |header| row_hash[header.to_s] }.find(&:present?)
       end
 
       def build_validation_field_metadata(all_models, field_analyzer)
@@ -143,29 +154,33 @@ module Bulkrax
       # Adding the default work type unconditionally makes every sheet answer
       # for that model's required fields, so a collection-only sheet gets asked
       # for properties belonging to a work type it never mentions.
-      def models_to_validate(csv_data, headers)
+      def models_to_validate(csv_data, headers, model_headers: ['model'])
         row_models = csv_data.map { |r| r[:model].to_s }.reject(&:blank?).uniq
         return row_models if Bulkrax.default_work_type.blank?
-        return row_models unless default_work_type_needed?(csv_data, headers)
+        return row_models unless default_work_type_needed?(csv_data, headers, model_headers)
 
         row_models | [Bulkrax.default_work_type]
       end
 
-      def default_work_type_needed?(csv_data, headers)
-        return true unless headers.map(&:to_s).include?('model')
+      def default_work_type_needed?(csv_data, headers, model_headers)
+        return true unless model_column_present?(headers, model_headers)
 
         csv_data.empty? || csv_data.any? { |r| r[:model].blank? }
+      end
+
+      def model_column_present?(headers, model_headers)
+        headers.any? { |header| Bulkrax::FieldResolver.header_for_any?(header, model_headers) }
       end
 
       # Adds a file-level notice when the model column is absent or every row has a blank
       # model value, indicating that the default work type will be used for all rows.
       # When this notice is present the per-row default_work_type_used warnings are
       # suppressed in the formatter — no need to repeat the same message for every row.
-      def append_missing_model_notice!(notices, headers, csv_data)
+      def append_missing_model_notice!(notices, headers, csv_data, model_headers: ['model'])
         default_model = Bulkrax.default_work_type
         return if default_model.blank?
 
-        model_column_present = headers.map(&:to_s).include?('model')
+        model_column_present = model_column_present?(headers, model_headers)
         all_rows_blank = model_column_present && csv_data.all? { |r| r[:model].blank? }
 
         return if model_column_present && !all_rows_blank
@@ -232,9 +247,10 @@ module Bulkrax
       # Builds the find_record lambda used by row validators and hierarchy extraction.
       def build_find_record
         all_mappings = Bulkrax.field_mappings['Bulkrax::CsvParser'] || {}
-        work_identifier = all_mappings.find { |_k, v| v['source_identifier'] == true }&.first || 'source'
-        work_identifier_search = Array.wrap(all_mappings.dig(work_identifier, 'search_field')).first&.to_s ||
-                                 "#{work_identifier}_sim"
+        flagged = Bulkrax::FieldResolver.flagged_key(all_mappings, 'source_identifier')
+        work_identifier = flagged&.to_s || 'source'
+        search_field = Bulkrax::FieldResolver.option(flagged && all_mappings[flagged], 'search_field')
+        work_identifier_search = Array.wrap(search_field).first&.to_s || "#{work_identifier}_sim"
         ->(id) { find_record_by_source_identifier(id, work_identifier, work_identifier_search) }
       end
 
@@ -265,11 +281,19 @@ module Bulkrax
       end
 
       def resolve_parent_split_pattern(mappings)
-        Bulkrax::SplitPatternCoercion.coerce(mappings.dig('parents', 'split') || mappings.dig(:parents, :split))
+        relationship_split_pattern(mappings, 'related_parents_field_mapping', 'parents')
       end
 
       def resolve_children_split_pattern(mappings)
-        Bulkrax::SplitPatternCoercion.coerce(mappings.dig('children', 'split') || mappings.dig(:children, :split))
+        relationship_split_pattern(mappings, 'related_children_field_mapping', 'children')
+      end
+
+      # Import splits the flagged mapping's cells, so read `split:` from that
+      # mapping, falling back to the conventional key when none is flagged.
+      def relationship_split_pattern(mappings, flag, default_key)
+        key = Bulkrax::FieldResolver.flagged_key(mappings, flag) || default_key
+        entry = mappings[key] || mappings[key.to_s] || mappings[key.to_sym]
+        Bulkrax::SplitPatternCoercion.coerce(Bulkrax::FieldResolver.option(entry, 'split'))
       end
 
       # Builds a graph of { source_identifier => [parent_ids] } from all CSV records.
