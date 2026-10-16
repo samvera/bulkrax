@@ -51,6 +51,22 @@ RSpec.describe Bulkrax::ImporterFileHandler do
       end
     end
 
+    context "with macOS metadata beside the CSV" do
+      it "skips the metadata files, as import does" do
+        Zip::File.open(zip_file.path, create: true) do |zip|
+          zip.get_output_stream("data.csv") { |f| f.write("csv content") }
+          zip.get_output_stream("._data.csv") { |f| f.write("resource fork") }
+          zip.get_output_stream("__MACOSX/._data.csv") { |f| f.write("resource fork") }
+        end
+
+        open_zip do |zip|
+          result = controller.locate_csv_entry_in_zip(zip)
+          expect(result).to be_a(Zip::Entry)
+          expect(result.name).to eq("data.csv")
+        end
+      end
+    end
+
     context 'with a single CSV in a subdirectory' do
       it 'returns the CSV entry' do
         Zip::File.open(zip_file.path, create: true) do |zip|
