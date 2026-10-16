@@ -2,7 +2,7 @@
 
 ## Context
 
-Guided-import validation currently uses `Bulkrax::CsvTemplate::FileValidator` to
+Guided-import validation currently uses `Bulkrax::FileValidator` to
 check whether files referenced in a CSV exist inside an uploaded zip. The check
 compares **basenames only** (`File.basename`), ignoring relative paths.
 
@@ -26,7 +26,7 @@ time with an unhelpful missing-file error.
 
 ## Architectural decision
 
-File validation moves from the standalone `CsvTemplate::FileValidator` class
+File validation moves from the standalone `Bulkrax::FileValidator` class
 into the existing `Bulkrax::CsvRow::*` row-validator framework. Reasoning:
 
 - Row validators are pluggable via `Bulkrax.csv_row_validators` — apps can
@@ -39,7 +39,7 @@ into the existing `Bulkrax::CsvRow::*` row-validator framework. Reasoning:
   shape (flat `missingFiles` basename list with no row attribution).
 - Per-row errors are strictly more informative than aggregated basename lists:
   users see which row references which missing file, not just the union.
-- Path-awareness is natural: each row validator sees `record[:file]` and can
+- Path-awareness is natural: each row validator sees `record[:file_values]` and can
   compare full relative paths against a shared plan passed in via `context`.
 
 ## Prerequisites from the extraction fix
@@ -112,10 +112,7 @@ module Bulkrax
         plan = context[:zip_plan]
         return if plan.nil?  # no zip uploaded
 
-        value = record[:file]
-        return if value.blank?
-
-        value.split(Bulkrax.multi_value_element_split_on).each do |raw|
+        Array(record[:file_values]).flat_map { |cell| cell.split(Bulkrax.multi_value_element_split_on) }.each do |raw|
           path = raw.strip
           next if path.blank?
           next if plan.available_paths.include?(path)
@@ -162,9 +159,9 @@ Emit different `category:` values so the UI and error CSV can distinguish:
 Each category gets its own i18n entry under
 `bulkrax.importer.guided_import.validation.file_reference_validator.errors.*`.
 
-### 5. Retire `CsvTemplate::FileValidator`
+### 5. Retire `Bulkrax::FileValidator`
 
-Delete `app/services/bulkrax/csv_template/file_validator.rb` or reduce to a
+Delete `app/services/bulkrax/file_validator.rb` or reduce to a
 stats helper that answers:
 
 - `zip_included?`
@@ -213,7 +210,7 @@ Keep this as a run-level **notice**, not a row error. Similar to
 
 ```ruby
 def append_missing_zip_notice!(notices, csv_data)
-  return if csv_data.none? { |r| r[:file].present? }
+  return if csv_data.none? { |r| r[:file_values].present? }
   return if zip_present?
   notices << {
     field: 'file',

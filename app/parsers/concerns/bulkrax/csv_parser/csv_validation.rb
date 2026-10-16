@@ -50,7 +50,7 @@ module Bulkrax
           append_missing_model_notice!(notices, headers, csv_data)
 
           row_errors                       = run_row_validators(csv_data, all_ids, source_id_key, mappings, field_metadata, find_record, notices, mapping_manager: mapping_manager)
-          file_validator                   = CsvTemplate::FileValidator.new(csv_data, zip_file, admin_set_id)
+          file_validator                   = Bulkrax::FileValidator.new(csv_data, zip_file, admin_set_id)
           collections, works, file_sets    = extract_hierarchy_items(csv_data, all_ids, find_record, mappings)
           [notices, row_errors, file_validator, collections, works, file_sets]
         end
@@ -66,11 +66,11 @@ module Bulkrax
           mappings        = mapping_manager.mappings
 
           source_id_key = resolve_validation_key(mapping_manager, flag: 'source_identifier', default: :source_identifier)
-          parent_key    = resolve_validation_key(mapping_manager, flag: 'related_parents_field_mapping',  default: :parents)
-          children_key  = resolve_validation_key(mapping_manager, flag: 'related_children_field_mapping', default: :children)
-          file_key      = resolve_validation_key(mapping_manager, key: 'file',                            default: :file)
+          parent_key    = resolve_validation_key(mapping_manager, flag: 'related_parents_field_mapping',  headers: headers, default: :parents)
+          children_key  = resolve_validation_key(mapping_manager, flag: 'related_children_field_mapping', headers: headers, default: :children)
+          file_headers  = Bulkrax::FieldResolver.headers_for_field(mappings, 'file')
 
-          csv_data       = parse_validation_rows(raw_csv, source_id_key, parent_key, children_key, file_key)
+          csv_data       = parse_validation_rows(raw_csv, source_id_key, parent_key, children_key, file_headers)
           all_models     = models_to_validate(csv_data, headers)
           field_analyzer = CsvTemplate::FieldAnalyzer.new(mappings, admin_set_id)
           field_metadata = build_validation_field_metadata(all_models, field_analyzer)
@@ -83,14 +83,14 @@ module Bulkrax
           all_models    = field_metadata.keys
           valid_headers = build_valid_validation_headers(mapping_manager, field_analyzer,
                                                          all_models, mappings, field_metadata)
-          # Only allow a suffixed header (e.g. `creator_1`, `redirect_path_2`)
+          # Only allow a numbered header (e.g. `creator_1`, `1_creator`)
           # when its base name is itself recognised. The blanket allow that
           # used to live here let through any *_<digits> column, which masked
           # typos in numbered columns at validation time even though the real
           # importer would fail to map them.
           known_property_keys = (field_metadata || {}).values.flat_map { |m| Array(m[:properties]) }.to_set
           suffixed = headers.select do |h|
-            h.match?(/_\d+\z/) && header_base_recognized?(h, valid_headers, mapping_manager, known_property_keys)
+            Bulkrax::FieldResolver.key_without_numbers(h) != h && header_base_recognized?(h, valid_headers, mapping_manager, known_property_keys)
           end
           valid_headers = (valid_headers + suffixed).uniq
 
@@ -106,27 +106,30 @@ module Bulkrax
         # Mirrors the recognition rule used by
         # find_unrecognized_validation_headers: a header's base name is
         # recognised if it appears in valid_headers directly or if its
-        # mapping_manager#mapped_to_key resolves to a known model property.
+        # mapping_manager#mapped_to_keys includes a known model property.
         # known_property_keys is precomputed by check_headers so this can be
         # called per-header without rebuilding the set each time.
         def header_base_recognized?(header, valid_headers, mapping_manager, known_property_keys)
-          base = header.sub(/_\d+\z/, '')
+          base = Bulkrax::FieldResolver.key_without_numbers(header)
           return true if valid_headers.include?(base)
 
-          mapped_key = mapping_manager&.mapped_to_key(base)
-          mapped_key.present? && known_property_keys.include?(mapped_key)
+          Array(mapping_manager&.mapped_to_keys(base)).any? { |key| known_property_keys.include?(key) }
         end
 
         def extract_hierarchy_items(csv_data, all_ids, find_record, mappings)
           extract_validation_items(
             csv_data, all_ids, find_record,
             parent_split_pattern: resolve_parent_split_pattern(mappings),
-            child_split_pattern: resolve_children_split_pattern(mappings) || Bulkrax::DEFAULT_MULTI_VALUE_ELEMENT_SPLIT_ON
+            child_split_pattern: resolve_children_split_pattern(mappings),
+            parent_columns: Bulkrax::CsvRow::RelationshipIds.columns(mappings, 'related_parents_field_mapping', 'parents'),
+            children_columns: Bulkrax::CsvRow::RelationshipIds.columns(mappings, 'related_children_field_mapping', 'children')
           )
         end
 
         # Runs all registered row validators and returns the collected errors.
         def run_row_validators(csv_data, all_ids, source_id_key, mappings, field_metadata, find_record, notices = [], mapping_manager: nil) # rubocop:disable Metrics/ParameterLists
+          parent_columns   = Bulkrax::CsvRow::RelationshipIds.columns(mappings, 'related_parents_field_mapping', 'parents')
+          children_columns = Bulkrax::CsvRow::RelationshipIds.columns(mappings, 'related_children_field_mapping', 'children')
           context = {
             errors: [],
             warnings: [],
@@ -135,8 +138,10 @@ module Bulkrax
             source_identifier: source_id_key.to_s,
             parent_split_pattern: resolve_parent_split_pattern(mappings),
             child_split_pattern: resolve_children_split_pattern(mappings),
-            parent_column: resolve_relationship_column(mappings, 'related_parents_field_mapping', 'parents'),
-            children_column: resolve_relationship_column(mappings, 'related_children_field_mapping', 'children'),
+            parent_column: parent_columns.first,
+            children_column: children_columns.first,
+            parent_columns: parent_columns,
+            children_columns: children_columns,
             mappings: mappings,
             mapping_manager: mapping_manager,
             field_metadata: field_metadata,

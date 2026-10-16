@@ -106,9 +106,10 @@ module Bulkrax
     #       than other parsers, in that they will make assumptions about each encountered column (in
     #       the case of CSV) or node (in the case of OAI).  tl;dr - Here there be dragons.
     def field_mapping_from_values_for_xml_element_names
-      Bulkrax.field_mappings[self.importerexporter.parser_klass].map do |_k, v|
-        v[:from]
-      end.flatten.compact.uniq
+      (Bulkrax.field_mappings[self.importerexporter.parser_klass] || {}).flat_map do |_k, v|
+        next [] unless v.is_a?(Hash)
+        Array(v['from'] || v[:from])
+      end.compact.uniq
     end
 
     # Included for potential downstream adopters

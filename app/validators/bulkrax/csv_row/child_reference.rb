@@ -37,19 +37,9 @@ module Bulkrax
       end
 
       def self.collect_child_ids(record, context)
-        split_pattern = Bulkrax::SplitPatternCoercion.coerce(context[:child_split_pattern]) ||
-                        Bulkrax::DEFAULT_MULTI_VALUE_ELEMENT_SPLIT_ON
-        children_column = context[:children_column] || 'children'
-
-        base_ids = record[:children].to_s.split(split_pattern).map(&:strip).reject(&:blank?)
-
-        suffix_pattern = /\A#{Regexp.escape(children_column)}_\d+\z/
-        suffix_ids = record[:raw_row]
-                     .select { |k, _| k.to_s.match?(suffix_pattern) }
-                     .values
-                     .map(&:to_s).map(&:strip).reject(&:blank?)
-
-        (base_ids + suffix_ids).uniq
+        split_pattern = Bulkrax::SplitPatternCoercion.coerce(context[:child_split_pattern])
+        columns = context[:children_columns] || [context[:children_column] || 'children']
+        RelationshipIds.ids(record[:children], record[:raw_row], columns, split_pattern)
       end
       private_class_method :collect_child_ids
     end

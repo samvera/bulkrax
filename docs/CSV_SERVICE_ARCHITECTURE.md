@@ -80,7 +80,7 @@ CsvParser.validate_csv
         ├── CsvTemplate::MappingManager     - Resolve column names from field mappings
         ├── CsvTemplate::FieldAnalyzer      - Required fields, controlled vocab per model
         ├── CsvTemplate::ColumnBuilder      - Valid headers for comparison
-        ├── CsvTemplate::FileValidator      - File references vs zip contents
+        ├── FileValidator                   - File references vs zip contents
         ├── Bulkrax.csv_row_validators      - Array of callable row validators
         │     ├── CsvRow::DuplicateIdentifier
         │     ├── CsvRow::ParentReference
@@ -182,7 +182,7 @@ Each validator receives:
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `record` | Hash | Parsed row with `:source_identifier`, `:model`, `:parent`, `:children`, `:file`, `:raw_row` |
+| `record` | Hash | Parsed row with `:source_identifier`, `:model`, `:parent`, `:children`, `:file` (the cell under the first file alias), `:file_values` (every file cell, numbered columns included), `:raw_row` |
 | `row_number` | Integer | 1-indexed row number (accounting for header row) |
 | `context` | Hash | Shared validation context |
 
@@ -220,7 +220,8 @@ Resolves Bulkrax field mappings between internal keys and CSV column names.
 ```ruby
 manager = CsvTemplate::MappingManager.new
 manager.mapped_to_key('work_type')       # => 'model'
-manager.key_to_mapped_column('model')    # => 'work_type'
+manager.mapped_to_keys('author')         # => every key the header feeds, e.g. ['creator', 'contributor']
+Bulkrax::FieldResolver.headers_for_field(manager.mappings, 'model')  # => ['work_type', 'model']
 ```
 
 ### FieldAnalyzer
@@ -253,7 +254,7 @@ Assembles the full list of valid CSV columns for a set of models. Combines core 
 Validates file references in parsed CSV data against the contents of an uploaded ZIP archive. Compares basenames only (no path comparison).
 
 ```ruby
-validator = CsvTemplate::FileValidator.new(csv_data, zip_file, admin_set_id)
+validator = Bulkrax::FileValidator.new(csv_data, zip_file, admin_set_id)
 validator.count_references       # => 10
 validator.missing_files          # => ['image1.jpg']
 validator.found_files_count      # => 9

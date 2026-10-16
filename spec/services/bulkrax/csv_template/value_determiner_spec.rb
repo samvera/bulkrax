@@ -195,5 +195,20 @@ RSpec.describe Bulkrax::CsvTemplate::ValueDeterminer do
         end
       end
     end
+
+    context "when the `file` mapping aliases are listed after the canonical name in `from:`" do
+      let(:mappings) do
+        {
+          "file" => { "from" => %w[file item], "split" => "|" },
+          "remote_files" => { "from" => ["remote_files"], "split" => "|" }
+        }
+      end
+      before { allow(mapping_manager).to receive(:mapped_to_key).with('item').and_return('file') }
+
+      it "recognizes a non-first alias (`item`) as a file column" do
+        result = value_determiner.determine_value('item', model_name, field_list)
+        expect(result).to eq('Optional')
+      end
+    end
   end
 end

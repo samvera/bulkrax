@@ -8,15 +8,25 @@ module Bulkrax
 
       # Resolve a symbol key from mappings for use as a record hash key.
       # Returns a Symbol matching the parser's symbol-keyed record hash.
-      def resolve_validation_key(mapping_manager, key: nil, flag: nil, default:)
-        options = mapping_manager.resolve_column_name(key: key, flag: flag, default: default.to_s)
+      #
+      # With `headers:`, picks the flagged mapping's alias that appears in
+      # the CSV, falling back to its first `from:` alias. Without it, uses
+      # the first alias, which is the only one import reads for the source
+      # identifier (ApplicationParser#source_identifier).
+      def resolve_validation_key(mapping_manager, flag:, default:, headers: nil)
+        if headers
+          chosen = Bulkrax::FieldResolver.present_header_for_flag(mapping_manager.mappings, flag, headers)
+          return chosen.to_sym if chosen
+        end
+
+        options = mapping_manager.resolve_column_name(flag: flag, default: default.to_s)
         options.first&.to_sym || default
       end
 
       # Parse rows from a CsvEntry.read_data result into the canonical record shape.
       # CsvEntry.read_data returns CSV::Row objects with symbol headers; blank rows
       # are already filtered by CsvWrapper.
-      def parse_validation_rows(raw_csv, source_id_key, parent_key, children_key, file_key)
+      def parse_validation_rows(raw_csv, source_id_key, parent_key, children_key, file_headers)
         raw_csv.map do |row|
           # CSV::Row#to_h converts symbol headers → string-keyed hash
           row_hash = row.to_h.transform_keys(&:to_s)
@@ -25,7 +35,8 @@ module Bulkrax
             model: row[:model],
             parent: row[parent_key],
             children: row[children_key],
-            file: row[file_key],
+            file: row[Array(file_headers).first&.to_sym],
+            file_values: row_hash.select { |header, _| Bulkrax::FieldResolver.header_for_any?(header, file_headers) }.values.reject(&:blank?),
             raw_row: row_hash
           }
         end
@@ -57,14 +68,14 @@ module Bulkrax
         # (core/file/relationship). Accept every alias so a CSV using a
         # non-primary alias like `file` (when mappings are `from: ['item', 'file']`)
         # isn't flagged unrecognised. Property-level aliases are handled
-        # separately by find_unrecognized_validation_headers via mapped_to_key.
+        # separately by find_unrecognized_validation_headers via mapped_to_keys.
         non_property_aliases = non_property_mapping_aliases(mappings)
         (all_cols + non_property_aliases).uniq - CsvTemplate::CsvBuilder::IGNORED_PROPERTIES
       rescue StandardError => e
         Rails.logger.error("CsvParser.validate_csv: error building valid headers – #{e.message}")
         standard = %w[model source_identifier parents children file]
         model_fields = field_metadata.values.flat_map { |m| m[:properties] }
-        model_fields = model_fields.map { |prop| mapping_manager.key_to_mapped_column(prop) }
+        model_fields = model_fields.map { |prop| Bulkrax::FieldResolver.headers_for_field(mapping_manager.mappings, prop).first }
         (standard + model_fields).uniq
       end
 
@@ -77,13 +88,14 @@ module Bulkrax
                             CsvTemplate::ColumnDescriptor::COLUMN_DESCRIPTIONS[:files].flat_map(&:keys) +
                             CsvTemplate::ColumnDescriptor::COLUMN_DESCRIPTIONS[:relationships].flat_map(&:keys)
         non_property_keys.flat_map do |key|
-          entry = mappings[key]
-          entry.is_a?(Hash) ? Array(entry["from"]) : []
+          Bulkrax::FieldResolver.headers_for_field(mappings, key)
         end
       end
 
       def find_missing_required_headers(headers, field_metadata, mapping_manager)
-        csv_keys = headers.map { |h| mapping_manager.mapped_to_key(h).sub(/_\d+\z/, '') }.uniq
+        csv_keys = headers.flat_map do |h|
+          Bulkrax::FieldResolver.fields_for_header(mapping_manager.mappings, Bulkrax::FieldResolver.key_without_numbers(h))
+        end.uniq
         missing = []
         field_metadata.each do |model, meta|
           (meta[:required_terms] || []).each do |field|
@@ -104,10 +116,9 @@ module Bulkrax
         checker = DidYouMean::SpellChecker.new(dictionary: valid_headers)
         unrecognized = headers.reject do |h|
           next true if h.blank?
-          base = h.sub(/_\d+\z/, '')
+          base = Bulkrax::FieldResolver.key_without_numbers(h)
           next true if valid_headers.include?(h) || valid_headers.include?(base)
-          mapped_key = mapping_manager&.mapped_to_key(base)
-          mapped_key && known_property_keys.include?(mapped_key)
+          Array(mapping_manager&.mapped_to_keys(base)).any? { |key| known_property_keys.include?(key) }
         end
         unrecognized.index_with { |h| checker.correct(h).first }
       end
@@ -253,14 +264,6 @@ module Bulkrax
         false
       end
 
-      # Returns the raw CSV column name (String) for a relationship field.
-      # Looks for the mapping entry flagged with +flag+ and returns its first +from+ value,
-      # falling back to +default+ when none is found.
-      def resolve_relationship_column(mappings, flag, default)
-        entry = mappings.find { |_k, v| v.is_a?(Hash) && v[flag] }
-        entry&.last&.dig('from')&.first || default
-      end
-
       def resolve_parent_split_pattern(mappings)
         Bulkrax::SplitPatternCoercion.coerce(mappings.dig('parents', 'split') || mappings.dig(:parents, :split))
       end
@@ -277,55 +280,33 @@ module Bulkrax
       #   - inverted child declarations (children / children_N columns), mirroring
       #     the normalisation done in importers_stepper.js#normalizeRelationships
       def build_relationship_graph(csv_data, mappings)
-        parent_column   = resolve_relationship_column(mappings, 'related_parents_field_mapping', 'parents')
-        children_column = resolve_relationship_column(mappings, 'related_children_field_mapping', 'children')
-        parent_suffix   = /\A#{Regexp.escape(parent_column)}_\d+\z/
-        children_suffix = /\A#{Regexp.escape(children_column)}_\d+\z/
+        parent_columns   = Bulkrax::CsvRow::RelationshipIds.columns(mappings, 'related_parents_field_mapping', 'parents')
+        children_columns = Bulkrax::CsvRow::RelationshipIds.columns(mappings, 'related_children_field_mapping', 'children')
 
-        graph = build_parent_edges(csv_data, parent_suffix, resolve_parent_split_pattern(mappings))
-        invert_child_edges(graph, csv_data, children_suffix, resolve_children_split_pattern(mappings))
+        graph = build_parent_edges(csv_data, parent_columns, resolve_parent_split_pattern(mappings))
+        invert_child_edges(graph, csv_data, children_columns, resolve_children_split_pattern(mappings))
         graph
       end
 
-      def build_parent_edges(csv_data, suffix_pattern, split_pattern)
+      def build_parent_edges(csv_data, columns, split_pattern)
         csv_data.each_with_object({}) do |record, graph|
           id = record[:source_identifier]
           next if id.blank?
 
-          base_ids = split_or_single(record[:parent], split_pattern)
-          suffix_ids = suffixed_values(record[:raw_row], suffix_pattern)
-          graph[id] = (base_ids + suffix_ids).uniq
+          graph[id] = Bulkrax::CsvRow::RelationshipIds.ids(record[:parent], record[:raw_row], columns, split_pattern)
         end
       end
 
-      def invert_child_edges(graph, csv_data, suffix_pattern, split_pattern)
+      def invert_child_edges(graph, csv_data, columns, split_pattern)
         csv_data.each do |record|
           id = record[:source_identifier]
           next if id.blank?
 
-          child_ids = split_or_single(record[:children], split_pattern) +
-                      suffixed_values(record[:raw_row], suffix_pattern)
-          child_ids.each do |child_id|
+          Bulkrax::CsvRow::RelationshipIds.ids(record[:children], record[:raw_row], columns, split_pattern).each do |child_id|
             graph[child_id] ||= []
             graph[child_id] << id unless graph[child_id].include?(id)
           end
         end
-      end
-
-      def split_or_single(value, split_pattern)
-        coerced = Bulkrax::SplitPatternCoercion.coerce(split_pattern)
-        if coerced
-          value.to_s.split(coerced).map(&:strip).reject(&:blank?)
-        elsif value.present?
-          [value.to_s.strip]
-        else
-          []
-        end
-      end
-
-      def suffixed_values(raw_row, suffix_pattern)
-        raw_row.select { |k, _| k.to_s.match?(suffix_pattern) }
-               .values.map(&:to_s).map(&:strip).reject(&:blank?)
       end
     end
   end

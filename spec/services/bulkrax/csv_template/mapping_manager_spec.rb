@@ -53,16 +53,6 @@ RSpec.describe Bulkrax::CsvTemplate::MappingManager do
     end
   end
 
-  describe '#key_to_mapped_column' do
-    it 'returns the mapped column name for a key' do
-      expect(manager.key_to_mapped_column('model')).to eq('work_type')
-    end
-
-    it 'returns the key if no mapping found' do
-      expect(manager.key_to_mapped_column('unmapped_key')).to eq('unmapped_key')
-    end
-  end
-
   describe '#find_by_flag' do
     it 'finds a key with the specified flag set to true' do
       expect(manager.find_by_flag('source_identifier', 'default')).to eq('source_identifier')
@@ -80,6 +70,15 @@ RSpec.describe Bulkrax::CsvTemplate::MappingManager do
 
     it 'returns nil if split not configured' do
       expect(manager.split_value_for('title')).to be false
+    end
+  end
+
+  describe "#mapped_to_key when a header is both a mapping key and another mapping's alias" do
+    it "prefers the mapping that lists it in from:" do
+      allow(Bulkrax).to receive(:field_mappings).and_return(
+        "Bulkrax::CsvParser" => { "creator" => { "from" => ["author"] }, "title" => { "from" => ["creator"] } }
+      )
+      expect(described_class.new.mapped_to_key("creator")).to eq("title")
     end
   end
 
@@ -155,6 +154,14 @@ RSpec.describe Bulkrax::CsvTemplate::MappingManager do
 
         result = new_manager.resolve_column_name(flag: 'source_identifier', default: 'source_identifier')
         expect(result).to eq(%w[id source_id identifier])
+      end
+
+      it 'finds the flagged mapping by the presence of its flag, as import does' do
+        allow(Bulkrax).to receive(:field_mappings).and_return(
+          'Bulkrax::CsvParser' => { 'source' => { 'from' => ['ident'], 'source_identifier' => 'true' } }
+        )
+        result = described_class.new.resolve_column_name(flag: 'source_identifier', default: 'source_identifier')
+        expect(result).to eq(['ident'])
       end
 
       it 'returns all options for flagged field when no headers provided' do
