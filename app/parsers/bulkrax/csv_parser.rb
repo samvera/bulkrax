@@ -26,7 +26,6 @@ module Bulkrax
     def records(_opts = {})
       return @records if @records.present?
 
-      file_for_import = only_updates ? parser_fields['partial_import_file_path'] : import_file_path
       csv_data = entry_class.read_data(file_for_import)
       unless validation_mode
         importer.parser_fields['total'] = csv_data.count
@@ -95,8 +94,10 @@ module Bulkrax
     end
 
     # We could use CsvEntry#fields_from_data(data) but that would mean re-reading the data
+    # Every row has every header, so the first row's keys are the whole
+    # sheet's; reading one row keeps each import job from parsing the file.
     def import_fields
-      @import_fields ||= records.inject(:merge).keys.compact.uniq
+      @import_fields ||= first_record_keys || records.inject(:merge).keys.compact.uniq
     end
 
     def required_elements?(record)
@@ -470,6 +471,17 @@ module Bulkrax
     end
 
     private
+
+    def file_for_import
+      only_updates ? parser_fields['partial_import_file_path'] : import_file_path
+    end
+
+    def first_record_keys
+      return if @records.present?
+
+      row = entry_class.read_first_row(file_for_import)
+      entry_class.data_for_entry(row, nil, self).keys.compact.uniq if row
+    end
 
     # Memoized base directory under which import attachments live. Kept
     # separate from `#path_to_files`' per-filename return value to avoid
