@@ -20,7 +20,7 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
     end
 
     let(:record) do
-      host.parse_validation_rows(raw_csv, :source_identifier, :parents, :children, %w[item file]).first
+      host.parse_validation_rows(raw_csv, :source_identifier, :parents, :children, { 'file' => { 'from' => ['item'] } }).first
     end
 
     it 'keeps `file` as the cell under the first file alias' do
