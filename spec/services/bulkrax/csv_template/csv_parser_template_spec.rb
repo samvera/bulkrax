@@ -65,6 +65,26 @@ RSpec.describe Bulkrax::CsvParser do
         result = described_class.generate_template(models: ['GenericWork'], output: 'csv_string')
         expect(result).to be_a(String)
       end
+
+      context "with a multi-alias mapping like `file: { from: ['item','file'] }`" do
+        before do
+          allow(Bulkrax).to receive(:field_mappings).and_return(
+            'Bulkrax::CsvParser' => {
+              'title' => { 'from' => ['title'] },
+              'model' => { 'from' => ['model'] },
+              'parents' => { 'from' => ['parents'], 'related_parents_field_mapping' => true },
+              'file' => { 'from' => %w[item file] },
+              'source_identifier' => { 'from' => ['source_identifier'], 'source_identifier' => true }
+            }
+          )
+        end
+
+        it 'emits one of the file aliases as a column header' do
+          template = described_class.generate_template(models: ['GenericWork'], output: 'csv_string')
+          headers = template.lines.first.split(',').map(&:strip)
+          expect(headers).to include(satisfy { |h| %w[file item].include?(h) })
+        end
+      end
     end
   end
 
@@ -174,6 +194,25 @@ RSpec.describe Bulkrax::CsvParser do
       it 'flags a numbered column whose base name is misspelled' do
         result = described_class.validate_csv(csv_file: csv_file, zip_file: nil)
         expect(result[:unrecognized].keys).to include('creater_1')
+      end
+    end
+
+    context 'when the parents mapping stores its split under symbol keys' do
+      before do
+        allow(Bulkrax).to receive(:field_mappings).and_return(
+          'Bulkrax::CsvParser' => {
+            'title' => { 'from' => ['title'] },
+            'model' => { 'from' => ['model'] },
+            'parents' => { from: ['parents'], split: '\|', related_parents_field_mapping: true },
+            'source_identifier' => { 'from' => ['source_identifier'], 'source_identifier' => true }
+          }
+        )
+      end
+
+      it 'splits a multi-parent cell, as import does' do
+        csv = StringIO.new("source_identifier,title,model,parents\nc1,C1,Collection,\nc2,C2,Collection,\nw1,W1,GenericWork,c1|c2\n")
+        result = described_class.validate_csv(csv_file: csv)
+        expect(result[:rowErrors].map { |e| e[:category] }).not_to include('invalid_parent_reference')
       end
     end
 

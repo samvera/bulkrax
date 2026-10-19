@@ -34,24 +34,8 @@ module Bulkrax
       end
 
       def self.collect_parent_ids(record, context)
-        split_pattern = Bulkrax::SplitPatternCoercion.coerce(context[:parent_split_pattern])
-        parent_column = context[:parent_column] || 'parents'
-
-        base_ids = if split_pattern
-                     record[:parent].to_s.split(split_pattern).map(&:strip).reject(&:blank?)
-                   elsif record[:parent].present?
-                     [record[:parent].to_s.strip]
-                   else
-                     []
-                   end
-
-        suffix_pattern = /\A#{Regexp.escape(parent_column)}_\d+\z/
-        suffix_ids = record[:raw_row]
-                     .select { |k, _| k.to_s.match?(suffix_pattern) }
-                     .values
-                     .map(&:to_s).map(&:strip).reject(&:blank?)
-
-        (base_ids + suffix_ids).uniq
+        columns = context[:parent_columns] || [context[:parent_column] || 'parents']
+        RelationshipIds.ids(record[:parent], record[:raw_row], columns, context[:parent_split_pattern])
       end
       private_class_method :collect_parent_ids
     end

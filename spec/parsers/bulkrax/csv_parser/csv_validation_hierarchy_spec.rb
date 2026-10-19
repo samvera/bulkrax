@@ -11,30 +11,6 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHierarchy do
       parent: parent, children: children, file: nil, raw_row: raw_row }
   end
 
-  # ─── parse_relationship_field ────────────────────────────────────────────────
-
-  describe '#parse_relationship_field' do
-    it 'returns an empty array for nil' do
-      expect(host.parse_relationship_field(nil)).to eq([])
-    end
-
-    it 'returns an empty array for a blank string' do
-      expect(host.parse_relationship_field('')).to eq([])
-    end
-
-    it 'returns a single-element array for a plain value' do
-      expect(host.parse_relationship_field('col1')).to eq(['col1'])
-    end
-
-    it 'splits on | by default' do
-      expect(host.parse_relationship_field('col1|col2')).to eq(%w[col1 col2])
-    end
-
-    it 'strips whitespace from each value' do
-      expect(host.parse_relationship_field(' col1 | col2 ')).to eq(%w[col1 col2])
-    end
-  end
-
   # ─── build_child_to_parents_map ─────────────────────────────────────────────
 
   describe '#build_child_to_parents_map' do
@@ -45,14 +21,14 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHierarchy do
           make_item(source_identifier: 'work1'),
           make_item(source_identifier: 'work2')
         ]
-        map = host.build_child_to_parents_map(data)
+        map = host.build_child_to_parents_map(data, child_split_pattern: '\|')
         expect(map['work1']).to eq(['col1'])
         expect(map['work2']).to eq(['col1'])
       end
 
       it 'returns an empty array for items with no parent in the map' do
         data = [make_item(source_identifier: 'work1')]
-        map = host.build_child_to_parents_map(data)
+        map = host.build_child_to_parents_map(data, child_split_pattern: '\|')
         expect(map['work1']).to eq([])
       end
     end
@@ -66,7 +42,7 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHierarchy do
           make_item(source_identifier: 'work1'),
           make_item(source_identifier: 'work2')
         ]
-        map = host.build_child_to_parents_map(data)
+        map = host.build_child_to_parents_map(data, child_split_pattern: '\|')
         expect(map['work1']).to eq(['col1'])
         expect(map['work2']).to eq(['col1'])
       end
@@ -79,7 +55,7 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHierarchy do
           make_item(source_identifier: 'work1'),
           make_item(source_identifier: 'work2')
         ]
-        map = host.build_child_to_parents_map(data)
+        map = host.build_child_to_parents_map(data, child_split_pattern: '\|')
         expect(map['work1']).to eq(['col1'])
         expect(map['work2']).to eq(['col1'])
       end
@@ -95,8 +71,8 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHierarchy do
                     children: nil,
                     raw_row: { 'children_1' => 'work1', 'children_2' => 'work2' })
         ]
-        expect(host.build_child_to_parents_map(split_data))
-          .to eq(host.build_child_to_parents_map(suffix_data))
+        expect(host.build_child_to_parents_map(split_data, child_split_pattern: '\\|'))
+          .to eq(host.build_child_to_parents_map(suffix_data, child_split_pattern: '\\|'))
       end
     end
   end
@@ -189,8 +165,8 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHierarchy do
                                            'children_1' => 'work1',
                                            'children_2' => 'work2' })
         ids = Set.new(%w[col1 work1 work2])
-        split_hash  = host.build_item_hash(split_item,  {}, ids, type: 'collection')
-        suffix_hash = host.build_item_hash(suffix_item, {}, ids, type: 'collection')
+        split_hash  = host.build_item_hash(split_item,  {}, ids, type: 'collection', child: '\|')
+        suffix_hash = host.build_item_hash(suffix_item, {}, ids, type: 'collection', child: '\|')
         expect(split_hash[:childIds]).to eq(suffix_hash[:childIds])
       end
     end
@@ -273,6 +249,17 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHierarchy do
         hash = host.build_item_hash(item, {}, all_ids,
                                     type: 'collection', child: ';')
         expect(hash[:childIds]).to contain_exactly('work1', 'work2')
+      end
+    end
+
+    context 'extract_validation_items without split patterns' do
+      it 'keeps numbered relationship cells whole, as import does' do
+        data = [
+          make_item(source_identifier: 'urn:col1', model: 'Collection', raw_row: { 'title' => 'Coll' }),
+          make_item(source_identifier: 'urn:work1', raw_row: { 'title' => 'W1', 'parents_1' => 'urn:col1' })
+        ]
+        _, works, = host.extract_validation_items(data, Set.new(%w[urn:col1 urn:work1]))
+        expect(works.first[:parentIds]).to eq(['urn:col1'])
       end
     end
 

@@ -39,9 +39,7 @@ module Bulkrax
       keys.map { |key| key_without_numbers(key) }
     end
 
-    def key_without_numbers(key)
-      key.gsub(/_\d+/, '').sub(/^\d+_/, '')
-    end
+    delegate :key_without_numbers, to: 'Bulkrax::FieldResolver'
 
     # Is this a file?
     def file?

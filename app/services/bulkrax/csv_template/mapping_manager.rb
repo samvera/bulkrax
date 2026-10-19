@@ -18,12 +18,15 @@ module Bulkrax
         @mappings = load_mappings(include_generated: include_generated)
       end
 
+      # A mapping that lists the header in `from:` wins over one whose key
+      # merely equals it, so single-field callers pick the field the CSV meant.
       def mapped_to_key(column_str)
-        @mappings.find { |_k, v| v["from"].include?(column_str) }&.first || column_str
+        keys = mapped_to_keys(column_str)
+        keys.find { |key| Array(Bulkrax::FieldResolver.from_value(@mappings[key])).map(&:to_s).include?(column_str.to_s) } || keys.first
       end
 
-      def key_to_mapped_column(key)
-        @mappings.dig(key, "from")&.first || key
+      def mapped_to_keys(column_str)
+        Bulkrax::FieldResolver.fields_for_header(@mappings, column_str)
       end
 
       # Returns the `object:` value for a given mapping key, or nil. Mirrors
@@ -46,29 +49,29 @@ module Bulkrax
         @mappings
           .select { |_k, v| v.is_a?(Hash) && v["object"] == object_name }
           .keys
-          .map { |key| key_to_mapped_column(key) }
+          .map { |key| Bulkrax::FieldResolver.headers_for_field(@mappings, key).first }
           .uniq
       end
 
       def find_by_flag(field_name, default)
-        @mappings.find { |_k, v| v[field_name] == true }&.first || default
+        Bulkrax::FieldResolver.flagged_key(@mappings, field_name) || default
       end
 
       def split_value_for(mapping_key)
-        @mappings.dig(mapping_key, "split")
+        Bulkrax::FieldResolver.option(@mappings[mapping_key], 'split')
       end
 
       def resolve_column_name(key: nil, flag: nil, default: nil)
         if flag
           mapped_key = find_by_flag(flag, nil)
           if mapped_key
-            mapped_options = @mappings.dig(mapped_key, "from") || []
+            mapped_options = aliases_for(mapped_key)
             return mapped_options if mapped_options.any?
           end
         end
 
         if key
-          mapped_options = @mappings.dig(key, "from") || []
+          mapped_options = aliases_for(key)
           return mapped_options if mapped_options.any?
         end
 
@@ -77,11 +80,16 @@ module Bulkrax
 
       private
 
+      # The `from:` aliases configured for `mapping_key`, without the key itself.
+      def aliases_for(mapping_key)
+        Array(Bulkrax::FieldResolver.from_value(@mappings[mapping_key]))
+      end
+
       def load_mappings(include_generated:)
         raw = Bulkrax.field_mappings["Bulkrax::CsvParser"]
         return raw if include_generated
 
-        raw.reject { |_key, value| value["generated"] == true }
+        raw.reject { |_key, value| value.is_a?(Hash) && (value["generated"] == true || value[:generated] == true) }
       end
     end
   end

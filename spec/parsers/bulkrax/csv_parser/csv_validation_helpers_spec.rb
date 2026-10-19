@@ -14,6 +14,24 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
   before { Bulkrax.object_factory = Bulkrax::ValkyrieObjectFactory }
   after  { Bulkrax.object_factory = Bulkrax::ObjectFactory }
 
+  describe '#parse_validation_rows' do
+    let(:raw_csv) do
+      Bulkrax::CsvEntry.read_data(StringIO.new("source_identifier,item,file_1\nw1,a.jpg,b.jpg\n"))
+    end
+
+    let(:record) do
+      host.parse_validation_rows(raw_csv, :source_identifier, :parents, :children, %w[item file]).first
+    end
+
+    it 'keeps `file` as the cell under the first file alias' do
+      expect(record[:file]).to eq('a.jpg')
+    end
+
+    it 'lists every file cell, numbered columns included, in `file_values`' do
+      expect(record[:file_values]).to eq(%w[a.jpg b.jpg])
+    end
+  end
+
   describe '#find_record_by_source_identifier' do
     let(:work_identifier)        { 'source' }
     let(:work_identifier_search) { 'source_sim' }
@@ -155,7 +173,7 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
     context 'when ColumnBuilder raises' do
       before do
         allow(Bulkrax::CsvTemplate::ColumnBuilder).to receive(:new).and_raise(StandardError, 'boom')
-        allow(mapping_manager).to receive(:key_to_mapped_column) { |prop| prop }
+        allow(mapping_manager).to receive(:mappings).and_return(mappings)
       end
 
       it 'falls back to a standard header list that includes both parents and children' do
@@ -246,6 +264,46 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
     end
   end
 
+  describe '#resolve_validation_key' do
+    let(:mapping_manager) { Bulkrax::CsvTemplate::MappingManager.new }
+    let(:mappings) do
+      {
+        'title' => { 'from' => ['title'] },
+        'parents' => { 'from' => %w[collection parents], 'related_parents_field_mapping' => true },
+        'children' => { 'from' => ['children'], 'related_children_field_mapping' => true },
+        'source_identifier' => { 'from' => ['source_identifier'], 'source_identifier' => true }
+      }
+    end
+
+    before { allow(Bulkrax).to receive(:field_mappings).and_return('Bulkrax::CsvParser' => mappings) }
+
+    context 'with a flag-resolved mapping that has multiple `from:` aliases' do
+      it 'resolves to the alias that appears in the CSV headers (canonical present)' do
+        key = host.resolve_validation_key(mapping_manager,
+                                          flag: 'related_parents_field_mapping',
+                                          headers: %w[parents title],
+                                          default: :parents)
+        expect(key).to eq(:parents)
+      end
+
+      it 'resolves to the alias that appears in the CSV headers (alias present)' do
+        key = host.resolve_validation_key(mapping_manager,
+                                          flag: 'related_parents_field_mapping',
+                                          headers: %w[collection title],
+                                          default: :parents)
+        expect(key).to eq(:collection)
+      end
+
+      it 'falls back to the first `from:` alias when no candidate matches the headers' do
+        key = host.resolve_validation_key(mapping_manager,
+                                          flag: 'related_parents_field_mapping',
+                                          headers: %w[title],
+                                          default: :parents)
+        expect(key).to eq(:collection)
+      end
+    end
+  end
+
   describe '#find_unrecognized_validation_headers (respects all `from` aliases)' do
     let(:mappings) do
       {
@@ -285,6 +343,24 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
 
     it 'does not flag a header matching a non-first `from` alias ("resource_type")' do
       expect(unrecognized(%w[title resource_type])).not_to have_key('resource_type')
+    end
+
+    context 'when a header also feeds a mapping that is not a model property' do
+      let(:mappings) do
+        {
+          'author_note' => { 'from' => ['author'] },
+          'creator' => { 'from' => %w[creator author] },
+          'title' => { 'from' => ['title'] }
+        }
+      end
+
+      it 'does not flag it, or its numbered form' do
+        expect(unrecognized(%w[title author author_1])).to be_empty
+      end
+    end
+
+    it 'does not flag a column numbered with a prefix ("1_creator")' do
+      expect(unrecognized(%w[title 1_creator])).not_to have_key('1_creator')
     end
 
     it 'still flags a header that matches no alias of any known property' do
@@ -362,6 +438,48 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
       it 'does not report rights_statement as missing when `rights` alias is present' do
         missing = host.find_missing_required_headers(%w[title rights], field_metadata, mapping_manager)
         expect(missing).to be_empty
+      end
+    end
+  end
+
+  describe '#find_missing_required_headers' do
+    let(:mapping_manager) { Bulkrax::CsvTemplate::MappingManager.new }
+    let(:field_metadata) do
+      { 'GenericWorkResource' => { properties: %w[title creator], required_terms: %w[title creator], controlled_vocab_terms: [] } }
+    end
+
+    before { allow(Bulkrax).to receive(:field_mappings).and_return('Bulkrax::CsvParser' => mappings) }
+
+    context 'when a numbered column uses a `from:` alias' do
+      let(:mappings) { { 'title' => { 'from' => ['title'] }, 'creator' => { 'from' => %w[author creator] } } }
+
+      it 'counts `author_1` as the creator column' do
+        expect(host.find_missing_required_headers(%w[title_1 author_1], field_metadata, mapping_manager)).to be_empty
+      end
+    end
+
+    context 'when a column is numbered with a prefix' do
+      let(:mappings) { { 'title' => { 'from' => ['title'] }, 'creator' => { 'from' => %w[author creator] } } }
+
+      it 'counts `1_author` as the creator column' do
+        expect(host.find_missing_required_headers(%w[title 1_author], field_metadata, mapping_manager)).to be_empty
+      end
+    end
+
+    context 'when one header feeds two mappings' do
+      let(:mappings) { { 'creator' => { 'from' => ['author'] }, 'title' => { 'from' => ['creator'] } } }
+
+      it 'counts the header for every field it feeds' do
+        expect(host.find_missing_required_headers(%w[creator], field_metadata, mapping_manager)).to be_empty
+      end
+    end
+
+    context 'when a required field has no column' do
+      let(:mappings) { { 'title' => { 'from' => ['title'] }, 'creator' => { 'from' => %w[author creator] } } }
+
+      it 'reports it' do
+        expect(host.find_missing_required_headers(%w[title], field_metadata, mapping_manager))
+          .to eq([{ model: 'GenericWorkResource', field: 'creator' }])
       end
     end
   end
@@ -471,6 +589,28 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
   describe '#resolve_children_split_pattern (JSON-serialised Regexp)' do
     include_examples 'coerces a serialised Regexp back into a Regexp',
                      :resolve_children_split_pattern, :children
+  end
+
+  describe 'relationship split patterns across mapping shapes' do
+    it 'reads a children split stored as symbol options under a string key' do
+      mappings = { 'children' => { from: ['children'], related_children_field_mapping: true, split: '\|' } }
+      expect('w1|w2'.split(host.resolve_children_split_pattern(mappings))).to eq(%w[w1 w2])
+    end
+
+    it 'reads a parents split stored under symbol keys' do
+      mappings = { 'parents' => { from: ['parents'], split: '\|', related_parents_field_mapping: true } }
+      expect('c1|c2'.split(host.resolve_parent_split_pattern(mappings))).to eq(%w[c1 c2])
+    end
+
+    it 'reads the parents split from the flagged mapping, whatever its key' do
+      mappings = { 'collection' => { 'from' => ['collection'], 'split' => ';', 'related_parents_field_mapping' => true } }
+      expect('c1;c2'.split(host.resolve_parent_split_pattern(mappings))).to eq(%w[c1 c2])
+    end
+
+    it 'reads the children split from the flagged mapping, whatever its key' do
+      mappings = { 'members' => { from: ['members'], split: ';', related_children_field_mapping: true } }
+      expect('w1;w2'.split(host.resolve_children_split_pattern(mappings))).to eq(%w[w1 w2])
+    end
   end
 
   describe '#build_relationship_graph' do
@@ -629,7 +769,7 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
   describe '#assemble_result' do
     let(:file_validator) do
       instance_double(
-        'Bulkrax::CsvTemplate::FileValidator',
+        'Bulkrax::FileValidator',
         missing_files: [],
         possible_missing_files?: false,
         count_references: 0,
