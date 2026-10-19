@@ -13,9 +13,8 @@ module Bulkrax
     # the "files referenced but no zip" case is a run-level notice, not
     # a per-row error.
     #
-    # The importer finds a referenced file by joining it onto `files/`,
-    # trying it as written and then with spaces turned into underscores
-    # (CsvParser#existing_file_path), after renaming each top-level entry
+    # The importer finds a referenced file by joining it onto `files/` under
+    # each of CsvParser.file_reference_candidates, after renaming each top-level entry
     # under `files/` that has a space, except names starting with `.`, which
     # the rename skips (CsvParser#remove_spaces_from_filenames).
     # There is no basename fallback, so a reference in the wrong folder is
@@ -32,7 +31,7 @@ module Bulkrax
         on_disk = context[:zip_paths_on_disk] ||= paths_on_disk(plan.available_paths)
 
         referenced_paths(record).each do |path|
-          next if candidates(path).any? { |candidate| on_disk.include?(candidate.b) }
+          next if Bulkrax::CsvParser.file_reference_candidates(path).any? { |candidate| on_disk.include?(candidate.b) }
 
           context[:errors] << error_hash(record, row_index, path)
         end
@@ -46,14 +45,6 @@ module Bulkrax
         end.to_set
       end
       private_class_method :paths_on_disk
-
-      def self.candidates(reference)
-        return [] if reference.end_with?('/', '/.')
-
-        cleaned = reference.split('/').reject { |part| part.empty? || part == '.' }.join('/')
-        [cleaned, cleaned.tr(' ', '_')].uniq
-      end
-      private_class_method :candidates
 
       # Each cell in `record[:file_values]` may itself be split by the file
       # `split:` pattern.

@@ -743,6 +743,41 @@ module Bulkrax
         end
       end
 
+      context 'when extraction renamed the file' do
+        let(:files_dir) { Dir.mktmpdir }
+
+        before do
+          FileUtils.touch(File.join(files_dir, 'a_b.jpg'))
+          allow(subject).to receive(:files_dir).and_return(files_dir)
+        end
+
+        after { FileUtils.rm_rf(files_dir) }
+
+        it 'finds it under the underscored name, as the preflight check does' do
+          expect(subject.path_to_files(filename: 'a b.jpg')).to eq(File.join(files_dir, 'a_b.jpg'))
+        end
+
+        it 'finds it when the reference starts with / or ./' do
+          expect(subject.path_to_files(filename: '/a b.jpg')).to eq(File.join(files_dir, 'a_b.jpg'))
+          expect(subject.path_to_files(filename: './a b.jpg')).to eq(File.join(files_dir, 'a_b.jpg'))
+        end
+
+        it 'does not return the files directory for a reference of just .' do
+          expect(subject.path_to_files(filename: '.')).to be_nil
+        end
+
+        it 'does not find it when the reference ends in a slash' do
+          expect(subject.path_to_files(filename: 'a_b.jpg/')).to be_nil
+          expect(subject.path_to_files(filename: 'a_b.jpg/.')).to be_nil
+        end
+
+        it 'does not underscore a name inside a folder, which extraction keeps' do
+          FileUtils.mkdir_p(File.join(files_dir, 'scans'))
+          FileUtils.touch(File.join(files_dir, 'scans', 'a_b.jpg'))
+          expect(subject.path_to_files(filename: 'scans/a b.jpg')).to be_nil
+        end
+      end
+
       # `path_to_files` previously memoized into `@path_to_files`
       # for both directory lookups (filename blank) and file lookups
       # (filename present). If it was first called with a filename and
@@ -913,6 +948,18 @@ module Bulkrax
         it 'returns paths from columns numbered with a prefix' do
           allow(subject).to receive(:records).and_return([{ '1_item': 'sun.jpg' }])
           expect(subject.file_paths).to include('spec/fixtures/csv/files/sun.jpg')
+        end
+
+        it 'finds a nested file whose top-level folder extraction renamed' do
+          allow(subject).to receive(:records).and_return([{ file: 'sub dir/a b.jpg' }])
+          allow(File).to receive(:exist?).and_call_original
+          allow(File).to receive(:exist?).with('spec/fixtures/csv/files/sub_dir/a b.jpg').and_return(true)
+          expect(subject.file_paths).to include('spec/fixtures/csv/files/sub_dir/a b.jpg')
+        end
+
+        it 'skips an empty piece of a file cell, as attaching does' do
+          allow(subject).to receive(:records).and_return([{ file: 'sun.jpg||moon.jpg' }])
+          expect(subject.file_paths).to contain_exactly('spec/fixtures/csv/files/sun.jpg', 'spec/fixtures/csv/files/moon.jpg')
         end
 
         it 'combines file values from multiple aliased columns in one record' do

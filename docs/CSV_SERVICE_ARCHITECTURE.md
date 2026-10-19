@@ -268,7 +268,7 @@ Decides where each zip entry lands under the import's unzip directory, without e
 - `:primary_csv` (a zip uploaded on its own): the shallowest CSV is the metadata file, and every other entry goes under `files/`, relative to that CSV's folder.
 - `:attachments_only` (a zip uploaded beside a CSV): every entry goes under `files/`, and a single top-level wrapper folder is stripped.
 
-`CsvRow::FileReference` reports, per row, each referenced path that will not exist under `files/`. It matches the way import resolves a reference: the path as written, or with spaces turned into underscores.
+`CsvRow::FileReference` reports, per row, each referenced path that will not exist under `files/`. It matches the way import resolves a reference, both in the preflight check and when attaching each file: the path as written, or with spaces turned into underscores in its top-level name, the only one extraction renames (`CsvParser.file_reference_candidates`). Names inside a folder must match exactly.
 
 ### TemplateContext
 

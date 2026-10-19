@@ -141,8 +141,13 @@ RSpec.describe Bulkrax::CsvRow::FileReference do
       expect(errors_for('/foo.jpg', 'foo.jpg')).to be_empty
     end
 
-    it 'rejects a nested reference whose folder the importer renames away' do
-      expect(errors_for('my dir/a b.jpg', 'my dir/a b.jpg')).not_to be_empty
+    it 'accepts a nested reference whose top-level folder the importer renames' do
+      expect(errors_for('my dir/a b.jpg', 'my dir/a b.jpg')).to be_empty
+    end
+
+    it 'rejects a nested reference that differs from the zip only by underscores' do
+      expect(errors_for('scans/my photo.jpg', 'scans/my_photo.jpg')).not_to be_empty
+      expect(errors_for('scans/my_photo.jpg', 'scans/my photo.jpg')).not_to be_empty
     end
 
     it 'matches a non-ASCII name against the raw bytes the zip reports' do

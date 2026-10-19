@@ -181,7 +181,7 @@ module Bulkrax
       self.parsed_metadata['file'] = self.parsed_metadata['file'].map do |f|
         next if f.blank?
 
-        path_to_file(f.tr(' ', '_'))
+        path_to_file(f)
       end.compact
     end
 
@@ -450,31 +450,22 @@ module Bulkrax
       self.collection_ids
     end
 
-    # If only filename is given, construct the path (/files/my_file).
-    # If file contains a path separator (e.g. attachments/cat_scan.jpg), resolve relative to the CSV's directory.
+    # Finds the file under the files directory the way the preflight check
+    # (CsvParser#file_paths) does, so a reference that passes it attaches.
     def path_to_file(file)
       return file if File.exist?(file)
 
-      # Relative path: resolve from CSV's directory (allows arbitrary subdirectory names, not just "files")
-      return resolve_relative_file_path(file) if file.include?('/')
-
-      # Bare filename: use legacy files/ directory for backward compatibility and round-tripping
       path = importerexporter.parser.path_to_files
       raise "Could not determine path to files directory. Ensure the import package contains a zip or a valid import_file_path." if path.nil?
 
-      f = File.join(path, file)
-      return f if File.exist?(f)
-      raise "File not found: #{f}. Check the file column in your CSV and ensure the file exists in the import package or path_to_files directory."
+      found = Bulkrax::CsvParser.file_reference_candidates(file)
+                                .map { |candidate| File.join(path, candidate) }
+                                .find { |candidate| File.exist?(candidate) }
+      return found if found
+      raise "File not found: #{File.join(path, file)}. Check the file column in your CSV and ensure the file exists in the import package or path_to_files directory."
     end
 
     private
-
-    def resolve_relative_file_path(file)
-      base = File.dirname(importerexporter.parser.import_file_path)
-      candidate = File.join(base, file)
-      return candidate if File.exist?(candidate)
-      raise "File not found: #{candidate}. Check the file path in your CSV and ensure the file exists in the import package or directory."
-    end
 
     def map_file_sets(file_sets)
       # rubocop:disable Rails/Presence

@@ -360,7 +360,7 @@ module Bulkrax
         next if raw_values.empty?
         raise StandardError, "Record references local files but no files directory could be resolved from the import path" if files_dir.nil?
 
-        raw_values.flat_map { |v| v.split(split_pattern) }.map { |f| existing_file_path(files_dir, f.strip) }
+        raw_values.flat_map { |v| v.split(split_pattern) }.map(&:strip).reject(&:empty?).map { |f| existing_file_path(files_dir, f) }
       end.flatten.compact.uniq
     end
 
@@ -384,8 +384,24 @@ module Bulkrax
       return base_dir if filename.blank? && Dir.exist?(base_dir)
       return nil if filename.blank?
 
-      candidate = File.join(base_dir, filename)
-      candidate if File.exist?(candidate)
+      self.class.file_reference_candidates(filename)
+          .map { |candidate| File.join(base_dir, candidate) }
+          .find { |candidate| File.exist?(candidate) }
+    end
+
+    # The names a file reference may have under `files/` after extraction,
+    # ignoring empty and `.` segments as extraction does: as written, or with
+    # spaces underscored in the top-level name, the only one
+    # #remove_spaces_from_filenames renames. A reference ending in a slash
+    # names a folder, not a file, so it has none.
+    def self.file_reference_candidates(reference)
+      return [] if reference.end_with?('/', '/.')
+
+      cleaned = reference.split('/').reject { |part| part.empty? || part == '.' }.join('/')
+      return [] if cleaned.empty?
+
+      top, rest = cleaned.split('/', 2)
+      [cleaned, [top.tr(' ', '_'), rest].compact.join('/')].uniq
     end
 
     # Extracts a zip that contains a primary CSV. The primary CSV lands at
@@ -462,14 +478,10 @@ module Bulkrax
       entry_class.data_for_entry(row, nil, self).keys.compact.uniq if row
     end
 
-    # Try the reference as written first, then the space->underscore
-    # variant produced by #remove_spaces_from_filenames. The rename only
-    # rewrites the top level of files/ (see unzip_spec), so nested
-    # attachments keep their spaces on disk and only match as written.
     def existing_file_path(files_dir, reference)
-      file = [reference, reference.tr(' ', '_')].uniq
-                                                .map { |candidate| File.join(files_dir, candidate) }
-                                                .find { |candidate| File.exist?(candidate) }
+      file = self.class.file_reference_candidates(reference)
+                 .map { |candidate| File.join(files_dir, candidate) }
+                 .find { |candidate| File.exist?(candidate) }
       raise "File #{File.join(files_dir, reference)} does not exist" if file.nil?
 
       file

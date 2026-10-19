@@ -1651,6 +1651,25 @@ module Bulkrax
         end
       end
 
+      context 'when a name inside a folder has a space' do
+        let(:raw_metadata) { { 'source_identifier' => 'id-1', 'file' => 'scans/my photo.jpg' } }
+        let(:files_dir) { Dir.mktmpdir }
+
+        before do
+          FileUtils.mkdir_p(File.join(files_dir, 'scans'))
+          FileUtils.touch(File.join(files_dir, 'scans', 'my photo.jpg'))
+          allow(parser).to receive(:path_to_files).and_return(files_dir)
+          allow(entry).to receive(:path_to_file).and_call_original
+        end
+
+        after { FileUtils.rm_rf(files_dir) }
+
+        it 'attaches the file by the name the zip gives it' do
+          entry.send(:add_file)
+          expect(entry.parsed_metadata['file']).to eq([File.join(files_dir, 'scans/my photo.jpg')])
+        end
+      end
+
       context 'when the `file` cell is already an Array' do
         let(:raw_metadata) { { 'source_identifier' => 'id-1', 'file' => ['sun.jpg', 'moon.jpg'] } }
 
@@ -1683,6 +1702,28 @@ module Bulkrax
         it 'returns the full path without raising' do
           result = entry.send(:path_to_file, 'sun.jpg')
           expect(result).to eq(File.join(files_dir, 'sun.jpg'))
+        end
+      end
+
+      context 'when the reference includes folders' do
+        let(:files_dir) { Dir.mktmpdir }
+
+        before do
+          FileUtils.mkdir_p(File.join(files_dir, 'scans'))
+          FileUtils.touch(File.join(files_dir, 'scans', 'a.jpg'))
+          FileUtils.mkdir_p(File.join(files_dir, 'sub_dir'))
+          FileUtils.touch(File.join(files_dir, 'sub_dir', 'a b.jpg'))
+          allow(parser).to receive(:path_to_files).and_return(files_dir)
+        end
+
+        after { FileUtils.rm_rf(files_dir) }
+
+        it 'finds the file under the files directory, as the preflight check does' do
+          expect(entry.send(:path_to_file, 'scans/a.jpg')).to eq(File.join(files_dir, 'scans/a.jpg'))
+        end
+
+        it 'finds a file whose top-level folder extraction renamed' do
+          expect(entry.send(:path_to_file, 'sub dir/a b.jpg')).to eq(File.join(files_dir, 'sub_dir/a b.jpg'))
         end
       end
 
