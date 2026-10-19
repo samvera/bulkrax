@@ -47,7 +47,7 @@ module Bulkrax
           find_record = build_find_record
           notices     = []
           append_missing_source_id!(missing_required, headers, source_id_key, csv_data.map { |r| r[:model] }.compact.uniq)
-          append_missing_model_notice!(notices, headers, csv_data)
+          append_missing_model_notice!(notices, headers, csv_data, model_headers: Bulkrax::FieldResolver.headers_for_field(mappings, 'model'))
 
           row_errors                       = run_row_validators(csv_data, all_ids, source_id_key, mappings, field_metadata, find_record, notices, mapping_manager: mapping_manager)
           file_validator                   = Bulkrax::FileValidator.new(csv_data, zip_file, admin_set_id)
@@ -68,10 +68,9 @@ module Bulkrax
           source_id_key = resolve_validation_key(mapping_manager, flag: 'source_identifier', default: :source_identifier)
           parent_key    = resolve_validation_key(mapping_manager, flag: 'related_parents_field_mapping',  headers: headers, default: :parents)
           children_key  = resolve_validation_key(mapping_manager, flag: 'related_children_field_mapping', headers: headers, default: :children)
-          file_headers  = Bulkrax::FieldResolver.headers_for_field(mappings, 'file')
 
-          csv_data       = parse_validation_rows(raw_csv, source_id_key, parent_key, children_key, file_headers)
-          all_models     = models_to_validate(csv_data, headers)
+          csv_data       = parse_validation_rows(raw_csv, source_id_key, parent_key, children_key, mappings)
+          all_models     = models_to_validate(csv_data, headers, model_headers: Bulkrax::FieldResolver.headers_for_field(mappings, 'model'))
           field_analyzer = CsvTemplate::FieldAnalyzer.new(mappings, admin_set_id)
           field_metadata = build_validation_field_metadata(all_models, field_analyzer)
 

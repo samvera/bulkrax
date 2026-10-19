@@ -20,7 +20,7 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
     end
 
     let(:record) do
-      host.parse_validation_rows(raw_csv, :source_identifier, :parents, :children, %w[item file]).first
+      host.parse_validation_rows(raw_csv, :source_identifier, :parents, :children, { 'file' => { 'from' => ['item'] } }).first
     end
 
     it 'keeps `file` as the cell under the first file alias' do
@@ -29,6 +29,12 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
 
     it 'lists every file cell, numbered columns included, in `file_values`' do
       expect(record[:file_values]).to eq(%w[a.jpg b.jpg])
+    end
+
+    it 'strips the model value, as import does' do
+      csv = Bulkrax::CsvEntry.read_data(StringIO.new("source_identifier,model,work_type\nw1,Collection,Collection \n"))
+      row = host.parse_validation_rows(csv, :source_identifier, :parents, :children, { 'model' => { 'from' => ['work_type'] } }).first
+      expect(row[:model]).to eq('Collection')
     end
   end
 
@@ -494,6 +500,13 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
       Bulkrax.default_work_type = original
     end
 
+    it 'counts a model alias column as the model column' do
+      csv_data = [{ model: 'DigitalCollection' }]
+
+      expect(host.models_to_validate(csv_data, %w[source_identifier title work_type], model_headers: %w[work_type model]))
+        .to eq(['DigitalCollection'])
+    end
+
     it 'is the models the rows name when every row names one' do
       csv_data = [{ model: 'DigitalCollection' }, { model: 'Book' }]
 
@@ -736,6 +749,22 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
       end
 
       it 'uses the mapped search_field' do
+        lam = host.build_find_record
+        expect(Bulkrax::ValkyrieObjectFactory).to receive(:search_by_property).with(
+          hash_including(search_field: 'local_id_tesim', name_field: 'local_id')
+        ).and_return(nil)
+        lam.call('anything')
+      end
+    end
+
+    context 'when the source_identifier mapping uses symbol keys' do
+      before do
+        allow(Bulkrax).to receive(:field_mappings).and_return(
+          'Bulkrax::CsvParser' => { 'local_id' => { from: ['source_identifier'], source_identifier: true, search_field: 'local_id_tesim' } }
+        )
+      end
+
+      it 'uses the mapped identifier and search_field' do
         lam = host.build_find_record
         expect(Bulkrax::ValkyrieObjectFactory).to receive(:search_by_property).with(
           hash_including(search_field: 'local_id_tesim', name_field: 'local_id')
