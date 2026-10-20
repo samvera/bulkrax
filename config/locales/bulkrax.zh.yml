@@ -105,6 +105,10 @@ zh:
           institution: 机构
           private: 私人的
           public: 民众
+      csv_read:
+        errors:
+          invalid_encoding: "此 CSV 文件未以 UTF-8 编码保存（第一个问题位于第 %{row} 行）。请将其另存为\"CSV UTF-8\"格式后再次上传。"
+          unreadable: "无法读取 CSV 文件（%{error}）。请修正文件后再次上传。"
       edit_form:
         entry_modal_title: 更新条目的选项
         entry_rebuild_hint: 重新构建元数据和文件。

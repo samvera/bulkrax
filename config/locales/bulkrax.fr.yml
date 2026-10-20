@@ -105,6 +105,10 @@ fr:
           institution: Institution
           private: Privé
           public: Publique
+      csv_read:
+        errors:
+          invalid_encoding: "Ce fichier CSV n'est pas enregistré en UTF-8 (le premier problème se trouve à la ligne %{row}). Enregistrez-le au format « CSV UTF-8 » et téléversez-le à nouveau."
+          unreadable: "Le fichier CSV n'a pas pu être lu (%{error}). Corrigez le fichier et téléversez-le à nouveau."
       edit_form:
         entry_modal_title: Options de mise à jour d'une entrée
         entry_rebuild_hint: Reconstruire les métadonnées et les fichiers.

@@ -40,20 +40,61 @@ module Bulkrax
     def self.read_data(path)
       raise CsvPathError, 'CSV path empty' if path.blank?
 
-      results = if path.respond_to?(:read)
-                  path.rewind if path.respond_to?(:rewind)
-                  CSV.parse(path.read, **read_data_options)
-                else
-                  CSV.read(path, **read_data_options)
-                end
+      results = explaining_csv_errors(path) do
+        if path.respond_to?(:read)
+          path.rewind if path.respond_to?(:rewind)
+          CSV.parse(path.read, **read_data_options)
+        else
+          CSV.read(path, **read_data_options)
+        end
+      end
       csv_wrapper_class.new(results)
     end
 
     def self.read_first_row(path)
       raise CsvPathError, 'CSV path empty' if path.blank?
 
-      CSV.foreach(path, **read_data_options).first
+      explaining_csv_errors(path) { CSV.foreach(path, **read_data_options).first }
     end
+
+    # Older csv gems raise a plain MalformedCSVError for bad bytes, so the
+    # message identifies an encoding problem where InvalidEncodingError is missing.
+    def self.explaining_csv_errors(source)
+      yield
+    rescue CSV::MalformedCSVError => e
+      encoding = (defined?(CSV::InvalidEncodingError) && e.is_a?(CSV::InvalidEncodingError)) || e.message.start_with?('Invalid byte sequence')
+      if encoding
+        row = first_invalid_row(source) || e.line_number
+        raise CsvReadError.new(I18n.t('bulkrax.importer.csv_read.errors.invalid_encoding', row: row), e.line_number)
+      end
+
+      raise CsvReadError.new(I18n.t('bulkrax.importer.csv_read.errors.unreadable', error: e.message.chomp('.')), e.line_number)
+    end
+    private_class_method :explaining_csv_errors
+
+    # The csv gem reports the file line where the bad record starts, which is
+    # not the spreadsheet row once an earlier quoted cell spans lines, so count
+    # line breaks outside quoted cells up to the first invalid byte.
+    def self.first_invalid_row(source)
+      if source.respond_to?(:read)
+        source.rewind if source.respond_to?(:rewind)
+        bytes = source.read
+      else
+        bytes = File.binread(source.to_s)
+      end
+      row = 1
+      in_quotes = false
+      previous = nil
+      bytes.dup.force_encoding(Encoding::UTF_8).each_char do |char|
+        return row unless char.valid_encoding?
+
+        in_quotes = !in_quotes if char == '"'
+        row += 1 if !in_quotes && (char == "\r" || (char == "\n" && previous != "\r"))
+        previous = char
+      end
+      nil
+    end
+    private_class_method :first_invalid_row
 
     def self.read_data_options
       {

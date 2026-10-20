@@ -44,7 +44,7 @@ module Bulkrax
       formatted = StepperResponseFormatter.format(validation_result)
       formatted[:validationErrorsCacheKey] = cache_key
       render json: formatted, status: :ok
-    rescue Bulkrax::UnzipError => e
+    rescue Bulkrax::UnzipError, Bulkrax::CsvReadError => e
       render json: StepperResponseFormatter.error(message: e.message), status: :ok
     rescue Zip::Error => e
       render json: StepperResponseFormatter.error(message: I18n.t('bulkrax.importer.guided_import.validation.zip_unreadable', error: e.message)), status: :ok

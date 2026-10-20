@@ -36,6 +36,85 @@ module Bulkrax
           expect { described_class.read_data(nil) }.to raise_error(CsvEntry::CsvPathError, 'CSV path empty')
         end
       end
+
+      context 'when the CSV is not UTF-8' do
+        let(:path) { File.expand_path('../../fixtures/csv/windows_1252.csv', __dir__) }
+
+        it 'asks for a UTF-8 CSV and names the first bad row' do
+          expect { described_class.read_data(path) }
+            .to raise_error(Bulkrax::CsvReadError, /isn't saved as UTF-8.*row 2/)
+        end
+
+        it 'can still be rescued as a CSV::MalformedCSVError, keeping the line number' do
+          expect { described_class.read_data(path) }.to raise_error(CSV::MalformedCSVError) { |error|
+            expect(error.line_number).to eq(2)
+            expect(error.message).to eq(I18n.t('bulkrax.importer.csv_read.errors.invalid_encoding', row: 2))
+          }
+        end
+
+        it 'recognizes the encoding problem from older csv gems, which raise a plain MalformedCSVError' do
+          allow(CSV).to receive(:read).and_raise(CSV::MalformedCSVError.new('Invalid byte sequence in UTF-8 in line 2.', 2))
+          expect { described_class.read_data(path) }
+            .to raise_error(Bulkrax::CsvReadError, /isn't saved as UTF-8.*row 2/)
+        end
+
+        it 'says the same for an uploaded file' do
+          File.open(path) do |upload|
+            expect { described_class.read_data(upload) }
+              .to raise_error(Bulkrax::CsvReadError, /isn't saved as UTF-8.*row 2/)
+          end
+        end
+
+        context 'when an earlier quoted cell spans two lines' do
+          around do |example|
+            Tempfile.create(['multiline', '.csv'], binmode: true) do |file|
+              file.write("a,b\n\"x\ny\",z\nw,R\xE9my\n".b)
+              file.flush
+              @multiline_path = file.path
+              example.run
+            end
+          end
+
+          it 'names the spreadsheet row, not the line in the file' do
+            expect { described_class.read_data(@multiline_path) }
+              .to raise_error(Bulkrax::CsvReadError, /isn't saved as UTF-8.*row 3\)/)
+          end
+
+          it 'names the spreadsheet row for an uploaded file' do
+            File.open(@multiline_path, 'rb') do |upload|
+              expect { described_class.read_data(upload) }
+                .to raise_error(Bulkrax::CsvReadError, /isn't saved as UTF-8.*row 3\)/)
+            end
+          end
+        end
+      end
+
+      context 'when the CSV cannot be parsed' do
+        let(:path) { File.expand_path('../../fixtures/csv/malformed.csv', __dir__) }
+
+        it 'says the CSV could not be read and why' do
+          expect { described_class.read_data(path) }
+            .to raise_error(Bulkrax::CsvReadError, /couldn't be read.*line 1/)
+        end
+      end
+
+      it 'reads a UTF-8 CSV that starts with a byte-order mark' do
+        Tempfile.create(['bom', '.csv']) do |file|
+          file.write("\xEF\xBB\xBFsource_identifier,title\nw1,Saint Rémy\n")
+          file.flush
+          data = described_class.read_data(file.path)
+          expect(data.headers).to eq(%i[source_identifier title])
+          expect(data.first[:title]).to eq('Saint Rémy')
+        end
+      end
+    end
+
+    describe '.read_first_row' do
+      it 'asks for a UTF-8 CSV when the first row is not UTF-8' do
+        path = File.expand_path('../../fixtures/csv/windows_1252.csv', __dir__)
+        expect { described_class.read_first_row(path) }
+          .to raise_error(Bulkrax::CsvReadError, /isn't saved as UTF-8.*row 2/)
+      end
     end
 
     describe '.data_for_entry' do

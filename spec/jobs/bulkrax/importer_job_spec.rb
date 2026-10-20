@@ -63,6 +63,16 @@ module Bulkrax
         end
       end
 
+      context 'with a CSV that is not UTF-8' do
+        let(:importer) { FactoryBot.create(:bulkrax_importer_csv_bad, parser_fields: { 'import_file_path' => 'spec/fixtures/csv/windows_1252.csv' }) }
+
+        it 'fails with a message asking for a UTF-8 CSV' do
+          importer_job.perform(importer.id)
+          expect(importer.reload.status).to eq('Failed')
+          expect(importer.current_status.error_message).to match(/isn't saved as UTF-8.*row 2/)
+        end
+      end
+
       context 'when current_run fails with an unexpected database error' do
         let(:importer) { FactoryBot.create(:bulkrax_importer_oai) }
         let(:db_error) { ActiveRecord::StatementInvalid.new('PG::UndefinedColumn: ERROR: column "processed_children" does not exist') }
