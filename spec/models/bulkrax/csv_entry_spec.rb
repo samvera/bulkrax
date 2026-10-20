@@ -40,7 +40,7 @@ module Bulkrax
       context 'when the CSV is not UTF-8' do
         let(:path) { File.expand_path('../../fixtures/csv/windows_1252.csv', __dir__) }
 
-        it 'asks for a UTF-8 CSV and names the first bad line' do
+        it 'asks for a UTF-8 CSV and names the first bad row' do
           expect { described_class.read_data(path) }
             .to raise_error(Bulkrax::CsvReadError, /isn't saved as UTF-8.*row 2/)
         end
@@ -62,6 +62,29 @@ module Bulkrax
           File.open(path) do |upload|
             expect { described_class.read_data(upload) }
               .to raise_error(Bulkrax::CsvReadError, /isn't saved as UTF-8.*row 2/)
+          end
+        end
+
+        context 'when an earlier quoted cell spans two lines' do
+          around do |example|
+            Tempfile.create(['multiline', '.csv'], binmode: true) do |file|
+              file.write("a,b\n\"x\ny\",z\nw,R\xE9my\n".b)
+              file.flush
+              @multiline_path = file.path
+              example.run
+            end
+          end
+
+          it 'names the spreadsheet row, not the line in the file' do
+            expect { described_class.read_data(@multiline_path) }
+              .to raise_error(Bulkrax::CsvReadError, /isn't saved as UTF-8.*row 3\)/)
+          end
+
+          it 'names the spreadsheet row for an uploaded file' do
+            File.open(@multiline_path, 'rb') do |upload|
+              expect { described_class.read_data(upload) }
+                .to raise_error(Bulkrax::CsvReadError, /isn't saved as UTF-8.*row 3\)/)
+            end
           end
         end
       end
