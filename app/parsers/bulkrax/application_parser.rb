@@ -482,9 +482,11 @@ module Bulkrax
       end
     end
 
-    def macos_junk_entry?(name)
+    def self.macos_junk_entry?(name)
       name.start_with?('__MACOSX/') || name.split('/').any? { |part| part == '.DS_Store' || part.start_with?('._') }
     end
+
+    delegate :macos_junk_entry?, to: :class
 
     # Zip Slip preflight — reject entries whose names are obviously unsafe
     # (absolute paths, `..` segments) before we touch the filesystem.
@@ -492,10 +494,12 @@ module Bulkrax
     # fails fast with a clear message.
     #
     # @raise [Bulkrax::UnzipError] if the entry name is unsafe
-    def reject_unsafe_entry!(name)
+    def self.reject_unsafe_entry!(name)
       return unless name.start_with?('/') || name.split('/').include?('..')
-      raise Bulkrax::UnzipError, I18n.t('bulkrax.importer.unzip.errors.unsafe_entry', name: name)
+      raise Bulkrax::UnzipError, I18n.t('bulkrax.importer.unzip.errors.unsafe_entry', name: name.dup.force_encoding(Encoding::UTF_8).scrub)
     end
+
+    delegate :reject_unsafe_entry!, to: :class
 
     # Zip Slip chokepoint. Resolves `relative_dest` against `dest_dir` and
     # returns the absolute destination path — but only if it stays inside

@@ -127,7 +127,7 @@ module Bulkrax
     end
 
     def group_entries_by_directory_level(zip)
-      zip.select { |entry| entry.name.end_with?('.csv') && !entry.directory? }
+      Bulkrax::CsvParser.real_zip_entries(zip).select { |entry| entry.name.end_with?('.csv') }
     end
 
     def get_directory_depth_for_each_csv(entries)

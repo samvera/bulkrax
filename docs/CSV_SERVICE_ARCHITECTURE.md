@@ -40,10 +40,7 @@ Returns:
   works: [...],
   fileSets: [...],
   totalItems: 247,
-  fileReferences: 55,
-  missingFiles: [...],
-  foundFiles: 52,
-  zipIncluded: true
+  notices: [...]               # File-level notices, e.g. files referenced but no ZIP
 }
 ```
 
@@ -80,12 +77,16 @@ CsvParser.validate_csv
         ├── CsvTemplate::MappingManager     - Resolve column names from field mappings
         ├── CsvTemplate::FieldAnalyzer      - Required fields, controlled vocab per model
         ├── CsvTemplate::ColumnBuilder      - Valid headers for comparison
-        ├── FileValidator                   - File references vs zip contents
+        ├── ZipPlacementPlanner             - Where each zip entry lands after extraction
         ├── Bulkrax.csv_row_validators      - Array of callable row validators
+        │     ├── CsvRow::MissingSourceIdentifier
         │     ├── CsvRow::DuplicateIdentifier
         │     ├── CsvRow::ParentReference
+        │     ├── CsvRow::ChildReference
+        │     ├── CsvRow::CircularReference
         │     ├── CsvRow::RequiredValues
-        │     └── CsvRow::ControlledVocabulary
+        │     ├── CsvRow::ControlledVocabulary
+        │     └── CsvRow::FileReference
         └── DidYouMean::SpellChecker        - Suggestions for unrecognized columns
 ```
 
@@ -120,16 +121,21 @@ Rows are `CSV::Row` objects with symbol-keyed headers. Field access uses the sym
 | `app/services/bulkrax/csv_template/explanation_builder.rb` | Field help text |
 | `app/services/bulkrax/csv_template/split_formatter.rb` | Multi-value delimiter descriptions |
 | `app/services/bulkrax/csv_template/file_path_generator.rb` | Default output file paths |
-| `app/services/bulkrax/csv_template/file_validator.rb` | Validate file references vs zip |
 
 ### CsvRow:: Validator Modules
 
 | File | Category | Severity |
 |------|----------|----------|
+| `app/validators/bulkrax/csv_row/missing_source_identifier.rb` | `missing_source_identifier` | error |
 | `app/validators/bulkrax/csv_row/duplicate_identifier.rb` | `duplicate_source_identifier` | error |
+| `app/validators/bulkrax/csv_row/duplicate_identifier.rb` | `existing_source_identifier` | warning |
 | `app/validators/bulkrax/csv_row/parent_reference.rb` | `invalid_parent_reference` | error |
+| `app/validators/bulkrax/csv_row/child_reference.rb` | `invalid_child_reference` | error |
+| `app/validators/bulkrax/csv_row/circular_reference.rb` | `circular_reference` | error |
 | `app/validators/bulkrax/csv_row/required_values.rb` | `missing_required_value` | error |
+| `app/validators/bulkrax/csv_row/required_values.rb` | `default_work_type_used` | warning |
 | `app/validators/bulkrax/csv_row/controlled_vocabulary.rb` | `invalid_controlled_value` | error |
+| `app/validators/bulkrax/csv_row/file_reference.rb` | `missing_file_reference` | error |
 
 ### Related Files
 
@@ -138,6 +144,7 @@ Rows are `CSV::Row` objects with symbol-keyed headers. Field access uses the sym
 | `app/controllers/bulkrax/guided_imports_controller.rb` | Calls `CsvParser.validate_csv`, delegates to `StepperResponseFormatter` |
 | `app/controllers/bulkrax/importers_controller.rb` | Calls `CsvParser.generate_template` for template download |
 | `app/services/bulkrax/stepper_response_formatter.rb` | Formats validation results for the stepper UI |
+| `app/services/bulkrax/zip_placement_planner.rb` | Plans where zip entries land; shared by import's unzip and `CsvRow::FileReference` |
 
 ## Configuration
 
@@ -150,10 +157,14 @@ Default value (set in `lib/bulkrax.rb`):
 ```ruby
 Bulkrax.csv_row_validators
 # => [
+#   Bulkrax::CsvRow::MissingSourceIdentifier,
 #   Bulkrax::CsvRow::DuplicateIdentifier,
 #   Bulkrax::CsvRow::ParentReference,
+#   Bulkrax::CsvRow::ChildReference,
+#   Bulkrax::CsvRow::CircularReference,
 #   Bulkrax::CsvRow::RequiredValues,
-#   Bulkrax::CsvRow::ControlledVocabulary
+#   Bulkrax::CsvRow::ControlledVocabulary,
+#   Bulkrax::CsvRow::FileReference
 # ]
 ```
 
@@ -195,6 +206,7 @@ Context keys available to validators:
 | `:all_ids` | Set | All source identifiers in the CSV |
 | `:field_metadata` | Hash | Per-model required and controlled vocab fields |
 | `:mapping_manager` | `CsvTemplate::MappingManager` | Field mapping resolver |
+| `:zip_plan` | `ZipPlacementPlanner::Plan`, nil | Paths that will exist under `files/` after extraction; nil when no ZIP was uploaded |
 
 ### Error Hash Structure
 
@@ -249,18 +261,14 @@ CsvTemplate::ModelLoader.determine_klass_for('GenericWork')  # => GenericWork (c
 
 Assembles the full list of valid CSV columns for a set of models. Combines core columns from `ColumnDescriptor`, relationship columns (parents/children), and file columns. All names are resolved through `MappingManager`.
 
-### FileValidator
+### ZipPlacementPlanner
 
-Validates file references in parsed CSV data against the contents of an uploaded ZIP archive. Compares basenames only (no path comparison).
+Decides where each zip entry lands under the import's unzip directory, without extracting anything. Import's unzip code and validation use the same plan, so validation checks the same paths import will look for.
 
-```ruby
-validator = Bulkrax::FileValidator.new(csv_data, zip_file, admin_set_id)
-validator.count_references       # => 10
-validator.missing_files          # => ['image1.jpg']
-validator.found_files_count      # => 9
-validator.zip_included?          # => true
-validator.possible_missing_files? # => false
-```
+- `:primary_csv` (a zip uploaded on its own): the shallowest CSV is the metadata file, and every other entry goes under `files/`, relative to that CSV's folder.
+- `:attachments_only` (a zip uploaded beside a CSV): every entry goes under `files/`, and a single top-level wrapper folder is stripped.
+
+`CsvRow::FileReference` reports, per row, each referenced path that will not exist under `files/`. It matches the way import resolves a reference, both in the preflight check and when attaching each file: the path as written, or with spaces turned into underscores in its top-level name, the only one extraction renames (`CsvParser.file_reference_candidates`). Names inside a folder must match exactly.
 
 ### TemplateContext
 
