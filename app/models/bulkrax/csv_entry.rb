@@ -40,20 +40,34 @@ module Bulkrax
     def self.read_data(path)
       raise CsvPathError, 'CSV path empty' if path.blank?
 
-      results = if path.respond_to?(:read)
-                  path.rewind if path.respond_to?(:rewind)
-                  CSV.parse(path.read, **read_data_options)
-                else
-                  CSV.read(path, **read_data_options)
-                end
+      results = explaining_csv_errors do
+        if path.respond_to?(:read)
+          path.rewind if path.respond_to?(:rewind)
+          CSV.parse(path.read, **read_data_options)
+        else
+          CSV.read(path, **read_data_options)
+        end
+      end
       csv_wrapper_class.new(results)
     end
 
     def self.read_first_row(path)
       raise CsvPathError, 'CSV path empty' if path.blank?
 
-      CSV.foreach(path, **read_data_options).first
+      explaining_csv_errors { CSV.foreach(path, **read_data_options).first }
     end
+
+    # Older csv gems raise a plain MalformedCSVError for bad bytes, so the
+    # message identifies an encoding problem where InvalidEncodingError is missing.
+    def self.explaining_csv_errors
+      yield
+    rescue CSV::MalformedCSVError => e
+      encoding = (defined?(CSV::InvalidEncodingError) && e.is_a?(CSV::InvalidEncodingError)) || e.message.start_with?('Invalid byte sequence')
+      raise CsvReadError.new(I18n.t('bulkrax.importer.csv_read.errors.invalid_encoding', row: e.line_number), e.line_number) if encoding
+
+      raise CsvReadError.new(I18n.t('bulkrax.importer.csv_read.errors.unreadable', error: e.message.chomp('.')), e.line_number)
+    end
+    private_class_method :explaining_csv_errors
 
     def self.read_data_options
       {

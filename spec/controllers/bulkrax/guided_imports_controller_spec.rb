@@ -63,6 +63,28 @@ module Bulkrax
         end
       end
 
+      context 'with a CSV that is not UTF-8' do
+        let(:csv_upload) { fixture_file_upload('spec/fixtures/csv/windows_1252.csv', 'text/csv') }
+
+        it 'fails validation and asks for a UTF-8 CSV' do
+          post_validate(importer: { parser_fields: { files: [csv_upload] } })
+          expect(response).to have_http_status(:ok)
+          expect(json_response[:isValid]).to eq(false)
+          expect(json_response.dig(:messages, :validationStatus, :summary)).to match(/isn't saved as UTF-8.*row 2/)
+        end
+      end
+
+      context 'with a CSV that cannot be parsed' do
+        let(:csv_upload) { fixture_file_upload('spec/fixtures/csv/malformed.csv', 'text/csv') }
+
+        it 'fails validation and says the CSV could not be read' do
+          post_validate(importer: { parser_fields: { files: [csv_upload] } })
+          expect(response).to have_http_status(:ok)
+          expect(json_response[:isValid]).to eq(false)
+          expect(json_response.dig(:messages, :validationStatus, :summary)).to match(/couldn't be read/)
+        end
+      end
+
       context 'with a file path that exists' do
         before { allow(Bulkrax::CsvParser).to receive(:validate_csv).and_return(validation_success) }
 

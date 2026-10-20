@@ -105,6 +105,10 @@ en:
           institution: Institution
           private: Private
           public: Public
+      csv_read:
+        errors:
+          invalid_encoding: This CSV isn't saved as UTF-8 (the first problem is in row %{row}). Save it as "CSV UTF-8" and upload it again.
+          unreadable: This CSV couldn't be read (%{error}). Fix the file and upload it again.
       edit_form:
         entry_modal_title: Options for Updating an Entry
         entry_rebuild_hint: Rebuild metadata and files.

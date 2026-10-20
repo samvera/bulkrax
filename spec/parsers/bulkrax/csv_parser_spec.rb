@@ -414,7 +414,8 @@ module Bulkrax
 
         it 'returns an empty array, and records the error on the importer' do
           subject.create_works
-          expect(importer.last_error['error_class']).to eq('CSV::MalformedCSVError')
+          expect(importer.last_error['error_class']).to eq('Bulkrax::CsvReadError')
+          expect(importer.last_error['error_message']).to match(/couldn't be read/)
         end
       end
 
