@@ -21,16 +21,33 @@ module Bulkrax
       end
     end
 
+    shared_examples 'a rerun that waits for relationships' do
+      it 'shows the entry as Pending while it re-imports, so relationships wait for it' do
+        status_during_import = nil
+        allow_any_instance_of(Entry).to receive(:build) do |built|
+          status_during_import = Entry.find(built.id).status_message
+          built.set_status_info('Complete')
+        end
+
+        described_class.perform_now(entry, importer_run)
+
+        expect(status_during_import).to eq('Pending')
+      end
+    end
+
     describe DeleteAndImportWorkJob do
       it_behaves_like 'a rerun that counts the record once', :processed_works
+      it_behaves_like 'a rerun that waits for relationships'
     end
 
     describe DeleteAndImportCollectionJob do
       it_behaves_like 'a rerun that counts the record once', :processed_collections
+      it_behaves_like 'a rerun that waits for relationships'
     end
 
     describe DeleteAndImportFileSetJob do
       it_behaves_like 'a rerun that counts the record once', :processed_file_sets
+      it_behaves_like 'a rerun that waits for relationships'
     end
   end
 end
