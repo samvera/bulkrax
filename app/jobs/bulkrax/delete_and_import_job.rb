@@ -28,6 +28,8 @@ module Bulkrax
 
     def reimport(entry, importer_run)
       entry = Bulkrax::Entry.find(entry.id) # maximum reload
+      # Back to Pending so ScheduleRelationshipsJob waits for the reimport.
+      entry.set_status_info('Pending', importer_run)
       self.class::IMPORT_CLASS.perform_now(entry.id, importer_run.id)
     end
 
