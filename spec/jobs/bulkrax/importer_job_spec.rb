@@ -256,6 +256,34 @@ module Bulkrax
       end
     end
 
+    describe 'cloud files' do
+      let(:dir) { Dir.mktmpdir }
+      let(:downloaded) { File.join(dir, 'a.tif').tap { |path| File.write(path, 'tif') } }
+      let(:pending_download) { File.join(dir, 'b.tif') }
+
+      after { FileUtils.remove_entry(dir) }
+
+      before do
+        importer.parser_fields['cloud_file_paths'] = { '0' => { 'file_size' => '3' }, '1' => { 'file_size' => '3' } }
+        importer.parser_fields['original_file_paths'] = [downloaded, pending_download]
+      end
+
+      it 'reschedules instead of failing while a file is still downloading' do
+        expect(importer).not_to receive(:import_objects)
+        expect(described_class).to receive(:set).and_return(described_class)
+        expect(described_class).to receive(:perform_later).with(importer.id, true)
+        expect { importer_job.perform(importer.id) }.not_to raise_error
+      end
+
+      it 'imports once every file has downloaded' do
+        File.write(pending_download, 'tif')
+        allow(parser).to receive(:collections).and_return(response)
+        allow(parser.collections).to receive(:count).and_return(collections_count)
+        expect(importer).to receive(:import_objects)
+        importer_job.perform(importer.id)
+      end
+    end
+
     describe 'schedulable' do
       before do
         allow(importer).to receive(:schedulable?).and_return(true)
