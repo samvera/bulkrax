@@ -8,13 +8,9 @@ module Bulkrax
     # Uses context[:all_ids] (Set of all source identifiers) to validate references
     # within the CSV, and context[:find_record_by_source_identifier] (callable) to
     # look up existing records in the same way the importer does at runtime.
-    # Skips validation when all_ids is empty and fill_in_blank_source_identifiers is
-    # configured, since generated identifiers cannot be cross-referenced at validation time.
     module ChildReference
       def self.call(record, row_index, context)
         all_ids = context[:all_ids]
-        return if all_ids.empty? && Bulkrax.fill_in_blank_source_identifiers.present?
-
         find_record = context[:find_record_by_source_identifier]
 
         collect_child_ids(record, context).each do |child_id|
