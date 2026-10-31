@@ -188,6 +188,44 @@ module Bulkrax
       end
     end
 
+    describe '#find' do
+      let(:factory) do
+        described_class.new(attributes: { id: id },
+                            source_identifier_value: 'src-1',
+                            work_identifier: :source,
+                            work_identifier_search_field: 'bulkrax_identifier_sim')
+      end
+
+      before { allow(factory).to receive(:search_by_identifier).and_return(false) }
+
+      [nil, ''].each do |blank_id|
+        context "when the id is #{blank_id.inspect}" do
+          let(:id) { blank_id }
+
+          it 'finds nothing without looking up the id' do
+            expect(described_class).not_to receive(:find)
+            expect(factory.find).to be_nil
+          end
+
+          it 'finds the record by its source identifier' do
+            record = double('Resource')
+            allow(factory).to receive(:search_by_identifier).and_return(record)
+            expect(factory.find).to eq(record)
+          end
+        end
+      end
+
+      context 'when the id is present' do
+        let(:id) { 'existing-id' }
+        let(:record) { double('Resource') }
+
+        it 'returns the record with that id' do
+          allow(described_class).to receive(:find).with('existing-id').and_return(record)
+          expect(factory.find).to eq(record)
+        end
+      end
+    end
+
     describe '#create_file_set' do
       let(:parent_id) { "gw-123" }
       let(:of_attributes) do

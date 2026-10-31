@@ -174,6 +174,21 @@ RSpec.describe Bulkrax::CsvParser do
       end
     end
 
+    context 'with a blank id column' do
+      let(:csv_content) do
+        <<~CSV
+          source_identifier,id,title,model
+          work1,,Test Work 1,GenericWork
+        CSV
+      end
+
+      it 'accepts the id header and reports no row errors' do
+        result = described_class.validate_csv(csv_file: csv_file, zip_file: nil)
+        expect(result[:unrecognized].keys).not_to include('id')
+        expect(result[:rowErrors]).to be_empty
+      end
+    end
+
     context 'with misspelled suffixed headers' do
       # Pre-2026, headers ending in `_<digits>` were unconditionally accepted
       # regardless of the base name. The validator now requires the base name
