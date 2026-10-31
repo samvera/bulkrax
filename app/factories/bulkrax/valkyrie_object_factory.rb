@@ -4,6 +4,14 @@ module Bulkrax
   # rubocop:disable Metrics/ClassLength
   class ValkyrieObjectFactory < ObjectFactoryInterface
     class FileFactoryInnerWorkings < Bulkrax::FileFactory::InnerWorkings
+      # A Valkyrie file set has no import_url to compare; when its row is updated, the checksum
+      # decides whether its file changed (see ValkyrieObjectFactory#replace_original_file).
+      def new_remote_files
+        return super unless object.is_a?(Bulkrax.file_model_class)
+
+        @new_remote_files ||= parsed_remote_files.select { |file| file[:url]&.match(URI::ABS_URI) }
+      end
+
       def remove_file_set(file_set:)
         file_metadata = Hyrax.custom_queries.find_files(file_set: file_set).first
         raise "No file metadata records found for #{file_set.class} ID=#{file_set.id}" unless file_metadata
@@ -543,10 +551,52 @@ module Bulkrax
 
     def update_file_set(attrs)
       attrs = HashWithIndifferentAccess.new(attrs)
+      remote_files = Array(attrs[:remote_files])
+      raise StandardError, "#{source_identifier_value} lists #{remote_files.size} remote files; a file set takes one" if remote_files.size > 1
+
       fs_attrs = attrs.merge(attributes).symbolize_keys
-      perform_transaction_for(object: object, attrs: fs_attrs) do
-        prep_fileset_content(attrs)
+      file_set = perform_transaction_for(object: object, attrs: fs_attrs) do
         transactions['change_set.update_file_set']
+      end
+      remote_files.empty? ? file_set : replace_original_file(file_set, remote_files.first)
+    end
+
+    # Replace the file set's original file with the remote one, and drop the old original along with
+    # everything derived from it, so only the new file's derivatives remain. Storage without versions
+    # adds a second original on upload, and a file set's original is whichever one is found first.
+    # @return [Hyrax::FileSet]
+    def replace_original_file(file_set, remote_file)
+      path = download_file(remote_file[:url])
+      previous = file_set.original_file
+      return file_set if previous && unchanged_file?(previous, path)
+
+      stale = Hyrax.custom_queries.find_files(file_set: file_set).to_a
+      # Before the upload, so the derivative jobs it starts cannot lose their output to the cleanup
+      Hyrax::FileSetDerivativesService.new(file_set).cleanup_derivatives
+      File.open(path) { |io| Hyrax::ValkyrieUpload.file(io: io, filename: remote_file[:file_name], file_set: file_set, user: @user) }
+      file_set = Hyrax.query_service.find_by(id: file_set.id)
+      # With versions, the upload became a new version of the same original, which stays
+      stale.reject! { |file| file.id.to_s == previous.id.to_s } if previous && original_files(file_set).size == 1
+      detach_files(file_set, stale)
+    end
+
+    # The checksum characterization records (MD5), or a SHA1 such as a migrated original may carry
+    def unchanged_file?(file_metadata, path)
+      (Array(file_metadata.checksum).map(&:to_s) & [Digest::MD5.file(path).hexdigest, Digest::SHA1.file(path).hexdigest]).any?
+    end
+
+    def original_files(file_set)
+      Hyrax.custom_queries.find_many_file_metadata_by_use(resource: file_set, use: Hyrax::FileMetadata::Use::ORIGINAL_FILE).to_a
+    end
+
+    def detach_files(file_set, files)
+      return file_set if files.empty?
+
+      ids = files.map { |file| file.id.to_s }
+      file_set.file_ids = file_set.file_ids.reject { |id| ids.include?(id.to_s) }
+      Hyrax.persister.save(resource: file_set).tap do |saved|
+        Hyrax.index_adapter.save(resource: saved)
+        files.each { |file| transactions['file_metadata.destroy'].call(file).value! }
       end
     end
 
