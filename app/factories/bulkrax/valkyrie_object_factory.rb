@@ -466,7 +466,9 @@ module Bulkrax
     end
 
     def find_by_id
-      self.class.find(attributes[:id]) if attributes.key? :id
+      return false if attributes[:id].blank?
+
+      self.class.find(attributes[:id])
     end
 
     ##
