@@ -12,7 +12,8 @@ jobs:
     env:
       HYRAX_VERSION: "${{ matrix.hyrax }}"
       RAILS_GEM_VERSION: "${{ matrix.rails }}"
-    runs-on: ubuntu-latest
+    # ubuntu-26.04 has no Ruby 2.7 build, and gems cached on 24.04 do not load there
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
