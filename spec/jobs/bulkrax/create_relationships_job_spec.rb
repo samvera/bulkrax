@@ -487,6 +487,82 @@ module Bulkrax
       end
     end
 
+    describe 'when finishing a pass on a work fails' do
+      let(:run) { importer.current_run }
+      let(:updated_parent) { work1 }
+      let!(:relationship) { create(:pending_relationship, importer_run_id: run.id, parent_id: work1_entry.identifier, child_id: work2_entry.identifier) }
+
+      subject(:perform) { create_relationships_job.perform(parent_identifier: work1_entry.identifier, importer_run_id: run.id) }
+
+      before do
+        allow(create_relationships_job).to receive(:find_record).with(work1_entry.identifier, run.id).and_return([work1_entry, work1])
+        allow(create_relationships_job).to receive(:find_record).with(work2_entry.identifier, run.id).and_return([work2_entry, work2])
+        allow(Bulkrax.object_factory).to receive(:update_index).and_raise('index down')
+      end
+
+      it 'records the error, keeps the relationship and reschedules the pass' do
+        expect(perform.map(&:message)).to include('index down')
+        expect(PendingRelationship.exists?(relationship.id)).to be true
+        expect(create_relationships_job).to have_received(:reschedule).with(hash_including(failure_count: 1))
+      end
+
+      it 'marks the relationship with the error, so a stalled ScheduleRelationshipsJob leaves it to the reschedule' do
+        perform
+
+        expect(relationship.reload.status_message).to eq 'index down'
+        expect(PendingRelationship.pending).not_to include(relationship)
+      end
+
+      it 'counts the relationship as failed while it waits, and the importer as complete once the reschedule links it' do
+        importer.set_status_info('Complete', run)
+
+        perform
+        expect(run.reload.failed_relationships).to eq 1
+        expect(Importer.find(importer.id).status).to eq 'Complete (with failures)'
+
+        allow(Bulkrax.object_factory).to receive(:update_index).and_return(true)
+        retry_job = described_class.new
+        allow(retry_job).to receive(:find_record).with(work1_entry.identifier, run.id).and_return([work1_entry, work1])
+        allow(retry_job).to receive(:find_record).with(work2_entry.identifier, run.id).and_return([work2_entry, work2])
+        retry_job.perform(parent_identifier: work1_entry.identifier, importer_run_id: run.id, failure_count: 1)
+
+        expect(run.reload.failed_relationships).to eq 0
+        expect(Importer.find(importer.id).status).to eq 'Complete'
+      end
+
+      it 'relates the child on the rescheduled pass' do
+        perform
+        allow(Bulkrax.object_factory).to receive(:update_index).and_return(true)
+        retry_job = described_class.new
+        allow(retry_job).to receive(:find_record).with(work1_entry.identifier, run.id).and_return([work1_entry, work1])
+        allow(retry_job).to receive(:find_record).with(work2_entry.identifier, run.id).and_return([work2_entry, work2])
+        allow(retry_job).to receive(:reschedule)
+
+        retry_job.perform(parent_identifier: work1_entry.identifier, importer_run_id: run.id, failure_count: 1)
+
+        expect(retry_job).not_to have_received(:reschedule)
+        expect(PendingRelationship.exists?(relationship.id)).to be false
+      end
+
+      it "destroys the relationships while it holds the work's lock, so another pass cannot finish them too" do
+        allow(Bulkrax.object_factory).to receive(:update_index).and_return(true)
+        locked = false
+        allow(create_relationships_job).to receive(:conditionally_acquire_lock_for).and_wrap_original do |method, *args, &block|
+          locked = true
+          method.call(*args, &block).tap { locked = false }
+        end
+        destroyed_while_locked = []
+        allow_any_instance_of(PendingRelationship).to receive(:destroy).and_wrap_original do |method|
+          destroyed_while_locked << locked
+          method.call
+        end
+
+        perform
+
+        expect(destroyed_while_locked).to eq [true]
+      end
+    end
+
     describe 'attaching file sets the Valkyrie object factory created unattached' do
       include_context 'with the Valkyrie memory adapter'
 
@@ -526,6 +602,15 @@ module Bulkrax
         perform
 
         expect(members).to eq titles
+      end
+
+      it 'reschedules the pass when the lock on the work cannot be acquired' do
+        relationship = relate('first')
+        allow(create_relationships_job).to receive(:conditionally_acquire_lock_for).and_raise('lock unavailable')
+
+        expect(perform.map(&:message)).to include('lock unavailable')
+        expect(PendingRelationship.exists?(relationship.id)).to be true
+        expect(create_relationships_job).to have_received(:reschedule).with(hash_including(failure_count: 1))
       end
     end
   end
