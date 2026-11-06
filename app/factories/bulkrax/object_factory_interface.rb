@@ -49,8 +49,10 @@ module Bulkrax
     end
 
     ##
-    # @note This does not save either object.  We need to do that in another
-    #       loop.  Why?  Because we might be adding many items to the parent.
+    # Adds the child to the parent work's members, unless it is one already.
+    #
+    # @return [Object] the parent work, which the relationship job saves after
+    #         adding all of its children
     def self.add_child_to_parent_work(parent:, child:)
       raise NotImplementedError, "#{self}.#{__method__}"
     end

@@ -12,9 +12,8 @@ module Bulkrax
     # @note This does not save either object.  We need to do that in another
     #       loop.  Why?  Because we might be adding many items to the parent.
     def self.add_child_to_parent_work(parent:, child:)
-      return true if parent.ordered_members.to_a.include?(child)
-
-      parent.ordered_members << child
+      parent.ordered_members << child unless parent.ordered_members.to_a.include?(child)
+      parent
     end
 
     def self.add_resource_to_collection(collection:, resource:, user:)

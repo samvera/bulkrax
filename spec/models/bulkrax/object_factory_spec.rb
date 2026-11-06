@@ -54,6 +54,23 @@ module Bulkrax
       end
     end
 
+    describe '.add_child_to_parent_work' do
+      let(:child) { double('child') }
+      let(:parent) { double('parent', ordered_members: []) }
+
+      it 'adds the child and returns the work' do
+        expect(described_class.add_child_to_parent_work(parent: parent, child: child)).to eq parent
+        expect(parent.ordered_members).to eq [child]
+      end
+
+      it 'returns the work, adding nothing, when the child is already a member' do
+        parent.ordered_members << child
+
+        expect(described_class.add_child_to_parent_work(parent: parent, child: child)).to eq parent
+        expect(parent.ordered_members).to eq [child]
+      end
+    end
+
     describe '.file_sets_for' do
       it "returns a work's file sets" do
         file_sets = [double('file set')]
