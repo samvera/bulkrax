@@ -60,6 +60,23 @@ module Bulkrax
     end
 
     ##
+    # Uploads that wait for CreateRelationshipsJob to add their file set to its work.
+    # The job queues each with .ingest_later once it has saved the work.
+    def self.uploads_awaiting_ingest(resource:) # rubocop:disable Lint/UnusedMethodArgument
+      []
+    end
+
+    def self.ingest_later(upload:)
+      raise NotImplementedError, "#{self}.#{__method__}"
+    end
+
+    ##
+    # Gives a file set CreateRelationshipsJob attached its work's visibility, embargo and lease.
+    def self.inherit_parent_visibility(parent:, resource:) # rubocop:disable Lint/UnusedMethodArgument
+      resource
+    end
+
+    ##
     # Add the user to the collection; assuming the given collection is a
     # Collection.  This is also only something we use in Hyrax.
     #

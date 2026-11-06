@@ -116,9 +116,85 @@ module Bulkrax
     def self.add_child_to_parent_work(parent:, child:)
       parent = self.find(parent.id)
       return parent if parent.member_ids.include?(child.id)
+      reject_second_work(parent: parent, child: child)
       parent.member_ids += [child.id]
+      if child.is_a?(Bulkrax.file_model_class)
+        parent.representative_id = child.id if parent.respond_to?(:representative_id) && parent.representative_id.blank?
+        parent.thumbnail_id = child.id if parent.respond_to?(:thumbnail_id) && parent.thumbnail_id.blank?
+      end
       Hyrax.persister.save(resource: parent)
     end
+
+    def self.reject_second_work(parent:, child:)
+      return unless child.is_a?(Bulkrax.file_model_class)
+
+      other = Hyrax.query_service.find_parents(resource: child).map(&:id).find { |id| id != parent.id }
+      raise FileSetInAnotherWorkError, "#{child.id} is already in work #{other}; adding it to work #{parent.id} is not supported" if other
+    end
+    private_class_method :reject_second_work
+
+    ##
+    # File sets are created unattached (see #create_file_set), so their files are ingested once
+    # CreateRelationshipsJob has attached them. A file set already a member with no files is one
+    # a killed pass attached but never queued.
+    def self.uploads_awaiting_ingest(resource:)
+      return [] unless resource.is_a?(Bulkrax.file_model_class) && resource.file_ids.blank?
+
+      Hyrax::UploadedFile.where(file_set_uri: resource.id.to_s).to_a
+    end
+
+    def self.ingest_later(upload:)
+      # perform_later returns false, without raising, when a callback aborts the enqueue
+      ::ValkyrieIngestJob.perform_later(upload) || raise("Could not queue the ingest of upload #{upload.id}")
+    end
+
+    def self.inherit_parent_visibility(parent:, resource:)
+      return resource unless resource.is_a?(Bulkrax.file_model_class)
+      return resource if under_embargo_or_lease?(resource)
+
+      inherit_visibility(from: parent, to: resource)
+    end
+
+    def self.inherit_visibility(from:, to:)
+      clear_ended_embargo_and_lease(to)
+      to.visibility = visibility_after_ended_policy(from) || from.visibility
+      Hyrax::EmbargoManager.new(resource: from).copy_embargo_to(target: to)
+      Hyrax::LeaseManager.new(resource: from).copy_lease_to(target: to)
+      to.permission_manager.acl.save
+      Hyrax.persister.save(resource: to).tap { |saved| Hyrax.index_adapter.save(resource: saved) }
+    end
+
+    # An embargo or lease that ended keeps its during visibility until Hyrax releases it, and is not
+    # copied, so the file set takes the visibility it ends in
+    def self.visibility_after_ended_policy(work)
+      embargo = work.embargo
+      return embargo.visibility_after_embargo if embargo&.embargo_release_date.present? && !embargo.active?
+
+      lease = work.lease
+      lease.visibility_after_lease if lease&.lease_expiration_date.present? && !lease.active?
+    end
+
+    POLICY_FIELDS = { embargo: %i[embargo_release_date visibility_during_embargo visibility_after_embargo],
+                      lease: %i[lease_expiration_date visibility_during_lease visibility_after_lease] }.freeze
+
+    # An ended embargo or lease left on the file set would let Hyrax's expiry jobs later
+    # release it to the visibility it was to have afterwards
+    def self.clear_ended_embargo_and_lease(file_set)
+      POLICY_FIELDS.each do |policy_name, fields|
+        policy = file_set.public_send(policy_name)
+        next if policy.nil? || policy.active?
+
+        fields.each { |field| policy.public_send("#{field}=", nil) }
+        # Hyrax 4 embeds it with no id, and saving the file set saves it
+        Hyrax.persister.save(resource: policy) if policy.id.present?
+      end
+    end
+
+    # Its own embargo or lease keeps a file set as it is until it ends
+    def self.under_embargo_or_lease?(file_set)
+      Hyrax::EmbargoManager.new(resource: file_set).under_embargo? || Hyrax::LeaseManager.new(resource: file_set).under_lease?
+    end
+    private_class_method :clear_ended_embargo_and_lease, :visibility_after_ended_policy
 
     ##
     # The resource added to a collection can be either a work or another collection.
@@ -393,19 +469,56 @@ module Bulkrax
       nil
     end
 
-    # @note We perform the transaction against the *parent* here, because the FileSets are generated and updated in relationship with their parent, not in isolation
+    # Saving the parent here would save the member_ids it was read with, dropping file sets
+    # other rows added meanwhile, so the file set is left for CreateRelationshipsJob to attach.
+    # It takes the parent's permissions and the row's visibility, or else stays restricted until
+    # the job gives it the visibility of the work it is attached to.
     def create_file_set(attrs)
       attrs = HashWithIndifferentAccess.new(attrs)
-      parent_object = find_record(attributes[related_parents_parsed_mapping].first, importer_run_id).last
-      perform_transaction_for(object: parent_object, attrs: {}) do
-        fs_attrs = attrs.merge(attributes).symbolize_keys
-        uploaded_files, = prep_fileset_content(attrs)
-        transactions['change_set.update_work']
-          .with_step_args(
-            'work_resource.add_file_sets' => { uploaded_files: uploaded_files, file_set_params: [fs_attrs] },
-            'work_resource.save_acl' => { permissions_params: [attrs.try('visibility') || 'open'].compact }
-          )
-      end
+      parent = row_parent || raise(StandardError, "#{source_identifier_value} names no parent")
+      uploaded_files, = prep_fileset_content(attrs)
+      raise StandardError, "#{source_identifier_value} lists #{uploaded_files.size} files; a file set row takes one" if uploaded_files.size > 1
+
+      upload = uploaded_files.first
+      raise StandardError, "#{source_identifier_value} has no file to attach" if upload.nil? || upload.file_set_uri.present?
+
+      params = attrs.merge(attributes).symbolize_keys
+      # A visibility only a work can carry, such as embargo or lease, counts as none
+      params.delete(:visibility) unless Hyrax.config.visibility_map.visibilities.include?(params[:visibility])
+      create_unattached_file_set(parent, upload, params)
+    end
+
+    # The row's first parent, or nil when it names none
+    def row_parent
+      identifier = Array(attributes[related_parents_parsed_mapping]).first
+      return if identifier.blank?
+
+      parent = find_record(identifier, importer_run_id).last
+      raise StandardError, "#{source_identifier_value} names parent #{identifier}, which was not found" unless parent
+      raise StandardError, "#{source_identifier_value} names parent #{identifier}, which is a #{parent.class}, not a work" unless parent.work?
+
+      parent
+    end
+
+    # Hyrax::WorkUploadsHandler#make_file_set_and_ingest as of Hyrax 5.3, minus adding the file
+    # set to the work and, as Hyrax 4 also does there, queueing its ingest
+    def create_unattached_file_set(parent, upload, params)
+      file_set = Hyrax.persister.save(resource: Bulkrax.file_model_class.new(file_set_attributes(upload).merge(params)))
+      Hyrax.publisher.publish('object.deposited', object: file_set, user: upload.user)
+      upload.add_file_set!(file_set)
+      Hyrax::AccessControlList.copy_permissions(source: Hyrax::AccessControlList.new(resource: parent), target: file_set)
+      file_set.visibility = params[:visibility].presence || Hydra::AccessControls::AccessRight::VISIBILITY_TEXT_VALUE_PRIVATE
+      file_set.permission_manager.acl.save if file_set.permission_manager.acl.pending_changes?
+      file_set
+    end
+
+    def file_set_attributes(upload)
+      { depositor: upload.user.user_key,
+        creator: [upload.user.user_key],
+        date_uploaded: upload.created_at,
+        date_modified: Hyrax::TimeService.time_in_utc,
+        label: upload.uploader.filename,
+        title: [upload.uploader.filename] }
     end
 
     def create_work(attrs)
@@ -571,13 +684,29 @@ module Bulkrax
       remote_files = Array(attrs[:remote_files])
       raise StandardError, "#{source_identifier_value} lists #{remote_files.size} remote files; a file set takes one" if remote_files.size > 1
 
+      parent = row_parent
+      current_ids = parent ? Hyrax.query_service.find_parents(resource: object).map(&:id) : []
+      reject_move_to(parent, current_ids)
       # Download before saving, so a failed download leaves the file set as it was
       path = download_file(remote_files.first[:url]) if remote_files.any?
       fs_attrs = attrs.merge(attributes).symbolize_keys
       file_set = perform_transaction_for(object: object, attrs: fs_attrs) do
         transactions['change_set.update_file_set']
       end
-      path ? replace_original_file(file_set, path, remote_files.first[:file_name]) : file_set
+      file_set = replace_original_file(file_set, path, remote_files.first[:file_name]) if path
+      return file_set if fs_attrs[:visibility].present? || parent.nil? || self.class.under_embargo_or_lease?(file_set)
+      # Not yet attached, it takes its work's visibility from CreateRelationshipsJob, once the work is known
+      return file_set if current_ids.empty?
+
+      self.class.inherit_visibility(from: parent, to: file_set)
+    end
+
+    # A file set belongs to one work, so a re-import naming another work is rejected rather than
+    # leaving the file set in both
+    def reject_move_to(parent, current_ids)
+      return if current_ids.empty? || current_ids.include?(parent.id)
+
+      raise StandardError, "#{source_identifier_value} is already in work #{current_ids.first}; moving a file set to #{parent.id} is not supported"
     end
 
     # Replace the file set's original file with the downloaded one, and drop the old original and the

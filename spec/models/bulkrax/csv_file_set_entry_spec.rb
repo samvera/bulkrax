@@ -94,5 +94,111 @@ module Bulkrax
         end
       end
     end
+
+    describe 'relating and visibility' do
+      subject(:entry) do
+        described_class.create!(identifier: 'file_set_entry', importerexporter: importer, parsed_metadata: { 'parents' => parents })
+      end
+
+      let(:importer) { FactoryBot.create(:bulkrax_importer_csv_complex) }
+      let(:parents) { ['work_entry', 'other_work_entry'] }
+      let(:relationships) { PendingRelationship.where(child_id: 'file_set_entry') }
+
+      before { FactoryBot.create(:bulkrax_importer_run, importer: importer) }
+
+      context 'with the ActiveFedora object factory, which attaches the file set itself' do
+        it 'records no pending relationship' do
+          expect(entry.parent_jobs).to be false
+          expect(relationships).to be_empty
+        end
+
+        it "gives a file set without a visibility the importer's" do
+          entry.parsed_metadata['visibility'] = ''
+          entry.add_visibility
+
+          expect(entry.parsed_metadata['visibility']).to eq importer.visibility
+        end
+      end
+
+      context 'with the Valkyrie object factory, which leaves the file set for CreateRelationshipsJob' do
+        before { allow(Bulkrax).to receive(:object_factory).and_return(ValkyrieObjectFactory) }
+
+        it 'records a pending relationship to the first parent only, the one the file set is created for' do
+          entry.parent_jobs
+
+          expect(relationships.pluck(:parent_id, :importer_run_id)).to eq [['work_entry', importer.last_run.id]]
+        end
+
+        it "marks the relationship to give the file set its work's visibility when the row names none" do
+          entry.parent_jobs
+
+          expect(relationships.pluck(:inherit_parent_visibility)).to eq [true]
+        end
+
+        it "marks the relationship to follow the work's embargo for a row naming an embargo visibility" do
+          entry.parsed_metadata['visibility'] = 'embargo'
+          entry.parent_jobs
+
+          expect(relationships.pluck(:inherit_parent_visibility)).to eq [true]
+        end
+
+        it 'leaves a re-imported file set already in a work to the factory, not the relationship' do
+          file_set = Hyrax::FileSet.new
+          entry.instance_variable_set(:@item, file_set)
+          allow(Hyrax.query_service).to receive(:find_parents).with(resource: file_set).and_return([WorkResource.new])
+          entry.parent_jobs
+
+          expect(relationships.pluck(:inherit_parent_visibility)).to eq [false]
+        end
+
+        it 'lets a re-run that names a visibility decide for a relationship an earlier run left waiting' do
+          entry.parent_jobs
+          entry.parsed_metadata['visibility'] = 'restricted'
+          entry.parent_jobs
+
+          expect(relationships.pluck(:inherit_parent_visibility)).to eq [false, false]
+        end
+
+        it 'marks the relationship to keep a visibility the row names' do
+          entry.parsed_metadata['visibility'] = 'open'
+          entry.parent_jobs
+
+          expect(relationships.pluck(:inherit_parent_visibility)).to eq [false]
+        end
+
+        it 'records none when the row fails, as when it would move an existing file set to another work' do
+          factory = instance_double(ValkyrieObjectFactory)
+          allow(factory).to receive(:run!).and_raise(StandardError, 'file_set_entry is already in work a; moving a file set to b is not supported')
+          allow(entry).to receive(:build_metadata)
+          allow(entry).to receive(:factory).and_return(factory)
+
+          entry.build_for_importer
+
+          expect(relationships).to be_empty
+          expect(entry.status_message).to eq 'Failed'
+        end
+
+        it 'records none to a parent the import deletes' do
+          entry.define_singleton_method(:deleted_identifier?) { |identifier| identifier == 'work_entry' }
+          entry.parent_jobs
+
+          expect(relationships).to be_empty
+        end
+
+        it "leaves a blank visibility blank, so the file set takes its work's" do
+          entry.parsed_metadata['visibility'] = ''
+          entry.add_visibility
+
+          expect(entry.parsed_metadata).not_to have_key('visibility')
+        end
+
+        it "keeps the row's visibility" do
+          entry.parsed_metadata['visibility'] = 'restricted'
+          entry.add_visibility
+
+          expect(entry.parsed_metadata['visibility']).to eq 'restricted'
+        end
+      end
+    end
   end
 end

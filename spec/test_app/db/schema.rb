@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2026_04_29_000000) do
+ActiveRecord::Schema.define(version: 2026_11_09_000000) do
   create_table "accounts", force: :cascade do |t|
     t.string "name"
   end
@@ -135,6 +135,7 @@ ActiveRecord::Schema.define(version: 2026_04_29_000000) do
     t.datetime "updated_at", null: false
     t.integer "order", default: 0
     t.string "status_message", default: "Pending"
+    t.boolean "inherit_parent_visibility", default: false, null: false
     t.index ["child_id"], name: "index_bulkrax_pending_relationships_on_child_id"
     t.index ["importer_run_id"], name: "index_bulkrax_pending_relationships_on_importer_run_id"
     t.index ["parent_id"], name: "index_bulkrax_pending_relationships_on_parent_id"

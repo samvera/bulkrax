@@ -91,6 +91,7 @@ module Bulkrax
       # rubocop:disable Rails/SkipsModelValidations
       ImporterRun.update_counters(@importer_run_id, processed_relationships: @number_of_successes) if @number_of_successes.positive?
       # rubocop:enable Rails/SkipsModelValidations
+      record_relationship_failures if @permanent_failures
       if @errors.present?
         parent_entry&.set_status_info(@errors.last, importer_run)
         failure_count += 1
@@ -187,6 +188,8 @@ module Bulkrax
             # after each relationship to ensure that we don't lose the membership.
             parent_record = add_to_work(relationship: rel, parent_record: parent_record, ability: ability)
             @parent_record_members_added = true
+          rescue FileSetInAnotherWorkError => e
+            fail_for_good(rel, e)
           rescue => e
             rel.update(status_message: e.message.truncate(STATUS_MESSAGE_LIMIT)) if @last_attempt
             @number_of_failures += 1
@@ -252,9 +255,10 @@ module Bulkrax
         parent: parent_record,
         child: child_record
       )
+      Bulkrax.object_factory.inherit_parent_visibility(parent: updated_parent, resource: child_record) if relationship.inherit_parent_visibility?
       # default is false for this... do not typically need to index file sets of child records
       Bulkrax.object_factory.update_index_for_file_sets_of(resource: child_record) if update_child_records_works_file_sets?
-      linked_relationships << relationship
+      linked_relationships << [relationship, Bulkrax.object_factory.uploads_awaiting_ingest(resource: child_record)]
 
       updated_parent
     end
@@ -263,11 +267,11 @@ module Bulkrax
       @linked_relationships ||= []
     end
 
-    def finish_linked_relationships
-      linked_relationships.each do |relationship|
-        relationship.destroy
-        self.number_of_successes += 1
-      end
+    # No retry can change the answer, so it fails now rather than after max_failure_count passes
+    def fail_for_good(relationship, error)
+      relationship.update(status_message: error.message.truncate(STATUS_MESSAGE_LIMIT))
+      @number_of_failures += 1
+      @permanent_failures = true
     end
 
     def record_pass_failure(parent_identifier, error)
@@ -279,6 +283,16 @@ module Bulkrax
       relationships.pending.update_all(status_message: error.message.truncate(STATUS_MESSAGE_LIMIT)) # rubocop:disable Rails/SkipsModelValidations
       # Counted, so the pass that links them recounts and sets the importer's status back
       record_relationship_failures
+    end
+
+    # Ingest runs with the file set in its saved work, never mid-pass
+    def finish_linked_relationships
+      queued = Set.new
+      linked_relationships.each do |relationship, uploads|
+        uploads.each { |upload| Bulkrax.object_factory.ingest_later(upload: upload) if queued.add?(upload.id) }
+        relationship.destroy
+        self.number_of_successes += 1
+      end
     end
 
     def child_not_found(relationship)

@@ -279,31 +279,272 @@ module Bulkrax
     end
 
     describe '#create_file_set' do
-      let(:parent_id) { "gw-123" }
-      let(:of_attributes) do
-        {
-          "parents" => [parent_id]
-        }
-      end
-      let(:valkyrie_object_factory) do
-        described_class.new(
-          attributes: of_attributes,
-          source_identifier_value: 'fs-123',
-          work_identifier: :bulkrax_identifier,
-          work_identifier_search_field: "bulkrax_identifier_tesim",
-          related_parents_parsed_mapping: "parents",
-          importer_run_id: importer_run.id
-        )
-      end
-      let(:importer_run) { FactoryBot.create(:bulkrax_importer_run) }
-      before do
-        stub_request(:head, %r{http://localhost:8986/rest/test.*}).to_return(status: 200, body: "", headers: {})
-        stub_request(:get, %r{http://localhost:8986/rest/test.*}).to_return(status: 200, body: "", headers: {})
-      end
-      it 'creates transactions for the parent object' do
-        expect(valkyrie_object_factory).to receive(:perform_transaction_for).with(object: satisfy { |data| data.id == parent_id }, attrs: {}).once
+      include_context 'with the Valkyrie memory adapter'
 
-        valkyrie_object_factory.send(:create_file_set, of_attributes)
+      let(:user) { create(:user) }
+      let(:work) { Hyrax.persister.save(resource: WorkResource.new(title: ['parent'], depositor: user.user_key)) }
+      let(:fixture_path) { Bulkrax::Engine.root.join('spec', 'fixtures', 'removed.png').to_s }
+
+      def build_factory(title, visibility: nil, files: 1, **row)
+        attributes = { 'title' => [title], 'parents' => [work.id.to_s], 'file' => [fixture_path] * files, 'visibility' => visibility }.compact.merge(row)
+        described_class.new(attributes: attributes, source_identifier_value: title, work_identifier: :bulkrax_identifier,
+                            work_identifier_search_field: 'bulkrax_identifier_tesim', related_parents_parsed_mapping: 'parents',
+                            user: user, klass: Hyrax::FileSet).tap do |factory|
+          allow(factory).to receive(:find_record) { [nil, reloaded(work)] }
+        end
+      end
+
+      def create_file_set(title = 'first', upload = uploaded_file, visibility: nil)
+        build_factory(title, visibility: visibility).send(:create_file_set, uploaded_files: [upload.id])
+      end
+
+      def uploaded_file
+        Hyrax::UploadedFile.create(file: File.open(fixture_path), user: user)
+      end
+
+      def reloaded(resource)
+        Hyrax.query_service.find_by(id: resource.id)
+      end
+
+      def save_work_with(embargo: nil, lease: nil)
+        work.embargo = Hyrax.persister.save(resource: embargo) if embargo
+        work.lease = Hyrax.persister.save(resource: lease) if lease
+        Hyrax::EmbargoManager.apply_embargo_for(resource: work)
+        Hyrax::LeaseManager.apply_lease_for(resource: work)
+        work.permission_manager.acl.save
+        Hyrax.persister.save(resource: work)
+      end
+
+      let(:embargo) do
+        Hyrax::Embargo.new(embargo_release_date: 1.month.from_now.to_date, visibility_during_embargo: 'restricted', visibility_after_embargo: 'open')
+      end
+
+      it 'creates the file set and leaves the work untouched' do
+        file_set = create_file_set
+
+        expect(file_set).to be_a(Hyrax::FileSet).and(be_persisted)
+        expect(file_set.title).to eq ['first']
+        expect(reloaded(work).member_ids).to be_empty
+      end
+
+      it 'leaves the ingest for the relationship pass' do
+        expect { create_file_set }.not_to have_enqueued_job(ValkyrieIngestJob)
+      end
+
+      it "gives the file set the work's permissions" do
+        work.permission_manager.edit_groups = ['editors']
+        work.permission_manager.acl.save
+
+        expect(reloaded(create_file_set).edit_groups).to include('editors')
+      end
+
+      it 'creates file sets for one work, at once, without saving the work' do
+        uploads = Array.new(3) { uploaded_file }
+        factories = %w[first second third].map { |title| build_factory(title) }
+
+        factories.zip(uploads).map { |factory, upload| Thread.new { factory.send(:create_file_set, uploaded_files: [upload.id]) } }.each(&:join)
+
+        expect(reloaded(work).member_ids).to be_empty
+        expect(uploads.map { |upload| upload.reload.file_set_uri }).to all(be_present)
+      end
+
+      context 'with a visibility on the row' do
+        it "gives the file set that visibility rather than the work's" do
+          file_set = create_file_set(visibility: 'open')
+
+          expect(reloaded(work).visibility).to eq 'restricted'
+          expect(reloaded(file_set).visibility).to eq 'open'
+        end
+
+        it "does not copy down the work's embargo" do
+          save_work_with(embargo: embargo)
+          file_set = reloaded(create_file_set(visibility: 'open'))
+
+          expect(file_set.embargo).to be_nil
+          expect(file_set.visibility).to eq 'open'
+        end
+      end
+
+      context 'without a visibility on the row' do
+        it "stays restricted under an open work until it is attached" do
+          work.visibility = 'open'
+          work.permission_manager.acl.save
+
+          expect(reloaded(create_file_set).visibility).to eq 'restricted'
+        end
+
+        it "takes none of the work's lease until it is attached" do
+          save_work_with(lease: Hyrax::Lease.new(lease_expiration_date: 1.month.from_now.to_date, visibility_during_lease: 'open',
+                                                 visibility_after_lease: 'restricted'))
+          file_set = reloaded(create_file_set)
+
+          expect(file_set.lease).to be_nil
+          expect(file_set.visibility).to eq 'restricted'
+        end
+
+        it "stays restricted for an embargo visibility, which only the work can carry" do
+          save_work_with(embargo: embargo)
+          file_set = reloaded(create_file_set(visibility: 'embargo'))
+
+          expect(file_set.embargo).to be_nil
+          expect(file_set.visibility).to eq 'restricted'
+        end
+      end
+
+      it 'fails a row with more than one file without creating anything' do
+        expect { build_factory('first', files: 2).send(:create_file_set, uploaded_files: [uploaded_file.id, uploaded_file.id]) }
+          .to raise_error(StandardError, 'first lists 2 files; a file set row takes one')
+        expect(Hyrax.query_service.find_all_of_model(model: Hyrax::FileSet).to_a).to be_empty
+      end
+
+      it 'fails a row whose parent is not a work without creating anything' do
+        upload = uploaded_file
+        collection = Hyrax.persister.save(resource: Hyrax::PcdmCollection.new(title: ['collection']))
+        factory = build_factory('first')
+        allow(factory).to receive(:find_record).and_return([nil, collection])
+
+        expect { factory.send(:create_file_set, uploaded_files: [upload.id]) }
+          .to raise_error(StandardError, "first names parent #{work.id}, which is a Hyrax::PcdmCollection, not a work")
+        expect(Hyrax.query_service.find_all_of_model(model: Hyrax::FileSet).to_a).to be_empty
+        expect(upload.reload.file_set_uri).to be_nil
+      end
+
+      it 'fails a row whose parent is not found without creating anything' do
+        upload = uploaded_file
+        factory = build_factory('first')
+        allow(factory).to receive(:find_record).and_return([nil, nil])
+
+        expect { factory.send(:create_file_set, uploaded_files: [upload.id]) }
+          .to raise_error(StandardError, "first names parent #{work.id}, which was not found")
+        expect(Hyrax.query_service.find_all_of_model(model: Hyrax::FileSet).to_a).to be_empty
+        expect(upload.reload.file_set_uri).to be_nil
+      end
+
+      context 'when a re-import updates the file set after its work changed visibility' do
+        let(:file_set) { reloaded(create_file_set(visibility: 'open')) }
+
+        def reimport(visibility: nil, **row)
+          build_factory('first', visibility: visibility, **row).tap do |factory|
+            allow(factory).to receive(:object).and_return(file_set)
+            allow(factory).to receive(:perform_transaction_for) { reloaded(file_set) }
+          end
+        end
+
+        def update_file_set(visibility: nil)
+          reloaded(reimport(visibility: visibility).send(:update_file_set, {}))
+        end
+
+        before { Hyrax.persister.save(resource: work.tap { |w| w.member_ids = [file_set.id] }) }
+
+        it "takes the work's visibility when the row has none" do
+          work.visibility = 'authenticated'
+          work.permission_manager.acl.save
+
+          expect(update_file_set.visibility).to eq 'authenticated'
+        end
+
+        it "takes the work's embargo when the row has no visibility" do
+          save_work_with(embargo: embargo)
+          updated = update_file_set
+
+          expect(updated.visibility).to eq 'restricted'
+          expect(updated.embargo).to be_present
+        end
+
+        it "keeps the row's visibility" do
+          save_work_with(embargo: embargo)
+
+          expect(update_file_set(visibility: 'open').visibility).to eq 'open'
+        end
+
+        it "passes the row's embargo to the file set form, which sets it" do
+          release_date = 1.month.from_now.to_date.to_s
+          row = { 'embargo_release_date' => release_date, 'visibility_during_embargo' => 'restricted', 'visibility_after_embargo' => 'open' }
+          factory = reimport(visibility: 'embargo', **row)
+          factory.send(:update_file_set, {})
+
+          expect(factory).to have_received(:perform_transaction_for)
+            .with(object: anything, attrs: hash_including(visibility: 'embargo', embargo_release_date: release_date))
+        end
+
+        it "reindexes the file set with the work's embargo" do
+          save_work_with(embargo: embargo)
+          allow(Hyrax.index_adapter).to receive(:save)
+
+          update_file_set
+
+          expect(Hyrax.index_adapter).to have_received(:save)
+            .with(resource: having_attributes(embargo: having_attributes(embargo_release_date: embargo.embargo_release_date)))
+        end
+
+        it 'clears its ended embargo, so the expiry job cannot release it to open later' do
+          file_set.embargo = Hyrax.persister.save(resource: Hyrax::Embargo.new(embargo_release_date: 1.day.ago.to_date,
+                                                                               visibility_during_embargo: 'restricted',
+                                                                               visibility_after_embargo: 'open'))
+          Hyrax.persister.save(resource: file_set)
+
+          updated = update_file_set
+          Hyrax::EmbargoManager.release_embargo_for(resource: updated)
+
+          expect(updated.visibility).to eq 'restricted'
+          expect(updated.embargo.embargo_release_date).to be_nil
+        end
+
+        it 'clears an ended embargo embedded without an id, as on Hyrax 4, without saving it as a record of its own' do
+          ended = Hyrax::Embargo.new(embargo_release_date: 1.day.ago.to_date, visibility_during_embargo: 'restricted', visibility_after_embargo: 'open')
+          file_set.embargo = ended
+
+          expect { described_class.send(:clear_ended_embargo_and_lease, file_set) }
+            .not_to(change { Hyrax.query_service.find_all_of_model(model: Hyrax::Embargo).count })
+          expect(ended.embargo_release_date).to be_nil
+        end
+
+        it 'leaves an unattached file set to take its visibility when it is attached' do
+          Hyrax.persister.save(resource: work.tap { |w| w.member_ids = [] })
+          work.visibility = 'authenticated'
+          work.permission_manager.acl.save
+
+          expect(update_file_set.visibility).to eq 'open'
+        end
+
+        context 'when the row names another work' do
+          let(:other_work) { Hyrax.persister.save(resource: WorkResource.new(title: ['other'])) }
+
+          it 'fails the row without touching the file set, which stays in its work only' do
+            factory = reimport
+            allow(factory).to receive(:find_record) { [nil, reloaded(other_work)] }
+
+            expect { factory.send(:update_file_set, {}) }
+              .to raise_error(StandardError, "first is already in work #{work.id}; moving a file set to #{other_work.id} is not supported")
+            expect(factory).not_to have_received(:perform_transaction_for)
+            expect(Hyrax.query_service.find_parents(resource: file_set).map(&:id)).to eq [work.id]
+          end
+
+          it 'updates the file set when the row names its own work' do
+            factory = reimport
+            factory.send(:update_file_set, {})
+
+            expect(factory).to have_received(:perform_transaction_for)
+          end
+        end
+
+        it 'keeps the file set restricted while its own embargo lasts' do
+          work.visibility = 'open'
+          work.permission_manager.acl.save
+          file_set.embargo = Hyrax.persister.save(resource: embargo)
+          Hyrax::EmbargoManager.apply_embargo_for(resource: file_set)
+          file_set.permission_manager.acl.save
+          Hyrax.persister.save(resource: file_set)
+
+          expect(update_file_set.visibility).to eq 'restricted'
+        end
+      end
+
+      it 'fails a row whose file is already attached' do
+        upload = uploaded_file
+        upload.update!(file_set_uri: 'already-attached')
+
+        expect { create_file_set('first', upload) }.to raise_error(StandardError, 'first has no file to attach')
       end
     end
 
@@ -314,11 +555,69 @@ module Bulkrax
       let(:file_set) { Hyrax.persister.save(resource: Hyrax::FileSet.new(title: ['first'])) }
       let(:other_file_set) { Hyrax.persister.save(resource: Hyrax::FileSet.new(title: ['other'])) }
 
+      it 'makes the first file set added the representative and thumbnail, as Hyrax does on attach' do
+        described_class.add_child_to_parent_work(parent: work, child: file_set)
+        parent = described_class.add_child_to_parent_work(parent: work, child: other_file_set)
+
+        expect(parent).to have_attributes(member_ids: [file_set.id, other_file_set.id], representative_id: file_set.id, thumbnail_id: file_set.id)
+      end
+
+      it 'keeps a representative the work already has' do
+        work.representative_id = other_file_set.id
+        parent = described_class.add_child_to_parent_work(parent: Hyrax.persister.save(resource: work), child: file_set)
+
+        expect(parent).to have_attributes(representative_id: other_file_set.id, thumbnail_id: file_set.id)
+      end
+
       it 'returns the work as saved, not the copy passed in, when the child is already a member' do
         stale = work
         saved = Hyrax.persister.save(resource: work.tap { |w| w.member_ids = [file_set.id, other_file_set.id] })
 
         expect(described_class.add_child_to_parent_work(parent: stale, child: file_set).member_ids).to eq saved.member_ids
+      end
+    end
+
+    describe '.uploads_awaiting_ingest' do
+      include_context 'with the Valkyrie memory adapter'
+
+      let(:user) { create(:user) }
+      let(:file_set) { Hyrax.persister.save(resource: Hyrax::FileSet.new(title: ['first'])) }
+      let!(:upload) do
+        Hyrax::UploadedFile.create!(file: File.open(Bulkrax::Engine.root.join('spec', 'fixtures', 'removed.png')), user: user, file_set_uri: file_set.id.to_s)
+      end
+
+      it 'returns the uploads of a file set with no file yet' do
+        expect(described_class.uploads_awaiting_ingest(resource: file_set)).to eq [upload]
+      end
+
+      it 'returns none for a file set that has its file' do
+        file_set.file_ids = [Valkyrie::ID.new('ingested-file')]
+
+        expect(described_class.uploads_awaiting_ingest(resource: file_set)).to be_empty
+      end
+
+      it 'returns none for a work' do
+        work = Hyrax.persister.save(resource: WorkResource.new(title: ['parent']))
+
+        expect(described_class.uploads_awaiting_ingest(resource: work)).to be_empty
+      end
+    end
+
+    describe '.ingest_later' do
+      let(:upload) { instance_double(Hyrax::UploadedFile, id: 7) }
+
+      it 'queues the ingest' do
+        allow(ValkyrieIngestJob).to receive(:perform_later).with(upload).and_return(true)
+
+        described_class.ingest_later(upload: upload)
+
+        expect(ValkyrieIngestJob).to have_received(:perform_later).with(upload)
+      end
+
+      it 'raises when the enqueue is aborted without raising' do
+        allow(ValkyrieIngestJob).to receive(:perform_later).and_return(false)
+
+        expect { described_class.ingest_later(upload: upload) }.to raise_error('Could not queue the ingest of upload 7')
       end
     end
 
