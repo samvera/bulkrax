@@ -78,6 +78,7 @@ module Bulkrax
 
     # POST /importers
     # rubocop:disable Metrics/MethodLength
+    # rubocop:disable Metrics/AbcSize
     def create
       # rubocop:disable Style/IfInsideElse
       if api_request?
@@ -92,8 +93,15 @@ module Bulkrax
       # the following line is needed to handle updating remote files of a FileSet
       # on a new import otherwise it only gets updated during the update path
       @importer.parser_fields['update_files'] = true if params[:commit] == 'Create and Import'
+
+      # Reject an unsafe cloud selection before the importer is ever
+      # persisted, rather than after save when a row would already exist.
+      preflight_cloud_files!(cloud_files)
+
       if @importer.save
-        files_for_import(file, cloud_files)
+        return render_create_failure if files_for_import(file, cloud_files) && !@importer.save
+        dispatch_cloud_downloads!
+
         if params[:commit] == 'Create and Import'
           Bulkrax::ImporterJob.send(@importer.parser.perform_method, @importer.id)
           render_request('Importer was successfully created and import has been queued.')
@@ -104,14 +112,13 @@ module Bulkrax
           render_request('Importer was successfully created.')
         end
       else
-        if api_request?
-          json_response('create', :unprocessable_entity)
-        else
-          render :new
-        end
+        render_create_failure
       end
       # rubocop:enable Style/IfInsideElse
+    rescue Bulkrax::UnsafeCloudSourceError, Bulkrax::UnsafePathError => e
+      reject_unsafe_cloud_files(e)
     end
+    # rubocop:enable Metrics/AbcSize
 
     # PATCH/PUT /importers/1
     # # @todo refactor so as to not need to disable rubocop
@@ -127,11 +134,19 @@ module Bulkrax
       # Skipped during a continue
       field_mapping_params if params[:importer][:parser_fields].present?
 
-      if @importer.update(importer_params)
-        files_for_import(file, cloud_files) unless file.nil? && cloud_files.nil?
+      # Assign the proposed attributes in memory first, so an unsafe cloud
+      # selection is rejected before anything is persisted; the rescue
+      # below then leaves the importer's persisted attributes untouched.
+      @importer.assign_attributes(importer_params)
+      preflight_cloud_files!(cloud_files)
+
+      if @importer.save
+        return render_update_failure if files_for_import(file, cloud_files) && !@importer.save
+        return render_update_failure if params[:commit] != 'Update Importer' && !set_files_parser_fields
+        dispatch_cloud_downloads!
+
         # do not perform the import
         unless params[:commit] == 'Update Importer'
-          set_files_parser_fields
           Bulkrax::ImporterJob.send(@importer.parser.perform_method, @importer.id, update_harvest)
         end
         if api_request?
@@ -140,12 +155,10 @@ module Bulkrax
           redirect_to importers_path, notice: 'Importer was successfully updated.'
         end
       else
-        if api_request?
-          json_response('update', :unprocessable_entity, 'Something went wrong.')
-        else
-          render :edit
-        end
+        render_update_failure
       end
+    rescue Bulkrax::UnsafeCloudSourceError, Bulkrax::UnsafePathError => e
+      reject_unsafe_cloud_files(e)
     end
     # rubocop:enable all
     # rubocop:enable Metrics/MethodLength
@@ -218,18 +231,68 @@ module Bulkrax
 
     private
 
+    # Validates every selected cloud-file entry — raw name and source
+    # safety — before the importer is created or updated at all. Must not
+    # touch the importer's workspace (no path_for_import, no directory
+    # creation, no download): for #create that workspace doesn't exist
+    # yet, and for #update it must not be assumed safe to touch before the
+    # proposed attributes are known to be acceptable.
+    #
+    # @param cloud_files [Hash, nil] cloud file specs from browse-everything
+    # @raise [Bulkrax::UnsafePathError, Bulkrax::UnsafeCloudSourceError] on the first unsafe entry
+    def preflight_cloud_files!(cloud_files)
+      return if cloud_files.blank?
+
+      cloud_files.values.each { |file| Bulkrax::CloudSourceValidator.preflight!(file) }
+    end
+
+    # Assigns files/cloud selections onto the importer record's in-memory
+    # parser fields, but does not save: the caller owns the second save,
+    # so it can check its result and avoid rendering success or enqueueing
+    # an import on failure.
+    #
+    # @return [Boolean] true if any parser field was touched and a second save is needed
     def files_for_import(file, cloud_files)
-      return if file.blank? && cloud_files.blank?
+      @cloud_download_plan = nil
+      return false if file.blank? && cloud_files.blank?
+
       @importer[:parser_fields]['import_file_path'] = @importer.parser.write_import_file(file) if file.present?
       if cloud_files.present?
         @importer[:parser_fields]['cloud_file_paths'] = cloud_files
+        assign_cloud_file_paths(cloud_files)
+      end
+
+      true
+    end
+
+    # For a parser that separates planning from dispatch (currently only
+    # CsvParser), resolves and validates the whole batch and records the
+    # target paths, deferring enqueue until {#dispatch_cloud_downloads!} is
+    # called after the controller persists those paths. Other parsers
+    # (e.g. BagitParser) already complete cloud retrieval synchronously
+    # and return the resolved path directly, so there's nothing left to
+    # dispatch.
+    def assign_cloud_file_paths(cloud_files)
+      parser = @importer.parser
+      if parser.respond_to?(:plan_cloud_files)
+        @cloud_download_plan = parser.plan_cloud_files(cloud_files)
+        @importer[:parser_fields]['original_file_paths'] =
+          @cloud_download_plan.map { |_file, _relative_filename, target_file| target_file }
+      else
         # For BagIt, there will only be one bag, so we get the file_path back and set import_file_path
-        # For CSV, we expect only file uploads, so we won't get the file_path back
-        # and we expect the import_file_path to be set already
-        target = @importer.parser.retrieve_cloud_files(cloud_files, @importer)
+        target = parser.retrieve_cloud_files(cloud_files, @importer)
         @importer[:parser_fields]['import_file_path'] = target if target.present?
       end
-      @importer.save
+    end
+
+    # Dispatches a plan prepared by {#assign_cloud_file_paths}, if any.
+    # Called by the controller only after it has successfully persisted
+    # the resolved paths, so a download is never enqueued for a path the
+    # importer doesn't actually have on record.
+    def dispatch_cloud_downloads!
+      return if @cloud_download_plan.blank?
+
+      @importer.parser.dispatch_cloud_files!(@cloud_download_plan, @importer)
     end
 
     # Use callbacks to share common setup or constraints between actions.
@@ -315,6 +378,36 @@ module Bulkrax
       'text/csv'
     end
 
+    # Reports an unsafe cloud-file batch without leaking the error's class
+    # or backtrace (which could include a provider auth header) to the
+    # response; `e.message` is always one of our own static, credential-free
+    # strings (see Bulkrax::CloudSourceValidator / Bulkrax::SafePath).
+    def reject_unsafe_cloud_files(e)
+      Rails.logger.error("Bulkrax: rejected unsafe cloud file batch for importer #{@importer&.id}: #{e.class}: #{e.message}")
+      if api_request?
+        json_response('create', :unprocessable_entity, e.message)
+      else
+        flash[:error] = e.message
+        redirect_back fallback_location: importers_path
+      end
+    end
+
+    def render_create_failure
+      if api_request?
+        json_response('create', :unprocessable_entity)
+      else
+        render :new
+      end
+    end
+
+    def render_update_failure
+      if api_request?
+        json_response('update', :unprocessable_entity, 'Something went wrong.')
+      else
+        render :edit
+      end
+    end
+
     def render_request(message, validate_only = false)
       if api_request?
         json_response('create', :created, message)
@@ -330,6 +423,8 @@ module Bulkrax
       params[:commit] == 'Update and Harvest Updated Items'
     end
 
+    # @return [Boolean] the result of the save, so the caller can treat a
+    #   failure here like an ordinary validation failure
     def set_files_parser_fields
       @importer.parser_fields['update_files'] =
         @importer.parser_fields['replace_files'] =
@@ -342,7 +437,7 @@ module Bulkrax
       elsif params[:commit] == 'Remove and Rerun'
         @importer.parser_fields['remove_and_rerun'] = true
       elsif params[:commit] == 'Update and Harvest Updated Items'
-        return
+        return true
       else
         @importer.parser_fields['metadata_only'] = true
       end

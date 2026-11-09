@@ -70,6 +70,9 @@ en:
         type: Type
         user: User
         work_entries: Work Entries
+      browse_everything:
+        errors:
+          missing_destination_context: This cloud file download is missing required destination information and can no longer be safely processed. Please re-select the file and try the import again.
     table_header:
       labels:
         identifier: Identifier

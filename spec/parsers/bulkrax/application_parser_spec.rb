@@ -123,5 +123,48 @@ module Bulkrax
         it { is_expected.to be_truthy }
       end
     end
+
+    describe '#unzip' do
+      let(:parser) { described_class.new(importer) }
+      let(:malicious_zip) { Dir::Tmpname.create(['bulkrax-zip-slip', '.zip']) { |p| p } }
+
+      after do
+        FileUtils.rm_f(malicious_zip)
+        FileUtils.rm_rf(parser.importer_unzip_path)
+      end
+
+      context 'with an entry name that attempts to escape the unzip destination' do
+        before do
+          Zip::OutputStream.open(malicious_zip) do |zos|
+            zos.put_next_entry('../../../tmp/bulkrax-zip-slip-escaped.txt')
+            zos.write('evil payload')
+          end
+        end
+
+        it 'raises before writing outside the importer workspace' do
+          escape_target = File.expand_path(File.join(parser.importer_unzip_path, '../../../tmp/bulkrax-zip-slip-escaped.txt'))
+
+          expect { parser.unzip(malicious_zip) }.to raise_error(Bulkrax::UnsafePathError)
+          expect(File).not_to exist(escape_target)
+        ensure
+          FileUtils.rm_f(escape_target)
+        end
+      end
+
+      context 'with a safe, normally nested entry name' do
+        before do
+          Zip::OutputStream.open(malicious_zip) do |zos|
+            zos.put_next_entry('nested/good.txt')
+            zos.write('safe payload')
+          end
+        end
+
+        it 'extracts the entry inside the importer workspace' do
+          parser.unzip(malicious_zip)
+
+          expect(File.read(File.join(parser.importer_unzip_path, 'nested/good.txt'))).to eq('safe payload')
+        end
+      end
+    end
   end
 end

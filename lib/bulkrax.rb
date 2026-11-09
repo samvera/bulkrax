@@ -13,6 +13,7 @@ require 'language_list'
 require 'marcel'
 require 'nokogiri'
 require 'ostruct'
+require 'ssrf_filter'
 require 'zip'
 
 def conditional_require(gem_name)

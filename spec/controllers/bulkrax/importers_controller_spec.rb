@@ -167,6 +167,131 @@ module Bulkrax
       end
     end
 
+    describe 'cloud file security' do
+      let(:unsafe_selected_files) do
+        { "0" => { "url" => "https://example.com/a.pdf", "file_name" => "../../../etc/passwd" } }
+      end
+      let(:safe_selected_files) do
+        { "0" => { "url" => "https://example.com/a.pdf", "file_name" => "a.pdf" } }
+      end
+
+      describe 'POST #create' do
+        context 'with an unsafe cloud file selection' do
+          it 'does not persist the importer' do
+            expect do
+              post :create, params: { importer: valid_attributes, selected_files: unsafe_selected_files }, session: valid_session
+            end.not_to change(Importer, :count)
+          end
+
+          it 'does not enqueue an import job' do
+            expect(Bulkrax::ImporterJob).not_to receive(:perform_later)
+            expect(Bulkrax::ImporterJob).not_to receive(:perform_now)
+            post :create, params: { importer: valid_attributes, selected_files: unsafe_selected_files }, session: valid_session
+          end
+
+          it 'does not enqueue a cloud file download' do
+            expect(Bulkrax::DownloadCloudFileJob).not_to receive(:perform_later)
+            post :create, params: { importer: valid_attributes, selected_files: unsafe_selected_files }, session: valid_session
+          end
+
+          it 'sets a flash error and redirects' do
+            post :create, params: { importer: valid_attributes, selected_files: unsafe_selected_files }, session: valid_session
+            expect(flash[:error]).to be_present
+            expect(response).to redirect_to(importers_path)
+          end
+        end
+
+        context 'with a safe cloud file selection' do
+          before { allow(Bulkrax::CloudSourceValidator).to receive(:validate!).and_return(true) }
+
+          it 'persists the importer and records the resolved path only after a successful save' do
+            expect do
+              post :create, params: { importer: valid_attributes, selected_files: safe_selected_files }, session: valid_session
+            end.to change(Importer, :count).by(1)
+
+            expect(Importer.last.parser_fields['original_file_paths']).to be_present
+          end
+
+          it 'dispatches the cloud download job' do
+            expect(Bulkrax::DownloadCloudFileJob).to receive(:perform_later)
+            post :create, params: { importer: valid_attributes, selected_files: safe_selected_files }, session: valid_session
+          end
+        end
+
+        context 'when the importer fails to save even though the cloud selection is safe' do
+          before { allow(Bulkrax::CloudSourceValidator).to receive(:validate!).and_return(true) }
+
+          it 'never dispatches a download for a path that was never persisted' do
+            expect(Bulkrax::DownloadCloudFileJob).not_to receive(:perform_later)
+            post :create, params: { importer: invalid_attributes, selected_files: safe_selected_files }, session: valid_session
+          end
+        end
+
+        # Proves preflight runs, and the importer is rejected, strictly
+        # before #files_for_import's second save -- not merely that the
+        # end result looks the same.
+        context 'ordering: preflight happens before any importer save' do
+          it 'never calls Importer#save when the cloud selection is unsafe' do
+            expect_any_instance_of(Importer).not_to receive(:save)
+            post :create, params: { importer: valid_attributes, selected_files: unsafe_selected_files }, session: valid_session
+          end
+        end
+      end
+
+      describe 'PUT #update' do
+        let(:importer) { Importer.create! valid_attributes }
+
+        context 'with an unsafe cloud file selection' do
+          it 'leaves the persisted importer attributes unchanged' do
+            original_name = importer.name
+            put :update, params: { id: importer.to_param, importer: { name: 'Changed Name' }, selected_files: unsafe_selected_files }, session: valid_session
+            expect(importer.reload.name).to eq(original_name)
+          end
+
+          it 'does not enqueue an import job' do
+            expect(Bulkrax::ImporterJob).not_to receive(:perform_later)
+            expect(Bulkrax::ImporterJob).not_to receive(:perform_now)
+            put :update, params: { id: importer.to_param, importer: { name: 'Changed Name' }, selected_files: unsafe_selected_files }, session: valid_session
+          end
+
+          it 'does not enqueue a cloud file download' do
+            expect(Bulkrax::DownloadCloudFileJob).not_to receive(:perform_later)
+            put :update, params: { id: importer.to_param, importer: { name: 'Changed Name' }, selected_files: unsafe_selected_files }, session: valid_session
+          end
+
+          it 'sets a flash error and redirects' do
+            put :update, params: { id: importer.to_param, importer: { name: 'Changed Name' }, selected_files: unsafe_selected_files }, session: valid_session
+            expect(flash[:error]).to be_present
+            expect(response).to redirect_to(importers_path)
+          end
+        end
+
+        context 'with a safe cloud file selection' do
+          before { allow(Bulkrax::CloudSourceValidator).to receive(:validate!).and_return(true) }
+
+          it 'updates the importer and dispatches the download job' do
+            expect(Bulkrax::DownloadCloudFileJob).to receive(:perform_later)
+            put :update, params: { id: importer.to_param, importer: { name: 'Changed Name' }, selected_files: safe_selected_files, commit: 'Update Importer' }, session: valid_session
+
+            expect(importer.reload.name).to eq('Changed Name')
+          end
+        end
+
+        # set_files_parser_fields' own save (distinct from the
+        # files_for_import save) must also gate the import dispatch: a
+        # failure there must not be treated as success just because the
+        # earlier saves succeeded.
+        context 'when set_files_parser_fields fails to save' do
+          it 'does not enqueue an import job' do
+            allow_any_instance_of(Importer).to receive(:save).and_return(true, false)
+
+            expect(Bulkrax::ImporterJob).not_to receive(:perform_later)
+            put :update, params: { id: importer.to_param, importer: { name: 'Changed Name' }, commit: 'Update Metadata and Files' }, session: valid_session
+          end
+        end
+      end
+    end
+
     describe 'PUT #continue' do
       let(:importer) { Importer.create! valid_attributes }
       let(:valid_attributes) do

@@ -166,12 +166,19 @@ unless ENV.fetch('BULKRAX_NO_BAGIT', 'false').to_s == 'true'
       # @todo - investigate getting directory structure
       # @todo - investigate using perform_later, and having the importer check for
       #   DownloadCloudFileJob before it starts
-      def retrieve_cloud_files(files, _importer)
+      def retrieve_cloud_files(files, importer)
         # There should only be one zip file for Bagit, take the first
         return if files['0'].blank?
-        target_file = File.join(path_for_import, files['0']['file_name'].tr(' ', '_'))
+
+        file = files['0']
+        # Checked on the raw file_name before any normalization — see
+        # Bulkrax::CsvParser#plan_cloud_file for why this must come first.
+        Bulkrax::CloudSourceValidator.preflight!(file)
+
+        relative_filename = file['file_name'].tr(' ', '_')
+        target_file = Bulkrax::SafePath.confine!(path_for_import, relative_filename, require_file: true)
         # Now because we want the files in place before the importer runs
-        Bulkrax::DownloadCloudFileJob.perform_now(files['0'], target_file)
+        Bulkrax::DownloadCloudFileJob.perform_now(file, importer_id: importer.id, relative_filename: relative_filename)
         return target_file
       end
 

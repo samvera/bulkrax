@@ -194,24 +194,55 @@ module Bulkrax
     # @todo - investigate using perform_later, and having the importer check for
     #   DownloadCloudFileJob before it starts
     def retrieve_cloud_files(files, importer)
+      plan = plan_cloud_files(files)
+      dispatch_cloud_files!(plan, importer)
+      importer[:parser_fields]['original_file_paths'] = plan.map { |_file, _relative_filename, target_file| target_file }
+      return nil
+    end
+
+    # Validates and resolves the whole batch, without enqueueing anything
+    # yet. Otherwise an earlier, valid file's job would already be running
+    # by the time a later file in the same batch is found to be unsafe.
+    # Split out from {#retrieve_cloud_files} so a caller (the importers
+    # controller) can persist the resolved paths before dispatching.
+    #
+    # @return [Array<Array(Hash, String, String)>] one entry per file: the
+    #   file spec, its relative destination filename, and the resolved
+    #   absolute target path
+    def plan_cloud_files(files)
       files_path = File.join(path_for_import, 'files')
       FileUtils.mkdir_p(files_path) unless File.exist?(files_path)
-      target_files = []
-      files.each_pair do |_key, file|
-        # fixes bug where auth headers do not get attached properly
-        if file['auth_header'].present?
-          file['headers'] ||= {}
-          file['headers'].merge!(file['auth_header'])
-        end
-        # this only works for uniquely named files
-        target_file = File.join(files_path, file['file_name'].tr(' ', '_'))
-        target_files << target_file
-        # Now because we want the files in place before the importer runs
-        # Problematic for a large upload
-        Bulkrax::DownloadCloudFileJob.perform_later(file, target_file)
+
+      files.values.map { |file| plan_cloud_file(file) }
+    end
+
+    # Enqueues a download job for each entry of an already-validated plan
+    # (see {#plan_cloud_files}).
+    def dispatch_cloud_files!(plan, importer)
+      plan.each { |file, relative_filename, _target_file| Bulkrax::DownloadCloudFileJob.perform_later(file, importer_id: importer.id, relative_filename: relative_filename) }
+    end
+
+    # Validates one cloud-file spec and resolves its destination, without
+    # enqueueing anything yet.
+    #
+    # @return [Array(Hash, String, String)] the file spec, its relative
+    #   destination filename, and the resolved absolute target path
+    def plan_cloud_file(file)
+      # fixes bug where auth headers do not get attached properly
+      if file['auth_header'].present?
+        file['headers'] ||= {}
+        file['headers'].merge!(file['auth_header'])
       end
-      importer[:parser_fields]['original_file_paths'] = target_files
-      return nil
+
+      # Checked on the raw file_name, before it's joined under 'files/':
+      # that join would otherwise neutralize a leading `/` (File.join
+      # doesn't treat it as absolute once it's not the first argument).
+      Bulkrax::CloudSourceValidator.preflight!(file)
+
+      # this only works for uniquely named files
+      relative_filename = File.join('files', file['file_name'].tr(' ', '_'))
+      target_file = Bulkrax::SafePath.confine!(path_for_import, relative_filename, require_file: true)
+      [file, relative_filename, target_file]
     end
 
     # export methods

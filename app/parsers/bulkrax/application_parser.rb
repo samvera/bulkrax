@@ -430,12 +430,35 @@ module Bulkrax
     def unzip(file_to_unzip)
       return untar(file_to_unzip) if file_to_unzip.end_with?('.tar.gz')
 
+      dest_dir = importer_unzip_path
       Zip::File.open(file_to_unzip) do |zip_file|
         zip_file.each do |entry|
-          entry_path = File.join(importer_unzip_path, entry.name)
+          # Zip Slip: reject/confine via the same Bulkrax::SafePath used
+          # for cloud-file destinations, rather than a bare File.join of
+          # attacker-controlled entry.name.
+          entry_path = Bulkrax::SafePath.confine!(dest_dir, entry.name)
           FileUtils.mkdir_p(File.dirname(entry_path))
-          zip_file.extract(entry, entry_path) unless File.exist?(entry_path)
+          next if File.exist?(entry_path)
+
+          extract_zip_entry(zip_file, entry, dest_dir, entry.name, entry_path)
         end
+      end
+    end
+
+    # rubyzip 2.x: extract(entry, absolute_dest_path)
+    # rubyzip 3.x: extract(entry, relative_name, destination_directory: dir)
+    #
+    # entry_path (from Bulkrax::SafePath.confine!) is always an absolute
+    # path; rubyzip 3.x's 2-positional-arg #extract treats its second
+    # argument as a name relative to the current directory rather than a
+    # destination path, which silently re-joins an already-absolute path
+    # onto the cwd. The keyword form is the only one both versions can be
+    # trusted to interpret as "this absolute/relative destination".
+    def extract_zip_entry(zip_file, entry, dest_dir, relative_name, dest_path)
+      if zip_file.method(:extract).arity == 2
+        zip_file.extract(entry, dest_path)
+      else
+        zip_file.extract(entry, relative_name, destination_directory: dest_dir)
       end
     end
 
