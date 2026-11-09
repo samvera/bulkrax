@@ -139,21 +139,38 @@ module Bulkrax
       csv_by_depth[shallowest_depth]
     end
 
-    # Persists uploaded file(s) and/or cloud files onto the importer record.
+    # Validates every selected cloud-file entry — raw name and source
+    # safety — before the importer is created or updated at all. Must not
+    # touch the importer's workspace (no path_for_import, no directory
+    # creation, no download): for #create that workspace doesn't exist
+    # yet, and for #update it must not be assumed safe to touch before the
+    # proposed attributes are known to be acceptable.
+    #
+    # @param cloud_files [Hash, nil] cloud file specs from browse-everything
+    # @raise [Bulkrax::UnsafePathError, Bulkrax::UnsafeCloudSourceError] on the first unsafe entry
+    def preflight_cloud_files!(cloud_files)
+      return if cloud_files.blank?
+
+      cloud_files.values.each { |file| Bulkrax::CloudSourceValidator.preflight!(file) }
+    end
+
+    # Assigns files/cloud selections onto the importer record's in-memory
+    # parser fields, but does not save: the caller (ImportersController)
+    # owns the second save, so it can check its result and avoid rendering
+    # success or enqueueing an import on failure.
+    #
     # @param file [ActionDispatch::Http::UploadedFile, nil] a directly uploaded file
     # @param cloud_files [Hash, nil] cloud file paths from browse-everything
     # @param uploads [ActiveRecord::Relation, Array, nil] Hyrax::UploadedFile records
+    # @return [Boolean] true if any parser field was touched and a second save is needed
     def files_for_import(file, cloud_files, uploads)
-      return if file.blank? && cloud_files.blank? && uploads.blank?
+      @cloud_download_plan = nil
+      return false if file.blank? && cloud_files.blank? && uploads.blank?
 
       @importer[:parser_fields]['import_file_path'] = @importer.parser.write_import_file(file) if file.present?
       if cloud_files.present?
         @importer[:parser_fields]['cloud_file_paths'] = cloud_files
-        # For BagIt, there will only be one bag, so we get the file_path back and set import_file_path
-        # For CSV, we expect only file uploads, so we won't get the file_path back
-        # and we expect the import_file_path to be set already
-        target = @importer.parser.retrieve_cloud_files(cloud_files, @importer)
-        @importer[:parser_fields]['import_file_path'] = target if target.present?
+        assign_cloud_file_paths(cloud_files)
       end
 
       if uploads.present?
@@ -162,7 +179,36 @@ module Bulkrax
         end
       end
 
-      @importer.save
+      true
+    end
+
+    # For a parser that separates planning from dispatch (currently only
+    # CsvParser), resolves and validates the whole batch and records the
+    # target paths, deferring enqueue until {#dispatch_cloud_downloads!} is
+    # called after the controller persists those paths. Other parsers
+    # (e.g. BagitParser) already complete cloud retrieval synchronously
+    # and return the resolved path directly, so there's nothing left to
+    # dispatch.
+    def assign_cloud_file_paths(cloud_files)
+      parser = @importer.parser
+      if parser.respond_to?(:plan_cloud_files)
+        @cloud_download_plan = parser.plan_cloud_files(cloud_files)
+        @importer[:parser_fields]['original_file_paths'] =
+          @cloud_download_plan.map { |_file, _relative_filename, target_file| target_file }
+      else
+        target = parser.retrieve_cloud_files(cloud_files, @importer)
+        @importer[:parser_fields]['import_file_path'] = target if target.present?
+      end
+    end
+
+    # Dispatches a plan prepared by {#assign_cloud_file_paths}, if any.
+    # Called by the controller only after it has successfully persisted
+    # the resolved paths, so a download is never enqueued for a path the
+    # importer doesn't actually have on record.
+    def dispatch_cloud_downloads!
+      return if @cloud_download_plan.blank?
+
+      @importer.parser.dispatch_cloud_files!(@cloud_download_plan, @importer)
     end
 
     def write_files(files)

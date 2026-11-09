@@ -491,11 +491,13 @@ module Bulkrax
     # Zip Slip preflight — reject entries whose names are obviously unsafe
     # (absolute paths, `..` segments) before we touch the filesystem.
     # {#safe_extract_path} is the final line of defense; this check just
-    # fails fast with a clear message.
+    # fails fast with a clear message. Delegates to {Bulkrax::SafePath} so
+    # cloud-file destinations and sources share the same rules.
     #
     # @raise [Bulkrax::UnzipError] if the entry name is unsafe
     def self.reject_unsafe_entry!(name)
-      return unless name.start_with?('/') || name.split('/').include?('..')
+      Bulkrax::SafePath.reject_unsafe_entry!(name)
+    rescue Bulkrax::UnsafePathError
       raise Bulkrax::UnzipError, I18n.t('bulkrax.importer.unzip.errors.unsafe_entry', name: name.dup.force_encoding(Encoding::UTF_8).scrub)
     end
 
@@ -503,17 +505,15 @@ module Bulkrax
 
     # Zip Slip chokepoint. Resolves `relative_dest` against `dest_dir` and
     # returns the absolute destination path — but only if it stays inside
-    # `dest_dir`. Callers must use this value rather than building their
-    # own path with `File.join`, so the path returned is always safe by
-    # construction.
+    # `dest_dir`, including through any symlink. Callers must use this
+    # value rather than building their own path with `File.join`, so the
+    # path returned is always safe by construction.
     #
     # @return [String] absolute destination path, validated to be inside `dest_dir`
     # @raise  [Bulkrax::UnzipError] if `relative_dest` escapes `dest_dir`
     def safe_extract_path(dest_dir, relative_dest)
-      expanded_dest_dir = File.expand_path(dest_dir)
-      dest_path = File.expand_path(relative_dest.to_s, expanded_dest_dir)
-      return dest_path if dest_path == expanded_dest_dir
-      return dest_path if dest_path.start_with?("#{expanded_dest_dir}#{File::SEPARATOR}")
+      Bulkrax::SafePath.confine!(dest_dir, relative_dest)
+    rescue Bulkrax::UnsafePathError
       raise Bulkrax::UnzipError, I18n.t('bulkrax.importer.unzip.errors.unsafe_entry', name: relative_dest)
     end
 
