@@ -91,6 +91,8 @@ en:
           public: Public
       browse_everything:
         add_cloud_files: Add Cloud Files
+        errors:
+          missing_destination_context: This cloud file download is missing required destination information and can no longer be safely processed. Please re-select the file and try the import again.
       csv:
         add_csv_to_import: 'Add CSV or ZIP File to Import:'
         add_files_hint: Choose files to upload. The filenames must be unique, and the filenames must be referenced in a column called 'file' in the accompanying CSV file.
