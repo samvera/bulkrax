@@ -492,7 +492,7 @@ module Bulkrax
     # escape the destination directory (Zip Slip).
     def self.real_zip_entries(zip_file)
       entries = zip_file.entries.select { |e| e.file? && !macos_junk_entry?(e.name) }
-      entries.each { |e| reject_unsafe_entry!(e.name) }
+      entries.each { |e| CsvParser.reject_unsafe_entry!(e.name) }
       entries
     end
 
