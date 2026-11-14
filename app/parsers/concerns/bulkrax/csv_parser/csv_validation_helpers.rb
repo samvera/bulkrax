@@ -84,7 +84,7 @@ module Bulkrax
         # isn't flagged unrecognised. Property-level aliases are handled
         # separately by find_unrecognized_validation_headers via mapped_to_keys.
         non_property_aliases = non_property_mapping_aliases(mappings)
-        (all_cols + non_property_aliases + ROW_ACTION_HEADERS).uniq - CsvTemplate::CsvBuilder::IGNORED_PROPERTIES
+        (all_cols + non_property_aliases + %w[delete remove_and_rerun]).uniq - CsvTemplate::CsvBuilder::IGNORED_PROPERTIES
       rescue StandardError => e
         Rails.logger.error("CsvParser.validate_csv: error building valid headers – #{e.message}")
         standard = %w[model source_identifier parents children file] + ROW_ACTION_HEADERS
