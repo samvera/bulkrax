@@ -87,7 +87,7 @@ module Bulkrax
         (all_cols + non_property_aliases + %w[delete remove_and_rerun]).uniq - CsvTemplate::CsvBuilder::IGNORED_PROPERTIES
       rescue StandardError => e
         Rails.logger.error("CsvParser.validate_csv: error building valid headers – #{e.message}")
-        standard = %w[model source_identifier parents children file] + ROW_ACTION_HEADERS
+        standard = %w[model source_identifier parents children file delete remove_and_rerun]
         model_fields = field_metadata.values.flat_map { |m| m[:properties] }
         model_fields = model_fields.map { |prop| Bulkrax::FieldResolver.headers_for_field(mapping_manager.mappings, prop).first }
         (standard + model_fields).uniq
