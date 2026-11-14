@@ -219,6 +219,7 @@ en:
           remove_file: Remove file
           render_error: Validation completed but results could not be displayed. Please try again.
           review_admin_set: 'Admin Set:'
+          review_deletions: 'Records to delete: %{count}'
           review_first_n_records: first %{count} records
           review_limit: 'Limit:'
           review_name: 'Name:'
@@ -227,6 +228,8 @@ en:
           review_total: "%{total} total — %{collections} collections, %{works} works, %{file_sets} file sets"
           review_visibility: 'Visibility:'
           server_error: Server error during validation. Please try again or contact support.
+          deleting_record_badge: delete
+          deleting_record_title: This row deletes the existing record
           existing_record_badge: existing
           existing_record_title: This record already exists in the repository and will be linked during import
           shared_badge: shared
@@ -349,6 +352,17 @@ en:
               suggestion: Check the controlled vocabulary for valid terms.
           critical_errors: Critical errors must be fixed before import.
           did_you_mean: Did you mean "%{suggestion}"?
+          deleted_record_reference_validator:
+            errors:
+              message: "'%{value}' is deleted by this import, so this row cannot be related to it."
+              suggestion: "Remove '%{value}' from this row's %{field} value, or keep that record."
+          delete_record_validator:
+            errors:
+              message: "No existing record matches '%{value}', so this row has nothing to delete."
+              suggestion: "Correct the %{field} value, or remove the delete value from this row."
+            warnings:
+              message: "'%{value}' matches an existing record, so this row will delete it."
+              suggestion: "If you did not intend to delete this record, remove the delete value from this row."
           duplicate_identifier_validator:
             errors:
               message: "Duplicate %{field} '%{value}' — also appears in row %{original_row}."
@@ -413,6 +427,10 @@ en:
             warnings:
               message: "No model specified — this row will be imported as '%{default_work_type}'."
               suggestion: "Specify a model value in the 'model' column for this row if you want to use a different work type."
+          remove_and_rerun_validator:
+            warnings:
+              message: "'%{value}' matches an existing record, so this row will delete it and import it again."
+              suggestion: "If you meant to update the record in place, remove the remove_and_rerun value from this row."
           required_field_validator:
             errors:
               message: "Field '%{field}' is required but is empty for this row."

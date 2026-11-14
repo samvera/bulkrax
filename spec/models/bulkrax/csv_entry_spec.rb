@@ -1759,6 +1759,29 @@ module Bulkrax
       end
     end
 
+    describe 'relationships to a record this import deletes' do
+      let(:importer) { FactoryBot.create(:bulkrax_importer_csv) }
+      let(:entry) { described_class.new(importerexporter: importer, identifier: 'work_1') }
+
+      before do
+        importer.current_run
+        importer.parser_fields['deleted_identifiers'] = ['gone']
+        importer.save!
+      end
+
+      it 'writes no pending relationship to a deleted parent' do
+        entry.parsed_metadata = { 'parents' => %w[gone kept] }
+        entry.parent_jobs
+        expect(PendingRelationship.where(child_id: 'work_1').pluck(:parent_id)).to eq(['kept'])
+      end
+
+      it 'writes no pending relationship to a deleted child' do
+        entry.parsed_metadata = { 'children' => %w[gone kept] }
+        entry.child_jobs
+        expect(PendingRelationship.where(parent_id: 'work_1').pluck(:child_id)).to eq(['kept'])
+      end
+    end
+
     describe '#path_to_file' do
       let(:importer) { FactoryBot.create(:bulkrax_importer_csv) }
       subject(:entry) { described_class.new(importerexporter: importer) }

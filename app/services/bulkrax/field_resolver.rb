@@ -48,6 +48,22 @@ module Bulkrax
 
     # The header import maps, after dropping column numbering such as
     # `creator_1` or `1_creator`.
+    # A row's id and its column as import reads them
+    # (HasMatchers#add_metadata): `id` is single-valued, so the last column
+    # mapped to it wins, blank or not, stripped; an excluded mapping is
+    # skipped. Guided validation and the CSV parser both use it.
+    #
+    # @param raw_row [Hash{String => String}] the row's cells by header
+    # @return [Array(String, String), nil] the header and its value (nil when blank)
+    def self.row_id(raw_row, mapping)
+      return if option(mapping&.dig('id'), 'excluded')
+
+      header = raw_row.keys.reverse.find do |key|
+        fields_for_header(mapping, key_without_numbers(key)).include?('id')
+      end
+      [header, raw_row[header].to_s.strip.presence] if header
+    end
+
     def self.key_without_numbers(header)
       header.to_s.gsub(/_\d+/, '').sub(/^\d+_/, '')
     end

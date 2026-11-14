@@ -122,6 +122,12 @@ $summary-variants: (
   vertical-align: middle;
 }
 
+.tree-deleting-badge {
+  @extend .tree-existing-badge;
+  color: $color-error-dark;
+  background: $bg-error;
+}
+
 .tree-shared-badge {
   display: inline-flex;
   align-items: center;

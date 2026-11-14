@@ -239,6 +239,17 @@ module Bulkrax
 
     DEFAULT_OBJECT_TYPES = %w[collection work file_set relationship].freeze
 
+    # A single entry re-run after the import finished may relate records a
+    # later import recreated, so the finished run's deleted identifiers
+    # (CsvParser#record_deleted_identifiers) no longer apply. While entries
+    # are still Pending, the run's own jobs still need them.
+    def clear_deleted_identifiers_unless_importing
+      return if parser_fields['deleted_identifiers'].blank? || entries.pending.exists?
+
+      parser_fields['deleted_identifiers'] = []
+      save
+    end
+
     def import_objects(types_array = nil)
       self.only_updates ||= false
       self.save if self.new_record? # Object needs to be saved for statuses

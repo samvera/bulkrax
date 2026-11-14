@@ -39,6 +39,8 @@ module Bulkrax
             children: row[children_key],
             file: row[file_headers.first.to_sym],
             file_values: row_hash.select { |header, _| Bulkrax::FieldResolver.header_for_any?(header, file_headers) }.values.reject(&:blank?),
+            deleting: Bulkrax::ApplicationParser.flag_set?(row_hash['delete']),
+            rerunning: Bulkrax::ApplicationParser.flag_set?(row_hash['remove_and_rerun']),
             raw_row: row_hash
           }
         end
@@ -82,10 +84,10 @@ module Bulkrax
         # isn't flagged unrecognised. Property-level aliases are handled
         # separately by find_unrecognized_validation_headers via mapped_to_keys.
         non_property_aliases = non_property_mapping_aliases(mappings)
-        (all_cols + non_property_aliases).uniq - CsvTemplate::CsvBuilder::IGNORED_PROPERTIES
+        (all_cols + non_property_aliases + %w[delete remove_and_rerun]).uniq - CsvTemplate::CsvBuilder::IGNORED_PROPERTIES
       rescue StandardError => e
         Rails.logger.error("CsvParser.validate_csv: error building valid headers – #{e.message}")
-        standard = %w[model source_identifier parents children file]
+        standard = %w[model source_identifier parents children file delete remove_and_rerun]
         model_fields = field_metadata.values.flat_map { |m| m[:properties] }
         model_fields = model_fields.map { |prop| Bulkrax::FieldResolver.headers_for_field(mapping_manager.mappings, prop).first }
         (standard + model_fields).uniq
@@ -163,6 +165,15 @@ module Bulkrax
         row_models | [Bulkrax.default_work_type]
       end
 
+      # The models whose required columns the sheet must have: those of rows
+      # it imports. A row that only deletes needs no metadata.
+      def required_header_models(csv_data, headers, mappings)
+        kept = csv_data.reject { |row| row[:deleting] }
+        return [] if kept.empty?
+
+        models_to_validate(kept, headers, model_headers: Bulkrax::FieldResolver.headers_for_field(mappings, 'model'))
+      end
+
       def default_work_type_needed?(csv_data, headers, model_headers)
         return true unless model_column_present?(headers, model_headers)
 
@@ -180,7 +191,7 @@ module Bulkrax
       # not an error.)
       def append_files_referenced_no_zip_notice!(notices, csv_data, zip_file)
         return if zip_file
-        return unless csv_data.any? { |r| r[:file_values].present? }
+        return unless csv_data.any? { |r| r[:file_values].present? && !r[:deleting] }
 
         base_key = 'bulkrax.importer.guided_import.validation.files_referenced_no_zip_notice'
         notices << {
@@ -234,7 +245,8 @@ module Bulkrax
           collections: collections,
           works: works,
           fileSets: file_sets,
-          totalItems: csv_data.length
+          totalItems: csv_data.length,
+          deletionCount: csv_data.count { |row| row[:deleting] }
         }
       end
 
@@ -289,7 +301,8 @@ module Bulkrax
       # FactoryClassFinder gives the row. Returns nil when the import would
       # create a record, else the column and value that matched, plus
       # `missing: true` for an id naming no record or the two model names
-      # for a record of another model. Each row is looked up once.
+      # for a record of another model, or `lookup_failed: true` when the
+      # repository could not be searched. Each row is looked up once.
       def build_find_existing_record(mappings)
         work_identifier, work_identifier_search = source_identifier_search_fields
         results = {}.compare_by_identity
@@ -297,24 +310,11 @@ module Bulkrax
           return results[row] if results.key?(row)
 
           results[row] = existing_record_match(
-            row, row_id(row[:raw_row], mappings),
+            row, Bulkrax::FieldResolver.row_id(row[:raw_row], mappings),
             klass: Bulkrax::FactoryClassFinder.find(entry: ImportRow.new(raw_metadata: { 'model' => row[:model] })),
             search_field: work_identifier_search, name_field: work_identifier
           )
         end
-      end
-
-      # The row's id and its column as import reads them
-      # (HasMatchers#add_metadata): `id` is single-valued, so the last column
-      # mapped to it wins, blank or not, stripped; an excluded mapping is
-      # skipped.
-      def row_id(raw_row, mappings)
-        return if Bulkrax::FieldResolver.option(mappings['id'], 'excluded')
-
-        header = raw_row.keys.reverse.find do |key|
-          Bulkrax::FieldResolver.fields_for_header(mappings, Bulkrax::FieldResolver.key_without_numbers(key)).include?('id')
-        end
-        [header, raw_row[header].to_s.strip.presence] if header
       end
 
       def existing_record_match(row, (id_header, id), klass:, search_field:, name_field:)
@@ -322,16 +322,27 @@ module Bulkrax
         record = Bulkrax.object_factory.find_for_import(id: id, source_identifier: row[:source_identifier], klass: klass,
                                                         search_field: search_field, name_field: name_field)
         return if record.nil?
-        return match if id && record.id.to_s == id.to_s
+        return match.merge(record_id: record.id.to_s) if id && record.id.to_s == id.to_s
 
-        { field: nil, value: row[:source_identifier] }
+        { field: nil, value: row[:source_identifier], record_id: record.id.to_s }
       rescue Bulkrax::ObjectFactoryInterface::ModelMismatchError => e
         match.merge(existing_model: e.existing_model, model: e.model)
       rescue Bulkrax::ObjectFactoryInterface::ObjectNotFoundError
         match.merge(missing: true)
       rescue StandardError => e
         Rails.logger.error("CsvParser.validate_csv: looking up an existing record failed – #{e.message}")
-        nil
+        { lookup_failed: true }
+      end
+
+      # The source identifiers and ids of the rows this import deletes, as
+      # CsvParser#record_deleted_identifiers records them for import, plus the
+      # repository id of each record a delete row matched.
+      def deleted_identifiers(csv_data, mappings, find_existing_record = nil)
+        csv_data.select { |row| row[:deleting] }
+                .flat_map do |row|
+                  [row[:source_identifier], Bulkrax::FieldResolver.row_id(row[:raw_row], mappings)&.last,
+                   find_existing_record&.call(row)&.dig(:record_id)]
+                end.compact.to_set
       end
 
       def source_identifier_search_fields
@@ -384,6 +395,20 @@ module Bulkrax
         Bulkrax::SplitPatternCoercion.coerce(Bulkrax::FieldResolver.option(entry, 'split'))
       end
 
+      def relationship_context(csv_data, mappings, find_existing_record = nil)
+        parent_columns, children_columns = relationship_columns(mappings)
+        {
+          parent_split_pattern: resolve_parent_split_pattern(mappings),
+          child_split_pattern: resolve_children_split_pattern(mappings),
+          parent_column: parent_columns.first,
+          children_column: children_columns.first,
+          parent_columns: parent_columns,
+          children_columns: children_columns,
+          relationship_graph: build_relationship_graph(csv_data, mappings),
+          deleted_ids: deleted_identifiers(csv_data, mappings, find_existing_record)
+        }
+      end
+
       # Builds a graph of { source_identifier => [parent_ids] } from all CSV records.
       # Used by CircularReference validator to detect cycles across the whole CSV.
       #
@@ -403,7 +428,7 @@ module Bulkrax
       def build_parent_edges(csv_data, columns, split_pattern)
         csv_data.each_with_object({}) do |record, graph|
           id = record[:source_identifier]
-          next if id.blank?
+          next if id.blank? || record[:deleting]
 
           graph[id] = Bulkrax::CsvRow::RelationshipIds.ids(record[:parent], record[:raw_row], columns, split_pattern)
         end
@@ -412,7 +437,7 @@ module Bulkrax
       def invert_child_edges(graph, csv_data, columns, split_pattern)
         csv_data.each do |record|
           id = record[:source_identifier]
-          next if id.blank?
+          next if id.blank? || record[:deleting]
 
           Bulkrax::CsvRow::RelationshipIds.ids(record[:children], record[:raw_row], columns, split_pattern).each do |child_id|
             graph[child_id] ||= []

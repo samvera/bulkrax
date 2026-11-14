@@ -123,6 +123,100 @@ RSpec.describe Bulkrax::CsvParser do
       end
     end
 
+    context 'with a sheet that only deletes' do
+      let(:csv_content) do
+        <<~CSV
+          source_identifier,model,delete
+          work1,GenericWork,true
+        CSV
+      end
+
+      it 'does not require the metadata columns of the models it deletes' do
+        allow(Bulkrax::ValkyrieObjectFactory).to receive(:find_for_import).and_return(double(id: 'rec-1'))
+        allow(described_class).to receive(:build_validation_field_metadata).and_return(
+          'GenericWork' => { properties: %w[source_identifier title model], required_terms: %w[source_identifier title], controlled_vocab_terms: [] }
+        )
+        result = described_class.validate_csv(csv_file: csv_file)
+        expect(result[:missingRequired]).to be_empty
+        expect(result[:isValid]).to be true
+      end
+    end
+
+    context 'with a row related by repository id to a row deleted by its source identifier' do
+      let(:csv_content) do
+        <<~CSV
+          source_identifier,title,model,delete,parents
+          work1,W1,GenericWork,true,
+          work2,W2,GenericWork,,rec-7
+        CSV
+      end
+
+      it 'reports the relationship' do
+        allow(Bulkrax::ValkyrieObjectFactory).to receive(:find_for_import).and_return(nil)
+        allow(Bulkrax::ValkyrieObjectFactory).to receive(:find_for_import).with(hash_including(source_identifier: 'work1')).and_return(double(id: 'rec-7'))
+        result = described_class.validate_csv(csv_file: csv_file)
+        expect(result[:rowErrors]).to include(a_hash_including(row: 3, category: 'deleted_record_reference', value: 'rec-7'))
+      end
+    end
+
+    context 'with rows related to a row this import deletes' do
+      let(:csv_content) do
+        <<~CSV
+          source_identifier,title,model,id,delete,parents
+          work1,W1,GenericWork,rec-1,true,
+          work2,W2,GenericWork,,,work1
+          work3,W3,GenericWork,,,rec-1
+        CSV
+      end
+
+      it 'reports each relationship, by source identifier or id' do
+        allow(Bulkrax::ValkyrieObjectFactory).to receive(:find_for_import).and_return(nil)
+        allow(Bulkrax::ValkyrieObjectFactory).to receive(:find_for_import).with(hash_including(id: 'rec-1')).and_return(double(id: 'rec-1'))
+        result = described_class.validate_csv(csv_file: csv_file)
+        expect(result[:rowErrors]).to include(a_hash_including(row: 3, category: 'deleted_record_reference', value: 'work1'),
+                                              a_hash_including(row: 4, category: 'deleted_record_reference', value: 'rec-1'))
+        expect(result[:works].select { |w| %w[work2 work3].include?(w[:id]) }.flat_map { |w| w.values_at(:parentIds, :existingParentIds) })
+          .to all(be_empty)
+      end
+    end
+
+    context 'with delete rows' do
+      let(:csv_content) do
+        <<~CSV
+          source_identifier,title,model,delete,remove_and_rerun
+          work1,Test Work 1,GenericWork,true,
+          work2,Test Work 2,GenericWork,true,
+          work3,Test Work 3,GenericWork,,
+        CSV
+      end
+
+      before do
+        allow(Bulkrax::ValkyrieObjectFactory).to receive(:find_for_import)
+          .and_return(nil)
+        allow(Bulkrax::ValkyrieObjectFactory).to receive(:find_for_import)
+          .with(hash_including(source_identifier: 'work1')).and_return(double(id: 'rec-1'))
+      end
+
+      it 'accepts the delete and remove_and_rerun columns' do
+        result = described_class.validate_csv(csv_file: csv_file)
+        expect(result[:unrecognized].keys).not_to include('delete', 'remove_and_rerun')
+      end
+
+      it 'warns about the record it deletes and blocks the row with nothing to delete' do
+        result = described_class.validate_csv(csv_file: csv_file)
+        expect(result[:rowErrors]).to include(a_hash_including(row: 2, category: 'delete_record', severity: 'warning'),
+                                              a_hash_including(row: 3, category: 'delete_record_not_found', severity: 'error'))
+        expect(result[:rowErrors]).not_to include(a_hash_including(category: 'existing_source_identifier'))
+        expect(result[:isValid]).to be false
+      end
+
+      it 'counts the records to delete and marks them in the tree' do
+        result = described_class.validate_csv(csv_file: csv_file)
+        expect(result[:deletionCount]).to eq(2)
+        expect(result[:works].map { |w| w[:deleting] }).to eq([true, true, false])
+      end
+    end
+
     it 'extracts headers from CSV' do
       result = described_class.validate_csv(csv_file: csv_file, zip_file: zip_file)
       expect(result[:headers]).to include('source_identifier', 'title', 'creator', 'model', 'parents', 'file', 'description')

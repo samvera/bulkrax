@@ -217,6 +217,7 @@ pt-BR:
           remove_file: Remover arquivo
           render_error: A validação foi concluída, mas os resultados não puderam ser exibidos. Tente novamente.
           review_admin_set: 'Conjunto de administrador:'
+          review_deletions: "Registros a excluir: %{count}"
           review_first_n_records: primeiros %{count} registros
           review_limit: 'Limite:'
           review_name: 'Nome:'
@@ -225,6 +226,8 @@ pt-BR:
           review_total: "%{total} total — %{collections} coleções, %{works} obras, %{file_sets} conjuntos de arquivos"
           review_visibility: 'Visibilidade:'
           server_error: Erro do servidor durante a validação. Tente novamente ou entre em contato com o suporte.
+          deleting_record_badge: "excluir"
+          deleting_record_title: "Esta linha exclui o registro existente"
           existing_record_badge: existente
           existing_record_title: Este registro já existe no repositório e será vinculado durante a importação.
           shared_badge: compartilhado
@@ -347,6 +350,17 @@ pt-BR:
               suggestion: "Verifique o vocabulário controlado para termos válidos."
           critical_errors: Erros críticos devem ser corrigidos antes da importação.
           did_you_mean: Você quis dizer "%{suggestion}"?
+          deleted_record_reference_validator:
+            errors:
+              message: "'%{value}' é excluído por esta importação, então esta linha não pode ser relacionada a ele."
+              suggestion: "Remova '%{value}' do valor de %{field} desta linha, ou mantenha esse registro."
+          delete_record_validator:
+            errors:
+              message: "Nenhum registro existente corresponde a '%{value}', então esta linha não tem nada para excluir."
+              suggestion: "Corrija o valor de %{field} ou remova o valor de exclusão desta linha."
+            warnings:
+              message: "'%{value}' corresponde a um registro existente, então esta linha irá excluí-lo."
+              suggestion: "Se você não pretendia excluir este registro, remova o valor de exclusão desta linha."
           duplicate_identifier_validator:
             errors:
               message: "%{field} duplicado '%{value}' — também aparece na linha %{original_row}."
@@ -411,6 +425,10 @@ pt-BR:
             message_column_empty: "Nenhum modelo fornecido — todas as linhas serão importadas como '%{default_work_type}'."
             suggestion_column_empty: "Adicione valores de modelo à coluna 'model' do seu CSV se quiser usar um tipo de trabalho diferente para algumas linhas."
             suggestion_column_missing: "Adicione uma coluna 'model' ao seu CSV se quiser usar um tipo de trabalho diferente para algumas linhas."
+          remove_and_rerun_validator:
+            warnings:
+              message: "'%{value}' corresponde a um registro existente, então esta linha irá excluí-lo e importá-lo novamente."
+              suggestion: "Se você pretendia atualizar o registro diretamente, remova o valor de remove_and_rerun desta linha."
           required_field_validator:
             errors:
               message: "O campo '%{field}' é obrigatório, mas está vazio para esta linha."

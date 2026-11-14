@@ -217,6 +217,7 @@ it:
           remove_file: Rimuovi file
           render_error: Convalida completata, ma i risultati non possono essere visualizzati. Riprova.
           review_admin_set: 'Set di amministrazione:'
+          review_deletions: "Record da eliminare: %{count}"
           review_first_n_records: primi %{count} record
           review_limit: 'Limite:'
           review_name: 'Nome:'
@@ -225,6 +226,8 @@ it:
           review_total: "%{total} totale — %{collections} collezioni, %{works} opere, %{file_sets} set di file"
           review_visibility: 'Visibilità:'
           server_error: Errore del server durante la convalida. Riprova o contatta l'assistenza.
+          deleting_record_badge: "elimina"
+          deleting_record_title: "Questa riga elimina il record esistente"
           existing_record_badge: esistente
           existing_record_title: Questo record esiste già nell'archivio e verrà collegato durante l'importazione.
           shared_badge: condiviso
@@ -347,6 +350,17 @@ it:
               suggestion: "Controllare il vocabolario controllato per i termini validi."
           critical_errors: Gli errori critici devono essere corretti prima dell'importazione.
           did_you_mean: Volevi dire "%{suggestion}"?
+          deleted_record_reference_validator:
+            errors:
+              message: "'%{value}' viene eliminato da questa importazione, quindi questa riga non può esservi collegata."
+              suggestion: "Rimuovi '%{value}' dal valore di %{field} di questa riga, oppure mantieni quel record."
+          delete_record_validator:
+            errors:
+              message: "Nessun record esistente corrisponde a '%{value}', quindi questa riga non ha nulla da eliminare."
+              suggestion: "Correggi il valore di %{field} oppure rimuovi il valore di eliminazione da questa riga."
+            warnings:
+              message: "'%{value}' corrisponde a un record esistente, quindi questa riga lo eliminerà."
+              suggestion: "Se non intendevi eliminare questo record, rimuovi il valore di eliminazione da questa riga."
           duplicate_identifier_validator:
             errors:
               message: "%{field} duplicato '%{value}' — appare anche nella riga %{original_row}."
@@ -411,6 +425,10 @@ it:
             message_column_empty: "Nessun modello fornito — tutte le righe verranno importate come '%{default_work_type}'."
             suggestion_column_empty: "Aggiungi valori modello alla colonna 'model' del tuo CSV se vuoi usare un tipo di lavoro diverso per alcune righe."
             suggestion_column_missing: "Aggiungi una colonna 'model' al tuo CSV se vuoi usare un tipo di lavoro diverso per alcune righe."
+          remove_and_rerun_validator:
+            warnings:
+              message: "'%{value}' corrisponde a un record esistente, quindi questa riga lo eliminerà e lo importerà di nuovo."
+              suggestion: "Se intendevi aggiornare il record direttamente, rimuovi il valore di remove_and_rerun da questa riga."
           required_field_validator:
             errors:
               message: "Il campo '%{field}' è obbligatorio ma è vuoto per questa riga."

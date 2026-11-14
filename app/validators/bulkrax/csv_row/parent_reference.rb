@@ -11,10 +11,16 @@ module Bulkrax
     # Uses context[:parent_split_pattern] (String/Regexp, may be nil) for multi-value splitting.
     module ParentReference
       def self.call(record, row_index, context)
+        return if record[:deleting]
+
         all_ids = context[:all_ids]
         find_record = context[:find_record_by_source_identifier]
 
         collect_parent_ids(record, context).each do |parent_id|
+          if context[:deleted_ids]&.include?(parent_id)
+            context[:errors] << RelationshipIds.deleted_reference_error(record, row_index, 'parent', parent_id)
+            next
+          end
           next if all_ids.include?(parent_id)
           next if find_record&.call(parent_id)
 

@@ -28,6 +28,7 @@ module Bulkrax
              end
       # do not run counters as it loads the whole parser
       item = @entry.importerexporter
+      item.clear_deleted_identifiers_unless_importing if item.is_a?(Bulkrax::Importer)
       current_run = item.current_run(skip_counts: true)
       @entry.set_status_info('Pending', current_run)
       ScheduleRelationshipsJob.set(wait: 5.minutes).perform_later(importer_id: @entry.importer.id)

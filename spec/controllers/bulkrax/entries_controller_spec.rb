@@ -97,6 +97,12 @@ module Bulkrax
       let(:entry_path) { importer_entry_path(parent, entry) }
 
       include_examples 'an entry admin'
+
+      it "forgets the finished import's deletions before re-running the entry" do
+        allow(controller).to receive(:current_ability).and_return(ability)
+        expect_any_instance_of(Bulkrax::Importer).to receive(:clear_deleted_identifiers_unless_importing)
+        patch :update, params: entry_params
+      end
     end
 
     context 'when the user administers exporters' do

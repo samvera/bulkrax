@@ -36,6 +36,28 @@ module Bulkrax
       end
     end
 
+    describe '#clear_deleted_identifiers_unless_importing' do
+      let(:importer) { FactoryBot.create(:bulkrax_importer_csv) }
+      let!(:entry) { FactoryBot.create(:bulkrax_csv_entry, importerexporter: importer) }
+
+      before do
+        importer.parser_fields['deleted_identifiers'] = ['gone']
+        importer.save!
+      end
+
+      it 'clears the list once the import has finished, since a later import may have recreated those records' do
+        entry.set_status_info(nil, importer.current_run)
+        importer.clear_deleted_identifiers_unless_importing
+        expect(Bulkrax::Importer.find(importer.id).parser_fields['deleted_identifiers']).to eq([])
+      end
+
+      it 'keeps it while entries are still Pending, which still need it' do
+        entry.set_status_info('Pending', importer.current_run)
+        importer.clear_deleted_identifiers_unless_importing
+        expect(Bulkrax::Importer.find(importer.id).parser_fields['deleted_identifiers']).to eq(['gone'])
+      end
+    end
+
     describe 'frequency' do
       it 'uses ISO 8601 for frequency' do
         importer.frequency = 'P1Y'

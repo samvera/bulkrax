@@ -20,6 +20,22 @@ module Bulkrax
         cells.flat_map { |cell| pattern ? cell.to_s.split(pattern) : [cell.to_s] }
              .map(&:strip).reject(&:blank?).uniq
       end
+
+      # A relationship to a row this import deletes: import writes no pending
+      # relationship for it (ImportBehavior#parent_jobs), so it is never made.
+      def self.deleted_reference_error(record, row_index, column, value)
+        scope = 'bulkrax.importer.guided_import.validation.deleted_record_reference_validator.errors'
+        {
+          row: row_index,
+          source_identifier: record[:source_identifier],
+          severity: 'error',
+          category: 'deleted_record_reference',
+          column: column,
+          value: value,
+          message: I18n.t("#{scope}.message", value: value),
+          suggestion: I18n.t("#{scope}.suggestion", value: value, field: column)
+        }
+      end
     end
   end
 end

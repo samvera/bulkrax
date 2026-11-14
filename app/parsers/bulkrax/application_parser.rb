@@ -258,12 +258,18 @@ module Bulkrax
 
     def record_deleted?(record)
       return false unless record.key?(:delete)
-      ActiveModel::Type::Boolean.new.cast(record[:delete])
+      self.class.flag_set?(record[:delete])
     end
 
     def record_remove_and_rerun?(record)
       return false unless record.key?(:remove_and_rerun)
-      ActiveModel::Type::Boolean.new.cast(record[:remove_and_rerun])
+      self.class.flag_set?(record[:remove_and_rerun])
+    end
+
+    # Whether a row's flag cell, such as `delete`, is on. Guided validation
+    # reads delete rows with the same rule.
+    def self.flag_set?(value)
+      ActiveModel::Type::Boolean.new.cast(value) || false
     end
 
     def create_entry_and_job(current_record, type, identifier = nil)

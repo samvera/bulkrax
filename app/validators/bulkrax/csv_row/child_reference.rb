@@ -10,10 +10,16 @@ module Bulkrax
     # look up existing records in the same way the importer does at runtime.
     module ChildReference
       def self.call(record, row_index, context)
+        return if record[:deleting]
+
         all_ids = context[:all_ids]
         find_record = context[:find_record_by_source_identifier]
 
         collect_child_ids(record, context).each do |child_id|
+          if context[:deleted_ids]&.include?(child_id)
+            context[:errors] << RelationshipIds.deleted_reference_error(record, row_index, 'children', child_id)
+            next
+          end
           next if all_ids.include?(child_id)
           next if find_record&.call(child_id)
 

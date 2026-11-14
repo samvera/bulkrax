@@ -26,7 +26,7 @@ module Bulkrax
     module FileReference
       def self.call(record, row_index, context)
         plan = context[:zip_plan]
-        return if plan.nil?
+        return if plan.nil? || record[:deleting]
 
         on_disk = context[:zip_paths_on_disk] ||= paths_on_disk(plan.available_paths)
 

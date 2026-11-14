@@ -217,6 +217,7 @@ de:
           remove_file: Datei entfernen
           render_error: Die Validierung wurde abgeschlossen, die Ergebnisse konnten jedoch nicht angezeigt werden. Bitte versuchen Sie es erneut.
           review_admin_set: 'Admin-Set:'
+          review_deletions: "Zu löschende Datensätze: %{count}"
           review_first_n_records: erste %{count} Datensätze
           review_limit: 'Limit:'
           review_name: 'Name:'
@@ -225,6 +226,8 @@ de:
           review_total: "%{total} Gesamt — %{collections} Sammlungen, %{works} Werke, %{file_sets} Dateisätze"
           review_visibility: 'Sichtweite:'
           server_error: Bei der Validierung ist ein Serverfehler aufgetreten. Bitte versuchen Sie es erneut oder kontaktieren Sie den Support.
+          deleting_record_badge: "löschen"
+          deleting_record_title: "Diese Zeile löscht den vorhandenen Datensatz"
           existing_record_badge: vorhanden
           existing_record_title: Dieser Datensatz ist bereits im Repository vorhanden und wird beim Import verknüpft.
           shared_badge: geteilt
@@ -347,6 +350,17 @@ de:
               suggestion: "Überprüfen Sie das kontrollierte Vokabular auf gültige Begriffe."
           critical_errors: Kritische Fehler müssen vor dem Import behoben werden.
           did_you_mean: Meinten Sie "%{suggestion}"?
+          deleted_record_reference_validator:
+            errors:
+              message: "'%{value}' wird durch diesen Import gelöscht, daher kann diese Zeile nicht damit verknüpft werden."
+              suggestion: "Entfernen Sie '%{value}' aus dem Wert für %{field} in dieser Zeile, oder behalten Sie diesen Datensatz."
+          delete_record_validator:
+            errors:
+              message: "Kein vorhandener Datensatz entspricht '%{value}', daher hat diese Zeile nichts zu löschen."
+              suggestion: "Korrigieren Sie den Wert für %{field} oder entfernen Sie den Löschwert aus dieser Zeile."
+            warnings:
+              message: "'%{value}' entspricht einem vorhandenen Datensatz, daher wird diese Zeile ihn löschen."
+              suggestion: "Falls Sie diesen Datensatz nicht löschen wollten, entfernen Sie den Löschwert aus dieser Zeile."
           duplicate_identifier_validator:
             errors:
               message: "Doppelter %{field} '%{value}' — erscheint auch in Zeile %{original_row}."
@@ -411,6 +425,10 @@ de:
             message_column_empty: "Kein Modell angegeben — alle Zeilen werden als '%{default_work_type}' importiert."
             suggestion_column_empty: "Fügen Sie Modellwerte in die 'model'-Spalte Ihrer CSV-Datei ein, wenn Sie für einige Zeilen einen anderen Werktyp verwenden möchten."
             suggestion_column_missing: "Fügen Sie Ihrer CSV-Datei eine 'model'-Spalte hinzu, wenn Sie für einige Zeilen einen anderen Werktyp verwenden möchten."
+          remove_and_rerun_validator:
+            warnings:
+              message: "'%{value}' entspricht einem vorhandenen Datensatz, daher wird diese Zeile ihn löschen und erneut importieren."
+              suggestion: "Falls Sie den Datensatz direkt aktualisieren wollten, entfernen Sie den Wert für remove_and_rerun aus dieser Zeile."
           required_field_validator:
             errors:
               message: "Das Feld '%{field}' ist erforderlich, ist aber für diese Zeile leer."

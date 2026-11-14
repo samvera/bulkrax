@@ -8,6 +8,8 @@ module Bulkrax
     # (e.g. 'title_1' or '1_title' satisfies the 'title' requirement).
     module RequiredValues
       def self.call(record, row_index, context)
+        return if record[:deleting]
+
         field_metadata = context[:field_metadata]
         return if field_metadata.blank?
 

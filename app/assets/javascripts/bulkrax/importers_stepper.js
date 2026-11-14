@@ -1556,6 +1556,7 @@
       works: data.works,
       fileSets: data.fileSets || data.file_sets,
       totalItems: data.totalItems != null ? data.totalItems : data.total_items,
+      deletionCount: data.deletionCount || 0,
       headers: data.headers,
       missingRequired: data.missingRequired || data.missing_required,
       unrecognized: data.unrecognized,
@@ -2211,6 +2212,10 @@
       ? '<span class="tree-existing-badge" title="' + t('existing_record_title') + '">' +
         t('existing_record_badge') + '</span>'
       : ''
+    var deletingBadge = item.deleting
+      ? '<span class="tree-deleting-badge" title="' + t('deleting_record_title') + '">' +
+        t('deleting_record_badge') + '</span>'
+      : ''
 
     var html =
       '<div class="tree-item' + (isExisting ? ' tree-item-existing' : '') + '" data-item-id="' +
@@ -2234,6 +2239,7 @@
         : '') +
       count +
       existingBadge +
+      deletingBadge +
       '</div>'
 
     if (hasChildren) {
@@ -2471,6 +2477,9 @@
           file_sets: data.fileSets.length
         }) +
         '</p>'
+      if (data.deletionCount > 0) {
+        recordsHtml += '<p>' + t('review_deletions', { count: data.deletionCount }) + '</p>'
+      }
     } else {
       recordsHtml = '<p class="text-muted">' + t('review_skipped') + '</p>'
     }

@@ -86,7 +86,8 @@ CsvParser.validate_csv
         │     ├── CsvRow::CircularReference
         │     ├── CsvRow::RequiredValues
         │     ├── CsvRow::ControlledVocabulary
-        │     └── CsvRow::FileReference
+        │     ├── CsvRow::FileReference
+        │     └── CsvRow::DeleteRecord
         └── DidYouMean::SpellChecker        - Suggestions for unrecognized columns
 ```
 
@@ -129,10 +130,14 @@ Rows are `CSV::Row` objects with symbol-keyed headers. Field access uses the sym
 | `app/validators/bulkrax/csv_row/missing_source_identifier.rb` | `missing_source_identifier` | error |
 | `app/validators/bulkrax/csv_row/duplicate_identifier.rb` | `duplicate_source_identifier` | error |
 | `app/validators/bulkrax/csv_row/duplicate_identifier.rb` | `existing_source_identifier` | warning |
+| `app/validators/bulkrax/csv_row/duplicate_identifier.rb` | `remove_and_rerun_record` | warning |
 | `app/validators/bulkrax/csv_row/duplicate_identifier.rb` | `existing_record_model_mismatch` | error |
 | `app/validators/bulkrax/csv_row/duplicate_identifier.rb` | `existing_record_id_not_found` | error |
+| `app/validators/bulkrax/csv_row/delete_record.rb` | `delete_record` | warning |
+| `app/validators/bulkrax/csv_row/delete_record.rb` | `delete_record_not_found` | error |
 | `app/validators/bulkrax/csv_row/parent_reference.rb` | `invalid_parent_reference` | error |
 | `app/validators/bulkrax/csv_row/child_reference.rb` | `invalid_child_reference` | error |
+| `app/validators/bulkrax/csv_row/parent_reference.rb`, `child_reference.rb` | `deleted_record_reference` | error |
 | `app/validators/bulkrax/csv_row/circular_reference.rb` | `circular_reference` | error |
 | `app/validators/bulkrax/csv_row/required_values.rb` | `missing_required_value` | error |
 | `app/validators/bulkrax/csv_row/required_values.rb` | `default_work_type_used` | warning |
@@ -166,7 +171,8 @@ Bulkrax.csv_row_validators
 #   Bulkrax::CsvRow::CircularReference,
 #   Bulkrax::CsvRow::RequiredValues,
 #   Bulkrax::CsvRow::ControlledVocabulary,
-#   Bulkrax::CsvRow::FileReference
+#   Bulkrax::CsvRow::FileReference,
+#   Bulkrax::CsvRow::DeleteRecord
 # ]
 ```
 
@@ -195,7 +201,7 @@ Each validator receives:
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `record` | Hash | Parsed row with `:source_identifier`, `:model`, `:parent`, `:children`, `:file` (the cell under the first file alias), `:file_values` (every file cell, numbered columns included), `:raw_row` |
+| `record` | Hash | Parsed row with `:source_identifier`, `:model`, `:parent`, `:children`, `:file` (the cell under the first file alias), `:file_values` (every file cell, numbered columns included), `:deleting` (the row's `delete` cell is truthy, as import reads it), `:rerunning` (the same for `remove_and_rerun`), `:raw_row` |
 | `row_number` | Integer | 1-indexed row number (accounting for header row) |
 | `context` | Hash | Shared validation context |
 
@@ -209,7 +215,8 @@ Context keys available to validators:
 | `:field_metadata` | Hash | Per-model required and controlled vocab fields |
 | `:mapping_manager` | `CsvTemplate::MappingManager` | Field mapping resolver |
 | `:zip_plan` | `ZipPlacementPlanner::Plan`, nil | Paths that will exist under `files/` after extraction; nil when no ZIP was uploaded |
-| `:find_existing_record` | Lambda, nil | Called with a `record`; returns nil when the import would create a record, else `{ field:, value: }` naming the column that matched (`field` is nil for the source identifier), plus `missing: true` for an id that names no record, or `existing_model:` and `model:` for a record of another model. Uses the importer's own lookup, `ObjectFactoryInterface.find_for_import` |
+| `:find_existing_record` | Lambda, nil | Called with a `record`; returns nil when the import would create a record, else `{ field:, value:, record_id: }` naming the column that matched (`field` is nil for the source identifier) and the record's repository id, plus `missing: true` for an id that names no record, or `existing_model:` and `model:` for a record of another model; or `{ lookup_failed: true }` when the repository could not be searched, which says nothing about the record. Uses the importer's own lookup, `ObjectFactoryInterface.find_for_import` |
+| `:deleted_ids` | Set | Source identifiers and ids of the rows this import deletes, and the repository id of each record a delete row matched. Import writes no relationship to them, so a reference to one is an error |
 
 ### Error Hash Structure
 

@@ -52,6 +52,37 @@ RSpec.describe Bulkrax::CsvRow::DuplicateIdentifier do
     expect(context[:errors].first[:suggestion]).to include('Etd', 'leave the id value blank')
   end
 
+  it 'warns that a remove-and-rerun row deletes the record and imports it again' do
+    context = make_context(find_existing: ->(_row) { { field: nil, value: 'work1' } })
+    described_class.call(make_record('work1').merge(rerunning: true), 2, context)
+    expect(context[:errors].first).to include(severity: 'warning', category: 'remove_and_rerun_record', value: 'work1')
+    expect(context[:errors].first[:message]).to include('delete it and import it again')
+  end
+
+  it 'treats a row that both deletes and reruns as a delete, as import does' do
+    context = make_context(find_existing: ->(_row) { { field: nil, value: 'work1' } })
+    described_class.call(make_record('work1').merge(deleting: true, rerunning: true), 2, context)
+    expect(context[:errors]).to be_empty
+  end
+
+  it 'reports nothing when the lookup itself failed' do
+    context = make_context(find_existing: ->(_row) { { lookup_failed: true } })
+    described_class.call(make_record('work1'), 2, context)
+    expect(context[:errors]).to be_empty
+  end
+
+  it 'gives a delete row no update warning' do
+    context = make_context(find_existing: ->(_row) { { field: nil, value: 'work1' } })
+    described_class.call(make_record('work1').merge(deleting: true), 2, context)
+    expect(context[:errors]).to be_empty
+  end
+
+  it 'still reports a delete row whose record is of another model' do
+    context = make_context(find_existing: ->(_row) { { field: nil, value: 'work1', existing_model: 'Etd', model: 'GenericWork' } })
+    described_class.call(make_record('work1').merge(deleting: true), 2, context)
+    expect(context[:errors].first).to include(category: 'existing_record_model_mismatch')
+  end
+
   it 'reports an error when the id names no existing record' do
     context = make_context(find_existing: ->(_row) { { field: 'id', value: 'rec-1', missing: true } })
     described_class.call(make_record('work1'), 2, context)

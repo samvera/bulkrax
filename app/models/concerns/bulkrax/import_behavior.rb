@@ -41,7 +41,7 @@ module Bulkrax
 
     def parent_jobs
       self.parsed_metadata[related_parents_parsed_mapping].each do |parent_identifier|
-        next if parent_identifier.blank?
+        next if parent_identifier.blank? || deleted_identifier?(parent_identifier)
 
         PendingRelationship.create!(child_id: self.identifier, parent_id: parent_identifier, importer_run_id: importerexporter.last_run.id, order: self.id)
       end
@@ -49,10 +49,17 @@ module Bulkrax
 
     def child_jobs
       self.parsed_metadata[related_children_parsed_mapping].each do |child_identifier|
-        next if child_identifier.blank?
+        next if child_identifier.blank? || deleted_identifier?(child_identifier)
 
         PendingRelationship.create!(parent_id: self.identifier, child_id: child_identifier, importer_run_id: importerexporter.last_run.id, order: self.id)
       end
+    end
+
+    # A row this import deletes (CsvParser#record_deleted_identifiers) can
+    # never be related, so no pending relationship to it is written.
+    def deleted_identifier?(identifier)
+      @deleted_identifiers ||= Array(importerexporter.parser_fields['deleted_identifiers']).to_set
+      @deleted_identifiers.include?(identifier.to_s)
     end
 
     def find_collection_ids
