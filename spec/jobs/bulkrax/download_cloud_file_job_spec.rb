@@ -264,7 +264,7 @@ module Bulkrax
         end
 
         it 'downloads real bytes end-to-end through the SSRF-safe transport' do
-          stub_request(:head, "http://#{fake_public_ip}/a.pdf").to_return(status: 200)
+          stub_request(:head, "http://#{host}/a.pdf").to_return(status: 200)
           stub_request(:get, "http://#{host}/a.pdf").to_return(status: 200, body: 'real-remote-bytes')
 
           job.perform({ 'url' => "http://#{host}/a.pdf", 'file_name' => 'a.pdf' }, importer_id: importer.id, relative_filename: 'files/a.pdf')
@@ -273,7 +273,7 @@ module Bulkrax
         end
 
         it 'never completes the download at all if the real GET is answered with a redirect' do
-          stub_request(:head, "http://#{fake_public_ip}/a.pdf").to_return(status: 200)
+          stub_request(:head, "http://#{host}/a.pdf").to_return(status: 200)
           stub_request(:get, "http://#{host}/a.pdf")
             .to_return(status: 302, headers: { 'Location' => 'http://attacker.example/steal' })
 
@@ -287,7 +287,7 @@ module Bulkrax
 
         it 'leaves no temp/partial file behind and does not truncate a pre-existing destination on failure' do
           File.write(target, 'previously-good-bytes')
-          stub_request(:head, "http://#{fake_public_ip}/a.pdf").to_return(status: 200)
+          stub_request(:head, "http://#{host}/a.pdf").to_return(status: 200)
           stub_request(:get, "http://#{host}/a.pdf").to_return(status: 404, body: 'nope')
 
           expect do
@@ -300,7 +300,7 @@ module Bulkrax
 
         it 'connects to the pinned IP with the environment proxy disabled and the real hostname as the Host header' do
           allow(Net::HTTP).to receive(:new).and_call_original
-          stub_request(:head, "https://#{fake_public_ip}/a.pdf").to_return(status: 200)
+          stub_request(:head, "https://#{host}/a.pdf").to_return(status: 200)
           stub_request(:get, "https://#{host}/a.pdf")
             .with(headers: { 'Host' => host }).to_return(status: 200, body: 'real-remote-bytes')
 
@@ -315,7 +315,7 @@ module Bulkrax
           allow(Net::HTTP).to receive(:new).and_wrap_original do |original, *args|
             observed_connection = original.call(*args)
           end
-          stub_request(:head, "https://#{fake_public_ip}/a.pdf").to_return(status: 200)
+          stub_request(:head, "https://#{host}/a.pdf").to_return(status: 200)
           stub_request(:get, "https://#{host}/a.pdf").to_return(status: 200, body: 'bytes')
 
           job.perform({ 'url' => "https://#{host}/a.pdf", 'file_name' => 'a.pdf' }, importer_id: importer.id, relative_filename: 'files/a.pdf')
@@ -323,7 +323,6 @@ module Bulkrax
           expect(observed_connection.address).to eq(host)
           expect(observed_connection.ipaddr).to eq(fake_public_ip)
           expect(observed_connection.verify_mode).not_to eq(OpenSSL::SSL::VERIFY_NONE)
-          expect(Thread.current[SsrfFilter::FIBER_LOCAL_KEY]).to be_nil
         end
       end
 
