@@ -70,10 +70,6 @@ module Bulkrax
         end
       end
 
-      # Columns import acts on (ApplicationParser#record_deleted?,
-      # #record_remove_and_rerun?) that are not template columns.
-      ROW_ACTION_HEADERS = %w[delete remove_and_rerun].freeze
-
       def build_valid_validation_headers(mapping_manager, field_analyzer, all_models, mappings, field_metadata)
         svc = Bulkrax::CsvParser::ValidationContext.new(
           mapping_manager: mapping_manager,
