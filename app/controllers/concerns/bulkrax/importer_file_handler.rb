@@ -173,8 +173,6 @@ module Bulkrax
           @importer[:parser_fields]['cloud_file_paths'] = cloud_files
           assign_cloud_file_paths(cloud_files)
         end
-
-        @importer[:parser_fields]['import_file_path'] = target if target.present?
       end
 
       if uploads.present?

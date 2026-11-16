@@ -262,10 +262,12 @@ module Bulkrax
         file_name = File.basename(current_upload_file)
         cloud_files = files.first.second["url"]
         cloud_files_path = File.expand_path(cloud_files.split('/')[2...-1].join('/'))
-        unless cloud_files_path.starts_with?(Bulkrax.config.filesystem_files_path)
+        puts "cloud_files_path: #{cloud_files_path}"
+        puts "filesystem_files_path: #{Bulkrax.config.filesystem_files_path}"
+        new_import_file_path = File.join(cloud_files_path, file_name)
+        unless new_import_file_path.starts_with?(Bulkrax.config.filesystem_files_path)
           raise StandardError, "Invalid ingest path"
         end
-        new_import_file_path = File.join(cloud_files_path, file_name)
 
         FileUtils.mv(
             current_upload_file,
