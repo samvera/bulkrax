@@ -199,13 +199,13 @@ RSpec.describe Bulkrax::CloudSourceValidator do
           before { allow(Resolv).to receive(:getaddresses).with(host).and_return([fake_public_ip]) }
 
           it 'succeeds end-to-end for a permitted remote source (the positive path still works)' do
-            stub_request(:head, "http://#{fake_public_ip}/file.pdf").to_return(status: 200)
+            stub_request(:head, "http://#{host}/file.pdf").to_return(status: 200)
 
             expect(described_class.validate!('url' => url)).to be true
           end
 
           it 'really does reject a redirect response rather than following it to a different host' do
-            stub_request(:head, "http://#{fake_public_ip}/file.pdf")
+            stub_request(:head, "http://#{host}/file.pdf")
               .to_return(status: 302, headers: { 'Location' => 'http://attacker.example/steal-credentials' })
 
             expect { described_class.validate!('url' => url) }
@@ -213,7 +213,7 @@ RSpec.describe Bulkrax::CloudSourceValidator do
           end
 
           it 'never sends a caller-supplied Host header on the real outgoing request' do
-            stub = stub_request(:head, "http://#{fake_public_ip}/file.pdf")
+            stub = stub_request(:head, "http://#{host}/file.pdf")
                    .with { |req| req.headers['Host'] != 'evil.example' }
                    .to_return(status: 200)
 
@@ -223,7 +223,7 @@ RSpec.describe Bulkrax::CloudSourceValidator do
           end
 
           it 'still forwards a legitimate provider auth header on the real outgoing request' do
-            stub = stub_request(:head, "http://#{fake_public_ip}/file.pdf")
+            stub = stub_request(:head, "http://#{host}/file.pdf")
                    .with(headers: { 'Authorization' => 'Bearer legit-token' })
                    .to_return(status: 200)
 

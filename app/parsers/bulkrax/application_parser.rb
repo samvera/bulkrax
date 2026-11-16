@@ -481,6 +481,8 @@ module Bulkrax
     rescue Bulkrax::UnsafePathError
       raise Bulkrax::UnzipError, I18n.t('bulkrax.importer.unzip.errors.unsafe_entry', name: name.dup.force_encoding(Encoding::UTF_8).scrub)
     end
+    # CsvParser#real_zip_entries calls this on the parser instance.
+    delegate :reject_unsafe_entry!, to: :class
 
     # Zip Slip chokepoint. Resolves `relative_dest` against `dest_dir` and
     # returns the absolute destination path — but only if it stays inside
