@@ -351,6 +351,15 @@ de:
             errors:
               message: "Doppelter %{field} '%{value}' — erscheint auch in Zeile %{original_row}."
               suggestion: "Jeder %{field} muss innerhalb der CSV-Datei eindeutig sein."
+          existing_record_id_not_found_validator:
+            errors:
+              message: "Kein vorhandener Datensatz hat %{field} '%{value}', daher kann diese Zeile keinen aktualisieren."
+              suggestion: "Korrigieren Sie den Wert für %{field} oder lassen Sie ihn leer, um einen neuen Datensatz anzulegen."
+          existing_record_model_mismatch_validator:
+            errors:
+              id_suggestion: "Ändern Sie das Modell dieser Zeile in %{existing_model} oder lassen Sie den Wert für %{field} leer, um einen neuen Datensatz anzulegen."
+              message: "'%{value}' entspricht einem vorhandenen %{existing_model}, aber das Modell dieser Zeile ist %{model}, daher wird der Import ihn nicht aktualisieren."
+              suggestion: "Ändern Sie das Modell dieser Zeile in %{existing_model} oder verwenden Sie für %{field} einen Wert, den kein anderer Datensatz hat."
           existing_source_identifier_validator:
             warnings:
               message: "'%{value}' entspricht einem vorhandenen Repository-Datensatz — diese Zeile wird ihn aktualisieren."
@@ -420,6 +429,7 @@ de:
       unzip:
         errors:
           multiple_csv: Mehrere CSV-Dateien befinden sich auf der obersten Ebene des ZIP-Archivs, sodass die primäre CSV nicht bestimmt werden kann. Belassen Sie genau eine CSV auf dieser Ebene; weitere CSVs müssen tiefer verschachtelt sein.
+          name_collision: "Einige Namen im ZIP unterscheiden sich nur durch Leerzeichen bzw. Unterstriche (%{names}). Beim Import werden diese Leerzeichen durch Unterstriche ersetzt, sodass die Namen kollidieren würden. Benennen Sie sie so um, dass sie sich stärker unterscheiden, und laden Sie das ZIP erneut hoch."
           no_csv: Es wurden keine CSV-Dateien im ZIP-Archiv gefunden.
           unsafe_entry: "Das ZIP enthält einen Eintrag mit unsicherem Pfad (%{name}). Einträge dürfen weder absolute Pfade noch Referenzen auf übergeordnete Verzeichnisse verwenden."
       validations:

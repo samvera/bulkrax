@@ -1826,9 +1826,9 @@
 
     // Main validation status - FROM BACKEND
     var status = data.messages.validationStatus
-    var content = '<p>' + status.summary + '</p>'
+    var content = '<p>' + escapeHtml(status.summary) + '</p>'
     if (status.details) {
-      content += '<p class="text-muted small">' + status.details + '</p>'
+      content += '<p class="text-muted small">' + escapeHtml(status.details) + '</p>'
     }
 
     $wrapper.append(

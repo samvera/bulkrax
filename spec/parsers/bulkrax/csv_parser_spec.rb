@@ -777,6 +777,11 @@ module Bulkrax
           FileUtils.touch(File.join(files_dir, 'scans', 'a_b.jpg'))
           expect(subject.path_to_files(filename: 'scans/a b.jpg')).to be_nil
         end
+
+        it 'does not find a reference that names a folder' do
+          FileUtils.mkdir_p(File.join(files_dir, 'scans'))
+          expect(subject.path_to_files(filename: 'scans')).to be_nil
+        end
       end
 
       # `path_to_files` previously memoized into `@path_to_files`
@@ -821,11 +826,22 @@ module Bulkrax
         end
       end
 
+      context 'when a record references a folder' do
+        before do
+          allow(subject).to receive(:records).and_return([{ file: 'files' }])
+          allow(subject).to receive(:path_to_files).and_return('spec/fixtures/csv')
+        end
+
+        it 'raises as it does for a missing file' do
+          expect { subject.file_paths }.to raise_error(RuntimeError, %r{spec/fixtures/csv/files does not exist})
+        end
+      end
+
       context 'when a record has multiple files separated by a delimiter' do
         before do
           allow(subject).to receive(:records).and_return([{ file: 'sun.jpg|moon.jpg' }])
           allow(subject).to receive(:path_to_files).and_return('spec/fixtures/csv/files')
-          allow(File).to receive(:exist?).and_return(true)
+          allow(File).to receive(:file?).and_return(true)
         end
 
         it 'returns a path for each individual file' do
@@ -842,9 +858,9 @@ module Bulkrax
         end
 
         it 'resolves nested files as written and top-level files via the underscored variant' do
-          allow(File).to receive(:exist?).and_return(false)
-          allow(File).to receive(:exist?).with('spec/fixtures/csv/files/subdir/has space.jpg').and_return(true)
-          allow(File).to receive(:exist?).with('spec/fixtures/csv/files/top_space.jpg').and_return(true)
+          allow(File).to receive(:file?).and_return(false)
+          allow(File).to receive(:file?).with('spec/fixtures/csv/files/subdir/has space.jpg').and_return(true)
+          allow(File).to receive(:file?).with('spec/fixtures/csv/files/top_space.jpg').and_return(true)
 
           expect(subject.file_paths).to contain_exactly(
             'spec/fixtures/csv/files/subdir/has space.jpg',
@@ -853,7 +869,7 @@ module Bulkrax
         end
 
         it 'raises naming the as-written reference when neither variant exists' do
-          allow(File).to receive(:exist?).and_return(false)
+          allow(File).to receive(:file?).and_return(false)
 
           expect { subject.file_paths }.to raise_error(RuntimeError, %r{subdir/has space\.jpg does not exist})
         end
@@ -881,7 +897,7 @@ module Bulkrax
         before do
           allow(subject).to receive(:records).and_return([{ file: 'sun.jpg;moon.jpg' }])
           allow(subject).to receive(:path_to_files).and_return('spec/fixtures/csv/files')
-          allow(File).to receive(:exist?).and_return(true)
+          allow(File).to receive(:file?).and_return(true)
           allow(Bulkrax).to receive(:field_mappings).and_return(base_mappings)
         end
 
@@ -910,7 +926,7 @@ module Bulkrax
           allow(Bulkrax).to receive(:field_mappings).and_return('Bulkrax::CsvParser' => {})
           allow(subject).to receive(:records).and_return([{ file: 'sun.jpg|moon.jpg' }])
           allow(subject).to receive(:path_to_files).and_return('spec/fixtures/csv/files')
-          allow(File).to receive(:exist?).and_return(true)
+          allow(File).to receive(:file?).and_return(true)
         end
 
         it 'falls back to Bulkrax.multi_value_element_split_on' do
@@ -925,7 +941,7 @@ module Bulkrax
             'Bulkrax::CsvParser' => { 'file' => { 'from' => %w[item file], 'split' => '\\|' } }
           )
           allow(subject).to receive(:path_to_files).and_return('spec/fixtures/csv/files')
-          allow(File).to receive(:exist?).and_return(true)
+          allow(File).to receive(:file?).and_return(true)
         end
 
         it 'returns paths when the record uses the canonical `file` key' do
@@ -953,8 +969,8 @@ module Bulkrax
 
         it 'finds a nested file whose top-level folder extraction renamed' do
           allow(subject).to receive(:records).and_return([{ file: 'sub dir/a b.jpg' }])
-          allow(File).to receive(:exist?).and_call_original
-          allow(File).to receive(:exist?).with('spec/fixtures/csv/files/sub_dir/a b.jpg').and_return(true)
+          allow(File).to receive(:file?).and_call_original
+          allow(File).to receive(:file?).with('spec/fixtures/csv/files/sub_dir/a b.jpg').and_return(true)
           expect(subject.file_paths).to include('spec/fixtures/csv/files/sub_dir/a b.jpg')
         end
 

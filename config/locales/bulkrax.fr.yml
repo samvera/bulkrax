@@ -351,6 +351,15 @@ fr:
             errors:
               message: "%{field} en double « %{value} » — apparaît également à la ligne %{original_row}."
               suggestion: "Chaque %{field} doit être unique dans le CSV."
+          existing_record_id_not_found_validator:
+            errors:
+              message: "Aucun enregistrement existant n'a « %{value} » comme %{field} ; cette ligne ne peut donc en mettre aucun à jour."
+              suggestion: "Corrigez la valeur de %{field} ou laissez-la vide pour créer un nouvel enregistrement."
+          existing_record_model_mismatch_validator:
+            errors:
+              id_suggestion: "Changez le modèle de cette ligne en %{existing_model}, ou laissez la valeur de %{field} vide pour créer un nouvel enregistrement."
+              message: "« %{value} » correspond à un %{existing_model} existant, mais le modèle de cette ligne est %{model} ; l'importation ne le mettra donc pas à jour."
+              suggestion: "Changez le modèle de cette ligne en %{existing_model}, ou utilisez une valeur de %{field} qu'aucun autre enregistrement n'a."
           existing_source_identifier_validator:
             warnings:
               message: "« %{value} » correspond à un enregistrement existant dans le dépôt — cette ligne le mettra à jour."
@@ -420,6 +429,7 @@ fr:
       unzip:
         errors:
           multiple_csv: Plusieurs fichiers CSV se trouvent au niveau le moins profond dans le ZIP, ce qui empêche d'identifier le CSV principal. Conservez exactement un fichier CSV à ce niveau ; les CSV supplémentaires doivent être imbriqués plus profondément.
+          name_collision: "Certains noms du ZIP ne diffèrent que par des espaces ou des traits de soulignement (%{names}). L'importation remplace ces espaces par des traits de soulignement, ce qui créerait un conflit entre les noms. Renommez-les pour qu'ils diffèrent davantage, puis téléversez de nouveau le ZIP."
           no_csv: Aucun fichier CSV trouvé dans le fichier ZIP
           unsafe_entry: "Le ZIP contient une entrée avec un chemin non sûr (%{name}). Les entrées ne doivent pas utiliser de chemins absolus ni de références au répertoire parent."
       validations:

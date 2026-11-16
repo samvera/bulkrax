@@ -1804,6 +1804,14 @@ module Bulkrax
         it 'finds a file whose top-level folder extraction renamed' do
           expect(entry.send(:path_to_file, 'sub dir/a b.jpg')).to eq(File.join(files_dir, 'sub_dir/a b.jpg'))
         end
+
+        it 'does not find a reference that names a folder' do
+          expect { entry.send(:path_to_file, 'scans') }.to raise_error(RuntimeError, /File not found/)
+        end
+
+        it 'does not return a full path to a folder' do
+          expect { entry.send(:path_to_file, File.join(files_dir, 'scans')) }.to raise_error(RuntimeError, /File not found/)
+        end
       end
 
       context 'when the file does not exist at the constructed path' do

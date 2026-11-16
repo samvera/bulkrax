@@ -161,6 +161,16 @@ RSpec.describe Bulkrax::CsvParser do
       end
     end
 
+    context 'when two folders differ only by spaces versus underscores' do
+      it 'raises before extracting anything' do
+        with_zip('metadata.csv' => 'csv', 'my dir/a.jpg' => 'a', 'my_dir/b.jpg' => 'b') do |zip_path|
+          expect { parser.unzip_with_primary_csv(zip_path) }
+            .to raise_error(Bulkrax::UnzipError, /"my dir".*"my_dir"/)
+          expect(Dir.children(unzip_dir)).to be_empty
+        end
+      end
+    end
+
     context 'when multiple CSVs share the shallowest level (same directory)' do
       it 'raises a visible error' do
         with_zip('a.csv' => '1', 'b.csv' => '2', 'files/foo.jpg' => 'jpg') do |zip_path|

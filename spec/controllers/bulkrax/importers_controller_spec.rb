@@ -211,6 +211,121 @@ module Bulkrax
         end
       end
 
+      context 'with an unsafe cloud file selection' do
+        before do
+          allow(BrowseEverything).to receive(:config).and_return({}.with_indifferent_access)
+        end
+
+        it 'does not enqueue a download and reports a clear error instead of a success message' do
+          expect(Bulkrax::DownloadCloudFileJob).not_to receive(:perform_later)
+
+          post :create, params: {
+            importer: valid_attributes,
+            selected_files: { '0' => { url: 'https://example.com/a.pdf', file_name: 'a.pdf' } }
+          }, session: valid_session
+
+          expect(flash[:error]).to match(/no remote cloud provider/)
+          expect(flash[:notice]).to be_nil
+        end
+
+        it 'does not leak the rejected url or headers into the error message' do
+          post :create, params: {
+            importer: valid_attributes,
+            selected_files: { '0' => { url: 'https://example.com/a.pdf', file_name: 'a.pdf', headers: { 'Authorization' => 'Bearer super-secret' } } }
+          }, session: valid_session
+
+          expect(flash[:error]).not_to include('super-secret')
+          expect(flash[:error]).not_to include('example.com')
+        end
+
+        it 'does not persist an Importer record at all' do
+          expect do
+            post :create, params: {
+              importer: valid_attributes,
+              selected_files: { '0' => { url: 'https://example.com/a.pdf', file_name: 'a.pdf' } }
+            }, session: valid_session
+          end.not_to change(Importer, :count)
+        end
+      end
+
+      context 'with a batch where the first cloud file is safe and the second is not' do
+        before { allow(Bulkrax::CloudSourceValidator).to receive(:validate!).and_return(true) }
+
+        it 'rejects the whole batch before persisting the importer' do
+          expect(Bulkrax::DownloadCloudFileJob).not_to receive(:perform_later)
+
+          expect do
+            post :create, params: {
+              importer: valid_attributes,
+              selected_files: {
+                '0' => { url: 'https://example.com/a.pdf', file_name: 'a.pdf' },
+                '1' => { url: 'https://example.com/b.pdf', file_name: '../../../etc/passwd' }
+              }
+            }, session: valid_session
+          end.not_to change(Importer, :count)
+        end
+      end
+
+      context 'when the second (file-field) save fails' do
+        let(:uploaded_file) { Hyrax::UploadedFile.create(file: fixture_file_upload('./spec/fixtures/csv/ok.csv'), user: current_user) }
+
+        before do
+          save_calls = 0
+          allow_any_instance_of(Bulkrax::Importer).to receive(:save).and_wrap_original do |original_method|
+            save_calls += 1
+            save_calls == 1 ? original_method.call : false
+          end
+        end
+
+        it 'does not enqueue the import and treats it like an ordinary validation failure' do
+          expect(Bulkrax::ImporterJob).not_to receive(:perform_later)
+          expect(Bulkrax::ImporterJob).not_to receive(:perform_now)
+
+          post :create, params: { importer: valid_attributes, uploaded_files: [uploaded_file.id] }, session: valid_session
+
+          expect(response).to be_successful
+        end
+
+        it 'still leaves the Importer created by the first save (the honest failure boundary)' do
+          expect do
+            post :create, params: { importer: valid_attributes, uploaded_files: [uploaded_file.id] }, session: valid_session
+          end.to change(Importer, :count).by(1)
+        end
+      end
+
+      context 'with no files at all' do
+        it 'saves the importer exactly once' do
+          expect_any_instance_of(Bulkrax::Importer).to receive(:save).once.and_call_original
+
+          post :create, params: { importer: valid_attributes }, session: valid_session
+        end
+      end
+
+      context 'successful CSV cloud-file create', clean_downloads: true do
+        before do
+          allow(Bulkrax::CloudSourceValidator).to receive(:validate!).and_return(true)
+        end
+
+        it 'saves identity, persists the resolved paths, then dispatches downloads, then the import job, in that order' do
+          call_order = []
+          allow_any_instance_of(Bulkrax::Importer).to receive(:save).and_wrap_original do |original_method|
+            call_order << :save
+            original_method.call
+          end
+          allow(Bulkrax::DownloadCloudFileJob).to receive(:perform_later) { call_order << :enqueue_download }
+          allow(Bulkrax::ImporterJob).to receive(:perform_later) { call_order << :enqueue_import }
+
+          post :create, params: {
+            importer: valid_attributes,
+            selected_files: { '0' => { url: 'https://example.com/a.pdf', file_name: 'a.pdf' } },
+            commit: 'Create and Import'
+          }, session: valid_session
+
+          expect(call_order).to eq([:save, :save, :enqueue_download, :enqueue_import])
+          expect(assigns(:importer).parser_fields['original_file_paths']).to be_present
+        end
+      end
+
       let(:file) { fixture_file_upload('./spec/fixtures/csv/ok.csv') }
       let(:uploaded_file) { Hyrax::UploadedFile.create(file: file, user: User.first) }
 
@@ -230,6 +345,105 @@ module Bulkrax
     end
 
     describe 'PUT #update' do
+      context 'with cloud files and final parser-field persistence', clean_downloads: true do
+        before do
+          allow(Bulkrax::CloudSourceValidator).to receive(:validate!).and_return(true)
+        end
+
+        it 'does not dispatch downloads when the final parser-field save fails' do
+          importer = Importer.create! valid_attributes
+          saves = 0
+          allow_any_instance_of(Bulkrax::Importer).to receive(:save).and_wrap_original do |original|
+            saves += 1
+            saves == 3 ? false : original.call
+          end
+          expect(Bulkrax::DownloadCloudFileJob).not_to receive(:perform_later)
+          expect(Bulkrax::ImporterJob).not_to receive(:perform_later)
+
+          put :update, params: {
+            id: importer.to_param, importer: valid_attributes,
+            selected_files: { '0' => { url: 'https://example.com/a.pdf', file_name: 'a.pdf' } },
+            commit: 'Update and Import'
+          }, session: valid_session
+
+          expect(response).to render_template(:edit)
+        end
+
+        it 'persists all parser fields before dispatching downloads and the import' do
+          importer = Importer.create! valid_attributes
+          calls = []
+          allow_any_instance_of(Bulkrax::Importer).to receive(:save).and_wrap_original do |original|
+            calls << :save
+            original.call
+          end
+          allow(Bulkrax::DownloadCloudFileJob).to receive(:perform_later) { calls << :download }
+          allow(Bulkrax::ImporterJob).to receive(:perform_later) { calls << :import }
+
+          put :update, params: {
+            id: importer.to_param, importer: valid_attributes,
+            selected_files: { '0' => { url: 'https://example.com/a.pdf', file_name: 'a.pdf' } },
+            commit: 'Update and Import'
+          }, session: valid_session
+
+          expect(calls).to eq([:save, :save, :save, :download, :import])
+        end
+      end
+
+      context 'with an unsafe cloud file selection' do
+        before do
+          allow(BrowseEverything).to receive(:config).and_return({}.with_indifferent_access)
+        end
+
+        it 'leaves the persisted importer unchanged' do
+          importer = Importer.create! valid_attributes
+          original_name = importer.name
+
+          put :update, params: {
+            id: importer.to_param,
+            importer: valid_attributes.merge(name: 'Changed Name'),
+            selected_files: { '0' => { url: 'https://example.com/a.pdf', file_name: 'a.pdf' } }
+          }, session: valid_session
+
+          expect(importer.reload.name).to eq(original_name)
+        end
+
+        it 'does not enqueue a download and reports a clear error instead of a success message' do
+          importer = Importer.create! valid_attributes
+          expect(Bulkrax::DownloadCloudFileJob).not_to receive(:perform_later)
+
+          put :update, params: {
+            id: importer.to_param,
+            importer: valid_attributes,
+            selected_files: { '0' => { url: 'https://example.com/a.pdf', file_name: 'a.pdf' } }
+          }, session: valid_session
+
+          expect(flash[:error]).to match(/no remote cloud provider/)
+          expect(flash[:notice]).to be_nil
+        end
+      end
+
+      context 'when the second (file-field) save fails' do
+        let(:uploaded_file) { Hyrax::UploadedFile.create(file: fixture_file_upload('./spec/fixtures/csv/ok.csv'), user: current_user) }
+
+        before do
+          save_calls = 0
+          allow_any_instance_of(Bulkrax::Importer).to receive(:save).and_wrap_original do |original_method|
+            save_calls += 1
+            save_calls == 1 ? original_method.call : false
+          end
+        end
+
+        it 'does not enqueue the import and treats it like an ordinary validation failure' do
+          importer = Importer.create! valid_attributes
+          expect(Bulkrax::ImporterJob).not_to receive(:perform_later)
+          expect(Bulkrax::ImporterJob).not_to receive(:perform_now)
+
+          put :update, params: { id: importer.to_param, importer: valid_attributes, uploaded_files: [uploaded_file.id] }, session: valid_session
+
+          expect(response).to be_successful
+        end
+      end
+
       context 'with valid params' do
         let(:new_attributes) do
           {

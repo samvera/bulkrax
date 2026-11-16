@@ -129,6 +129,8 @@ Rows are `CSV::Row` objects with symbol-keyed headers. Field access uses the sym
 | `app/validators/bulkrax/csv_row/missing_source_identifier.rb` | `missing_source_identifier` | error |
 | `app/validators/bulkrax/csv_row/duplicate_identifier.rb` | `duplicate_source_identifier` | error |
 | `app/validators/bulkrax/csv_row/duplicate_identifier.rb` | `existing_source_identifier` | warning |
+| `app/validators/bulkrax/csv_row/duplicate_identifier.rb` | `existing_record_model_mismatch` | error |
+| `app/validators/bulkrax/csv_row/duplicate_identifier.rb` | `existing_record_id_not_found` | error |
 | `app/validators/bulkrax/csv_row/parent_reference.rb` | `invalid_parent_reference` | error |
 | `app/validators/bulkrax/csv_row/child_reference.rb` | `invalid_child_reference` | error |
 | `app/validators/bulkrax/csv_row/circular_reference.rb` | `circular_reference` | error |
@@ -207,6 +209,7 @@ Context keys available to validators:
 | `:field_metadata` | Hash | Per-model required and controlled vocab fields |
 | `:mapping_manager` | `CsvTemplate::MappingManager` | Field mapping resolver |
 | `:zip_plan` | `ZipPlacementPlanner::Plan`, nil | Paths that will exist under `files/` after extraction; nil when no ZIP was uploaded |
+| `:find_existing_record` | Lambda, nil | Called with a `record`; returns nil when the import would create a record, else `{ field:, value: }` naming the column that matched (`field` is nil for the source identifier), plus `missing: true` for an id that names no record, or `existing_model:` and `model:` for a record of another model. Uses the importer's own lookup, `ObjectFactoryInterface.find_for_import` |
 
 ### Error Hash Structure
 
@@ -267,6 +270,8 @@ Decides where each zip entry lands under the import's unzip directory, without e
 
 - `:primary_csv` (a zip uploaded on its own): the shallowest CSV is the metadata file, and every other entry goes under `files/`, relative to that CSV's folder.
 - `:attachments_only` (a zip uploaded beside a CSV): every entry goes under `files/`, and a single top-level wrapper folder is stripped.
+
+In either mode, the plan raises `Bulkrax::UnzipError` when two top-level names under `files/` differ only by spaces versus underscores, such as `x y.jpg` and `x_y.jpg`, because extraction would rename one onto the other. Validation shows the error, and import stops before extracting anything.
 
 `CsvRow::FileReference` reports, per row, each referenced path that will not exist under `files/`. It matches the way import resolves a reference, both in the preflight check and when attaching each file: the path as written, or with spaces turned into underscores in its top-level name, the only one extraction renames (`CsvParser.file_reference_candidates`). Names inside a folder must match exactly.
 

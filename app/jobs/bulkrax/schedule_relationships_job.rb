@@ -19,7 +19,7 @@ module Bulkrax
     def perform(importer_id:)
       importer = Importer.find(importer_id)
       pending = importer.entries.pending
-      return create_relationships(importer, importer.last_run.parents) unless pending.exists?
+      return create_relationships(final_pass_parents(importer)) unless pending.exists?
 
       last_progress = last_progress_at(importer)
       return reschedule(importer_id) if last_progress > STALL_LIMIT.ago
@@ -27,7 +27,7 @@ module Bulkrax
       giving_up = last_progress < GIVE_UP_LIMIT.ago
       log_stall(importer_id, pending, giving_up: giving_up)
       ScheduleRelationshipsJob.set(wait: STALLED_CHECK_WAIT).perform_later(importer_id: importer_id) unless giving_up
-      create_relationships(importer, ready_parents(importer, pending))
+      create_relationships(ready_parents(importer, pending))
     end
 
     def reschedule(importer_id)
@@ -48,11 +48,23 @@ module Bulkrax
       end
     end
 
-    def create_relationships(importer, parent_ids)
-      parent_ids.each do |parent_id|
-        Bulkrax.relationship_job_class.constantize.perform_later(parent_identifier: parent_id,
-                                                                 importer_run_id: importer.last_run.id)
+    def create_relationships(run_and_parent_ids)
+      run_and_parent_ids.each do |run_id, parent_id|
+        Bulkrax.relationship_job_class.constantize.perform_later(parent_identifier: parent_id, importer_run_id: run_id)
       end
+    end
+
+    # Every run of the importer, because re-running an entry starts a new run
+    # while relationships recorded under earlier runs still wait.
+    def pending_relationships(importer)
+      PendingRelationship.where(importer_run_id: importer.importer_runs.select(:id))
+    end
+
+    # The latest run's failed relationships are retried; an earlier run's are not.
+    def final_pass_parents(importer)
+      relationships = pending_relationships(importer)
+      relationships.pending.or(relationships.where(importer_run_id: importer.last_run.id))
+                   .distinct.pluck(:importer_run_id, :parent_id)
     end
 
     def last_progress_at(importer)
@@ -61,17 +73,17 @@ module Bulkrax
     end
 
     # Relating a parent fails, and marks it with the error, while the parent or
-    # any child it still has to link is Pending. An identifier with no entry in
+    # any child it still has to link under that run is Pending. An identifier with no entry in
     # this import is an existing record, so it counts as ready. A relationship
-    # that already failed waits for the final pass, so retrying it hourly does
-    # not keep writing Failed statuses that look like progress. Known limit: a
-    # cell that names a Pending row's record id rather than its source
-    # identifier is not recognized as Pending.
+    # that already failed is left to the final pass, which retries only the
+    # latest run's, so retrying it hourly does not keep writing Failed statuses
+    # that look like progress. Known limit: a cell that names a Pending row's
+    # record id rather than its source identifier is not recognized as Pending.
     def ready_parents(importer, pending)
       pending_identifiers = pending.select(:identifier)
-      relationships = importer.last_run.pending_relationships
+      relationships = pending_relationships(importer)
       blocked = relationships.where(parent_id: pending_identifiers).or(relationships.where(child_id: pending_identifiers))
-      relationships.pending.where.not(parent_id: blocked.select(:parent_id)).distinct.pluck(:parent_id)
+      relationships.pending.distinct.pluck(:importer_run_id, :parent_id) - blocked.distinct.pluck(:importer_run_id, :parent_id)
     end
   end
 end

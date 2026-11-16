@@ -99,6 +99,16 @@ module Bulkrax
       raise ObjectFactoryInterface::ObjectNotFoundError, e.message
     end
 
+    def self.record_for_id(id, klass:)
+      return false if id.blank?
+      # Rails / Ruby upgrade, we moved from :exists? to :exist?  However we want to continue (for a
+      # bit) to support older versions.
+      method_name = klass.respond_to?(:exist?) ? :exist? : :exists?
+      klass.find(id) if klass.send(method_name, id)
+    rescue Valkyrie::Persistence::ObjectNotFoundError
+      false
+    end
+
     def self.find_or_create_default_admin_set
       # NOTE: Hyrax 5+ removed this method
       AdminSet.find_or_create_default_admin_set_id
@@ -189,16 +199,6 @@ module Bulkrax
     end
     # @!endgroup Class Method Interface
     ##
-
-    def find_by_id
-      return false if attributes[:id].blank?
-      # Rails / Ruby upgrade, we moved from :exists? to :exist?  However we want to continue (for a
-      # bit) to support older versions.
-      method_name = klass.respond_to?(:exist?) ? :exist? : :exists?
-      klass.find(attributes[:id]) if klass.send(method_name, attributes[:id])
-    rescue Valkyrie::Persistence::ObjectNotFoundError
-      false
-    end
 
     def delete(_user)
       obj = find

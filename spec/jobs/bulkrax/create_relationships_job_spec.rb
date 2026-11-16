@@ -182,8 +182,8 @@ module Bulkrax
           expect { perform }.to change(work1_entry, :failed?).to(true)
         end
 
-        it 'increments current importer run\'s :failed_relationships' do
-          expect(ImporterRun).to receive(:update_counters).with(importer.current_run.id, failed_relationships: 1)
+        it 'does not count the failure while attempts remain' do
+          expect(ImporterRun).not_to receive(:update_counters).with(importer.current_run.id, hash_including(:failed_relationships))
           perform
         end
       end
@@ -206,11 +206,258 @@ module Bulkrax
         end
 
         it 'reschedules the job' do
-          expect(ImporterRun).to receive(:update_counters).with(importer.current_run.id, failed_relationships: 1)
+          expect(ImporterRun).not_to receive(:update_counters).with(importer.current_run.id, hash_including(:failed_relationships))
           expect(create_relationships_job).to receive(:reschedule).with(parent_identifier: parent_identifier, importer_run_id: importer.current_run.id, run_user: importer.current_run.user, failure_count: 1)
           result = perform
           # Expect the result to be an array containing one RuntimeError
           expect(result).to match([an_instance_of(RuntimeError)])
+        end
+      end
+
+      context 'when a child never resolves and the last attempt fails' do
+        subject(:perform) do
+          create_relationships_job.perform(
+            parent_identifier: parent_identifier,
+            importer_run_id: run.id,
+            failure_count: described_class.max_failure_count - 1
+          )
+        end
+        let(:run) { importer.current_run }
+        let(:parent_identifier) { work1_entry.identifier }
+        let!(:relationship) do
+          create(:pending_relationship, importer_run_id: run.id, parent_id: parent_identifier, child_id: 'no-such-child', order: 1)
+        end
+
+        before do
+          allow(ImporterRun).to receive(:update_counters).and_call_original
+          allow(create_relationships_job).to receive(:find_record).and_call_original
+          allow(create_relationships_job).to receive(:find_record).with(parent_identifier, run.id).and_return([work1_entry, work1])
+          allow(Bulkrax.object_factory).to receive(:find).with('no-such-child')
+                                                         .and_raise(Bulkrax::ObjectFactoryInterface::ObjectNotFoundError)
+          importer.set_status_info('Complete', run)
+        end
+
+        it 'leaves no pending relationship' do
+          perform
+          expect(Bulkrax::PendingRelationship.pending.where(importer_run_id: run.id)).to be_empty
+        end
+
+        it 'names the missing child on the relationship and the parent entry' do
+          perform
+          expect(relationship.reload.status_message).to include('no-such-child')
+          expect(work1_entry.reload.current_status.error_message).to include('no-such-child')
+        end
+
+        it 'counts the failed relationship once' do
+          expect { perform }.to change { run.reload.failed_relationships }.by(1)
+        end
+
+        context 'when an earlier chain already failed a relationship for this parent' do
+          before do
+            earlier = create(:pending_relationship, importer_run_id: run.id, parent_id: parent_identifier, child_id: 'earlier-child', order: 2)
+            earlier.update!(status_message: 'Child record earlier-child could not be found for parent work1_entry')
+            run.update!(failed_relationships: 1)
+            allow(Bulkrax.object_factory).to receive(:find).with('earlier-child')
+                                                           .and_raise(Bulkrax::ObjectFactoryInterface::ObjectNotFoundError)
+          end
+
+          it 'counts each failed relationship once' do
+            perform
+            expect(run.reload.failed_relationships).to eq(2)
+          end
+        end
+
+        it 'marks the importer as complete with failures' do
+          perform
+          expect(importer.reload.status).to eq('Complete (with failures)')
+        end
+
+        context 'when the importer has started a newer run' do
+          let!(:newer_run) { importer.importer_runs.create! }
+
+          before { importer.set_status_info('Complete', newer_run) }
+
+          it 'leaves the newer run\'s status alone' do
+            perform
+            expect(Importer.find(importer.id).status).to eq('Complete')
+          end
+        end
+
+        context 'when the identifiers are long' do
+          let(:long_child) { "https://example.com/#{'c' * 230}" }
+          let!(:relationship) do
+            create(:pending_relationship, importer_run_id: run.id, parent_id: parent_identifier, child_id: long_child, order: 1)
+          end
+
+          before do
+            allow(Bulkrax.object_factory).to receive(:find).with(long_child)
+                                                           .and_raise(Bulkrax::ObjectFactoryInterface::ObjectNotFoundError)
+          end
+
+          it 'keeps the message within the column limit' do
+            perform
+            expect(relationship.reload.status_message.length).to be <= 255
+          end
+        end
+
+        context 'when attempts remain' do
+          subject(:perform) do
+            create_relationships_job.perform(parent_identifier: parent_identifier, importer_run_id: run.id)
+          end
+
+          it 'does not count the failure yet' do
+            expect { perform }.not_to change { run.reload.failed_relationships }
+          end
+
+          it 'leaves the relationship Pending' do
+            perform
+            expect(relationship.reload.status_message).to eq('Pending')
+          end
+
+          it 'leaves the importer complete' do
+            perform
+            expect(importer.reload.status).to eq('Complete')
+          end
+        end
+      end
+
+      shared_examples 'a failed relationship that links later' do
+        let(:run) { importer.current_run }
+        let!(:relationship) do
+          create(:pending_relationship, importer_run_id: run.id, parent_id: parent_entry.identifier, child_id: child_entry.identifier, order: 1)
+        end
+
+        subject(:perform) { create_relationships_job.perform(parent_identifier: parent_entry.identifier, importer_run_id: run.id) }
+
+        before do
+          relationship.update!(status_message: "Child record #{child_entry.identifier} could not be found for parent #{parent_entry.identifier}")
+          run.update!(failed_relationships: 1)
+          importer.set_status_info('Complete (with failures)', run)
+          allow(ImporterRun).to receive(:update_counters).and_call_original
+          allow(create_relationships_job).to receive(:find_record).with(parent_entry.identifier, run.id).and_return([parent_entry, parent_record])
+          allow(create_relationships_job).to receive(:find_record).with(child_entry.identifier, run.id).and_return([child_entry, child_record])
+        end
+
+        it 'no longer counts it as failed' do
+          perform
+          expect(run.reload.failed_relationships).to eq(0)
+        end
+
+        it 'marks the importer complete' do
+          perform
+          expect(Importer.find(importer.id).status).to eq('Complete')
+        end
+
+        context 'when another relationship for the parent still needs a retry' do
+          before do
+            create(:pending_relationship, importer_run_id: run.id, parent_id: parent_entry.identifier, child_id: 'not-yet-imported', order: 2)
+            allow(create_relationships_job).to receive(:find_record).with('not-yet-imported', run.id).and_return([nil, nil])
+          end
+
+          it 'no longer counts the one that linked' do
+            perform
+            expect(run.reload.failed_relationships).to eq(0)
+          end
+
+          it 'marks the importer complete' do
+            perform
+            expect(Importer.find(importer.id).status).to eq('Complete')
+          end
+        end
+      end
+
+      context 'when an overlapping run of the job fails a relationship that this one then links' do
+        let(:run) { importer.current_run }
+        let(:parent_identifier) { work1_entry.identifier }
+        let(:updated_parent) { work1 }
+        let!(:relationship) do
+          create(:pending_relationship, importer_run_id: run.id, parent_id: parent_identifier, child_id: work2_entry.identifier, order: 1)
+        end
+
+        subject(:perform) { create_relationships_job.perform(parent_identifier: parent_identifier, importer_run_id: run.id) }
+
+        before do
+          importer.set_status_info('Complete', run)
+          allow(ImporterRun).to receive(:update_counters).and_call_original
+          allow(create_relationships_job).to receive(:find_record).with(parent_identifier, run.id).and_return([work1_entry, work1])
+          allow(create_relationships_job).to receive(:find_record).with(work2_entry.identifier, run.id).and_return([work2_entry, work2])
+          allow(Bulkrax.object_factory).to receive(:add_child_to_parent_work) do
+            Bulkrax::PendingRelationship.where(id: relationship.id).update_all(status_message: 'Child record work2_entry could not be found for parent work1_entry') # rubocop:disable Rails/SkipsModelValidations
+            ImporterRun.where(id: run.id).update_all(failed_relationships: 1) # rubocop:disable Rails/SkipsModelValidations
+            importer.set_status_info('Complete (with failures)', run)
+            work1
+          end
+        end
+
+        it 'no longer counts it as failed' do
+          perform
+          expect(run.reload.failed_relationships).to eq(0)
+        end
+
+        it 'marks the importer complete' do
+          perform
+          expect(Importer.find(importer.id).status).to eq('Complete')
+        end
+      end
+
+      context 'when a failed relationship to a parent work links on a later run of the job' do
+        let(:parent_entry) { work1_entry }
+        let(:parent_record) { work1 }
+        let(:child_entry) { work2_entry }
+        let(:child_record) { work2 }
+        let(:updated_parent) { work1 }
+
+        it_behaves_like 'a failed relationship that links later'
+      end
+
+      context 'when a failed relationship to a parent collection links on a later run of the job' do
+        let(:parent_entry) { collection1_entry }
+        let(:parent_record) { collection1 }
+        let(:child_entry) { work1_entry }
+        let(:child_record) { work1 }
+
+        it_behaves_like 'a failed relationship that links later'
+      end
+
+      context 'when called without an importer run' do
+        subject(:perform) do
+          create_relationships_job.perform(parent_identifier: 'missing-parent', failure_count: described_class.max_failure_count - 1)
+        end
+
+        before { allow(create_relationships_job).to receive(:find_record).with('missing-parent', nil).and_return([nil, nil]) }
+
+        it 'returns the error on the last attempt instead of raising' do
+          expect(perform).to match([a_string_including('missing-parent')])
+        end
+      end
+
+      context 'when a parent never resolves and the last attempt fails' do
+        subject(:perform) do
+          create_relationships_job.perform(
+            parent_identifier: 'no-such-parent',
+            importer_run_id: run.id,
+            failure_count: described_class.max_failure_count - 1
+          )
+        end
+        let(:run) { importer.current_run }
+        let!(:relationship) do
+          create(:pending_relationship, importer_run_id: run.id, parent_id: 'no-such-parent', child_id: work1_entry.identifier, order: 1)
+        end
+
+        before do
+          allow(ImporterRun).to receive(:update_counters).and_call_original
+          allow(create_relationships_job).to receive(:find_record).with('no-such-parent', run.id).and_return([nil, nil])
+          importer.set_status_info('Complete', run)
+        end
+
+        it 'names the missing parent on the relationship' do
+          perform
+          expect(relationship.reload.status_message).to include('no-such-parent')
+        end
+
+        it 'marks the importer as complete with failures' do
+          perform
+          expect(importer.reload.status).to eq('Complete (with failures)')
         end
       end
 
@@ -232,7 +479,7 @@ module Bulkrax
         end
 
         it 'reschedules the job' do
-          expect(ImporterRun).to receive(:update_counters).with(importer.current_run.id, failed_relationships: 1)
+          expect(ImporterRun).not_to receive(:update_counters).with(importer.current_run.id, hash_including(:failed_relationships))
           expect(create_relationships_job).to receive(:reschedule).with(parent_identifier: parent_identifier, importer_run_id: importer.current_run.id, run_user: importer.current_run.user, failure_count: 1)
           result = perform
           expect(result).to eq(["Parent record #{parent_identifier} not yet available for creating relationships with children records."])

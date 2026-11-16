@@ -91,6 +91,8 @@ module Bulkrax
       cloud_files = importer.parser_fields['cloud_file_paths']
       original_files = importer.parser_fields['original_file_paths']
       return true unless cloud_files.present? && original_files.present?
+      # A file whose DownloadCloudFileJob has not run yet is not on disk.
+      return false unless original_files.all? { |imported_file| File.exist?(imported_file) }
 
       imported_file_sizes = cloud_files.map { |_, v| v['file_size'].to_i }
       original_file_sizes = original_files.map { |imported_file| File.size(imported_file) }

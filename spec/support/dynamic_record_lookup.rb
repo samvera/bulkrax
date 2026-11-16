@@ -47,6 +47,13 @@ module Bulkrax
             expect(found_record.title).to eq(record.title)
             expect(found_entry.identifier).to eq(entry.identifier)
           end
+
+          it "returns the entry without a record when its record is of another model" do
+            allow(factory).to receive(:find)
+              .and_raise(Bulkrax::ObjectFactoryInterface::ModelMismatchError.new(identifier: source_identifier, existing_model: 'Etd', model: 'Work'))
+
+            expect(subject.find_record(source_identifier, importer_run_id)).to eq([entry, nil])
+          end
         end
 
         context 'when nothing is found' do

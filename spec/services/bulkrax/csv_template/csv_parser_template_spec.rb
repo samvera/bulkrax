@@ -106,6 +106,23 @@ RSpec.describe Bulkrax::CsvParser do
       expect(result).to have_key(:totalItems)
     end
 
+    context 'when a row names an existing record only by its id' do
+      let(:csv_content) do
+        <<~CSV
+          source_identifier,title,model,id
+          work1,Test Work 1,GenericWork,rec-1
+        CSV
+      end
+
+      it 'warns that the row will update it and marks it existing in the tree' do
+        allow(Bulkrax::ValkyrieObjectFactory).to receive(:find_for_import)
+          .with(hash_including(id: 'rec-1', source_identifier: 'work1', klass: GenericWork)).and_return(double(id: 'rec-1'))
+        result = described_class.validate_csv(csv_file: csv_file)
+        expect(result[:rowErrors]).to include(a_hash_including(category: 'existing_source_identifier', column: 'id', value: 'rec-1'))
+        expect(result[:works].first[:existing]).to be true
+      end
+    end
+
     it 'extracts headers from CSV' do
       result = described_class.validate_csv(csv_file: csv_file, zip_file: zip_file)
       expect(result[:headers]).to include('source_identifier', 'title', 'creator', 'model', 'parents', 'file', 'description')
@@ -171,6 +188,21 @@ RSpec.describe Bulkrax::CsvParser do
         result = described_class.validate_csv(csv_file: csv_file, zip_file: nil)
         expect(result[:unrecognized]).to be_a(Hash)
         expect(result[:unrecognized].keys).to include('source_idenifier', 'titel', 'creater')
+      end
+    end
+
+    context 'with a blank id column' do
+      let(:csv_content) do
+        <<~CSV
+          source_identifier,id,title,model
+          work1,,Test Work 1,GenericWork
+        CSV
+      end
+
+      it 'accepts the id header and reports no row errors' do
+        result = described_class.validate_csv(csv_file: csv_file, zip_file: nil)
+        expect(result[:unrecognized].keys).not_to include('id')
+        expect(result[:rowErrors]).to be_empty
       end
     end
 

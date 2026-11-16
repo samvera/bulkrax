@@ -58,6 +58,47 @@ module Bulkrax
       end
     end
 
+    context 'when an entry was re-run during the import' do
+      let!(:rerun) { importer.importer_runs.create! }
+
+      before do
+        PendingRelationship.create!(importer_run_id: rerun.id, parent_id: 'parent-3', child_id: 'finished')
+        failed = PendingRelationship.create!(importer_run_id: run.id, parent_id: 'old-failed', child_id: 'missing-child')
+        failed.update!(status_message: 'Could not find child record missing-child')
+      end
+
+      it 'relates the earlier run\'s relationships under that run' do
+        finish_late_entry
+        expect { job.perform(importer_id: importer.id) }
+          .to have_enqueued_job(CreateRelationshipsJob).with(parent_identifier: 'parent-1', importer_run_id: run.id)
+          .and have_enqueued_job(CreateRelationshipsJob).with(parent_identifier: 'parent-2', importer_run_id: run.id)
+          .and have_enqueued_job(CreateRelationshipsJob).with(parent_identifier: 'parent-3', importer_run_id: rerun.id)
+      end
+
+      it 'does not retry an earlier run\'s relationship that failed for good' do
+        finish_late_entry
+        expect { job.perform(importer_id: importer.id) }
+          .not_to have_enqueued_job(CreateRelationshipsJob).with(hash_including(parent_identifier: 'old-failed'))
+      end
+
+      it 'relates the earlier run\'s ready relationships during a stall' do
+        travel(25.hours) do
+          expect { job.perform(importer_id: importer.id) }
+            .to have_enqueued_job(CreateRelationshipsJob).with(parent_identifier: 'parent-1', importer_run_id: run.id)
+            .and have_enqueued_job(CreateRelationshipsJob).with(parent_identifier: 'parent-3', importer_run_id: rerun.id)
+        end
+      end
+
+      it 'does not hold back a parent because of a Pending child under another run' do
+        PendingRelationship.create!(importer_run_id: run.id, parent_id: 'parent-4', child_id: 'late')
+        PendingRelationship.create!(importer_run_id: rerun.id, parent_id: 'parent-4', child_id: 'finished')
+        travel(25.hours) do
+          expect { job.perform(importer_id: importer.id) }
+            .to have_enqueued_job(CreateRelationshipsJob).with(parent_identifier: 'parent-4', importer_run_id: rerun.id)
+        end
+      end
+    end
+
     context 'when the run started long ago but entries are still finishing' do
       before { run.update!(created_at: 3.days.ago) }
 

@@ -81,8 +81,15 @@ RSpec.describe Bulkrax::CsvRow::ChildReference do
         .and_return(->(_parser, _index) { SecureRandom.uuid })
     end
 
-    it 'skips the check — child ids cannot be validated against generated identifiers' do
-      context = make_context(all_ids: Set.new)
+    it 'adds an error when the child is not found in the repository' do
+      context = make_context(all_ids: Set.new, find_record: ->(_id) { false })
+      described_class.call(make_record(children: 'bcd123'), 2, context)
+      expect(context[:errors].length).to eq(1)
+      expect(context[:errors].first).to include(category: 'invalid_child_reference', value: 'bcd123')
+    end
+
+    it 'adds no error when the child exists as a repository record' do
+      context = make_context(all_ids: Set.new, find_record: ->(id) { id == 'bcd123' })
       described_class.call(make_record(children: 'bcd123'), 2, context)
       expect(context[:errors]).to be_empty
     end

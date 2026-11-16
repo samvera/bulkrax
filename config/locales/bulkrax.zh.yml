@@ -351,6 +351,15 @@ zh:
             errors:
               message: "重复的 %{field} '%{value}' — 也出现在第 %{original_row} 行。"
               suggestion: "每个 %{field} 在 CSV 中必须是唯一的。"
+          existing_record_id_not_found_validator:
+            errors:
+              message: "没有现有记录的 %{field} 为 '%{value}'，因此此行无法更新任何记录。"
+              suggestion: "请更正 %{field} 的值，或将其留空以创建新记录。"
+          existing_record_model_mismatch_validator:
+            errors:
+              id_suggestion: "请将此行的模型改为 %{existing_model}，或将 %{field} 留空以创建新记录。"
+              message: "'%{value}' 与现有的 %{existing_model} 匹配，但此行的模型是 %{model}，因此导入不会更新它。"
+              suggestion: "请将此行的模型改为 %{existing_model}，或为 %{field} 使用其他记录都没有的值。"
           existing_source_identifier_validator:
             warnings:
               message: "'%{value}' 与仓库中的现有记录匹配 — 此行将更新该记录。"
@@ -420,6 +429,7 @@ zh:
       unzip:
         errors:
           multiple_csv: ZIP 文件中的同一最浅层级下发现了多个 CSV 文件，无法确定主 CSV。请在该层级仅保留一个 CSV，其他 CSV 必须位于更深的目录中。
+          name_collision: "ZIP 中有些名称仅在空格与下划线上有所不同（%{names}）。导入时会将这些空格替换为下划线，因此这些名称会发生冲突。请重命名，使它们有更多区别，然后重新上传 ZIP。"
           no_csv: ZIP 文件中未找到 CSV 文件
           unsafe_entry: "ZIP 文件包含路径不安全的条目（%{name}）。条目不得使用绝对路径或父目录引用。"
       validations:

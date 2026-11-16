@@ -721,6 +721,101 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
     end
   end
 
+  describe '#build_find_existing_record' do
+    let(:raw_row) { { 'source_identifier' => 'src-1', 'model' => 'Image' } }
+    let(:row) { { source_identifier: 'src-1', model: raw_row['model'], raw_row: raw_row } }
+    let(:find_existing_record) { host.build_find_existing_record({}) }
+
+    before do
+      stub_const('Image', Class.new)
+      allow(Bulkrax).to receive(:field_mappings).and_return('Bulkrax::CsvParser' => {})
+      allow(Bulkrax::ValkyrieObjectFactory).to receive(:find_for_import).and_return(nil)
+    end
+
+    it "looks the row up as the importer does, in the row's model" do
+      find_existing_record.call(row)
+      expect(Bulkrax::ValkyrieObjectFactory).to have_received(:find_for_import)
+        .with(id: nil, source_identifier: 'src-1', klass: Image, search_field: 'source_sim', name_field: 'source')
+    end
+
+    it 'resolves the model name the way the importer does' do
+      stub_const('GenericWork', Class.new)
+      raw_row['model'] = 'Generic Work'
+      find_existing_record.call(row)
+      expect(Bulkrax::ValkyrieObjectFactory).to have_received(:find_for_import).with(hash_including(klass: GenericWork))
+    end
+
+    it 'uses the default work type for a row without a model' do
+      raw_row.delete('model')
+      allow(Bulkrax).to receive(:default_work_type).and_return('Image')
+      find_existing_record.call(row)
+      expect(Bulkrax::ValkyrieObjectFactory).to have_received(:find_for_import).with(hash_including(klass: Image))
+    end
+
+    it 'reports nothing when the import would create a record' do
+      expect(find_existing_record.call(row)).to be_nil
+    end
+
+    it 'reports a match by source identifier' do
+      allow(Bulkrax::ValkyrieObjectFactory).to receive(:find_for_import).and_return(double(id: 'rec-9'))
+      expect(find_existing_record.call(row)).to eq(field: nil, value: 'src-1')
+    end
+
+    context 'when the row has an id' do
+      before { raw_row['id'] = 'rec-1' }
+
+      it 'looks it up by that id and reports the match under the id column' do
+        allow(Bulkrax::ValkyrieObjectFactory).to receive(:find_for_import).and_return(double(id: 'rec-1'))
+        expect(find_existing_record.call(row)).to eq(field: 'id', value: 'rec-1')
+        expect(Bulkrax::ValkyrieObjectFactory).to have_received(:find_for_import).with(hash_including(id: 'rec-1'))
+      end
+
+      it 'looks up the id without surrounding spaces, as import reads it' do
+        raw_row['id'] = ' rec-1 '
+        find_existing_record.call(row)
+        expect(Bulkrax::ValkyrieObjectFactory).to have_received(:find_for_import).with(hash_including(id: 'rec-1'))
+      end
+
+      context 'when several columns map to id' do
+        let(:find_existing_record) { host.build_find_existing_record('id' => { 'from' => %w[legacy_id id] }) }
+
+        it 'uses the last of them, as import does' do
+          raw_row.replace('legacy_id' => 'rec-A', 'source_identifier' => 'src-1', 'id' => 'rec-B', 'model' => 'Image')
+          find_existing_record.call(row)
+          expect(Bulkrax::ValkyrieObjectFactory).to have_received(:find_for_import).with(hash_including(id: 'rec-B'))
+        end
+
+        it 'has no id when the last of them is blank' do
+          raw_row.replace('id' => 'rec-A', 'source_identifier' => 'src-1', 'legacy_id' => '', 'model' => 'Image')
+          find_existing_record.call(row)
+          expect(Bulkrax::ValkyrieObjectFactory).to have_received(:find_for_import).with(hash_including(id: nil))
+        end
+      end
+
+      it 'ignores the id when its mapping is excluded, as import does' do
+        host.build_find_existing_record('id' => { 'from' => ['id'], 'excluded' => true }).call(row)
+        expect(Bulkrax::ValkyrieObjectFactory).to have_received(:find_for_import).with(hash_including(id: nil))
+      end
+
+      it 'reports an id that names no record, which the import cannot update' do
+        allow(Bulkrax::ValkyrieObjectFactory).to receive(:find_for_import)
+          .and_raise(Bulkrax::ObjectFactoryInterface::ObjectNotFoundError)
+        expect(find_existing_record.call(row)).to eq(field: 'id', value: 'rec-1', missing: true)
+      end
+    end
+
+    it 'reports a record of another model, which the import will not update' do
+      allow(Bulkrax::ValkyrieObjectFactory).to receive(:find_for_import)
+        .and_raise(Bulkrax::ObjectFactoryInterface::ModelMismatchError.new(identifier: 'src-1', existing_model: 'Etd', model: 'Image'))
+      expect(find_existing_record.call(row)).to eq(field: nil, value: 'src-1', existing_model: 'Etd', model: 'Image')
+    end
+
+    it 'looks each row up once' do
+      2.times { find_existing_record.call(row) }
+      expect(Bulkrax::ValkyrieObjectFactory).to have_received(:find_for_import).once
+    end
+  end
+
   describe '#build_find_record' do
     before do
       allow(Hyrax.query_service).to receive(:find_by).and_raise(Hyrax::ObjectNotFoundError)

@@ -156,6 +156,8 @@
       "missing_source_identifier",
       "duplicate_source_identifier",
       "existing_source_identifier",
+      "existing_record_model_mismatch",
+      "existing_record_id_not_found",
       "invalid_parent_reference",
       "invalid_child_reference",
       "circular_reference",

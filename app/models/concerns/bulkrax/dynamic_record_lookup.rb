@@ -26,7 +26,17 @@ module Bulkrax
 
       # return the found entry here instead of searching for it again in the CreateRelationshipsJob
       # also accounts for when the found entry isn't a part of this importer
-      record.is_a?(Entry) ? [record, record.factory.find] : [nil, record]
+      record.is_a?(Entry) ? [record, entry_record(record)] : [nil, record]
+    end
+
+    private
+
+    # An entry whose record is of another model failed to import, so it has
+    # no record to relate.
+    def entry_record(entry)
+      entry.factory.find
+    rescue Bulkrax::ObjectFactoryInterface::ModelMismatchError
+      nil
     end
   end
 end

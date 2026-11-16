@@ -93,6 +93,37 @@ RSpec.describe Bulkrax::ZipPlacementPlanner do
     end
   end
 
+  describe 'names that differ only by spaces versus underscores' do
+    it 'raises naming both files' do
+      expect { described_class.plan([entry('x y.jpg'), entry('x_y.jpg')], mode: :attachments_only) }
+        .to raise_error(Bulkrax::UnzipError, /"x y\.jpg".*"x_y\.jpg"/)
+    end
+
+    it 'raises naming both folders' do
+      entries = [entry('metadata.csv'), entry('files/my dir/a.jpg'), entry('files/my_dir/b.jpg')]
+      expect { described_class.plan(entries, mode: :primary_csv) }
+        .to raise_error(Bulkrax::UnzipError, /"my dir".*"my_dir"/)
+    end
+
+    it 'names non-ASCII entries read as binary in a translated message' do
+      entries = [entry('café photo.jpg'.b), entry('café_photo.jpg'.b)]
+      I18n.with_locale(:fr) do
+        expect { described_class.plan(entries, mode: :attachments_only) }
+          .to raise_error(Bulkrax::UnzipError, /"café photo\.jpg".*"café_photo\.jpg"/)
+      end
+    end
+
+    it 'allows them inside a folder, where extraction keeps names as they are' do
+      expect { described_class.plan([entry('scans/x y.jpg'), entry('scans/x_y.jpg'), entry('other.jpg')], mode: :attachments_only) }
+        .not_to raise_error
+    end
+
+    it 'allows them in names starting with a dot, which extraction does not rename' do
+      expect { described_class.plan([entry('.x y.jpg'), entry('.x_y.jpg')], mode: :attachments_only) }
+        .not_to raise_error
+    end
+  end
+
   describe '.plan with an unknown mode' do
     it 'raises ArgumentError' do
       expect { described_class.plan([], mode: :garbage) }.to raise_error(ArgumentError, /Unknown mode/)

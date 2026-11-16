@@ -188,6 +188,96 @@ module Bulkrax
       end
     end
 
+    describe '#find' do
+      let(:factory) do
+        described_class.new(attributes: { id: id },
+                            source_identifier_value: 'src-1',
+                            work_identifier: :source,
+                            work_identifier_search_field: 'bulkrax_identifier_sim',
+                            klass: ImageResource)
+      end
+
+      before do
+        stub_const('ImageResource', Class.new)
+        allow(described_class).to receive(:search_by_property).and_return(nil)
+      end
+
+      [nil, ''].each do |blank_id|
+        context "when the id is #{blank_id.inspect}" do
+          let(:id) { blank_id }
+
+          it 'finds nothing without looking up the id' do
+            expect(described_class).not_to receive(:find)
+            expect(factory.find).to be_nil
+          end
+
+          it 'finds the record by its source identifier' do
+            record = ImageResource.new
+            allow(described_class).to receive(:search_by_property).and_return(record)
+            expect(factory.find).to eq(record)
+          end
+        end
+      end
+
+      context 'when the id is present' do
+        let(:id) { 'existing-id' }
+        let(:record) { ImageResource.new }
+
+        it 'returns the record with that id' do
+          allow(described_class).to receive(:find).with('existing-id').and_return(record)
+          expect(factory.find).to eq(record)
+        end
+      end
+    end
+
+    describe '#find when the record found is of another model' do
+      let(:id) { nil }
+      let(:factory) do
+        described_class.new(attributes: { id: id },
+                            source_identifier_value: 'src-1',
+                            work_identifier: :source,
+                            work_identifier_search_field: 'bulkrax_identifier_sim',
+                            klass: ImageResource)
+      end
+
+      before do
+        stub_const('ImageResource', Class.new)
+        stub_const('Image', Class.new)
+        stub_const('EtdResource', Class.new)
+      end
+
+      it 'raises instead of updating it' do
+        allow(described_class).to receive(:search_by_property).and_return(EtdResource.new)
+        expect { factory.find }.to raise_error(ObjectFactoryInterface::ModelMismatchError, /src-1.*EtdResource.*ImageResource/)
+      end
+
+      context 'when it was found by id' do
+        let(:id) { 'existing-id' }
+
+        it 'raises naming the id' do
+          allow(described_class).to receive(:find).with('existing-id').and_return(EtdResource.new)
+          expect { factory.find }.to raise_error(ObjectFactoryInterface::ModelMismatchError, /existing-id.*EtdResource/)
+        end
+      end
+
+      it 'checks the record a subclass override of #find_by_id returns' do
+        subclass = Class.new(described_class) do
+          def find_by_id
+            EtdResource.new
+          end
+        end
+        factory = subclass.new(attributes: {}, source_identifier_value: 'src-1', work_identifier: :source,
+                               work_identifier_search_field: 'bulkrax_identifier_sim', klass: ImageResource)
+        expect { factory.find }.to raise_error(ObjectFactoryInterface::ModelMismatchError)
+      end
+
+      it "returns it when it is the row's model under its other name" do
+        record = Image.new
+        allow(described_class).to receive(:search_by_property).and_return(record)
+        expect(factory.find).to eq(record)
+      end
+    end
+
     describe '#create_file_set' do
       let(:parent_id) { "gw-123" }
       let(:of_attributes) do
@@ -240,6 +330,135 @@ module Bulkrax
         expect(valkyrie_object_factory).to receive(:perform_transaction_for).with(object: satisfy { |data| data.id == 'some-long-identifier' }, attrs: {}).once
 
         valkyrie_object_factory.send(:update_file_set, {})
+      end
+
+      context 'with a remote file' do
+        let(:remote_file) { { url: 'https://example.com/new.jpg', file_name: 'new.jpg' } }
+        let(:path) { Rails.root.join('tmp', 'new.jpg').to_s }
+        let(:use) { ::Valkyrie::Vocab::PCDMUse }
+        let(:previous) { double('FileMetadata', id: 'old-original', checksum: ['0' * 32], file_identifier: 'disk://old.jpg', pcdm_use: [use.OriginalFile]) }
+        let(:thumbnail) { double('FileMetadata', id: 'old-thumbnail', file_identifier: 'disk://thumbnail.jpeg', pcdm_use: [use.ThumbnailImage]) }
+        let(:service_file) { double('FileMetadata', id: 'old-mp4', file_identifier: 'disk://old.mp4', pcdm_use: [use.ServiceFile]) }
+        let(:transcript) { double('FileMetadata', id: 'transcript', file_identifier: 'disk://transcript.txt', pcdm_use: [use.Transcript]) }
+        let(:new_original) { double('FileMetadata', id: 'new-original', file_identifier: 'disk://new.jpg') }
+        let(:file_set) { double('FileSet', id: 'fs-id', original_file: previous, file_ids: %w[old-original old-thumbnail old-mp4 transcript]) }
+        let(:uploaded) { double('FileSet', id: 'fs-id', file_ids: %w[old-original old-thumbnail old-mp4 transcript new-original]) }
+        let(:custom_queries) { double('custom_queries') }
+        let(:derivatives) { double('FileSetDerivativesService', cleanup_derivatives: true) }
+        let(:destroy_transaction) { double('transaction') }
+        let(:originals) { [previous, new_original] }
+
+        before do
+          File.write(path, 'new bytes')
+          allow(valkyrie_object_factory).to receive(:object).and_return(orig_file_set)
+          allow(valkyrie_object_factory).to receive(:perform_transaction_for).and_return(file_set)
+          allow(valkyrie_object_factory).to receive(:download_file).with(remote_file[:url]).and_return(path)
+          allow(valkyrie_object_factory).to receive(:transactions).and_return('file_metadata.destroy' => destroy_transaction)
+          allow(Hyrax).to receive(:custom_queries).and_return(custom_queries)
+          allow(custom_queries).to receive(:find_files).with(file_set: file_set).and_return([previous, thumbnail, service_file, transcript])
+          allow(custom_queries).to receive(:find_files).with(file_set: uploaded).and_return([transcript, new_original])
+          allow(custom_queries).to receive(:find_many_file_metadata_by_use) { originals }
+          allow(Hyrax::FileSetDerivativesService).to receive(:new).with(file_set).and_return(derivatives)
+          allow(Hyrax::ValkyrieUpload).to receive(:file)
+          allow(Hyrax.query_service).to receive(:find_by).with(id: 'fs-id').and_return(uploaded)
+          allow(uploaded).to receive(:file_ids=)
+          allow(Hyrax.persister).to receive(:save).with(resource: uploaded).and_return(uploaded)
+          allow(destroy_transaction).to receive(:call) { |file| Dry::Monads::Success(file) }
+          allow(Hyrax.index_adapter).to receive(:save)
+          allow(Hyrax.persister).to receive(:delete)
+          allow(Hyrax.publisher).to receive(:publish)
+        end
+
+        after { FileUtils.rm_f(path) }
+
+        it 'uploads the remote file as the new original' do
+          valkyrie_object_factory.send(:update_file_set, remote_files: [remote_file])
+
+          expect(Hyrax::ValkyrieUpload).to have_received(:file).with(hash_including(filename: 'new.jpg', file_set: file_set))
+        end
+
+        it "clears the old file's derivatives before the upload" do
+          valkyrie_object_factory.send(:update_file_set, remote_files: [remote_file])
+
+          expect(derivatives).to have_received(:cleanup_derivatives).ordered
+          expect(Hyrax::ValkyrieUpload).to have_received(:file).ordered
+        end
+
+        it "fails a row whose download fails before saving the file set's metadata" do
+          allow(valkyrie_object_factory).to receive(:download_file).and_raise('Failed to download file')
+
+          expect { valkyrie_object_factory.send(:update_file_set, remote_files: [remote_file]) }.to raise_error('Failed to download file')
+          expect(valkyrie_object_factory).not_to have_received(:perform_transaction_for)
+        end
+
+        it 'detaches the old original and its derivative records, keeping the new original and other files' do
+          valkyrie_object_factory.send(:update_file_set, remote_files: [remote_file])
+
+          expect(uploaded).to have_received(:file_ids=).with(%w[transcript new-original])
+          expect(destroy_transaction).to have_received(:call).with(previous)
+          expect(destroy_transaction).to have_received(:call).with(thumbnail)
+          expect(destroy_transaction).to have_received(:call).with(service_file)
+          expect(destroy_transaction).not_to have_received(:call).with(transcript)
+          expect(Hyrax.index_adapter).to have_received(:save).with(resource: uploaded)
+        end
+
+        context 'when storage keeps the new file at the old path' do
+          let(:new_original) { double('FileMetadata', id: 'new-original', file_identifier: 'disk://old.jpg') }
+
+          it "deletes the old original's record but not the bytes, which are now the new file" do
+            valkyrie_object_factory.send(:update_file_set, remote_files: [remote_file])
+
+            expect(destroy_transaction).not_to have_received(:call).with(previous)
+            expect(Hyrax.persister).to have_received(:delete).with(resource: previous)
+            expect(Hyrax.publisher).to have_received(:publish).with('file.metadata.deleted', metadata: previous)
+          end
+        end
+
+        context 'when storage keeps versions' do
+          let(:originals) { [previous] }
+
+          it 'keeps the original, now holding the new version, and detaches its derivatives' do
+            valkyrie_object_factory.send(:update_file_set, remote_files: [remote_file])
+
+            expect(uploaded).to have_received(:file_ids=).with(%w[old-original transcript new-original])
+            expect(destroy_transaction).not_to have_received(:call).with(previous)
+            expect(destroy_transaction).to have_received(:call).with(thumbnail)
+          end
+        end
+
+        { 'MD5' => Digest::MD5, 'SHA1' => Digest::SHA1 }.each do |name, digest|
+          it "leaves the file set alone when the remote file matches its original's #{name}" do
+            allow(previous).to receive(:checksum).and_return([digest.hexdigest('new bytes')])
+
+            expect(valkyrie_object_factory.send(:update_file_set, remote_files: [remote_file])).to eq file_set
+            expect(derivatives).not_to have_received(:cleanup_derivatives)
+            expect(Hyrax::ValkyrieUpload).not_to have_received(:file)
+          end
+        end
+
+        it 'fails a row with more than one remote file before changing anything' do
+          expect { valkyrie_object_factory.send(:update_file_set, remote_files: [remote_file, remote_file]) }
+            .to raise_error(StandardError, 'fs-123 lists 2 remote files; a file set takes one')
+          expect(valkyrie_object_factory).not_to have_received(:perform_transaction_for)
+        end
+      end
+    end
+
+    describe 'FileFactoryInnerWorkings#new_remote_files' do
+      let(:file_set) { Hyrax::FileSet.new }
+      let(:object_factory) do
+        instance_double(described_class, object: file_set, klass: Hyrax::FileSet, attributes: { remote_files: ['https://example.com/new.jpg', 'not a url'] })
+      end
+
+      before do
+        allow(Bulkrax).to receive(:file_model_class).and_return(Hyrax::FileSet)
+        allow(Bulkrax::Importer).to receive(:safe_uri_filename) { |url| File.basename(url) }
+      end
+
+      it "keeps a file set's valid remote files without comparing an import_url" do
+        inner = described_class::FileFactoryInnerWorkings.new(object_factory: object_factory)
+
+        expect(inner.new_remote_files.map { |file| file[:url] }).to eq ['https://example.com/new.jpg']
       end
     end
 

@@ -351,6 +351,15 @@ pt-BR:
             errors:
               message: "%{field} duplicado '%{value}' — também aparece na linha %{original_row}."
               suggestion: "Cada %{field} deve ser exclusivo no CSV."
+          existing_record_id_not_found_validator:
+            errors:
+              message: "Nenhum registro existente tem %{field} '%{value}', então esta linha não pode atualizar nenhum."
+              suggestion: "Corrija o valor de %{field} ou deixe-o em branco para criar um novo registro."
+          existing_record_model_mismatch_validator:
+            errors:
+              id_suggestion: "Altere o modelo desta linha para %{existing_model} ou deixe o valor de %{field} em branco para criar um novo registro."
+              message: "'%{value}' corresponde a um %{existing_model} existente, mas o modelo desta linha é %{model}, então a importação não irá atualizá-lo."
+              suggestion: "Altere o modelo desta linha para %{existing_model} ou use um valor de %{field} que nenhum outro registro tenha."
           existing_source_identifier_validator:
             warnings:
               message: "'%{value}' corresponde a um registro existente no repositório — esta linha irá atualizá-lo."
@@ -420,6 +429,7 @@ pt-BR:
       unzip:
         errors:
           multiple_csv: Vários arquivos CSV estão no nível menos profundo dentro do ZIP, então não é possível determinar qual é o CSV principal. Mantenha exatamente um CSV nesse nível; CSVs adicionais devem estar aninhados em níveis mais profundos.
+          name_collision: "Alguns nomes no ZIP diferem apenas por espaços ou sublinhados (%{names}). A importação substitui esses espaços por sublinhados, então os nomes entrariam em conflito. Renomeie-os para que se diferenciem em algo mais e envie o ZIP novamente."
           no_csv: Nenhum arquivo CSV encontrado no arquivo ZIP.
           unsafe_entry: "O ZIP contém uma entrada com caminho inseguro (%{name}). As entradas não devem usar caminhos absolutos nem referências ao diretório pai."
       validations:

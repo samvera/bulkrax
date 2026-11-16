@@ -351,6 +351,15 @@ it:
             errors:
               message: "%{field} duplicato '%{value}' — appare anche nella riga %{original_row}."
               suggestion: "Ogni %{field} deve essere univoco all'interno del CSV."
+          existing_record_id_not_found_validator:
+            errors:
+              message: "Nessun record esistente ha %{field} '%{value}', quindi questa riga non può aggiornarne uno."
+              suggestion: "Correggi il valore di %{field} oppure lascialo vuoto per creare un nuovo record."
+          existing_record_model_mismatch_validator:
+            errors:
+              id_suggestion: "Cambia il modello di questa riga in %{existing_model} oppure lascia vuoto il valore di %{field} per creare un nuovo record."
+              message: "'%{value}' corrisponde a un %{existing_model} esistente, ma il modello di questa riga è %{model}, quindi l'importazione non lo aggiornerà."
+              suggestion: "Cambia il modello di questa riga in %{existing_model} oppure usa un valore di %{field} che nessun altro record ha."
           existing_source_identifier_validator:
             warnings:
               message: "'%{value}' corrisponde a un record esistente nel repository — questa riga lo aggiornerà."
@@ -420,6 +429,7 @@ it:
       unzip:
         errors:
           multiple_csv: Sono stati trovati più file CSV al livello meno profondo all'interno dello ZIP, quindi non è possibile determinare il CSV principale. Mantieni esattamente un CSV a quel livello; eventuali CSV aggiuntivi devono essere annidati più in profondità.
+          name_collision: "Alcuni nomi nello ZIP differiscono solo per spazi o trattini bassi (%{names}). L'importazione sostituisce questi spazi con trattini bassi, quindi i nomi entrerebbero in conflitto. Rinominali in modo che differiscano in altro modo e carica di nuovo lo ZIP."
           no_csv: Nessun file CSV trovato nello ZIP
           unsafe_entry: "Lo ZIP contiene una voce con un percorso non sicuro (%{name}). Le voci non devono utilizzare percorsi assoluti né riferimenti alla directory superiore."
       validations:

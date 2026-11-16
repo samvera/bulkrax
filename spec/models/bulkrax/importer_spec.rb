@@ -8,6 +8,34 @@ module Bulkrax
       FactoryBot.create(:bulkrax_importer)
     end
 
+    describe '#record_status' do
+      let(:run) { importer.current_run(skip_counts: true) }
+
+      before { run.update!(enqueued_records: 0, failed_records: 0) }
+
+      def add_relationship(status_message)
+        create(:pending_relationship, importer_run_id: run.id, parent_id: 'p', child_id: 'c', status_message: status_message)
+      end
+
+      it 'reports failures when a relationship failed' do
+        add_relationship('Child record c could not be found for parent p')
+        importer.record_status
+        expect(importer.reload.status).to eq('Complete (with failures)')
+      end
+
+      it 'reports complete when the only relationships left are Pending' do
+        add_relationship('Pending')
+        importer.record_status
+        expect(importer.reload.status).to eq('Complete')
+      end
+
+      it 'reports complete when failed_relationships was counted for retries that later linked' do
+        run.update!(failed_relationships: 2)
+        importer.record_status
+        expect(importer.reload.status).to eq('Complete')
+      end
+    end
+
     describe 'frequency' do
       it 'uses ISO 8601 for frequency' do
         importer.frequency = 'P1Y'

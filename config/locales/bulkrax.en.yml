@@ -91,6 +91,8 @@ en:
           public: Public
       browse_everything:
         add_cloud_files: Add Cloud Files
+        errors:
+          missing_destination_context: This cloud file download is missing required destination information and can no longer be safely processed. Please re-select the file and try the import again.
       csv:
         add_csv_to_import: 'Add CSV or ZIP File to Import:'
         add_files_hint: Choose files to upload. The filenames must be unique, and the filenames must be referenced in a column called 'file' in the accompanying CSV file.
@@ -351,6 +353,15 @@ en:
             errors:
               message: "Duplicate %{field} '%{value}' — also appears in row %{original_row}."
               suggestion: "Each %{field} must be unique within the CSV."
+          existing_record_id_not_found_validator:
+            errors:
+              message: "No existing record has the %{field} '%{value}', so this row cannot update one."
+              suggestion: "Correct the %{field} value, or leave it blank to create a new record."
+          existing_record_model_mismatch_validator:
+            errors:
+              id_suggestion: "Change this row's model to %{existing_model}, or leave the %{field} value blank to create a new record."
+              message: "'%{value}' matches an existing %{existing_model}, but this row's model is %{model}, so the import will not update it."
+              suggestion: "Change this row's model to %{existing_model}, or use a %{field} that no other record has."
           existing_source_identifier_validator:
             warnings:
               message: "'%{value}' matches an existing repository record — this row will update it."
@@ -420,6 +431,7 @@ en:
       unzip:
         errors:
           multiple_csv: Multiple CSV files share the shallowest directory level in the ZIP, so the primary CSV cannot be determined. Keep exactly one CSV at that level; any additional CSVs must be nested deeper.
+          name_collision: "Some names in the ZIP differ only by spaces versus underscores (%{names}). Import replaces those spaces with underscores, so the names would collide. Rename them so they differ by more than that, and upload the ZIP again."
           no_csv: No CSV file found in the ZIP
           unsafe_entry: "The ZIP contains an entry with an unsafe path (%{name}). Entries must not use absolute paths or parent-directory references."
       validations:

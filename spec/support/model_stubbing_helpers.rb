@@ -31,6 +31,11 @@ module ModelStubbingHelpers
   # @return [void]
   # rubocop:disable Metrics/MethodLength
   def stub_bulkrax_models
+    # Validation resolves a row without a model to the default work type, as
+    # import does. Load it while Hyrax.config is still real: autoloading it
+    # after the stub below calls the double.
+    Bulkrax.default_work_type&.safe_constantize
+
     # First, stub ValkyrieObjectFactory to prevent schema access issues
     stub_const('Bulkrax::ValkyrieObjectFactory', Class.new do
       def self.schema_properties(klass:, admin_set_id: nil) # rubocop:disable Lint/UnusedMethodArgument
@@ -43,6 +48,10 @@ module ModelStubbingHelpers
       end
 
       def self.search_by_property(**_kwargs)
+        nil
+      end
+
+      def self.find_for_import(**_kwargs)
         nil
       end
     end)

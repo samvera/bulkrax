@@ -25,6 +25,35 @@ module Bulkrax
         expect(collection.title).to eq(["Title"])
       end
     end
+    describe '#find' do
+      let(:record) { double('record') }
+      let(:klass) { double('klass', exist?: false, where: []) }
+      let(:factory) do
+        described_class.new(attributes: { id: 'existing-id' },
+                            source_identifier_value: 'src-1',
+                            work_identifier: :source,
+                            work_identifier_search_field: 'source_sim',
+                            klass: klass)
+      end
+
+      it "returns the record with the row's id when it is of the row's model" do
+        allow(klass).to receive(:exist?).with('existing-id').and_return(true)
+        allow(klass).to receive(:find).with('existing-id').and_return(record)
+        expect(factory.find).to eq(record)
+      end
+
+      it "returns the record with the row's source identifier in the row's model" do
+        found = double('record', source: ['src-1'])
+        allow(klass).to receive(:where).with('source_sim' => 'src-1').and_return([found])
+        expect(factory.find).to eq(found)
+      end
+
+      it "finds nothing when neither matches a record of the row's model" do
+        expect(klass).not_to receive(:find)
+        expect(factory.find).to be_nil
+      end
+    end
+
     describe '.file_sets_for' do
       it "returns a work's file sets" do
         file_sets = [double('file set')]

@@ -8,16 +8,18 @@ module Bulkrax
     module DuplicateIdentifier
       def self.call(record, row_index, context)
         source_id = record[:source_identifier]
-        return if source_id.blank? && Bulkrax.fill_in_blank_source_identifiers.present?
-
         source_id_label = context[:source_identifier] || 'source_identifier'
-        first_row = context[:seen_ids][source_id]
+        if source_id.blank? && Bulkrax.fill_in_blank_source_identifiers.present?
+          add_existing_warning(record, context, row_index, source_id, source_id_label)
+          return
+        end
 
+        first_row = context[:seen_ids][source_id]
         if first_row
           add_duplicate_error(context, row_index, source_id, source_id_label, first_row)
         else
           context[:seen_ids][source_id] = row_index
-          add_existing_warning(context, row_index, source_id, source_id_label)
+          add_existing_warning(record, context, row_index, source_id, source_id_label)
         end
       end
 
@@ -39,24 +41,38 @@ module Bulkrax
       end
       private_class_method :add_duplicate_error
 
-      def self.add_existing_warning(context, row_index, source_id, source_id_label)
-        find_record = context[:find_record_by_source_identifier]
-        return unless find_record&.call(source_id)
+      def self.add_existing_warning(record, context, row_index, source_id, source_id_label)
+        match = context[:find_existing_record]&.call(record)
+        return unless match
 
+        field = match[:field] || source_id_label
+        issue = if match[:existing_model]
+                  ['error', 'existing_record_model_mismatch', 'existing_record_model_mismatch_validator.errors']
+                elsif match[:missing]
+                  ['error', 'existing_record_id_not_found', 'existing_record_id_not_found_validator.errors']
+                else
+                  ['warning', 'existing_source_identifier', 'existing_source_identifier_validator.warnings']
+                end
+        add_existing_issue(context, row_index, source_id, field, match, *issue)
+      end
+
+      def self.add_existing_issue(context, row_index, source_id, field, match, severity, category, key) # rubocop:disable Metrics/ParameterLists
+        scope = "bulkrax.importer.guided_import.validation.#{key}"
+        values = { value: match[:value], field: field, existing_model: match[:existing_model], model: match[:model] }
+        suggestion = match[:existing_model] && match[:field] ? 'id_suggestion' : 'suggestion'
         context[:errors] << {
           row: row_index,
           source_identifier: source_id,
-          severity: 'warning',
-          category: 'existing_source_identifier',
-          column: source_id_label,
-          value: source_id,
-          message: I18n.t('bulkrax.importer.guided_import.validation.existing_source_identifier_validator.warnings.message',
-                          value: source_id,
-                          field: source_id_label),
-          suggestion: I18n.t('bulkrax.importer.guided_import.validation.existing_source_identifier_validator.warnings.suggestion',
-                             field: source_id_label)
+          severity: severity,
+          category: category,
+          column: field,
+          value: match[:value],
+          message: I18n.t("#{scope}.message", **values),
+          suggestion: I18n.t("#{scope}.#{suggestion}", **values)
         }
       end
+      private_class_method :add_existing_issue
+
       private_class_method :add_existing_warning
     end
   end

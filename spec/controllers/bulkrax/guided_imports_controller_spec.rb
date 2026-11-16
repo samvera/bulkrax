@@ -411,6 +411,24 @@ module Bulkrax
           end
         end
 
+        context 'when only a zip is uploaded and two names differ only by spaces versus underscores' do
+          let(:colliding_zip_upload) do
+            t = Tempfile.new(['upload', '.zip'])
+            Zip::File.open(t.path, create: true) do |zip|
+              zip.get_output_stream('metadata.csv') { |f| f.write("source_identifier,title,model,file\nw1,W1,GenericWork,x y.jpg\nw2,W2,GenericWork,x_y.jpg\n") }
+              zip.get_output_stream('x y.jpg') { |f| f.write('one') }
+              zip.get_output_stream('x_y.jpg') { |f| f.write('two') }
+            end
+            Rack::Test::UploadedFile.new(t.path, 'application/zip', original_filename: 'upload.zip')
+          end
+
+          it 'fails validation and names both' do
+            post_validate(importer: { parser_fields: { files: [colliding_zip_upload] } })
+            expect(json_response[:isValid]).to eq(false)
+            expect(json_response.dig(:messages, :validationStatus, :summary)).to include('"x y.jpg"', '"x_y.jpg"')
+          end
+        end
+
         context 'when only a zip is uploaded and it cannot be read' do
           let(:broken_zip_upload) do
             t = Tempfile.new(['upload', '.zip'])

@@ -3,9 +3,9 @@
 require 'rails_helper'
 
 RSpec.describe Bulkrax::CsvRow::DuplicateIdentifier do
-  def make_context(find_record: nil)
+  def make_context(find_existing: nil)
     { errors: [], warnings: [], seen_ids: {}, source_identifier: 'source_identifier',
-      find_record_by_source_identifier: find_record }
+      find_existing_record: find_existing }
   end
 
   def make_record(source_id)
@@ -13,14 +13,14 @@ RSpec.describe Bulkrax::CsvRow::DuplicateIdentifier do
   end
 
   it 'adds nothing for a unique identifier that does not exist in the repo' do
-    context = make_context(find_record: ->(_id) { false })
+    context = make_context(find_existing: ->(_row) {})
     described_class.call(make_record('work1'), 2, context)
     expect(context[:errors]).to be_empty
     expect(context[:seen_ids]).to eq('work1' => 2)
   end
 
   it 'adds a warning for a unique identifier that already exists in the repo' do
-    context = make_context(find_record: ->(_id) { true })
+    context = make_context(find_existing: ->(_row) { { field: nil, value: 'work1' } })
     described_class.call(make_record('work1'), 2, context)
     expect(context[:errors].length).to eq(1)
     warning = context[:errors].first
@@ -28,9 +28,37 @@ RSpec.describe Bulkrax::CsvRow::DuplicateIdentifier do
     expect(warning[:category]).to eq('existing_source_identifier')
     expect(warning[:row]).to eq(2)
     expect(warning[:value]).to eq('work1')
+    expect(warning[:column]).to eq('source_identifier')
   end
 
-  it 'adds no warning when find_record is not provided' do
+  it "warns under the id column when the row's id matches an existing record" do
+    context = make_context(find_existing: ->(_row) { { field: 'id', value: 'rec-1' } })
+    described_class.call(make_record('work1'), 2, context)
+    warning = context[:errors].first
+    expect(warning).to include(severity: 'warning', category: 'existing_source_identifier', column: 'id', value: 'rec-1')
+  end
+
+  it 'reports an error when the existing record is of another model' do
+    context = make_context(find_existing: ->(_row) { { field: nil, value: 'work1', existing_model: 'Etd', model: 'GenericWork' } })
+    described_class.call(make_record('work1'), 2, context)
+    error = context[:errors].first
+    expect(error).to include(severity: 'error', category: 'existing_record_model_mismatch', column: 'source_identifier', value: 'work1')
+    expect(error[:message]).to include('Etd', 'GenericWork')
+  end
+
+  it 'suggests clearing the id when the record of another model was matched by id' do
+    context = make_context(find_existing: ->(_row) { { field: 'id', value: 'rec-1', existing_model: 'Etd', model: 'GenericWork' } })
+    described_class.call(make_record('work1'), 2, context)
+    expect(context[:errors].first[:suggestion]).to include('Etd', 'leave the id value blank')
+  end
+
+  it 'reports an error when the id names no existing record' do
+    context = make_context(find_existing: ->(_row) { { field: 'id', value: 'rec-1', missing: true } })
+    described_class.call(make_record('work1'), 2, context)
+    expect(context[:errors].first).to include(severity: 'error', category: 'existing_record_id_not_found', column: 'id', value: 'rec-1')
+  end
+
+  it 'adds no warning when no lookup is provided' do
     context = make_context
     described_class.call(make_record('work1'), 2, context)
     expect(context[:errors]).to be_empty
@@ -60,6 +88,13 @@ RSpec.describe Bulkrax::CsvRow::DuplicateIdentifier do
       described_class.call(make_record(nil), 3, context)
 
       expect(context[:errors]).to be_empty
+    end
+
+    it 'still reports a blank-identifier row whose id names no record' do
+      context = make_context(find_existing: ->(_row) { { field: 'id', value: 'rec-1', missing: true } })
+      described_class.call(make_record(nil), 2, context)
+
+      expect(context[:errors].first).to include(category: 'existing_record_id_not_found', value: 'rec-1')
     end
 
     it 'still records an error for duplicate non-blank identifiers' do

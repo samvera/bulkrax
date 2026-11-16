@@ -4,6 +4,14 @@ module Bulkrax
   # rubocop:disable Metrics/ClassLength
   class ValkyrieObjectFactory < ObjectFactoryInterface
     class FileFactoryInnerWorkings < Bulkrax::FileFactory::InnerWorkings
+      # A Valkyrie file set has no import_url to compare; when its row is updated, the checksum
+      # decides whether its file changed (see ValkyrieObjectFactory#replace_original_file).
+      def new_remote_files
+        return super unless object.is_a?(Bulkrax.file_model_class)
+
+        @new_remote_files ||= parsed_remote_files.select { |file| file[:url]&.match(URI::ABS_URI) }
+      end
+
       def remove_file_set(file_set:)
         file_metadata = Hyrax.custom_queries.find_files(file_set: file_set).first
         raise "No file metadata records found for #{file_set.class} ID=#{file_set.id}" unless file_metadata
@@ -158,6 +166,27 @@ module Bulkrax
     rescue Hyrax::ObjectNotFoundError, Valkyrie::Persistence::ObjectNotFoundError => e
       raise ObjectFactoryInterface::ObjectNotFoundError, e.message
     end
+
+    # Neither lookup is limited to the row's model, so a record of another
+    # model is reported rather than updated as if it were the row's.
+    def self.record_of_row_model(record, klass:, identifier:)
+      return record if record.nil? || record_of_model?(record, klass)
+
+      raise ObjectFactoryInterface::ModelMismatchError.new(identifier: identifier, existing_model: record.class, model: klass)
+    end
+
+    def self.record_for_id(id, klass:) # rubocop:disable Lint/UnusedMethodArgument
+      return false if id.blank?
+
+      find(id)
+    end
+
+    def self.record_of_model?(record, klass)
+      config = Bulkrax.config
+      twin = config.file_model_name?(klass.to_s) ? config.file_set_twin_for(klass) : config.curation_concern_twin_for(klass)
+      config.model_names_for(klass, twin: twin).include?(record.class.to_s)
+    end
+    private_class_method :record_of_model?
 
     def self.find_or_create_default_admin_set
       Hyrax::AdminSetCreateService.find_or_create_default_admin_set
@@ -465,10 +494,6 @@ module Bulkrax
       end
     end
 
-    def find_by_id
-      self.class.find(attributes[:id]) if attributes.key? :id
-    end
-
     ##
     # @param object [Valkyrie::Resource]
     # @param attrs [Valkyrie::Resource]
@@ -543,11 +568,68 @@ module Bulkrax
 
     def update_file_set(attrs)
       attrs = HashWithIndifferentAccess.new(attrs)
+      remote_files = Array(attrs[:remote_files])
+      raise StandardError, "#{source_identifier_value} lists #{remote_files.size} remote files; a file set takes one" if remote_files.size > 1
+
+      # Download before saving, so a failed download leaves the file set as it was
+      path = download_file(remote_files.first[:url]) if remote_files.any?
       fs_attrs = attrs.merge(attributes).symbolize_keys
-      perform_transaction_for(object: object, attrs: fs_attrs) do
-        prep_fileset_content(attrs)
+      file_set = perform_transaction_for(object: object, attrs: fs_attrs) do
         transactions['change_set.update_file_set']
       end
+      path ? replace_original_file(file_set, path, remote_files.first[:file_name]) : file_set
+    end
+
+    # Replace the file set's original file with the downloaded one, and drop the old original and the
+    # derivatives made from it. Storage without versions adds a second original on upload, and a file
+    # set's original is whichever one is found first.
+    # @return [Hyrax::FileSet]
+    def replace_original_file(file_set, path, file_name)
+      previous = file_set.original_file
+      return file_set if previous && unchanged_file?(previous, path)
+
+      stale = Hyrax.custom_queries.find_files(file_set: file_set).select { |file| derivative?(file) }
+      # Before the upload, so the derivative jobs it starts cannot lose their output to the cleanup
+      Hyrax::FileSetDerivativesService.new(file_set).cleanup_derivatives
+      File.open(path) { |io| Hyrax::ValkyrieUpload.file(io: io, filename: file_name, file_set: file_set, user: @user) }
+      file_set = Hyrax.query_service.find_by(id: file_set.id)
+      # With versions, the upload became a new version of the same original, which stays
+      stale << previous if previous && original_files(file_set).size > 1
+      detach_files(file_set, stale)
+    end
+
+    # The checksum characterization records (MD5), or a SHA1 such as a migrated original may carry
+    def unchanged_file?(file_metadata, path)
+      (Array(file_metadata.checksum).map(&:to_s) & [Digest::MD5.file(path).hexdigest, Digest::SHA1.file(path).hexdigest]).any?
+    end
+
+    # The uses Hyrax saves generated derivatives under: thumbnails, extracted text, and audio/video service files
+    def derivative?(file_metadata)
+      uses = ::Valkyrie::Vocab::PCDMUse
+      (Array(file_metadata.pcdm_use) & [uses.ThumbnailImage, uses.ExtractedText, uses.ServiceFile]).any?
+    end
+
+    def original_files(file_set)
+      Hyrax.custom_queries.find_many_file_metadata_by_use(resource: file_set, use: Hyrax::FileMetadata::Use::ORIGINAL_FILE).to_a
+    end
+
+    def detach_files(file_set, files)
+      return file_set if files.empty?
+
+      ids = files.map { |file| file.id.to_s }
+      file_set.file_ids = file_set.file_ids.reject { |id| ids.include?(id.to_s) }
+      Hyrax.persister.save(resource: file_set).tap do |saved|
+        Hyrax.index_adapter.save(resource: saved)
+        kept = Hyrax.custom_queries.find_files(file_set: saved).map { |file| file.file_identifier.to_s }
+        files.each { |file| kept.include?(file.file_identifier.to_s) ? delete_file_record(file) : transactions['file_metadata.destroy'].call(file).value! }
+      end
+    end
+
+    # Disk storage keys a file by its name, so a same-named upload overwrote the old bytes in place
+    # and only the record goes
+    def delete_file_record(file)
+      Hyrax.persister.delete(resource: file)
+      Hyrax.publisher.publish('file.metadata.deleted', metadata: file)
     end
 
     def uploaded_local_files(uploaded_files: [])
@@ -584,7 +666,9 @@ module Bulkrax
         file = Tempfile.new
         file.binmode
         file.write(URI.open(url).read)
-        file.rewind
+        file.close
+        # Hold the Tempfile, or garbage collection can delete it before the path is read
+        (@downloads ||= []) << file
         file.path
       rescue => e
         raise "Failed to download file from #{url}: #{e.message}"

@@ -34,6 +34,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'rdf', '>= 2.0.2', '< 4.0'
   s.add_dependency 'rubyzip'
   s.add_dependency 'simple_form'
+  s.add_dependency 'ssrf_filter', '>= 1.0', '< 2.0'
 
   s.add_development_dependency 'dry-monads'
   s.add_development_dependency 'sqlite3', '>= 1.4', '< 3'

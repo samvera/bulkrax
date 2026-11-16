@@ -494,14 +494,14 @@ module Bulkrax
     # Finds the file under the files directory the way the preflight check
     # (CsvParser#file_paths) does, so a reference that passes it attaches.
     def path_to_file(file)
-      return file if File.exist?(file)
+      return file if File.file?(file)
 
       path = importerexporter.parser.path_to_files
       raise "Could not determine path to files directory. Ensure the import package contains a zip or a valid import_file_path." if path.nil?
 
       found = Bulkrax::CsvParser.file_reference_candidates(file)
                                 .map { |candidate| File.join(path, candidate) }
-                                .find { |candidate| File.exist?(candidate) }
+                                .find { |candidate| File.file?(candidate) }
       return found if found
       raise "File not found: #{File.join(path, file)}. Check the file column in your CSV and ensure the file exists in the import package or path_to_files directory."
     end

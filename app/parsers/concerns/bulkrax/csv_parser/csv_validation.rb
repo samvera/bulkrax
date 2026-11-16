@@ -65,15 +65,17 @@ module Bulkrax
         # Builds notices, runs row validators, and hierarchy extraction.
         # Returns [notices, row_errors, collections, works, file_sets].
         def run_validations(csv_data, all_ids, headers, source_id_key, mappings, field_metadata, missing_required, zip_file, mapping_manager: nil, csv_in_zip: false) # rubocop:disable Metrics/ParameterLists
-          find_record = build_find_record
-          notices     = []
+          find_record          = build_find_record
+          find_existing_record = build_find_existing_record(mappings)
+          notices              = []
           append_missing_source_id!(missing_required, headers, source_id_key, csv_data.map { |r| r[:model] }.compact.uniq)
           append_missing_model_notice!(notices, headers, csv_data, model_headers: Bulkrax::FieldResolver.headers_for_field(mappings, 'model'))
           append_files_referenced_no_zip_notice!(notices, csv_data, zip_file)
 
           zip_plan                       = build_zip_plan(zip_file, csv_in_zip: csv_in_zip)
-          row_errors                     = run_row_validators(csv_data, all_ids, source_id_key, mappings, field_metadata, find_record, notices, mapping_manager: mapping_manager, zip_plan: zip_plan)
-          collections, works, file_sets  = extract_hierarchy_items(csv_data, all_ids, find_record, mappings)
+          row_errors                     = run_row_validators(csv_data, all_ids, source_id_key, mappings, field_metadata, find_record, notices,
+                                                              mapping_manager: mapping_manager, zip_plan: zip_plan, find_existing_record: find_existing_record)
+          collections, works, file_sets  = extract_hierarchy_items(csv_data, all_ids, find_record, mappings, find_existing_record: find_existing_record)
           [notices, row_errors, collections, works, file_sets]
         end
 
@@ -137,10 +139,11 @@ module Bulkrax
           Array(mapping_manager&.mapped_to_keys(base)).any? { |key| known_property_keys.include?(key) }
         end
 
-        def extract_hierarchy_items(csv_data, all_ids, find_record, mappings)
+        def extract_hierarchy_items(csv_data, all_ids, find_record, mappings, find_existing_record: nil)
           parent_columns, children_columns = relationship_columns(mappings)
           extract_validation_items(
             csv_data, all_ids, find_record,
+            find_existing_record: find_existing_record,
             parent_split_pattern: resolve_parent_split_pattern(mappings),
             child_split_pattern: resolve_children_split_pattern(mappings),
             parent_columns: parent_columns,
@@ -154,7 +157,7 @@ module Bulkrax
         end
 
         # Runs all registered row validators and returns the collected errors.
-        def run_row_validators(csv_data, all_ids, source_id_key, mappings, field_metadata, find_record, notices = [], mapping_manager: nil, zip_plan: nil) # rubocop:disable Metrics/ParameterLists
+        def run_row_validators(csv_data, all_ids, source_id_key, mappings, field_metadata, find_record, notices = [], mapping_manager: nil, zip_plan: nil, find_existing_record: nil) # rubocop:disable Metrics/ParameterLists
           parent_columns, children_columns = relationship_columns(mappings)
           context = {
             errors: [],
@@ -172,13 +175,13 @@ module Bulkrax
             mapping_manager: mapping_manager,
             field_metadata: field_metadata,
             find_record_by_source_identifier: find_record,
+            find_existing_record: find_existing_record,
             relationship_graph: build_relationship_graph(csv_data, mappings),
             notices: notices,
             zip_plan: zip_plan
           }
           csv_data.each_with_index do |record, index|
-            row_number = index + 2 # 1-indexed, plus header row
-            Bulkrax.csv_row_validators.each { |v| v.call(record, row_number, context) }
+            Bulkrax.csv_row_validators.each { |v| v.call(record, index + 2, context) } # 1-indexed, plus header row
           end
           context[:errors]
         end

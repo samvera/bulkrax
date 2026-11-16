@@ -35,6 +35,20 @@ module Bulkrax
     end
 
     ##
+    # Raised when the record a row's id or source identifier finds is of a
+    # different model than the row's, so the import neither updates nor
+    # deletes it.
+    class ModelMismatchError < StandardError
+      attr_reader :existing_model, :model
+
+      def initialize(identifier:, existing_model:, model:)
+        @existing_model = existing_model.to_s
+        @model = model.to_s
+        super("#{identifier} matches an existing #{@existing_model}, but the row's model is #{@model}")
+      end
+    end
+
+    ##
     # @note This does not save either object.  We need to do that in another
     #       loop.  Why?  Because we might be adding many items to the parent.
     def self.add_child_to_parent_work(parent:, child:)
@@ -192,6 +206,42 @@ module Bulkrax
       raise NotImplementedError, "#{self}.#{__method__}"
     end
 
+    ##
+    # The record an import of a row updates or deletes, found as {#find}
+    # finds it: by the row's id, then its source identifier. Guided
+    # validation calls it, so validation reports what the import will do.
+    #
+    # @return [Object] the existing record
+    # @return [NilClass] when the import would create a record
+    def self.find_for_import(id:, source_identifier:, klass:, search_field:, name_field:)
+      record = record_for_id(id, klass: klass) ||
+               record_for_source_identifier(source_identifier, klass: klass, search_field: search_field, name_field: name_field)
+      record_of_row_model(record || nil, klass: klass, identifier: id.presence || source_identifier)
+    end
+
+    ##
+    # The record found for a row, or nil, as the import acts on it. A factory
+    # whose lookups can find another model's record raises
+    # {ModelMismatchError} here instead.
+    def self.record_of_row_model(record, klass:, identifier:) # rubocop:disable Lint/UnusedMethodArgument
+      record
+    end
+
+    ##
+    # @abstract
+    #
+    # @return [Object] the record with this id
+    # @return [FalseClass] when there is none to update
+    def self.record_for_id(id, klass:)
+      raise NotImplementedError, "#{self}.#{__method__}"
+    end
+
+    def self.record_for_source_identifier(value, klass:, search_field:, name_field:)
+      return false if value.blank?
+
+      search_by_property(klass: klass, search_field: search_field, value: value, name_field: name_field)
+    end
+
     def self.solr_name(field_name)
       raise NotImplementedError, "#{self}.#{__method__}"
     end
@@ -347,17 +397,15 @@ module Bulkrax
     #         source_identifier
     # @return [NilClass] when we cannot find the object.
     def find
-      find_by_id || search_by_identifier || nil
+      self.class.record_of_row_model(find_by_id || search_by_identifier || nil,
+                                     klass: klass, identifier: attributes[:id].presence || source_identifier_value)
     end
 
     ##
-    # @abstract
-    #
-    # @return [Object] when we've found the object by the entry's :id or by it's
-    #         source_identifier
+    # @return [Object] when we've found the object by the entry's :id
     # @return [FalseClass] when we cannot find the object.
     def find_by_id
-      raise NotImplementedError, "#{self.class}##{__method__}"
+      self.class.record_for_id(attributes[:id], klass: klass)
     end
 
     ##
@@ -398,13 +446,8 @@ module Bulkrax
     # @return [Object] when we have a source_identifier_value value and we can
     #         find it in the data store.
     def search_by_identifier
-      return false if source_identifier_value.blank?
-
-      self.class.search_by_property(
-        klass: klass,
-        search_field: work_identifier_search_field,
-        value: source_identifier_value,
-        name_field: work_identifier
+      self.class.record_for_source_identifier(
+        source_identifier_value, klass: klass, search_field: work_identifier_search_field, name_field: work_identifier
       )
     end
 

@@ -47,7 +47,9 @@ module Bulkrax
     # @param mode [Symbol] `:primary_csv` or `:attachments_only`
     # @return [Plan]
     # @raise [Bulkrax::UnzipError] in `:primary_csv` mode when no CSV is
-    #   present or multiple CSVs share the shallowest level.
+    #   present or multiple CSVs share the shallowest level, and in either
+    #   mode when top-level names under `files/` differ only by spaces versus
+    #   underscores.
     def self.plan(entries, mode:)
       case mode
       when :primary_csv then plan_with_primary_csv(entries)
@@ -70,7 +72,7 @@ module Bulkrax
       Plan.new(
         primary_csv_entry: primary,
         placements: placements,
-        available_paths: paths_under_files(placements)
+        available_paths: available_paths!(placements)
       )
     end
     private_class_method :plan_with_primary_csv
@@ -87,7 +89,7 @@ module Bulkrax
       Plan.new(
         primary_csv_entry: nil,
         placements: placements,
-        available_paths: paths_under_files(placements)
+        available_paths: available_paths!(placements)
       )
     end
     private_class_method :plan_attachments_only
@@ -135,9 +137,24 @@ module Bulkrax
     end
     private_class_method :without_dot_segments
 
-    def self.paths_under_files(placements)
-      placements.values.filter_map { |rel| rel.delete_prefix('files/') if rel.start_with?('files/') }
+    def self.available_paths!(placements)
+      paths = placements.values.filter_map { |rel| rel.delete_prefix('files/') if rel.start_with?('files/') }
+      reject_name_collisions!(paths)
+      paths
     end
-    private_class_method :paths_under_files
+    private_class_method :available_paths!
+
+    # Extraction underscores the spaces in each top-level name under `files/`
+    # except dot names (CsvParser#remove_spaces_from_filenames), so names that
+    # differ only by spaces versus underscores would land on the same path.
+    def self.reject_name_collisions!(paths)
+      tops = paths.map { |path| path.split('/').first }.uniq.reject { |top| top.start_with?('.') }
+      colliding = tops.group_by { |top| top.tr(' ', '_') }.values.select { |names| names.size > 1 }
+      return if colliding.empty?
+
+      names = colliding.flat_map(&:sort).map { |name| %("#{name.dup.force_encoding(Encoding::UTF_8).scrub}") }.join(', ')
+      raise Bulkrax::UnzipError, I18n.t('bulkrax.importer.unzip.errors.name_collision', names: names)
+    end
+    private_class_method :reject_name_collisions!
   end
 end

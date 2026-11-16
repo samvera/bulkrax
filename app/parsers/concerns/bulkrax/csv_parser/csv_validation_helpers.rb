@@ -260,12 +260,86 @@ module Bulkrax
 
       # Builds the find_record lambda used by row validators and hierarchy extraction.
       def build_find_record
+        work_identifier, work_identifier_search = source_identifier_search_fields
+        ->(id) { find_record_by_source_identifier(id, work_identifier, work_identifier_search) }
+      end
+
+      # What FactoryClassFinder reads from an entry before its metadata is
+      # built. The model is the row's, already chosen by import's rule
+      # (#row_model).
+      ImportRow = Struct.new(:raw_metadata, keyword_init: true) do
+        def parsed_metadata; end
+
+        def importerexporter; end
+
+        def parser
+          self
+        end
+
+        def model_field_mappings
+          ['model']
+        end
+
+        delegate :default_work_type, to: :Bulkrax
+      end
+
+      # Builds a lambda telling, for a row, the existing record its import
+      # would update or delete, through the importer's own lookup
+      # (ObjectFactoryInterface.find_for_import) and the model
+      # FactoryClassFinder gives the row. Returns nil when the import would
+      # create a record, else the column and value that matched, plus
+      # `missing: true` for an id naming no record or the two model names
+      # for a record of another model. Each row is looked up once.
+      def build_find_existing_record(mappings)
+        work_identifier, work_identifier_search = source_identifier_search_fields
+        results = {}.compare_by_identity
+        lambda do |row|
+          return results[row] if results.key?(row)
+
+          results[row] = existing_record_match(
+            row, row_id(row[:raw_row], mappings),
+            klass: Bulkrax::FactoryClassFinder.find(entry: ImportRow.new(raw_metadata: { 'model' => row[:model] })),
+            search_field: work_identifier_search, name_field: work_identifier
+          )
+        end
+      end
+
+      # The row's id and its column as import reads them
+      # (HasMatchers#add_metadata): `id` is single-valued, so the last column
+      # mapped to it wins, blank or not, stripped; an excluded mapping is
+      # skipped.
+      def row_id(raw_row, mappings)
+        return if Bulkrax::FieldResolver.option(mappings['id'], 'excluded')
+
+        header = raw_row.keys.reverse.find do |key|
+          Bulkrax::FieldResolver.fields_for_header(mappings, Bulkrax::FieldResolver.key_without_numbers(key)).include?('id')
+        end
+        [header, raw_row[header].to_s.strip.presence] if header
+      end
+
+      def existing_record_match(row, (id_header, id), klass:, search_field:, name_field:)
+        match = id ? { field: id_header, value: id } : { field: nil, value: row[:source_identifier] }
+        record = Bulkrax.object_factory.find_for_import(id: id, source_identifier: row[:source_identifier], klass: klass,
+                                                        search_field: search_field, name_field: name_field)
+        return if record.nil?
+        return match if id && record.id.to_s == id.to_s
+
+        { field: nil, value: row[:source_identifier] }
+      rescue Bulkrax::ObjectFactoryInterface::ModelMismatchError => e
+        match.merge(existing_model: e.existing_model, model: e.model)
+      rescue Bulkrax::ObjectFactoryInterface::ObjectNotFoundError
+        match.merge(missing: true)
+      rescue StandardError => e
+        Rails.logger.error("CsvParser.validate_csv: looking up an existing record failed – #{e.message}")
+        nil
+      end
+
+      def source_identifier_search_fields
         all_mappings = Bulkrax.field_mappings['Bulkrax::CsvParser'] || {}
         flagged = Bulkrax::FieldResolver.flagged_key(all_mappings, 'source_identifier')
         work_identifier = flagged&.to_s || 'source'
         search_field = Bulkrax::FieldResolver.option(flagged && all_mappings[flagged], 'search_field')
-        work_identifier_search = Array.wrap(search_field).first&.to_s || "#{work_identifier}_sim"
-        ->(id) { find_record_by_source_identifier(id, work_identifier, work_identifier_search) }
+        [work_identifier, Array.wrap(search_field).first&.to_s || "#{work_identifier}_sim"]
       end
 
       # Attempt to locate an existing repository record by its identifier.

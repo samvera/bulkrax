@@ -200,39 +200,75 @@ module Bulkrax
     # @todo - investigate using perform_later, and having the importer check for
     #   DownloadCloudFileJob before it starts
     def retrieve_cloud_files(files, importer)
-      files_path = File.join(path_for_import, 'files')
-      FileUtils.mkdir_p(files_path) unless File.exist?(files_path)
-      target_files = []
-      files.each_pair do |_key, file|
-        # fixes bug where auth headers do not get attached properly
-        if file['auth_header'].present?
-          file['headers'] ||= {}
-          file['headers'].merge!(file['auth_header'])
-        end
-        # this only works for uniquely named files
-        target_file = File.join(files_path, file['file_name'].tr(' ', '_'))
-        target_files << target_file
-        # Now because we want the files in place before the importer runs
-        # Problematic for a large upload
-        Bulkrax::DownloadCloudFileJob.perform_later(file, target_file)
-      end
-      importer[:parser_fields]['original_file_paths'] = target_files
+      plan = plan_cloud_files(files)
+      dispatch_cloud_files!(plan, importer)
+      importer[:parser_fields]['original_file_paths'] = plan.map { |_file, _relative_filename, target_file| target_file }
       return nil
     end
 
-    def move_csv_file_to_filesystem(files, upload_file, importer)
-      # /mnt/hyrax/imports/10_20230929154530/bulkrax_local.csv 
+    # Validates and resolves the whole batch, without enqueueing anything
+    # yet. Otherwise an earlier, valid file's job would already be running
+    # by the time a later file in the same batch is found to be unsafe.
+    # Split out from {#retrieve_cloud_files} so a caller (the importers
+    # controller) can persist the resolved paths before dispatching.
+    #
+    # @return [Array<Array(Hash, String, String)>] one entry per file: the
+    #   file spec, its relative destination filename, and the resolved
+    #   absolute target path
+    def plan_cloud_files(files)
+      files_path = File.join(path_for_import, 'files')
+      FileUtils.mkdir_p(files_path) unless File.exist?(files_path)
+
+      files.values.map { |file| plan_cloud_file(file) }
+    end
+
+    # Enqueues a download job for each entry of an already-validated plan
+    # (see {#plan_cloud_files}).
+    def dispatch_cloud_files!(plan, importer)
+      plan.each { |file, relative_filename, _target_file| Bulkrax::DownloadCloudFileJob.perform_later(file, importer_id: importer.id, relative_filename: relative_filename) }
+    end
+
+    # Validates one cloud-file spec and resolves its destination, without
+    # enqueueing anything yet.
+    #
+    # @return [Array(Hash, String, String)] the file spec, its relative
+    #   destination filename, and the resolved absolute target path
+    def plan_cloud_file(file)
+      # fixes bug where auth headers do not get attached properly
+      if file['auth_header'].present?
+        file['headers'] ||= {}
+        file['headers'].merge!(file['auth_header'])
+      end
+
+      # Checked on the raw file_name, before it's joined under 'files/':
+      # that join would otherwise neutralize a leading `/` (File.join
+      # doesn't treat it as absolute once it's not the first argument).
+      Bulkrax::CloudSourceValidator.preflight!(file)
+
+      # this only works for uniquely named files
+      relative_filename = File.join('files', file['file_name'].tr(' ', '_'))
+      target_file = Bulkrax::SafePath.confine!(path_for_import, relative_filename, require_file: true)
+      [file, relative_filename, target_file]
+    end
+
+    def move_csv_to_ingest_directory(files, upload_file, importer)
+      # /mnt/hyrax/uploads/10_20230929154530/bulkrax_local.csv 
       # to
       # /mnt/volume/ingest_files/bulkrax_local.csv
-      # move uploaded file to the same directory as the other cloud files
+      # move uploaded file .csv to the same directory as the other "cloud" files.
+      # Check the filesystem path is valid and matches config.filesystem_files_path.
       if files.present? && !files.first.nil?
-        file_name = upload_file.split('/').last
+        current_upload_file = upload_file.file
+        file_name = File.basename(current_upload_file)
         cloud_files = files.first.second["url"]
-        cloud_files_path = cloud_files.split('/')[2...-1].join('/')
+        cloud_files_path = File.expand_path(cloud_files.split('/')[2...-1].join('/'))
+        unless cloud_files_path.starts_with?(Bulkrax.config.filesystem_files_path)
+          raise StandardError, "Invalid ingest path"
+        end
         new_import_file_path = File.join(cloud_files_path, file_name)
 
         FileUtils.mv(
-            upload_file,
+            current_upload_file,
             new_import_file_path,
             force: true,
             verbose: true
@@ -240,7 +276,7 @@ module Bulkrax
         puts "new_import_file_path: #{new_import_file_path}"
         new_import_file_path
       else
-        upload_file
+        current_upload_file
       end
     end
 
@@ -410,7 +446,7 @@ module Bulkrax
 
       self.class.file_reference_candidates(filename)
           .map { |candidate| File.join(base_dir, candidate) }
-          .find { |candidate| File.exist?(candidate) }
+          .find { |candidate| File.file?(candidate) }
     end
 
     # The names a file reference may have under `files/` after extraction,
@@ -485,7 +521,7 @@ module Bulkrax
     # escape the destination directory (Zip Slip).
     def self.real_zip_entries(zip_file)
       entries = zip_file.entries.select { |e| e.file? && !macos_junk_entry?(e.name) }
-      entries.each { |e| reject_unsafe_entry!(e.name) }
+      entries.each { |e| CsvParser.reject_unsafe_entry!(e.name) }
       entries
     end
 
@@ -505,7 +541,7 @@ module Bulkrax
     def existing_file_path(files_dir, reference)
       file = self.class.file_reference_candidates(reference)
                  .map { |candidate| File.join(files_dir, candidate) }
-                 .find { |candidate| File.exist?(candidate) }
+                 .find { |candidate| File.file?(candidate) }
       raise "File #{File.join(files_dir, reference)} does not exist" if file.nil?
 
       file

@@ -19,7 +19,7 @@ module Bulkrax
   #       to either a record's ID or an Bulkrax::Entry's source_identifier.
   # Please override with your own job for custom/non-hyrax applications
   # set Bulkrax config variable :relationship_job to your custom class
-  class CreateRelationshipsJob < ApplicationJob
+  class CreateRelationshipsJob < ApplicationJob # rubocop:disable Metrics/ClassLength
     ##
     # @api public
     # @since v5.0.1
@@ -39,6 +39,9 @@ module Bulkrax
     # @see https://github.com/scientist-softserv/louisville-hyku/commit/128a9ef
     class_attribute :update_child_records_works_file_sets, default: false
     class_attribute :max_failure_count, default: 5
+    # The size of bulkrax_pending_relationships.status_message on databases
+    # that enforce string limits, such as MySQL.
+    STATUS_MESSAGE_LIMIT = 255
 
     include DynamicRecordLookup
 
@@ -66,6 +69,7 @@ module Bulkrax
       @number_of_failures = 0
       @errors = []
       @parent_record_members_added = false
+      @last_attempt = failure_count + 1 >= max_failure_count
 
       parent_entry, parent_record = find_record(parent_identifier, @importer_run_id)
       if parent_record
@@ -84,10 +88,6 @@ module Bulkrax
       end
 
       if @errors.present?
-        # rubocop:disable Rails/SkipsModelValidations
-        ImporterRun.update_counters(@importer_run_id, failed_relationships: @number_of_failures)
-        # rubocop:enable Rails/SkipsModelValidations
-
         parent_entry&.set_status_info(@errors.last, importer_run)
         failure_count += 1
 
@@ -98,12 +98,16 @@ module Bulkrax
             run_user: @user,
             failure_count: failure_count
           )
+          recount_if_failures_counted
+        else
+          fail_relationships(parent_identifier)
         end
         return @errors # stop current job from continuing to run after rescheduling
       else
         # rubocop:disable Rails/SkipsModelValidations
         ImporterRun.update_counters(@importer_run_id, processed_relationships: @number_of_successes)
         # rubocop:enable Rails/SkipsModelValidations
+        recount_if_failures_counted
       end
     end
     # rubocop:enable Metrics/MethodLength
@@ -147,7 +151,7 @@ module Bulkrax
           @number_of_successes += 1
           @parent_record_members_added = true
         rescue => e
-          rel.update(status_message: e.message)
+          rel.update(status_message: e.message.truncate(STATUS_MESSAGE_LIMIT)) if @last_attempt
           @number_of_failures += 1
           @errors << e
         end
@@ -183,7 +187,7 @@ module Bulkrax
             self.number_of_successes += 1
             @parent_record_members_added = true
           rescue => e
-            rel.update(status_message: e.message)
+            rel.update(status_message: e.message.truncate(STATUS_MESSAGE_LIMIT)) if @last_attempt
             @number_of_failures += 1
             @errors << e
           end
@@ -206,7 +210,7 @@ module Bulkrax
     def add_to_collection(relationship:, parent_record:, ability:)
       ActiveRecord::Base.uncached do
         _child_entry, child_record = find_record(relationship.child_id, @importer_run_id)
-        raise "#{relationship} could not find child record" unless child_record
+        raise child_not_found(relationship) unless child_record
         raise "Cannot add child collection (ID=#{relationship.child_id}) to parent work (ID=#{relationship.parent_id})" if child_record.collection? && parent_record.work?
         ability.authorize!(:edit, child_record)
         # We could do this outside of the loop, but that could lead to odd counter failures.
@@ -231,7 +235,7 @@ module Bulkrax
     # To avoid having to reload the parent, we return the updated parent to the calling method.
     def add_to_work(relationship:, parent_record:, ability:)
       _child_entry, child_record = find_record(relationship.child_id, @importer_run_id)
-      raise "#{relationship} could not find child record" unless child_record
+      raise child_not_found(relationship) unless child_record
       raise "Cannot add child collection (ID=#{relationship.child_id}) to parent work (ID=#{relationship.parent_id})" if child_record.collection? && parent_record.work?
 
       ability.authorize!(:edit, child_record)
@@ -246,6 +250,59 @@ module Bulkrax
       relationship.destroy
 
       updated_parent
+    end
+
+    def child_not_found(relationship)
+      "Child record #{relationship.child_id} could not be found for parent #{relationship.parent_id}"
+    end
+
+    # Only the last attempt records errors on relationships, so a relationship
+    # that is no longer Pending failed for good and one that links on a retry
+    # is never reported. A missing parent leaves its relationships untried, so
+    # they get the parent's error here.
+    def fail_relationships(parent_identifier)
+      relationships = Bulkrax::PendingRelationship.where(parent_id: parent_identifier, importer_run_id: @importer_run_id)
+      # rubocop:disable Rails/SkipsModelValidations
+      relationships.pending.update_all(status_message: @errors.last.to_s.truncate(STATUS_MESSAGE_LIMIT))
+      # rubocop:enable Rails/SkipsModelValidations
+      record_relationship_failures
+    end
+
+    # Counts failed relationships from their rows rather than adding to the
+    # counter, because a later run of this job may fail or link the same ones.
+    # The run's row stays locked through the importer status, as it does in the
+    # import jobs, so jobs finishing together count and record in turn.
+    def record_relationship_failures
+      return unless @importer_run_id
+
+      ImporterRun.transaction do
+        failed = ImporterRun.lock.find(@importer_run_id).pending_relationships.where.not(status_message: 'Pending').count
+        # rubocop:disable Rails/SkipsModelValidations
+        ImporterRun.where(id: @importer_run_id).update_all(failed_relationships: failed)
+        # rubocop:enable Rails/SkipsModelValidations
+        record_importer_status
+      end
+    end
+
+    # Linking a relationship that any run of this job failed must clear it,
+    # even when this attempt loaded it while it was still Pending. The counter
+    # is read under the run's lock, so a run of this job that is recording a
+    # failure finishes first.
+    def recount_if_failures_counted
+      return unless @importer_run_id && @number_of_successes.positive?
+
+      ImporterRun.transaction do
+        record_relationship_failures if ImporterRun.lock.find(@importer_run_id).failed_relationships.to_i.positive?
+      end
+    end
+
+    # A chain from an earlier run must not set the status of a newer one.
+    def record_importer_status
+      importer = importer_run&.importer
+      return unless importer && importer.last_run == importer_run
+
+      importer.current_run = importer_run
+      importer.record_status
     end
 
     def reschedule(**kargs)
