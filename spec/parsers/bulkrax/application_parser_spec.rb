@@ -220,6 +220,18 @@ module Bulkrax
       end
     end
 
+    describe '#reject_unsafe_entry!' do
+      let(:parser) { described_class.new(importer) }
+
+      it 'accepts a safe entry name on the parser instance' do
+        expect { parser.reject_unsafe_entry!('files/photo.jpg') }.not_to raise_error
+      end
+
+      it 'rejects an unsafe entry name on the parser instance' do
+        expect { parser.reject_unsafe_entry!('../photo.jpg') }.to raise_error(Bulkrax::UnzipError)
+      end
+    end
+
     describe '#macos_junk_entry?' do
       let(:parser) { described_class.new(importer) }
 
