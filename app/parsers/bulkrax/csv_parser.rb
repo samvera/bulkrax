@@ -220,6 +220,30 @@ module Bulkrax
       return nil
     end
 
+    def move_csv_file_to_filesystem(files, upload_file, importer)
+      # /mnt/hyrax/imports/10_20230929154530/bulkrax_local.csv 
+      # to
+      # /mnt/volume/ingest_files/bulkrax_local.csv
+      # move uploaded file to the same directory as the other cloud files
+      if files.present? && !files.first.nil?
+        file_name = upload_file.split('/').last
+        cloud_files = files.first.second["url"]
+        cloud_files_path = cloud_files.split('/')[2...-1].join('/')
+        new_import_file_path = File.join(cloud_files_path, file_name)
+
+        FileUtils.mv(
+            upload_file,
+            new_import_file_path,
+            force: true,
+            verbose: true
+          )
+        puts "new_import_file_path: #{new_import_file_path}"
+        new_import_file_path
+      else
+        upload_file
+      end
+    end
+
     # export methods
 
     def write_files
@@ -494,7 +518,11 @@ module Bulkrax
       @files_dir ||= begin
         has_attachments_zip = parser_fields['attachments_zip_path'].present? && zip_file?(parser_fields['attachments_zip_path'])
         base = zip? || has_attachments_zip ? importer_unzip_path : File.dirname(import_file_path)
-        File.join(base, 'files')
+        if Bulkrax.config.bypass_download_cloud_files?
+          base
+        else
+          File.join(base, 'files')
+        end
       end
     end
 
