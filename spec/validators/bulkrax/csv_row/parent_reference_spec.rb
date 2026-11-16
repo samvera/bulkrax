@@ -140,4 +140,16 @@ RSpec.describe Bulkrax::CsvRow::ParentReference do
       expect(context[:errors].first[:value]).to eq('missing_parent')
     end
   end
+
+  it 'ignores a delete row, which relates nothing at import' do
+    context = make_context
+    described_class.call(make_record(parent: 'missing_parent').merge(deleting: true), 2, context)
+    expect(context[:errors]).to be_empty
+  end
+
+  it 'reports a parent this import deletes, which no relationship can reach' do
+    context = make_context.merge(deleted_ids: Set.new(['col1']))
+    described_class.call(make_record(parent: 'col1'), 2, context)
+    expect(context[:errors].first).to include(severity: 'error', category: 'deleted_record_reference', value: 'col1')
+  end
 end

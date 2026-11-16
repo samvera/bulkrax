@@ -90,6 +90,7 @@ module Bulkrax
         works: @data[:works],
         fileSets: @data[:fileSets],
         totalItems: @data[:totalItems],
+        deletionCount: @data[:deletionCount] || 0,
         messages: build_messages
       }
     end

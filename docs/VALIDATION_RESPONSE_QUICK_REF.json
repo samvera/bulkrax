@@ -40,6 +40,7 @@
         "id": "string",
         "title": "string",
         "type": "collection",
+        "deleting": "boolean - The row has a truthy `delete` value, so the import deletes the record",
         "parentIds": [
           "string - Parent IDs (empty array if top-level)"
         ],
@@ -53,6 +54,7 @@
         "id": "string",
         "title": "string",
         "type": "work",
+        "deleting": "boolean - The row has a truthy `delete` value, so the import deletes the record",
         "parentIds": [
           "string - Parent IDs (empty array if standalone)"
         ],
@@ -65,10 +67,12 @@
       {
         "id": "string",
         "title": "string",
-        "type": "file_set"
+        "type": "file_set",
+        "deleting": "boolean - The row has a truthy `delete` value, so the import deletes the record"
       }
     ],
     "totalItems*": "integer - collections + works + fileSets count",
+    "deletionCount*": "integer - Rows with a truthy `delete` value",
     "validationErrorsCacheKey": "string|null - Cache key passed to GET /importers/guided_import/download_validation_errors?key=<value>. Present when any errors exist (missingRequired, unrecognized, emptyColumns, or rowErrors). Null when validation is clean.",
     "messages*": {
       "validationStatus*": {
@@ -156,10 +160,14 @@
       "missing_source_identifier",
       "duplicate_source_identifier",
       "existing_source_identifier",
+      "remove_and_rerun_record",
       "existing_record_model_mismatch",
       "existing_record_id_not_found",
+      "delete_record",
+      "delete_record_not_found",
       "invalid_parent_reference",
       "invalid_child_reference",
+      "deleted_record_reference",
       "circular_reference",
       "missing_required_value",
       "invalid_controlled_value",

@@ -217,6 +217,7 @@ fr:
           remove_file: Supprimer le fichier
           render_error: La validation a été effectuée, mais les résultats n'ont pas pu être affichés. Veuillez réessayer.
           review_admin_set: 'Ensemble d''administrateur :'
+          review_deletions: "Enregistrements à supprimer : %{count}"
           review_first_n_records: premiers %{count} enregistrements
           review_limit: 'Limite:'
           review_name: 'Nom:'
@@ -225,6 +226,8 @@ fr:
           review_total: "%{total} au total — %{collections} collections, %{works} œuvres, %{file_sets} ensembles de fichiers"
           review_visibility: 'Visibilité:'
           server_error: Erreur serveur lors de la validation. Veuillez réessayer ou contacter l'assistance.
+          deleting_record_badge: "supprimer"
+          deleting_record_title: "Cette ligne supprime l'enregistrement existant"
           existing_record_badge: existant
           existing_record_title: Cet enregistrement existe déjà dans le dépôt et sera lié lors de l'importation.
           shared_badge: commun
@@ -347,6 +350,17 @@ fr:
               suggestion: "Veuillez vérifier le vocabulaire contrôlé pour les termes valides."
           critical_errors: Les erreurs critiques doivent être corrigées avant l'importation.
           did_you_mean: Vouliez-vous dire « %{suggestion} » ?
+          deleted_record_reference_validator:
+            errors:
+              message: "« %{value} » est supprimé par cette importation ; cette ligne ne peut donc pas y être liée."
+              suggestion: "Retirez « %{value} » de la valeur de %{field} de cette ligne, ou conservez cet enregistrement."
+          delete_record_validator:
+            errors:
+              message: "Aucun enregistrement existant ne correspond à « %{value} » ; cette ligne n'a donc rien à supprimer."
+              suggestion: "Corrigez la valeur de %{field} ou retirez la valeur de suppression de cette ligne."
+            warnings:
+              message: "« %{value} » correspond à un enregistrement existant ; cette ligne le supprimera donc."
+              suggestion: "Si vous ne souhaitiez pas supprimer cet enregistrement, retirez la valeur de suppression de cette ligne."
           duplicate_identifier_validator:
             errors:
               message: "%{field} en double « %{value} » — apparaît également à la ligne %{original_row}."
@@ -411,6 +425,10 @@ fr:
             message_column_empty: "Aucun modèle fourni — toutes les lignes seront importées en tant que '%{default_work_type}'."
             suggestion_column_empty: "Ajoutez des valeurs de modèle à la colonne 'model' de votre CSV si vous souhaitez utiliser un type de travail différent pour certaines lignes."
             suggestion_column_missing: "Ajoutez une colonne 'model' à votre CSV si vous souhaitez utiliser un type de travail différent pour certaines lignes."
+          remove_and_rerun_validator:
+            warnings:
+              message: "« %{value} » correspond à un enregistrement existant ; cette ligne le supprimera donc puis l'importera de nouveau."
+              suggestion: "Si vous vouliez mettre à jour l'enregistrement directement, retirez la valeur de remove_and_rerun de cette ligne."
           required_field_validator:
             errors:
               message: "Le champ « %{field} » est obligatoire mais il est vide pour cette ligne."

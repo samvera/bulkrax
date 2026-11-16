@@ -27,7 +27,8 @@ module Bulkrax
             parse_csv_inputs(csv_file, admin_set_id)
 
           all_ids          = csv_data.map { |r| r[:source_identifier] }.compact.to_set
-          header_issues    = check_headers(headers, raw_csv, mapping_manager, mappings, field_metadata, field_analyzer)
+          header_issues    = check_headers(headers, raw_csv, mapping_manager, mappings, field_metadata, field_analyzer,
+                                           required_models: required_header_models(csv_data, headers, mappings))
           missing_required = header_issues[:missing_required]
           notices, row_errors, collections, works, file_sets =
             run_validations(csv_data, all_ids, headers, source_id_key, mappings, field_metadata, missing_required, zip_file,
@@ -102,7 +103,7 @@ module Bulkrax
         end
 
         # Runs all header-level checks and returns a hash of results.
-        def check_headers(headers, raw_csv, mapping_manager, mappings, field_metadata, field_analyzer) # rubocop:disable Metrics/ParameterLists
+        def check_headers(headers, raw_csv, mapping_manager, mappings, field_metadata, field_analyzer, required_models: field_metadata.keys) # rubocop:disable Metrics/ParameterLists
           all_models    = field_metadata.keys
           valid_headers = build_valid_validation_headers(mapping_manager, field_analyzer,
                                                          all_models, mappings, field_metadata)
@@ -118,7 +119,7 @@ module Bulkrax
           valid_headers = (valid_headers + suffixed).uniq
 
           {
-            missing_required: find_missing_required_headers(headers, field_metadata, mapping_manager),
+            missing_required: find_missing_required_headers(headers, field_metadata.slice(*required_models), mapping_manager),
             unrecognized: find_unrecognized_validation_headers(headers, valid_headers,
                                                                mapping_manager: mapping_manager,
                                                                field_metadata: field_metadata),
@@ -144,6 +145,7 @@ module Bulkrax
           extract_validation_items(
             csv_data, all_ids, find_record,
             find_existing_record: find_existing_record,
+            deleted_ids: deleted_identifiers(csv_data, mappings, find_existing_record),
             parent_split_pattern: resolve_parent_split_pattern(mappings),
             child_split_pattern: resolve_children_split_pattern(mappings),
             parent_columns: parent_columns,
@@ -158,30 +160,24 @@ module Bulkrax
 
         # Runs all registered row validators and returns the collected errors.
         def run_row_validators(csv_data, all_ids, source_id_key, mappings, field_metadata, find_record, notices = [], mapping_manager: nil, zip_plan: nil, find_existing_record: nil) # rubocop:disable Metrics/ParameterLists
-          parent_columns, children_columns = relationship_columns(mappings)
           context = {
             errors: [],
             warnings: [],
             seen_ids: {},
             all_ids: all_ids,
             source_identifier: source_id_key.to_s,
-            parent_split_pattern: resolve_parent_split_pattern(mappings),
-            child_split_pattern: resolve_children_split_pattern(mappings),
-            parent_column: parent_columns.first,
-            children_column: children_columns.first,
-            parent_columns: parent_columns,
-            children_columns: children_columns,
             mappings: mappings,
             mapping_manager: mapping_manager,
             field_metadata: field_metadata,
             find_record_by_source_identifier: find_record,
             find_existing_record: find_existing_record,
-            relationship_graph: build_relationship_graph(csv_data, mappings),
             notices: notices,
-            zip_plan: zip_plan
+            zip_plan: zip_plan,
+            **relationship_context(csv_data, mappings, find_existing_record)
           }
           csv_data.each_with_index do |record, index|
-            Bulkrax.csv_row_validators.each { |v| v.call(record, index + 2, context) } # 1-indexed, plus header row
+            row_number = index + 2 # 1-indexed, plus header row
+            Bulkrax.csv_row_validators.each { |v| v.call(record, row_number, context) }
           end
           context[:errors]
         end

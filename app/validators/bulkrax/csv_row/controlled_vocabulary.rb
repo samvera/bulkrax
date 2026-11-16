@@ -7,6 +7,8 @@ module Bulkrax
     # to the QA authority for that field.
     module ControlledVocabulary
       def self.call(record, row_index, context) # rubocop:disable Metrics/MethodLength
+        return if record[:deleting]
+
         field_metadata = context[:field_metadata]
         return if field_metadata.blank?
 

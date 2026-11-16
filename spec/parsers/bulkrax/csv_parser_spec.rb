@@ -323,6 +323,75 @@ module Bulkrax
         end
       end
 
+      context 'when a row is deleted' do
+        before do
+          allow(subject).to receive(:works).and_return([{ source_identifier: 'work_1' }, { source_identifier: 'work_2', id: 'rec-2', delete: 'true' }])
+          allow(DeleteWorkJob).to receive(:perform_later)
+        end
+
+        it "records the row's identifiers before queuing any job, so no relationship to it is written" do
+          seen_by_first_job = nil
+          allow(ImportWorkJob).to receive(:perform_later) { seen_by_first_job ||= Importer.find(importer.id).parser_fields['deleted_identifiers'] }
+          subject.create_objects(%w[work])
+
+          expect(seen_by_first_job).to contain_exactly('work_2', 'rec-2')
+        end
+
+        it 'keeps deletions recorded earlier in the same run' do
+          allow(subject).to receive(:collections).and_return([{ source_identifier: 'col_1', delete: 'true' }])
+          allow(DeleteCollectionJob).to receive(:perform_later)
+          allow(ImportWorkJob).to receive(:perform_later)
+          subject.create_objects(%w[collection])
+          allow(subject).to receive(:works).and_return([{ source_identifier: 'work_1' }])
+          subject.create_objects(%w[work])
+          expect(Importer.find(importer.id).parser_fields['deleted_identifiers']).to eq(['col_1'])
+        end
+
+        it 'starts over for a new run' do
+          importer.parser_fields.merge!('deleted_identifiers' => ['old'], 'deleted_identifiers_run_id' => -1)
+          importer.save!
+          allow(ImportWorkJob).to receive(:perform_later)
+          subject.create_objects(%w[work])
+          expect(Importer.find(importer.id).parser_fields['deleted_identifiers']).to contain_exactly('work_2', 'rec-2')
+        end
+
+        it 'clears the list for an Existing Entries run, which deletes nothing' do
+          importer.parser_fields['deleted_identifiers'] = ['old']
+          importer.save!
+          subject.rebuild_entries(%w[work])
+          expect(Importer.find(importer.id).parser_fields['deleted_identifiers']).to eq([])
+        end
+
+        it 'leaves the saved identifiers alone when no record types are submitted' do
+          importer.parser_fields['deleted_identifiers'] = ['kept']
+          importer.save!
+          allow(ScheduleRelationshipsJob).to receive_message_chain(:set, :perform_later)
+          subject.create_objects(%w[relationship])
+          expect(Importer.find(importer.id).parser_fields['deleted_identifiers']).to eq(['kept'])
+        end
+
+        it 'leaves out delete rows past the import limit, which are never queued' do
+          allow(subject).to receive(:limit).and_return(1)
+          allow(ImportWorkJob).to receive(:perform_later)
+          subject.create_objects(%w[work])
+          expect(Importer.find(importer.id).parser_fields['deleted_identifiers']).to eq([])
+        end
+
+        it 'reads the id through the id mapping, as import does' do
+          allow(subject).to receive(:works).and_return([{ source_identifier: 'work_2', legacy_id: 'rec-2', delete: 'true' }])
+          allow(importer).to receive(:mapping).and_return('id' => { 'from' => ['legacy_id'] })
+          subject.create_objects(%w[work])
+          expect(Importer.find(importer.id).parser_fields['deleted_identifiers']).to contain_exactly('work_2', 'rec-2')
+        end
+
+        it 'ignores an id whose mapping is excluded, as import does' do
+          allow(importer).to receive(:mapping).and_return('id' => { 'from' => ['id'], 'excluded' => true })
+          allow(ImportWorkJob).to receive(:perform_later)
+          subject.create_objects(%w[work])
+          expect(Importer.find(importer.id).parser_fields['deleted_identifiers']).to eq(['work_2'])
+        end
+      end
+
       context 'when a row has no source identifier' do
         before do
           allow(subject).to receive(:works).and_return([{ source_identifier: 'work_1' }, { title: 'no source identifier' }])
@@ -443,8 +512,8 @@ module Bulkrax
         context 'with fill_in_source_identifier set' do
           it 'fills in the source_identifier if fill_in_source_identifier is set' do
             expect(subject).to receive(:increment_counters).twice
-            # once for present? and once to execute
-            expect(Bulkrax).to receive(:fill_in_blank_source_identifiers).twice.and_return(->(_parser, _index) { "4649ee79-7d7a-4df0-86d6-d6865e2925ca" })
+            # for present? and to execute, plus the check for which rows are queued
+            expect(Bulkrax).to receive(:fill_in_blank_source_identifiers).at_least(:twice).and_return(->(_parser, _index) { "4649ee79-7d7a-4df0-86d6-d6865e2925ca" })
             subject.create_works
             expect(subject.seen).to include("2", "4649ee79-7d7a-4df0-86d6-d6865e2925ca")
           end
@@ -802,6 +871,26 @@ module Bulkrax
     # `#unzip_with_primary_csv` and `#unzip_attachments_only` against the
     # accepted zip shapes from guided-import validation.
 
+    describe '#valid_import?' do
+      let(:importer) { FactoryBot.create(:bulkrax_importer_csv) }
+
+      it 'does not require metadata on rows that only delete' do
+        allow(subject).to receive(:records).and_return([{ source_identifier: 'w1', title: '', delete: 'true' }])
+        expect(subject.valid_import?).to be true
+      end
+
+      it 'does not require a mapping for metadata the sheet omits when every row deletes' do
+        allow(subject).to receive(:records).and_return([{ source_identifier: 'w1', delete: 'true' }])
+        allow(importer).to receive(:mapping).and_return('source_identifier' => { 'from' => ['source_identifier'], 'source_identifier' => true })
+        expect(subject.valid_import?).to be true
+      end
+
+      it 'still requires it on the rows it imports' do
+        allow(subject).to receive(:records).and_return([{ source_identifier: 'w1', title: '', delete: 'true' }, { source_identifier: 'w2', title: '' }])
+        expect(subject.valid_import?).to be false
+      end
+    end
+
     describe '#file_paths' do
       let(:importer) do
         FactoryBot.build(:bulkrax_importer_csv,
@@ -834,6 +923,17 @@ module Bulkrax
 
         it 'raises as it does for a missing file' do
           expect { subject.file_paths }.to raise_error(RuntimeError, %r{spec/fixtures/csv/files does not exist})
+        end
+      end
+
+      context 'when a delete row names a file that is not there' do
+        before do
+          allow(subject).to receive(:records).and_return([{ file: 'gone.jpg', delete: 'true' }])
+          allow(subject).to receive(:path_to_files).and_return('spec/fixtures/csv/files')
+        end
+
+        it 'does not stop the import, since deleting never reads the file' do
+          expect(subject.file_paths).to eq([])
         end
       end
 

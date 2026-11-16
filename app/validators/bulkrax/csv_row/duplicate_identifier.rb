@@ -43,16 +43,22 @@ module Bulkrax
 
       def self.add_existing_warning(record, context, row_index, source_id, source_id_label)
         match = context[:find_existing_record]&.call(record)
-        return unless match
+        return if match.nil? || match[:lookup_failed]
 
         field = match[:field] || source_id_label
         issue = if match[:existing_model]
                   ['error', 'existing_record_model_mismatch', 'existing_record_model_mismatch_validator.errors']
                 elsif match[:missing]
                   ['error', 'existing_record_id_not_found', 'existing_record_id_not_found_validator.errors']
+                elsif record[:deleting]
+                  nil
+                elsif record[:rerunning]
+                  ['warning', 'remove_and_rerun_record', 'remove_and_rerun_validator.warnings']
                 else
                   ['warning', 'existing_source_identifier', 'existing_source_identifier_validator.warnings']
                 end
+        return unless issue
+
         add_existing_issue(context, row_index, source_id, field, match, *issue)
       end
 

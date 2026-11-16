@@ -173,4 +173,10 @@ RSpec.describe Bulkrax::CsvRow::RequiredValues do
       expect(context[:errors].map { |e| e[:column] }).to contain_exactly('creator')
     end
   end
+
+  it 'ignores a delete row, whose metadata the import never builds' do
+    context = make_context
+    described_class.call(make_record({ 'title' => '' }).merge(deleting: true), 2, context)
+    expect(context[:errors]).to be_empty
+  end
 end

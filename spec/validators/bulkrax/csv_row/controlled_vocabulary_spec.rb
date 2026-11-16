@@ -181,4 +181,15 @@ RSpec.describe Bulkrax::CsvRow::ControlledVocabulary do
       end
     end
   end
+
+  context 'when a delete row has a value not in the authority' do
+    let(:record) do
+      { source_identifier: 'work-001', model: 'GenericWork', raw_row: { 'rights_statement' => 'Unknown' }, deleting: true }
+    end
+
+    it 'ignores it, since the import never builds a delete row' do
+      call
+      expect(errors).to be_empty
+    end
+  end
 end

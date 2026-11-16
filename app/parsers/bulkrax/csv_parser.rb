@@ -23,6 +23,47 @@ module Bulkrax
       Bulkrax::SplitPatternCoercion.coerce(split_value) || Bulkrax.multi_value_element_split_on
     end
 
+    def create_objects(types_array = nil)
+      record_deleted_identifiers(types_array)
+      super
+    rescue StandardError => e
+      set_status_info(e)
+    end
+
+    # Each row's import job skips a relationship to a row this import deletes
+    # (ImportBehavior#parent_jobs), even one whose own job has not run yet, so
+    # the identifiers are saved before any job is queued.
+    def record_deleted_identifiers(types_array = nil)
+      types = (types_array || %w[collection work file_set]) - ['relationship']
+      return if types.empty?
+
+      deleted = queued_records(types).select { |record| record_deleted?(record) }
+      mapping = deleted.empty? ? {} : importerexporter.mapping || {}
+      identifiers = deleted.flat_map { |record| [record[source_identifier], Bulkrax::FieldResolver.row_id(record.to_h.transform_keys(&:to_s), mapping)&.last] }
+                           .map { |value| value.to_s.strip }.reject(&:empty?)
+      fields = importerexporter.parser_fields
+      # Each record type may be submitted separately; keep the run's earlier ones.
+      earlier = fields['deleted_identifiers_run_id'] == current_run.id ? Array(fields['deleted_identifiers']) : []
+      fields['deleted_identifiers'] = (earlier + identifiers).uniq
+      fields['deleted_identifiers_run_id'] = current_run.id
+      importerexporter.save
+    end
+
+    # An Existing Entries run submits entries as imports and deletes nothing.
+    def rebuild_entries(types_array = nil)
+      importerexporter.parser_fields['deleted_identifiers'] = []
+      importerexporter.save
+      super
+    end
+
+    # The rows #create_objects queues: those with a source identifier, or one
+    # Bulkrax fills in, up to the import limit.
+    def queued_records(types)
+      fills_in = Bulkrax.fill_in_blank_source_identifiers.present?
+      queued = types.flat_map { |type| send(type.pluralize) }.select { |record| record[source_identifier].present? || fills_in }
+      limit.nil? || limit.zero? ? queued : queued.first(limit)
+    end
+
     def records(_opts = {})
       return @records if @records.present?
 
@@ -112,9 +153,13 @@ module Bulkrax
     end
 
     def valid_import?
-      compressed_record = records.flat_map(&:to_a).partition { |_, v| !v }.flatten(1).to_h
-      error_alert = "Missing at least one required element, missing element(s) are: #{missing_elements(compressed_record).join(', ')}"
-      raise StandardError, error_alert unless required_elements?(compressed_record)
+      # A row that only deletes needs no metadata: its record is never built.
+      kept = records.reject { |record| record_deleted?(record) }
+      if kept.any?
+        compressed_record = kept.flat_map(&:to_a).partition { |_, v| !v }.flatten(1).to_h
+        error_alert = "Missing at least one required element, missing element(s) are: #{missing_elements(compressed_record).join(', ')}"
+        raise StandardError, error_alert unless required_elements?(compressed_record)
+      end
 
       file_paths.is_a?(Array)
     rescue StandardError => e
@@ -388,7 +433,7 @@ module Bulkrax
 
       @file_paths ||= records.map do |r|
         raw_values = r.select { |key, _| Bulkrax::FieldResolver.header_for_any?(key, file_headers) }.values.reject(&:blank?)
-        next if raw_values.empty?
+        next if raw_values.empty? || record_deleted?(r)
         raise StandardError, "Record references local files but no files directory could be resolved from the import path" if files_dir.nil?
 
         raw_values.flat_map { |v| v.split(split_pattern) }.map(&:strip).reject(&:empty?).map { |f| existing_file_path(files_dir, f) }

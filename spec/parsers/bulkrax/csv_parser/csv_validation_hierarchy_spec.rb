@@ -26,6 +26,13 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHierarchy do
         expect(map['work2']).to eq(['col1'])
       end
 
+      it "leaves out a delete row's children, which the import never relates" do
+        data = [make_item(source_identifier: 'col1', model: 'Collection', children: 'work1').merge(deleting: true),
+                make_item(source_identifier: 'work1')]
+        map = host.build_child_to_parents_map(data, child_split_pattern: '\\|')
+        expect(map['work1']).to eq([])
+      end
+
       it 'returns an empty array for items with no parent in the map' do
         data = [make_item(source_identifier: 'work1')]
         map = host.build_child_to_parents_map(data, child_split_pattern: '\|')
@@ -201,8 +208,33 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHierarchy do
         expect(existing_for(field: nil, value: 'work1', existing_model: 'Etd', model: 'GenericWork')).to be false
       end
 
+      it 'is false when the lookup itself failed' do
+        expect(existing_for(lookup_failed: true)).to be false
+      end
+
       it 'is false when the id names no record' do
         expect(existing_for(field: 'id', value: 'rec-1', missing: true)).to be false
+      end
+
+      it "gives a delete row no relationships, which the import never makes" do
+        deleting = make_item(source_identifier: 'work1', parent: 'col1', children: 'work2', raw_row: { 'title' => 'Work One' })
+        hash = host.build_item_hash(deleting.merge(deleting: true), { 'work1' => ['col2'] }, Set.new(%w[col1 col2 work2]),
+                                    type: 'work', find_record: ->(_id) { true })
+        expect(hash.values_at(:parentIds, :childIds, :existingParentIds, :existingChildIds)).to all(be_empty)
+      end
+
+      it 'drops references to a row this import deletes, by source identifier or id' do
+        item = make_item(source_identifier: 'work2', parent: 'col1', children: 'rec-9', raw_row: { 'title' => 'Work Two' })
+        find_record = ->(_id) { true }
+        hash = host.build_item_hash(item, { 'work2' => ['col1'] }, Set.new(%w[col1 work2]),
+                                    type: 'work', find_record: find_record, deleted_ids: Set.new(%w[col1 rec-9]))
+        expect(hash.values_at(:parentIds, :childIds, :existingParentIds, :existingChildIds)).to all(be_empty)
+      end
+
+      it 'marks a delete row as deleting, not as an existing record to link' do
+        found = ->(_row) { { field: nil, value: 'work1' } }
+        hash = host.build_item_hash(item.merge(deleting: true), {}, all_ids, type: 'work', find_existing_record: found)
+        expect(hash).to include(deleting: true, existing: false)
       end
 
       it 'is false when no lookup is provided' do

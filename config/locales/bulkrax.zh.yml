@@ -217,6 +217,7 @@ zh:
           remove_file: 删除文件
           render_error: 验证已完成，但结果无法显示。请重试。
           review_admin_set: 管理员设置：
+          review_deletions: "删除的记录数：%{count}"
           review_first_n_records: 前 %{count} 条记录
           review_limit: 限制：
           review_name: 姓名：
@@ -225,6 +226,8 @@ zh:
           review_total: 总计 %{total} — %{collections} 个收藏集，%{works} 个作品，%{file_sets} 个文件集
           review_visibility: 能见度：
           server_error: 验证过程中服务器出错。请重试或联系客服。
+          deleting_record_badge: "删除"
+          deleting_record_title: "此行将删除现有记录"
           existing_record_badge: 已存在
           existing_record_title: 此记录已存在于存储库中，导入时将进行关联。
           shared_badge: 共享
@@ -347,6 +350,17 @@ zh:
               suggestion: "请检查受控词表以获取有效术语。"
           critical_errors: 导入前必须修复关键错误。
           did_you_mean: 您是不是想输入“%{suggestion}”？
+          deleted_record_reference_validator:
+            errors:
+              message: "'%{value}' 将被此次导入删除，因此此行无法与其关联。"
+              suggestion: "请从此行的 %{field} 值中移除 '%{value}'，或保留该记录。"
+          delete_record_validator:
+            errors:
+              message: "没有现有记录与 '%{value}' 匹配，因此此行没有可删除的内容。"
+              suggestion: "请更正 %{field} 的值，或从此行中移除删除值。"
+            warnings:
+              message: "'%{value}' 与现有记录匹配，因此此行将删除该记录。"
+              suggestion: "如果您不打算删除此记录，请从此行中移除删除值。"
           duplicate_identifier_validator:
             errors:
               message: "重复的 %{field} '%{value}' — 也出现在第 %{original_row} 行。"
@@ -411,6 +425,10 @@ zh:
             message_column_empty: "未提供模型 — 所有行将以 '%{default_work_type}' 导入。"
             suggestion_column_empty: "如果您想为某些行使用不同的作品类型，请在 CSV 的 'model' 列中添加模型值。"
             suggestion_column_missing: "如果您想为某些行使用不同的作品类型，请在 CSV 中添加 'model' 列。"
+          remove_and_rerun_validator:
+            warnings:
+              message: "'%{value}' 与现有记录匹配，因此此行将删除该记录并重新导入。"
+              suggestion: "如果您打算直接更新该记录，请从此行中移除 remove_and_rerun 的值。"
           required_field_validator:
             errors:
               message: "字段 '%{field}' 是必填项，但此行中该字段为空。"

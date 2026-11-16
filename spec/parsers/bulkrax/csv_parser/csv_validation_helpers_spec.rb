@@ -31,6 +31,18 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
       expect(record[:file_values]).to eq(%w[a.jpg b.jpg])
     end
 
+    it 'marks a row deleting when its delete cell is truthy, as import reads it' do
+      csv = Bulkrax::CsvEntry.read_data(StringIO.new("source_identifier,delete\nw1,true\nw2,false\nw3,0\nw4,\nw5,yes\n"))
+      rows = host.parse_validation_rows(csv, :source_identifier, :parents, :children, {})
+      expect(rows.map { |r| r[:deleting] }).to eq([true, false, false, false, true])
+    end
+
+    it 'marks a row rerunning when its remove_and_rerun cell is truthy' do
+      csv = Bulkrax::CsvEntry.read_data(StringIO.new("source_identifier,remove_and_rerun\nw1,true\nw2,\n"))
+      rows = host.parse_validation_rows(csv, :source_identifier, :parents, :children, {})
+      expect(rows.map { |r| r[:rerunning] }).to eq([true, false])
+    end
+
     it 'strips the model value, as import does' do
       csv = Bulkrax::CsvEntry.read_data(StringIO.new("source_identifier,model,work_type\nw1,Collection,Collection \n"))
       row = host.parse_validation_rows(csv, :source_identifier, :parents, :children, { 'model' => { 'from' => ['work_type'] } }).first
@@ -43,6 +55,12 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
       notices = []
       host.append_files_referenced_no_zip_notice!(notices, [{ file: nil, file_values: ["a.jpg"] }], nil)
       expect(notices.map { |n| n[:category] }).to eq(["files_referenced_no_zip"])
+    end
+
+    it "adds no notice when only delete rows list files" do
+      notices = []
+      host.append_files_referenced_no_zip_notice!(notices, [{ file: nil, file_values: ["a.jpg"], deleting: true }], nil)
+      expect(notices).to be_empty
     end
   end
 
@@ -645,6 +663,11 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
       host.build_relationship_graph(csv_data, mappings)
     end
 
+    it "leaves out a delete row's relationships, which the import never records" do
+      data = [record('a', parent: 'b').merge(deleting: true), record('b', children: 'a').merge(deleting: true), record('c', parent: 'a')]
+      expect(graph(data)).to eq('c' => ['a'])
+    end
+
     context 'with only parent declarations' do
       it 'maps each record to its declared parents' do
         data = [record('child', parent: 'parent1'), record('parent1')]
@@ -758,7 +781,7 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
 
     it 'reports a match by source identifier' do
       allow(Bulkrax::ValkyrieObjectFactory).to receive(:find_for_import).and_return(double(id: 'rec-9'))
-      expect(find_existing_record.call(row)).to eq(field: nil, value: 'src-1')
+      expect(find_existing_record.call(row)).to eq(field: nil, value: 'src-1', record_id: 'rec-9')
     end
 
     context 'when the row has an id' do
@@ -766,7 +789,7 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
 
       it 'looks it up by that id and reports the match under the id column' do
         allow(Bulkrax::ValkyrieObjectFactory).to receive(:find_for_import).and_return(double(id: 'rec-1'))
-        expect(find_existing_record.call(row)).to eq(field: 'id', value: 'rec-1')
+        expect(find_existing_record.call(row)).to eq(field: 'id', value: 'rec-1', record_id: 'rec-1')
         expect(Bulkrax::ValkyrieObjectFactory).to have_received(:find_for_import).with(hash_including(id: 'rec-1'))
       end
 
@@ -808,6 +831,11 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
       allow(Bulkrax::ValkyrieObjectFactory).to receive(:find_for_import)
         .and_raise(Bulkrax::ObjectFactoryInterface::ModelMismatchError.new(identifier: 'src-1', existing_model: 'Etd', model: 'Image'))
       expect(find_existing_record.call(row)).to eq(field: nil, value: 'src-1', existing_model: 'Etd', model: 'Image')
+    end
+
+    it 'reports a lookup that failed, rather than no match' do
+      allow(Bulkrax::ValkyrieObjectFactory).to receive(:find_for_import).and_raise(RuntimeError, 'Solr is down')
+      expect(find_existing_record.call(row)).to eq(lookup_failed: true)
     end
 
     it 'looks each row up once' do

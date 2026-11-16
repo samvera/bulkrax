@@ -178,6 +178,10 @@ RSpec.describe Bulkrax::StepperResponseFormatter do
         expect(result[:isValid]).to eq(raw_data[:isValid])
         expect(result[:totalItems]).to eq(raw_data[:totalItems])
       end
+
+      it 'passes the number of records to delete through' do
+        expect(described_class.format(raw_data.merge(deletionCount: 2))[:deletionCount]).to eq(2)
+      end
     end
   end
 

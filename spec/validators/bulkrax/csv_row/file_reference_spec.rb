@@ -26,6 +26,15 @@ RSpec.describe Bulkrax::CsvRow::FileReference do
       end
     end
 
+    context 'when a delete row names a file missing from the ZIP' do
+      let(:plan) { build_plan('foo.jpg') }
+
+      it 'ignores it, since deleting never reads the file' do
+        described_class.call({ source_identifier: 'w1', file_values: ['gone.jpg'], deleting: true }, 2, context)
+        expect(context[:errors]).to be_empty
+      end
+    end
+
     context 'when the record references no files' do
       let(:plan) { build_plan('foo.jpg') }
 
