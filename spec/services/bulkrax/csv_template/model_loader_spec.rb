@@ -39,6 +39,17 @@ RSpec.describe Bulkrax::CsvTemplate::ModelLoader do
       end
     end
 
+    context 'when factory_class_name_coercer turns Image into ImageResource and there is no Image class' do
+      before do
+        stub_const('ImageResource', Class.new)
+        allow(Bulkrax).to receive(:factory_class_name_coercer).and_return(Bulkrax::FactoryClassFinder::ValkyrieMigrationCoercer)
+      end
+
+      it 'keeps Image, since the importer creates an ImageResource for it' do
+        expect(described_class.new(['Image']).models).to eq(['Image'])
+      end
+    end
+
     context 'when a model name cannot be constantized' do
       it 'omits the invalid model and keeps the valid ones' do
         loader = described_class.new(['GenericWork', 'NonExistentModel'])
@@ -49,30 +60,25 @@ RSpec.describe Bulkrax::CsvTemplate::ModelLoader do
   end
 
   describe '.determine_klass_for' do
-    context 'when using ActiveFedora object factory' do
-      before do
-        allow(Bulkrax.config).to receive(:object_factory).and_return(double)
-      end
+    before { allow(described_class).to receive(:determine_klass_for).and_call_original }
 
-      it 'returns the class for a known model name' do
-        expect(described_class.determine_klass_for('GenericWork')).to eq(GenericWork)
-      end
-
-      it 'returns nil for an unknown model name' do
-        expect(described_class.determine_klass_for('NoSuchModel')).to be_nil
-      end
+    it 'returns GenericWork for GenericWork' do
+      expect(described_class.determine_klass_for('GenericWork')).to eq(GenericWork)
     end
 
-    context 'when using ValkyrieObjectFactory' do
-      let(:resolver) { ->(_name) { GenericWork } }
+    it 'returns nil for a model name with no class' do
+      expect(described_class.determine_klass_for('NoSuchModel')).to be_nil
+    end
 
+    context 'when factory_class_name_coercer turns Image into ImageResource' do
       before do
-        allow(Bulkrax.config).to receive(:object_factory).and_return(Bulkrax::ValkyrieObjectFactory)
-        allow(Valkyrie.config).to receive(:resource_class_resolver).and_return(resolver)
+        stub_const('Image', Class.new)
+        stub_const('ImageResource', Class.new)
+        allow(Bulkrax).to receive(:factory_class_name_coercer).and_return(Bulkrax::FactoryClassFinder::ValkyrieMigrationCoercer)
       end
 
-      it 'uses the resource_class_resolver' do
-        expect(described_class.determine_klass_for('GenericWork')).to eq(GenericWork)
+      it 'returns ImageResource for Image, the class the importer creates' do
+        expect(described_class.determine_klass_for('Image')).to eq(ImageResource)
       end
     end
   end
