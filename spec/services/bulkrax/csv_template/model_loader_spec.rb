@@ -70,6 +70,16 @@ RSpec.describe Bulkrax::CsvTemplate::ModelLoader do
       expect(described_class.determine_klass_for('NoSuchModel')).to be_nil
     end
 
+    it 'returns file_model_class FileSet for hyrax::fileset' do
+      expect(described_class.determine_klass_for('hyrax::fileset')).to eq(Bulkrax.file_model_class)
+    end
+
+    it 'returns collection_model_class Collection for CollectionResource' do
+      stub_const('CollectionResource', Class.new)
+
+      expect(described_class.determine_klass_for('CollectionResource')).to eq(Bulkrax.collection_model_class)
+    end
+
     context 'when factory_class_name_coercer turns Image into ImageResource' do
       before do
         stub_const('Image', Class.new)

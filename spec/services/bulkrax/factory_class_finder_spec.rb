@@ -66,6 +66,47 @@ RSpec.describe Bulkrax::FactoryClassFinder do
         end
       end
     end
+
+    [Bulkrax::FactoryClassFinder::DefaultCoercer, Bulkrax::FactoryClassFinder::ValkyrieMigrationCoercer].each do |given_coercer|
+      context "with coercer: #{given_coercer}" do
+        let(:coercer) { given_coercer }
+
+        before { stub_const('CollectionResource', Class.new) }
+
+        [
+          ['FileSet', 'Hyrax::FileSet'],
+          ['FileSet', 'hyrax::fileset'],
+          ['Hyrax::FileSet', 'FileSet'],
+          ['Hyrax::FileSet', 'fileset']
+        ].each do |configured, given_model_name|
+          context "when file_model_class is #{configured} and the row says #{given_model_name}" do
+            let(:model_name) { given_model_name }
+
+            before { Bulkrax.file_model_class = configured.constantize }
+
+            it "returns #{configured}" do
+              expect(finder).to eq(configured.constantize)
+            end
+          end
+        end
+
+        [
+          ['Collection', 'CollectionResource'],
+          ['CollectionResource', 'Collection'],
+          ['CollectionResource', 'collection']
+        ].each do |configured, given_model_name|
+          context "when collection_model_class is #{configured} and the row says #{given_model_name}" do
+            let(:model_name) { given_model_name }
+
+            before { Bulkrax.collection_model_class = configured.constantize }
+
+            it "returns #{configured}" do
+              expect(finder).to eq(configured.constantize)
+            end
+          end
+        end
+      end
+    end
   end
 
   context 'when the entry has no parsed metadata' do
