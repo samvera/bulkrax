@@ -53,9 +53,18 @@ module Bulkrax
     # @return [Class] the class import creates for that name
     # @return [Nil] when no class matches the name
     def self.resolve(name, coercer: Bulkrax.factory_class_name_coercer || DefaultCoercer)
-      coercer.call(normalize_class_name(name))
+      name = normalize_class_name(name)
+      configured_model_class_for(name) || coercer.call(name)
     rescue NameError
       nil
+    end
+
+    # Sheets and exports spell file set and collection models either way, and
+    # the factories and CsvEntry pick those paths by exact comparison with the
+    # configured class.
+    def self.configured_model_class_for(name)
+      return Bulkrax.file_model_class if Bulkrax.file_model_name?(name)
+      Bulkrax.collection_model_class if Bulkrax.collection_model_name?(name)
     end
 
     ##
@@ -68,7 +77,7 @@ module Bulkrax
       name = name.downcase if name.match?(/[-_]/)
       name.camelcase
     end
-    private_class_method :normalize_class_name
+    private_class_method :configured_model_class_for, :normalize_class_name
 
     def initialize(entry:, coercer:)
       @entry = entry
