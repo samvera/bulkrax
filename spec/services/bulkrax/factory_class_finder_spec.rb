@@ -39,6 +39,16 @@ RSpec.describe Bulkrax::FactoryClassFinder do
     end
   end
 
+  describe '.resolve' do
+    it 'returns LegacyWork for "Legacy Work"' do
+      expect(described_class.resolve('Legacy Work', coercer: described_class::DefaultCoercer)).to eq(LegacyWork)
+    end
+
+    it 'returns nil for a model name with no class' do
+      expect(described_class.resolve('NoSuchModel')).to be_nil
+    end
+  end
+
   describe '.find' do
     let(:entry) { double(Bulkrax::Entry, parsed_metadata: { "model" => model_name }, default_work_type: "Work", raw_metadata: { "model" => model_name }) }
     subject(:finder) { described_class.find(entry: entry, coercer: coercer) }

@@ -56,7 +56,7 @@ CsvParser.generate_template
         └── TemplateContext
               ├── CsvTemplate::MappingManager   - Field mapping resolution
               ├── CsvTemplate::FieldAnalyzer    - Schema introspection (cached per model)
-              ├── CsvTemplate::ModelLoader      - Loads model classes from Hyrax / constantize
+              ├── CsvTemplate::ModelLoader      - Loads model classes through FactoryClassFinder.resolve
               └── CsvTemplate::CsvBuilder       - Writes CSV file or string
                     ├── CsvTemplate::RowBuilder       - Creates header, explanation, and data rows
                     │     ├── CsvTemplate::ValueDeterminer    - Sample cell values
@@ -258,7 +258,7 @@ analyzer.find_or_create_field_list_for(model_name: 'GenericWork')
 
 ### ModelLoader
 
-Loads model classes by name. Supports both `resource_class_resolver` (Valkyrie) and `constantize` (ActiveFedora). When `models` is empty or `'all'`, loads all models from `Hyrax.config.curation_concerns`.
+Loads model classes by name. `determine_klass_for` resolves a name through `FactoryClassFinder.resolve`, so the template and guided validation use the class import creates for that name. When `models` is empty or `'all'`, loads all models from `Hyrax.config.curation_concerns`.
 
 ```ruby
 loader = CsvTemplate::ModelLoader.new(['GenericWork', 'Collection'])
