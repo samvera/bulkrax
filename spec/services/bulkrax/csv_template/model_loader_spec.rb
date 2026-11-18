@@ -50,6 +50,16 @@ RSpec.describe Bulkrax::CsvTemplate::ModelLoader do
       end
     end
 
+    context 'when factory_class_name_coercer raises something other than NameError' do
+      before do
+        allow(Bulkrax).to receive(:factory_class_name_coercer).and_return(->(_name) { raise ArgumentError, 'broken coercer' })
+      end
+
+      it 'raises it instead of returning no models' do
+        expect { described_class.new(['Image']) }.to raise_error(ArgumentError, 'broken coercer')
+      end
+    end
+
     context 'when a model name cannot be constantized' do
       it 'omits the invalid model and keeps the valid ones' do
         loader = described_class.new(['GenericWork', 'NonExistentModel'])

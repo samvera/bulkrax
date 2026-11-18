@@ -12,8 +12,6 @@ module Bulkrax
 
       def self.determine_klass_for(model_name)
         FactoryClassFinder.resolve(model_name)
-      rescue StandardError
-        nil
       end
 
       private
@@ -27,8 +25,6 @@ module Bulkrax
         else
           all_available_models
         end
-      rescue StandardError
-        []
       end
 
       def all_available_models
