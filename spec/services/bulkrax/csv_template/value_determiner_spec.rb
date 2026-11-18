@@ -71,7 +71,7 @@ RSpec.describe Bulkrax::CsvTemplate::ValueDeterminer do
 
       before do
         allow(mapping_manager).to receive(:mapped_to_key).with('work_type').and_return('model')
-        allow(Bulkrax::CsvTemplate::ModelLoader).to receive(:determine_klass_for)
+        allow(Bulkrax::FactoryClassFinder).to receive(:resolve)
           .with(model_name).and_return(mock_klass)
       end
 

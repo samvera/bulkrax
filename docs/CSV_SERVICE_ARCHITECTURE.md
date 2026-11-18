@@ -258,13 +258,13 @@ analyzer.find_or_create_field_list_for(model_name: 'GenericWork')
 
 ### ModelLoader
 
-Loads model classes by name. `determine_klass_for` resolves a name through `FactoryClassFinder.resolve`, so the template and guided validation use the class import creates for that name. When `models` is empty or `'all'`, loads all models from `Hyrax.config.curation_concerns`.
+Loads the template's models by name, keeping each name `FactoryClassFinder.resolve` turns into a class, so the template uses the class import creates for that name. `determine_klass_for` is deprecated; call `FactoryClassFinder.resolve` instead. When `models` is empty or `'all'`, loads every model in `Hyrax.config.curation_concerns` plus the collection and file set models.
 
 ```ruby
 loader = CsvTemplate::ModelLoader.new(['GenericWork', 'Collection'])
 loader.models  # => ['GenericWork', 'Collection']
 
-CsvTemplate::ModelLoader.determine_klass_for('GenericWork')  # => GenericWork (class)
+FactoryClassFinder.resolve('GenericWork')  # => GenericWork (class)
 ```
 
 ### ColumnBuilder

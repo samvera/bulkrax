@@ -21,7 +21,7 @@ module Bulkrax
       private
 
       def model_breakdown(model_name, header_row)
-        klass = CsvTemplate::ModelLoader.determine_klass_for(model_name)
+        klass = FactoryClassFinder.resolve(model_name)
         return [] if klass.nil?
 
         field_list = @service.field_analyzer.find_or_create_field_list_for(model_name: model_name)

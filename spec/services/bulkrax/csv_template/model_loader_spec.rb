@@ -70,36 +70,16 @@ RSpec.describe Bulkrax::CsvTemplate::ModelLoader do
   end
 
   describe '.determine_klass_for' do
-    before { allow(described_class).to receive(:determine_klass_for).and_call_original }
+    it 'warns that it is deprecated in favor of FactoryClassFinder.resolve' do
+      expect(Deprecation).to receive(:warn).with(described_class, /Bulkrax::FactoryClassFinder\.resolve/)
 
-    it 'returns GenericWork for GenericWork' do
-      expect(described_class.determine_klass_for('GenericWork')).to eq(GenericWork)
+      described_class.determine_klass_for('GenericWork')
     end
 
-    it 'returns nil for a model name with no class' do
-      expect(described_class.determine_klass_for('NoSuchModel')).to be_nil
-    end
+    it 'returns what FactoryClassFinder.resolve returns' do
+      allow(Deprecation).to receive(:warn)
 
-    it 'returns file_model_class FileSet for hyrax::fileset' do
-      expect(described_class.determine_klass_for('hyrax::fileset')).to eq(Bulkrax.file_model_class)
-    end
-
-    it 'returns collection_model_class Collection for CollectionResource' do
-      stub_const('CollectionResource', Class.new)
-
-      expect(described_class.determine_klass_for('CollectionResource')).to eq(Bulkrax.collection_model_class)
-    end
-
-    context 'when factory_class_name_coercer turns Image into ImageResource' do
-      before do
-        stub_const('Image', Class.new)
-        stub_const('ImageResource', Class.new)
-        allow(Bulkrax).to receive(:factory_class_name_coercer).and_return(Bulkrax::FactoryClassFinder::ValkyrieMigrationCoercer)
-      end
-
-      it 'returns ImageResource for Image, the class the importer creates' do
-        expect(described_class.determine_klass_for('Image')).to eq(ImageResource)
-      end
+      expect(described_class.determine_klass_for('hyrax::fileset')).to eq(Bulkrax::FactoryClassFinder.resolve('hyrax::fileset'))
     end
   end
 end

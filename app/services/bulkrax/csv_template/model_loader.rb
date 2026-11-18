@@ -4,6 +4,7 @@ module Bulkrax
   module CsvTemplate
     # Handles model loading based on configuration
     class ModelLoader
+      extend Deprecation
       attr_reader :models
 
       def initialize(models)
@@ -11,6 +12,7 @@ module Bulkrax
       end
 
       def self.determine_klass_for(model_name)
+        Deprecation.warn(self, 'determine_klass_for is deprecated and will be removed in Bulkrax 11.0. Use Bulkrax::FactoryClassFinder.resolve instead.')
         FactoryClassFinder.resolve(model_name)
       end
 

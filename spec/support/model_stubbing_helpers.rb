@@ -10,7 +10,6 @@ module ModelStubbingHelpers
   # - Hyrax configuration (curation concerns, collection/file models)
   # - Bulkrax field mappings (title, creator, description, model, parents, file, source_identifier)
   # - ValkyrieObjectFactory stub to prevent schema access issues
-  # - ModelLoader stub to recognize the test models
   #
   # Models created:
   # - GenericWork: properties = { 'title', 'creator', 'description' }
@@ -126,15 +125,6 @@ module ModelStubbingHelpers
     allow(Hyrax).to receive(:config).and_return(double(curation_concerns: [GenericWork]))
     allow(Bulkrax).to receive(:collection_model_class).and_return(Collection)
     allow(Bulkrax).to receive(:file_model_class).and_return(FileSet)
-
-    # Stub ModelLoader to recognize these models
-    allow(Bulkrax::CsvTemplate::ModelLoader).to receive(:determine_klass_for) do |name|
-      case name
-      when 'GenericWork' then GenericWork
-      when 'Collection' then Collection
-      when 'FileSet' then FileSet
-      end
-    end
 
     # Stub field mappings
     allow(Bulkrax).to receive(:field_mappings).and_return({
