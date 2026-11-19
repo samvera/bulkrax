@@ -114,6 +114,10 @@ module Bulkrax
       transactions.key?('change_set.update_file_set')
     end
 
+    def self.file_sets_take_work_visibility?
+      file_set_transaction?
+    end
+
     ##
     # When adding a child to a parent work, we save the parent.
     # Locking appears inconsistent, so we are finding the parent and
