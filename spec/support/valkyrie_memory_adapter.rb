@@ -9,7 +9,8 @@ RSpec.shared_context 'with the Valkyrie memory adapter' do
   before do
     [Hyrax::CustomQueries::Navigators::ChildFileSetsNavigator,
      Hyrax::CustomQueries::Navigators::FindFiles,
-     Hyrax::CustomQueries::FindAccessControl].each do |handler|
+     Hyrax::CustomQueries::FindAccessControl,
+     Hyrax::CustomQueries::FindFileMetadata].each do |handler|
       metadata_adapter.query_service.custom_queries.register_query_handler(handler)
     end
     allow(Valkyrie.config).to receive(:metadata_adapter).and_return(metadata_adapter)

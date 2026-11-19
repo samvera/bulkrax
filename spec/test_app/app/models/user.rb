@@ -12,6 +12,6 @@ class User < ApplicationRecord
   end
 
   def user_key
-    ''
+    email
   end
 end

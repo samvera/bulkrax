@@ -89,6 +89,7 @@ module Bulkrax
     # TODO: the following module needs revisiting for Valkyrie work.
     #       proposal is to create Bulkrax::ValkyrieFileFactory.
     include Bulkrax::FileFactory
+    include Bulkrax::Lockable
 
     self.file_set_factory_inner_workings_class = Bulkrax::ValkyrieObjectFactory::FileFactoryInnerWorkings
 
@@ -108,6 +109,11 @@ module Bulkrax
     ##
     # @!group Class Method Interface
 
+    # Hyrax 4 has no file set transaction, so a file set is built through its work
+    def self.file_set_transaction?
+      transactions.key?('change_set.update_file_set')
+    end
+
     ##
     # When adding a child to a parent work, we save the parent.
     # Locking appears inconsistent, so we are finding the parent and
@@ -117,6 +123,11 @@ module Bulkrax
       parent = self.find(parent.id)
       return parent if parent.member_ids.include?(child.id)
       parent.member_ids += [child.id]
+      # As Hyrax::WorkUploadsHandler#append_to_work does
+      if child.try(:file_set?)
+        parent.representative_id = child.id if parent.respond_to?(:representative_id) && parent.representative_id.blank?
+        parent.thumbnail_id = child.id if parent.respond_to?(:thumbnail_id) && parent.thumbnail_id.blank?
+      end
       Hyrax.persister.save(resource: parent)
     end
 
@@ -393,10 +404,17 @@ module Bulkrax
       nil
     end
 
-    # @note We perform the transaction against the *parent* here, because the FileSets are generated and updated in relationship with their parent, not in isolation
     def create_file_set(attrs)
       attrs = HashWithIndifferentAccess.new(attrs)
       parent_object = find_record(attributes[related_parents_parsed_mapping].first, importer_run_id).last
+      return create_file_set_through_work(parent_object, attrs) unless self.class.file_set_transaction?
+
+      uploaded_files, = prep_fileset_content(attrs)
+      uploaded_files.map { |upload| build_file_set(parent_object, upload, attrs) }.last
+    end
+
+    # Hyrax 4 has no file set transaction, so the file set is built through its work, by Hyrax's upload handler
+    def create_file_set_through_work(parent_object, attrs)
       perform_transaction_for(object: parent_object, attrs: {}) do
         fs_attrs = attrs.merge(attributes).symbolize_keys
         uploaded_files, = prep_fileset_content(attrs)
@@ -406,6 +424,55 @@ module Bulkrax
             'work_resource.save_acl' => { permissions_params: [attrs.try('visibility') || 'open'].compact }
           )
       end
+    end
+
+    # Starts from its work's permissions, so a visibility on the row applies on top of them,
+    # in the order Hyrax::WorkUploadsHandler applies them.
+    def build_file_set(parent, upload, attrs)
+      # Locked before anything is saved, as Hyrax::WorkUploadsHandler#attach does, so a lock that can't be taken leaves no file set
+      acquire_lock_for(parent.id) do
+        # Read again under the lock: preparing the files, such as downloading them, takes time
+        parent = self.class.find(parent.id)
+        @object = Bulkrax.file_model_class.new(file_set_attributes(upload))
+        object.permission_manager.acl.permissions = parent.permission_manager.acl.permissions
+        # A blank title or visibility would replace the file name and the work's visibility
+        form_attrs = attrs.reject { |key, value| %w[title visibility].include?(key.to_s) && Array(value).all?(&:blank?) }
+        file_set = perform_transaction_for(object: object, attrs: form_attrs) { transactions['change_set.update_file_set'] }
+        upload.add_file_set!(file_set)
+        file_set = inherit_work_visibility(parent, file_set) unless form_attrs.key?(:visibility)
+        attach_to_work(parent, file_set, upload)
+        file_set
+      end
+    end
+
+    # Mirrors Hyrax::WorkUploadsHandler#file_set_args
+    def file_set_attributes(upload)
+      # A reloaded upload's uploader has no filename; its stored file does
+      filename = upload.uploader.filename || upload.file.file&.filename
+      { depositor: upload.user.user_key,
+        creator: [upload.user.user_key],
+        date_uploaded: upload.created_at,
+        date_modified: Hyrax::TimeService.time_in_utc,
+        label: filename,
+        title: [filename] }
+    end
+
+    # Gives the file set its work's embargo or lease too, as
+    # Hyrax::ResourceVisibilityPropagator does for a work's file sets
+    def inherit_work_visibility(parent, file_set)
+      file_set.visibility = parent.visibility
+      Hyrax::EmbargoManager.new(resource: parent).copy_embargo_to(target: file_set)
+      Hyrax::LeaseManager.new(resource: parent).copy_lease_to(target: file_set)
+      file_set.permission_manager.acl.save
+      Hyrax.persister.save(resource: file_set)
+    end
+
+    # Mirrors Hyrax::WorkUploadsHandler#attach for one file set
+    def attach_to_work(parent, file_set, upload)
+      work = self.class.add_child_to_parent_work(parent: parent, child: file_set)
+      Hyrax.publisher.publish('object.metadata.updated', object: work, user: upload.user)
+      ValkyrieIngestJob.perform_later(upload)
+      Hyrax.publisher.publish('file.set.attached', file_set: file_set, user: upload.user)
     end
 
     def create_work(attrs)
@@ -514,6 +581,7 @@ module Bulkrax
       admin_set_id = attrs[:admin_set_id] || attrs['admin_set_id'] ||
                      attributes[:admin_set_id] || attributes['admin_set_id']
       form = resource_form_for(object, admin_set_id).prepopulate!
+      carry_pending_permissions(object, form.model)
 
       # TODO: Handle validations
       form.validate(attrs)
@@ -527,6 +595,14 @@ module Bulkrax
         msg += " - #{result.failure[1].full_messages.join(',')}" if result.failure[1].respond_to?(:full_messages)
         raise StandardError, msg, result.trace
       end
+    end
+
+    # Hyrax builds a flexible resource's form on a copy of it, which lacks permissions set in memory
+    def carry_pending_permissions(object, model)
+      return if model.equal?(object) || !object.respond_to?(:permission_manager)
+
+      acl = object.permission_manager.acl
+      model.permission_manager.acl.permissions = acl.permissions if acl.pending_changes?
     end
 
     # Hyrax 5.3 and later take the admin set that a flexible metadata schema
