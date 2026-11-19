@@ -28,6 +28,22 @@ RSpec.describe Bulkrax::RemoveRelationshipsForImporter do
       entry.statuses.create!(status_message: "Complete", runnable: importer_run)
       remover
     end
+
+    it "treats each record as a work when there is no collection model" do
+      # rubocop:disable RSpec/VerifiedDoubles
+      found = double("a work", member_of_works: [], member_works: [], save!: true)
+      allow(found).to receive(:member_of_collections=)
+      # rubocop:enable RSpec/VerifiedDoubles
+      # rubocop:disable RSpec/AnyInstance
+      allow_any_instance_of(Bulkrax::ObjectFactory).to receive(:find).and_return(found)
+      # rubocop:enable RSpec/AnyInstance
+      allow(Bulkrax).to receive(:collection_model_class).and_return(nil)
+      entry.statuses.create!(status_message: "Complete", runnable: importer_run)
+
+      remover
+
+      expect(found).to have_received(:member_of_collections=).with([])
+    end
   end
 
   describe "#remove_relationships_from_collection" do
@@ -36,7 +52,7 @@ RSpec.describe Bulkrax::RemoveRelationshipsForImporter do
     let(:parent_collection) { double("parent collection") }
     let(:child_collection) { double("child collection") }
     let(:collection) do
-      double("collection", member_works: [], member_of_collections: [parent_collection], member_collections: [child_collection])
+      double("collection", member_works: [], member_of_collections: [parent_collection], member_collections: [child_collection], reload: nil)
     end
     # rubocop:enable RSpec/VerifiedDoubles
 
@@ -49,6 +65,13 @@ RSpec.describe Bulkrax::RemoveRelationshipsForImporter do
         .to have_received(:remove_nested_relationship_for).with(parent: parent_collection, child: collection)
       expect(Hyrax::Collections::NestedCollectionPersistenceService)
         .to have_received(:remove_nested_relationship_for).with(parent: collection, child: child_collection)
+    end
+
+    it "reloads the collection after removing its collection links, so saving it keeps them removed" do
+      remover.remove_relationships_from_collection(collection)
+
+      expect(Hyrax::Collections::NestedCollectionPersistenceService).to have_received(:remove_nested_relationship_for).twice.ordered
+      expect(collection).to have_received(:reload).ordered
     end
 
     it "leaves collection links alone without Hyrax" do
