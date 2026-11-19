@@ -24,6 +24,26 @@ Hyrax remains enabled by default for the existing integration suite. Resolve the
 bundle again when switching modes; do not reuse a frozen lockfile from the other
 mode. Rails 8.1 requires Ruby 3.2 or newer and SQLite 2.1 or newer for this smoke app.
 
+### Without Hyrax
+
+An application without Hyrax can use Bulkrax by supplying its own object
+factory; see [Using Bulkrax without Hyrax](https://github.com/samvera/bulkrax/wiki/Using-Bulkrax-without-Hyrax)
+for what it needs. Bulkrax releases after 8.3 have not been fully tested this way, so
+bugs may remain. The specs in `spec/without_hyrax` cover only CSV imports and
+exports of works in the same minimal Rails application, through a stand-in object
+factory: creating and updating works, relating parent and child works, and
+exporting the works an importer created or every work. They do not cover other
+parsers, collections, file sets, or a repository such as Fedora and Solr. CI runs
+them on Rails 7.0 and 8.1.
+
+```bash
+BULKRAX_WITH_HYRAX=false RAILS_GEM_VERSION='~> 7.0.8' BUNDLE_PATH=vendor/rails70 bundle install
+BULKRAX_WITH_HYRAX=false RAILS_GEM_VERSION='~> 7.0.8' BUNDLE_PATH=vendor/rails70 bundle exec rspec spec/without_hyrax
+```
+
+Set `RAILS_GEM_VERSION='~> 8.1.0'` to run them on Rails 8.1. Ruby 3.3.0 cannot
+load Rails 8.1; use Ruby 3.2, or 3.3.1 or newer.
+
 ### Install Generator
 
 Add this line to your application's Gemfile:
