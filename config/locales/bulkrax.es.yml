@@ -425,6 +425,11 @@ es:
             message_column_empty: "No se proporcionó ningún modelo — todas las filas se importarán como '%{default_work_type}'."
             suggestion_column_empty: "Añada valores de modelo a la columna 'model' de su CSV si desea usar un tipo de trabajo diferente para algunas filas."
             suggestion_column_missing: "Añada una columna 'model' a su CSV si desea usar un tipo de trabajo diferente para algunas filas."
+          file_set_files_validator:
+            errors:
+              more_than_one_file:
+                message: "Esta fila de conjunto de archivos incluye %{value} archivos; una fila de conjunto de archivos admite uno."
+                suggestion: "Indique un archivo por fila de conjunto de archivos, o indique varios archivos en una fila de obra, que crea un conjunto de archivos para cada uno."
           visibility_validator:
             errors:
               unknown_visibility:

@@ -172,6 +172,14 @@ module Bulkrax
     end
 
     ##
+    # @param file_count [Integer] the files a file set row lists
+    # @return [Symbol, nil] :more_than_one_file when the row's import would fail
+    #         for listing more than one; nil otherwise
+    def self.file_set_row_problem(file_count:) # rubocop:disable Lint/UnusedMethodArgument
+      nil
+    end
+
+    ##
     # @param field [String]
     # @param model [Class]
     #

@@ -65,6 +65,30 @@ module Bulkrax
       [header, matched_cell(field, entry, raw_row[header]).to_s.strip.presence] if header
     end
 
+    # A multi-valued field's values as import reads them (HasMatchers#add_metadata):
+    # each column mapped to the field, in order, through the mapping's matcher when
+    # there is one, without blanks or repeats; an excluded mapping, or one filling
+    # a nested `object:`, gives none.
+    #
+    # @param raw_row [Hash{String => String}] the row's cells by header
+    # @param field [String] a multi-valued field, such as 'file'
+    # @param parse [Boolean] false to skip the mapping's `parsed:` step, which for
+    #   remote files requests each url
+    # @return [Array<String>]
+    def self.row_values(raw_row, mapping, field, parse: true)
+      entry = mapping&.dig(field)
+      return [] if option(entry, 'excluded') || option(entry, 'object').present?
+
+      entry = entry.to_h.except('parsed', :parsed) if entry && !parse
+
+      values = raw_row.each_with_object([]) do |(header, cell), found|
+        next unless fields_for_header(mapping, key_without_numbers(header)).include?(field)
+
+        found.concat(Array.wrap(matched_cell(field, entry, cell)))
+      end
+      values.map { |value| value.to_s.strip }.reject(&:blank?).uniq
+    end
+
     def self.matched_cell(field, entry, cell)
       entry ? Bulkrax::CsvEntry.matcher(field, entry.to_h.symbolize_keys).result(nil, cell) : cell
     end

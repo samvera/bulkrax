@@ -140,6 +140,11 @@ module Bulkrax
       end
     end
 
+    # A file set row makes one file set; a work row, or a file set row on Hyrax 4, makes one for each of its files
+    def self.file_set_row_problem(file_count:)
+      :more_than_one_file if file_set_transaction? && file_count > 1
+    end
+
     def self.policy_problem(policy, visibility_during, date)
       return :"unknown_visibility_during_#{policy}" unless known_visibility?(visibility_during)
       return if date.blank?
@@ -450,6 +455,12 @@ module Bulkrax
     def reject_row_problems
       problem = self.class.visibility_problem(attributes, model: klass.to_s)
       raise StandardError, "#{source_identifier_value}: #{VisibilityProblem.message(problem, attributes)}" if problem
+      return unless klass == Bulkrax.file_model_class
+
+      # Every file prep_fileset_content uploads becomes a file set
+      file_count = (Array.wrap(attributes[:file]) + Array.wrap(attributes[:remote_files]) + Array.wrap(attributes[:thumbnail_url])).count(&:present?)
+      problem = self.class.file_set_row_problem(file_count: file_count)
+      raise StandardError, "#{source_identifier_value}: #{I18n.t("#{CsvRow::FileSetFiles::SCOPE}.#{problem}.message", value: file_count)}" if problem
     end
 
     def create_file_set(attrs)
