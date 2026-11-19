@@ -21,6 +21,15 @@ RSpec.describe 'Importing a CSV without Hyrax' do
     expect(importer.status).to eq('Complete')
   end
 
+  it 'splits values on the pattern an app configures' do
+    Bulkrax.config.multi_value_element_split_on = /\s*;\s*/
+    import("bulkrax_identifier,title,creator\nwork-1,First work,Lovelace: Ada;Hopper: Grace\n")
+
+    expect(Work.pluck(:creator)).to eq([['Lovelace: Ada', 'Hopper: Grace']])
+  ensure
+    Bulkrax.config.multi_value_element_split_on = nil
+  end
+
   it 'updates the existing work when a row is imported again' do
     import("bulkrax_identifier,title\nwork-1,First title\n")
     import("bulkrax_identifier,title\nwork-1,Second title\n")

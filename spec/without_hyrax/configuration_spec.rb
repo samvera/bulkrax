@@ -14,4 +14,22 @@ RSpec.describe 'Configuring Bulkrax without Hyrax' do
   ensure
     Bulkrax.config.collection_model_class = previous
   end
+
+  it 'keeps the multi-value split pattern an app configures' do
+    previous = Bulkrax.config.multi_value_element_split_on
+    Bulkrax.config.multi_value_element_split_on = /\s*;\s*/
+
+    expect(Bulkrax.multi_value_element_split_on).to eq(/\s*;\s*/)
+  ensure
+    Bulkrax.config.multi_value_element_split_on = previous
+  end
+
+  it 'keeps the multi-value join an app configures' do
+    previous = Bulkrax.config.multi_value_element_join_on
+    Bulkrax.config.multi_value_element_join_on = '; '
+
+    expect(Bulkrax.multi_value_element_join_on).to eq('; ')
+  ensure
+    Bulkrax.config.multi_value_element_join_on = previous
+  end
 end

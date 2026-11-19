@@ -46,8 +46,6 @@ module Bulkrax
                   :guided_import_demo_scenarios_enabled,
                   :generated_metadata_mapping,
                   :import_path,
-                  :multi_value_element_join_on,
-                  :multi_value_element_split_on,
                   :object_factory,
                   :parsers,
                   :qa_controlled_properties,
@@ -273,6 +271,28 @@ module Bulkrax
     def register_csv_row_validator(callable)
       csv_row_validators << callable
     end
+
+    attr_writer :multi_value_element_join_on, :multi_value_element_split_on
+
+    # Specify the delimiter for joining an attribute's multi-value array into a string.
+    #
+    # @note the specific delimiter should likely be present in the multi_value_element_split_on
+    #       expression.
+    def multi_value_element_join_on
+      @multi_value_element_join_on ||= DEFAULT_MULTI_VALUE_ELEMENT_JOIN_ON
+    end
+
+    # @return [RegexClass] the regular express to use to "split" an attribute's values.  If set to
+    # `true` use the DEFAULT_MULTI_VALUE_ELEMENT_SPLIT_ON.
+    #
+    # @note The "true" value is to preserve backwards compatibility.
+    def multi_value_element_split_on
+      if @multi_value_element_split_on.is_a?(TrueClass)
+        DEFAULT_MULTI_VALUE_ELEMENT_SPLIT_ON
+      else
+        @multi_value_element_split_on ||= DEFAULT_MULTI_VALUE_ELEMENT_SPLIT_ON
+      end
+    end
   end
 
   def config
@@ -315,7 +335,9 @@ module Bulkrax
                  :generated_metadata_mapping=,
                  :import_path,
                  :import_path=,
+                 :multi_value_element_join_on,
                  :multi_value_element_join_on=,
+                 :multi_value_element_split_on,
                  :multi_value_element_split_on=,
                  :object_factory,
                  :object_factory=,
@@ -468,27 +490,7 @@ module Bulkrax
   end
 
   DEFAULT_MULTI_VALUE_ELEMENT_JOIN_ON = ' | '
-  # Specify the delimiter for joining an attribute's multi-value array into a string.
-  #
-  # @note the specific delimiter should likely be present in the multi_value_element_split_on
-  #       expression.
-  def multi_value_element_join_on
-    @multi_value_element_join_on ||= DEFAULT_MULTI_VALUE_ELEMENT_JOIN_ON
-  end
-
   DEFAULT_MULTI_VALUE_ELEMENT_SPLIT_ON = /\s*[:;|]\s*/.freeze
-  # @return [RegexClass] the regular express to use to "split" an attribute's values.  If set to
-  # `true` use the DEFAULT_MULTI_VALUE_ELEMENT_JOIN_ON.
-  #
-  # @note The "true" value is to preserve backwards compatibility.
-  # @see DEFAULT_MULTI_VALUE_ELEMENT_JOIN_ON
-  def multi_value_element_split_on
-    if @multi_value_element_join_on.is_a?(TrueClass)
-      DEFAULT_MULTI_VALUE_ELEMENT_SPLIT_ON
-    else
-      @multi_value_element_split_on ||= DEFAULT_MULTI_VALUE_ELEMENT_SPLIT_ON
-    end
-  end
 
   # Responsible for stripping hidden characters from the given string.
   #
