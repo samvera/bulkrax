@@ -163,6 +163,15 @@ module Bulkrax
     end
 
     ##
+    # @param attributes [Hash] a row's visibility, embargo and lease values
+    # @param model [String] the row's model
+    # @return [Symbol, nil] what in them would fail the row's import, such as
+    #         :past_embargo_date; nil when they would import
+    def self.visibility_problem(attributes, model:) # rubocop:disable Lint/UnusedMethodArgument
+      nil
+    end
+
+    ##
     # @param field [String]
     # @param model [Class]
     #
