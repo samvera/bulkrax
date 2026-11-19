@@ -56,7 +56,7 @@ CsvParser.generate_template
         └── TemplateContext
               ├── CsvTemplate::MappingManager   - Field mapping resolution
               ├── CsvTemplate::FieldAnalyzer    - Schema introspection (cached per model)
-              ├── CsvTemplate::ModelLoader      - Loads model classes from Hyrax / constantize
+              ├── CsvTemplate::ModelLoader      - Loads model classes through FactoryClassFinder.resolve
               └── CsvTemplate::CsvBuilder       - Writes CSV file or string
                     ├── CsvTemplate::RowBuilder       - Creates header, explanation, and data rows
                     │     ├── CsvTemplate::ValueDeterminer    - Sample cell values
@@ -258,13 +258,13 @@ analyzer.find_or_create_field_list_for(model_name: 'GenericWork')
 
 ### ModelLoader
 
-Loads model classes by name. Supports both `resource_class_resolver` (Valkyrie) and `constantize` (ActiveFedora). When `models` is empty or `'all'`, loads all models from `Hyrax.config.curation_concerns`.
+Loads the template's models by name, keeping each name `FactoryClassFinder.resolve` turns into a class, so the template uses the class import creates for that name. `determine_klass_for` is deprecated; call `FactoryClassFinder.resolve` instead. When `models` is empty or `'all'`, loads every model in `Hyrax.config.curation_concerns` plus the collection and file set models.
 
 ```ruby
 loader = CsvTemplate::ModelLoader.new(['GenericWork', 'Collection'])
 loader.models  # => ['GenericWork', 'Collection']
 
-CsvTemplate::ModelLoader.determine_klass_for('GenericWork')  # => GenericWork (class)
+FactoryClassFinder.resolve('GenericWork')  # => GenericWork (class)
 ```
 
 ### ColumnBuilder

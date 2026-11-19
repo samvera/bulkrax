@@ -4,6 +4,7 @@ module Bulkrax
   module CsvTemplate
     # Handles model loading based on configuration
     class ModelLoader
+      extend Deprecation
       attr_reader :models
 
       def initialize(models)
@@ -11,13 +12,8 @@ module Bulkrax
       end
 
       def self.determine_klass_for(model_name)
-        if Bulkrax.config.object_factory == Bulkrax::ValkyrieObjectFactory
-          Valkyrie.config.resource_class_resolver.call(model_name)
-        else
-          model_name.constantize
-        end
-      rescue StandardError
-        nil
+        Deprecation.warn(self, 'determine_klass_for is deprecated and will be removed in Bulkrax 11.0. Use Bulkrax::FactoryClassFinder.resolve instead.')
+        FactoryClassFinder.resolve(model_name)
       end
 
       private
@@ -27,18 +23,10 @@ module Bulkrax
         when Array
           return all_available_models if models.empty?
           return all_available_models if models.include?('all')
-          models.filter_map { |model| safe_constantize(model) }
+          models.select { |model| FactoryClassFinder.resolve(model) }
         else
           all_available_models
         end
-      rescue StandardError
-        []
-      end
-
-      def safe_constantize(model_name)
-        model_name.constantize && model_name
-      rescue NameError
-        nil
       end
 
       def all_available_models

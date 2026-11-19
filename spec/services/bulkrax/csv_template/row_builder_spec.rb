@@ -50,7 +50,7 @@ RSpec.describe Bulkrax::CsvTemplate::RowBuilder do
 
     before do
       allow(service).to receive(:all_models).and_return(['GenericWork'])
-      allow(Bulkrax::CsvTemplate::ModelLoader).to receive(:determine_klass_for)
+      allow(Bulkrax::FactoryClassFinder).to receive(:resolve)
         .with('GenericWork').and_return(mock_klass)
       allow(field_analyzer).to receive(:find_or_create_field_list_for)
         .with(model_name: 'GenericWork').and_return(field_list)
@@ -81,7 +81,7 @@ RSpec.describe Bulkrax::CsvTemplate::RowBuilder do
 
       before do
         allow(service).to receive(:all_models).and_return(['GenericWork', 'Image'])
-        allow(Bulkrax::CsvTemplate::ModelLoader).to receive(:determine_klass_for)
+        allow(Bulkrax::FactoryClassFinder).to receive(:resolve)
           .with('Image').and_return(another_mock_klass)
         allow(field_analyzer).to receive(:find_or_create_field_list_for)
           .with(model_name: 'Image').and_return(another_field_list)
@@ -104,7 +104,7 @@ RSpec.describe Bulkrax::CsvTemplate::RowBuilder do
 
     context 'when model class cannot be determined' do
       before do
-        allow(Bulkrax::CsvTemplate::ModelLoader).to receive(:determine_klass_for)
+        allow(Bulkrax::FactoryClassFinder).to receive(:resolve)
           .with('GenericWork').and_return(nil)
       end
 

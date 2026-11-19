@@ -17,7 +17,7 @@ module Bulkrax
         existing = @field_list.find { |entry| entry.key?(model_name) }
         return existing if existing.present?
 
-        klass = CsvTemplate::ModelLoader.determine_klass_for(model_name)
+        klass = FactoryClassFinder.resolve(model_name)
         return {} if klass.nil?
 
         model_entry = build_field_list_entry(model_name, klass)
