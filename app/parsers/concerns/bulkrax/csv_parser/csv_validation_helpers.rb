@@ -63,8 +63,8 @@ module Bulkrax
       rescue StandardError => e
         Rails.logger.error("CsvParser.validate_csv: error building valid headers – #{e.message}")
         standard = %w[model source_identifier parents children file]
-        model_fields = field_metadata.values.flat_map { |m| m[:properties] }
-                                            .map { |prop| mapping_manager.key_to_mapped_column(prop) }
+        properties = field_metadata.values.flat_map { |m| m[:properties] }
+        model_fields = properties.map { |prop| mapping_manager.key_to_mapped_column(prop) }
         (standard + model_fields).uniq
       end
 
@@ -127,6 +127,23 @@ module Bulkrax
         return if Bulkrax.fill_in_blank_source_identifiers.present?
 
         all_models.each { |model| missing_required << { model: model, field: source_id_key.to_s } }
+      end
+
+      # Adding the default work type unconditionally makes every sheet answer
+      # for that model's required fields, so a collection-only sheet gets asked
+      # for properties belonging to a work type it never mentions.
+      def models_to_validate(csv_data, headers)
+        row_models = csv_data.map { |r| r[:model].to_s }.reject(&:blank?).uniq
+        return row_models if Bulkrax.default_work_type.blank?
+        return row_models unless default_work_type_needed?(csv_data, headers)
+
+        row_models | [Bulkrax.default_work_type]
+      end
+
+      def default_work_type_needed?(csv_data, headers)
+        return true unless headers.map(&:to_s).include?('model')
+
+        csv_data.empty? || csv_data.any? { |r| r[:model].blank? }
       end
 
       # Adds a file-level notice when the model column is absent or every row has a blank

@@ -11,6 +11,17 @@ module Bulkrax
       it { is_expected.to eq("FileSet") }
     end
 
+    describe '#add_metadata_for_model' do
+      context 'when the row says Hyrax::FileSet and file_model_class is FileSet' do
+        before { entry.parsed_metadata = { 'model' => 'Hyrax::FileSet' } }
+
+        it 'builds it as a file set, which requires a filename' do
+          expect { entry.send(:add_metadata_for_model) }
+            .to raise_error(FileSetEntryBehavior::FileNameError, 'File set must have a filename')
+        end
+      end
+    end
+
     describe '#file_reference' do
       context 'when parsed_metadata includes the "file" property' do
         before do

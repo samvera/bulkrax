@@ -88,6 +88,28 @@ module Bulkrax
 
         include_examples 'records are assigned correctly'
       end
+
+      context 'when the collection model is configured to a host-app class' do
+        before do
+          allow(Bulkrax.config).to receive(:collection_model_class).and_return(double(to_s: 'DigitalCollection'))
+          Bulkrax.collection_model_names = nil
+          allow(subject).to receive(:records).and_return(
+            [{ source_identifier: 'c1', model: 'DigitalCollection' },
+             { source_identifier: 'w1', model: 'Work' },
+             { source_identifier: 'fs1', model: 'FileSet' }]
+          )
+        end
+
+        after { Bulkrax.collection_model_names = nil }
+
+        it 'assigns rows naming that class to @collections' do
+          subject.build_records
+
+          expect(subject.collections.map { |r| r[:source_identifier] }).to contain_exactly('c1')
+          expect(subject.works.map { |r| r[:source_identifier] }).to contain_exactly('w1')
+          expect(subject.file_sets.map { |r| r[:source_identifier] }).to contain_exactly('fs1')
+        end
+      end
     end
 
     describe '#collections' do
@@ -386,11 +408,7 @@ module Bulkrax
         before do
           allow(Site).to receive(:instance).and_return(site)
           allow(Site.instance).to receive(:account).and_return(account)
-          ENV['HYKU_MULTITENANT'] = 'true'
-        end
-
-        after do
-          ENV['HYKU_MULTITENANT'] = 'false'
+          stub_env('HYKU_MULTITENANT', 'true')
         end
 
         it 'returns the path of the partial import file' do

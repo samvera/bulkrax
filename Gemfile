@@ -12,7 +12,7 @@ gemspec
 # Git. Remember to move these dependencies to your gemspec before releasing
 # your gem to rubygems.org.
 
-gem 'blacklight'
+gem 'blacklight', '< 7.43' # 7.43.0 needs Rails 7.0+ and Ruby 3.0+ despite its gemspec
 gem 'bootstrap-sass', '~> 3.4.1'
 gem 'coderay'
 gem 'concurrent-ruby', '1.3.4'
@@ -20,6 +20,7 @@ gem 'factory_bot_rails'
 
 # Bulkrax supports Hyrax 2.3 through 5.2 only.
 gem 'hyrax', ENV['HYRAX_VERSION'] || '~> 5.0'
+gem 'json', '< 3.0' # remove once Bulkrax allows rails >= 8.0 - ActiveSupport::JSON passes quirks_mode kwarg that json 3.0 dropped
 
 gem 'oai'
 gem 'pg'
