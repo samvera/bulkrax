@@ -12,9 +12,8 @@ module Bulkrax
     # @note This does not save either object.  We need to do that in another
     #       loop.  Why?  Because we might be adding many items to the parent.
     def self.add_child_to_parent_work(parent:, child:)
-      return true if parent.ordered_members.to_a.include?(child)
-
-      parent.ordered_members << child
+      parent.ordered_members << child unless parent.ordered_members.to_a.include?(child)
+      parent
     end
 
     def self.add_resource_to_collection(collection:, resource:, user:)
@@ -68,6 +67,15 @@ module Bulkrax
       # TODO: Consider how this may or may not work for Valkyrie
       properties = Bulkrax.curation_concerns.map { |work| work.properties.keys }.flatten.uniq.sort
       properties.reject { |prop| Bulkrax.reserved_properties.include?(prop) }
+    end
+
+    def self.export_values(values)
+      # ActiveTriples::Relation does not respond to #to_ary, so Array.wrap would not unwrap it
+      values.is_a?(ActiveTriples::Relation) ? values.to_a : values
+    end
+
+    def self.export_value(value)
+      value.is_a?(ActiveTriples::Resource) ? value.to_uri.to_s : value
     end
 
     #  Unused admin set included to support flexible contexts in the Valkyrie version

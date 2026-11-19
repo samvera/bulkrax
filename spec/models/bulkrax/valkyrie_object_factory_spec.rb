@@ -306,6 +306,22 @@ module Bulkrax
         valkyrie_object_factory.send(:create_file_set, of_attributes)
       end
     end
+
+    describe '.add_child_to_parent_work' do
+      include_context 'with the Valkyrie memory adapter'
+
+      let(:work) { Hyrax.persister.save(resource: WorkResource.new(title: ['parent'])) }
+      let(:file_set) { Hyrax.persister.save(resource: Hyrax::FileSet.new(title: ['first'])) }
+      let(:other_file_set) { Hyrax.persister.save(resource: Hyrax::FileSet.new(title: ['other'])) }
+
+      it 'returns the work as saved, not the copy passed in, when the child is already a member' do
+        stale = work.class.new(work.attributes)
+        saved = Hyrax.persister.save(resource: work.tap { |w| w.member_ids = [file_set.id, other_file_set.id] })
+
+        expect(described_class.add_child_to_parent_work(parent: stale, child: file_set).member_ids).to eq saved.member_ids
+      end
+    end
+
     describe '#update_file_set' do
       let(:orig_file_set) do
         double(FileSet, bulkrax_identifier: 'fs-123', title: ["Custom File Set Title"], id: 'some-long-identifier')

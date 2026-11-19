@@ -87,6 +87,30 @@ jobs:
       - name: Run engine boot, migration, and serialization smoke specs
         run: bundle exec rspec spec/rails_compat --format progress
 
+  without_hyrax:
+    name: Import specs without Hyrax, rails ${{ matrix.rails }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rails: '~> 7.0.8'
+            cache: rails70-no-hyrax
+          - rails: '~> 8.1.0'
+            cache: rails81-no-hyrax
+    env:
+      BULKRAX_WITH_HYRAX: 'false'
+      RAILS_GEM_VERSION: ${{ matrix.rails }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+          bundler-cache: true
+          cache-version: ${{ matrix.cache }}
+      - name: Run import specs without Hyrax
+        run: bundle exec rspec spec/without_hyrax --format progress
+
   coverage:
     runs-on: ubuntu-latest
 

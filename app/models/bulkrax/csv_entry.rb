@@ -242,9 +242,7 @@ module Bulkrax
     def build_system_metadata
       self.parsed_metadata['id'] = hyrax_record.id
       source_id = hyrax_record.send(work_identifier)
-      # Because ActiveTriples::Relation does not respond to #to_ary we can't rely on Array.wrap universally
-      source_id = source_id.to_a if source_id.is_a?(ActiveTriples::Relation)
-      source_id = Array.wrap(source_id).first
+      source_id = Array.wrap(Bulkrax.object_factory.export_values(source_id)).first
       self.parsed_metadata[source_identifier] = source_id
       model_name = Bulkrax.object_factory.model_name(resource: hyrax_record)
       self.parsed_metadata[key_for_export('model')] = model_name
@@ -335,8 +333,7 @@ module Bulkrax
       data = hyrax_record.send(value['object'])
       return if data.empty?
 
-      data = data.to_a if data.is_a?(ActiveTriples::Relation)
-      object_metadata(Array.wrap(data), value['object'])
+      object_metadata(Array.wrap(Bulkrax.object_factory.export_values(data)), value['object'])
     end
 
     def build_value(property_name, mapping_config)
@@ -391,11 +388,7 @@ module Bulkrax
     end
 
     def prepare_export_data(datum)
-      if datum.is_a?(ActiveTriples::Resource)
-        datum.to_uri.to_s
-      else
-        datum
-      end
+      Bulkrax.object_factory.export_value(datum)
     end
 
     def object_metadata(data, object_name = nil)

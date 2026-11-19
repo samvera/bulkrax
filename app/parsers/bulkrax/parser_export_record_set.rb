@@ -156,7 +156,7 @@ module Bulkrax
       end
 
       def collections
-        @collections ||= if collections_query
+        @collections ||= if Bulkrax.collection_model_class && collections_query
                            Bulkrax.object_factory.query(collections_query, **collections_query_kwargs)
                          else
                            []
@@ -283,6 +283,8 @@ module Bulkrax
       end
 
       def collections
+        return @collections = [] unless Bulkrax.collection_model_class
+
         @collections ||= ParserExportRecordSet.in_batches(complete_entry_identifiers) do |ids|
           Bulkrax.object_factory.query(
             "has_model_ssim:#{Bulkrax.collection_model_internal_resource} #{extra_filters}",

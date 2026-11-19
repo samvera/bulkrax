@@ -24,7 +24,13 @@ gem 'json', '< 3.0' # Legacy Rails passes quirks_mode, which JSON 3.0 dropped.
 
 gem 'oai'
 gem 'pg'
-gem 'rails', ENV['RAILS_GEM_VERSION'] || '~> 7.2'
+rails_requirement = ENV['RAILS_GEM_VERSION'] || '~> 7.2'
+gem 'rails', rails_requirement
+# Rails 8 needs sqlite3 2.x, which Rails 7.0 rejects. Bundler resolves Rails after this
+# runs, so a requirement that allows Rails 8 gets the newer sqlite3.
+rails_versions = Gem::Requirement.new(rails_requirement)
+rails8 = rails_versions.satisfied_by?(Gem::Version.new('8.0')) ||
+         rails_versions.requirements.map(&:last).min >= Gem::Version.new('8')
 gem 'rsolr', '>= 1.0'
 gem 'rspec-rails'
 gem 'twitter-typeahead-rails', '0.11.1.pre.corejavascript'
@@ -37,7 +43,7 @@ group :development, :test do
   gem 'pry-byebug'
   gem 'solargraph'
   gem 'solr_wrapper', '>= 0.3'
-  gem 'sqlite3', ENV['BULKRAX_WITH_HYRAX'] == 'false' ? '~> 2.1' : '~> 1.4'
+  gem 'sqlite3', rails8 ? '~> 2.1' : '~> 1.4'
 end
 
 group :test do

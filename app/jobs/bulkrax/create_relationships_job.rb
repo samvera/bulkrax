@@ -77,7 +77,7 @@ module Bulkrax
         # - works know both their children (file_sets and child works) in member_ids
         # - works and collections know their parents (collections) in member_of_collection_ids
         # We need to handle the two differently by locking the records appropriately to avoid race condition errors.
-        if parent_record.is_a?(Bulkrax.collection_model_class)
+        if Bulkrax.collection_model_class && parent_record.is_a?(Bulkrax.collection_model_class)
           process_parent_as_collection(parent_record: parent_record, parent_identifier: parent_identifier)
         else
           process_parent_as_work(parent_record: parent_record, parent_identifier: parent_identifier)

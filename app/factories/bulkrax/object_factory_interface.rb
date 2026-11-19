@@ -49,8 +49,10 @@ module Bulkrax
     end
 
     ##
-    # @note This does not save either object.  We need to do that in another
-    #       loop.  Why?  Because we might be adding many items to the parent.
+    # Adds the child to the parent work's members, unless it is one already.
+    #
+    # @return [Object] the parent work, which the relationship job saves after
+    #         adding all of its children
     def self.add_child_to_parent_work(parent:, child:)
       raise NotImplementedError, "#{self}.#{__method__}"
     end
@@ -134,6 +136,22 @@ module Bulkrax
     # @return [Array<String>]
     def self.export_properties
       raise NotImplementedError, "#{self}.#{__method__}"
+    end
+
+    ##
+    # @param values [Object] a property's values, as the record returns them
+    # @return [Object] the values, as a plain list when the record returns a
+    #         list type of its own
+    def self.export_values(values)
+      values
+    end
+
+    ##
+    # @param value [Object] one of a property's values
+    # @return [Object] the value as written to an export, such as a URI string
+    #         for a linked resource
+    def self.export_value(value)
+      value
     end
 
     ##
