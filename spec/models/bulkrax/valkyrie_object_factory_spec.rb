@@ -308,6 +308,22 @@ module Bulkrax
       end
     end
 
+    describe '.file_set_transaction?' do
+      before { allow(Hyrax::Transactions::Container).to receive(:key?).and_call_original }
+
+      it "is true where Hyrax has the file set transaction, and new file sets take their work's visibility" do
+        allow(Hyrax::Transactions::Container).to receive(:key?).with('change_set.update_file_set').and_return(true)
+
+        expect([described_class.file_set_transaction?, described_class.file_sets_take_work_visibility?]).to eq [true, true]
+      end
+
+      it 'is false on Hyrax 4, which builds file sets through their work and gives them the importer visibility' do
+        allow(Hyrax::Transactions::Container).to receive(:key?).with('change_set.update_file_set').and_return(false)
+
+        expect([described_class.file_set_transaction?, described_class.file_sets_take_work_visibility?]).to eq [false, false]
+      end
+    end
+
     describe '#perform_transaction_for' do
       include_context 'with the Valkyrie memory adapter'
 

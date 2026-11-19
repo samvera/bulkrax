@@ -155,6 +155,14 @@ module Bulkrax
     end
 
     ##
+    # @return [Boolean] true when a new file set whose row names no visibility
+    #         takes its work's visibility, embargo and lease; false when it takes
+    #         the importer's visibility
+    def self.file_sets_take_work_visibility?
+      false
+    end
+
+    ##
     # @param field [String]
     # @param model [Class]
     #
