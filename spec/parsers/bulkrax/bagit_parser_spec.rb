@@ -141,6 +141,35 @@ module Bulkrax
           end
         end
 
+        describe '#records' do
+          context "when a row's model cell says Work and the importer creates a WorkResource for it" do
+            let(:work_row) { subject.records.find { |record| record[:source_identifier] == 'ghijkl' } }
+            let(:collection_row) { subject.records.find { |record| record[:source_identifier] == 'abcdef' } }
+
+            before do
+              allow(Bulkrax).to receive(:factory_class_name_coercer).and_return(Bulkrax::FactoryClassFinder::ValkyrieMigrationCoercer)
+            end
+
+            it 'attaches the bag files to that row when WorkResource is registered as a curation concern' do
+              allow(Bulkrax).to receive(:curation_concerns).and_return([WorkResource])
+
+              expect(work_row[:file]).to be_present
+            end
+
+            it 'attaches the bag files to that row when Work is registered as a curation concern' do
+              allow(Bulkrax).to receive(:curation_concerns).and_return([Work])
+
+              expect(work_row[:file]).to be_present
+            end
+
+            it 'does not attach the bag files to the row whose model cell says Collection' do
+              allow(Bulkrax).to receive(:curation_concerns).and_return([Work])
+
+              expect(collection_row[:file]).to be_blank
+            end
+          end
+        end
+
         describe 'Bag or Bags with CSV Metadata' do
           let(:entry) { FactoryBot.create(:bulkrax_csv_entry, importerexporter: csv_importer) }
 

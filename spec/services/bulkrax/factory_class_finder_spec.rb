@@ -39,6 +39,16 @@ RSpec.describe Bulkrax::FactoryClassFinder do
     end
   end
 
+  describe '.resolve' do
+    it 'returns LegacyWork for "Legacy Work"' do
+      expect(described_class.resolve('Legacy Work', coercer: described_class::DefaultCoercer)).to eq(LegacyWork)
+    end
+
+    it 'returns nil for a model name with no class' do
+      expect(described_class.resolve('NoSuchModel')).to be_nil
+    end
+  end
+
   describe '.find' do
     let(:entry) { double(Bulkrax::Entry, parsed_metadata: { "model" => model_name }, default_work_type: "Work", raw_metadata: { "model" => model_name }) }
     subject(:finder) { described_class.find(entry: entry, coercer: coercer) }
@@ -53,6 +63,47 @@ RSpec.describe Bulkrax::FactoryClassFinder do
         let(:coercer) { given_coercer }
         it "returns the expected class" do
           expect(finder).to eq(expected_class_name.constantize)
+        end
+      end
+    end
+
+    [Bulkrax::FactoryClassFinder::DefaultCoercer, Bulkrax::FactoryClassFinder::ValkyrieMigrationCoercer].each do |given_coercer|
+      context "with coercer: #{given_coercer}" do
+        let(:coercer) { given_coercer }
+
+        before { stub_const('CollectionResource', Class.new) }
+
+        [
+          ['FileSet', 'Hyrax::FileSet'],
+          ['FileSet', 'hyrax::fileset'],
+          ['Hyrax::FileSet', 'FileSet'],
+          ['Hyrax::FileSet', 'fileset']
+        ].each do |configured, given_model_name|
+          context "when file_model_class is #{configured} and the row says #{given_model_name}" do
+            let(:model_name) { given_model_name }
+
+            before { Bulkrax.file_model_class = configured.constantize }
+
+            it "returns #{configured}" do
+              expect(finder).to eq(configured.constantize)
+            end
+          end
+        end
+
+        [
+          ['Collection', 'CollectionResource'],
+          ['CollectionResource', 'Collection'],
+          ['CollectionResource', 'collection']
+        ].each do |configured, given_model_name|
+          context "when collection_model_class is #{configured} and the row says #{given_model_name}" do
+            let(:model_name) { given_model_name }
+
+            before { Bulkrax.collection_model_class = configured.constantize }
+
+            it "returns #{configured}" do
+              expect(finder).to eq(configured.constantize)
+            end
+          end
         end
       end
     end

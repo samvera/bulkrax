@@ -64,7 +64,7 @@ unless ENV.fetch('BULKRAX_NO_BAGIT', 'false').to_s == 'true'
             record_data = entry_class.data_for_entry(data_row, source_identifier, self)
             next record_data if importerexporter.metadata_only?
 
-            record_data[:file] = bag.bag_files.join('|') if Bulkrax.curation_concerns.include? record_data[:model]&.constantize
+            record_data[:file] = bag.bag_files.join('|') if curation_concern?(record_data[:model])
             record_data
           end
         else
@@ -195,6 +195,13 @@ unless ENV.fetch('BULKRAX_NO_BAGIT', 'false').to_s == 'true'
       end
 
       private
+
+      # Both sides resolve the same way, so a registered Work matches a row
+      # the importer creates as a WorkResource.
+      def curation_concern?(model_name)
+        klass = FactoryClassFinder.resolve(model_name) if model_name.present?
+        klass.present? && Bulkrax.curation_concerns.any? { |concern| FactoryClassFinder.resolve(concern.to_s) == klass }
+      end
 
       def bags
         return @bags if @bags.present?

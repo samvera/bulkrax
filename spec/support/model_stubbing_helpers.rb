@@ -31,6 +31,11 @@ module ModelStubbingHelpers
   # @return [void]
   # rubocop:disable Metrics/MethodLength
   def stub_bulkrax_models
+    # Validation resolves a row without a model to the default work type, as
+    # import does. Load it while Hyrax.config is still real: autoloading it
+    # after the stub below calls the double.
+    Bulkrax.default_work_type&.safe_constantize
+
     # First, stub ValkyrieObjectFactory to prevent schema access issues
     stub_const('Bulkrax::ValkyrieObjectFactory', Class.new do
       def self.schema_properties(klass:, admin_set_id: nil) # rubocop:disable Lint/UnusedMethodArgument
@@ -43,6 +48,10 @@ module ModelStubbingHelpers
       end
 
       def self.search_by_property(**_kwargs)
+        nil
+      end
+
+      def self.find_for_import(**_kwargs)
         nil
       end
     end)
@@ -141,8 +150,20 @@ module ModelStubbingHelpers
                                                           })
   end
   # rubocop:enable Metrics/MethodLength
+
+  # Bulkrax memoizes these on its config the first time they are read. Read
+  # while Collection or FileSet is stubbed, they keep the stub class after
+  # RSpec restores the real constant, and later examples compare against it.
+  MEMOIZED_MODEL_SETTINGS = %i[@collection_model_class @collection_model_names @file_model_class @file_model_names].freeze
+
+  def reset_bulkrax_model_memos
+    MEMOIZED_MODEL_SETTINGS.each do |ivar|
+      Bulkrax.config.remove_instance_variable(ivar) if Bulkrax.config.instance_variable_defined?(ivar)
+    end
+  end
 end
 
 RSpec.configure do |config|
   config.include ModelStubbingHelpers
+  config.after { reset_bulkrax_model_memos }
 end
