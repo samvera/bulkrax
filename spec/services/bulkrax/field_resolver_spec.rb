@@ -117,6 +117,23 @@ RSpec.describe Bulkrax::FieldResolver do
     end
   end
 
+  describe '.row_values' do
+    it "reads every column mapped to the field, through the mapping's matcher, without repeats" do
+      mapping = { 'file' => { 'from' => ['file'], 'split' => '\\|' } }
+      expect(described_class.row_values({ 'file' => 'a.png|b.png', 'file_2' => 'a.png' }, mapping, 'file')).to eq(%w[a.png b.png])
+    end
+
+    it 'gives nothing when the mapping fills a nested object, not the field' do
+      mapping = { 'file' => { 'from' => ['file'], 'object' => 'attachment' } }
+      expect(described_class.row_values({ 'file' => 'a.png' }, mapping, 'file')).to eq []
+    end
+
+    it "drops cells the mapping's condition rejects" do
+      mapping = { 'file' => { 'from' => ['file'], 'if' => ['match?', '\\.png$'] } }
+      expect(described_class.row_values({ 'file' => 'a.png', 'file_2' => 'notes.txt' }, mapping, 'file')).to eq(%w[a.png])
+    end
+  end
+
   describe '.flagged_key' do
     it 'finds a flag stored under a symbol key' do
       mapping = { 'title' => { 'from' => ['title'] }, 'parents' => { from: ['parents'], related_parents_field_mapping: true } }
