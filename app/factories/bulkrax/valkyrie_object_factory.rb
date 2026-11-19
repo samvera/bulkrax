@@ -513,7 +513,7 @@ module Bulkrax
     def perform_transaction_for(object:, attrs:)
       admin_set_id = attrs[:admin_set_id] || attrs['admin_set_id'] ||
                      attributes[:admin_set_id] || attributes['admin_set_id']
-      form = Hyrax::Forms::ResourceForm.for(resource: object, admin_set_id: admin_set_id).prepopulate!
+      form = resource_form_for(object, admin_set_id).prepopulate!
 
       # TODO: Handle validations
       form.validate(attrs)
@@ -526,6 +526,20 @@ module Bulkrax
         msg = result.failure[0].to_s
         msg += " - #{result.failure[1].full_messages.join(',')}" if result.failure[1].respond_to?(:full_messages)
         raise StandardError, msg, result.trace
+      end
+    end
+
+    # Hyrax 5.3 and later take the admin set that a flexible metadata schema
+    # depends on; Hyrax 5.0 to 5.2 take the resource alone, and Hyrax 4 takes it
+    # as a positional argument.
+    def resource_form_for(object, admin_set_id)
+      parameters = Hyrax::Forms::ResourceForm.method(:for).parameters
+      if parameters.any? { |type, name| name == :admin_set_id || type == :keyrest }
+        Hyrax::Forms::ResourceForm.for(resource: object, admin_set_id: admin_set_id)
+      elsif parameters.include?([:key, :resource])
+        Hyrax::Forms::ResourceForm.for(resource: object)
+      else
+        Hyrax::Forms::ResourceForm.for(object)
       end
     end
 
