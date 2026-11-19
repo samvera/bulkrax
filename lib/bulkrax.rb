@@ -251,7 +251,7 @@ module Bulkrax
     ##
     # @return [Array<#call>] callable validators invoked per-row during CSV validation.
     #   Each callable receives (record, row_number, context).
-    #   Defaults to the four built-in CsvRow:: validators.
+    #   Defaults to the built-in CsvRow:: validators.
     def csv_row_validators
       @csv_row_validators ||= [
         Bulkrax::CsvRow::MissingSourceIdentifier,
@@ -262,7 +262,8 @@ module Bulkrax
         Bulkrax::CsvRow::RequiredValues,
         Bulkrax::CsvRow::ControlledVocabulary,
         Bulkrax::CsvRow::FileReference,
-        Bulkrax::CsvRow::DeleteRecord
+        Bulkrax::CsvRow::DeleteRecord,
+        Bulkrax::CsvRow::Visibility
       ]
     end
 

@@ -425,6 +425,32 @@ it:
             message_column_empty: "Nessun modello fornito — tutte le righe verranno importate come '%{default_work_type}'."
             suggestion_column_empty: "Aggiungi valori modello alla colonna 'model' del tuo CSV se vuoi usare un tipo di lavoro diverso per alcune righe."
             suggestion_column_missing: "Aggiungi una colonna 'model' al tuo CSV se vuoi usare un tipo di lavoro diverso per alcune righe."
+          visibility_validator:
+            errors:
+              unknown_visibility:
+                message: "La visibilità \"%{value}\" non è open, authenticated, restricted, embargo né lease."
+                suggestion: "Usa uno di questi valori oppure lascia la cella vuota per usare la visibilità predefinita."
+              unknown_collection_visibility:
+                message: "La visibilità \"%{value}\" non è open, authenticated né restricted, le sole visibilità che una collezione accetta."
+                suggestion: "Usa uno di questi valori oppure lascia la cella vuota per usare la visibilità dell'importatore."
+              unknown_visibility_during_embargo:
+                message: "La visibilità durante l'embargo è \"%{value}\", non open, authenticated o restricted."
+                suggestion: "Imposta visibility_during_embargo sulla visibilità che l'elemento ha fino alla fine dell'embargo."
+              past_embargo_date:
+                message: "La data di fine embargo %{value} non è successiva a oggi."
+                suggestion: "Usa una data di fine successiva a oggi oppure una visibilità senza embargo."
+              invalid_embargo_date:
+                message: "La data di fine embargo %{value} non è una data."
+                suggestion: "Scrivi la data nel formato YYYY-MM-DD."
+              unknown_visibility_during_lease:
+                message: "La visibilità durante la locazione è \"%{value}\", non open, authenticated o restricted."
+                suggestion: "Imposta visibility_during_lease sulla visibilità che l'elemento ha fino alla fine della locazione."
+              past_lease_date:
+                message: "La data di scadenza della locazione %{value} non è successiva a oggi."
+                suggestion: "Usa una data di scadenza successiva a oggi oppure una visibilità senza locazione."
+              invalid_lease_date:
+                message: "La data di scadenza della locazione %{value} non è una data."
+                suggestion: "Scrivi la data nel formato YYYY-MM-DD."
           remove_and_rerun_validator:
             warnings:
               message: "'%{value}' corrisponde a un record esistente, quindi questa riga lo eliminerà e lo importerà di nuovo."
