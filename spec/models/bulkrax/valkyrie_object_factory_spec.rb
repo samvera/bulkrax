@@ -324,6 +324,47 @@ module Bulkrax
       end
     end
 
+    describe '.visibility_problem' do
+      let(:future) { 1.month.from_now.to_date.to_s }
+
+      {
+        "a visibility Hyrax doesn't know" => [{ visibility: 'bogus' }, :unknown_visibility],
+        'an embargo whose during visibility is missing' => [{ visibility: 'embargo', embargo_release_date: :future }, :unknown_visibility_during_embargo],
+        "an embargo whose during visibility Hyrax doesn't know" =>
+          [{ visibility: 'embargo', embargo_release_date: :future, visibility_during_embargo: 'bogus' }, :unknown_visibility_during_embargo],
+        'an embargo date of today' => [{ visibility: 'embargo', embargo_release_date: :today, visibility_during_embargo: 'restricted' }, :past_embargo_date],
+        'an embargo date that is not a date' =>
+          [{ visibility: 'embargo', embargo_release_date: '12/19/2026', visibility_during_embargo: 'restricted' }, :invalid_embargo_date],
+        'a lease whose during visibility is missing' => [{ visibility: 'lease', lease_expiration_date: :future }, :unknown_visibility_during_lease],
+        'a past lease date' => [{ visibility: 'lease', lease_expiration_date: :yesterday, visibility_during_lease: 'open' }, :past_lease_date],
+        'an embargo with no date' => [{ visibility: 'embargo', visibility_during_embargo: 'restricted' }, nil],
+        "an after visibility Hyrax doesn't know" =>
+          [{ visibility: 'embargo', embargo_release_date: :future, visibility_during_embargo: 'restricted', visibility_after_embargo: 'bogus' }, nil],
+        'a known visibility' => [{ visibility: 'open' }, nil],
+        'no visibility' => [{}, nil]
+      }.each do |row, (attributes, problem)|
+        it "is #{problem.inspect} for #{row}" do
+          dates = { future: future, today: Time.zone.today.to_s, yesterday: Time.zone.yesterday.to_s }
+          attributes = attributes.transform_values { |value| dates.fetch(value, value) }
+
+          expect(described_class.visibility_problem(attributes, model: 'WorkResource')).to eq problem
+        end
+      end
+
+      { 'bogus' => :unknown_collection_visibility, 'embargo' => :unknown_collection_visibility, 'open' => nil }.each do |visibility, problem|
+        it "is #{problem.inspect} for a collection whose visibility is #{visibility}, as its form takes no embargo or lease" do
+          expect(described_class.visibility_problem({ visibility: visibility, embargo_release_date: '2020-01-01' }, model: Bulkrax.collection_model_class.to_s))
+            .to eq problem
+        end
+      end
+
+      it "is nil for a file set on Hyrax 4, which does not apply its row's visibility" do
+        allow(described_class).to receive(:file_set_transaction?).and_return(false)
+
+        expect(described_class.visibility_problem({ visibility: 'bogus' }, model: Bulkrax.file_model_class.to_s)).to be_nil
+      end
+    end
+
     describe '#perform_transaction_for' do
       include_context 'with the Valkyrie memory adapter'
 
@@ -442,10 +483,17 @@ module Bulkrax
       end
 
       it 'fails a row whose embargo date has passed, without creating a file set' do
+        yesterday = Time.zone.yesterday.to_s
         expect do
-          import('visibility' => 'embargo', 'embargo_release_date' => 1.day.ago.to_date.to_s,
+          import('visibility' => 'embargo', 'embargo_release_date' => yesterday,
                  'visibility_during_embargo' => 'restricted', 'visibility_after_embargo' => 'open')
-        end.to raise_error(StandardError)
+        end.to raise_error(StandardError, "fs-1: The embargo release date #{yesterday} is not after today.")
+        expect(file_sets).to be_empty
+      end
+
+      it 'fails a row naming an embargo without its visibility while in effect, without creating a file set' do
+        expect { import('visibility' => 'embargo', 'embargo_release_date' => release_date.to_s, 'visibility_after_embargo' => 'open') }
+          .to raise_error(StandardError, 'fs-1: The visibility during the embargo is "", not open, authenticated or restricted.')
         expect(file_sets).to be_empty
       end
 

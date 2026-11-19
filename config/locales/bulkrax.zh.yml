@@ -425,6 +425,32 @@ zh:
             message_column_empty: "未提供模型 — 所有行将以 '%{default_work_type}' 导入。"
             suggestion_column_empty: "如果您想为某些行使用不同的作品类型，请在 CSV 的 'model' 列中添加模型值。"
             suggestion_column_missing: "如果您想为某些行使用不同的作品类型，请在 CSV 中添加 'model' 列。"
+          visibility_validator:
+            errors:
+              unknown_visibility:
+                message: "可见性\"%{value}\"不是 open、authenticated、restricted、embargo 或 lease 之一。"
+                suggestion: "请使用其中一个值，或将该单元格留空以使用默认可见性。"
+              unknown_collection_visibility:
+                message: "可见性\"%{value}\"不是 open、authenticated 或 restricted，而集合只接受这几种可见性。"
+                suggestion: "请使用其中一个值，或将该单元格留空以使用导入器的可见性。"
+              unknown_visibility_during_embargo:
+                message: "时滞期间的可见性为\"%{value}\"，而不是 open、authenticated 或 restricted。"
+                suggestion: "请将 visibility_during_embargo 设置为该项目在时滞结束前的可见性。"
+              past_embargo_date:
+                message: "时滞解除日期 %{value} 不晚于今天。"
+                suggestion: "请使用晚于今天的解除日期，或使用不带时滞的可见性。"
+              invalid_embargo_date:
+                message: "时滞解除日期 %{value} 不是有效日期。"
+                suggestion: "请按 YYYY-MM-DD 格式填写日期。"
+              unknown_visibility_during_lease:
+                message: "租借期间的可见性为\"%{value}\"，而不是 open、authenticated 或 restricted。"
+                suggestion: "请将 visibility_during_lease 设置为该项目在租借结束前的可见性。"
+              past_lease_date:
+                message: "租借到期日期 %{value} 不晚于今天。"
+                suggestion: "请使用晚于今天的到期日期，或使用不带租借的可见性。"
+              invalid_lease_date:
+                message: "租借到期日期 %{value} 不是有效日期。"
+                suggestion: "请按 YYYY-MM-DD 格式填写日期。"
           remove_and_rerun_validator:
             warnings:
               message: "'%{value}' 与现有记录匹配，因此此行将删除该记录并重新导入。"
