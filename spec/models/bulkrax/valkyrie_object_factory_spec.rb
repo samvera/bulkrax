@@ -307,6 +307,22 @@ module Bulkrax
       end
     end
 
+    describe '#perform_transaction_for' do
+      include_context 'with the Valkyrie memory adapter'
+
+      let(:work) { Hyrax.persister.save(resource: WorkResource.new(title: ['before'])) }
+      let(:factory) do
+        described_class.new(attributes: {}, source_identifier_value: 'work-1', work_identifier: :bulkrax_identifier,
+                            work_identifier_search_field: 'bulkrax_identifier_tesim', user: create(:user), klass: WorkResource)
+      end
+
+      it "saves the record through Hyrax's form and transaction" do
+        saved = factory.send(:perform_transaction_for, object: work, attrs: { title: ['after'] }) { factory.transactions['change_set.apply'] }
+
+        expect(saved.title).to eq ['after']
+      end
+    end
+
     describe '.add_child_to_parent_work' do
       include_context 'with the Valkyrie memory adapter'
 
