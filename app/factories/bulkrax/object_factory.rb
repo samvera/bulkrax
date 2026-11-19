@@ -69,6 +69,15 @@ module Bulkrax
       properties.reject { |prop| Bulkrax.reserved_properties.include?(prop) }
     end
 
+    def self.export_values(values)
+      # ActiveTriples::Relation does not respond to #to_ary, so Array.wrap would not unwrap it
+      values.is_a?(ActiveTriples::Relation) ? values.to_a : values
+    end
+
+    def self.export_value(value)
+      value.is_a?(ActiveTriples::Resource) ? value.to_uri.to_s : value
+    end
+
     #  Unused admin set included to support flexible contexts in the Valkyrie version
     def self.field_multi_value?(field:, model:, admin_set_id: nil) # rubocop:disable Lint/UnusedMethodArgument
       return false unless field_supported?(field: field, model: model)

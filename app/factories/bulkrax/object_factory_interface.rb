@@ -139,6 +139,22 @@ module Bulkrax
     end
 
     ##
+    # @param values [Object] a property's values, as the record returns them
+    # @return [Object] the values, as a plain list when the record returns a
+    #         list type of its own
+    def self.export_values(values)
+      values
+    end
+
+    ##
+    # @param value [Object] one of a property's values
+    # @return [Object] the value as written to an export, such as a URI string
+    #         for a linked resource
+    def self.export_value(value)
+      value
+    end
+
+    ##
     # @param field [String]
     # @param model [Class]
     #
