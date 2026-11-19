@@ -427,6 +427,11 @@ en:
             warnings:
               message: "No model specified — this row will be imported as '%{default_work_type}'."
               suggestion: "Specify a model value in the 'model' column for this row if you want to use a different work type."
+          file_set_files_validator:
+            errors:
+              more_than_one_file:
+                message: "This file set row lists %{value} files; a file set row takes one."
+                suggestion: "List one file per file set row, or list several files on a work row, which makes a file set for each."
           visibility_validator:
             errors:
               unknown_visibility:

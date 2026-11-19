@@ -308,6 +308,24 @@ module Bulkrax
       end
     end
 
+    describe '.file_set_row_problem' do
+      before { allow(described_class).to receive(:file_set_transaction?).and_return(true) }
+
+      it 'is :more_than_one_file for a row listing more than one file' do
+        expect(described_class.file_set_row_problem(file_count: 2)).to eq :more_than_one_file
+      end
+
+      it 'is nil for a row listing one file' do
+        expect(described_class.file_set_row_problem(file_count: 1)).to be_nil
+      end
+
+      it 'is nil when Hyrax has no file set transaction, as its work makes a file set for each file' do
+        allow(described_class).to receive(:file_set_transaction?).and_return(false)
+
+        expect(described_class.file_set_row_problem(file_count: 2)).to be_nil
+      end
+    end
+
     describe '.file_set_transaction?' do
       before { allow(Hyrax::Transactions::Container).to receive(:key?).and_call_original }
 
@@ -482,6 +500,28 @@ module Bulkrax
         expect(file_set.lease).to have_attributes(visibility_during_lease: 'open', visibility_after_lease: 'restricted')
       end
 
+      it 'fails a row that lists more than one file, without creating a file set' do
+        expect { import('file' => [fixture_path, fixture_path]) }
+          .to raise_error(StandardError, 'fs-1: This file set row lists 2 files; a file set row takes one.')
+        expect(file_sets).to be_empty
+      end
+
+      it 'fails a row that lists a file and a remote file, without creating a file set' do
+        allow_any_instance_of(described_class).to receive(:download_file).and_return(fixture_path) # rubocop:disable RSpec/AnyInstance
+
+        expect { import('file' => [fixture_path], 'remote_files' => [{ url: 'https://example.com/other.png', file_name: 'other.png' }]) }
+          .to raise_error(StandardError, 'fs-1: This file set row lists 2 files; a file set row takes one.')
+        expect(file_sets).to be_empty
+      end
+
+      it 'makes one file set from a thumbnail given as a url and file name' do
+        allow_any_instance_of(described_class).to receive(:download_file).and_return(fixture_path) # rubocop:disable RSpec/AnyInstance
+
+        import('file' => [], 'thumbnail_url' => { url: 'https://example.com/thumbnail.png', file_name: 'thumbnail.png' })
+
+        expect(file_sets.size).to eq 1
+      end
+
       it 'fails a row whose embargo date has passed, without creating a file set' do
         yesterday = Time.zone.yesterday.to_s
         expect do
@@ -506,6 +546,14 @@ module Bulkrax
           factory.instance_variable_set(:@object, file_set)
           factory.send(:update)
           reloaded(file_set)
+        end
+
+        it 'fails a row that lists more than one file, leaving the file set as it was' do
+          file_set = import('description' => ['A description'])
+
+          expect { reimport(file_set, 'description' => ['New description'], 'file' => [fixture_path, fixture_path.sub('removed', 'other')]) }
+            .to raise_error(StandardError, 'fs-1: This file set row lists 2 files; a file set row takes one.')
+          expect(reloaded(file_set).description).to eq ['A description']
         end
 
         it 'clears a blank cell when blank values are removed before the form, as for a work' do

@@ -425,6 +425,11 @@ it:
             message_column_empty: "Nessun modello fornito — tutte le righe verranno importate come '%{default_work_type}'."
             suggestion_column_empty: "Aggiungi valori modello alla colonna 'model' del tuo CSV se vuoi usare un tipo di lavoro diverso per alcune righe."
             suggestion_column_missing: "Aggiungi una colonna 'model' al tuo CSV se vuoi usare un tipo di lavoro diverso per alcune righe."
+          file_set_files_validator:
+            errors:
+              more_than_one_file:
+                message: "Questa riga di set di file elenca %{value} file; una riga di set di file ne accetta uno."
+                suggestion: "Indica un file per riga di set di file, oppure indica più file in una riga di opera, che crea un set di file per ciascuno."
           visibility_validator:
             errors:
               unknown_visibility:
