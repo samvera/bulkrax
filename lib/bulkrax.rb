@@ -114,7 +114,7 @@ module Bulkrax
     end
 
     def collection_model_class
-      @collection_model_class ||= Collection if Bulkrax.hyrax_loaded?
+      @collection_model_class ||= (Collection if Bulkrax.hyrax_loaded?)
     end
 
     def collection_model_class=(klass)
