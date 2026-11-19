@@ -29,4 +29,34 @@ RSpec.describe Bulkrax::RemoveRelationshipsForImporter do
       remover
     end
   end
+
+  describe "#remove_relationships_from_collection" do
+    subject(:remover) { described_class.new(entries: [], progress_bar: described_class::NullProgressBar) }
+    # rubocop:disable RSpec/VerifiedDoubles
+    let(:parent_collection) { double("parent collection") }
+    let(:child_collection) { double("child collection") }
+    let(:collection) do
+      double("collection", member_works: [], member_of_collections: [parent_collection], member_collections: [child_collection])
+    end
+    # rubocop:enable RSpec/VerifiedDoubles
+
+    before { allow(Hyrax::Collections::NestedCollectionPersistenceService).to receive(:remove_nested_relationship_for) }
+
+    it "removes the collection from its parent collections and its child collections from it" do
+      remover.remove_relationships_from_collection(collection)
+
+      expect(Hyrax::Collections::NestedCollectionPersistenceService)
+        .to have_received(:remove_nested_relationship_for).with(parent: parent_collection, child: collection)
+      expect(Hyrax::Collections::NestedCollectionPersistenceService)
+        .to have_received(:remove_nested_relationship_for).with(parent: collection, child: child_collection)
+    end
+
+    it "leaves collection links alone without Hyrax" do
+      allow(Bulkrax).to receive(:hyrax_loaded?).and_return(false)
+
+      remover.remove_relationships_from_collection(collection)
+
+      expect(Hyrax::Collections::NestedCollectionPersistenceService).not_to have_received(:remove_nested_relationship_for)
+    end
+  end
 end

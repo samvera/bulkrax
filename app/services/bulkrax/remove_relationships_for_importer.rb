@@ -76,7 +76,7 @@ module Bulkrax
         work.save! if change.present?
       end
 
-      return if defined?(Hyrax)
+      return unless Bulkrax.hyrax_loaded?
 
       # NOTE: This should not need to be migrated to the object factory.
       # Remove parent collection relationships
