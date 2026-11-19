@@ -425,6 +425,11 @@ zh:
             message_column_empty: "未提供模型 — 所有行将以 '%{default_work_type}' 导入。"
             suggestion_column_empty: "如果您想为某些行使用不同的作品类型，请在 CSV 的 'model' 列中添加模型值。"
             suggestion_column_missing: "如果您想为某些行使用不同的作品类型，请在 CSV 中添加 'model' 列。"
+          file_set_files_validator:
+            errors:
+              more_than_one_file:
+                message: "此文件集行列出了 %{value} 个文件；一个文件集行只接受一个文件。"
+                suggestion: "每个文件集行只列一个文件，或在作品行中列出多个文件，作品会为每个文件创建一个文件集。"
           visibility_validator:
             errors:
               unknown_visibility:

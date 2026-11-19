@@ -425,6 +425,11 @@ fr:
             message_column_empty: "Aucun modèle fourni — toutes les lignes seront importées en tant que '%{default_work_type}'."
             suggestion_column_empty: "Ajoutez des valeurs de modèle à la colonne 'model' de votre CSV si vous souhaitez utiliser un type de travail différent pour certaines lignes."
             suggestion_column_missing: "Ajoutez une colonne 'model' à votre CSV si vous souhaitez utiliser un type de travail différent pour certaines lignes."
+          file_set_files_validator:
+            errors:
+              more_than_one_file:
+                message: "Cette ligne d'ensemble de fichiers indique %{value} fichiers ; une ligne d'ensemble de fichiers n'en accepte qu'un."
+                suggestion: "Indiquez un fichier par ligne d'ensemble de fichiers, ou indiquez plusieurs fichiers sur une ligne d'œuvre, qui crée un ensemble de fichiers pour chacun."
           visibility_validator:
             errors:
               unknown_visibility:
