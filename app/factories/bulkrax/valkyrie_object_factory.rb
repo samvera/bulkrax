@@ -771,7 +771,10 @@ module Bulkrax
 
     def create_uploaded_file(file_path, file_name)
       file = File.open(file_path)
-      uploaded_file = Hyrax::UploadedFile.create(file: file, user: @user, filename: file_name)
+      # The download has a temporary name; the stored file takes the remote file's, which ingest
+      # gives the file set as its label
+      upload = ActionDispatch::Http::UploadedFile.new(tempfile: file, filename: file_name.presence || File.basename(file_path))
+      uploaded_file = Hyrax::UploadedFile.create(file: upload, user: @user, filename: file_name)
       file.close
       uploaded_file
     rescue => e

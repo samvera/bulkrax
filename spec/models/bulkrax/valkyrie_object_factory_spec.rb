@@ -488,6 +488,16 @@ module Bulkrax
         expect(import('title' => ['']).title).to eq ['removed.png']
       end
 
+      it "stores a remote file under its own name, not the download's" do
+        download = Tempfile.new.tap { |file| file.binmode && file.write(File.binread(fixture_path)) && file.close }
+        allow_any_instance_of(described_class).to receive(:download_file).and_return(download.path) # rubocop:disable RSpec/AnyInstance
+
+        file_set = import('title' => [], 'file' => [], 'remote_files' => [{ url: 'https://example.com/cover.png', file_name: 'cover.png' }])
+
+        expect(file_set).to have_attributes(title: ['cover.png'], label: 'cover.png')
+        expect(Hyrax::UploadedFile.last.file.file.original_filename).to eq 'cover.png'
+      end
+
       it "keeps its work's permissions when Hyrax builds the form on a copy, as for flexible metadata" do
         allow_any_instance_of(described_class).to receive(:resource_form_for).and_wrap_original do |original, resource, admin_set_id| # rubocop:disable RSpec/AnyInstance
           original.call(resource.class.new(resource.attributes), admin_set_id)
