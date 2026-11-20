@@ -44,6 +44,8 @@ module Bulkrax
     STATUS_MESSAGE_LIMIT = 255
 
     include DynamicRecordLookup
+    # It's not certain that Hyrax's lock works, so resources are also reloaded before they are updated
+    include Bulkrax::Lockable
 
     queue_as Bulkrax.config.ingest_queue_name
 
@@ -113,29 +115,6 @@ module Bulkrax
     # rubocop:enable Metrics/MethodLength
 
     private
-
-    ##
-    # We can use Hyrax's lock manager when we have one available.
-    # However it's not certain that this is actually working, so to be
-    # as safe as possible, we will reload resources before we update.
-    if Bulkrax.hyrax_loaded?
-      include Hyrax::Lockable
-
-      def conditionally_acquire_lock_for(*args, &block)
-        if Bulkrax.use_locking?
-          acquire_lock_for(*args, &block)
-        else
-          yield
-        end
-      end
-    else
-      # Otherwise, we're providing no meaningful lock manager at this time.
-      def acquire_lock_for(*)
-        yield
-      end
-
-      alias conditionally_acquire_lock_for acquire_lock_for
-    end
 
     # When the parent is a collection, we save the relationship on each child.
     # The parent does not need to be saved, as the relationship is stored on the child.

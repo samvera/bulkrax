@@ -105,5 +105,68 @@ module Bulkrax
         end
       end
     end
+
+    describe '#add_visibility' do
+      subject(:entry) { described_class.new(importerexporter: importer, type: 'Bulkrax::CsvFileSetEntry') }
+      let(:importer) { FactoryBot.create(:bulkrax_importer_csv, parser_fields: { 'import_file_path' => 'spec/fixtures/csv/good.csv', 'visibility' => 'open' }) }
+      let(:existing_record) { nil }
+      # rubocop:disable RSpec/VerifiedDoubles
+      let(:factory) { double('factory', find: existing_record) }
+      # rubocop:enable RSpec/VerifiedDoubles
+
+      before do
+        entry.parsed_metadata = {}
+        allow(entry).to receive(:factory).and_return(factory)
+        allow(Bulkrax.object_factory).to receive(:file_sets_take_work_visibility?).and_return(takes_work_visibility)
+      end
+
+      context 'when new file sets take their work visibility' do
+        let(:takes_work_visibility) { true }
+
+        it "leaves a new file set's visibility to its work" do
+          entry.add_visibility
+
+          expect(entry.parsed_metadata['visibility']).to be_nil
+        end
+
+        context 'when the row updates an existing file set' do
+          let(:existing_record) { Object.new }
+
+          it "gives it the importer's visibility" do
+            entry.add_visibility
+
+            expect(entry.parsed_metadata['visibility']).to eq 'open'
+          end
+        end
+      end
+
+      context 'when new file sets do not take their work visibility' do
+        let(:takes_work_visibility) { false }
+
+        it "gives a new file set the importer's visibility" do
+          entry.add_visibility
+
+          expect(entry.parsed_metadata['visibility']).to eq 'open'
+        end
+      end
+    end
+
+    describe 'the factory import runs, after a visibility lookup' do
+      subject(:entry) { described_class.new(importerexporter: importer, type: 'Bulkrax::CsvFileSetEntry', identifier: 'fs-1') }
+      let(:importer) { FactoryBot.create(:bulkrax_importer_csv) }
+
+      before do
+        entry.parsed_metadata = {}
+        allow(Bulkrax.object_factory).to receive(:file_sets_take_work_visibility?).and_return(true)
+        allow_any_instance_of(Bulkrax.object_factory).to receive(:find).and_return(nil) # rubocop:disable RSpec/AnyInstance
+      end
+
+      it 'is built from the metadata added after the lookup' do
+        entry.add_visibility
+        entry.parsed_metadata['title'] = ['A file set']
+
+        expect(entry.factory.attributes['title']).to eq ['A file set']
+      end
+    end
   end
 end
