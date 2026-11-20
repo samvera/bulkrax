@@ -38,7 +38,7 @@ module Bulkrax
     #
     # @see https://github.com/scientist-softserv/louisville-hyku/commit/128a9ef
     class_attribute :update_child_records_works_file_sets, default: false
-    class_attribute :max_failure_count, default: 5
+    class_attribute :max_failure_count, default: 6
     # The size of bulkrax_pending_relationships.status_message on databases
     # that enforce string limits, such as MySQL.
     STATUS_MESSAGE_LIMIT = 255
@@ -79,10 +79,15 @@ module Bulkrax
         # - works know both their children (file_sets and child works) in member_ids
         # - works and collections know their parents (collections) in member_of_collection_ids
         # We need to handle the two differently by locking the records appropriately to avoid race condition errors.
-        if Bulkrax.collection_model_class && parent_record.is_a?(Bulkrax.collection_model_class)
-          process_parent_as_collection(parent_record: parent_record, parent_identifier: parent_identifier)
-        else
-          process_parent_as_work(parent_record: parent_record, parent_identifier: parent_identifier)
+        begin
+          if Bulkrax.collection_model_class && parent_record.is_a?(Bulkrax.collection_model_class)
+            process_parent_as_collection(parent_record: parent_record, parent_identifier: parent_identifier)
+          else
+            process_parent_as_work(parent_record: parent_record, parent_identifier: parent_identifier)
+          end
+        rescue Lockable::RecordLockedError => e
+          @number_of_failures += 1
+          @errors << e
         end
       else
         @number_of_failures = 1
@@ -90,8 +95,9 @@ module Bulkrax
       end
 
       if @errors.present?
-        parent_entry&.set_status_info(@errors.last, importer_run)
         failure_count += 1
+        # Waiting on a lock isn't a failure until the retries run out
+        parent_entry&.set_status_info(@errors.last, importer_run) unless failure_count < max_failure_count && @errors.all?(Lockable::RecordLockedError)
 
         if failure_count < max_failure_count
           reschedule(
@@ -285,7 +291,8 @@ module Bulkrax
     end
 
     def reschedule(**kargs)
-      CreateRelationshipsJob.set(wait: 10.minutes).perform_later(**kargs)
+      wait = @errors&.all?(Lockable::RecordLockedError) ? Lockable.retry_wait(kargs[:failure_count]) : 10.minutes
+      CreateRelationshipsJob.set(wait: wait).perform_later(**kargs)
     end
   end
 end
