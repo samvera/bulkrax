@@ -30,6 +30,22 @@ module Bulkrax
       end
     end
 
+    describe 'handling the if argument' do
+      subject(:matcher) { described_class.new(if: ['match?', '^open$']) }
+
+      it 'returns the cell when it meets the condition' do
+        expect(matcher.result(nil, 'open')).to eq('open')
+      end
+
+      it 'returns nothing for a cell that does not meet the condition' do
+        expect(matcher.result(nil, 'restricted')).to be_nil
+      end
+
+      it 'returns nothing for an empty cell the CSV reader gives as nil' do
+        expect(matcher.result(nil, nil)).to be_nil
+      end
+    end
+
     describe '#parse_subject' do
       subject(:matcher) { described_class.new(to: 'subject', parsed: true, split: nil, if: nil, excluded: false, nested_type: nil) }
 
