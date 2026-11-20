@@ -95,6 +95,45 @@ RSpec.describe Bulkrax::FieldResolver do
     end
   end
 
+  describe '.row_value' do
+    it 'reads the last column mapped to the field' do
+      expect(described_class.row_value({ 'visibility' => 'open', 'visibility_2' => ' restricted ' }, {}, 'visibility'))
+        .to eq(['visibility_2', 'restricted'])
+    end
+
+    it "gives no value when the mapping's condition drops the cell" do
+      mapping = { 'visibility' => { 'from' => ['visibility'], 'if' => ['match?', '^open$'] } }
+      expect(described_class.row_value({ 'visibility' => 'bogus' }, mapping, 'visibility')).to eq(['visibility', nil])
+    end
+
+    it 'gives nothing when the mapping is excluded' do
+      mapping = { 'visibility' => { 'from' => ['visibility'], 'excluded' => true } }
+      expect(described_class.row_value({ 'visibility' => 'open' }, mapping, 'visibility')).to be_nil
+    end
+
+    it 'gives nothing when the mapping fills a nested object, not the field' do
+      mapping = { 'visibility' => { 'from' => ['access'], 'object' => 'single_object' } }
+      expect(described_class.row_value({ 'access' => 'Public' }, mapping, 'visibility')).to be_nil
+    end
+  end
+
+  describe '.row_values' do
+    it "reads every column mapped to the field, through the mapping's matcher, without repeats" do
+      mapping = { 'file' => { 'from' => ['file'], 'split' => '\\|' } }
+      expect(described_class.row_values({ 'file' => 'a.png|b.png', 'file_2' => 'a.png' }, mapping, 'file')).to eq(%w[a.png b.png])
+    end
+
+    it 'gives nothing when the mapping fills a nested object, not the field' do
+      mapping = { 'file' => { 'from' => ['file'], 'object' => 'attachment' } }
+      expect(described_class.row_values({ 'file' => 'a.png' }, mapping, 'file')).to eq []
+    end
+
+    it "drops cells the mapping's condition rejects" do
+      mapping = { 'file' => { 'from' => ['file'], 'if' => ['match?', '\\.png$'] } }
+      expect(described_class.row_values({ 'file' => 'a.png', 'file_2' => 'notes.txt' }, mapping, 'file')).to eq(%w[a.png])
+    end
+  end
+
   describe '.flagged_key' do
     it 'finds a flag stored under a symbol key' do
       mapping = { 'title' => { 'from' => ['title'] }, 'parents' => { from: ['parents'], related_parents_field_mapping: true } }

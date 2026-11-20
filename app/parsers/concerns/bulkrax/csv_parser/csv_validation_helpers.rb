@@ -310,7 +310,7 @@ module Bulkrax
           return results[row] if results.key?(row)
 
           results[row] = existing_record_match(
-            row, Bulkrax::FieldResolver.row_id(row[:raw_row], mappings),
+            row, Bulkrax::FieldResolver.row_value(row[:raw_row], mappings, 'id'),
             klass: Bulkrax::FactoryClassFinder.find(entry: ImportRow.new(raw_metadata: { 'model' => row[:model] })),
             search_field: work_identifier_search, name_field: work_identifier
           )
@@ -340,7 +340,7 @@ module Bulkrax
       def deleted_identifiers(csv_data, mappings, find_existing_record = nil)
         csv_data.select { |row| row[:deleting] }
                 .flat_map do |row|
-                  [row[:source_identifier], Bulkrax::FieldResolver.row_id(row[:raw_row], mappings)&.last,
+                  [row[:source_identifier], Bulkrax::FieldResolver.row_value(row[:raw_row], mappings, 'id')&.last,
                    find_existing_record&.call(row)&.dig(:record_id)]
                 end.compact.to_set
       end

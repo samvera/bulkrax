@@ -87,7 +87,9 @@ CsvParser.validate_csv
         │     ├── CsvRow::RequiredValues
         │     ├── CsvRow::ControlledVocabulary
         │     ├── CsvRow::FileReference
-        │     └── CsvRow::DeleteRecord
+        │     ├── CsvRow::DeleteRecord
+        │     ├── CsvRow::Visibility
+        │     └── CsvRow::FileSetFiles
         └── DidYouMean::SpellChecker        - Suggestions for unrecognized columns
 ```
 
@@ -143,6 +145,12 @@ Rows are `CSV::Row` objects with symbol-keyed headers. Field access uses the sym
 | `app/validators/bulkrax/csv_row/required_values.rb` | `default_work_type_used` | warning |
 | `app/validators/bulkrax/csv_row/controlled_vocabulary.rb` | `invalid_controlled_value` | error |
 | `app/validators/bulkrax/csv_row/file_reference.rb` | `missing_file_reference` | error |
+| `app/validators/bulkrax/csv_row/visibility.rb` | `unknown_visibility` | error |
+| `app/validators/bulkrax/csv_row/visibility.rb` | `unknown_visibility_during_embargo`, `unknown_visibility_during_lease` | error |
+| `app/validators/bulkrax/csv_row/visibility.rb` | `past_embargo_date`, `past_lease_date` | error |
+| `app/validators/bulkrax/csv_row/visibility.rb` | `invalid_embargo_date`, `invalid_lease_date` | error |
+| `app/validators/bulkrax/csv_row/visibility.rb` | `unknown_collection_visibility` | error |
+| `app/validators/bulkrax/csv_row/file_set_files.rb` | `more_than_one_file` | error |
 
 ### Related Files
 
@@ -172,7 +180,9 @@ Bulkrax.csv_row_validators
 #   Bulkrax::CsvRow::RequiredValues,
 #   Bulkrax::CsvRow::ControlledVocabulary,
 #   Bulkrax::CsvRow::FileReference,
-#   Bulkrax::CsvRow::DeleteRecord
+#   Bulkrax::CsvRow::DeleteRecord,
+#   Bulkrax::CsvRow::Visibility,
+#   Bulkrax::CsvRow::FileSetFiles
 # ]
 ```
 

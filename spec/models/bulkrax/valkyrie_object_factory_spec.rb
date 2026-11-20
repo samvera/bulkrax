@@ -308,6 +308,16 @@ module Bulkrax
       end
     end
 
+    describe '.file_set_row_problem' do
+      it 'is :more_than_one_file for a row listing more than one file' do
+        expect(described_class.file_set_row_problem(file_count: 2)).to eq :more_than_one_file
+      end
+
+      it 'is nil for a row listing one file' do
+        expect(described_class.file_set_row_problem(file_count: 1)).to be_nil
+      end
+    end
+
     describe '.file_set_transaction?' do
       before { allow(Hyrax::Transactions::Container).to receive(:key?).and_call_original }
 
@@ -321,6 +331,47 @@ module Bulkrax
         allow(Hyrax::Transactions::Container).to receive(:key?).with('change_set.update_file_set').and_return(false)
 
         expect([described_class.file_set_transaction?, described_class.file_sets_take_work_visibility?]).to eq [false, false]
+      end
+    end
+
+    describe '.visibility_problem' do
+      let(:future) { 1.month.from_now.to_date.to_s }
+
+      {
+        "a visibility Hyrax doesn't know" => [{ visibility: 'bogus' }, :unknown_visibility],
+        'an embargo whose during visibility is missing' => [{ visibility: 'embargo', embargo_release_date: :future }, :unknown_visibility_during_embargo],
+        "an embargo whose during visibility Hyrax doesn't know" =>
+          [{ visibility: 'embargo', embargo_release_date: :future, visibility_during_embargo: 'bogus' }, :unknown_visibility_during_embargo],
+        'an embargo date of today' => [{ visibility: 'embargo', embargo_release_date: :today, visibility_during_embargo: 'restricted' }, :past_embargo_date],
+        'an embargo date that is not a date' =>
+          [{ visibility: 'embargo', embargo_release_date: '12/19/2026', visibility_during_embargo: 'restricted' }, :invalid_embargo_date],
+        'a lease whose during visibility is missing' => [{ visibility: 'lease', lease_expiration_date: :future }, :unknown_visibility_during_lease],
+        'a past lease date' => [{ visibility: 'lease', lease_expiration_date: :yesterday, visibility_during_lease: 'open' }, :past_lease_date],
+        'an embargo with no date' => [{ visibility: 'embargo', visibility_during_embargo: 'restricted' }, nil],
+        "an after visibility Hyrax doesn't know" =>
+          [{ visibility: 'embargo', embargo_release_date: :future, visibility_during_embargo: 'restricted', visibility_after_embargo: 'bogus' }, nil],
+        'a known visibility' => [{ visibility: 'open' }, nil],
+        'no visibility' => [{}, nil]
+      }.each do |row, (attributes, problem)|
+        it "is #{problem.inspect} for #{row}" do
+          dates = { future: future, today: Time.zone.today.to_s, yesterday: Time.zone.yesterday.to_s }
+          attributes = attributes.transform_values { |value| dates.fetch(value, value) }
+
+          expect(described_class.visibility_problem(attributes, model: 'WorkResource')).to eq problem
+        end
+      end
+
+      { 'bogus' => :unknown_collection_visibility, 'embargo' => :unknown_collection_visibility, 'open' => nil }.each do |visibility, problem|
+        it "is #{problem.inspect} for a collection whose visibility is #{visibility}, as its form takes no embargo or lease" do
+          expect(described_class.visibility_problem({ visibility: visibility, embargo_release_date: '2020-01-01' }, model: Bulkrax.collection_model_class.to_s))
+            .to eq problem
+        end
+      end
+
+      it "is nil for a file set on Hyrax 4, which does not apply its row's visibility" do
+        allow(described_class).to receive(:file_set_transaction?).and_return(false)
+
+        expect(described_class.visibility_problem({ visibility: 'bogus' }, model: Bulkrax.file_model_class.to_s)).to be_nil
       end
     end
 
@@ -441,11 +492,40 @@ module Bulkrax
         expect(file_set.lease).to have_attributes(visibility_during_lease: 'open', visibility_after_lease: 'restricted')
       end
 
+      it 'fails a row that lists more than one file, without creating a file set' do
+        expect { import('file' => [fixture_path, fixture_path]) }
+          .to raise_error(StandardError, 'fs-1: This file set row lists 2 files; a file set row takes one.')
+        expect(file_sets).to be_empty
+      end
+
+      it 'fails a row that lists a file and a remote file, without creating a file set' do
+        allow_any_instance_of(described_class).to receive(:download_file).and_return(fixture_path) # rubocop:disable RSpec/AnyInstance
+
+        expect { import('file' => [fixture_path], 'remote_files' => [{ url: 'https://example.com/other.png', file_name: 'other.png' }]) }
+          .to raise_error(StandardError, 'fs-1: This file set row lists 2 files; a file set row takes one.')
+        expect(file_sets).to be_empty
+      end
+
+      it 'makes one file set from a thumbnail given as a url and file name' do
+        allow_any_instance_of(described_class).to receive(:download_file).and_return(fixture_path) # rubocop:disable RSpec/AnyInstance
+
+        import('file' => [], 'thumbnail_url' => { url: 'https://example.com/thumbnail.png', file_name: 'thumbnail.png' })
+
+        expect(file_sets.size).to eq 1
+      end
+
       it 'fails a row whose embargo date has passed, without creating a file set' do
+        yesterday = Time.zone.yesterday.to_s
         expect do
-          import('visibility' => 'embargo', 'embargo_release_date' => 1.day.ago.to_date.to_s,
+          import('visibility' => 'embargo', 'embargo_release_date' => yesterday,
                  'visibility_during_embargo' => 'restricted', 'visibility_after_embargo' => 'open')
-        end.to raise_error(StandardError)
+        end.to raise_error(StandardError, "fs-1: The embargo release date #{yesterday} is not after today.")
+        expect(file_sets).to be_empty
+      end
+
+      it 'fails a row naming an embargo without its visibility while in effect, without creating a file set' do
+        expect { import('visibility' => 'embargo', 'embargo_release_date' => release_date.to_s, 'visibility_after_embargo' => 'open') }
+          .to raise_error(StandardError, 'fs-1: The visibility during the embargo is "", not open, authenticated or restricted.')
         expect(file_sets).to be_empty
       end
 
@@ -458,6 +538,14 @@ module Bulkrax
           factory.instance_variable_set(:@object, file_set)
           factory.send(:update)
           reloaded(file_set)
+        end
+
+        it 'fails a row that lists more than one file, leaving the file set as it was' do
+          file_set = import('description' => ['A description'])
+
+          expect { reimport(file_set, 'description' => ['New description'], 'file' => [fixture_path, fixture_path.sub('removed', 'other')]) }
+            .to raise_error(StandardError, 'fs-1: This file set row lists 2 files; a file set row takes one.')
+          expect(reloaded(file_set).description).to eq ['A description']
         end
 
         it 'clears a blank cell when blank values are removed before the form, as for a work' do

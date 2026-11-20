@@ -46,24 +46,56 @@ module Bulkrax
       (aliases + [canonical_key]).uniq
     end
 
-    # The header import maps, after dropping column numbering such as
-    # `creator_1` or `1_creator`.
-    # A row's id and its column as import reads them
-    # (HasMatchers#add_metadata): `id` is single-valued, so the last column
-    # mapped to it wins, blank or not, stripped; an excluded mapping is
+    # A single-valued field's column and value as import reads them
+    # (HasMatchers#add_metadata): the last column mapped to the field wins,
+    # blank or not, through the mapping's matcher when there is one, then
+    # stripped; an excluded mapping, or one filling a nested `object:`, is
     # skipped. Guided validation and the CSV parser both use it.
     #
     # @param raw_row [Hash{String => String}] the row's cells by header
+    # @param field [String] a single-valued field, such as 'id' or 'visibility'
     # @return [Array(String, String), nil] the header and its value (nil when blank)
-    def self.row_id(raw_row, mapping)
-      return if option(mapping&.dig('id'), 'excluded')
+    def self.row_value(raw_row, mapping, field)
+      entry = mapping&.dig(field)
+      return if option(entry, 'excluded') || option(entry, 'object').present?
 
       header = raw_row.keys.reverse.find do |key|
-        fields_for_header(mapping, key_without_numbers(key)).include?('id')
+        fields_for_header(mapping, key_without_numbers(key)).include?(field)
       end
-      [header, raw_row[header].to_s.strip.presence] if header
+      [header, matched_cell(field, entry, raw_row[header]).to_s.strip.presence] if header
     end
 
+    # A multi-valued field's values as import reads them (HasMatchers#add_metadata):
+    # each column mapped to the field, in order, through the mapping's matcher when
+    # there is one, without blanks or repeats; an excluded mapping, or one filling
+    # a nested `object:`, gives none.
+    #
+    # @param raw_row [Hash{String => String}] the row's cells by header
+    # @param field [String] a multi-valued field, such as 'file'
+    # @param parse [Boolean] false to skip the mapping's `parsed:` step, which for
+    #   remote files requests each url
+    # @return [Array<String>]
+    def self.row_values(raw_row, mapping, field, parse: true)
+      entry = mapping&.dig(field)
+      return [] if option(entry, 'excluded') || option(entry, 'object').present?
+
+      entry = entry.to_h.except('parsed', :parsed) if entry && !parse
+
+      values = raw_row.each_with_object([]) do |(header, cell), found|
+        next unless fields_for_header(mapping, key_without_numbers(header)).include?(field)
+
+        found.concat(Array.wrap(matched_cell(field, entry, cell)))
+      end
+      values.map { |value| value.to_s.strip }.reject(&:blank?).uniq
+    end
+
+    def self.matched_cell(field, entry, cell)
+      entry ? Bulkrax::CsvEntry.matcher(field, entry.to_h.symbolize_keys).result(nil, cell) : cell
+    end
+    private_class_method :matched_cell
+
+    # The header import maps, after dropping column numbering such as
+    # `creator_1` or `1_creator`.
     def self.key_without_numbers(header)
       header.to_s.gsub(/_\d+/, '').sub(/^\d+_/, '')
     end

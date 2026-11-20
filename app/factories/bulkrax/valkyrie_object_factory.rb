@@ -48,6 +48,7 @@ module Bulkrax
 
     # Customized create method for Valkyrie so that @object gets set
     def create
+      reject_row_problems
       attrs = transform_attributes
       @object = klass.new
       conditionally_set_reindex_extent
@@ -70,6 +71,7 @@ module Bulkrax
     # Customized update method for Valkyrie so that @object gets set
     def update
       raise "Object doesn't exist" unless object
+      reject_row_problems
       conditionally_destroy_existing_files
 
       attrs = transform_attributes(update: true)
@@ -117,6 +119,47 @@ module Bulkrax
     def self.file_sets_take_work_visibility?
       file_set_transaction?
     end
+
+    # The rows Hyrax's form and save step reject: see Hyrax::LeaseabilityBehavior#visibility_populator
+    # and Hyrax::Transactions::Steps::Save#valid_future_date?. Hyrax 4's save step has no date check,
+    # but a past date is rejected there too, since an embargo or lease that has already ended means
+    # nothing. A collection's form takes only the visibilities in Hyrax's map, with no embargo or
+    # lease, and Hyrax 4 does not apply a file set row's visibility.
+    def self.visibility_problem(attributes, model:)
+      return if Bulkrax.file_model_name?(model) && !file_set_transaction?
+
+      attributes = attributes.with_indifferent_access
+      visibility = attributes[:visibility].presence
+      return if visibility.nil?
+      return (:unknown_collection_visibility unless known_visibility?(visibility)) if Bulkrax.collection_model_name?(model)
+
+      case visibility
+      when 'embargo' then policy_problem(:embargo, attributes[:visibility_during_embargo], attributes[:embargo_release_date])
+      when 'lease' then policy_problem(:lease, attributes[:visibility_during_lease], attributes[:lease_expiration_date])
+      else :unknown_visibility unless known_visibility?(visibility)
+      end
+    end
+
+    # A file set row makes one file set; a work row makes one for each of its files
+    def self.file_set_row_problem(file_count:)
+      :more_than_one_file if file_count > 1
+    end
+
+    def self.policy_problem(policy, visibility_during, date)
+      return :"unknown_visibility_during_#{policy}" unless known_visibility?(visibility_during)
+      return if date.blank?
+
+      # The comparison Hyrax makes, which parses a date string or raises ArgumentError
+      :"past_#{policy}_date" if date < Time.zone.now
+    rescue ArgumentError
+      :"invalid_#{policy}_date"
+    end
+    private_class_method :policy_problem
+
+    def self.known_visibility?(visibility)
+      Hyrax.config.visibility_map.visibilities.include?(visibility)
+    end
+    private_class_method :known_visibility?
 
     ##
     # When adding a child to a parent work, we save the parent.
@@ -406,6 +449,18 @@ module Bulkrax
       # Valkyrie does not concern itself with the reindex extent; no nesting
       # indexers here!
       nil
+    end
+
+    # Fails the row before anything is saved, with the message guided validation gives it
+    def reject_row_problems
+      problem = self.class.visibility_problem(attributes, model: klass.to_s)
+      raise StandardError, "#{source_identifier_value}: #{VisibilityProblem.message(problem, attributes)}" if problem
+      return unless klass == Bulkrax.file_model_class
+
+      # Every file prep_fileset_content uploads becomes a file set
+      file_count = (Array.wrap(attributes[:file]) + Array.wrap(attributes[:remote_files]) + Array.wrap(attributes[:thumbnail_url])).count(&:present?)
+      problem = self.class.file_set_row_problem(file_count: file_count)
+      raise StandardError, "#{source_identifier_value}: #{I18n.t("#{CsvRow::FileSetFiles::SCOPE}.#{problem}.message", value: file_count)}" if problem
     end
 
     def create_file_set(attrs)

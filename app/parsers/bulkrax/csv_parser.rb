@@ -39,7 +39,7 @@ module Bulkrax
 
       deleted = queued_records(types).select { |record| record_deleted?(record) }
       mapping = deleted.empty? ? {} : importerexporter.mapping || {}
-      identifiers = deleted.flat_map { |record| [record[source_identifier], Bulkrax::FieldResolver.row_id(record.to_h.transform_keys(&:to_s), mapping)&.last] }
+      identifiers = deleted.flat_map { |record| [record[source_identifier], Bulkrax::FieldResolver.row_value(record.to_h.transform_keys(&:to_s), mapping, 'id')&.last] }
                            .map { |value| value.to_s.strip }.reject(&:empty?)
       fields = importerexporter.parser_fields
       # Each record type may be submitted separately; keep the run's earlier ones.

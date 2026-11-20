@@ -425,6 +425,37 @@ de:
             message_column_empty: "Kein Modell angegeben — alle Zeilen werden als '%{default_work_type}' importiert."
             suggestion_column_empty: "Fügen Sie Modellwerte in die 'model'-Spalte Ihrer CSV-Datei ein, wenn Sie für einige Zeilen einen anderen Werktyp verwenden möchten."
             suggestion_column_missing: "Fügen Sie Ihrer CSV-Datei eine 'model'-Spalte hinzu, wenn Sie für einige Zeilen einen anderen Werktyp verwenden möchten."
+          file_set_files_validator:
+            errors:
+              more_than_one_file:
+                message: "Diese Dateisatz-Zeile enthält %{value} Dateien; eine Dateisatz-Zeile nimmt nur eine Datei auf."
+                suggestion: "Geben Sie eine Datei pro Dateisatz-Zeile an, oder geben Sie mehrere Dateien in einer Werk-Zeile an, die für jede Datei einen Dateisatz anlegt."
+          visibility_validator:
+            errors:
+              unknown_visibility:
+                message: "Die Sichtbarkeit \"%{value}\" ist nicht open, authenticated, restricted, embargo oder lease."
+                suggestion: "Verwenden Sie einen dieser Werte oder lassen Sie die Zelle leer, um die Standardsichtbarkeit zu verwenden."
+              unknown_collection_visibility:
+                message: "Die Sichtbarkeit \"%{value}\" ist nicht open, authenticated oder restricted, die einzigen Sichtbarkeiten, die eine Sammlung annimmt."
+                suggestion: "Verwenden Sie einen dieser Werte oder lassen Sie die Zelle leer, um die Sichtbarkeit des Imports zu verwenden."
+              unknown_visibility_during_embargo:
+                message: "Die Sichtbarkeit während des Embargos ist \"%{value}\", nicht open, authenticated oder restricted."
+                suggestion: "Setzen Sie visibility_during_embargo auf die Sichtbarkeit, die das Objekt bis zum Ende des Embargos hat."
+              past_embargo_date:
+                message: "Das Freigabedatum des Embargos %{value} liegt nicht nach dem heutigen Tag."
+                suggestion: "Verwenden Sie ein Freigabedatum nach dem heutigen Tag oder eine Sichtbarkeit ohne Embargo."
+              invalid_embargo_date:
+                message: "Das Freigabedatum des Embargos %{value} ist kein Datum."
+                suggestion: "Schreiben Sie das Datum im Format YYYY-MM-DD."
+              unknown_visibility_during_lease:
+                message: "Die Sichtbarkeit während des Leasings ist \"%{value}\", nicht open, authenticated oder restricted."
+                suggestion: "Setzen Sie visibility_during_lease auf die Sichtbarkeit, die das Objekt bis zum Ende des Leasings hat."
+              past_lease_date:
+                message: "Das Ablaufdatum des Leasings %{value} liegt nicht nach dem heutigen Tag."
+                suggestion: "Verwenden Sie ein Ablaufdatum nach dem heutigen Tag oder eine Sichtbarkeit ohne Leasing."
+              invalid_lease_date:
+                message: "Das Ablaufdatum des Leasings %{value} ist kein Datum."
+                suggestion: "Schreiben Sie das Datum im Format YYYY-MM-DD."
           remove_and_rerun_validator:
             warnings:
               message: "'%{value}' entspricht einem vorhandenen Datensatz, daher wird diese Zeile ihn löschen und erneut importieren."

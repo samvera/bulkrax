@@ -425,6 +425,37 @@ es:
             message_column_empty: "No se proporcionó ningún modelo — todas las filas se importarán como '%{default_work_type}'."
             suggestion_column_empty: "Añada valores de modelo a la columna 'model' de su CSV si desea usar un tipo de trabajo diferente para algunas filas."
             suggestion_column_missing: "Añada una columna 'model' a su CSV si desea usar un tipo de trabajo diferente para algunas filas."
+          file_set_files_validator:
+            errors:
+              more_than_one_file:
+                message: "Esta fila de conjunto de archivos incluye %{value} archivos; una fila de conjunto de archivos admite uno."
+                suggestion: "Indique un archivo por fila de conjunto de archivos, o indique varios archivos en una fila de obra, que crea un conjunto de archivos para cada uno."
+          visibility_validator:
+            errors:
+              unknown_visibility:
+                message: "La visibilidad \"%{value}\" no es open, authenticated, restricted, embargo ni lease."
+                suggestion: "Use uno de esos valores o deje la celda vacía para usar la visibilidad predeterminada."
+              unknown_collection_visibility:
+                message: "La visibilidad \"%{value}\" no es open, authenticated ni restricted, las únicas visibilidades que admite una colección."
+                suggestion: "Use uno de esos valores o deje la celda vacía para usar la visibilidad del importador."
+              unknown_visibility_during_embargo:
+                message: "La visibilidad durante el embargo es \"%{value}\", no open, authenticated ni restricted."
+                suggestion: "Establezca visibility_during_embargo en la visibilidad que tiene el elemento hasta que termine el embargo."
+              past_embargo_date:
+                message: "La fecha de liberación del embargo %{value} no es posterior a hoy."
+                suggestion: "Use una fecha de liberación posterior a hoy o una visibilidad sin embargo."
+              invalid_embargo_date:
+                message: "La fecha de liberación del embargo %{value} no es una fecha."
+                suggestion: "Escriba la fecha con el formato YYYY-MM-DD."
+              unknown_visibility_during_lease:
+                message: "La visibilidad durante el arrendamiento es \"%{value}\", no open, authenticated ni restricted."
+                suggestion: "Establezca visibility_during_lease en la visibilidad que tiene el elemento hasta que termine el arrendamiento."
+              past_lease_date:
+                message: "La fecha de vencimiento del arrendamiento %{value} no es posterior a hoy."
+                suggestion: "Use una fecha de vencimiento posterior a hoy o una visibilidad sin arrendamiento."
+              invalid_lease_date:
+                message: "La fecha de vencimiento del arrendamiento %{value} no es una fecha."
+                suggestion: "Escriba la fecha con el formato YYYY-MM-DD."
           remove_and_rerun_validator:
             warnings:
               message: "'%{value}' coincide con un registro existente, por lo que esta fila lo eliminará y lo volverá a importar."

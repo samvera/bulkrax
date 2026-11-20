@@ -425,6 +425,37 @@ fr:
             message_column_empty: "Aucun modèle fourni — toutes les lignes seront importées en tant que '%{default_work_type}'."
             suggestion_column_empty: "Ajoutez des valeurs de modèle à la colonne 'model' de votre CSV si vous souhaitez utiliser un type de travail différent pour certaines lignes."
             suggestion_column_missing: "Ajoutez une colonne 'model' à votre CSV si vous souhaitez utiliser un type de travail différent pour certaines lignes."
+          file_set_files_validator:
+            errors:
+              more_than_one_file:
+                message: "Cette ligne d'ensemble de fichiers indique %{value} fichiers ; une ligne d'ensemble de fichiers n'en accepte qu'un."
+                suggestion: "Indiquez un fichier par ligne d'ensemble de fichiers, ou indiquez plusieurs fichiers sur une ligne d'œuvre, qui crée un ensemble de fichiers pour chacun."
+          visibility_validator:
+            errors:
+              unknown_visibility:
+                message: "La visibilité « %{value} » n'est ni open, ni authenticated, ni restricted, ni embargo, ni lease."
+                suggestion: "Utilisez l'une de ces valeurs ou laissez la cellule vide pour utiliser la visibilité par défaut."
+              unknown_collection_visibility:
+                message: "La visibilité « %{value} » n'est ni open, ni authenticated, ni restricted, les seules visibilités qu'accepte une collection."
+                suggestion: "Utilisez l'une de ces valeurs ou laissez la cellule vide pour utiliser la visibilité de l'importateur."
+              unknown_visibility_during_embargo:
+                message: "La visibilité pendant l'embargo est « %{value} », et non open, authenticated ou restricted."
+                suggestion: "Définissez visibility_during_embargo sur la visibilité de l'élément jusqu'à la fin de l'embargo."
+              past_embargo_date:
+                message: "La date de levée de l'embargo %{value} n'est pas postérieure à aujourd'hui."
+                suggestion: "Utilisez une date de levée postérieure à aujourd'hui, ou une visibilité sans embargo."
+              invalid_embargo_date:
+                message: "La date de levée de l'embargo %{value} n'est pas une date."
+                suggestion: "Écrivez la date au format YYYY-MM-DD."
+              unknown_visibility_during_lease:
+                message: "La visibilité pendant le bail est « %{value} », et non open, authenticated ou restricted."
+                suggestion: "Définissez visibility_during_lease sur la visibilité de l'élément jusqu'à la fin du bail."
+              past_lease_date:
+                message: "La date d'expiration du bail %{value} n'est pas postérieure à aujourd'hui."
+                suggestion: "Utilisez une date d'expiration postérieure à aujourd'hui, ou une visibilité sans bail."
+              invalid_lease_date:
+                message: "La date d'expiration du bail %{value} n'est pas une date."
+                suggestion: "Écrivez la date au format YYYY-MM-DD."
           remove_and_rerun_validator:
             warnings:
               message: "« %{value} » correspond à un enregistrement existant ; cette ligne le supprimera donc puis l'importera de nouveau."

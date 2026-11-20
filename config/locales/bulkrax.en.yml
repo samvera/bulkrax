@@ -427,6 +427,37 @@ en:
             warnings:
               message: "No model specified — this row will be imported as '%{default_work_type}'."
               suggestion: "Specify a model value in the 'model' column for this row if you want to use a different work type."
+          file_set_files_validator:
+            errors:
+              more_than_one_file:
+                message: "This file set row lists %{value} files; a file set row takes one."
+                suggestion: "List one file per file set row, or list several files on a work row, which makes a file set for each."
+          visibility_validator:
+            errors:
+              unknown_visibility:
+                message: 'The visibility "%{value}" is not open, authenticated, restricted, embargo or lease.'
+                suggestion: "Use one of those values, or leave the cell blank to use the default visibility."
+              unknown_collection_visibility:
+                message: 'The visibility "%{value}" is not open, authenticated or restricted, the only visibilities a collection takes.'
+                suggestion: "Use one of those values, or leave the cell blank to use the importer's visibility."
+              unknown_visibility_during_embargo:
+                message: 'The visibility during the embargo is "%{value}", not open, authenticated or restricted.'
+                suggestion: "Set visibility_during_embargo to the visibility the item has until the embargo ends."
+              past_embargo_date:
+                message: "The embargo release date %{value} is not after today."
+                suggestion: "Use a release date after today, or a visibility without an embargo."
+              invalid_embargo_date:
+                message: "The embargo release date %{value} is not a date."
+                suggestion: "Write the date as YYYY-MM-DD."
+              unknown_visibility_during_lease:
+                message: 'The visibility during the lease is "%{value}", not open, authenticated or restricted.'
+                suggestion: "Set visibility_during_lease to the visibility the item has until the lease ends."
+              past_lease_date:
+                message: "The lease expiration date %{value} is not after today."
+                suggestion: "Use an expiration date after today, or a visibility without a lease."
+              invalid_lease_date:
+                message: "The lease expiration date %{value} is not a date."
+                suggestion: "Write the date as YYYY-MM-DD."
           remove_and_rerun_validator:
             warnings:
               message: "'%{value}' matches an existing record, so this row will delete it and import it again."
