@@ -82,6 +82,17 @@ RSpec.describe Bulkrax::CsvRow::Visibility do
     end
   end
 
+  context "when the visibility mapping has a condition and the cell is empty" do
+    let(:mappings) { { 'visibility' => { 'from' => ['visibility'], 'if' => ['match?', '^open$'] } } }
+    let(:raw_row) { { 'visibility' => nil } }
+
+    it "reports nothing, as import uses the importer's visibility" do
+      call
+
+      expect(errors).to be_empty
+    end
+  end
+
   context 'when the visibility mapping fills a nested object' do
     let(:mappings) { { 'visibility' => { 'from' => ['access'], 'object' => 'single_object' } } }
     let(:raw_row) { { 'access' => 'Public' } }

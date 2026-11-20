@@ -57,6 +57,17 @@ RSpec.describe Bulkrax::CsvRow::FileSetFiles do
     end
   end
 
+  context "when the file mapping has a condition and a cell is empty" do
+    let(:mappings) { { 'file' => { 'from' => ['file'], 'if' => ['match?', '\\.png$'] } } }
+    let(:raw_row) { { 'file' => 'cover.png', 'file_2' => nil } }
+
+    it 'counts only the files import keeps' do
+      call
+
+      expect(errors).to be_empty
+    end
+  end
+
   context 'when a file set row lists a file and a remote file' do
     let(:raw_row) { { 'file' => 'first.png', 'remote_files' => 'https://example.com/second.png' } }
 
