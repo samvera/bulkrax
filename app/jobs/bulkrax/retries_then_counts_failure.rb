@@ -14,6 +14,10 @@ module Bulkrax
       retry_on StandardError, wait: ->(executions) { (5 * (2**(executions - 1))).minutes }, attempts: 5 do |job, error|
         job.count_as_failed(*job.counted_ids, error)
       end
+      # Another job was still updating the record, so try again sooner
+      retry_on Lockable::RecordLockedError, wait: ->(executions) { Lockable.retry_wait(executions) }, attempts: 6 do |job, error|
+        job.count_as_failed(*job.counted_ids, error)
+      end
     end
 
     # One transaction, so a failure part way through leaves nothing counted for a

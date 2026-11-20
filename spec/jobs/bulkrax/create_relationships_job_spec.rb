@@ -4,6 +4,8 @@ require 'rails_helper'
 
 module Bulkrax
   RSpec.describe CreateRelationshipsJob, type: :job do
+    include ActiveSupport::Testing::TimeHelpers
+
     let(:create_relationships_job) { described_class.new }
     let(:importer) { FactoryBot.create(:bulkrax_importer_csv_complex) }
     let(:ability) { instance_double(Ability) }
@@ -44,6 +46,21 @@ module Bulkrax
       Bulkrax.object_factory = Bulkrax::MockObjectFactory
       spec.run
       Bulkrax.object_factory = old
+    end
+
+    shared_context 'when records stay locked' do
+      around do |spec|
+        use_locking = Bulkrax.use_locking?
+        Bulkrax.use_locking = true
+        spec.run
+      ensure
+        Bulkrax.use_locking = use_locking
+      end
+
+      before do
+        allow(create_relationships_job).to receive(:reschedule).and_call_original
+        allow_any_instance_of(Hyrax::LockManager).to receive(:lock).and_raise(Hyrax::LockManager::UnableToAcquireLockError) # rubocop:disable RSpec/AnyInstance
+      end
     end
 
     describe 'is capable of looking up records dynamically' do
@@ -89,6 +106,18 @@ module Bulkrax
         it 'does not reschedule the job' do
           perform
           expect(create_relationships_job).not_to have_received(:reschedule)
+        end
+
+        context "when the child work's lock can't be taken" do
+          include_context 'when records stay locked'
+
+          it 'tries again in about a minute' do
+            freeze_time do
+              expect { perform }.to have_enqueued_job(described_class)
+                .with(hash_including(failure_count: 1))
+                .at(a_value_between(1.minute.from_now, 1.minute.from_now + 30.seconds))
+            end
+          end
         end
       end
 
@@ -159,6 +188,47 @@ module Bulkrax
         it 'does not reschedule the job' do
           perform
           expect(create_relationships_job).not_to have_received(:reschedule)
+        end
+
+        context "when the parent work's lock can't be taken" do
+          include_context 'when records stay locked'
+
+          it 'tries again in about a minute' do
+            freeze_time do
+              expect { perform }.to have_enqueued_job(described_class)
+                .with(hash_including(failure_count: 1))
+                .at(a_value_between(1.minute.from_now, 1.minute.from_now + 30.seconds))
+            end
+          end
+
+          it 'retries five times, waiting 1, 2, 4, 8 and then 16 minutes' do
+            allow(Bulkrax::Lockable).to receive(:rand).and_return(7)
+            waits = []
+            allow(described_class).to receive(:set).and_wrap_original do |original, **options|
+              waits << options[:wait].to_i
+              original.call(**options)
+            end
+
+            (0...described_class.max_failure_count).each do |failure_count|
+              create_relationships_job.perform(parent_identifier: parent_identifier, importer_run_id: importer.current_run.id, failure_count: failure_count)
+            end
+
+            expect(waits).to eq([1, 2, 4, 8, 16].map { |minutes| minutes.minutes.to_i + 7 })
+          end
+
+          it "leaves the parent entry's status alone while retries remain" do
+            perform
+
+            expect(work1_entry.reload.status).to eq('Pending')
+          end
+
+          it 'names the locked work on the relationship and the parent entry once the retries run out' do
+            create_relationships_job.perform(parent_identifier: parent_identifier, importer_run_id: importer.current_run.id,
+                                             failure_count: described_class.max_failure_count - 1)
+
+            expect(pending_rel_test.reload.status_message).to include(work1.id.to_s)
+            expect(work1_entry.reload.current_status.error_message).to include(work1.id.to_s)
+          end
         end
       end
 
