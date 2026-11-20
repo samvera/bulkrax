@@ -15,7 +15,7 @@ module Bulkrax
           parent_jobs if self.parsed_metadata[related_parents_parsed_mapping]&.join.present?
           child_jobs if self.parsed_metadata[related_children_parsed_mapping]&.join.present?
         end
-      rescue RSolr::Error::Http, CollectionsCreatedError => e
+      rescue RSolr::Error::Http, CollectionsCreatedError, Lockable::RecordLockedError => e
         raise e
       rescue StandardError => e
         set_status_info(e)

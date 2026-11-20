@@ -458,7 +458,7 @@ module Bulkrax
       it "saves nothing when the work's lock can't be taken" do
         allow_any_instance_of(Hyrax::LockManager).to receive(:lock).and_raise(Hyrax::LockManager::UnableToAcquireLockError) # rubocop:disable RSpec/AnyInstance
 
-        expect { import }.to raise_error(Hyrax::LockManager::UnableToAcquireLockError)
+        expect { import }.to raise_error(Bulkrax::Lockable::RecordLockedError)
         expect(file_sets).to be_empty
       end
 

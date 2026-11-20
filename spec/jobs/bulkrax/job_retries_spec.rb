@@ -5,6 +5,7 @@ require 'rails_helper'
 module Bulkrax
   RSpec.describe 'Jobs that keep raising until their retries run out', type: :job do
     include ActiveJob::TestHelper
+    include ActiveSupport::Testing::TimeHelpers
 
     let(:importer_run) { create(:bulkrax_importer_run, enqueued_records: 2) }
     let(:entry) { create(:bulkrax_csv_entry, importerexporter: importer_run.importer) }
@@ -84,6 +85,74 @@ module Bulkrax
 
     describe ImportFileSetJob do
       it_behaves_like 'an import job that counts the record as failed once', :failed_file_sets
+    end
+
+    context "when the record's lock can't be taken" do
+      let(:locker) { Class.new { include Bulkrax::Lockable }.new }
+      let(:factory) { double('factory') }
+
+      before do
+        allow_any_instance_of(Entry).to receive(:build).and_call_original
+        allow_any_instance_of(CsvEntry).to receive(:build_metadata)
+        allow_any_instance_of(CsvEntry).to receive(:collections_created?).and_return(true)
+        allow_any_instance_of(CsvEntry).to receive(:factory).and_return(factory)
+        allow(factory).to receive(:run!) { locker.acquire_lock_for('locked-work') { nil } }
+        allow_any_instance_of(Hyrax::LockManager).to receive(:lock).and_raise(Hyrax::LockManager::UnableToAcquireLockError)
+      end
+
+      shared_examples 'an import job that retries soon, then fails naming the locked record' do |failed_type_counter|
+        it 'leaves the entry pending and uncounted while it waits to retry' do
+          described_class.perform_now(entry.id, importer_run.id)
+
+          expect(entry.reload.status).to eq('Pending')
+          expect(importer_run.reload).to have_attributes(enqueued_records: 2, failed_records: 0)
+        end
+
+        it 'waits 1, 2, 4, 8 and then 16 minutes, plus some randomness, before each retry' do
+          allow(Bulkrax::Lockable).to receive(:rand).and_return(7)
+          waits = []
+          allow_any_instance_of(described_class).to receive(:retry_job).and_wrap_original do |original, *args, **options|
+            waits << (args.first || options)[:wait].to_i
+            original.call(*args, **options)
+          end
+
+          perform_enqueued_jobs { described_class.perform_later(entry.id, importer_run.id) }
+
+          expect(waits).to eq([1, 2, 4, 8, 16].map { |minutes| minutes.minutes.to_i + 7 })
+        end
+
+        it 'fails the entry, naming the locked record, once the retries run out' do
+          perform_enqueued_jobs { described_class.perform_later(entry.id, importer_run.id) }
+
+          expect(entry.reload.status).to eq('Failed')
+          expect(entry.current_status.error_message).to include('locked-work')
+          expect(importer_run.reload)
+            .to have_attributes(enqueued_records: 1, failed_records: 1, failed_type_counter => 1)
+        end
+      end
+
+      describe ImportFileSetJob do
+        it_behaves_like 'an import job that retries soon, then fails naming the locked record', :failed_file_sets
+      end
+
+      describe ImportWorkJob do
+        it_behaves_like 'an import job that retries soon, then fails naming the locked record', :failed_works
+      end
+
+      context 'when the lock is one Hyrax takes itself after saving part of the row' do
+        before do
+          allow(factory).to receive(:run!).and_raise(Hyrax::LockManager::UnableToAcquireLockError)
+        end
+
+        describe ImportFileSetJob do
+          it 'fails the row without retrying' do
+            expect { described_class.perform_now(entry.id, importer_run.id) }
+              .not_to have_enqueued_job(described_class)
+
+            expect(entry.reload.status).to eq('Failed')
+          end
+        end
+      end
     end
 
     context 'when recording the importer status raises after a delete' do
