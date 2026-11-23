@@ -51,6 +51,20 @@ module Bulkrax
       raise OrphanFileSetError, 'File set must be related to at least one work'
     end
 
+    # A new file set whose row names no visibility is left without one when the
+    # object factory gives such a file set its work's visibility, embargo and
+    # lease (ObjectFactoryInterface.file_sets_take_work_visibility?). Any other
+    # row without one, including a row updating an existing file set, takes the
+    # importer's visibility as other entries do.
+    def add_visibility
+      return super if parsed_metadata['visibility'].present? || !Bulkrax.object_factory.file_sets_take_work_visibility?
+
+      existing_file_set = factory.find
+      # The factory copies parsed_metadata when it is built, so import needs one built from the finished metadata
+      @factory = nil
+      super if existing_file_set.present?
+    end
+
     def parent_jobs
       false # FileSet relationships are handled in ObjectFactory#create_file_set
     end

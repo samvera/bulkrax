@@ -300,10 +300,248 @@ module Bulkrax
         stub_request(:head, %r{http://localhost:8986/rest/test.*}).to_return(status: 200, body: "", headers: {})
         stub_request(:get, %r{http://localhost:8986/rest/test.*}).to_return(status: 200, body: "", headers: {})
       end
-      it 'creates transactions for the parent object' do
+      it 'builds the file set through its work when Hyrax has no file set transaction' do
+        allow(described_class).to receive(:file_set_transaction?).and_return(false)
         expect(valkyrie_object_factory).to receive(:perform_transaction_for).with(object: satisfy { |data| data.id == parent_id }, attrs: {}).once
 
         valkyrie_object_factory.send(:create_file_set, of_attributes)
+      end
+    end
+
+    describe '.file_set_transaction?' do
+      before { allow(Hyrax::Transactions::Container).to receive(:key?).and_call_original }
+
+      it "is true where Hyrax has the file set transaction, and new file sets take their work's visibility" do
+        allow(Hyrax::Transactions::Container).to receive(:key?).with('change_set.update_file_set').and_return(true)
+
+        expect([described_class.file_set_transaction?, described_class.file_sets_take_work_visibility?]).to eq [true, true]
+      end
+
+      it 'is false on Hyrax 4, which builds file sets through their work and gives them the importer visibility' do
+        allow(Hyrax::Transactions::Container).to receive(:key?).with('change_set.update_file_set').and_return(false)
+
+        expect([described_class.file_set_transaction?, described_class.file_sets_take_work_visibility?]).to eq [false, false]
+      end
+    end
+
+    describe '#perform_transaction_for' do
+      include_context 'with the Valkyrie memory adapter'
+
+      let(:work) { Hyrax.persister.save(resource: WorkResource.new(title: ['before'])) }
+      let(:factory) do
+        described_class.new(attributes: {}, source_identifier_value: 'work-1', work_identifier: :bulkrax_identifier,
+                            work_identifier_search_field: 'bulkrax_identifier_tesim', user: create(:user), klass: WorkResource)
+      end
+
+      it "saves the record through Hyrax's form and transaction" do
+        saved = factory.send(:perform_transaction_for, object: work, attrs: { title: ['after'] }) { factory.transactions['change_set.apply'] }
+
+        expect(saved.title).to eq ['after']
+      end
+    end
+
+    describe 'importing a file set row' do
+      include_context 'with the Valkyrie memory adapter'
+
+      let(:user) { create(:user) }
+      let(:work) { Hyrax.persister.save(resource: WorkResource.new(title: ['parent'], depositor: user.user_key)) }
+      let(:fixture_path) { Bulkrax::Engine.root.join('spec', 'fixtures', 'removed.png').to_s }
+      let(:release_date) { 1.month.from_now.to_date }
+
+      before do
+        skip 'Hyrax 4 has no file set transaction' unless described_class.file_set_transaction?
+        # Hyrax's lock manager needs Redis
+        allow_any_instance_of(Hyrax::LockManager).to receive(:lock).and_yield # rubocop:disable RSpec/AnyInstance
+      end
+
+      def build_factory(**row)
+        attributes = { 'title' => ['first'], 'parents' => [work.id.to_s], 'file' => [fixture_path] }.merge(row)
+        described_class.new(attributes: attributes, source_identifier_value: 'fs-1', work_identifier: :bulkrax_identifier,
+                            work_identifier_search_field: 'bulkrax_identifier_tesim', related_parents_parsed_mapping: 'parents',
+                            user: user, klass: Hyrax::FileSet).tap do |factory|
+          allow(factory).to receive(:find_record) { [nil, reloaded(work)] }
+        end
+      end
+
+      def import(**row)
+        build_factory(**row).tap { |factory| factory.send(:create) }
+        file_sets.last
+      end
+
+      def file_sets
+        Hyrax.query_service.find_all_of_model(model: Hyrax::FileSet).to_a
+      end
+
+      def reloaded(resource)
+        Hyrax.query_service.find_by(id: resource.id)
+      end
+
+      def save_work_with(visibility: nil, embargo: nil)
+        work.visibility = visibility if visibility
+        work.embargo = Hyrax.persister.save(resource: embargo) if embargo
+        Hyrax::EmbargoManager.apply_embargo_for(resource: work)
+        work.permission_manager.acl.save
+        Hyrax.persister.save(resource: work)
+      end
+
+      it "gives the file set the row's metadata, shaped as a work's would be" do
+        file_set = import('description' => ['A description'], 'keyword' => [''])
+
+        expect(file_set).to have_attributes(title: ['first'], description: ['A description'], keyword: [])
+      end
+
+      it 'attaches the file set to its work' do
+        file_set = import
+
+        expect(reloaded(work).member_ids).to eq [file_set.id]
+      end
+
+      it "saves nothing when the work's lock can't be taken" do
+        allow_any_instance_of(Hyrax::LockManager).to receive(:lock).and_raise(Hyrax::LockManager::UnableToAcquireLockError) # rubocop:disable RSpec/AnyInstance
+
+        expect { import }.to raise_error(Hyrax::LockManager::UnableToAcquireLockError)
+        expect(file_sets).to be_empty
+      end
+
+      it "queues the file's ingest and announces the attachment" do
+        file_set = nil
+        expect { file_set = import }.to have_enqueued_job(ValkyrieIngestJob)
+        expect(Hyrax.publisher).to have_received(:publish).with('file.set.attached', hash_including(file_set: file_set))
+      end
+
+      it "keeps its work's permissions, as well as the row's visibility" do
+        work.permission_manager.edit_groups = ['editors']
+        work.permission_manager.acl.save
+
+        file_set = import('visibility' => 'open')
+
+        expect(file_set).to have_attributes(edit_groups: include('editors'), visibility: 'open')
+      end
+
+      it "gives the file set the row's visibility" do
+        save_work_with(visibility: 'restricted')
+
+        expect(import('visibility' => 'open').visibility).to eq 'open'
+      end
+
+      it "applies the row's embargo" do
+        file_set = import('visibility' => 'embargo', 'embargo_release_date' => release_date.to_s,
+                          'visibility_during_embargo' => 'authenticated', 'visibility_after_embargo' => 'open')
+
+        expect(file_set.visibility).to eq 'authenticated'
+        expect(file_set.embargo).to have_attributes(visibility_during_embargo: 'authenticated', visibility_after_embargo: 'open')
+        expect(file_set.embargo.embargo_release_date.to_date).to eq release_date
+      end
+
+      it "applies the row's lease" do
+        file_set = import('visibility' => 'lease', 'lease_expiration_date' => release_date.to_s,
+                          'visibility_during_lease' => 'open', 'visibility_after_lease' => 'restricted')
+
+        expect(file_set.visibility).to eq 'open'
+        expect(file_set.lease).to have_attributes(visibility_during_lease: 'open', visibility_after_lease: 'restricted')
+      end
+
+      it 'fails a row whose embargo date has passed, without creating a file set' do
+        expect do
+          import('visibility' => 'embargo', 'embargo_release_date' => 1.day.ago.to_date.to_s,
+                 'visibility_during_embargo' => 'restricted', 'visibility_after_embargo' => 'open')
+        end.to raise_error(StandardError)
+        expect(file_sets).to be_empty
+      end
+
+      context 'when the row is imported again' do
+        def reimport(file_set, **row)
+          attributes = { 'id' => file_set.id.to_s, 'title' => ['first'], 'parents' => [work.id.to_s] }.merge(row)
+          factory = described_class.new(attributes: attributes, source_identifier_value: 'fs-1', work_identifier: :bulkrax_identifier,
+                                        work_identifier_search_field: 'bulkrax_identifier_tesim', related_parents_parsed_mapping: 'parents',
+                                        user: user, klass: Hyrax::FileSet)
+          factory.instance_variable_set(:@object, file_set)
+          factory.send(:update)
+          reloaded(file_set)
+        end
+
+        it 'clears a blank cell when blank values are removed before the form, as for a work' do
+          allow_any_instance_of(described_class).to receive(:transformation_removes_blank_hash_values?).and_return(true) # rubocop:disable RSpec/AnyInstance
+          file_set = import('description' => ['A description'])
+
+          expect(reimport(file_set, 'description' => ['']).description).to eq []
+        end
+
+        it 'clears a field whose cell is blank' do
+          file_set = import('description' => ['A description'])
+
+          expect(reimport(file_set, 'description' => ['']).description).to eq []
+        end
+
+        it "updates the row's metadata" do
+          file_set = import('description' => ['A description'])
+
+          expect(reimport(file_set, 'description' => ['New description']).description).to eq ['New description']
+        end
+      end
+
+      it 'titles a file set whose row has no title with its file name' do
+        expect(import('title' => []).title).to eq ['removed.png']
+      end
+
+      it 'titles a file set whose title cell is blank with its file name' do
+        expect(import('title' => ['']).title).to eq ['removed.png']
+      end
+
+      it "stores a remote file under its own name, not the download's" do
+        download = Tempfile.new.tap { |file| file.binmode && file.write(File.binread(fixture_path)) && file.close }
+        allow_any_instance_of(described_class).to receive(:download_file).and_return(download.path) # rubocop:disable RSpec/AnyInstance
+
+        file_set = import('title' => [], 'file' => [], 'remote_files' => [{ url: 'https://example.com/cover.png', file_name: 'cover.png' }])
+
+        expect(file_set).to have_attributes(title: ['cover.png'], label: 'cover.png')
+        expect(Hyrax::UploadedFile.last.file.file.original_filename).to eq 'cover.png'
+      end
+
+      it "keeps its work's permissions when Hyrax builds the form on a copy, as for flexible metadata" do
+        allow_any_instance_of(described_class).to receive(:resource_form_for).and_wrap_original do |original, resource, admin_set_id| # rubocop:disable RSpec/AnyInstance
+          original.call(resource.class.new(resource.attributes), admin_set_id)
+        end
+        work.permission_manager.edit_groups = ['editors']
+        work.permission_manager.acl.save
+
+        expect(import('visibility' => 'open')).to have_attributes(edit_groups: include('editors'), visibility: 'open')
+      end
+
+      context 'without a visibility on the row' do
+        it "takes its work's visibility when the visibility cell is blank" do
+          save_work_with(visibility: 'open')
+
+          expect(import('visibility' => '').visibility).to eq 'open'
+        end
+
+        it "takes its work's visibility when the row has no visibility column" do
+          save_work_with(visibility: 'open')
+
+          expect(import.visibility).to eq 'open'
+        end
+
+        it "takes the embargo its work has once locked, not when the row was read" do
+          save_work_with(visibility: 'open')
+          read_before_the_embargo = reloaded(work)
+          save_work_with(embargo: Hyrax::Embargo.new(embargo_release_date: release_date, visibility_during_embargo: 'restricted',
+                                                     visibility_after_embargo: 'open'))
+          factory = build_factory
+          allow(factory).to receive(:find_record).and_return([nil, read_before_the_embargo])
+
+          factory.send(:create)
+
+          expect(file_sets.last.embargo).to have_attributes(visibility_after_embargo: 'open')
+        end
+
+        it "takes its work's embargo" do
+          save_work_with(embargo: Hyrax::Embargo.new(embargo_release_date: release_date, visibility_during_embargo: 'restricted',
+                                                     visibility_after_embargo: 'open'))
+          file_set = import
+
+          expect(file_set.visibility).to eq 'restricted'
+          expect(file_set.embargo).to have_attributes(visibility_after_embargo: 'open')
+        end
       end
     end
 
@@ -319,6 +557,25 @@ module Bulkrax
         saved = Hyrax.persister.save(resource: work.tap { |w| w.member_ids = [file_set.id, other_file_set.id] })
 
         expect(described_class.add_child_to_parent_work(parent: stale, child: file_set).member_ids).to eq saved.member_ids
+      end
+
+      it 'makes a file set the representative and thumbnail of a work that has none' do
+        expect(described_class.add_child_to_parent_work(parent: work, child: file_set))
+          .to have_attributes(member_ids: [file_set.id], representative_id: file_set.id, thumbnail_id: file_set.id)
+      end
+
+      it "keeps the work's representative and thumbnail" do
+        described_class.add_child_to_parent_work(parent: work, child: file_set)
+
+        expect(described_class.add_child_to_parent_work(parent: work, child: other_file_set))
+          .to have_attributes(member_ids: [file_set.id, other_file_set.id], representative_id: file_set.id, thumbnail_id: file_set.id)
+      end
+
+      it 'does not make a child work the representative or thumbnail' do
+        child_work = Hyrax.persister.save(resource: WorkResource.new(title: ['child']))
+
+        expect(described_class.add_child_to_parent_work(parent: work, child: child_work))
+          .to have_attributes(member_ids: [child_work.id], representative_id: nil, thumbnail_id: nil)
       end
     end
 
