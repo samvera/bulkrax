@@ -193,6 +193,14 @@ module Bulkrax
 
           expect(assigns(:importer).user_id).to eq(current_user.id)
         end
+
+        it 'keeps the submitted parser_fields, including the entry_statuses array' do
+          parser_fields = { visibility: 'open', file_style: 'Upload a File', entry_statuses: [''] }
+
+          post :create, params: { importer: valid_attributes.merge(parser_fields: parser_fields) }, session: valid_session
+
+          expect(assigns(:importer).parser_fields).to include('visibility' => 'open', 'file_style' => 'Upload a File', 'entry_statuses' => [''])
+        end
       end
 
       context 'with invalid params' do
