@@ -493,6 +493,7 @@ module Bulkrax
         # Read again under the lock: preparing the files, such as downloading them, takes time
         parent = self.class.find(parent.id)
         @object = Bulkrax.file_model_class.new(file_set_attributes(upload))
+        assign_attributes_form_leaves_out(object, attrs)
         object.permission_manager.acl.permissions = parent.permission_manager.acl.permissions
         # A blank title or visibility would replace the file name and the work's visibility
         form_attrs = attrs.reject { |key, value| %w[title visibility].include?(key.to_s) && Array(value).all?(&:blank?) }
@@ -501,6 +502,25 @@ module Bulkrax
         file_set = inherit_work_visibility(parent, file_set) unless form_attrs.key?(:visibility)
         attach_to_work(parent, file_set, upload)
         file_set
+      end
+    end
+
+    # The form keeps only the fields it defines, and an app's file set form, such as Hyrax's stock one,
+    # may leave out properties the file set has. Those are set on the file set itself.
+    def assign_attributes_form_leaves_out(file_set, attrs)
+      form_fields = resource_form_for(file_set, form_admin_set_id(attrs)).class.definitions.keys
+      managed = Valkyrie::Resource.reserved_attributes + %i[file_ids embargo_id lease_id]
+      # transform_attributes turns based_near into the form's based_near_attributes
+      locations = attrs[:based_near_attributes]&.values&.map { |location| location['id'] }
+      attrs = attrs.merge(based_near: locations) if locations
+      attrs.merge(work_identifier => source_identifier_value).each do |key, value|
+        next if managed.include?(key.to_sym) || form_fields.include?(key.to_s) || !file_set.class.schema.key?(key.to_sym)
+        # transform_attributes gives a row without a title a blank one, which would replace the file name or the stored title
+        next if key.to_s == 'title' && Array(value).all?(&:blank?)
+
+        # Added to, not replaced, since the file set may already have other alternate ids
+        value = (file_set.alternate_ids + Array(value)).uniq(&:to_s) if key.to_s == 'alternate_ids'
+        file_set.public_send("#{key}=", value)
       end
     end
 
@@ -637,9 +657,7 @@ module Bulkrax
     # TODO What do we return when the calculated form fails?
     # @raise [StandardError] when there was a failure calling the translation.
     def perform_transaction_for(object:, attrs:)
-      admin_set_id = attrs[:admin_set_id] || attrs['admin_set_id'] ||
-                     attributes[:admin_set_id] || attributes['admin_set_id']
-      form = resource_form_for(object, admin_set_id).prepopulate!
+      form = resource_form_for(object, form_admin_set_id(attrs)).prepopulate!
       carry_pending_permissions(object, form.model)
 
       # TODO: Handle validations
@@ -676,6 +694,10 @@ module Bulkrax
       else
         Hyrax::Forms::ResourceForm.for(object)
       end
+    end
+
+    def form_admin_set_id(attrs)
+      attrs[:admin_set_id] || attrs['admin_set_id'] || attributes[:admin_set_id] || attributes['admin_set_id']
     end
 
     ##
@@ -723,6 +745,7 @@ module Bulkrax
       # Download before saving, so a failed download leaves the file set as it was
       path = download_file(remote_files.first[:url]) if remote_files.any?
       fs_attrs = attrs.merge(attributes).symbolize_keys
+      assign_attributes_form_leaves_out(object, fs_attrs)
       file_set = perform_transaction_for(object: object, attrs: fs_attrs) do
         transactions['change_set.update_file_set']
       end

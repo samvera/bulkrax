@@ -413,11 +413,11 @@ module Bulkrax
         allow_any_instance_of(Hyrax::LockManager).to receive(:lock).and_yield # rubocop:disable RSpec/AnyInstance
       end
 
-      def build_factory(**row)
+      def build_factory(klass: Hyrax::FileSet, **row)
         attributes = { 'title' => ['first'], 'parents' => [work.id.to_s], 'file' => [fixture_path] }.merge(row)
         described_class.new(attributes: attributes, source_identifier_value: 'fs-1', work_identifier: :bulkrax_identifier,
                             work_identifier_search_field: 'bulkrax_identifier_tesim', related_parents_parsed_mapping: 'parents',
-                            user: user, klass: Hyrax::FileSet).tap do |factory|
+                            user: user, klass: klass).tap do |factory|
           allow(factory).to receive(:find_record) { [nil, reloaded(work)] }
         end
       end
@@ -574,6 +574,64 @@ module Bulkrax
 
           expect(reimport(file_set, 'description' => ['New description']).description).to eq ['New description']
         end
+
+        context "with a property Hyrax's file set form leaves out" do
+          let(:rights) { ['http://rightsstatements.org/vocab/InC/1.0/'] }
+          let(:file_set) { import('rights_statement' => rights) }
+
+          it 'updates it' do
+            other_rights = ['http://rightsstatements.org/vocab/NoC-US/1.0/']
+
+            expect(reimport(file_set, 'rights_statement' => other_rights).rights_statement).to eq other_rights
+          end
+
+          it 'clears it when its cell is blank' do
+            expect(reimport(file_set, 'rights_statement' => ['']).rights_statement).to eq []
+          end
+
+          it 'clears it when its cell is blank and blank values are removed before the form, as for a work' do
+            allow_any_instance_of(described_class).to receive(:transformation_removes_blank_hash_values?).and_return(true) # rubocop:disable RSpec/AnyInstance
+
+            expect(reimport(file_set, 'rights_statement' => ['']).rights_statement).to eq []
+          end
+
+          it 'leaves it alone when the row has no column for it' do
+            expect(reimport(file_set, 'description' => ['New description']).rights_statement).to eq rights
+          end
+        end
+
+        it 'keeps the alternate ids it already has, adding its source identifier' do
+          file_set = import
+          file_set.alternate_ids = ['legacy-1']
+          Hyrax.persister.save(resource: file_set)
+
+          expect(reimport(file_set).alternate_ids.map(&:to_s)).to contain_exactly('legacy-1', 'fs-1')
+        end
+
+        it 'keeps its source identifier among its alternate ids once' do
+          expect(reimport(import).alternate_ids.map(&:to_s)).to eq ['fs-1']
+        end
+      end
+
+      context 'when the file set form has none of its metadata fields' do
+        before do
+          stub_const('UntitledFormFileSet', Class.new(Hyrax::FileSet))
+          stub_const('UntitledFormFileSetForm', Class.new(Hyrax::Forms::ResourceForm))
+          allow(Bulkrax).to receive(:file_model_class).and_return(UntitledFormFileSet)
+        end
+
+        it 'titles a file set whose row has no title with its file name' do
+          build_factory(klass: UntitledFormFileSet, 'title' => []).send(:create)
+
+          expect(Hyrax.query_service.find_all_of_model(model: UntitledFormFileSet).map(&:title)).to eq [['removed.png']]
+        end
+
+        it "keeps the row's location" do
+          location = 'http://sws.geonames.org/5128581/'
+          build_factory(klass: UntitledFormFileSet, 'based_near' => [location]).send(:create)
+
+          expect(Hyrax.query_service.find_all_of_model(model: UntitledFormFileSet).map { |file_set| file_set.based_near.map(&:to_s) }).to eq [[location]]
+        end
       end
 
       it 'titles a file set whose row has no title with its file name' do
@@ -602,6 +660,35 @@ module Bulkrax
         work.permission_manager.acl.save
 
         expect(import('visibility' => 'open')).to have_attributes(edit_groups: include('editors'), visibility: 'open')
+      end
+
+      context 'when the file set has the source identifier property but its form has no field for it' do
+        before do
+          stub_const('IdentifiedFileSet', Class.new(Hyrax::FileSet) { attribute :bulkrax_identifier, Valkyrie::Types::String })
+          stub_const('IdentifiedFileSetForm', Class.new(Hyrax::Forms::FileSetForm))
+          allow(Bulkrax).to receive(:file_model_class).and_return(IdentifiedFileSet)
+        end
+
+        it 'keeps the source identifier, so a later import can find the file set' do
+          build_factory(klass: IdentifiedFileSet, 'bulkrax_identifier' => ['fs-1']).send(:create)
+
+          expect(Hyrax.query_service.find_all_of_model(model: IdentifiedFileSet).map(&:bulkrax_identifier)).to eq ['fs-1']
+        end
+      end
+
+      it "keeps the row's values for file set properties that Hyrax's file set form leaves out" do
+        rights = ['http://rightsstatements.org/vocab/InC/1.0/']
+        file_set = import('rights_statement' => rights, 'resource_type' => ['Image'], 'abstract' => ['An abstract'])
+
+        expect(file_set).to have_attributes(rights_statement: rights, resource_type: ['Image'], abstract: ['An abstract'])
+      end
+
+      it "takes no repository id from the row's id column" do
+        expect(import('id' => 'id-from-the-csv').id.to_s).not_to eq 'id-from-the-csv'
+      end
+
+      it 'keeps its source identifier among its alternate ids' do
+        expect(import.alternate_ids.map(&:to_s)).to eq ['fs-1']
       end
 
       context 'without a visibility on the row' do
@@ -693,6 +780,7 @@ module Bulkrax
       before do
         stub_request(:head, %r{http://localhost:8986/rest/test.*}).to_return(status: 200, body: "", headers: {})
         stub_request(:get, %r{http://localhost:8986/rest/test.*}).to_return(status: 200, body: "", headers: {})
+        allow(valkyrie_object_factory).to receive(:assign_attributes_form_leaves_out)
       end
       it 'creates transactions for the file_set object' do
         allow(valkyrie_object_factory).to receive(:object).and_return(orig_file_set)
