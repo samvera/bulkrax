@@ -210,10 +210,69 @@ RSpec.describe Bulkrax::CsvParser do
         expect(result[:isValid]).to be false
       end
 
-      it 'counts the records to delete and marks them in the tree' do
+      it 'counts only the delete rows that match a record, and marks every delete row in the tree' do
         result = described_class.validate_csv(csv_file: csv_file)
-        expect(result[:deletionCount]).to eq(2)
+        expect(result[:deletionCount]).to eq(1)
         expect(result[:works].map { |w| w[:deleting] }).to eq([true, true, false])
+      end
+
+      it 'counts a delete row whose lookup failed, since the import still deletes it' do
+        allow(Bulkrax::ValkyrieObjectFactory).to receive(:find_for_import)
+          .with(hash_including(source_identifier: 'work1')).and_raise(StandardError, 'Solr is down')
+
+        expect(described_class.validate_csv(csv_file: csv_file)[:deletionCount]).to eq(1)
+      end
+
+      it 'counts every delete row when the app does not run DeleteRecord' do
+        allow(Bulkrax).to receive(:csv_row_validators).and_return(Bulkrax.csv_row_validators - [Bulkrax::CsvRow::DeleteRecord])
+
+        expect(described_class.validate_csv(csv_file: csv_file)[:deletionCount]).to eq(2)
+      end
+    end
+
+    context 'with delete rows the import fails' do
+      let(:csv_content) do
+        <<~CSV
+          source_identifier,title,model,id,delete
+          work1,W1,GenericWork,,true
+          work2,W2,GenericWork,rec-2,true
+          work3,W3,GenericWork,rec-3,
+          work4,W4,GenericWork,,true
+        CSV
+      end
+
+      before do
+        allow(Bulkrax::ValkyrieObjectFactory).to receive(:find_for_import).and_return(double(id: 'rec-4'))
+        allow(Bulkrax::ValkyrieObjectFactory).to receive(:find_for_import).with(hash_including(source_identifier: 'work1'))
+                                                                          .and_raise(Bulkrax::ObjectFactoryInterface::ModelMismatchError.new(identifier: 'work1', existing_model: 'Image', model: 'GenericWork'))
+        allow(Bulkrax::ValkyrieObjectFactory).to receive(:find_for_import).with(hash_including(id: 'rec-2'))
+                                                                          .and_raise(Bulkrax::ObjectFactoryInterface::ObjectNotFoundError)
+        allow(Bulkrax::ValkyrieObjectFactory).to receive(:find_for_import).with(hash_including(id: 'rec-3'))
+                                                                          .and_raise(Bulkrax::ObjectFactoryInterface::ObjectNotFoundError)
+      end
+
+      it 'counts neither a record of another model nor an id that names no record' do
+        result = described_class.validate_csv(csv_file: csv_file)
+        expect(result[:rowErrors]).to include(a_hash_including(row: 2, category: 'existing_record_model_mismatch'),
+                                              a_hash_including(row: 3, category: 'existing_record_id_not_found'),
+                                              a_hash_including(row: 4, category: 'existing_record_id_not_found'))
+        expect(result[:deletionCount]).to eq(1)
+      end
+
+      context 'when two delete rows share a source identifier' do
+        let(:csv_content) do
+          <<~CSV
+            source_identifier,title,model,delete
+            work4,W4,GenericWork,true
+            work4,W4,GenericWork,true
+          CSV
+        end
+
+        it 'counts the record once' do
+          result = described_class.validate_csv(csv_file: csv_file)
+          expect(result[:rowErrors]).to include(a_hash_including(row: 3, category: 'duplicate_source_identifier'))
+          expect(result[:deletionCount]).to eq(1)
+        end
       end
     end
 
