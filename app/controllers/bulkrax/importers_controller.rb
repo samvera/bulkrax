@@ -284,7 +284,7 @@ module Bulkrax
         :validate_only,
         selected_files: {},
         field_mapping: {},
-        parser_fields: [importable_parser_fields]
+        parser_fields: importable_parser_fields
       )
     end
 
