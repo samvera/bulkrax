@@ -410,14 +410,16 @@ module Bulkrax
     def delete(user)
       obj = find
       raise ObjectFactoryInterface::ObjectNotFoundError, "Object not found to delete" unless obj
-      # delete the file sets when we delete a work
-      # This has to be done before the work is deleted or we can't find them
-      # via the custom query
-      destroy_existing_files(object: obj)
 
-      Hyrax.persister.delete(resource: obj)
-      Hyrax.index_adapter.delete(resource: obj)
-      Hyrax.publisher.publish('object.deleted', object: obj, user: user)
+      return destroy_file_set(obj, user) if obj.file_set?
+
+      file_sets_to_delete_first(obj).each { |file_set| destroy_file_set(file_set, user) } unless obj.collection?
+      remove_from_relations(obj, user)
+      # Another delete may be unlinking this record under its lock, and its save would bring the record back to Solr
+      acquire_lock_for(obj.id.to_s) do
+        obj = self.class.find(obj.id)
+        destroy_transaction_for(obj, user).call(obj).value!
+      end
     end
 
     def run!
@@ -834,6 +836,72 @@ module Bulkrax
       uploaded_file
     rescue => e
       raise "Failed to create Hyrax::UploadedFile for #{file_name}: #{e.message}"
+    end
+
+    # Hyrax's own delete, with the step args its controllers pass. Hyrax 4's work and
+    # collection deletes lack some of these steps, and step args for a missing step raise.
+    def destroy_transaction_for(obj, user)
+      name, steps = if obj.file_set?
+                      ['file_set.destroy', %w[file_set.remove_from_work file_set.delete]]
+                    elsif obj.collection?
+                      ['collection_resource.destroy', %w[collection_resource.delete collection_resource.remove_from_membership]]
+                    else
+                      ['work_resource.destroy', %w[work_resource.delete work_resource.delete_all_file_sets]]
+                    end
+      transaction = transactions[name]
+      transaction.with_step_args(**(steps & transaction.steps).index_with { { user: user } })
+    end
+
+    # Deleted the way a file set row is. Hyrax 4's work delete leaves a work's file sets in place,
+    # and Hyrax after 5.3.1 leaves one that is also in another work listed there, so on Hyrax 5
+    # only those go first and Hyrax's own delete handles the rest.
+    def file_sets_to_delete_first(work)
+      file_sets = Hyrax.custom_queries.find_child_file_sets(resource: work).to_a
+      return file_sets unless transactions['work_resource.destroy'].steps.include?('work_resource.delete_all_file_sets')
+
+      file_sets.select { |file_set| parent_ids_of(file_set).size > 1 }
+    end
+
+    def destroy_file_set(file_set, user)
+      with_locks_on(parent_ids_of(file_set)) { destroy_transaction_for(file_set, user).call(file_set).value! }
+    end
+
+    # Hyrax's delete saves the parent work without a lock, so two deletes in one import
+    # could each save a stale copy of it. Locked in id order, so they can't deadlock.
+    def parent_ids_of(obj)
+      Hyrax.query_service.find_parents(resource: obj).map { |parent| parent.id.to_s }.uniq.sort
+    end
+
+    def with_locks_on(ids, &block)
+      return yield if ids.empty?
+
+      acquire_lock_for(ids.first) { with_locks_on(ids.drop(1), &block) }
+    end
+
+    # Hyrax's delete saves a work's parent works and a collection's members without a
+    # lock, and a large delete outlasts a lock held around all of it. So each one is
+    # locked and read again on its own first, as CreateRelationshipsJob adds members,
+    # leaving Hyrax's delete nothing to save. One deleted meanwhile is skipped. These
+    # locks are taken one at a time, never while holding another, so they can't deadlock.
+    def remove_from_relations(obj, user)
+      related = if obj.collection?
+                  Hyrax.custom_queries.find_members_of(collection: obj)
+                else
+                  Hyrax.query_service.find_parents(resource: obj)
+                end
+      related.each do |record|
+        acquire_lock_for(record.id.to_s) do
+          record = self.class.find_or_nil(record.id)
+          next unless record
+
+          if obj.collection?
+            record.member_of_collection_ids -= [obj.id]
+          else
+            record.member_ids -= [obj.id]
+          end
+          self.class.save!(resource: record, user: user)
+        end
+      end
     end
 
     # @Override Destroy existing files with Hyrax::Transactions

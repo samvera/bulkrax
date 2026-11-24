@@ -212,10 +212,21 @@ module Bulkrax
       obj = find
       raise ObjectFactoryInterface::ObjectNotFoundError, "Object not found to delete" unless obj
 
+      remove_file_set_from_parent(obj) if klass == Bulkrax.file_model_class
       obj.delete(eradicate: true)
     end
 
     private
+
+    def remove_file_set_from_parent(file_set)
+      parent = file_set.parent
+      return unless parent.respond_to?(:ordered_members)
+
+      om = parent.ordered_members.to_a
+      om.delete(file_set)
+      parent.ordered_members = om
+      parent.save
+    end
 
     # @param [Hash] attrs the attributes to put in the environment
     # @return [Hyrax::Actors::Environment]

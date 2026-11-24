@@ -974,6 +974,207 @@ module Bulkrax
         end
       end
     end
+
+    describe '#delete' do
+      include_context 'with the Valkyrie memory adapter'
+
+      let(:user) { create(:user) }
+      let(:locked_ids) { [] }
+
+      # on_lock stands in for another job that saves the record just before this delete gets the lock
+      def delete_record(record, on_lock: ->(_id) {})
+        factory = described_class.new(attributes: {}, source_identifier_value: 'row-1', work_identifier: :bulkrax_identifier,
+                                      work_identifier_search_field: 'bulkrax_identifier_tesim', user: user, klass: record.class)
+        allow(factory).to receive(:find).and_return(record)
+        allow(factory).to receive(:acquire_lock_for) do |id, &block|
+          locked_ids << id
+          on_lock.call(id)
+          block.call
+        end
+        factory.delete(user)
+      end
+
+      # A copy, since the memory adapter hands out the stored record itself
+      def retitle(id)
+        record = Hyrax.query_service.find_by(id: id)
+        Hyrax.persister.save(resource: record.class.new(record.attributes.merge(title: ['changed meanwhile'])))
+      end
+
+      def reloaded(resource)
+        Hyrax.query_service.find_by(id: resource.id)
+      end
+
+      context "with a file set that is its work's thumbnail" do
+        let(:file_set) { Hyrax.persister.save(resource: Hyrax::FileSet.new(title: ['first'])) }
+        let(:other_file_set) { Hyrax.persister.save(resource: Hyrax::FileSet.new(title: ['other'])) }
+        let!(:work) do
+          Hyrax.persister.save(resource: WorkResource.new(title: ['parent'], member_ids: [file_set.id, other_file_set.id],
+                                                          thumbnail_id: file_set.id, representative_id: file_set.id))
+        end
+
+        before { delete_record(file_set, on_lock: ->(id) { retitle(id) }) }
+
+        it 'locks its work, and keeps a change another job saved to the work meanwhile' do
+          expect(locked_ids).to eq [work.id.to_s]
+          expect(reloaded(work).title).to eq ['changed meanwhile']
+        end
+
+        it 'deletes the file set' do
+          expect { reloaded(file_set) }.to raise_error(Valkyrie::Persistence::ObjectNotFoundError)
+        end
+
+        it 'removes it from the work and clears the thumbnail and representative' do
+          expect(reloaded(work)).to have_attributes(member_ids: [other_file_set.id], thumbnail_id: nil, representative_id: nil)
+        end
+
+        it 'publishes the updated work, so the work is reindexed' do
+          expect(Hyrax.publisher).to have_received(:publish)
+            .with('object.metadata.updated', hash_including(object: having_attributes(id: work.id, member_ids: [other_file_set.id])))
+        end
+      end
+
+      context 'with a collection that has a member work' do
+        let(:collection) { Hyrax.persister.save(resource: Hyrax::PcdmCollection.new(title: ['collection'])) }
+        let!(:work) { Hyrax.persister.save(resource: WorkResource.new(title: ['member'], member_of_collection_ids: [collection.id])) }
+
+        let!(:other_work) { Hyrax.persister.save(resource: WorkResource.new(title: ['other'], member_of_collection_ids: [collection.id])) }
+
+        before { delete_record(collection, on_lock: ->(id) { retitle(id) }) }
+
+        it 'locks each member work on its own, then the collection, and keeps a change another job saved to a member meanwhile' do
+          expect(locked_ids).to contain_exactly(work.id.to_s, other_work.id.to_s, collection.id.to_s)
+          expect(locked_ids.last).to eq collection.id.to_s
+          expect([reloaded(work), reloaded(other_work)].map(&:title)).to all(eq ['changed meanwhile'])
+        end
+
+        it 'publishes each updated member work, so it is reindexed' do
+          expect(Hyrax.publisher).to have_received(:publish)
+            .with('object.metadata.updated', hash_including(object: having_attributes(id: work.id, member_of_collection_ids: [])))
+        end
+
+        it 'deletes the collection' do
+          expect { reloaded(collection) }.to raise_error(Valkyrie::Persistence::ObjectNotFoundError)
+        end
+
+        it 'removes the collection from its member work' do
+          expect(reloaded(work).member_of_collection_ids).to be_empty
+        end
+      end
+
+      context 'with a collection whose member is deleted while the delete waits for its lock' do
+        let(:collection) { Hyrax.persister.save(resource: Hyrax::PcdmCollection.new(title: ['collection'])) }
+        let!(:work) { Hyrax.persister.save(resource: WorkResource.new(title: ['member'], member_of_collection_ids: [collection.id])) }
+
+        before { delete_record(collection, on_lock: ->(_id) { Hyrax.persister.delete(resource: work) }) }
+
+        it 'skips the member and deletes the collection' do
+          expect { reloaded(collection) }.to raise_error(Valkyrie::Persistence::ObjectNotFoundError)
+        end
+      end
+
+      context 'with a collection that has a child collection' do
+        let(:collection) { Hyrax.persister.save(resource: Hyrax::PcdmCollection.new(title: ['collection'])) }
+        let!(:child) { Hyrax.persister.save(resource: Hyrax::PcdmCollection.new(title: ['child'], member_of_collection_ids: [collection.id])) }
+
+        before { delete_record(collection) }
+
+        it 'publishes the child as an updated collection' do
+          expect(Hyrax.publisher).to have_received(:publish)
+            .with('collection.metadata.updated', hash_including(collection: having_attributes(id: child.id, member_of_collection_ids: [])))
+        end
+      end
+
+      context 'with a work that has a file set and a parent work' do
+        let(:file_set) { Hyrax.persister.save(resource: Hyrax::FileSet.new(title: ['first'])) }
+        let!(:work) { Hyrax.persister.save(resource: WorkResource.new(title: ['child'], member_ids: [file_set.id])) }
+        let!(:parent_work) { Hyrax.persister.save(resource: WorkResource.new(title: ['parent'], member_ids: [work.id])) }
+
+        before { delete_record(work, on_lock: ->(id) { retitle(id) }) }
+
+        it "locks the parent work, then the work, and keeps a change another job saved to the parent meanwhile; " \
+           "on Hyrax 4, whose work delete leaves file sets, it locks the work for its file set first" do
+          hyrax_deletes_file_sets = Hyrax::Transactions::Container['work_resource.destroy'].steps.include?('work_resource.delete_all_file_sets')
+          expect(locked_ids).to eq((hyrax_deletes_file_sets ? [] : [work.id.to_s]) + [parent_work.id.to_s, work.id.to_s])
+          expect(reloaded(parent_work).title).to eq ['changed meanwhile']
+        end
+
+        it 'removes the work from its parent and publishes the parent' do
+          expect(reloaded(parent_work).member_ids).to be_empty
+          expect(Hyrax.publisher).to have_received(:publish)
+            .with('object.metadata.updated', hash_including(object: having_attributes(id: parent_work.id, member_ids: [])))
+        end
+
+        it 'deletes the work and its file set' do
+          expect { reloaded(work) }.to raise_error(Valkyrie::Persistence::ObjectNotFoundError)
+          expect { reloaded(file_set) }.to raise_error(Valkyrie::Persistence::ObjectNotFoundError)
+        end
+      end
+
+      context 'with a work whose file set is also in another work' do
+        let(:file_set) { Hyrax.persister.save(resource: Hyrax::FileSet.new(title: ['shared'])) }
+        let!(:work) { Hyrax.persister.save(resource: WorkResource.new(title: ['deleted'], member_ids: [file_set.id])) }
+        let!(:other_work) { Hyrax.persister.save(resource: WorkResource.new(title: ['other'], member_ids: [file_set.id])) }
+
+        before do
+          # Hyrax after 5.3.1 deletes a work's file sets without unlinking them from other works; this suite runs released Hyrax
+          allow(Hyrax::Transactions::Container).to receive(:[]).and_call_original
+          allow(Hyrax::Transactions::Container).to receive(:[]).with('work_resource.delete_all_file_sets').and_return(
+            lambda do |resource, **|
+              Hyrax.custom_queries.find_child_file_sets(resource: resource).each { |child| Hyrax.persister.delete(resource: child) }
+              Dry::Monads::Success(resource)
+            end
+          )
+          delete_record(work)
+        end
+
+        it 'removes the deleted file set from the other work and publishes that work' do
+          expect(reloaded(other_work).member_ids).to be_empty
+          expect(Hyrax.publisher).to have_received(:publish)
+            .with('object.metadata.updated', hash_including(object: having_attributes(id: other_work.id, member_ids: [])))
+        end
+      end
+
+      context "when Hyrax's work and collection deletes have only their ACL and delete steps, as on Hyrax 4" do
+        let(:file_set) { Hyrax.persister.save(resource: Hyrax::FileSet.new(title: ['first'])) }
+        let!(:work) { Hyrax.persister.save(resource: WorkResource.new(title: ['work'], member_ids: [file_set.id])) }
+        let(:collection) { Hyrax.persister.save(resource: Hyrax::PcdmCollection.new(title: ['collection'])) }
+
+        before do
+          allow(Hyrax::Transactions::Container).to receive(:[]).and_call_original
+          %w[work_resource collection_resource].each do |type|
+            allow(Hyrax::Transactions::Container).to receive(:[]).with("#{type}.destroy")
+                                                                 .and_return(Hyrax::Transactions::Transaction.new(steps: ["#{type}.delete_acl", "#{type}.delete"]))
+          end
+        end
+
+        it 'deletes a work and its file sets' do
+          delete_record(work)
+
+          expect { reloaded(work) }.to raise_error(Valkyrie::Persistence::ObjectNotFoundError)
+          expect { reloaded(file_set) }.to raise_error(Valkyrie::Persistence::ObjectNotFoundError)
+        end
+
+        it 'deletes a collection' do
+          delete_record(collection)
+
+          expect { reloaded(collection) }.to raise_error(Valkyrie::Persistence::ObjectNotFoundError)
+        end
+      end
+
+      context 'with a file set in two works' do
+        let(:file_set) { Hyrax.persister.save(resource: Hyrax::FileSet.new(title: ['shared'])) }
+
+        before do
+          Hyrax.persister.save(resource: WorkResource.new(id: 'b-work', title: ['b'], member_ids: [file_set.id]))
+          Hyrax.persister.save(resource: WorkResource.new(id: 'a-work', title: ['a'], member_ids: [file_set.id]))
+          delete_record(file_set)
+        end
+
+        it 'locks a-work before b-work, though it finds b-work first' do
+          expect(locked_ids).to eq %w[a-work b-work]
+        end
+      end
+    end
   end
 
   describe '#convert_based_near_to_attributes' do

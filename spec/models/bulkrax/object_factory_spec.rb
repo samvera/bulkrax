@@ -54,6 +54,31 @@ module Bulkrax
       end
     end
 
+    describe '#delete' do
+      let(:file_set) { double('file set', delete: true) }
+      let(:other_file_set) { double('other file set') }
+      let(:parent) { double('parent', ordered_members: [file_set, other_file_set], 'ordered_members=': nil, save: true) }
+      let(:factory) do
+        described_class.new(attributes: {}, source_identifier_value: 'fs-1', work_identifier: :source,
+                            work_identifier_search_field: 'source_sim', klass: Bulkrax.file_model_class)
+      end
+
+      before do
+        allow(file_set).to receive(:parent).and_return(parent)
+        allow(factory).to receive(:find).and_return(file_set)
+        factory.delete(nil)
+      end
+
+      it "removes a file set from its work's ordered members and saves the work" do
+        expect(parent).to have_received(:ordered_members=).with([other_file_set])
+        expect(parent).to have_received(:save)
+      end
+
+      it 'deletes the file set' do
+        expect(file_set).to have_received(:delete).with(eradicate: true)
+      end
+    end
+
     describe '.add_child_to_parent_work' do
       let(:child) { double('child') }
       let(:parent) { double('parent', ordered_members: []) }
