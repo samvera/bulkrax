@@ -8,6 +8,7 @@ RSpec.shared_context 'with the Valkyrie memory adapter' do
 
   before do
     [Hyrax::CustomQueries::Navigators::ChildFileSetsNavigator,
+     Hyrax::CustomQueries::Navigators::CollectionMembers,
      Hyrax::CustomQueries::Navigators::FindFiles,
      Hyrax::CustomQueries::FindAccessControl,
      Hyrax::CustomQueries::FindFileMetadata].each do |handler|

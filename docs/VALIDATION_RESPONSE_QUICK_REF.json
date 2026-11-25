@@ -72,7 +72,7 @@
       }
     ],
     "totalItems*": "integer - collections + works + fileSets count",
-    "deletionCount*": "integer - Rows with a truthy `delete` value",
+    "deletionCount*": "integer - Rows with a truthy `delete` value, except those with a row error",
     "validationErrorsCacheKey": "string|null - Cache key passed to GET /importers/guided_import/download_validation_errors?key=<value>. Present when any errors exist (missingRequired, unrecognized, emptyColumns, or rowErrors). Null when validation is clean.",
     "messages*": {
       "validationStatus*": {

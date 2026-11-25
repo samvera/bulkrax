@@ -246,8 +246,14 @@ module Bulkrax
           works: works,
           fileSets: file_sets,
           totalItems: csv_data.length,
-          deletionCount: csv_data.count { |row| row[:deleting] }
+          deletionCount: deletion_count(csv_data, row_errors)
         }
+      end
+
+      # Delete rows without an error, since the import fails a delete row that has one
+      def deletion_count(csv_data, row_errors)
+        rows_with_errors = row_errors.select { |error| error[:severity] == 'error' }.map { |error| error[:row] }.to_set
+        csv_data.each_with_index.count { |row, index| row[:deleting] && rows_with_errors.exclude?(index + 2) }
       end
 
       # Returns [is_valid, has_warnings] for the assembled result.
