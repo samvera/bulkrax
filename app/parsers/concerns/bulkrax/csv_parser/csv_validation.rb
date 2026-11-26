@@ -30,6 +30,7 @@ module Bulkrax
           header_issues    = check_headers(headers, raw_csv, mapping_manager, mappings, field_metadata, field_analyzer,
                                            required_models: required_header_models(csv_data, headers, mappings))
           missing_required = header_issues[:missing_required]
+          drop_identified_source_field!(missing_required, mappings, source_id_key, csv_data)
           notices, row_errors, collections, works, file_sets =
             run_validations(csv_data, all_ids, headers, source_id_key, mappings, field_metadata, missing_required, zip_file,
                             mapping_manager: mapping_manager, csv_in_zip: csv_in_zip)
@@ -69,7 +70,7 @@ module Bulkrax
           find_record          = build_find_record
           find_existing_record = build_find_existing_record(mappings)
           notices              = []
-          append_missing_source_id!(missing_required, headers, source_id_key, csv_data.map { |r| r[:model] }.compact.uniq)
+          append_missing_source_id!(missing_required, headers, source_id_key, csv_data)
           append_missing_model_notice!(notices, headers, csv_data, model_headers: Bulkrax::FieldResolver.headers_for_field(mappings, 'model'))
           append_files_referenced_no_zip_notice!(notices, csv_data, zip_file)
 

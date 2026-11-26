@@ -145,6 +145,11 @@ module Bulkrax
       return raw_data
     end
 
+    # A record without a source identifier is exported with a blank one, so its id identifies the row
+    def self.source_identifier_for(raw_row, source_identifier, mapping)
+      source_identifier.presence || Bulkrax::FieldResolver.row_value(raw_row, mapping, 'id')&.last
+    end
+
     def build_metadata
       validate_record
 

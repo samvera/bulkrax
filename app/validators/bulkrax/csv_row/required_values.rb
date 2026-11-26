@@ -42,6 +42,9 @@ module Bulkrax
 
       def self.add_missing_required_value_errors(context, record, row_index, metadata, mapping_manager)
         (metadata[:required_terms] || []).each do |field|
+          # A row with a blank source identifier is identified by its id, as import does
+          next if record[:source_identifier].present? && resolve_header(context[:source_identifier].to_s, mapping_manager).include?(field)
+
           column_present = record[:raw_row].keys.any? { |key| resolve_header(key.to_s, mapping_manager).include?(field) }
           next unless column_present
           next if record[:raw_row].any? { |key, value| resolve_header(key.to_s, mapping_manager).include?(field) && value.present? }

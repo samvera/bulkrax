@@ -180,6 +180,47 @@ RSpec.describe Bulkrax::CsvParser do
       end
     end
 
+    context 'with rows that have an id but no source identifier' do
+      let(:csv_content) do
+        <<~CSV
+          source_identifier,id,title,model,children
+          ,rec-1,W1,GenericWork,rec-2
+          ,rec-2,W2,GenericWork,
+        CSV
+      end
+
+      it "identifies each row by its id, so other rows can refer to it" do
+        allow(Bulkrax::ValkyrieObjectFactory).to receive(:find_for_import).and_return(nil)
+        result = described_class.validate_csv(csv_file: csv_file)
+        expect(result[:rowErrors].map { |error| error[:category] })
+          .not_to include('missing_source_identifier', 'duplicate_source_identifier', 'invalid_child_reference')
+      end
+    end
+
+    context 'without a source_identifier column, when every row has an id' do
+      let(:csv_content) do
+        <<~CSV
+          id,title,model
+          rec-1,W1,GenericWork
+          rec-2,W2,GenericWork
+        CSV
+      end
+
+      it 'does not ask for the column, since each row is identified by its id' do
+        allow(Bulkrax::ValkyrieObjectFactory).to receive(:find_for_import).and_return(nil)
+        result = described_class.validate_csv(csv_file: csv_file)
+        expect(result[:missingRequired]).not_to include(a_hash_including(field: 'source_identifier'))
+      end
+
+      it 'counts the ids toward a required property the source identifier fills' do
+        source_field = Bulkrax::FieldResolver.fields_for_header(Bulkrax::CsvTemplate::MappingManager.new.mappings, 'source_identifier').first
+        allow_any_instance_of(Bulkrax::CsvTemplate::SchemaAnalyzer).to receive(:required_terms).and_return([source_field]) # rubocop:disable RSpec/AnyInstance
+        allow(Bulkrax::ValkyrieObjectFactory).to receive(:find_for_import).and_return(nil)
+        result = described_class.validate_csv(csv_file: csv_file)
+        expect(result[:missingRequired]).to be_empty
+      end
+    end
+
     context 'with delete rows' do
       let(:csv_content) do
         <<~CSV

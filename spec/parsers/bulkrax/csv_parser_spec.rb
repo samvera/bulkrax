@@ -43,6 +43,27 @@ module Bulkrax
       end
     end
 
+    describe '#records' do
+      # Held, not just its path: a Tempfile no longer referenced is deleted when it is garbage collected
+      let(:csv_file) do
+        file = Tempfile.new(['ids', '.csv'])
+        file.write(<<~CSV)
+          source_identifier,id,title,model
+          ,rec-1,No identifier,GenericWork
+          work2,rec-2,Has identifier,GenericWork
+          ,,Neither,GenericWork
+        CSV
+        file.close
+        file
+      end
+      let(:csv_path) { csv_file.path }
+      let(:importer) { FactoryBot.create(:bulkrax_importer_csv, parser_fields: { 'import_file_path' => csv_path }) }
+
+      it "identifies a row with a blank source identifier by its id, and keeps every other row's" do
+        expect(subject.records.map { |record| record[:source_identifier] }).to eq(['rec-1', 'work2', nil])
+      end
+    end
+
     describe '#build_records' do
       let(:importer) { FactoryBot.create(:bulkrax_importer_csv, :with_relationships_mappings, parser_fields: { 'import_file_path' => 'spec/fixtures/csv/all_record_types.csv' }) }
 

@@ -73,8 +73,13 @@ module Bulkrax
         importer.save
       end
 
-      @records = csv_data.map { |record_data| entry_class.data_for_entry(record_data, nil, self) }
+      @records = csv_data.map { |record_data| identify_by_id(entry_class.data_for_entry(record_data, nil, self)) }
       @records
+    end
+
+    def identify_by_id(record)
+      record[source_identifier] = entry_class.source_identifier_for(record.transform_keys(&:to_s), record[source_identifier], importerexporter.mapping)
+      record
     end
 
     def build_records

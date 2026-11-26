@@ -33,7 +33,7 @@ module Bulkrax
           # CSV::Row#to_h converts symbol headers → string-keyed hash
           row_hash = row.to_h.transform_keys(&:to_s)
           {
-            source_identifier: row[source_id_key],
+            source_identifier: Bulkrax::CsvEntry.source_identifier_for(row_hash, row[source_id_key], mappings),
             model: row_model(row_hash, model_headers),
             parent: row[parent_key],
             children: row[children_key],
@@ -145,13 +145,23 @@ module Bulkrax
         end
       end
 
+      # Rows identified by their ids fill the property the source identifier maps to, as at import
+      def drop_identified_source_field!(missing_required, mappings, source_id_key, csv_data)
+        return unless csv_data.all? { |row| row[:source_identifier].present? }
+
+        fields = Bulkrax::FieldResolver.fields_for_header(mappings, source_id_key.to_s)
+        missing_required.reject! { |entry| fields.include?(entry[:field]) }
+      end
+
       # Adds a missing source_identifier entry to missing_required when the column
-      # is absent and fill_in_blank_source_identifiers is not configured.
-      def append_missing_source_id!(missing_required, headers, source_id_key, all_models)
+      # is absent, fill_in_blank_source_identifiers is not configured, and some row
+      # has no id to be identified by instead, as import identifies it.
+      def append_missing_source_id!(missing_required, headers, source_id_key, csv_data)
         return if headers.map(&:to_s).include?(source_id_key.to_s)
         return if Bulkrax.fill_in_blank_source_identifiers.present?
+        return if csv_data.all? { |row| row[:source_identifier].present? }
 
-        all_models.each { |model| missing_required << { model: model, field: source_id_key.to_s } }
+        csv_data.map { |row| row[:model] }.compact.uniq.each { |model| missing_required << { model: model, field: source_id_key.to_s } }
       end
 
       # Adding the default work type unconditionally makes every sheet answer

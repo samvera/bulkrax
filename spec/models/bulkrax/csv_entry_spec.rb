@@ -278,10 +278,13 @@ module Bulkrax
           expect(subject.work_identifier).to eq('source')
         end
 
-        it 'has custom source and work id fields' do
-          subject.importerexporter.field_mapping['title'] = { 'from' => ['title'], 'source_identifier' => true }
-          expect(subject.source_identifier).to eq('title')
-          expect(subject.work_identifier).to eq('title')
+        context 'when the title is mapped as the source identifier' do
+          let(:importer) { FactoryBot.create(:bulkrax_importer_csv, field_mapping: { 'title' => { 'from' => ['title'], 'source_identifier' => true } }) }
+
+          it 'has custom source and work id fields' do
+            expect(subject.source_identifier).to eq('title')
+            expect(subject.work_identifier).to eq('title')
+          end
         end
       end
 
