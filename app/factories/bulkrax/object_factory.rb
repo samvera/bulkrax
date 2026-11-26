@@ -27,6 +27,15 @@ module Bulkrax
       resource.file_sets.each(&:update_index) if resource.respond_to?(:file_sets)
     end
 
+    def self.visibility_values(resource:)
+      # hydra-access-controls counts an embargo as in force through its release day, which import rejects as not in the future
+      embargo_in_force = resource.try(:under_embargo?) && resource.embargo_release_date.to_date.future?
+      return policy_columns(:embargo, during: resource.visibility_during_embargo, date: resource.embargo_release_date, after: resource.visibility_after_embargo) if embargo_in_force
+      return policy_columns(:lease, during: resource.visibility_during_lease, date: resource.lease_expiration_date, after: resource.visibility_after_lease) if resource.try(:active_lease?)
+
+      { 'visibility' => resource.visibility }
+    end
+
     ##
     # @return [String] the name of the model class for the given resource/object.
     def self.model_name(resource:)

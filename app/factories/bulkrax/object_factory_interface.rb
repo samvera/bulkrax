@@ -303,6 +303,23 @@ module Bulkrax
     # rubocop:enable Metrics/ParameterLists
 
     ##
+    # @param resource [Object] a work, collection or file set
+    # @return [Hash{String => String}] its visibility, and its embargo or lease while one is in force,
+    #   under the column names import reads. An ended embargo or lease is left out, since import
+    #   rejects a release date in the past.
+    def self.visibility_values(resource:)
+      raise NotImplementedError, "#{self}.#{__method__}"
+    end
+
+    def self.policy_columns(policy, during:, date:, after:)
+      { 'visibility' => policy.to_s,
+        "visibility_during_#{policy}" => during,
+        "#{policy == :embargo ? 'embargo_release' : 'lease_expiration'}_date" => date.to_date.iso8601,
+        "visibility_after_#{policy}" => after }
+    end
+    private_class_method :policy_columns
+
+    ##
     # @return [String] the name of the model class for the given resource/object.
     def self.model_name(resource:)
       raise NotImplementedError, "#{self}.#{__method__}"

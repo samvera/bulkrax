@@ -200,6 +200,18 @@ module Bulkrax
       end
     end
 
+    def self.visibility_values(resource:)
+      embargo = Hyrax::EmbargoManager.new(resource: resource).embargo if resource.respond_to?(:embargo)
+      # Newer Hyrax counts an embargo as in force through its release day, which import rejects as not in the future
+      embargo_in_force = embargo&.active? && embargo.embargo_release_date.to_date.future?
+      return policy_columns(:embargo, during: embargo.visibility_during_embargo, date: embargo.embargo_release_date, after: embargo.visibility_after_embargo) if embargo_in_force
+
+      lease = Hyrax::LeaseManager.new(resource: resource).lease if resource.respond_to?(:lease)
+      return policy_columns(:lease, during: lease.visibility_during_lease, date: lease.lease_expiration_date, after: lease.visibility_after_lease) if lease&.active?
+
+      { 'visibility' => resource.visibility }
+    end
+
     def self.field_supported?(field:, model:, admin_set_id: nil)
       if model.respond_to?(:schema)
         schema_properties(klass: model, admin_set_id: admin_set_id).include?(field)

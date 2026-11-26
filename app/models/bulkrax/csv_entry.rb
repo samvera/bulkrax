@@ -233,6 +233,7 @@ module Bulkrax
       build_files_metadata if Bulkrax.collection_model_class.present? && !hyrax_record.is_a?(Bulkrax.collection_model_class)
       build_relationship_metadata
       build_mapping_metadata
+      build_visibility_metadata
       self.save!
 
       self.parsed_metadata
@@ -246,6 +247,11 @@ module Bulkrax
       self.parsed_metadata[source_identifier] = source_id
       model_name = Bulkrax.object_factory.model_name(resource: hyrax_record)
       self.parsed_metadata[key_for_export('model')] = model_name
+    end
+
+    # Last, so a mapped visibility column can't replace an embargo's or lease's
+    def build_visibility_metadata
+      Bulkrax.object_factory.visibility_values(resource: hyrax_record).each { |key, value| parsed_metadata[key_for_export(key)] = value }
     end
 
     def build_files_metadata

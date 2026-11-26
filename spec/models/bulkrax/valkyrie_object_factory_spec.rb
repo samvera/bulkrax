@@ -383,6 +383,52 @@ module Bulkrax
       end
     end
 
+    describe '.visibility_values' do
+      include_context 'with the Valkyrie memory adapter'
+
+      def work_with(visibility:, embargo: nil, lease: nil)
+        skip "Hyrax 4's resources hold no embargo or lease" if (embargo || lease) && !WorkResource.method_defined?(:embargo_id=)
+        work = WorkResource.new(title: ['w'])
+        work.embargo_id = Hyrax.persister.save(resource: embargo).id if embargo
+        work.lease_id = Hyrax.persister.save(resource: lease).id if lease
+        work.visibility = visibility
+        work
+      end
+
+      it 'is the visibility of a record without an embargo or lease' do
+        expect(described_class.visibility_values(resource: work_with(visibility: 'restricted'))).to eq('visibility' => 'restricted')
+      end
+
+      it 'is the embargo while one is in force' do
+        embargo = Hyrax::Embargo.new(embargo_release_date: Time.zone.parse('2099-01-02'), visibility_during_embargo: 'restricted', visibility_after_embargo: 'open')
+
+        expect(described_class.visibility_values(resource: work_with(visibility: 'restricted', embargo: embargo)))
+          .to eq('visibility' => 'embargo', 'visibility_during_embargo' => 'restricted', 'embargo_release_date' => '2099-01-02', 'visibility_after_embargo' => 'open')
+      end
+
+      it 'is the lease while one is in force' do
+        lease = Hyrax::Lease.new(lease_expiration_date: Time.zone.parse('2099-03-04'), visibility_during_lease: 'open', visibility_after_lease: 'restricted')
+
+        expect(described_class.visibility_values(resource: work_with(visibility: 'open', lease: lease)))
+          .to eq('visibility' => 'lease', 'visibility_during_lease' => 'open', 'lease_expiration_date' => '2099-03-04', 'visibility_after_lease' => 'restricted')
+      end
+
+      it 'is only the visibility on the day an embargo ends, where newer Hyrax still counts it as in force' do
+        embargo = Hyrax::Embargo.new(embargo_release_date: Time.zone.today.to_datetime, visibility_during_embargo: 'restricted', visibility_after_embargo: 'open')
+        allow(embargo).to receive(:active?).and_return(true)
+        work = work_with(visibility: 'restricted')
+        allow(Hyrax::EmbargoManager).to receive(:new).and_return(instance_double(Hyrax::EmbargoManager, embargo: embargo))
+
+        expect(described_class.visibility_values(resource: work)).to eq('visibility' => 'restricted')
+      end
+
+      it 'is only the visibility once an embargo has ended, since import rejects a past release date' do
+        embargo = Hyrax::Embargo.new(embargo_release_date: Time.zone.parse('2020-01-02'), visibility_during_embargo: 'restricted', visibility_after_embargo: 'open')
+
+        expect(described_class.visibility_values(resource: work_with(visibility: 'open', embargo: embargo))).to eq('visibility' => 'open')
+      end
+    end
+
     describe '#perform_transaction_for' do
       include_context 'with the Valkyrie memory adapter'
 
