@@ -572,7 +572,10 @@ Bulkrax.csv_row_validators
 #   Bulkrax::CsvRow::RequiredValues,
 #   Bulkrax::CsvRow::ControlledVocabulary,
 #   Bulkrax::CsvRow::FileReference,
-#   Bulkrax::CsvRow::DeleteRecord
+#   Bulkrax::CsvRow::DeleteRecord,
+#   Bulkrax::CsvRow::Visibility,
+#   Bulkrax::CsvRow::FileSetFiles,
+#   Bulkrax::CsvRow::TrueFalseValues
 # ]
 ```
 

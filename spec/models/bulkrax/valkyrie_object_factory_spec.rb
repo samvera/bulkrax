@@ -397,6 +397,33 @@ module Bulkrax
 
         expect(saved.title).to eq ['after']
       end
+
+      context 'when the form has a true/false field' do
+        let(:form_class) { Class.new(Hyrax::Forms::ResourceForm(WorkResource)) { property :hidden, virtual: true, type: Dry::Types['params.bool'] } }
+        # Hyrax 4's form takes the resource as a positional argument
+        let(:form) { form_class.instance_method(:initialize).parameters.include?([:key, :resource]) ? form_class.new(resource: work) : form_class.new(work) }
+
+        before { allow(factory).to receive(:resource_form_for).and_return(form) }
+
+        { '' => false, 'No' => false, 'False' => false, ' YES ' => true }.each do |cell, value|
+          it "reads #{cell.inspect} as #{value}" do
+            factory.send(:perform_transaction_for, object: work, attrs: { hidden: cell }) { factory.transactions['change_set.apply'] }
+
+            expect(form.hidden).to be value
+          end
+        end
+
+        it 'fails the row for a value that is neither true nor false' do
+          expect { factory.send(:perform_transaction_for, object: work, attrs: { hidden: 'maybe' }) { factory.transactions['change_set.apply'] } }
+            .to raise_error(StandardError, /hidden.*maybe/)
+        end
+
+        it 'lists the field among the true/false fields of its model' do
+          allow(described_class).to receive(:resource_form_for).and_return(form)
+
+          expect(described_class.true_false_fields(klass: WorkResource)).to eq ['hidden']
+        end
+      end
     end
 
     describe 'importing a file set row' do

@@ -430,6 +430,10 @@ fr:
               more_than_one_file:
                 message: "Cette ligne d'ensemble de fichiers indique %{value} fichiers ; une ligne d'ensemble de fichiers n'en accepte qu'un."
                 suggestion: "Indiquez un fichier par ligne d'ensemble de fichiers, ou indiquez plusieurs fichiers sur une ligne d'œuvre, qui crée un ensemble de fichiers pour chacun."
+          true_false_validator:
+            errors:
+              message: "« %{value} » dans %{field} n'est ni vrai ni faux."
+              suggestion: "Utilisez true ou false, yes ou no, ou 1 ou 0. Une cellule vide signifie false."
           visibility_validator:
             errors:
               unknown_visibility:

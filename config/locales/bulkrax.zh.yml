@@ -430,6 +430,10 @@ zh:
               more_than_one_file:
                 message: "此文件集行列出了 %{value} 个文件；一个文件集行只接受一个文件。"
                 suggestion: "每个文件集行只列一个文件，或在作品行中列出多个文件，作品会为每个文件创建一个文件集。"
+          true_false_validator:
+            errors:
+              message: "%{field} 中的 \"%{value}\" 既不是真也不是假。"
+              suggestion: "请使用 true 或 false、yes 或 no、1 或 0。空单元格表示 false。"
           visibility_validator:
             errors:
               unknown_visibility:

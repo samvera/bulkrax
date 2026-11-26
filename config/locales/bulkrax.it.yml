@@ -430,6 +430,10 @@ it:
               more_than_one_file:
                 message: "Questa riga di set di file elenca %{value} file; una riga di set di file ne accetta uno."
                 suggestion: "Indica un file per riga di set di file, oppure indica più file in una riga di opera, che crea un set di file per ciascuno."
+          true_false_validator:
+            errors:
+              message: "\"%{value}\" in %{field} non è né vero né falso."
+              suggestion: "Usa true o false, yes o no, oppure 1 o 0. Una cella vuota significa false."
           visibility_validator:
             errors:
               unknown_visibility:

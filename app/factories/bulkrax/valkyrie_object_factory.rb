@@ -358,6 +358,32 @@ module Bulkrax
     end
     # rubocop:enable Metrics/ParameterLists
 
+    def self.true_false_fields(klass:, admin_set_id: nil)
+      true_false_fields_of(resource_form_for(klass.new, admin_set_id))
+    end
+
+    def self.true_false_fields_of(form)
+      definitions = form.class.definitions
+      definitions.keys.select do |name|
+        type = definitions[name][:type]
+        type.respond_to?(:primitive?) && type.primitive?(true) && type.primitive?(false) && !type.primitive?('')
+      end
+    end
+
+    # Hyrax 5.3 and later take the admin set that a flexible metadata schema
+    # depends on; Hyrax 5.0 to 5.2 take the resource alone, and Hyrax 4 takes it
+    # as a positional argument.
+    def self.resource_form_for(object, admin_set_id)
+      parameters = Hyrax::Forms::ResourceForm.method(:for).parameters
+      if parameters.any? { |type, name| name == :admin_set_id || type == :keyrest }
+        Hyrax::Forms::ResourceForm.for(resource: object, admin_set_id: admin_set_id)
+      elsif parameters.include?([:key, :resource])
+        Hyrax::Forms::ResourceForm.for(resource: object)
+      else
+        Hyrax::Forms::ResourceForm.for(object)
+      end
+    end
+
     ##
     # Retrieve schema property names for a model, respecting admin set contexts
     # when using flexible metadata. Delegates context resolution to Hyrax so
@@ -659,6 +685,7 @@ module Bulkrax
     def perform_transaction_for(object:, attrs:)
       form = resource_form_for(object, form_admin_set_id(attrs)).prepopulate!
       carry_pending_permissions(object, form.model)
+      attrs = true_false_values(form, attrs)
 
       # TODO: Handle validations
       form.validate(attrs)
@@ -682,17 +709,19 @@ module Bulkrax
       model.permission_manager.acl.permissions = acl.permissions if acl.pending_changes?
     end
 
-    # Hyrax 5.3 and later take the admin set that a flexible metadata schema
-    # depends on; Hyrax 5.0 to 5.2 take the resource alone, and Hyrax 4 takes it
-    # as a positional argument.
     def resource_form_for(object, admin_set_id)
-      parameters = Hyrax::Forms::ResourceForm.method(:for).parameters
-      if parameters.any? { |type, name| name == :admin_set_id || type == :keyrest }
-        Hyrax::Forms::ResourceForm.for(resource: object, admin_set_id: admin_set_id)
-      elsif parameters.include?([:key, :resource])
-        Hyrax::Forms::ResourceForm.for(resource: object)
-      else
-        Hyrax::Forms::ResourceForm.for(object)
+      self.class.resource_form_for(object, admin_set_id)
+    end
+
+    # The form reads a true/false cell its own way and raises for an empty one, so these
+    # cells are read as Bulkrax::TrueFalse reads them, and one that is neither fails the row
+    def true_false_values(form, attrs)
+      fields = self.class.true_false_fields_of(form)
+      attrs.each_with_object(attrs.dup) do |(key, value), cast|
+        next unless fields.include?(key.to_s)
+
+        cast[key] = Bulkrax::TrueFalse.cast(Array.wrap(value).first)
+        raise StandardError, "#{key}: \"#{value}\" is neither true nor false" if cast[key].nil?
       end
     end
 

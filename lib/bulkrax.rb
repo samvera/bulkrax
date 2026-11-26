@@ -37,7 +37,7 @@ module Bulkrax
 
   ##
   # @api public
-  class Configuration
+  class Configuration # rubocop:disable Metrics/ClassLength
     attr_accessor :api_definition,
                   :default_field_mapping,
                   :export_path,
@@ -264,7 +264,8 @@ module Bulkrax
         Bulkrax::CsvRow::FileReference,
         Bulkrax::CsvRow::DeleteRecord,
         Bulkrax::CsvRow::Visibility,
-        Bulkrax::CsvRow::FileSetFiles
+        Bulkrax::CsvRow::FileSetFiles,
+        Bulkrax::CsvRow::TrueFalseValues
       ]
     end
 

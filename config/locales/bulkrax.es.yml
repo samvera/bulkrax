@@ -430,6 +430,10 @@ es:
               more_than_one_file:
                 message: "Esta fila de conjunto de archivos incluye %{value} archivos; una fila de conjunto de archivos admite uno."
                 suggestion: "Indique un archivo por fila de conjunto de archivos, o indique varios archivos en una fila de obra, que crea un conjunto de archivos para cada uno."
+          true_false_validator:
+            errors:
+              message: "\"%{value}\" en %{field} no es ni verdadero ni falso."
+              suggestion: "Use true o false, yes o no, o 1 o 0. Una celda vacía significa false."
           visibility_validator:
             errors:
               unknown_visibility:
