@@ -65,7 +65,8 @@ module Bulkrax
           hash[model] = {
             properties: field_list.dig(model, 'properties') || [],
             required_terms: field_list.dig(model, 'required_terms') || [],
-            controlled_vocab_terms: field_list.dig(model, 'controlled_vocab_terms') || []
+            controlled_vocab_terms: field_list.dig(model, 'controlled_vocab_terms') || [],
+            true_false_terms: field_list.dig(model, 'true_false_terms') || []
           }
         end
       end

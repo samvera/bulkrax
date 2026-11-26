@@ -430,6 +430,10 @@ de:
               more_than_one_file:
                 message: "Diese Dateisatz-Zeile enthält %{value} Dateien; eine Dateisatz-Zeile nimmt nur eine Datei auf."
                 suggestion: "Geben Sie eine Datei pro Dateisatz-Zeile an, oder geben Sie mehrere Dateien in einer Werk-Zeile an, die für jede Datei einen Dateisatz anlegt."
+          true_false_validator:
+            errors:
+              message: "\"%{value}\" in %{field} ist weder wahr noch falsch."
+              suggestion: "Verwenden Sie true oder false, yes oder no bzw. 1 oder 0. Eine leere Zelle bedeutet false."
           visibility_validator:
             errors:
               unknown_visibility:

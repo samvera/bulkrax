@@ -172,7 +172,8 @@
       "missing_required_value",
       "invalid_controlled_value",
       "default_work_type_used",
-      "missing_file_reference"
+      "missing_file_reference",
+      "invalid_true_false"
     ]
   },
   "validation_rules": {

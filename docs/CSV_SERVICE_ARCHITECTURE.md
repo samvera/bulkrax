@@ -89,7 +89,8 @@ CsvParser.validate_csv
         │     ├── CsvRow::FileReference
         │     ├── CsvRow::DeleteRecord
         │     ├── CsvRow::Visibility
-        │     └── CsvRow::FileSetFiles
+        │     ├── CsvRow::FileSetFiles
+        │     └── CsvRow::TrueFalseValues
         └── DidYouMean::SpellChecker        - Suggestions for unrecognized columns
 ```
 
@@ -151,6 +152,7 @@ Rows are `CSV::Row` objects with symbol-keyed headers. Field access uses the sym
 | `app/validators/bulkrax/csv_row/visibility.rb` | `invalid_embargo_date`, `invalid_lease_date` | error |
 | `app/validators/bulkrax/csv_row/visibility.rb` | `unknown_collection_visibility` | error |
 | `app/validators/bulkrax/csv_row/file_set_files.rb` | `more_than_one_file` | error |
+| `app/validators/bulkrax/csv_row/true_false_values.rb` | `invalid_true_false` | error |
 
 ### Related Files
 
@@ -182,7 +184,8 @@ Bulkrax.csv_row_validators
 #   Bulkrax::CsvRow::FileReference,
 #   Bulkrax::CsvRow::DeleteRecord,
 #   Bulkrax::CsvRow::Visibility,
-#   Bulkrax::CsvRow::FileSetFiles
+#   Bulkrax::CsvRow::FileSetFiles,
+#   Bulkrax::CsvRow::TrueFalseValues
 # ]
 ```
 
@@ -211,7 +214,7 @@ Each validator receives:
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `record` | Hash | Parsed row with `:source_identifier`, `:model`, `:parent`, `:children`, `:file` (the cell under the first file alias), `:file_values` (every file cell, numbered columns included), `:deleting` (the row's `delete` cell is truthy, as import reads it), `:rerunning` (the same for `remove_and_rerun`), `:raw_row` |
+| `record` | Hash | Parsed row with `:source_identifier`, `:model`, `:parent`, `:children`, `:file` (the cell under the first file alias), `:file_values` (every file cell, numbered columns included), `:deleting` (the row's `delete` cell is true, as import reads it with `Bulkrax::TrueFalse`), `:rerunning` (the same for `remove_and_rerun`), `:raw_row` |
 | `row_number` | Integer | 1-indexed row number (accounting for header row) |
 | `context` | Hash | Shared validation context |
 

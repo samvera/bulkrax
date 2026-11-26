@@ -180,6 +180,27 @@ RSpec.describe Bulkrax::CsvParser do
       end
     end
 
+    context 'with true/false cells' do
+      let(:csv_content) do
+        <<~CSV
+          source_identifier,title,model,hide_from_catalog_search,delete
+          work1,W1,GenericWork,No,No
+          work2,W2,GenericWork,maybe,
+        CSV
+      end
+
+      before do
+        allow(Bulkrax::ValkyrieObjectFactory).to receive(:find_for_import).and_return(nil)
+        allow(Bulkrax.object_factory).to receive(:true_false_fields).and_return(['hide_from_catalog_search'])
+      end
+
+      it 'reads "No" in delete as not deleting, and reports a value that is neither true nor false' do
+        result = described_class.validate_csv(csv_file: csv_file)
+        expect(result[:works].map { |work| work[:deleting] }).to eq([false, false])
+        expect(result[:rowErrors]).to contain_exactly(a_hash_including(row: 3, category: 'invalid_true_false', column: 'hide_from_catalog_search', value: 'maybe'))
+      end
+    end
+
     context 'with delete rows' do
       let(:csv_content) do
         <<~CSV

@@ -430,6 +430,10 @@ pt-BR:
               more_than_one_file:
                 message: "Esta linha de conjunto de arquivos lista %{value} arquivos; uma linha de conjunto de arquivos aceita apenas um."
                 suggestion: "Indique um arquivo por linha de conjunto de arquivos, ou indique vários arquivos em uma linha de obra, que cria um conjunto de arquivos para cada um."
+          true_false_validator:
+            errors:
+              message: "\"%{value}\" em %{field} não é verdadeiro nem falso."
+              suggestion: "Use true ou false, yes ou no, ou 1 ou 0. Uma célula vazia significa false."
           visibility_validator:
             errors:
               unknown_visibility:

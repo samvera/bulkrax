@@ -45,7 +45,8 @@ RSpec.describe Bulkrax::CsvTemplate::FieldAnalyzer do
                                'Work' => {
                                  'properties' => ['title', 'creator', 'date_created', 'rights_statement'],
                                  'required_terms' => ['title', 'creator'],
-                                 'controlled_vocab_terms' => ['rights_statement', 'resource_type']
+                                 'controlled_vocab_terms' => ['rights_statement', 'resource_type'],
+                                 'true_false_terms' => []
                                }
                              })
       end
@@ -77,7 +78,8 @@ RSpec.describe Bulkrax::CsvTemplate::FieldAnalyzer do
                                'Work' => {
                                  'properties' => ['title', 'creator', 'subject', 'description'],
                                  'required_terms' => ['title', 'creator'],
-                                 'controlled_vocab_terms' => ['rights_statement', 'resource_type']
+                                 'controlled_vocab_terms' => ['rights_statement', 'resource_type'],
+                                 'true_false_terms' => []
                                }
                              })
       end

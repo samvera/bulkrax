@@ -172,6 +172,13 @@ module Bulkrax
     end
 
     ##
+    # @param klass [Class] a model
+    # @return [Array<String>] the fields whose cells import reads as true or false (Bulkrax::TrueFalse)
+    def self.true_false_fields(klass:, admin_set_id: nil) # rubocop:disable Lint/UnusedMethodArgument
+      []
+    end
+
+    ##
     # @param file_count [Integer] the files a file set row lists
     # @return [Symbol, nil] :more_than_one_file when the row's import would fail
     #         for listing more than one; nil otherwise

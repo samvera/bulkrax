@@ -432,6 +432,10 @@ en:
               more_than_one_file:
                 message: "This file set row lists %{value} files; a file set row takes one."
                 suggestion: "List one file per file set row, or list several files on a work row, which makes a file set for each."
+          true_false_validator:
+            errors:
+              message: '"%{value}" in %{field} is neither true nor false.'
+              suggestion: "Use true or false, yes or no, or 1 or 0. An empty cell means false."
           visibility_validator:
             errors:
               unknown_visibility:

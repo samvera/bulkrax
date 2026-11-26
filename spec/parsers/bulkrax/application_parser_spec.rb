@@ -250,4 +250,18 @@ module Bulkrax
       end
     end
   end
+
+  describe '.flag_set?' do
+    ['False', 'no', 'No', 'Off', ' false', 'maybe'].each do |value|
+      it "does not set a flag such as delete for #{value.inspect}" do
+        expect(Bulkrax::ApplicationParser.flag_set?(value)).to be false
+      end
+    end
+
+    ['TRUE', 'Yes', 'y', '1'].each do |value|
+      it "sets the flag for #{value.inspect}" do
+        expect(Bulkrax::ApplicationParser.flag_set?(value)).to be true
+      end
+    end
+  end
 end

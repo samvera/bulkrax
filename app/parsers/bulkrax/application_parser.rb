@@ -269,7 +269,7 @@ module Bulkrax
     # Whether a row's flag cell, such as `delete`, is on. Guided validation
     # reads delete rows with the same rule.
     def self.flag_set?(value)
-      ActiveModel::Type::Boolean.new.cast(value) || false
+      Bulkrax::TrueFalse.cast(value) || false
     end
 
     def create_entry_and_job(current_record, type, identifier = nil)

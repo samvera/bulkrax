@@ -39,9 +39,16 @@ module Bulkrax
           model_name => {
             'properties' => extract_properties(klass),
             'required_terms' => schema_analyzer.required_terms,
-            'controlled_vocab_terms' => schema_analyzer.controlled_vocab_terms
+            'controlled_vocab_terms' => schema_analyzer.controlled_vocab_terms,
+            'true_false_terms' => true_false_terms(klass)
           }
         }
+      end
+
+      def true_false_terms(klass)
+        Bulkrax.object_factory.true_false_fields(klass: klass, admin_set_id: @admin_set_id)
+      rescue StandardError
+        []
       end
 
       def extract_properties(klass)
