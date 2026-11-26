@@ -157,6 +157,7 @@ module Bulkrax
       add_identifier
       establish_factory_class
       add_ingested_metadata
+      drop_linking_id
       # TODO(alishaevn): remove the collections stuff entirely and only reference collections via the new parents code
       add_collections
       add_visibility
@@ -173,7 +174,13 @@ module Bulkrax
       self.parsed_metadata = {}
       establish_factory_class
       add_ingested_metadata
+      drop_linking_id
       self.parsed_metadata
+    end
+
+    # An id that only links the sheet's rows names no record here, so the record is found by source identifier
+    def drop_linking_id
+      parsed_metadata.delete('id') if parser.create_new_records?
     end
 
     def validate_record

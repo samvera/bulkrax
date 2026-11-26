@@ -13,12 +13,13 @@ module Bulkrax
 
       # `base_value` is the row's already-resolved relationship cell, kept so
       # callers that build records without a matching raw_row column still work.
-      def self.ids(base_value, raw_row, columns, split_pattern)
+      # `row_ids` maps another row's id cell to its source identifier, for a sheet whose ids only link its rows.
+      def self.ids(base_value, raw_row, columns, split_pattern, row_ids = {})
         pattern = Bulkrax::SplitPatternCoercion.coerce(split_pattern)
         cells = [base_value] + (raw_row || {}).select { |header, _| Bulkrax::FieldResolver.header_for_any?(header, columns) }.values
 
         cells.flat_map { |cell| pattern ? cell.to_s.split(pattern) : [cell.to_s] }
-             .map(&:strip).reject(&:blank?).uniq
+             .map(&:strip).reject(&:blank?).map { |id| row_ids.fetch(id, id) }.uniq
       end
 
       # A relationship to a row this import deletes: import writes no pending

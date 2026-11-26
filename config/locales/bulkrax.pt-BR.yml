@@ -91,6 +91,10 @@ pt-BR:
           public: Público
       browse_everything:
         add_cloud_files: Adicionar arquivos na nuvem
+      create_new_records:
+        heading: "Dados de outra fonte"
+        hint: "Ao importar dados de outra fonte (como a exportação de outro site), marque a caixa para que os IDs não sejam procurados como registros existentes. Linhas novas se tornam registros novos, e as linhas importadas anteriormente são atualizadas. Os IDs servem apenas para ligar as linhas aos seus pais ou filhos."
+        label: "Importar dados de fonte externa"
       csv:
         add_csv_to_import: 'Adicionar arquivo CSV ou ZIP para importação:'
         add_files_hint: Selecione os arquivos para upload. Os nomes dos arquivos devem ser únicos e devem estar referenciados em uma coluna chamada 'arquivo' no arquivo CSV que acompanha o arquivo.

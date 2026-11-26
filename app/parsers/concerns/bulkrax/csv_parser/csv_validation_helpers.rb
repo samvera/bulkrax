@@ -313,14 +313,15 @@ module Bulkrax
       # `missing: true` for an id naming no record or the two model names
       # for a record of another model, or `lookup_failed: true` when the
       # repository could not be searched. Each row is looked up once.
-      def build_find_existing_record(mappings)
+      # A sheet whose ids only link its rows matches records by source identifier alone, as its import does
+      def build_find_existing_record(mappings, create_new_records: false)
         work_identifier, work_identifier_search = source_identifier_search_fields
         results = {}.compare_by_identity
         lambda do |row|
           return results[row] if results.key?(row)
 
           results[row] = existing_record_match(
-            row, Bulkrax::FieldResolver.row_value(row[:raw_row], mappings, 'id'),
+            row, create_new_records ? nil : Bulkrax::FieldResolver.row_value(row[:raw_row], mappings, 'id'),
             klass: Bulkrax::FactoryClassFinder.find(entry: ImportRow.new(raw_metadata: { 'model' => row[:model] })),
             search_field: work_identifier_search, name_field: work_identifier
           )
@@ -405,16 +406,22 @@ module Bulkrax
         Bulkrax::SplitPatternCoercion.coerce(Bulkrax::FieldResolver.option(entry, 'split'))
       end
 
-      def relationship_context(csv_data, mappings, find_existing_record = nil)
+      # Each row's id cell, mapped to its source identifier, so another row's relationship can name it
+      def row_ids_of(csv_data, mappings)
+        Bulkrax::CsvParser.row_ids_from(csv_data.map { |row| [Bulkrax::FieldResolver.row_value(row[:raw_row], mappings, 'id')&.last, row[:source_identifier]] })
+      end
+
+      def relationship_context(csv_data, mappings, find_existing_record = nil, row_ids = {})
         parent_columns, children_columns = relationship_columns(mappings)
         {
+          row_ids: row_ids,
           parent_split_pattern: resolve_parent_split_pattern(mappings),
           child_split_pattern: resolve_children_split_pattern(mappings),
           parent_column: parent_columns.first,
           children_column: children_columns.first,
           parent_columns: parent_columns,
           children_columns: children_columns,
-          relationship_graph: build_relationship_graph(csv_data, mappings),
+          relationship_graph: build_relationship_graph(csv_data, mappings, row_ids),
           deleted_ids: deleted_identifiers(csv_data, mappings, find_existing_record)
         }
       end
@@ -426,30 +433,30 @@ module Bulkrax
       #   - explicit parent declarations (parents / parents_N columns)
       #   - inverted child declarations (children / children_N columns), mirroring
       #     the normalisation done in importers_stepper.js#normalizeRelationships
-      def build_relationship_graph(csv_data, mappings)
+      def build_relationship_graph(csv_data, mappings, row_ids = {})
         parent_columns   = Bulkrax::CsvRow::RelationshipIds.columns(mappings, 'related_parents_field_mapping', 'parents')
         children_columns = Bulkrax::CsvRow::RelationshipIds.columns(mappings, 'related_children_field_mapping', 'children')
 
-        graph = build_parent_edges(csv_data, parent_columns, resolve_parent_split_pattern(mappings))
-        invert_child_edges(graph, csv_data, children_columns, resolve_children_split_pattern(mappings))
+        graph = build_parent_edges(csv_data, parent_columns, resolve_parent_split_pattern(mappings), row_ids)
+        invert_child_edges(graph, csv_data, children_columns, resolve_children_split_pattern(mappings), row_ids)
         graph
       end
 
-      def build_parent_edges(csv_data, columns, split_pattern)
+      def build_parent_edges(csv_data, columns, split_pattern, row_ids = {})
         csv_data.each_with_object({}) do |record, graph|
           id = record[:source_identifier]
           next if id.blank? || record[:deleting]
 
-          graph[id] = Bulkrax::CsvRow::RelationshipIds.ids(record[:parent], record[:raw_row], columns, split_pattern)
+          graph[id] = Bulkrax::CsvRow::RelationshipIds.ids(record[:parent], record[:raw_row], columns, split_pattern, row_ids)
         end
       end
 
-      def invert_child_edges(graph, csv_data, columns, split_pattern)
+      def invert_child_edges(graph, csv_data, columns, split_pattern, row_ids = {})
         csv_data.each do |record|
           id = record[:source_identifier]
           next if id.blank? || record[:deleting]
 
-          Bulkrax::CsvRow::RelationshipIds.ids(record[:children], record[:raw_row], columns, split_pattern).each do |child_id|
+          Bulkrax::CsvRow::RelationshipIds.ids(record[:children], record[:raw_row], columns, split_pattern, row_ids).each do |child_id|
             graph[child_id] ||= []
             graph[child_id] << id unless graph[child_id].include?(id)
           end

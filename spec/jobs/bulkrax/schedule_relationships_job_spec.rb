@@ -179,6 +179,16 @@ module Bulkrax
           end
         end
 
+        it "holds back a parent named by a Pending row's id, in a sheet whose ids only link its rows" do
+          importer.parser_fields['row_ids'] = { 'old-late' => 'late' }
+          importer.save!
+          PendingRelationship.create!(importer_run_id: run.id, parent_id: 'old-late', child_id: 'finished')
+          travel(25.hours) do
+            expect { job.perform(importer_id: importer.id) }
+              .not_to have_enqueued_job(CreateRelationshipsJob).with(hash_including(parent_identifier: 'old-late'))
+          end
+        end
+
         it 'holds back parents that are Pending or still have a Pending child' do
           travel(25.hours) do
             expect { job.perform(importer_id: importer.id) }

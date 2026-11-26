@@ -62,6 +62,95 @@ module Bulkrax
       it "identifies a row with a blank source identifier by its id, and keeps every other row's" do
         expect(subject.records.map { |record| record[:source_identifier] }).to eq(['rec-1', 'work2', nil])
       end
+
+      describe '#record_row_ids' do
+        it "saves each row's id with its source identifier when the ids only link the rows" do
+          importer.parser_fields['create_new_records'] = '1'
+          subject.record_row_ids
+          expect(importer.reload.parser_fields['row_ids']).to eq('rec-2' => 'work2')
+        end
+
+        it 'saves them for an Existing Entries run, whose form does not carry them' do
+          importer.parser_fields['create_new_records'] = '1'
+          subject.rebuild_entries
+          expect(importer.reload.parser_fields['row_ids']).to eq('rec-2' => 'work2')
+        end
+
+        it "keeps the ids an earlier run saved, such as a corrected file's, on an Existing Entries run" do
+          importer.parser_fields.merge!('create_new_records' => '1', 'row_ids' => { 'rec-9' => 'work9' })
+          subject.rebuild_entries
+          expect(importer.reload.parser_fields['row_ids']).to eq('rec-9' => 'work9', 'rec-2' => 'work2')
+        end
+
+        it "keeps the earlier rows' ids when a corrected file brings only some of the rows" do
+          corrected = Tempfile.new(['corrected', '.csv'])
+          corrected.write("source_identifier,id,title,model\nwork3,rec-3,Corrected,GenericWork\n")
+          corrected.close
+          importer.parser_fields.merge!('create_new_records' => '1', 'row_ids' => { 'rec-2' => 'work2' }, 'partial_import_file_path' => corrected.path)
+          importer.only_updates = true
+          subject.record_row_ids
+          expect(importer.reload.parser_fields['row_ids']).to eq('rec-2' => 'work2', 'rec-3' => 'work3')
+        end
+
+        context 'when two rows share an id' do
+          let(:csv_file) do
+            file = Tempfile.new(['ids', '.csv'])
+            file.write("source_identifier,id,title,model\nwork-a,old-1,A,GenericWork\nwork-b,old-1,B,GenericWork\nwork-c,old-3,C,GenericWork\n")
+            file.close
+            file
+          end
+
+          it 'leaves that id out, since it names no one row' do
+            importer.parser_fields['create_new_records'] = '1'
+            subject.record_row_ids
+            expect(importer.reload.parser_fields['row_ids']).to eq('old-3' => 'work-c')
+          end
+
+          it 'drops an earlier run\'s saved alias for it' do
+            importer.parser_fields.merge!('create_new_records' => '1', 'row_ids' => { 'old-1' => 'work-a', 'old-9' => 'work-9' })
+            subject.record_row_ids
+            expect(importer.reload.parser_fields['row_ids']).to eq('old-3' => 'work-c', 'old-9' => 'work-9')
+          end
+        end
+
+        it "drops a saved id that a later file uses as a row's source identifier" do
+          corrected = Tempfile.new(['corrected', '.csv'])
+          corrected.write("source_identifier,id,title,model\nrec-2,rec-7,Now a source identifier,GenericWork\n")
+          corrected.close
+          importer.parser_fields.merge!('create_new_records' => '1', 'row_ids' => { 'rec-2' => 'work2', 'rec-5' => 'work5' }, 'partial_import_file_path' => corrected.path)
+          importer.only_updates = true
+          subject.record_row_ids
+          expect(importer.reload.parser_fields['row_ids']).to eq('rec-5' => 'work5', 'rec-7' => 'rec-2')
+        end
+
+        it "drops an id that names one of the importer's entries" do
+          FactoryBot.create(:bulkrax_csv_entry, identifier: 'rec-2', importerexporter: importer)
+          importer.parser_fields.merge!('create_new_records' => '1', 'row_ids' => { 'rec-2' => 'work2' })
+          subject.record_row_ids
+          expect(importer.reload.parser_fields['row_ids']).not_to have_key('rec-2')
+        end
+
+        context "when a row's source identifier is another row's id" do
+          let(:csv_file) do
+            file = Tempfile.new(['ids', '.csv'])
+            file.write("source_identifier,id,title,model\nold-b,old-a,A,GenericWork\nwork-b,old-b,B,GenericWork\n")
+            file.close
+            file
+          end
+
+          it 'leaves that id out, since a source identifier names its own row' do
+            importer.parser_fields['create_new_records'] = '1'
+            subject.record_row_ids
+            expect(importer.reload.parser_fields['row_ids']).to eq('old-a' => 'old-b')
+          end
+        end
+
+        it 'saves none otherwise' do
+          importer.parser_fields['row_ids'] = { 'stale' => 'value' }
+          subject.record_row_ids
+          expect(importer.reload.parser_fields['row_ids']).to be_nil
+        end
+      end
     end
 
     describe '#build_records' do

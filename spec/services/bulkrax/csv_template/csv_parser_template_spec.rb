@@ -221,6 +221,73 @@ RSpec.describe Bulkrax::CsvParser do
       end
     end
 
+    context 'with an export from another repository' do
+      let(:csv_content) do
+        <<~CSV
+          source_identifier,id,title,model,parents,children
+          col1,old-c,Collection,Collection,,old-w
+          work1,old-w,Work,GenericWork,old-c,
+          ,old-w2,Child work,GenericWork,old-w,
+        CSV
+      end
+
+      before do
+        allow(Bulkrax::ValkyrieObjectFactory).to receive(:find_for_import) do |id:, **|
+          raise Bulkrax::ObjectFactoryInterface::ObjectNotFoundError if id.present?
+        end
+      end
+
+      it 'reports ids that name no record in this repository' do
+        result = described_class.validate_csv(csv_file: csv_file)
+        expect(result[:rowErrors]).to include(a_hash_including(row: 2, category: 'existing_record_id_not_found'))
+      end
+
+      context 'when the rows are created as new records' do
+        let(:result) { described_class.validate_csv(csv_file: csv_file, create_new_records: true) }
+
+        it 'creates every row, and resolves relationships by the ids of other rows' do
+          expect(result[:rowErrors].map { |error| error[:category] })
+            .not_to include('existing_record_id_not_found', 'invalid_parent_reference', 'invalid_child_reference')
+        end
+
+        context 'when two rows share an id' do
+          let(:csv_content) do
+            <<~CSV
+              source_identifier,id,title,model,parents
+              work-a,old-1,A,GenericWork,
+              work-b,old-1,B,GenericWork,
+              child,old-c,C,GenericWork,old-1
+            CSV
+          end
+
+          it 'reports a reference to that id, which names no one row' do
+            expect(result[:rowErrors]).to include(a_hash_including(row: 4, category: 'invalid_parent_reference', value: 'old-1'))
+          end
+        end
+
+        context "when a row's source identifier is another row's id" do
+          let(:csv_content) do
+            <<~CSV
+              source_identifier,id,title,model,parents
+              old-b,old-a,A,GenericWork,
+              work-b,old-b,B,GenericWork,
+              child,old-c,C,GenericWork,old-b
+            CSV
+          end
+
+          it 'reads a reference to it as that row, not the row with that id' do
+            parents = result[:works].to_h { |item| [item[:id], item[:parentIds]] }
+            expect(parents['child']).to eq(['old-b'])
+          end
+        end
+
+        it 'places each row under the row its relationship names' do
+          parents = (result[:collections] + result[:works]).to_h { |item| [item[:id], item[:parentIds]] }
+          expect(parents).to include('work1' => ['col1'], 'old-w2' => ['work1'])
+        end
+      end
+    end
+
     context 'with delete rows' do
       let(:csv_content) do
         <<~CSV

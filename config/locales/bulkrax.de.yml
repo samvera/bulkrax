@@ -91,6 +91,10 @@ de:
           public: Öffentlich
       browse_everything:
         add_cloud_files: Cloud-Dateien hinzufügen
+      create_new_records:
+        heading: "Daten aus einer anderen Quelle"
+        hint: "Wenn Sie Daten aus einer anderen Quelle importieren (zum Beispiel den Export einer anderen Website), aktivieren Sie das Kontrollkästchen, damit die IDs nicht als vorhandene Datensätze gesucht werden. Neue Zeilen werden zu neuen Datensätzen, und bereits importierte Zeilen werden aktualisiert. Die IDs dienen nur dazu, Zeilen mit ihren übergeordneten oder untergeordneten Elementen zu verbinden."
+        label: "Daten aus externer Quelle importieren"
       csv:
         add_csv_to_import: 'CSV- oder ZIP-Datei zum Import hinzufügen:'
         add_files_hint: Wählen Sie die hochzuladenden Dateien aus. Die Dateinamen müssen eindeutig sein und in einer Spalte namens „Datei“ in der beigefügten CSV-Datei referenziert werden.

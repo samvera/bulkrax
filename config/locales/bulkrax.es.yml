@@ -91,6 +91,10 @@ es:
           public: Público
       browse_everything:
         add_cloud_files: Agregar archivos en la nube
+      create_new_records:
+        heading: "Datos de otra fuente"
+        hint: "Al importar datos de otra fuente (como la exportación de otro sitio), marque la casilla para que los identificadores no se busquen como registros existentes. Las filas nuevas se convierten en registros nuevos y las filas importadas anteriormente se actualizan. Los identificadores solo se usan para vincular las filas con sus elementos primarios o secundarios."
+        label: "Importar datos de una fuente externa"
       csv:
         add_csv_to_import: 'Agregar archivo CSV o ZIP para importar:'
         add_files_hint: Seleccione los archivos que desea cargar. Los nombres de archivo deben ser únicos y deben estar referenciados en la columna "archivo" del archivo CSV adjunto.

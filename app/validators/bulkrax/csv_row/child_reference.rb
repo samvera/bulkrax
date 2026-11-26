@@ -41,7 +41,7 @@ module Bulkrax
       def self.collect_child_ids(record, context)
         split_pattern = Bulkrax::SplitPatternCoercion.coerce(context[:child_split_pattern])
         columns = context[:children_columns] || [context[:children_column] || 'children']
-        RelationshipIds.ids(record[:children], record[:raw_row], columns, split_pattern)
+        RelationshipIds.ids(record[:children], record[:raw_row], columns, split_pattern, context[:row_ids] || {})
       end
       private_class_method :collect_child_ids
     end
