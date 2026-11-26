@@ -828,6 +828,24 @@ module Bulkrax
     describe 'reads entry' do
       subject { described_class.new(importerexporter: exporter) }
 
+      context "with the record's visibility" do
+        let(:exporter) { FactoryBot.create(:bulkrax_exporter_worktype, field_mapping: { 'id' => { from: ['id'], source_identifier: true }, 'visibility' => { from: ['visibility'] } }) }
+        let(:work_obj) { Work.new(title: ['test'], visibility: 'restricted') }
+
+        before do
+          allow(subject).to receive(:hyrax_record).and_return(work_obj)
+          allow(work_obj).to receive(:id).and_return('test123')
+          allow(work_obj).to receive_messages(member_of_work_ids: [], in_work_ids: [], member_work_ids: [])
+          allow(Bulkrax.object_factory).to receive(:visibility_values).with(resource: work_obj)
+                                                                      .and_return('visibility' => 'embargo', 'embargo_release_date' => '2099-01-02')
+        end
+
+        it 'exports it, over a mapped visibility column, so an embargo keeps its visibility' do
+          metadata = subject.build_export_metadata
+          expect(metadata).to include('visibility' => 'embargo', 'embargo_release_date' => '2099-01-02')
+        end
+      end
+
       context 'with object fields prefixed' do
         let(:exporter) do
           FactoryBot.create(:bulkrax_exporter_worktype, field_mapping: {

@@ -23,8 +23,8 @@ RSpec.describe 'Exporting a CSV without Hyrax' do
 
   let(:exported_works) do
     [
-      { 'bulkrax_identifier' => 'work-1', 'model' => 'Work', 'title' => 'First work', 'creator_1' => 'Ada', 'creator_2' => 'Grace' },
-      { 'bulkrax_identifier' => 'work-2', 'model' => 'Work', 'title' => 'Second work', 'creator_1' => 'Alan', 'creator_2' => nil }
+      { 'bulkrax_identifier' => 'work-1', 'model' => 'Work', 'title' => 'First work', 'creator_1' => 'Ada', 'creator_2' => 'Grace', 'visibility' => 'open' },
+      { 'bulkrax_identifier' => 'work-2', 'model' => 'Work', 'title' => 'Second work', 'creator_1' => 'Alan', 'creator_2' => nil, 'visibility' => 'open' }
     ]
   end
 

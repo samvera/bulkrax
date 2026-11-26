@@ -86,6 +86,35 @@ module Bulkrax
       end
     end
 
+    describe '.visibility_values' do
+      it 'is the visibility of a record without an embargo or lease' do
+        expect(described_class.visibility_values(resource: Work.new(visibility: 'authenticated'))).to eq('visibility' => 'authenticated')
+      end
+
+      it 'is the embargo while one is in force' do
+        work = Work.new
+        work.apply_embargo(Date.parse('2099-01-02'), 'restricted', 'open')
+
+        expect(described_class.visibility_values(resource: work))
+          .to eq('visibility' => 'embargo', 'visibility_during_embargo' => 'restricted', 'embargo_release_date' => '2099-01-02', 'visibility_after_embargo' => 'open')
+      end
+
+      it 'is only the visibility on the day an embargo ends, since import rejects a release date that is not in the future' do
+        work = Work.new
+        work.apply_embargo(Date.current, 'restricted', 'open')
+
+        expect(described_class.visibility_values(resource: work).keys).to eq(['visibility'])
+      end
+
+      it 'is the lease while one is in force' do
+        work = Work.new
+        work.apply_lease(Date.parse('2099-03-04'), 'open', 'restricted')
+
+        expect(described_class.visibility_values(resource: work))
+          .to eq('visibility' => 'lease', 'visibility_during_lease' => 'open', 'lease_expiration_date' => '2099-03-04', 'visibility_after_lease' => 'restricted')
+      end
+    end
+
     describe 'is capable of looking up records dynamically' do
       include_examples 'dynamic record lookup'
     end
