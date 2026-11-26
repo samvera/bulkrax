@@ -41,7 +41,7 @@ module Bulkrax
 
       def self.collect_parent_ids(record, context)
         columns = context[:parent_columns] || [context[:parent_column] || 'parents']
-        RelationshipIds.ids(record[:parent], record[:raw_row], columns, context[:parent_split_pattern])
+        RelationshipIds.ids(record[:parent], record[:raw_row], columns, context[:parent_split_pattern], context[:row_ids] || {})
       end
       private_class_method :collect_parent_ids
     end

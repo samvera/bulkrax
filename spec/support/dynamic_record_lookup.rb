@@ -56,6 +56,19 @@ module Bulkrax
           end
         end
 
+        context "when it is another row's id, in a sheet whose ids only link its rows" do
+          before do
+            importer.parser_fields['row_ids'] = { 'old-id-1' => source_identifier }
+            importer.save!
+          end
+
+          it "looks up that row's entry" do
+            expect(Entry).to receive(:find_by).with({ identifier: source_identifier, importerexporter_type: 'Bulkrax::Importer', importerexporter_id: importer_id }).once
+
+            subject.find_record('old-id-1', importer_run_id)
+          end
+        end
+
         context 'when nothing is found' do
           it 'returns nil' do
             expect(subject.find_record(source_identifier, importer_run_id)[1]).to be_nil

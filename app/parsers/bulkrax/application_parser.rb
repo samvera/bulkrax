@@ -156,6 +156,11 @@ module Bulkrax
       @visibility ||= self.parser_fields['visibility'] || 'open'
     end
 
+    # The sheet's data comes from another source, so its ids only link its rows and records get new ids
+    def create_new_records?
+      ApplicationParser.flag_set?(parser_fields['create_new_records'])
+    end
+
     def create_collections
       create_objects(['collection'])
     end

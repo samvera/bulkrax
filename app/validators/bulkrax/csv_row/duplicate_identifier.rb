@@ -9,7 +9,7 @@ module Bulkrax
       def self.call(record, row_index, context)
         source_id = record[:source_identifier]
         source_id_label = context[:source_identifier] || 'source_identifier'
-        if source_id.blank? && Bulkrax.fill_in_blank_source_identifiers.present?
+        if source_id.blank?
           add_existing_warning(record, context, row_index, source_id, source_id_label)
           return
         end

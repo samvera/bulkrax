@@ -91,6 +91,10 @@ zh:
           public: 民众
       browse_everything:
         add_cloud_files: 添加云文件
+      create_new_records:
+        heading: "来自其他来源的数据"
+        hint: "导入来自其他来源的数据（例如另一个站点的导出文件）时，请勾选此框，这样 ID 就不会被当作现有记录来查找。新行将成为新记录，之前导入过的行将被更新。ID 仅用于将行与其父级或子级关联。"
+        label: "从外部来源导入数据"
       csv:
         add_csv_to_import: 添加要导入的 CSV 或 ZIP 文件：
         add_files_hint: 选择要上传的文件。文件名必须唯一，并且文件名必须在随附的 CSV 文件中名为“file”的列中引用。

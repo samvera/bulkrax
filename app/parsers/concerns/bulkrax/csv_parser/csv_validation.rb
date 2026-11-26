@@ -22,17 +22,19 @@ module Bulkrax
         # @param csv_in_zip [Boolean] true when csv_file was extracted from zip_file
         # @return [Hash] validation result compatible with the guided import UI
         # @raise [Bulkrax::UnzipError] when zip_file can't be read
-        def validate_csv(csv_file:, zip_file: nil, admin_set_id: nil, csv_in_zip: false)
+        def validate_csv(csv_file:, zip_file: nil, admin_set_id: nil, csv_in_zip: false, create_new_records: false)
           raw_csv, headers, mapping_manager, mappings, source_id_key, csv_data, field_metadata, field_analyzer =
             parse_csv_inputs(csv_file, admin_set_id)
 
           all_ids          = csv_data.map { |r| r[:source_identifier] }.compact.to_set
+          row_ids          = create_new_records ? row_ids_of(csv_data, mappings) : nil
           header_issues    = check_headers(headers, raw_csv, mapping_manager, mappings, field_metadata, field_analyzer,
                                            required_models: required_header_models(csv_data, headers, mappings))
           missing_required = header_issues[:missing_required]
+          drop_identified_source_field!(missing_required, mappings, source_id_key, csv_data)
           notices, row_errors, collections, works, file_sets =
             run_validations(csv_data, all_ids, headers, source_id_key, mappings, field_metadata, missing_required, zip_file,
-                            mapping_manager: mapping_manager, csv_in_zip: csv_in_zip)
+                            mapping_manager: mapping_manager, csv_in_zip: csv_in_zip, row_ids: row_ids)
 
           result = assemble_result(
             headers: headers, missing_required: missing_required, header_issues: header_issues,
@@ -65,18 +67,20 @@ module Bulkrax
 
         # Builds notices, runs row validators, and hierarchy extraction.
         # Returns [notices, row_errors, collections, works, file_sets].
-        def run_validations(csv_data, all_ids, headers, source_id_key, mappings, field_metadata, missing_required, zip_file, mapping_manager: nil, csv_in_zip: false) # rubocop:disable Metrics/ParameterLists
+        # `row_ids` is set when the sheet's ids only link its rows; see #row_ids_of
+        def run_validations(csv_data, all_ids, headers, source_id_key, mappings, field_metadata, missing_required, zip_file, mapping_manager: nil, csv_in_zip: false, row_ids: nil) # rubocop:disable Metrics/ParameterLists
           find_record          = build_find_record
-          find_existing_record = build_find_existing_record(mappings)
+          find_existing_record = build_find_existing_record(mappings, create_new_records: !row_ids.nil?)
           notices              = []
-          append_missing_source_id!(missing_required, headers, source_id_key, csv_data.map { |r| r[:model] }.compact.uniq)
+          append_missing_source_id!(missing_required, headers, source_id_key, csv_data)
           append_missing_model_notice!(notices, headers, csv_data, model_headers: Bulkrax::FieldResolver.headers_for_field(mappings, 'model'))
           append_files_referenced_no_zip_notice!(notices, csv_data, zip_file)
 
           zip_plan                       = build_zip_plan(zip_file, csv_in_zip: csv_in_zip)
           row_errors                     = run_row_validators(csv_data, all_ids, source_id_key, mappings, field_metadata, find_record, notices,
-                                                              mapping_manager: mapping_manager, zip_plan: zip_plan, find_existing_record: find_existing_record)
-          collections, works, file_sets  = extract_hierarchy_items(csv_data, all_ids, find_record, mappings, find_existing_record: find_existing_record)
+                                                              mapping_manager: mapping_manager, zip_plan: zip_plan, find_existing_record: find_existing_record,
+                                                              row_ids: row_ids || {})
+          collections, works, file_sets  = extract_hierarchy_items(csv_data, all_ids, find_record, mappings, find_existing_record: find_existing_record, row_ids: row_ids || {})
           [notices, row_errors, collections, works, file_sets]
         end
 
@@ -140,7 +144,7 @@ module Bulkrax
           Array(mapping_manager&.mapped_to_keys(base)).any? { |key| known_property_keys.include?(key) }
         end
 
-        def extract_hierarchy_items(csv_data, all_ids, find_record, mappings, find_existing_record: nil)
+        def extract_hierarchy_items(csv_data, all_ids, find_record, mappings, find_existing_record: nil, row_ids: {}) # rubocop:disable Metrics/ParameterLists
           parent_columns, children_columns = relationship_columns(mappings)
           extract_validation_items(
             csv_data, all_ids, find_record,
@@ -149,7 +153,8 @@ module Bulkrax
             parent_split_pattern: resolve_parent_split_pattern(mappings),
             child_split_pattern: resolve_children_split_pattern(mappings),
             parent_columns: parent_columns,
-            children_columns: children_columns
+            children_columns: children_columns,
+            row_ids: row_ids
           )
         end
 
@@ -159,7 +164,7 @@ module Bulkrax
         end
 
         # Runs all registered row validators and returns the collected errors.
-        def run_row_validators(csv_data, all_ids, source_id_key, mappings, field_metadata, find_record, notices = [], mapping_manager: nil, zip_plan: nil, find_existing_record: nil) # rubocop:disable Metrics/ParameterLists
+        def run_row_validators(csv_data, all_ids, source_id_key, mappings, field_metadata, find_record, notices = [], mapping_manager: nil, zip_plan: nil, find_existing_record: nil, row_ids: {}) # rubocop:disable Metrics/ParameterLists
           context = {
             errors: [],
             warnings: [],
@@ -173,7 +178,7 @@ module Bulkrax
             find_existing_record: find_existing_record,
             notices: notices,
             zip_plan: zip_plan,
-            **relationship_context(csv_data, mappings, find_existing_record)
+            **relationship_context(csv_data, mappings, find_existing_record, row_ids)
           }
           csv_data.each_with_index do |record, index|
             row_number = index + 2 # 1-indexed, plus header row

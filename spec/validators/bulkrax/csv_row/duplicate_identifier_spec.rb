@@ -107,6 +107,14 @@ RSpec.describe Bulkrax::CsvRow::DuplicateIdentifier do
     expect(error[:value]).to eq('work1')
   end
 
+  it 'does not report rows with a blank source_identifier as duplicates of each other' do
+    context = make_context
+    described_class.call(make_record(nil), 2, context)
+    described_class.call(make_record(nil), 3, context)
+
+    expect(context[:errors]).to be_empty
+  end
+
   context 'when fill_in_blank_source_identifiers is configured' do
     before do
       allow(Bulkrax).to receive(:fill_in_blank_source_identifiers)

@@ -337,3 +337,16 @@
     font-size: 15px;
   }
 }
+
+// Laid out like a validation accordion, but it does not collapse, so its header is not a control
+.create-new-records {
+  margin-bottom: 20px;
+
+  .accordion-header {
+    cursor: default;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+}

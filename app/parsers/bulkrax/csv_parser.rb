@@ -25,6 +25,7 @@ module Bulkrax
 
     def create_objects(types_array = nil)
       record_deleted_identifiers(types_array)
+      record_row_ids
       super
     rescue StandardError => e
       set_status_info(e)
@@ -49,10 +50,22 @@ module Bulkrax
       importerexporter.save
     end
 
+    # A relationship that names another row by its id finds that row's entry through these
+    # (DynamicRecordLookup#find_record), so they are saved before any job is queued.
+    def record_row_ids
+      # Built first: reading the records saves the importer, which replaces parser_fields
+      row_ids = row_ids_by_id if create_new_records?
+      # Added to, not replaced: an id from the other site always names the same row, and a corrected
+      # file or an earlier run may have brought rows this file lacks
+      row_ids = (importerexporter.parser_fields['row_ids'] || {}).merge(row_ids).except(*taken_identifiers(row_ids)) if row_ids
+      importerexporter.parser_fields['row_ids'] = row_ids
+      importerexporter.save
+    end
+
     # An Existing Entries run submits entries as imports and deletes nothing.
     def rebuild_entries(types_array = nil)
       importerexporter.parser_fields['deleted_identifiers'] = []
-      importerexporter.save
+      record_row_ids
       super
     end
 
@@ -73,8 +86,42 @@ module Bulkrax
         importer.save
       end
 
-      @records = csv_data.map { |record_data| entry_class.data_for_entry(record_data, nil, self) }
+      @records = csv_data.map { |record_data| identify_by_id(entry_class.data_for_entry(record_data, nil, self)) }
       @records
+    end
+
+    # A source identifier names its own row, even when an earlier file used it as an id,
+    # and an id this file's rows share names none, even when an earlier file saved it
+    def taken_identifiers(row_ids)
+      shared = row_id_pairs.map(&:first).tally.select { |_id, count| count > 1 }.keys
+      records.map { |record| record[source_identifier] } + shared +
+        importerexporter.entries.where(identifier: (importerexporter.parser_fields['row_ids'] || {}).keys + row_ids.keys).pluck(:identifier)
+    end
+
+    def row_ids_by_id
+      self.class.row_ids_from(row_id_pairs)
+    end
+
+    # Each row's id and source identifier
+    def row_id_pairs
+      mapping = importerexporter.mapping || {}
+      records.map { |record| [Bulkrax::FieldResolver.row_value(record.to_h.transform_keys(&:to_s), mapping, 'id')&.last, record[source_identifier]] }
+    end
+
+    # @param ids [Array<Array(String, String)>] each row's id and source identifier
+    # @return [Hash{String => String}] the source identifier of the row each id names. A source identifier
+    #   names its own row even when it is also another row's id, and an id that rows share names none.
+    def self.row_ids_from(ids)
+      source_identifiers = ids.map(&:last).to_set
+      shared = ids.map(&:first).tally.select { |_id, count| count > 1 }.keys.to_set
+      ids.each_with_object({}) do |(id, identifier), row_ids|
+        row_ids[id] = identifier if id && identifier.present? && !source_identifiers.include?(id) && !shared.include?(id)
+      end
+    end
+
+    def identify_by_id(record)
+      record[source_identifier] = entry_class.source_identifier_for(record.transform_keys(&:to_s), record[source_identifier], importerexporter.mapping)
+      record
     end
 
     def build_records

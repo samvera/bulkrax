@@ -91,6 +91,10 @@ fr:
           public: Publique
       browse_everything:
         add_cloud_files: Ajouter des fichiers cloud
+      create_new_records:
+        heading: "Données provenant d'une autre source"
+        hint: "Lors de l'importation de données provenant d'une autre source (comme l'export d'un autre site), cochez la case pour que les identifiants ne soient pas recherchés comme des enregistrements existants. Les nouvelles lignes deviennent de nouveaux enregistrements et les lignes déjà importées sont mises à jour. Les identifiants servent uniquement à relier les lignes à leurs parents ou à leurs enfants."
+        label: "Importer des données d'une source externe"
       csv:
         add_csv_to_import: 'Ajouter un fichier CSV ou ZIP à importer :'
         add_files_hint: Choisissez les fichiers à télécharger. Les noms de fichiers doivent être uniques et figurer dans une colonne nommée « file » du fichier CSV joint.

@@ -800,7 +800,7 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
       end
 
       context 'when several columns map to id' do
-        let(:find_existing_record) { host.build_find_existing_record('id' => { 'from' => %w[legacy_id id] }) }
+        let(:find_existing_record) { host.build_find_existing_record({ 'id' => { 'from' => %w[legacy_id id] } }) }
 
         it 'uses the last of them, as import does' do
           raw_row.replace('legacy_id' => 'rec-A', 'source_identifier' => 'src-1', 'id' => 'rec-B', 'model' => 'Image')
@@ -816,7 +816,7 @@ RSpec.describe Bulkrax::CsvParser::CsvValidationHelpers do
       end
 
       it 'ignores the id when its mapping is excluded, as import does' do
-        host.build_find_existing_record('id' => { 'from' => ['id'], 'excluded' => true }).call(row)
+        host.build_find_existing_record({ 'id' => { 'from' => ['id'], 'excluded' => true } }).call(row)
         expect(Bulkrax::ValkyrieObjectFactory).to have_received(:find_for_import).with(hash_including(id: nil))
       end
 

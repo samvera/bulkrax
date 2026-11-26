@@ -78,6 +78,20 @@ Before validation, users must select an admin set. The admin set ID is:
 - Used to update the CSV template download link
 - Stored in the importer on creation
 
+### Data From Another Source
+
+Below the admin set, a "Data from another source" card holds an "Import data from external source" checkbox
+(`parser_fields['create_new_records']`), which says whether the CSV edits this account's data or brings data from
+elsewhere:
+- Unchecked (default): the CSV edits data already in this account. A row with an id updates that record, and an id
+  that names no record is an error.
+- Checked: the data comes from another source, such as another site's export. Rows are matched by source
+  identifier alone, so new records get new ids, and a parent or child cell may name another row by its id. A row
+  whose source identifier is already in this account, from an earlier run, updates that record.
+
+Changing it resets validation, since it changes what validation reports. It is passed to `CsvParser.validate_csv`
+and stored in the importer on creation.
+
 ### CSV Template Download
 
 A "Download a CSV template" link generates a template via `CsvParser.generate_template` for the selected admin set. The link URL updates dynamically when the admin set selection changes.
@@ -163,7 +177,7 @@ The review step displays:
 1. Resolves files from either upload params or file path
 2. Finds CSV and ZIP from the file list (by extension)
 3. If no CSV found but ZIP exists, extracts CSV from the ZIP
-4. Calls `CsvParser.validate_csv(csv_file:, zip_file:, admin_set_id:)`
+4. Calls `CsvParser.validate_csv(csv_file:, zip_file:, admin_set_id:, csv_in_zip:, create_new_records:)`
 5. Formats result through `StepperResponseFormatter.format()`
 6. Returns JSON response
 
@@ -172,7 +186,7 @@ The review step displays:
 1. Extracts uploaded files from params
 2. Creates `Importer` with guided import strong parameters:
    - `name`, `admin_set_id`, `limit`
-   - `parser_fields`: `visibility`, `rights_statement`, `override_rights_statement`, `import_file_path`, `file_style`
+   - `parser_fields`: `visibility`, `rights_statement`, `override_rights_statement`, `import_file_path`, `file_style`, `create_new_records`
 3. Sets `parser_klass` to `Bulkrax::CsvParser`
 4. Associates with `current_user`
 5. Applies field mapping from `Bulkrax.field_mappings["Bulkrax::CsvParser"]`
@@ -186,7 +200,7 @@ Key helpers include:
 - `resolve_validation_files` - Returns `[files, error]` tuple from upload or file path
 - `select_csv_and_zip(files)` - Scans files by extension, returns `[csv_file, zip_file]`
 - `extract_csv_from_zip(zip_file)` - Opens ZIP, finds CSV, returns `[csv_file, error]`
-- `run_validation(csv_file, zip_file, admin_set_id:)` - Delegates to `CsvParser.validate_csv`
+- `run_validation(csv_file, zip_file, admin_set_id:, csv_in_zip:, create_new_records:)` - Delegates to `CsvParser.validate_csv`
 - `write_files(files)` - Writes CSV and ZIP to disk via parser methods
 
 ## StepperResponseFormatter

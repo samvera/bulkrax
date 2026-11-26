@@ -250,6 +250,23 @@
                 { id: 'importer-admin-set', class: 'form-control', required: true } %>
           </div>
 
+          <!-- Data From Another Source -->
+          <div class="accordion-item accordion-warning create-new-records">
+            <div class="accordion-header">
+              <div class="accordion-title-bar">
+                <span class="fa fa-exchange accordion-status-icon" aria-hidden="true"></span>
+                <span><%= t('bulkrax.importer.create_new_records.heading') %></span>
+              </div>
+            </div>
+            <div class="accordion-content">
+              <p id="create-new-records-hint"><%= t('bulkrax.importer.create_new_records.hint') %></p>
+              <div class="form-check">
+                <%= check_box_tag 'importer[parser_fields][create_new_records]', '1', false, class: 'form-check-input', id: 'importer-create-new-records', aria: { describedby: 'create-new-records-hint' } %>
+                <label class="form-check-label" for="importer-create-new-records"><%= t('bulkrax.importer.create_new_records.label') %></label>
+              </div>
+            </div>
+          </div>
+
           <!-- Download Template Link -->
           <div class="download-template-link">
             <span class="fa fa-download text-primary" aria-hidden="true"></span>

@@ -61,6 +61,11 @@ module Bulkrax
           expect(response).to have_http_status(:ok)
           expect(json_response[:isValid]).to eq(true)
         end
+
+        it 'validates the rows as new records when asked to' do
+          post_validate(importer: { parser_fields: { files: [csv_upload], create_new_records: '1' } })
+          expect(Bulkrax::CsvParser).to have_received(:validate_csv).with(hash_including(create_new_records: true))
+        end
       end
 
       context 'with a CSV that is not UTF-8' do
@@ -726,6 +731,13 @@ module Bulkrax
         it 'permits the parameter and saves it on the importer' do
           post_create(override_rights_statement: '1')
           expect(Importer.last.parser_fields['override_rights_statement']).to eq('1')
+        end
+      end
+
+      context 'with create_new_records in parser_fields' do
+        it 'permits the parameter and saves it on the importer' do
+          post_create(create_new_records: '1')
+          expect(Importer.last.parser_fields['create_new_records']).to eq('1')
         end
       end
 

@@ -475,6 +475,20 @@ module Bulkrax
           expect(response).to redirect_to(importers_path)
         end
 
+        context "when the importer's ids only link its rows" do
+          let(:importer) { Importer.create! valid_attributes.merge(parser_fields: { 'create_new_records' => '1', 'row_ids' => { 'old-1' => 'work1' } }) }
+
+          it 'keeps the saved row ids, which the form does not carry, for entries re-run later' do
+            put :update, params: { id: importer.to_param, importer: new_attributes.merge(parser_fields: { create_new_records: '1' }), commit: 'Update Importer' }, session: valid_session
+            expect(importer.reload.parser_fields['row_ids']).to eq('old-1' => 'work1')
+          end
+
+          it 'drops them when the ids no longer link its rows' do
+            put :update, params: { id: importer.to_param, importer: new_attributes.merge(parser_fields: { create_new_records: '0' }), commit: 'Update Importer' }, session: valid_session
+            expect(importer.reload.parser_fields['row_ids']).to be_nil
+          end
+        end
+
         it 'does not change the importer owner from submitted params' do
           importer = Importer.create! valid_attributes
           submitted_user = FactoryBot.create(:user)

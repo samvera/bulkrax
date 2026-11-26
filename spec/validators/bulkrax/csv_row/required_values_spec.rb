@@ -20,6 +20,13 @@ RSpec.describe Bulkrax::CsvRow::RequiredValues do
     }
   end
 
+  it "counts a row's id, which identifies a row with a blank source identifier, toward a required source identifier" do
+    context = make_context(required_terms: ['source_identifier']).merge(source_identifier: 'source_identifier')
+    record = make_record('source_identifier' => '', 'id' => 'rec-1').merge(source_identifier: 'rec-1')
+    described_class.call(record, 2, context)
+    expect(context[:errors]).to be_empty
+  end
+
   it 'adds no error when the required field is present' do
     context = make_context
     described_class.call(make_record('title' => 'My Title'), 2, context)

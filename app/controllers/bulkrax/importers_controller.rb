@@ -159,7 +159,7 @@ module Bulkrax
       # Assign the proposed attributes in memory first, so an unsafe cloud
       # selection is rejected before anything is persisted; the rescue
       # below then leaves the importer's persisted attributes untouched.
-      @importer.assign_attributes(importer_params)
+      assign_attributes_keeping_row_ids
       preflight_cloud_files!(cloud_files)
 
       if @importer.save
@@ -267,6 +267,13 @@ module Bulkrax
 
     def importable_params
       params.except(:selected_files)
+    end
+
+    # The form does not carry the row ids that an entry re-run later still needs (CsvParser#record_row_ids)
+    def assign_attributes_keeping_row_ids
+      row_ids = @importer.parser_fields['row_ids']
+      @importer.assign_attributes(importer_params)
+      @importer.parser_fields['row_ids'] = row_ids if row_ids && @importer.parser.create_new_records?
     end
 
     def importable_parser_fields

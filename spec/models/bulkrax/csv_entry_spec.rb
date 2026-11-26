@@ -274,14 +274,37 @@ module Bulkrax
           expect(subject.source_identifier).to eq('source_identifier')
         end
 
+        context "with the row's id" do
+          before do
+            allow(subject).to receive(:raw_metadata).and_return('source_identifier' => '2', 'title' => 'some title', 'id' => 'old-1')
+          end
+
+          it 'looks for the record with that id' do
+            expect(subject.build_metadata['id']).to eq('old-1')
+          end
+
+          it 'leaves it out when the sheet only uses ids to link its rows' do
+            importer.parser_fields['create_new_records'] = '1'
+            expect(subject.build_metadata).not_to have_key('id')
+          end
+
+          it 'leaves it out of a delete row when the sheet only uses ids to link its rows' do
+            importer.parser_fields['create_new_records'] = '1'
+            expect(subject.build_metadata_for_delete).not_to have_key('id')
+          end
+        end
+
         it 'has a work id field' do
           expect(subject.work_identifier).to eq('source')
         end
 
-        it 'has custom source and work id fields' do
-          subject.importerexporter.field_mapping['title'] = { 'from' => ['title'], 'source_identifier' => true }
-          expect(subject.source_identifier).to eq('title')
-          expect(subject.work_identifier).to eq('title')
+        context 'when the title is mapped as the source identifier' do
+          let(:importer) { FactoryBot.create(:bulkrax_importer_csv, field_mapping: { 'title' => { 'from' => ['title'], 'source_identifier' => true } }) }
+
+          it 'has custom source and work id fields' do
+            expect(subject.source_identifier).to eq('title')
+            expect(subject.work_identifier).to eq('title')
+          end
         end
       end
 

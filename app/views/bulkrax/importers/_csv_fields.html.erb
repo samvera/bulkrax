@@ -22,6 +22,7 @@
           %>
     <%= fi.input :override_rights_statement, as: :boolean, hint: t('bulkrax.importer.hints.override_rights_statement'), input_html: { checked: (importer.parser_fields['override_rights_statement'] == "1") } %>
   <% end %>
+  <%= fi.input :create_new_records, as: :boolean, label: t('bulkrax.importer.create_new_records.label'), hint: t('bulkrax.importer.create_new_records.hint'), input_html: { checked: Bulkrax::ApplicationParser.flag_set?(importer.parser_fields['create_new_records']) } %>
   <h4><%= t('bulkrax.importer.csv.add_csv_to_import') %></h4>
   <%# accept a single file upload; data files and bags will need to be added another way %>
   <% file_style_list = [t('bulkrax.importer.csv.file_style.upload'), t('bulkrax.importer.csv.file_style.server_path')] %>

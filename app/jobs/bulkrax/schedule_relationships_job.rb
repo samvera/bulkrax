@@ -78,9 +78,16 @@ module Bulkrax
     # that already failed is left to the final pass, which retries only the
     # latest run's, so retrying it hourly does not keep writing Failed statuses
     # that look like progress. Known limit: a cell that names a Pending row's
-    # record id rather than its source identifier is not recognized as Pending.
+    # record id rather than its source identifier is not recognized as Pending,
+    # unless the sheet's ids only link its rows (CsvParser#record_row_ids).
     def ready_parents(importer, pending)
       pending_identifiers = pending.select(:identifier)
+      row_ids = importer.parser_fields['row_ids']
+      if row_ids.present?
+        pending_identifiers = pending_identifiers.pluck(:identifier).to_set
+        pending_identifiers += row_ids.select { |_id, identifier| pending_identifiers.include?(identifier) }.keys
+        pending_identifiers = pending_identifiers.to_a
+      end
       relationships = pending_relationships(importer)
       blocked = relationships.where(parent_id: pending_identifiers).or(relationships.where(child_id: pending_identifiers))
       relationships.pending.distinct.pluck(:importer_run_id, :parent_id) - blocked.distinct.pluck(:importer_run_id, :parent_id)

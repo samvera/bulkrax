@@ -113,6 +113,7 @@
     uploadMode: 'upload', // 'upload' or 'file_path'
     validated: false,
     validationData: null,
+    validationRequest: 0,
     warningsAcked: false,
     skipValidation: false, // Flag to skip validation step
     isAddingFiles: false, // Flag to track if we're adding files vs replacing
@@ -352,6 +353,15 @@
       StepperState.settings.name = $(this).val()
       updateStepNavigation()
     }, CONSTANTS.DEBOUNCE_DELAY))
+
+    // Creating the rows as new records changes what validation reports
+    $('#importer-create-new-records').on('change', function () {
+      resetValidationState()
+      updateStepNavigation()
+      if (StepperState.uploadMode === 'file_path' || StepperState.uploadedFiles.length > 0) {
+        updateValidateButtonState()
+      }
+    })
 
     // Admin set selection change
     $('#importer-admin-set').on('change', function () {
@@ -1078,6 +1088,10 @@
 
   // Reset validation state and restore button text (called when inputs change)
   function resetValidationState() {
+    // A validation still running answers for settings that have since changed
+    StepperState.validationRequest++
+    $('#validate-upload-btn').html('<span class="fa fa-file-text"></span> ' + t('validate_upload'))
+    $('#validate-path-btn').html('<span class="fa fa-file-text"></span> ' + t('validate_path'))
     if (!StepperState.validated) return
 
     StepperState.validated = false
@@ -1086,8 +1100,6 @@
     $('#warnings-acked').prop('checked', false)
     $('.validation-results').hide()
     $('.warning-acknowledgment').hide()
-    $('#validate-upload-btn').html('<span class="fa fa-file-text"></span> ' + t('validate_upload'))
-    $('#validate-path-btn').html('<span class="fa fa-file-text"></span> ' + t('validate_path'))
     renderUploadedFiles()
     updateStepNavigation()
   }
@@ -1279,6 +1291,7 @@
     StepperState.uploadState = CONSTANTS.UPLOAD_STATES.EMPTY
     StepperState.validated = false
     StepperState.validationData = null
+    StepperState.validationRequest++
     StepperState.warningsAcked = false
     StepperState.skipValidation = false
     StepperState.demoScenario = null
@@ -1329,6 +1342,7 @@
     }).val() || ''
     $adminSetSelect.val(defaultAdminSet)
     StepperState.adminSetId = defaultAdminSet
+    $('#importer-create-new-records').prop('checked', false)
     StepperState.adminSetName = $adminSetSelect.find('option:selected').text()
 
     // Reset settings
@@ -1375,7 +1389,8 @@
       data: {
         importer: {
           parser_fields: {
-            import_file_path: filePath
+            import_file_path: filePath,
+            create_new_records: createNewRecordsValue()
           },
           admin_set_id: StepperState.adminSetId
         },
@@ -1397,6 +1412,10 @@
         resolve(mockData)
       }, CONSTANTS.VALIDATION_DELAY)
     })
+  }
+
+  function createNewRecordsValue() {
+    return $('#importer-create-new-records').is(':checked') ? '1' : '0'
   }
 
   // Update UI after successful validation
@@ -1464,6 +1483,7 @@
 
   // Validate files (AJAX call to backend)
   function validateFiles() {
+    var request = ++StepperState.validationRequest
     var $btn = StepperState.uploadMode === 'file_path' ? $('#validate-path-btn') : $('#validate-upload-btn')
     $btn
       .prop('disabled', true)
@@ -1489,7 +1509,8 @@
           .filter(function (f) { return f.uploadId })
           .map(function (f) { return f.uploadId }),
         importer: {
-          admin_set_id: StepperState.adminSetId
+          admin_set_id: StepperState.adminSetId,
+          parser_fields: { create_new_records: createNewRecordsValue() }
         },
         locale: $('input[name="locale"]').val()
       }
@@ -1518,9 +1539,12 @@
     // Handle validation result
     validationPromise
       .then(function (data) {
+        // The reset that made this request stale has already restored the button
+        if (request !== StepperState.validationRequest) return
         handleValidationSuccess(data, $btn)
       })
       .catch(function (error) {
+        if (request !== StepperState.validationRequest) return
         handleValidationError(error, $btn)
       })
   }

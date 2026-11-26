@@ -38,7 +38,8 @@ module Bulkrax
       end
 
       admin_set_id = params[:importer]&.[](:admin_set_id)
-      validation_result = run_validation(csv_file, zip_file, admin_set_id: admin_set_id, csv_in_zip: csv_in_zip)
+      create_new_records = ApplicationParser.flag_set?(params[:importer]&.[](:parser_fields)&.[](:create_new_records))
+      validation_result = run_validation(csv_file, zip_file, admin_set_id: admin_set_id, csv_in_zip: csv_in_zip, create_new_records: create_new_records)
       raw_csv_data = validation_result.delete(:raw_csv_data)
       cache_key = cache_validation_errors(validation_result, raw_csv_data, csv_file)
       formatted = StepperResponseFormatter.format(validation_result)
@@ -139,8 +140,8 @@ module Bulkrax
       key
     end
 
-    def run_validation(csv_file, zip_file, admin_set_id: nil, csv_in_zip: false)
-      CsvParser.validate_csv(csv_file: csv_file, zip_file: zip_file, admin_set_id: admin_set_id, csv_in_zip: csv_in_zip)
+    def run_validation(csv_file, zip_file, admin_set_id: nil, csv_in_zip: false, create_new_records: false)
+      CsvParser.validate_csv(csv_file: csv_file, zip_file: zip_file, admin_set_id: admin_set_id, csv_in_zip: csv_in_zip, create_new_records: create_new_records)
     end
 
     def importer_params
@@ -148,7 +149,7 @@ module Bulkrax
         :name,
         :admin_set_id,
         :limit,
-        parser_fields: [:visibility, :rights_statement, :override_rights_statement, :import_file_path, :file_style]
+        parser_fields: [:visibility, :rights_statement, :override_rights_statement, :import_file_path, :file_style, :create_new_records]
       )
     end
 

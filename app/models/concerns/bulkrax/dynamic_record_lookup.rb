@@ -13,6 +13,7 @@ module Bulkrax
     def find_record(identifier, importer_run_id = nil)
       # check for our entry in our current importer first
       importer_id = ImporterRun.find(importer_run_id).importer_id
+      identifier = row_ids_of(importer_id).fetch(identifier, identifier)
       default_scope = { identifier: identifier, importerexporter_type: 'Bulkrax::Importer' }
 
       begin
@@ -29,6 +30,12 @@ module Bulkrax
     end
 
     private
+
+    # Another row's id, in a sheet whose ids only link its rows (CsvParser#record_row_ids), names that row
+    def row_ids_of(importer_id)
+      @row_ids ||= {}
+      @row_ids[importer_id] ||= Importer.find(importer_id).parser_fields['row_ids'] || {}
+    end
 
     # An entry whose record is of another model failed to import, so it has
     # no record to relate.

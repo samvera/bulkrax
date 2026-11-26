@@ -91,6 +91,10 @@ it:
           public: Pubblico
       browse_everything:
         add_cloud_files: Aggiungi file cloud
+      create_new_records:
+        heading: "Dati da un'altra fonte"
+        hint: "Quando importi dati da un'altra fonte (ad esempio l'esportazione di un altro sito), seleziona la casella in modo che gli ID non vengano cercati come record esistenti. Le nuove righe diventano nuovi record e le righe già importate vengono aggiornate. Gli ID servono solo a collegare le righe ai loro genitori o figli."
+        label: "Importa dati da una fonte esterna"
       csv:
         add_csv_to_import: 'Aggiungi file CSV o ZIP da importare:'
         add_files_hint: Seleziona i file da caricare. I nomi dei file devono essere univoci e devono essere referenziati in una colonna denominata "file" nel file CSV allegato.

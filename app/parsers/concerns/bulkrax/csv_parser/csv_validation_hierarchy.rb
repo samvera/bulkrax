@@ -6,31 +6,32 @@ module Bulkrax
     # categorising items from parsed CSV data for the guided import tree view.
     module CsvValidationHierarchy
       def extract_validation_items(csv_data, all_ids = Set.new, find_record = nil, parent_split_pattern: nil, child_split_pattern: nil, # rubocop:disable Metrics/ParameterLists
-                                   parent_columns: ['parents'], children_columns: ['children'], find_existing_record: nil, deleted_ids: Set.new)
-        child_to_parents = build_child_to_parents_map(csv_data, child_split_pattern: child_split_pattern, children_columns: children_columns)
+                                   parent_columns: ['parents'], children_columns: ['children'], find_existing_record: nil, deleted_ids: Set.new,
+                                   row_ids: {})
+        child_to_parents = build_child_to_parents_map(csv_data, child_split_pattern: child_split_pattern, children_columns: children_columns, row_ids: row_ids)
         collections = []
         works       = []
         file_sets   = []
         taken_ids   = ids_in_csv(csv_data, parent_split_pattern: parent_split_pattern, child_split_pattern: child_split_pattern,
-                                           parent_columns: parent_columns, children_columns: children_columns)
+                                           parent_columns: parent_columns, children_columns: children_columns, row_ids: row_ids)
 
         csv_data.each_with_index do |item, index|
           categorise_validation_item(item, child_to_parents, all_ids, collections, works, file_sets, find_record,
                                      row_id: display_id(item, index + 2, taken_ids),
                                      parent_split_pattern: parent_split_pattern, child_split_pattern: child_split_pattern,
                                      parent_columns: parent_columns, children_columns: children_columns,
-                                     find_existing_record: find_existing_record, deleted_ids: deleted_ids)
+                                     find_existing_record: find_existing_record, deleted_ids: deleted_ids, row_ids: row_ids)
         end
 
         [collections, works, file_sets]
       end
 
-      def build_child_to_parents_map(csv_data, child_split_pattern: nil, children_columns: ['children'])
+      def build_child_to_parents_map(csv_data, child_split_pattern: nil, children_columns: ['children'], row_ids: {})
         Hash.new { |h, k| h[k] = [] }.tap do |map|
           csv_data.each do |item|
             next if item[:source_identifier].blank? || item[:deleting]
 
-            collect_relationship_ids(item[:children], item[:raw_row], children_columns, split_pattern: child_split_pattern).each do |child_id|
+            collect_relationship_ids(item[:children], item[:raw_row], children_columns, split_pattern: child_split_pattern, row_ids: row_ids).each do |child_id|
               map[child_id] << item[:source_identifier]
             end
           end
@@ -39,13 +40,13 @@ module Bulkrax
 
       def categorise_validation_item(item, child_to_parents, all_ids, collections, works, file_sets, find_record = nil, parent_split_pattern: nil, child_split_pattern: nil, # rubocop:disable Metrics/ParameterLists
                                      parent_columns: ['parents'], children_columns: ['children'], row_id: nil, find_existing_record: nil,
-                                     deleted_ids: Set.new)
+                                     deleted_ids: Set.new, row_ids: {})
         item_id   = row_id || item[:source_identifier]
         model_str = item[:model].to_s
 
         opts = { type: nil, find_record: find_record, find_existing_record: find_existing_record, parent: parent_split_pattern,
                  child: child_split_pattern, parent_columns: parent_columns, children_columns: children_columns, id: item_id,
-                 deleted_ids: deleted_ids }
+                 deleted_ids: deleted_ids, row_ids: row_ids }
         if Bulkrax.collection_model_name?(model_str)
           collections << build_item_hash(item, child_to_parents, all_ids, opts.merge(type: 'collection'))
         elsif Bulkrax.file_model_name?(model_str)
@@ -65,8 +66,8 @@ module Bulkrax
         parents, children, named_by = if item[:deleting]
                                         [[], [], []]
                                       else
-                                        [collect_relationship_ids(item[:parent], item[:raw_row], opts[:parent_columns] || ['parents'], split_pattern: opts[:parent]),
-                                         collect_relationship_ids(item[:children], item[:raw_row], opts[:children_columns] || ['children'], split_pattern: opts[:child]),
+                                        [collect_relationship_ids(item[:parent], item[:raw_row], opts[:parent_columns] || ['parents'], split_pattern: opts[:parent], row_ids: opts[:row_ids] || {}),
+                                         collect_relationship_ids(item[:children], item[:raw_row], opts[:children_columns] || ['children'], split_pattern: opts[:child], row_ids: opts[:row_ids] || {}),
                                          child_to_parents.fetch(item[:source_identifier], [])]
                                       end
         parents, children, named_by = [parents, children, named_by].map { |ids| ids.reject { |id| opts[:deleted_ids]&.include?(id) } }
@@ -103,16 +104,16 @@ module Bulkrax
         stand_in
       end
 
-      def ids_in_csv(csv_data, parent_split_pattern:, child_split_pattern:, parent_columns:, children_columns:)
+      def ids_in_csv(csv_data, parent_split_pattern:, child_split_pattern:, parent_columns:, children_columns:, row_ids: {}) # rubocop:disable Metrics/ParameterLists
         csv_data.each_with_object(Set.new) do |item, ids|
           ids << item[:source_identifier] if item[:source_identifier].present?
-          ids.merge(collect_relationship_ids(item[:parent], item[:raw_row], parent_columns, split_pattern: parent_split_pattern))
-          ids.merge(collect_relationship_ids(item[:children], item[:raw_row], children_columns, split_pattern: child_split_pattern))
+          ids.merge(collect_relationship_ids(item[:parent], item[:raw_row], parent_columns, split_pattern: parent_split_pattern, row_ids: row_ids))
+          ids.merge(collect_relationship_ids(item[:children], item[:raw_row], children_columns, split_pattern: child_split_pattern, row_ids: row_ids))
         end
       end
 
-      def collect_relationship_ids(base_value, raw_row, columns, split_pattern: nil)
-        Bulkrax::CsvRow::RelationshipIds.ids(base_value, raw_row, Array(columns), split_pattern)
+      def collect_relationship_ids(base_value, raw_row, columns, split_pattern: nil, row_ids: {})
+        Bulkrax::CsvRow::RelationshipIds.ids(base_value, raw_row, Array(columns), split_pattern, row_ids)
       end
 
       def resolvable_ids(ids, all_ids)
