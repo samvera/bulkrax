@@ -296,6 +296,37 @@ module Bulkrax
       [file, relative_filename, target_file]
     end
 
+    def move_csv_to_ingest_directory(files, upload_file, importer)
+      # /mnt/hyrax/uploads/10_20230929154530/bulkrax_local.csv 
+      # to
+      # /mnt/volume/ingest_files/bulkrax_local.csv
+      # move uploaded file .csv to the same directory as the other "cloud" files.
+      # Check the filesystem path is valid and matches config.filesystem_files_path.
+      if files.present? && !files.first.nil?
+        current_upload_file = upload_file.file
+        file_name = File.basename(current_upload_file)
+        cloud_files = files.first.second["url"]
+        cloud_files_path = File.expand_path(cloud_files.split('/')[2...-1].join('/'))
+        puts "cloud_files_path: #{cloud_files_path}"
+        puts "filesystem_files_path: #{Bulkrax.config.filesystem_files_path}"
+        new_import_file_path = File.join(cloud_files_path, file_name)
+        unless new_import_file_path.starts_with?(Bulkrax.config.filesystem_files_path)
+          raise StandardError, "Invalid ingest path"
+        end
+
+        FileUtils.mv(
+            current_upload_file,
+            new_import_file_path,
+            force: true,
+            verbose: true
+          )
+        puts "new_import_file_path: #{new_import_file_path}"
+        new_import_file_path
+      else
+        current_upload_file
+      end
+    end
+
     # export methods
 
     def write_files
@@ -570,7 +601,11 @@ module Bulkrax
       @files_dir ||= begin
         has_attachments_zip = parser_fields['attachments_zip_path'].present? && zip_file?(parser_fields['attachments_zip_path'])
         base = zip? || has_attachments_zip ? importer_unzip_path : File.dirname(import_file_path)
-        File.join(base, 'files')
+        if Bulkrax.config.bypass_download_cloud_files?
+          base
+        else
+          File.join(base, 'files')
+        end
       end
     end
 

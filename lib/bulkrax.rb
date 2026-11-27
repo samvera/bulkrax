@@ -39,9 +39,11 @@ module Bulkrax
   # @api public
   class Configuration
     attr_accessor :api_definition,
+                  :bypass_download_cloud_files,
                   :default_field_mapping,
                   :export_path,
                   :field_mappings,
+                  :filesystem_files_path,
                   :guided_import_enabled,
                   :guided_import_demo_scenarios_enabled,
                   :generated_metadata_mapping,
@@ -248,6 +250,8 @@ module Bulkrax
     end
     alias use_locking? use_locking
 
+    alias bypass_download_cloud_files? bypass_download_cloud_files
+
     ##
     # @return [Array<#call>] callable validators invoked per-row during CSV validation.
     #   Each callable receives (record, row_number, context).
@@ -306,6 +310,9 @@ module Bulkrax
 
   def_delegators :@config,
                  :api_definition=,
+                 :bypass_download_cloud_files,
+                 :bypass_download_cloud_files=,
+                 :bypass_download_cloud_files?,
                  :collection_model_class,
                  :collection_model_internal_resource,
                  :collection_model_class=,
@@ -331,6 +338,8 @@ module Bulkrax
                  :file_model_name?,
                  :file_model_names,
                  :file_model_names=,
+                 :filesystem_files_path,
+                 :filesystem_files_path=,
                  :fill_in_blank_source_identifiers,
                  :fill_in_blank_source_identifiers=,
                  :generated_metadata_mapping,
@@ -387,6 +396,8 @@ module Bulkrax
     conf.required_elements = ['title']
     conf.guided_import_enabled = ActiveModel::Type::Boolean.new.cast(ENV.fetch('BULKRAX_GUIDED_IMPORTER', false))
     conf.guided_import_demo_scenarios_enabled = false
+    conf.bypass_download_cloud_files = Bulkrax.bypass_download_cloud_files || false
+    conf.filesystem_files_path = Bulkrax.filesystem_files_path || ''
 
     # Hash of Generic field_mappings for use in the view
     # There must be one field_mappings hash per view partial

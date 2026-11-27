@@ -169,13 +169,19 @@ module Bulkrax
 
       @importer[:parser_fields]['import_file_path'] = @importer.parser.write_import_file(file) if file.present?
       if cloud_files.present?
-        @importer[:parser_fields]['cloud_file_paths'] = cloud_files
-        assign_cloud_file_paths(cloud_files)
+        unless Bulkrax.config.bypass_download_cloud_files?
+          @importer[:parser_fields]['cloud_file_paths'] = cloud_files
+          assign_cloud_file_paths(cloud_files)
+        end
       end
 
       if uploads.present?
         uploads.each do |upload|
-          @importer[:parser_fields]['import_file_path'] = @importer.parser.write_import_file(upload.file.file)
+          unless Bulkrax.config.bypass_download_cloud_files?
+            @importer[:parser_fields]['import_file_path'] = @importer.parser.write_import_file(upload.file.file)
+          else
+            @importer[:parser_fields]['import_file_path'] = @importer.parser.move_csv_to_ingest_directory(cloud_files, upload.file.file, @importer)
+          end
         end
       end
 
